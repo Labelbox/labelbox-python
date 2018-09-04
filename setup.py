@@ -20,15 +20,20 @@ dev_requirements = [
         ]
 
 setup(
-    name='LBExporters',
-    version='0.1.1',
-    packages=['labelbox2coco', 'labelbox2pascal'],
+    name='labelbox',
+    version='0.0.1.dev0',
+    packages=[
+        'labelbox.labelbox2coco',
+        'labelbox.labelbox2pascal',
+        'labelbox.labelbox2pascal.pascal_voc_writer'
+    ],
     licence='Apache 2.0',
-    description='Converters from Labelbox exports to other common foramts',
+    description='A python library for interacting with labelbox.com',
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=requirements,
     extras_require={
         'dev': dev_requirements,
     },
+    include_package_data=True,
 )
