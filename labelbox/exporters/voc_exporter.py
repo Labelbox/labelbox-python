@@ -5,15 +5,8 @@ from shapely import wkt
 import requests
 from PIL import Image
 
-from .pascal_voc_writer import Writer as PascalWriter
-
-
-class UnknownFormatError(Exception):
-    """Exception raised for unknown label_format"""
-
-    def __init__(self, label_format):
-        self.message = ("Provided label_format '{}' is unsupported"
-                        .format(label_format))
+from labelbox.exceptions import UnknownFormatError
+from labelbox.exporters.pascal_voc_writer import Writer as PascalWriter
 
 
 def from_json(labeled_data, annotations_output_dir, images_output_dir,

@@ -6,7 +6,7 @@ from shapely.geometry import Polygon
 import requests
 from PIL import Image
 
-from labelbox2pascal import UnknownFormatError
+from labelbox.exceptions import UnknownFormatError
 
 
 def from_json(labeled_data, coco_output, label_format='WKT'):
