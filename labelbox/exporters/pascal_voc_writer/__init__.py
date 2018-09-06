@@ -29,7 +29,7 @@ class Writer:
         }
 
     def add_object(self, name, xy_coords, pose='Unspecified',
-                  truncated=0, difficult=0):
+                   truncated=0, difficult=0):
         """
         Adds an annotation object represented by `xy_coords` to the current annotation being built.
 
