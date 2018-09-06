@@ -4,9 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+requests = "*"
+shapely = "*"
+xmltodict = "*"
+"jinja2" = "*"
 
 [dev-packages]
-lbexporters = {editable = true, path = ".", extras = ["dev"]}
+tox = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.6"

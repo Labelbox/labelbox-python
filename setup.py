@@ -23,11 +23,10 @@ setup(
     name='labelbox',
     version='0.0.1.dev0',
     packages=[
-        'labelbox.labelbox2coco',
-        'labelbox.labelbox2pascal',
-        'labelbox.labelbox2pascal.pascal_voc_writer'
+        'labelbox.exporters',
+        'labelbox.exporters.pascal_voc_writer'
     ],
-    licence='Apache 2.0',
+    license='Apache 2.0',
     description='A python library for interacting with labelbox.com',
     long_description=long_description,
     long_description_content_type='text/markdown',
