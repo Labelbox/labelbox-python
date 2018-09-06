@@ -7,8 +7,7 @@ from jinja2 import Environment, PackageLoader
 
 class Writer:
     "Class for writing Pascal VOC annotation formats."
-    def __init__(self, path, width, height, depth=3,
-                 database='Unknown', segmented=0):
+    def __init__(self, path, width, height):
         environment = Environment(
             loader=PackageLoader('labelbox.exporters', package_path='pascal_voc_writer/templates'),
             keep_trailing_newline=True)
@@ -22,14 +21,13 @@ class Writer:
             'folder': os.path.basename(os.path.dirname(abspath)),
             'width': width,
             'height': height,
-            'depth': depth,
-            'database': database,
-            'segmented': segmented,
+            'depth': 3,
+            'database': 'Unknown',
+            'segmented': 0,
             'objects': []
         }
 
-    def add_object(self, name, xy_coords, pose='Unspecified',
-                   truncated=0, difficult=0):
+    def add_object(self, name, xy_coords):
         """
         Adds an annotation object represented by `xy_coords` to the current annotation being built.
 
@@ -52,9 +50,9 @@ class Writer:
             'name': name,
             'type': label_type,
             'xy_coords': xy_coords,
-            'pose': pose,
-            'truncated': truncated,
-            'difficult': difficult,
+            'pose': 'Unspecified',
+            'truncated': 0,
+            'difficult': 0,
         })
 
     def save(self, annotation_path):

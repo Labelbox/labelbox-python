@@ -36,7 +36,6 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
         assert os.path.isdir(annotations_output_dir)
     except AssertionError:
         logging.exception('Annotation output directory does not exist')
-        return None
 
     # read labelbox JSON output
     with open(labeled_data, 'r') as file_handle:
@@ -45,25 +44,23 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
 
     for data in label_data:
         try:
-            write_label(data['ID'], data['Labeled Data'], data['Label'], label_format,
-                        images_output_dir, annotations_output_dir)
+            _write_label(data, label_format, images_output_dir, annotations_output_dir)
 
-        except requests.exceptions.MissingSchema:
-            logging.exception(('"Labeled Data" field must be a URL. '
-                               'Support for local files coming soon'))
+        except requests.exceptions.MissingSchema as exc:
+            logging.exception(exc)
             continue
         except requests.exceptions.ConnectionError:
             logging.exception('Failed to fetch image from %s', data['Labeled Data'])
             continue
 
-def write_label(
-        label_id, image_url, labels, label_format, images_output_dir, annotations_output_dir):
+def _write_label(
+        data, label_format, images_output_dir, annotations_output_dir):
     "Writes a Pascal VOC formatted image and label pair to disk."
     # Download image and save it
-    response = requests.get(image_url, stream=True)
+    response = requests.get(data['Labeled Data'], stream=True)
     response.raw.decode_content = True
     image = Image.open(response.raw)
-    image_name = ('{img_id}.{ext}'.format(img_id=label_id, ext=image.format.lower()))
+    image_name = ('{img_id}.{ext}'.format(img_id=data['ID'], ext=image.format.lower()))
     image_fqn = os.path.join(images_output_dir, image_name)
     image.save(image_fqn, format=image.format)
 
@@ -72,12 +69,12 @@ def write_label(
     xml_writer = PascalWriter(image_fqn, width, height)
 
     # remove classification labels (Skip, etc...)
-    if not callable(getattr(labels, 'keys', None)):
+    if not callable(getattr(data['Label'], 'keys', None)):
         # skip if no categories (e.g. "Skip")
         return
 
     # convert label to Pascal VOC format
-    for category_name, wkt_data in labels.items():
+    for category_name, wkt_data in data['Label'].items():
         if label_format == 'WKT':
             xml_writer = _add_pascal_object_from_wkt(
                 xml_writer, img_height=height, wkt_data=wkt_data,
@@ -92,8 +89,7 @@ def write_label(
             raise exc
 
     # write Pascal VOC xml annotation for image
-    xml_writer.save(os.path.join(annotations_output_dir, '{}.xml'.format(label_id)))
-
+    xml_writer.save(os.path.join(annotations_output_dir, '{}.xml'.format(data['ID'])))
 
 
 def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):

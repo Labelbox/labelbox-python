@@ -34,9 +34,8 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
                 "date_captured": None,
             }
             _add_label(coco, image, data['Label'], label_format)
-        except requests.exceptions.MissingSchema:
-            logging.exception(('"Labeled Data" field must be a URL. '
-                               'Support for local files coming soon'))
+        except requests.exceptions.MissingSchema as exc:
+            logging.exception(exc)
             continue
         except requests.exceptions.ConnectionError:
             logging.exception('Failed to fetch image from %s', data['Labeled Data'])
