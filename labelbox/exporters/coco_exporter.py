@@ -69,8 +69,7 @@ def _add_label(coco, image, labels, label_format):
     "Incrementally updates COCO export data structure with a new label."
     response = requests.get(image['coco_url'], stream=True)
     response.raw.decode_content = True
-    image = Image.open(response.raw)
-    image['width'], image['height'] = image.size
+    image['width'], image['height'] = Image.open(response.raw).size
 
     coco['images'].append(image)
 

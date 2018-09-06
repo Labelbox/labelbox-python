@@ -26,3 +26,8 @@ jobs:
       - store_artifacts:
           path: htmlcov
           destination: htmlcov
+
+      - store_test_results:
+          path: xmlcov
+          destination: htmlcov
+
