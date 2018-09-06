@@ -28,6 +28,5 @@ jobs:
           destination: htmlcov
 
       - store_test_results:
-          path: xmlcov
-          destination: htmlcov
+          path: test-results
 
