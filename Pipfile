@@ -4,16 +4,17 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+"jinja2" = "*"
+pillow = "*"
 requests = "*"
 shapely = "*"
-xmltodict = "*"
-"jinja2" = "*"
 
 [dev-packages]
-tox = "*"
-pytest = "*"
 pylint = "*"
-coverage = "*"
+pytest = "*"
+pytest-cov = "*"
+tox = "*"
+xmltodict = "*"
 
 [requires]
 python_version = "3.6"

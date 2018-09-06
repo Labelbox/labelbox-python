@@ -15,7 +15,10 @@ requirements = [
         ]
 
 dev_requirements = [
+        'pylint',
         'pytest',
+        'pytest-cov',
+        'tox',
         'xmltodict',
         ]
 
