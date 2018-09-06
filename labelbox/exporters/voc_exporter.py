@@ -110,7 +110,7 @@ def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
 	# remove last polygon if it is identical to first point
         if xy_coords[-2:] == xy_coords[:2]:
             xy_coords = xy_coords[:-2]
-        xml_writer.addObject(name=label, xy_coords=xy_coords)
+        xml_writer.add_object(name=label, xy_coords=xy_coords)
     return xml_writer
 
 
@@ -123,5 +123,5 @@ def _add_pascal_object_from_xy(xml_writer, img_height, polygons, label):
         xy_coords = []
         for point in polygon:
             xy_coords.extend([point['x'], img_height - point['y']])
-        xml_writer.addObject(name=label, xy_coords=xy_coords)
+        xml_writer.add_object(name=label, xy_coords=xy_coords)
     return xml_writer
