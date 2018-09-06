@@ -1,3 +1,7 @@
+"""
+Module for converting labelbox.com JSON exports to MS COCO format.
+"""
+
 import json
 import datetime as dt
 import logging
