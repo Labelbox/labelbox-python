@@ -1,0 +1,32 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - cache-{{ checksum "Pipfile.lock" }}
+            - cache-
+      - run:
+          name: Install dependencies
+          command: pipenv sync --dev
+      - save_cache:
+          key: cache-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.local
+            - ~/.cache
+  test:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - run: pipenv run tox
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test
