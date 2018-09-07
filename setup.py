@@ -10,6 +10,7 @@ with open(path.join(here, 'README.md')) as f:
 requirements = [
         'jinja2',
         'pillow',
+        'rasterio',
         'requests',
         'shapely',
         ]
@@ -27,7 +28,8 @@ setup(
     version='0.0.1.dev0',
     packages=[
         'labelbox.exporters',
-        'labelbox.exporters.pascal_voc_writer'
+        'labelbox.exporters.pascal_voc_writer',
+        'labelbox.predictions',
     ],
     license='Apache 2.0',
     description='A python library for interacting with labelbox.com',
