@@ -31,3 +31,8 @@ Check https://test.pypi.org/project/labelbox/ and if it looks good
 pipenv run tox -e release
 ```
 
+To generate a `requirements.txt` for usage outside of `pipenv`
+
+```sh
+pipenv lock -r > requirements.txt
+```

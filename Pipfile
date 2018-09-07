@@ -17,6 +17,9 @@ pytest = "*"
 pytest-cov = "*"
 tox = "*"
 xmltodict = "*"
+check-manifest = "*"
+mypy = "*"
+docutils = "*"
 
 [requires]
 python_version = "3.6"
