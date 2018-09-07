@@ -23,6 +23,8 @@ docutils = "*"
 "flake8" = "*"
 sphinx = "*"
 sphinxcontrib-napoleon = "*"
+setuptools = "*"
+wheel = "*"
 
 [requires]
 python_version = "3.6"
