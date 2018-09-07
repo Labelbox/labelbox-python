@@ -17,6 +17,7 @@ requirements = [
         ]
 
 dev_requirements = [
+        'numpy',
         'pylint',
         'pytest',
         'pytest-cov',

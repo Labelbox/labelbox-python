@@ -4,10 +4,9 @@ Module for interacting with predictions on labelbox.com
 import collections
 
 import rasterio.features
-from simplification.cutil import simplify_coords
+from simplification.cutil import simplify_coords # pylint: disable=no-name-in-module
 
 
-# TODO: path simplification
 def vectorize_to_v4_label(segmentation_map, legend, epsilon=None):
     """Converts a segmentation map into polygons.
 
@@ -50,5 +49,5 @@ def vectorize_to_v4_label(segmentation_map, legend, epsilon=None):
                 geometry.append({'x': int(point[0]), 'y': int(point[1])})
 
             class_name = legend[pixel_value]
-            label[class_name].append({ 'geometry': geometry })
+            label[class_name].append({'geometry': geometry})
     return label

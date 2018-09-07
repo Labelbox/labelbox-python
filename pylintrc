@@ -1,3 +1,6 @@
+[TYPECHECK]
+generated-members=simplification.cutil.*
+
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
