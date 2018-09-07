@@ -4,7 +4,7 @@ Module for interacting with predictions on labelbox.com
 import collections
 
 import rasterio.features
-from simplification.cutil import simplify_coords # pylint: disable=no-name-in-module
+from simplification.cutil import simplify_coords  # pylint: disable=no-name-in-module
 
 
 def vectorize_to_v4_label(segmentation_map, legend, epsilon=None):
@@ -33,7 +33,7 @@ def vectorize_to_v4_label(segmentation_map, legend, epsilon=None):
         in image-segmentation v4 frontend after calling `json.dumps`.
     """
     assert len(segmentation_map.shape) == 2, \
-            'Segmentation maps must be numpy arrays with shape (width, height)'
+        'Segmentation maps must be numpy arrays with shape (width, height)'
     label = collections.defaultdict(lambda: [])
     for polygon, pixel_value in rasterio.features.shapes(segmentation_map):
         pixel_value = int(pixel_value)

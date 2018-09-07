@@ -44,6 +44,7 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
     with open(coco_output, 'w+') as file_handle:
         file_handle.write(json.dumps(coco))
 
+
 def make_coco_metadata(project_name, created_by):
     "Initializes COCO export data structure."
     coco = {
@@ -64,6 +65,7 @@ def make_coco_metadata(project_name, created_by):
     }
 
     return coco
+
 
 def _add_label(coco, image, labels, label_format):
     "Incrementally updates COCO export data structure with a new label."
@@ -114,23 +116,24 @@ def _add_label(coco, image, labels, label_format):
 
             coco['annotations'].append(annotation)
 
+
 def _get_polygons(label_format, label_data):
     "Converts segmentation `label: String!` into polygons"
     if label_format == 'WKT':
-        if isinstance(label_data, list): # V3
+        if isinstance(label_data, list):  # V3
             polygons = map(lambda x: wkt.loads(x['geometry']), label_data)
-        else: # V2
+        else:  # V2
             polygons = wkt.loads(label_data)
     elif label_format == 'XY':
         polygons = []
         for xy_list in label_data:
-            if 'geometry' in xy_list: # V3
+            if 'geometry' in xy_list:  # V3
                 xy_list = xy_list['geometry']
 
                 # V2 and V3
                 assert isinstance(xy_list, list), \
-                        'Expected list in "geometry" key but got {}'.format(xy_list)
-            else: # V2, or non-list
+                    'Expected list in "geometry" key but got {}'.format(xy_list)
+            else:  # V2, or non-list
                 if not isinstance(xy_list, list) or not xy_list or 'x' not in xy_list[0]:
                     # skip non xy lists
                     continue

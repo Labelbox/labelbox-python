@@ -2,6 +2,7 @@
 Exception classes for the labelbox python package.
 """
 
+
 class UnknownFormatError(Exception):
     """Exception raised for unknown label_format"""
 

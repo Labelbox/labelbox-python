@@ -6,6 +6,7 @@ import xmltodict
 import labelbox.exporters.coco_exporter as lb2co
 import labelbox.exporters.voc_exporter as lb2pa
 
+
 class TestCocoExporter(object):
     def test_labelbox_1(self, tmpfile, datadir):
         labeled_data = datadir.join('labelbox_1.json')
@@ -39,6 +40,7 @@ class TestCocoExporter(object):
     def test_empty_skipped(self, tmpfile, datadir):
         labeled_data = datadir.join('empty_skipped.json')
         lb2co.from_json(labeled_data=labeled_data, coco_output=tmpfile)
+
 
 class TestVocExporter(object):
     def test_wkt_1(self, tmpdir, datadir):
