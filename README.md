@@ -1,6 +1,7 @@
 # labelbox-python
 
 [![CircleCI](https://circleci.com/gh/Labelbox/labelbox-python.svg?style=svg)](https://circleci.com/gh/Labelbox/labelbox-python)
+[![Documentation Status](https://readthedocs.org/projects/labelbox/badge/?version=latest)](https://labelbox.readthedocs.io/en/latest/?badge=latest)
 
 Python libraries for interacting with [Labelbox](https://labelbox.com/).
 
