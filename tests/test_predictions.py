@@ -1,4 +1,5 @@
 import numpy as np
+from PIL import Image, ImageDraw
 
 import labelbox.predictions as lbpreds
 
@@ -30,3 +31,28 @@ def test_vectorize_to_v4_label():
 
     # does not contain unannotated class
     assert 'NO_LABELS' not in label.keys()
+
+def test_vectorize_simplify():
+# Using Ramer–Douglas–Peucker
+    coords = [
+        (0.0, 0.0),
+        (5.0, 4.0),
+        (11.0, 5.5),
+        (17.3, 3.2),
+        (27.8, 0.1)
+    ]
+
+    segmentation_map = Image.new('L', (28, 28))
+    draw = ImageDraw.Draw(segmentation_map)
+    draw.polygon(coords, fill=1)
+
+    legend = {
+            1: 'CLASS',
+    }
+    segmentation_map = np.asarray(segmentation_map)
+
+    label = lbpreds.vectorize_to_v4_label(segmentation_map, legend, epsilon=None)
+    label_simple = lbpreds.vectorize_to_v4_label(segmentation_map, legend, epsilon=1.0)
+
+    # simplification reduces the number of points
+    assert len(label['CLASS'][0]['geometry']) > len(label_simple['CLASS'][0]['geometry'])

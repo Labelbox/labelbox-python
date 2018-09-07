@@ -13,6 +13,7 @@ requirements = [
         'rasterio',
         'requests',
         'shapely',
+        'simplification',
         ]
 
 dev_requirements = [

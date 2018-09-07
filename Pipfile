@@ -9,6 +9,7 @@ pillow = "*"
 requests = "*"
 shapely = "*"
 rasterio = "*"
+simplification = "*"
 
 [dev-packages]
 pylint = "*"
