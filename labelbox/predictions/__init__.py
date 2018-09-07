@@ -1,18 +1,20 @@
-"""
-Module for interacting with predictions on labelbox.com
-"""
+"Module for interacting with predictions on labelbox.com."
 import collections
+from typing import DefaultDict, Dict, List, Optional
 
 import rasterio.features
 from simplification.cutil import simplify_coords  # pylint: disable=no-name-in-module
 
 
-def vectorize_to_v4_label(segmentation_map, legend, epsilon=None):
+def vectorize_to_v4_label(
+        segmentation_map,
+        legend: Dict[int, str],
+        epsilon: Optional[float]) -> DefaultDict[str, List[dict]]:
     """Converts a segmentation map into polygons.
 
-    Given a raster pixel-wise array of predictions, this method
-    converts it into vectorized polygons suitable for use in
-    as `prediction`s in Labelbox's image-segmentation front ends.
+    Given a raster pixel wise array of predictions in `segmentation_map`,
+    this method converts it into vectorized polygons suitable for use in as
+    predictions in Labelbox image segmentation front ends.
 
     A pixel value of 0 is used to denote background pixels and
     the remaining pixel values are interpereted following the
@@ -34,7 +36,7 @@ def vectorize_to_v4_label(segmentation_map, legend, epsilon=None):
     """
     assert len(segmentation_map.shape) == 2, \
         'Segmentation maps must be numpy arrays with shape (width, height)'
-    label = collections.defaultdict(lambda: [])
+    label: DefaultDict[str, List[dict]] = collections.defaultdict(lambda: [])
     for polygon, pixel_value in rasterio.features.shapes(segmentation_map):
         pixel_value = int(pixel_value)
         # ignore background (denoted by pixel value 0)
