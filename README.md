@@ -22,11 +22,12 @@ pipenv run tox
 ## Releasing
 
 ```sh
-pipenv run python setup.py sdist bdist_wheel
-twine upload --repository-url 'https://test.pypi.org/legacy/' 'dist/*'
+pipenv run tox -e release-test
 ```
 
-If it looks good
+Check https://test.pypi.org/project/labelbox/ and if it looks good
+
 ```sh
-twine upload 'dist/*'
+pipenv run tox -e release
 ```
+
