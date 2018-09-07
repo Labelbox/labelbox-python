@@ -8,8 +8,8 @@ name = "pypi"
 pillow = "*"
 requests = "*"
 shapely = "*"
-rasterio = "*"
 simplification = "*"
+rasterio = "*"
 
 [dev-packages]
 pylint = "*"
