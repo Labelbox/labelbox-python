@@ -9,7 +9,7 @@ from simplification.cutil import simplify_coords  # pylint: disable=no-name-in-m
 def vectorize_to_v4_label(
         segmentation_map,
         legend: Dict[int, str],
-        epsilon: Optional[float]) -> DefaultDict[str, List[dict]]:
+        epsilon: Optional[float] = None) -> DefaultDict[str, List[dict]]:
     """Converts a segmentation map into polygons.
 
     Given a raster pixel wise array of predictions in `segmentation_map`,

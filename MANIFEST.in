@@ -9,4 +9,7 @@ include tox.ini
 recursive-include labelbox *.py
 recursive-include tests *.json
 recursive-include tests *.py
+recursive-include docs *.py
+recursive-include docs *.rst
+
 include labelbox/exporters/pascal_voc_writer/templates/annotation.xml
