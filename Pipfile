@@ -23,7 +23,7 @@ docutils = "*"
 "flake8" = "*"
 sphinx = "*"
 sphinxcontrib-napoleon = "*"
-setuptools = "*"
+setuptools = ">=40.2.0"
 wheel = "*"
 sphinx-rtd-theme = "*"
 
