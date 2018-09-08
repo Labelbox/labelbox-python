@@ -5,7 +5,6 @@
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
-from labelbox import __version__
 
 # -- Path setup --------------------------------------------------------------
 
@@ -17,6 +16,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../.'))
 
+import labelbox
+
 
 # -- Project information -----------------------------------------------------
 
@@ -25,9 +26,9 @@ copyright = '2018, Labelbox'
 author = 'Labelbox'
 
 # The short X.Y version
-version = __version__
+version = labelbox.__version__
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = labelbox.__version__
 
 
 # -- General configuration ---------------------------------------------------

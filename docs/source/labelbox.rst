@@ -1,5 +1,5 @@
-labelbox namespace
-==================
+labelbox package
+================
 
 Subpackages
 -----------
@@ -21,3 +21,10 @@ labelbox.exceptions module
     :show-inheritance:
 
 
+Module contents
+---------------
+
+.. automodule:: labelbox
+    :members:
+    :undoc-members:
+    :show-inheritance:
