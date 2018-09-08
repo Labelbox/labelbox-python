@@ -1,16 +1,16 @@
 include *.lock
 include *.py
 include *.txt
+include *.yml
 include LICENSE
 include LICENSES
 include Pipfile
 include pylintrc
 include tox.ini
-recursive-include labelbox *.py
-recursive-include tests *.json
-recursive-include tests *.py
+recursive-include docs *.gitkeep
 recursive-include docs *.py
 recursive-include docs *.rst
-recursive-include docs *.gitkeep
-
+recursive-include labelbox *.py
 include labelbox/exporters/pascal_voc_writer/templates/annotation.xml
+recursive-include tests *.json
+recursive-include tests *.py
