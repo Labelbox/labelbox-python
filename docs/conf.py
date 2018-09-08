@@ -5,6 +5,7 @@
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
+from labelbox import __version__
 
 # -- Path setup --------------------------------------------------------------
 
@@ -20,13 +21,13 @@ sys.path.insert(0, os.path.abspath('../.'))
 # -- Project information -----------------------------------------------------
 
 project = 'labelbox'
-copyright = '2018, Feynman Liang'
-author = 'Feynman Liang'
+copyright = '2018, Labelbox'
+author = 'Labelbox'
 
 # The short X.Y version
-version = ''
+version = __version__
 # The full version, including alpha/beta/rc tags
-release = '0.0.1dev'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -77,7 +78,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
