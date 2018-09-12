@@ -52,8 +52,24 @@ def test_vectorize_simplify():
     }
     segmentation_map = np.asarray(segmentation_map)
 
-    label = lbpreds.vectorize_to_v4_label(segmentation_map, legend, epsilon=None)
-    label_simple = lbpreds.vectorize_to_v4_label(segmentation_map, legend, epsilon=1.0)
+    label = lbpreds.vectorize_to_v4_label(segmentation_map, legend, max_num_points=None)
+    label_simple = lbpreds.vectorize_to_v4_label(segmentation_map, legend, max_num_points=10)
 
     # simplification reduces the number of points
     assert len(label['CLASS'][0]['geometry']) > len(label_simple['CLASS'][0]['geometry'])
+
+
+def test_vectorize_simplify_defaults(datadir):
+    with open(datadir.join('dog_prediction.png'), 'rb') as fp:
+        im = np.array(Image.open(fp))
+        legend = {
+                65535: 'Dog',
+        }
+        label = lbpreds.vectorize_to_v4_label(im, legend, max_num_points=None)
+
+        # a huge label with no simplification
+        assert len(label['Dog'][0]['geometry']) > 5000
+
+        # by default, simplifies to <= 50 points
+        label_simple = lbpreds.vectorize_to_v4_label(im, legend)
+        assert len(label_simple['Dog'][0]['geometry']) <= 50

@@ -9,7 +9,7 @@ from simplification.cutil import simplify_coords  # pylint: disable=no-name-in-m
 def vectorize_to_v4_label(
         segmentation_map,
         legend: Dict[int, str],
-        epsilon: Optional[float] = None) -> DefaultDict[str, List[dict]]:
+        max_num_points: Optional[int] = 50) -> DefaultDict[str, List[dict]]:
     """Converts a segmentation map into polygons.
 
     Given a raster pixel wise array of predictions in `segmentation_map`,
@@ -25,10 +25,8 @@ def vectorize_to_v4_label(
         legend: A dictonary mapping pixel values
             used in `segmentation_map` to semantic
             class names.
-        epsilon: An optional argument, if present
-            controls the amount of path simplification.
-            Start with 1.0 and decrease to 0.01, 0.001.
-            No simplification occurs if absent.
+        max_num_points: The maximum number of points in the simplified path.
+            If `None`, then no path simplification is performed.
 
     Returns:
         A dictionary suitable for use as a `prediction`
@@ -43,8 +41,12 @@ def vectorize_to_v4_label(
         if pixel_value in legend and pixel_value is not 0:
             xy_list = polygon['coordinates'][0]
 
-            if epsilon:
+            if max_num_points:
+                epsilon = 0.001
                 xy_list = simplify_coords(xy_list, epsilon)
+                while len(xy_list) > max_num_points:
+                    epsilon *= 2
+                    xy_list = simplify_coords(xy_list, epsilon)
 
             geometry = []
             for point in xy_list:
