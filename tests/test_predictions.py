@@ -58,6 +58,7 @@ def test_vectorize_simplify():
     # simplification reduces the number of points
     assert len(label['CLASS'][0]['geometry']) > len(label_simple['CLASS'][0]['geometry'])
 
+
 def test_vectorize_simplify_defaults(datadir):
     with open(datadir.join('dog_prediction.png'), 'rb') as fp:
         im = np.array(Image.open(fp))
