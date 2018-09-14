@@ -5,13 +5,14 @@ Module for converting labelbox.com JSON exports to MS COCO format.
 import datetime as dt
 import json
 import logging
-from typing import Any, Dict, Sequence
+from typing import Any, Dict
 
-from labelbox.exceptions import UnknownFormatError
 from PIL import Image
 import requests
 from shapely import wkt
 from shapely.geometry import Polygon
+
+from labelbox.exceptions import UnknownFormatError
 
 
 def from_json(labeled_data, coco_output, label_format='WKT'):
@@ -48,29 +49,25 @@ def make_coco_metadata(project_name: str, created_by: str) -> Dict[str, Any]:
     Returns:
         The COCO export represented as a dictionary.
     """
-    coco = {
-        'info': None,
+    return {
+        'info': {
+            'year': dt.datetime.now(dt.timezone.utc).year,
+            'version': None,
+            'description': project_name,
+            'contributor': created_by,
+            'url': 'labelbox.com',
+            'date_created': dt.datetime.now(dt.timezone.utc).isoformat()
+        },
         'images': [],
         'annotations': [],
         'licenses': [],
         'categories': []
     }
 
-    coco['info'] = {
-        'year': dt.datetime.now(dt.timezone.utc).year,
-        'version': None,
-        'description': project_name,
-        'contributor': created_by,
-        'url': 'labelbox.com',
-        'date_created': dt.datetime.now(dt.timezone.utc).isoformat()
-    }
-
-    return coco
-
 
 def add_label(
         coco: Dict[str, Any], label_id: str, image_url: str,
-        labels: Sequence[Any], label_format: str):
+        labels: Dict[str, Any], label_format: str):
     """Incrementally updates COCO export data structure with a new label.
 
     Args:

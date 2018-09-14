@@ -5,7 +5,7 @@ Module for converting labelbox.com JSON exports to Pascal VOC 2012 format.
 import json
 import logging
 import os
-from typing import Any, Sequence
+from typing import Any, Dict
 
 from PIL import Image
 import requests
@@ -63,7 +63,7 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
 
 
 def write_label(  # pylint: disable-msg=too-many-arguments
-        label_id: str, image_url: str, labels: Sequence[Any], label_format: str,
+        label_id: str, image_url: str, labels: Dict[str, Any], label_format: str,
         images_output_dir: str, annotations_output_dir: str):
     """Writes a single Pascal VOC formatted image and label pair to disk.
 
