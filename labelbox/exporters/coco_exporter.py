@@ -5,13 +5,13 @@ Module for converting labelbox.com JSON exports to MS COCO format.
 import datetime as dt
 import json
 import logging
-import requests
-from shapely import wkt
-from shapely.geometry import Polygon
 from typing import Any, Dict, Sequence
 
 from labelbox.exceptions import UnknownFormatError
 from PIL import Image
+import requests
+from shapely import wkt
+from shapely.geometry import Polygon
 
 
 def from_json(labeled_data, coco_output, label_format='WKT'):
