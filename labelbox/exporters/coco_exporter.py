@@ -2,13 +2,15 @@
 Module for converting labelbox.com JSON exports to MS COCO format.
 """
 
-import json
 import datetime as dt
+import json
 import logging
+from typing import Any, Dict
+
+from PIL import Image
+import requests
 from shapely import wkt
 from shapely.geometry import Polygon
-import requests
-from PIL import Image
 
 from labelbox.exceptions import UnknownFormatError
 
@@ -25,15 +27,7 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
     for data in label_data:
         # Download and get image name
         try:
-            image = {
-                "id": data['ID'],
-                "file_name": data['Labeled Data'],
-                "license": None,
-                "flickr_url": data['Labeled Data'],
-                "coco_url": data['Labeled Data'],
-                "date_captured": None,
-            }
-            _add_label(coco, image, data['Label'], label_format)
+            add_label(coco, data['ID'], data['Labeled Data'], data['Label'], label_format)
         except requests.exceptions.MissingSchema as exc:
             logging.exception(exc)
             continue
@@ -45,31 +39,57 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
         file_handle.write(json.dumps(coco))
 
 
-def make_coco_metadata(project_name, created_by):
-    "Initializes COCO export data structure."
-    coco = {
-        'info': None,
+def make_coco_metadata(project_name: str, created_by: str) -> Dict[str, Any]:
+    """Initializes COCO export data structure.
+
+    Args:
+        project_name: name of the project
+        created_by: email of the project creator
+
+    Returns:
+        The COCO export represented as a dictionary.
+    """
+    return {
+        'info': {
+            'year': dt.datetime.now(dt.timezone.utc).year,
+            'version': None,
+            'description': project_name,
+            'contributor': created_by,
+            'url': 'labelbox.com',
+            'date_created': dt.datetime.now(dt.timezone.utc).isoformat()
+        },
         'images': [],
         'annotations': [],
         'licenses': [],
         'categories': []
     }
 
-    coco['info'] = {
-        'year': dt.datetime.now(dt.timezone.utc).year,
-        'version': None,
-        'description': project_name,
-        'contributor': created_by,
-        'url': 'labelbox.com',
-        'date_created': dt.datetime.now(dt.timezone.utc).isoformat()
+
+def add_label(
+        coco: Dict[str, Any], label_id: str, image_url: str,
+        labels: Dict[str, Any], label_format: str):
+    """Incrementally updates COCO export data structure with a new label.
+
+    Args:
+        coco: The current COCO export, will be incrementally updated by this method.
+        label_id: ID for the instance to write
+        image_url: URL to download image file from
+        labels: Labelbox formatted labels to use for generating annotation
+        label_format: Format of the labeled data. Valid options are: "WKT" and
+                      "XY", default is "WKT".
+
+    Returns:
+        The updated COCO export represented as a dictionary.
+    """
+    image = {
+        "id": label_id,
+        "file_name": image_url,
+        "license": None,
+        "flickr_url": image_url,
+        "coco_url": image_url,
+        "date_captured": None,
     }
-
-    return coco
-
-
-def _add_label(coco, image, labels, label_format):
-    "Incrementally updates COCO export data structure with a new label."
-    response = requests.get(image['coco_url'], stream=True)
+    response = requests.get(image_url, stream=True)
     response.raw.decode_content = True
     image['width'], image['height'] = Image.open(response.raw).size
 
@@ -96,25 +116,29 @@ def _add_label(coco, image, labels, label_format):
             coco['categories'].append(category)
 
         polygons = _get_polygons(label_format, label_data)
+        _append_polygons_as_annotations(coco, image, category_id, polygons)
 
-        for polygon in polygons:
-            segmentation = []
-            for x_val, y_val in polygon.exterior.coords:
-                segmentation.extend([x_val, image['height'] - y_val])
 
-            annotation = {
-                "id": len(coco['annotations']) + 1,
-                "image_id": image['id'],
-                "category_id": category_id,
-                "segmentation": [segmentation],
-                "area": polygon.area,  # float
-                "bbox": [polygon.bounds[0], polygon.bounds[1],
-                         polygon.bounds[2] - polygon.bounds[0],
-                         polygon.bounds[3] - polygon.bounds[1]],
-                "iscrowd": 0
-            }
+def _append_polygons_as_annotations(coco, image, category_id, polygons):
+    "Adds `polygons` as annotations in the `coco` export"
+    for polygon in polygons:
+        segmentation = []
+        for x_val, y_val in polygon.exterior.coords:
+            segmentation.extend([x_val, image['height'] - y_val])
 
-            coco['annotations'].append(annotation)
+        annotation = {
+            "id": len(coco['annotations']) + 1,
+            "image_id": image['id'],
+            "category_id": category_id,
+            "segmentation": [segmentation],
+            "area": polygon.area,  # float
+            "bbox": [polygon.bounds[0], polygon.bounds[1],
+                     polygon.bounds[2] - polygon.bounds[0],
+                     polygon.bounds[3] - polygon.bounds[1]],
+            "iscrowd": 0
+        }
+
+        coco['annotations'].append(annotation)
 
 
 def _get_polygons(label_format, label_data):
