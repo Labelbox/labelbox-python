@@ -5,13 +5,13 @@ Module for converting labelbox.com JSON exports to MS COCO format.
 import datetime as dt
 import json
 import logging
-from PIL import Image
 import requests
 from shapely import wkt
 from shapely.geometry import Polygon
 from typing import Any, Dict, Sequence
 
 from labelbox.exceptions import UnknownFormatError
+from PIL import Image
 
 
 def from_json(labeled_data, coco_output, label_format='WKT'):
@@ -78,7 +78,8 @@ def add_label(
         label_id: ID for the instance to write
         image_url: URL to download image file from
         labels: Labelbox formatted labels to use for generating annotation
-        label_format: Format of the labeled data. Valid options are: "WKT" and "XY", default is "WKT".
+        label_format: Format of the labeled data. Valid options are: "WKT" and
+                      "XY", default is "WKT".
 
     Returns:
         The updated COCO export represented as a dictionary.
@@ -118,25 +119,29 @@ def add_label(
             coco['categories'].append(category)
 
         polygons = _get_polygons(label_format, label_data)
+        _append_polygons_as_annotations(coco, image, category_id, polygons)
 
-        for polygon in polygons:
-            segmentation = []
-            for x_val, y_val in polygon.exterior.coords:
-                segmentation.extend([x_val, image['height'] - y_val])
 
-            annotation = {
-                "id": len(coco['annotations']) + 1,
-                "image_id": image['id'],
-                "category_id": category_id,
-                "segmentation": [segmentation],
-                "area": polygon.area,  # float
-                "bbox": [polygon.bounds[0], polygon.bounds[1],
-                         polygon.bounds[2] - polygon.bounds[0],
-                         polygon.bounds[3] - polygon.bounds[1]],
-                "iscrowd": 0
-            }
+def _append_polygons_as_annotations(coco, image, category_id, polygons):
+    "Adds `polygons` as annotations in the `coco` export"
+    for polygon in polygons:
+        segmentation = []
+        for x_val, y_val in polygon.exterior.coords:
+            segmentation.extend([x_val, image['height'] - y_val])
 
-            coco['annotations'].append(annotation)
+        annotation = {
+            "id": len(coco['annotations']) + 1,
+            "image_id": image['id'],
+            "category_id": category_id,
+            "segmentation": [segmentation],
+            "area": polygon.area,  # float
+            "bbox": [polygon.bounds[0], polygon.bounds[1],
+                     polygon.bounds[2] - polygon.bounds[0],
+                     polygon.bounds[3] - polygon.bounds[1]],
+            "iscrowd": 0
+        }
+
+        coco['annotations'].append(annotation)
 
 
 def _get_polygons(label_format, label_data):
