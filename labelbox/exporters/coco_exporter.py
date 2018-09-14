@@ -2,13 +2,14 @@
 Module for converting labelbox.com JSON exports to MS COCO format.
 """
 
-import json
 import datetime as dt
+import json
 import logging
+from PIL import Image
+import requests
 from shapely import wkt
 from shapely.geometry import Polygon
-import requests
-from PIL import Image
+from typing import Any, Dict, Sequence
 
 from labelbox.exceptions import UnknownFormatError
 
@@ -25,15 +26,7 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
     for data in label_data:
         # Download and get image name
         try:
-            image = {
-                "id": data['ID'],
-                "file_name": data['Labeled Data'],
-                "license": None,
-                "flickr_url": data['Labeled Data'],
-                "coco_url": data['Labeled Data'],
-                "date_captured": None,
-            }
-            _add_label(coco, image, data['Label'], label_format)
+            add_label(coco, data['ID'], data['Labeled Data'], data['Label'], label_format)
         except requests.exceptions.MissingSchema as exc:
             logging.exception(exc)
             continue
@@ -45,8 +38,16 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
         file_handle.write(json.dumps(coco))
 
 
-def make_coco_metadata(project_name, created_by):
-    "Initializes COCO export data structure."
+def make_coco_metadata(project_name: str, created_by: str) -> Dict[str, Any]:
+    """Initializes COCO export data structure.
+
+    Args:
+        project_name: name of the project
+        created_by: email of the project creator
+
+    Returns:
+        The COCO export represented as a dictionary.
+    """
     coco = {
         'info': None,
         'images': [],
@@ -67,9 +68,30 @@ def make_coco_metadata(project_name, created_by):
     return coco
 
 
-def _add_label(coco, image, labels, label_format):
-    "Incrementally updates COCO export data structure with a new label."
-    response = requests.get(image['coco_url'], stream=True)
+def add_label(
+        coco: Dict[str, Any], label_id: str, image_url: str,
+        labels: Sequence[Any], label_format: str):
+    """Incrementally updates COCO export data structure with a new label.
+
+    Args:
+        coco: The current COCO export, will be incrementally updated by this method.
+        label_id: ID for the instance to write
+        image_url: URL to download image file from
+        labels: Labelbox formatted labels to use for generating annotation
+        label_format: Format of the labeled data. Valid options are: "WKT" and "XY", default is "WKT".
+
+    Returns:
+        The updated COCO export represented as a dictionary.
+    """
+    image = {
+        "id": label_id,
+        "file_name": image_url,
+        "license": None,
+        "flickr_url": image_url,
+        "coco_url": image_url,
+        "date_captured": None,
+    }
+    response = requests.get(image_url, stream=True)
     response.raw.decode_content = True
     image['width'], image['height'] = Image.open(response.raw).size
 
