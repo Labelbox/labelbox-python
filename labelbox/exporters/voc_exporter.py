@@ -44,7 +44,13 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
 
     for data in label_data:
         try:
-            _write_label(data, label_format, images_output_dir, annotations_output_dir)
+            write_label(
+                data['ID'],
+                data['Labeled Data'],
+                data['Label'],
+                label_format,
+                images_output_dir,
+                annotations_output_dir)
 
         except requests.exceptions.MissingSchema as exc:
             logging.exception(exc)
@@ -54,14 +60,23 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
             continue
 
 
-def _write_label(
-        data, label_format, images_output_dir, annotations_output_dir):
-    "Writes a Pascal VOC formatted image and label pair to disk."
+def write_label(label_id, image_url, labels, label_format, images_output_dir, annotations_output_dir):
+    """Writes a single Pascal VOC formatted image and label pair to disk.
+
+    Args:
+        label_id (str): ID for the instance to write
+        image_url (str): URL to download image file from
+        labels (str): Labelbox formatted labels to use for generating annotation
+        label_format (str): Format of the labeled data. Valid options are: "WKT" and "XY", default is "WKT".
+        annotations_output_dir (str): File path of directory to write Pascal VOC
+            annotation files.
+        images_output_dir (str): File path of directory to write images.
+    """
     # Download image and save it
-    response = requests.get(data['Labeled Data'], stream=True)
+    response = requests.get(image_url, stream=True)
     response.raw.decode_content = True
     image = Image.open(response.raw)
-    image_name = ('{img_id}.{ext}'.format(img_id=data['ID'], ext=image.format.lower()))
+    image_name = ('{img_id}.{ext}'.format(img_id=label_id, ext=image.format.lower()))
     image_fqn = os.path.join(images_output_dir, image_name)
     image.save(image_fqn, format=image.format)
 
@@ -70,19 +85,19 @@ def _write_label(
     xml_writer = PascalWriter(image_fqn, width, height)
 
     # remove classification labels (Skip, etc...)
-    if not callable(getattr(data['Label'], 'keys', None)):
+    if not callable(getattr(labels, 'keys', None)):
         # skip if no categories (e.g. "Skip")
         return
 
     # convert label to Pascal VOC format
-    for category_name, wkt_data in data['Label'].items():
+    for category_name, paths in labels.items():
         if label_format == 'WKT':
             xml_writer = _add_pascal_object_from_wkt(
-                xml_writer, img_height=height, wkt_data=wkt_data,
+                xml_writer, img_height=height, wkt_data=paths,
                 label=category_name)
         elif label_format == 'XY':
             xml_writer = _add_pascal_object_from_xy(
-                xml_writer, img_height=height, polygons=wkt_data,
+                xml_writer, img_height=height, polygons=paths,
                 label=category_name)
         else:
             exc = UnknownFormatError(label_format=label_format)
@@ -90,7 +105,7 @@ def _write_label(
             raise exc
 
     # write Pascal VOC xml annotation for image
-    xml_writer.save(os.path.join(annotations_output_dir, '{}.xml'.format(data['ID'])))
+    xml_writer.save(os.path.join(annotations_output_dir, '{}.xml'.format(label_id)))
 
 
 def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
@@ -112,10 +127,16 @@ def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
 
 
 def _add_pascal_object_from_xy(xml_writer, img_height, polygons, label):
+    if not isinstance(polygons, list):
+        # polygons is not [{'geometry': [xy]}] nor [[xy]]
+        return xml_writer
     for polygon in polygons:
         if 'geometry' in polygon:  # V3
             polygon = polygon['geometry']
-        assert isinstance(polygon, list)  # V2 and V3
+        if not isinstance(polygon, list) \
+                or not all(map(lambda p: 'x' in p and 'y' in p, polygon)):
+            # couldn't make a list of points, give up
+            return xml_writer
 
         xy_coords = []
         for point in polygon:
