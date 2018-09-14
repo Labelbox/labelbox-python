@@ -5,13 +5,14 @@ Module for converting labelbox.com JSON exports to Pascal VOC 2012 format.
 import json
 import logging
 import os
+from typing import Any, Sequence
+
+from PIL import Image
 import requests
 from shapely import wkt
-from typing import Any, Sequence
 
 from labelbox.exceptions import UnknownFormatError
 from labelbox.exporters.pascal_voc_writer import Writer as PascalWriter
-from PIL import Image
 
 
 def from_json(labeled_data, annotations_output_dir, images_output_dir,
@@ -61,7 +62,7 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
             continue
 
 
-def write_label(
+def write_label(  # pylint: disable-msg=too-many-arguments
         label_id: str, image_url: str, labels: Sequence[Any], label_format: str,
         images_output_dir: str, annotations_output_dir: str):
     """Writes a single Pascal VOC formatted image and label pair to disk.
@@ -80,8 +81,9 @@ def write_label(
     response = requests.get(image_url, stream=True)
     response.raw.decode_content = True
     image = Image.open(response.raw)
-    image_name = ('{img_id}.{ext}'.format(img_id=label_id, ext=image.format.lower()))
-    image_fqn = os.path.join(images_output_dir, image_name)
+    image_fqn = os.path.join(
+        images_output_dir,
+        '{img_id}.{ext}'.format(img_id=label_id, ext=image.format.lower()))
     image.save(image_fqn, format=image.format)
 
     # generate image annotation in Pascal VOC
