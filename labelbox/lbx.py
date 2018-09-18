@@ -36,24 +36,23 @@ _BACKGROUND_RGBA.flags.writeable = False
 _HEADER_LENGTH = 6 * 4
 
 
-def encode(image):
-    """Converts a RGB `PIL.Image` to a `io.BytesIO` with LBX encoded data.
+def encode(image_in: Image):
+    """Converts a RGB `Image` to a `io.BytesIO` with LBX encoded data.
 
     Args:
-        image (`PIL.Image`): The image to encode.
+        image_in: The image to encode.
 
     Returns:
         A `io.BytesIO` containing the LBX encoded image.
     """
-    im = image.convert('RGBA')
-    pixel_words = np.array(im).reshape(-1, 4)
+    image = image_in.convert('RGBA')
+    pixel_words = np.array(image).reshape(-1, 4)
     pixel_words.flags.writeable = False
 
-    colormap = list(filter(lambda x: not np.all(x == _BACKGROUND_RGBA),
-            np.unique(pixel_words, axis=0)))
+    colormap = list(
+        filter(lambda x: not np.all(x == _BACKGROUND_RGBA), np.unique(pixel_words, axis=0)))
 
-
-    input_byte_len = len(np.array(im).flat)
+    input_byte_len = len(np.array(image).flat)
     buff = BytesIO(bytes([0] * (len(colormap) * 4 + input_byte_len)))
 
     offset = _HEADER_LENGTH  # make room for header
@@ -67,64 +66,64 @@ def encode(image):
         struct.pack_into('<BBBB', buff.getbuffer(), offset, *color)
         color_dict[_color_to_key(color)] = i
         offset += 4
-    color_dict[_color_to_key(_BACKGROUND_RGBA)] = i+1
+    color_dict[_color_to_key(_BACKGROUND_RGBA)] = len(colormap)
 
     count = 0
     pixel_ints = np.apply_along_axis(_color_to_key, 1, pixel_words)
-    for i in range(len(pixel_ints)):
+    for i, pixel_int in enumerate(pixel_ints):
         count += 1
         if i+1 == len(pixel_ints) \
-                or not pixel_ints[i] == pixel_ints[i+1] \
+                or not pixel_int == pixel_ints[i+1] \
                 or count > 65534:
-            struct.pack_into('<HH', buff.getbuffer(), offset,
-                    color_dict[pixel_ints[i]], count)
+            struct.pack_into('<HH', buff.getbuffer(), offset, color_dict[pixel_int], count)
             offset += 4
             count = 0
 
     # write header
-    struct.pack_into('<iiiiii', buff.getbuffer(), 0,
-            1, im.width, im.height, input_byte_len, len(colormap),
-            offset - len(colormap)*4 - _HEADER_LENGTH)
+    struct.pack_into(
+        '<iiiiii', buff.getbuffer(), 0,
+        1, image.width, image.height, input_byte_len,
+        len(colormap), offset - len(colormap)*4 - _HEADER_LENGTH)
 
     return buff
 
 
-def decode(lbx):
-    """Decodes a `io.BytesIO` with LBX encoded data into a `PIL.Image`.
+def decode(lbx: BytesIO):
+    """Decodes a `BytesIO` with LBX encoded data into a `PIL.Image`.
 
     Args:
-        lbxA (`io.BytesIO`): A byte buffer containing the LBX encoded image data.
+        lbx: A byte buffer containing the LBX encoded image data.
 
     Returns:
         A `PIL.Image` of the decoded data.
     """
-    version, width, height, byteLength, numColors, numBlocks = \
-            map(lambda x: x[0], struct.iter_unpack('<i', lbx.read(_HEADER_LENGTH)))
+    version, width, height, byte_length, num_colors, num_blocks = \
+        map(lambda x: x[0], struct.iter_unpack('<i', lbx.read(_HEADER_LENGTH)))
+    assert version == 1, 'this method only supports LBX v1 format'
+
     colormap = np.array(
-            list(_grouper(
-                map(lambda x: x[0],
-                    struct.iter_unpack('<B', lbx.read(4 * numColors))),
-                4)) +
-            [_BACKGROUND_RGBA]
-            )
+        list(_grouper(
+            map(lambda x: x[0],
+                struct.iter_unpack('<B', lbx.read(4 * num_colors))),
+            4)) +
+        [_BACKGROUND_RGBA])
 
     image_data = np.zeros((width * height, 4), dtype='uint8')
     offset = 0
-    for _ in range(numBlocks):
+    for _ in range(num_blocks):
         layer = struct.unpack('<H', lbx.read(2))[0]
         run_length = struct.unpack('<H', lbx.read(2))[0]
         image_data[offset:offset + run_length, :] = colormap[layer]
         offset += run_length
-    assert offset ==  width * height, 'number of bytes read does not equal numBytes in header'
+    assert 4*offset == byte_length, \
+        'number of bytes read does not equal numBytes in header'
 
     reshaped_image = np.reshape(image_data, (height, width, 4))
-    im = Image.fromarray(reshaped_image, mode='RGBA')
-    return im
+    return Image.fromarray(reshaped_image, mode='RGBA')
 
 
-def _grouper(iterable, n, fillvalue=None):
+def _grouper(iterable, group_size, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-    args = [iter(iterable)] * n
+    args = [iter(iterable)] * group_size
     return itertools.zip_longest(*args, fillvalue=fillvalue)
-
