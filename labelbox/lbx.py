@@ -31,7 +31,8 @@ import struct
 import numpy as np
 from PIL import Image
 
-_BACKGROUND_RGBA = [255, 255, 255, 255]
+_BACKGROUND_RGBA = np.array([255, 255, 255, 255])
+_BACKGROUND_RGBA.flags.writeable = False
 _HEADER_LENGTH = 6 * 4
 
 
@@ -46,6 +47,7 @@ def encode(image):
     """
     im = image.convert('RGBA')
     pixel_words = np.array(im).reshape(-1, 4)
+    pixel_words.flags.writeable = False
 
     colormap = list(filter(lambda x: not np.all(x == _BACKGROUND_RGBA),
             np.unique(pixel_words, axis=0)))
@@ -55,14 +57,34 @@ def encode(image):
     buff = BytesIO(bytes([0] * (len(colormap) * 4 + input_byte_len)))
 
     offset = _HEADER_LENGTH  # make room for header
-    for color in colormap:
+
+    def _color_to_key(color):
+        return hash(color.tostring())
+
+    color_dict = dict()
+    for i, color in enumerate(colormap):
+        color.flags.writeable = False
         struct.pack_into('<BBBB', buff.getbuffer(), offset, *color)
+        color_dict[_color_to_key(color)] = i
         offset += 4
+    color_dict[_color_to_key(_BACKGROUND_RGBA)] = i+1
+
+    count = 0
+    pixel_ints = np.apply_along_axis(_color_to_key, 1, pixel_words)
+    for i in range(len(pixel_ints)):
+        count += 1
+        if i+1 == len(pixel_ints) \
+                or not pixel_ints[i] == pixel_ints[i+1] \
+                or count > 65534:
+            struct.pack_into('<HH', buff.getbuffer(), offset,
+                    color_dict[pixel_ints[i]], count)
+            offset += 4
+            count = 0
 
     # write header
     struct.pack_into('<iiiiii', buff.getbuffer(), 0,
             1, im.width, im.height, input_byte_len, len(colormap),
-            offset - len(colormap) - _HEADER_LENGTH)
+            offset - len(colormap)*4 - _HEADER_LENGTH)
 
     return buff
 

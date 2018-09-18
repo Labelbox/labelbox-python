@@ -1,13 +1,14 @@
 from io import BytesIO
 
 import labelbox.lbx as lbx
+import numpy as np
 from PIL import Image
 import pytest
 import struct
 
 @pytest.fixture
 def im_png(datadir):
-    with open(datadir.join('PNG_transparency_demonstration_2.png'), 'rb') as f:
+    with open(datadir.join('sample.png'), 'rb') as f:
         yield Image.open(BytesIO(f.read()))
 
 @pytest.fixture
