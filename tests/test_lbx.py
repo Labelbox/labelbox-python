@@ -28,7 +28,7 @@ def test_lbx_encode(im_png):
     lbx_encoded = lbx.encode(im_png)
     version, width, height = map(lambda x: x[0], struct.iter_unpack('<i', lbx_encoded.read(12)))
     assert version == 1
-    assert width == 800
+    assert width == 500
     assert height == 600
 
 
