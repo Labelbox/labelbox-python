@@ -26,6 +26,7 @@ sphinxcontrib-napoleon = "*"
 setuptools = ">=40.2.0"
 wheel = "*"
 sphinx-rtd-theme = "*"
+twine = "*"
 
 [requires]
 python_version = "3.6"
