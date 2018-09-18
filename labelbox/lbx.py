@@ -27,6 +27,7 @@ bytes 2-3 -> # consecutive occurences
 from io import BytesIO
 import itertools
 import struct
+from typing import List
 
 import numpy as np
 from PIL import Image
@@ -36,11 +37,14 @@ _BACKGROUND_RGBA.flags.writeable = False
 _HEADER_LENGTH = 6 * 4
 
 
-def encode(image_in: Image):
+def encode(image_in: Image, colormap: List[np.array]):
     """Converts a RGB `Image` to a `io.BytesIO` with LBX encoded data.
 
     Args:
         image_in: The image to encode.
+        colormap: Ordered list of `np.array`s each of length 3 representing
+                  a RGB color. The ordering of this list determines which colors
+                  map to which class labels in the project ontology.
 
     Returns:
         A `io.BytesIO` containing the LBX encoded image.
@@ -49,8 +53,8 @@ def encode(image_in: Image):
     pixel_words = np.array(image).reshape(-1, 4)
     pixel_words.flags.writeable = False
 
-    colormap = list(
-        filter(lambda x: not np.all(x == _BACKGROUND_RGBA), np.unique(pixel_words, axis=0)))
+    colormap = [np.zeros(4, dtype=np.uint8)] + \
+        list(map(lambda color: np.append(color, 255).astype(np.uint8), colormap))
 
     input_byte_len = len(np.array(image).flat)
     buff = BytesIO(bytes([0] * (len(colormap) * 4 + input_byte_len)))

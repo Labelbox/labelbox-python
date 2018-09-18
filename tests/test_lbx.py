@@ -25,12 +25,20 @@ def test_lbx_decode(lbx_sample):
 
 
 def test_lbx_encode(im_png):
-    lbx_encoded = lbx.encode(im_png)
+    colormap = [
+        np.array([0, 0, 128]),
+        np.array([0, 128, 0]),
+    ]
+    lbx_encoded = lbx.encode(im_png, colormap)
     version, width, height = map(lambda x: x[0], struct.iter_unpack('<i', lbx_encoded.read(12)))
     assert version == 1
     assert width == 500
-    assert height == 600
+    assert height == 375
 
 
 def test_identity(im_png):
-    assert np.all(np.array(lbx.decode(lbx.encode(im_png))) == np.array(im_png))
+    colormap = [
+        np.array([0, 0, 128]),
+        np.array([0, 128, 0]),
+    ]
+    assert np.all(np.array(lbx.decode(lbx.encode(im_png, colormap))) == np.array(im_png))
