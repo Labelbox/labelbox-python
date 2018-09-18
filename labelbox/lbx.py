@@ -9,7 +9,7 @@ def encode(image):
     Returns:
         A `io.BytesIO` containing the LBX encoded image.
     """
-    pass
+    return image
 
 def decode(lbx):
     """Decodes a `io.BytesIO` with LBX encoded data into a `PIL.Image`.
@@ -20,4 +20,4 @@ def decode(lbx):
     Returns:
         A `PIL.Image` of the decoded data.
     """
-    pass
+    return lbx
