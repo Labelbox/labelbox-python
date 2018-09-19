@@ -33,29 +33,36 @@ from typing import List
 import numpy as np
 from PIL import Image
 
+# NOTE: image-segmentation front-end requires background pixels to be white to
+#       render them transparent
 BACKGROUND_RGBA = np.array([255, 255, 255, 255], dtype=np.uint8)
 BACKGROUND_RGBA.flags.writeable = False
+
 _HEADER_LENGTH = 6 * 4
 
 
-def encode(image_in: Image, colormap: List[np.array]):
-    """Converts a RGB `Image` to a `io.BytesIO` with LBX encoded data.
+def encode(image_in: Image, colormap: List[np.array]) -> BytesIO:
+    """Converts a RGB `Image` representing a segmentation map into the LBX data format.
+
+    Given a segmentation map representing an image, convert it to the LBX format.
+    Background pixels should be represented using the `BACKGROUND_RGBA` RGBA value.
 
     Args:
         image_in: The image to encode.
-        colormap: Ordered list of `np.array`s each of length 3 representing
-                  a RGB color. The ordering of this list determines which colors
-                  map to which class labels in the project ontology.
+        colormap: Ordered list of `np.array`s each of length 3 representing a
+                  RGB color. Do not include `BACKGROUND_RGBA`; it will be automatically
+                  accounted for. Every pixel in `image_in` must match some entry in this
+                  list. The ordering of this list determines which colors map to which
+                  class labels in the project ontology.
 
     Returns:
-        A `io.BytesIO` containing the LBX encoded image.
+        The LBX encoded bytes.
     """
     image = image_in.convert('RGBA')
     pixel_words = np.array(image).reshape(-1, 4)
     pixel_words.flags.writeable = False
 
-    colormap = [BACKGROUND_RGBA] + \
-        list(map(lambda color: np.append(color, 255).astype(np.uint8), colormap))
+    colormap = list(map(lambda color: np.append(color, 255).astype(np.uint8), colormap))
 
     input_byte_len = len(np.array(image).flat)
     buff = BytesIO(bytes([0] * (len(colormap) * 4 + input_byte_len)))
@@ -66,12 +73,12 @@ def encode(image_in: Image, colormap: List[np.array]):
         return hash(color.tostring())
 
     color_dict = dict()
+    color_dict[_color_to_key(BACKGROUND_RGBA)] = 0  # manually add bg
     for i, color in enumerate(colormap):
         color.flags.writeable = False
         struct.pack_into('<BBBB', buff.getbuffer(), offset, *color)
-        color_dict[_color_to_key(color)] = i
+        color_dict[_color_to_key(color)] = i+1
         offset += 4
-    # color_dict[_color_to_key(BACKGROUND_RGBA)] = len(colormap)
 
     count = 0
     pixel_ints = np.apply_along_axis(_color_to_key, 1, pixel_words)
@@ -84,9 +91,11 @@ def encode(image_in: Image, colormap: List[np.array]):
                 struct.pack_into('<HH', buff.getbuffer(), offset, color_dict[pixel_int], count)
                 offset += 4
                 count = 0
-            except KeyError as e:
-                logging.error('Could not find color {} in colormap'.format(pixel_words[i]))
-                raise e
+            except KeyError as exc:
+                logging.error('Could not find color %s in colormap', pixel_words[i])
+                if np.all(pixel_words[i] == np.array([0, 0, 0, 0])):
+                    logging.error('Did you remember to set background pixels to `BACKGROUND_RGBA`?')
+                raise exc
 
     # write header
     struct.pack_into(
@@ -97,35 +106,31 @@ def encode(image_in: Image, colormap: List[np.array]):
     return buff
 
 
-def decode(lbx: BytesIO):
-    """Decodes a `BytesIO` with LBX encoded data into a `PIL.Image`.
+def decode(lbx: BytesIO) -> Image:
+    """Decodes LBX encoded byte data into an image.
 
     Args:
         lbx: A byte buffer containing the LBX encoded image data.
 
     Returns:
-        A `PIL.Image` of the decoded data.
+        A RGBA image of the decoded data.
     """
-    version, width, height, byte_length, num_colors, num_blocks = \
-        map(lambda x: x[0], struct.iter_unpack('<i', lbx.read(_HEADER_LENGTH)))
-    assert version == 1, 'this method only supports LBX v1 format'
+    version, width, height, byte_length, num_colors, num_blocks =\
+        struct.unpack('<' + 'i'*int(_HEADER_LENGTH/4), lbx.read(_HEADER_LENGTH))
+    assert version == 1, 'only LBX v1 format is supported'
 
     colormap = np.array(
-        list(_grouper(
-            map(lambda x: x[0],
-                struct.iter_unpack('<B', lbx.read(4 * num_colors))),
-            4)) +
-        [BACKGROUND_RGBA])
+        [BACKGROUND_RGBA] +
+        list(_grouper(struct.unpack('<' + 'B'*4*num_colors, lbx.read(4 * num_colors)), 4)))
 
     image_data = np.zeros((width * height, 4), dtype='uint8')
     offset = 0
     for _ in range(num_blocks):
-        layer = struct.unpack('<H', lbx.read(2))[0]
-        run_length = struct.unpack('<H', lbx.read(2))[0]
+        layer, run_length = struct.unpack('<HH', lbx.read(4))
         image_data[offset:offset + run_length, :] = colormap[layer]
         offset += run_length
     assert 4*offset == byte_length, \
-        'number of bytes read does not equal numBytes in header'
+        'number of bytes read does not equal num bytes specified in header'
 
     reshaped_image = np.reshape(image_data, (height, width, 4))
     return Image.fromarray(reshaped_image, mode='RGBA')

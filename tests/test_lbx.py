@@ -10,7 +10,12 @@ import struct
 @pytest.fixture
 def im_png(datadir):
     with open(datadir.join('sample.png'), 'rb') as f:
-        yield Image.open(BytesIO(f.read()))
+        image = np.array(Image.open(BytesIO(f.read())))
+
+        # convert black to BG
+        image[np.apply_along_axis(np.all, 2, image[:, :, :3] == [0, 0, 0])] = [255, 255, 255, 255]
+        image = Image.fromarray(image)
+        yield image
 
 
 @pytest.fixture
@@ -30,7 +35,7 @@ def test_lbx_encode(im_png):
         np.array([0, 128, 0]),
     ]
     lbx_encoded = lbx.encode(im_png, colormap)
-    version, width, height = map(lambda x: x[0], struct.iter_unpack('<i', lbx_encoded.read(12)))
+    version, width, height = struct.unpack('<iii', lbx_encoded.read(12))
     assert version == 1
     assert width == 500
     assert height == 375
