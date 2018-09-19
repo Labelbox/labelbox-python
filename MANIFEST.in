@@ -13,5 +13,6 @@ recursive-include docs *.rst
 recursive-include labelbox *.py
 include labelbox/exporters/pascal_voc_writer/templates/annotation.xml
 recursive-include tests *.json
+recursive-include tests *.lbx
 recursive-include tests *.png
 recursive-include tests *.py
