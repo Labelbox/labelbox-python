@@ -26,14 +26,15 @@ bytes 2-3 -> # consecutive occurences
 """
 from io import BytesIO
 import itertools
+import logging
 import struct
 from typing import List
 
 import numpy as np
 from PIL import Image
 
-_BACKGROUND_RGBA = np.array([255, 255, 255, 255])
-_BACKGROUND_RGBA.flags.writeable = False
+BACKGROUND_RGBA = np.array([255, 255, 255, 255], dtype=np.uint8)
+BACKGROUND_RGBA.flags.writeable = False
 _HEADER_LENGTH = 6 * 4
 
 
@@ -53,7 +54,7 @@ def encode(image_in: Image, colormap: List[np.array]):
     pixel_words = np.array(image).reshape(-1, 4)
     pixel_words.flags.writeable = False
 
-    colormap = [np.zeros(4, dtype=np.uint8)] + \
+    colormap = [BACKGROUND_RGBA] + \
         list(map(lambda color: np.append(color, 255).astype(np.uint8), colormap))
 
     input_byte_len = len(np.array(image).flat)
@@ -70,7 +71,7 @@ def encode(image_in: Image, colormap: List[np.array]):
         struct.pack_into('<BBBB', buff.getbuffer(), offset, *color)
         color_dict[_color_to_key(color)] = i
         offset += 4
-    color_dict[_color_to_key(_BACKGROUND_RGBA)] = len(colormap)
+    # color_dict[_color_to_key(BACKGROUND_RGBA)] = len(colormap)
 
     count = 0
     pixel_ints = np.apply_along_axis(_color_to_key, 1, pixel_words)
@@ -79,9 +80,13 @@ def encode(image_in: Image, colormap: List[np.array]):
         if i+1 == len(pixel_ints) \
                 or not pixel_int == pixel_ints[i+1] \
                 or count > 65534:
-            struct.pack_into('<HH', buff.getbuffer(), offset, color_dict[pixel_int], count)
-            offset += 4
-            count = 0
+            try:
+                struct.pack_into('<HH', buff.getbuffer(), offset, color_dict[pixel_int], count)
+                offset += 4
+                count = 0
+            except KeyError as e:
+                logging.error('Could not find color {} in colormap'.format(pixel_words[i]))
+                raise e
 
     # write header
     struct.pack_into(
@@ -110,7 +115,7 @@ def decode(lbx: BytesIO):
             map(lambda x: x[0],
                 struct.iter_unpack('<B', lbx.read(4 * num_colors))),
             4)) +
-        [_BACKGROUND_RGBA])
+        [BACKGROUND_RGBA])
 
     image_data = np.zeros((width * height, 4), dtype='uint8')
     offset = 0
