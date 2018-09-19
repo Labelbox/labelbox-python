@@ -162,7 +162,8 @@ def _get_polygons(label_format, label_data):
                     # skip non xy lists
                     continue
 
-            polygons.append(Polygon(map(lambda p: (p['x'], p['y']), xy_list)))
+            if len(xy_list) > 2:  # need at least 3 points to make a polygon
+                polygons.append(Polygon(map(lambda p: (p['x'], p['y']), xy_list)))
     else:
         exc = UnknownFormatError(label_format=label_format)
         logging.exception(exc.message)
