@@ -33,6 +33,8 @@ from typing import List
 import numpy as np
 from PIL import Image
 
+LOGGER = logging.getLogger(__name__)
+
 # NOTE: image-segmentation front-end requires background pixels to be white to
 #       render them transparent
 BACKGROUND_RGBA = np.array([255, 255, 255, 255], dtype=np.uint8)
@@ -92,9 +94,9 @@ def encode(image_in: Image, colormap: List[np.array]) -> BytesIO:
                 offset += 4
                 count = 0
             except KeyError as exc:
-                logging.error('Could not find color %s in colormap', pixel_words[i])
+                LOGGER.error('Could not find color %s in colormap', pixel_words[i])
                 if np.all(pixel_words[i] == np.array([0, 0, 0, 0])):
-                    logging.error('Did you remember to set background pixels to `BACKGROUND_RGBA`?')
+                    LOGGER.error('Did you remember to set background pixels to `BACKGROUND_RGBA`?')
                 raise exc
 
     # write header
