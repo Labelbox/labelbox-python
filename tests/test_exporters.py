@@ -41,6 +41,10 @@ class TestCocoExporter(object):
         labeled_data = datadir.join('empty_skipped.json')
         lb2co.from_json(labeled_data=labeled_data, coco_output=tmpfile)
 
+    def test_non_polygons(self, tmpfile, datadir):
+        labeled_data = datadir.join('non_polygon.json')
+        lb2co.from_json(labeled_data=labeled_data, coco_output=tmpfile, label_format='XY')
+
 
 class TestVocExporter(object):
     def test_wkt_1(self, tmpdir, datadir):
@@ -85,3 +89,7 @@ class TestVocExporter(object):
         labeled_data = datadir.join('labelbox_xy_1.json')
         with pytest.raises(lb2pa.UnknownFormatError):
             lb2pa.from_json(labeled_data, tmpdir, tmpdir, label_format='INVALID')
+
+    def test_non_polygons(self, tmpdir, datadir):
+        labeled_data = datadir.join('non_polygon.json')
+        lb2pa.from_json(labeled_data, tmpdir, tmpdir, label_format='XY')
