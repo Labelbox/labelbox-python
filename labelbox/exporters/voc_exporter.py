@@ -15,6 +15,9 @@ from labelbox.exceptions import UnknownFormatError
 from labelbox.exporters.pascal_voc_writer import Writer as PascalWriter
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def from_json(labeled_data, annotations_output_dir, images_output_dir,
               label_format='WKT'):
     """Convert Labelbox JSON export to Pascal VOC format.
@@ -26,18 +29,15 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
         images_output_dir (str): File path of directory to write images.
         label_format (str): Format of the labeled data.
             Valid options are: "WKT" and "XY", default is "WKT".
-
-    Todo:
-        * Add functionality to allow use of local copy of an image instead of
-            downloading it each time.
     """
 
     # make sure annotation output directory is valid
     try:
         annotations_output_dir = os.path.abspath(annotations_output_dir)
         assert os.path.isdir(annotations_output_dir)
-    except AssertionError:
-        logging.exception('Annotation output directory does not exist')
+    except AssertionError as exc:
+        LOGGER.exception('Annotation output directory does not exist, please create it first.')
+        raise exc
 
     # read labelbox JSON output
     with open(labeled_data, 'r') as file_handle:
@@ -55,10 +55,10 @@ def from_json(labeled_data, annotations_output_dir, images_output_dir,
                 annotations_output_dir)
 
         except requests.exceptions.MissingSchema as exc:
-            logging.exception(exc)
+            LOGGER.warning(exc)
             continue
         except requests.exceptions.ConnectionError:
-            logging.exception('Failed to fetch image from %s', data['Labeled Data'])
+            LOGGER.warning('Failed to fetch image from %s, skipping', data['Labeled Data'])
             continue
 
 
@@ -141,7 +141,7 @@ def _add_pascal_object_from_xy(xml_writer, img_height, polygons, label):
             polygon = polygon['geometry']
         if not isinstance(polygon, list) \
                 or not all(map(lambda p: 'x' in p and 'y' in p, polygon)):
-            # couldn't make a list of points, give up
+            LOGGER.warning('Could not get an point list to construct polygon, skipping')
             return xml_writer
 
         xy_coords = []

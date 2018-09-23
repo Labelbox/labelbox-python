@@ -15,6 +15,9 @@ from shapely.geometry import Polygon
 from labelbox.exceptions import UnknownFormatError
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def from_json(labeled_data, coco_output, label_format='WKT'):
     "Writes labelbox JSON export into MS COCO format."
     # read labelbox JSON output
@@ -29,10 +32,10 @@ def from_json(labeled_data, coco_output, label_format='WKT'):
         try:
             add_label(coco, data['ID'], data['Labeled Data'], data['Label'], label_format)
         except requests.exceptions.MissingSchema as exc:
-            logging.exception(exc)
+            LOGGER.warning(exc)
             continue
         except requests.exceptions.ConnectionError:
-            logging.exception('Failed to fetch image from %s', data['Labeled Data'])
+            LOGGER.warning('Failed to fetch image from %s, skipping', data['Labeled Data'])
             continue
 
     with open(coco_output, 'w+') as file_handle:
@@ -155,18 +158,20 @@ def _get_polygons(label_format, label_data):
                 xy_list = xy_list['geometry']
 
                 # V2 and V3
-                assert isinstance(xy_list, list), \
-                    'Expected list in "geometry" key but got {}'.format(xy_list)
+                if not isinstance(xy_list, list):
+                    LOGGER.warning('Could not get an point list to construct polygon, skipping')
+                    continue
             else:  # V2, or non-list
                 if not isinstance(xy_list, list) or not xy_list or 'x' not in xy_list[0]:
                     # skip non xy lists
+                    LOGGER.warning('Could not get an point list to construct polygon, skipping')
                     continue
 
             if len(xy_list) > 2:  # need at least 3 points to make a polygon
                 polygons.append(Polygon(map(lambda p: (p['x'], p['y']), xy_list)))
     else:
         exc = UnknownFormatError(label_format=label_format)
-        logging.exception(exc.message)
+        LOGGER.exception(exc.message)
         raise exc
 
     return polygons
