@@ -78,7 +78,7 @@ def write_label(  # pylint: disable-msg=too-many-arguments
         images_output_dir: File path of directory to write images.
     """
     # Download image and save it
-    response = requests.get(image_url, stream=True)
+    response = requests.get(image_url, stream=True, timeout=1.0)
     response.raw.decode_content = True
     image = Image.open(response.raw)
     image_fqn = os.path.join(
