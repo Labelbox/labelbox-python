@@ -127,7 +127,7 @@ def _append_polygons_as_annotations(coco, image, category_id, polygons):
     for polygon in polygons:
         segmentation = []
         for x_val, y_val in polygon.exterior.coords:
-            segmentation.extend([x_val, image['height'] - y_val])
+            segmentation.extend([x_val, y_val])
 
         annotation = {
             "id": len(coco['annotations']) + 1,
