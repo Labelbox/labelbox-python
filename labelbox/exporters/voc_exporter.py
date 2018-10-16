@@ -78,7 +78,7 @@ def write_label(  # pylint: disable-msg=too-many-arguments
         images_output_dir: File path of directory to write images.
     """
     # Download image and save it
-    response = requests.get(image_url, stream=True)
+    response = requests.get(image_url, stream=True, timeout=1.0)
     response.raw.decode_content = True
     image = Image.open(response.raw)
     image_fqn = os.path.join(
@@ -99,12 +99,9 @@ def write_label(  # pylint: disable-msg=too-many-arguments
     for category_name, paths in labels.items():
         if label_format == 'WKT':
             xml_writer = _add_pascal_object_from_wkt(
-                xml_writer, img_height=height, wkt_data=paths,
-                label=category_name)
+                xml_writer, wkt_data=paths, label=category_name)
         elif label_format == 'XY':
-            xml_writer = _add_pascal_object_from_xy(
-                xml_writer, img_height=height, polygons=paths,
-                label=category_name)
+            xml_writer = _add_pascal_object_from_xy(xml_writer, polygons=paths, label=category_name)
         else:
             exc = UnknownFormatError(label_format=label_format)
             logging.exception(exc.message)
@@ -114,7 +111,7 @@ def write_label(  # pylint: disable-msg=too-many-arguments
     xml_writer.save(os.path.join(annotations_output_dir, '{}.xml'.format(label_id)))
 
 
-def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
+def _add_pascal_object_from_wkt(xml_writer, wkt_data, label):
     polygons = []
     if isinstance(wkt_data, list):  # V3+
         polygons = map(lambda x: wkt.loads(x['geometry']), wkt_data)
@@ -124,7 +121,7 @@ def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
     for point in polygons:
         xy_coords = []
         for x_val, y_val in point.exterior.coords:
-            xy_coords.extend([x_val, img_height - y_val])
+            xy_coords.extend([x_val, y_val])
         # remove last polygon if it is identical to first point
         if xy_coords[-2:] == xy_coords[:2]:
             xy_coords = xy_coords[:-2]
@@ -132,9 +129,9 @@ def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
     return xml_writer
 
 
-def _add_pascal_object_from_xy(xml_writer, img_height, polygons, label):
+def _add_pascal_object_from_xy(xml_writer, polygons, label):
     if not isinstance(polygons, list):
-        # polygons is not [{'geometry': [xy]}] nor [[xy]]
+        LOGGER.warning('polygons is not [{geometry: [xy]}] nor [[xy]], skipping')
         return xml_writer
     for polygon in polygons:
         if 'geometry' in polygon:  # V3
@@ -146,6 +143,6 @@ def _add_pascal_object_from_xy(xml_writer, img_height, polygons, label):
 
         xy_coords = []
         for point in polygon:
-            xy_coords.extend([point['x'], img_height - point['y']])
+            xy_coords.extend([point['x'], point['y']])
         xml_writer.add_object(name=label, xy_coords=xy_coords)
     return xml_writer
