@@ -39,9 +39,3 @@ To generate a `requirements.txt` for usage outside of `pipenv`
 ```sh
 pipenv lock -r > requirements.txt
 ```
-
-## Publishing docs
-
-```sh
-./build-docs.sh
-```
