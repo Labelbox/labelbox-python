@@ -98,7 +98,8 @@ def write_label(  # pylint: disable-msg=too-many-arguments
     # convert label to Pascal VOC format
     for category_name, paths in labels.items():
         if label_format == 'WKT':
-            xml_writer = _add_pascal_object_from_wkt(xml_writer, wkt_data=paths, label=category_name)
+            xml_writer = _add_pascal_object_from_wkt(
+                xml_writer, wkt_data=paths, label=category_name)
         elif label_format == 'XY':
             xml_writer = _add_pascal_object_from_xy(xml_writer, polygons=paths, label=category_name)
         else:
