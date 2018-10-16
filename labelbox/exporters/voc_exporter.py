@@ -98,13 +98,9 @@ def write_label(  # pylint: disable-msg=too-many-arguments
     # convert label to Pascal VOC format
     for category_name, paths in labels.items():
         if label_format == 'WKT':
-            xml_writer = _add_pascal_object_from_wkt(
-                xml_writer, img_height=height, wkt_data=paths,
-                label=category_name)
+            xml_writer = _add_pascal_object_from_wkt(xml_writer, wkt_data=paths, label=category_name)
         elif label_format == 'XY':
-            xml_writer = _add_pascal_object_from_xy(
-                xml_writer, img_height=height, polygons=paths,
-                label=category_name)
+            xml_writer = _add_pascal_object_from_xy(xml_writer, polygons=paths, label=category_name)
         else:
             exc = UnknownFormatError(label_format=label_format)
             logging.exception(exc.message)
@@ -114,7 +110,7 @@ def write_label(  # pylint: disable-msg=too-many-arguments
     xml_writer.save(os.path.join(annotations_output_dir, '{}.xml'.format(label_id)))
 
 
-def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
+def _add_pascal_object_from_wkt(xml_writer, wkt_data, label):
     polygons = []
     if isinstance(wkt_data, list):  # V3+
         polygons = map(lambda x: wkt.loads(x['geometry']), wkt_data)
@@ -132,7 +128,7 @@ def _add_pascal_object_from_wkt(xml_writer, img_height, wkt_data, label):
     return xml_writer
 
 
-def _add_pascal_object_from_xy(xml_writer, img_height, polygons, label):
+def _add_pascal_object_from_xy(xml_writer, polygons, label):
     if not isinstance(polygons, list):
         LOGGER.warning('polygons is not [{geometry: [xy]}] nor [[xy]], skipping')
         return xml_writer
