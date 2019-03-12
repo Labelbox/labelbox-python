@@ -40,8 +40,10 @@ class Writer:
             y_points = sorted(xy_coords[1::2])
 
             # quantize up to 1 px off to bounding boxes
-            if (abs(x_points[0] - x_points[1]) < 1 and abs(x_points[2] - x_points[3]) < 1
-                    and abs(y_points[0] == y_points[1]) < 1 and abs(y_points[2] == y_points[3]) < 1:
+            if abs(x_points[0] - x_points[1]) < 1 \
+                    and abs(x_points[2] - x_points[3]) < 1 \
+                    and abs(y_points[0] == y_points[1]) < 1 \
+                    and abs(y_points[2] == y_points[3])) < 1:
                 x_points[0] = x_points[1]
                 x_points[2] = x_points[3]
                 label_type = 'bndbox'
