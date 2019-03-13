@@ -38,7 +38,7 @@ def vectorize_to_v4_label(
     for polygon, pixel_value in rasterio.features.shapes(segmentation_map):
         pixel_value = int(pixel_value)
         # ignore background (denoted by pixel value 0)
-        if pixel_value in legend and pixel_value is not 0:
+        if pixel_value in legend and pixel_value != 0:
             xy_list = polygon['coordinates'][0]
 
             if max_num_points:
