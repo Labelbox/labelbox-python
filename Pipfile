@@ -6,10 +6,10 @@ name = "pypi"
 [packages]
 "jinja2" = "*"
 pillow = "*"
-requests = "*"
 shapely = "*"
 simplification = "*"
 rasterio = "*"
+requests = ">=2.20.0"
 
 [dev-packages]
 pylint = "*"
