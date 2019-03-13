@@ -42,7 +42,7 @@ release = labelbox.__version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinxcontrib.napoleon',
+    'sphinx.ext.napoleon',
     'sphinx.ext.todo',
 ]
 
