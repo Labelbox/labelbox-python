@@ -13,7 +13,7 @@ numpy==1.16.2; python_version != '3.2.*'
 pillow==5.4.1
 pyparsing==2.3.1
 rasterio==1.0.21
-requests==2.21.0
+requests==2.22.0
 shapely==1.6.4.post2
 simplification==0.4.2
 snuggs==1.4.3
