@@ -92,7 +92,7 @@ def add_label(
         "coco_url": image_url,
         "date_captured": None,
     }
-    response = requests.get(image_url, stream=True, timeout=1.0)
+    response = requests.get(image_url, stream=True, timeout=10.0)
     response.raw.decode_content = True
     image['width'], image['height'] = Image.open(response.raw).size
 
