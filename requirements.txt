@@ -7,14 +7,14 @@ click-plugins==1.0.4; python_version != '3.3.*'
 click==7.0; python_version >= '2.7'
 cligj==0.5.0; python_version != '3.3.*'
 idna==2.8; python_version != '3.0.*'
-jinja2==2.10
+jinja2==2.10.1
 markupsafe==1.1.1; python_version != '3.3.*'
 numpy==1.16.2; python_version != '3.2.*'
 pillow==5.4.1
 pyparsing==2.3.1
 rasterio==1.0.21
-requests==2.21.0
+requests==2.22.0
 shapely==1.6.4.post2
 simplification==0.4.2
 snuggs==1.4.3
-urllib3==1.24.1; python_version != '3.0.*'
+urllib3==1.25.3; python_version != '3.0.*'
