@@ -1,6 +1,24 @@
 import re
 
 
-def snake_to_camel(s):
-    """ Converts a string in snake_case to camelCase. """
-    return re.sub("_(\w)", lambda m: m.group(1).upper(), s)
+def _convert(s, sep, title):
+    components = list(map(str.lower, filter(None, re.split(r"_|(?=[A-Z])", s))))
+    for i in range(len(components)):
+        if title(i):
+            components[i] = components[i][0].upper() + components[i][1:]
+    return sep.join(components)
+
+
+def camel_case(s):
+    """ Converts a string in [snake|camel|title]case to camelCase. """
+    return _convert(s, "", lambda i: i > 0)
+
+
+def title_case(s):
+    """ Converts a string in [snake|camel|title]case to TitleCase. """
+    return _convert(s, "", lambda i: True)
+
+
+def snake_case(s):
+    """ Converts a string in [snake|camel|title]case to snake_case. """
+    return _convert(s, "_", lambda i: False)

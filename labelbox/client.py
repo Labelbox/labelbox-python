@@ -3,10 +3,10 @@ import logging
 import os
 import urllib.request
 
+from labelbox import query
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError)
-from labelbox.db_objects import Project
-from labelbox.query import PaginatedCollection
+from labelbox.db_objects import Project, Dataset
 
 
 logger = logging.getLogger(__name__)
@@ -60,26 +60,37 @@ class Client:
             # Convert HTTPError into a Labelbox error
             raise NetworkError(e)
 
-    def get_project(self, project_id):
-        """ Fetches the project for the given ID.
+    def get_single(self, db_object_type, uid):
+        """ Fetches a single object of the given type, for the given ID.
 
         Args:
-            project_id (str): Unique ID of the project.
+            db_object_type (type): DbObject subclass.
+            uid (str): Unique ID of the row.
         Return:
-            Project object.
+            Object of `db_object_type`.
         Raises:
-            labelbox.exception.ResourceNotFoundError: If there is no Project
-                for the given ID.
+            labelbox.exception.ResourceNotFoundError: If there is no object
+                of the given type for the given ID.
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        fields = " ".join(field.graphql_name for field in Project.fields())
-        query = "query GetProjectPyApi {project(where: {id: \"%s\"}) {%s} }" % (
-            project_id, fields)
-        res = self.execute(query)
-        # TODO check if result contains Project data, if not raise
-        # ResourceNotFoundError
-        return Project(self, res["data"]["project"])
+        query_str, id_param_name = query.get_single(db_object_type)
+        params = {id_param_name: uid}
+        res = self.execute(query_str, params)["data"][
+            db_object_type.type_name().lower()]
+        if res is None:
+            raise ResourceNotFoundError(db_object_type, params)
+        else:
+            return db_object_type(self, res)
+
+
+    def get_project(self, project_id):
+        """ Convenience for `client.get_single(Project, project_id)`. """
+        return self.get_single(Project, project_id)
+
+    def get_dataset(self, dataset_id):
+        """ Convenience for `client.get_single(Dataset, dataset_id)`. """
+        return self.get_single(Dataset, dataset_id)
 
     def get_projects(self):
         """ Fetches all the projects the user has access to.
@@ -90,7 +101,17 @@ class Client:
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        fields = " ".join(field.graphql_name for field in Project.fields())
-        query = "query GetProjectsPyApi {projects(skip: %%d first: %%d) {%s} }" \
-            % fields
-        return PaginatedCollection(self, query, ["projects"], Project)
+        return query.PaginatedCollection(
+            self, query.get_all(Project), {}, ["projects"], Project)
+
+    def get_datasets(self):
+        """ Fetches all the datasets the user has access to.
+
+        Return:
+            An iterable of Datasets (typically a PaginatedCollection).
+        Raises:
+            labelbox.exception.LabelboxError: Any error raised by
+                `Client.execute` can also be raised by this function.
+        """
+        return query.PaginatedCollection(
+            self, query.get_all(Dataset), {}, ["datasets"], Dataset)
