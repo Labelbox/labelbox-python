@@ -124,3 +124,7 @@ dmypy.json
 .pyre/
 
 .idea
+
+# Vim swap files
+*.swp
+*.swo
