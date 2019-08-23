@@ -1,3 +1,3 @@
-# Labelbox pip Package
+# Labelbox Python API
 
 TODO
