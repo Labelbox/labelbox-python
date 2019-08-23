@@ -1,83 +1,8 @@
-from enum import Enum
-
 from labelbox import utils
 
 
 # Size of a single page in a paginated query.
 _PAGE_SIZE = 100
-
-"""
-Database query construction and execution functions and
-supporting classes. These should only be used by the library
-internals and not by the libraray user.
-"""
-
-class Field:
-    """ Represents field in a database table.
-
-    Attributes:
-        name (str): name that the attribute has in client-side Python objects
-        grapgql_name (str): name that the attribute has in queries (and in
-            server-side database definition).
-    """
-    def __init__(self, name, graphql_name=None):
-        """ Field constructor.
-        Args:
-            name (str): client-side Python attribute name of a database
-                object.
-            graphql_name (str): query and server-side name of a database object.
-                If None, it is constructed from the client-side name by converting
-                snake_case (Python convention) into camelCase (GraphQL convention).
-        """
-        self.name = name
-        if graphql_name is None:
-            graphql_name = utils.snake_to_camel(name)
-        self.graphql_name = graphql_name
-
-
-class DbObject:
-    """ A client-side representation of a database object (row). Intended as
-    base class for classes representing concrete database types (for example
-    a Project). Exposes support functionalities so that the concrete subclass
-    definition be as simple and DRY as possible. It should come down to just
-    listing Fields of that particular database type. For example:
-        >>> class Project(DbObject):
-        >>>     uid = Field("uid", "id")
-        >>>     name = Field("name")
-        >>>     description = Field("description")
-    """
-
-    def __init__(self, client, field_values):
-        """ Constructor of a database object. Generally it should only be used
-        by library internals and not by the end user.
-
-        Args:
-            client (labelbox.Client): the client used for fetching data from DB.
-            field_values (dict): Data obtained from the DB. Maps database object
-                fields (their graphql_name version) to values.
-        """
-        self.client = client
-        for field in type(self).fields():
-            setattr(self, field.name, field_values[field.graphql_name])
-
-    @classmethod
-    def fields(cls):
-        """ Yields all the Fields declared in a concrete subclass. """
-        for attr_name in dir(cls):
-            attr = getattr(cls, attr_name)
-            if isinstance(attr, Field):
-                yield attr
-
-    def __repr__(self):
-        #TODO ensure that object has "uid" attribute, or check
-        return "<%s ID: %s>" % (type(self).__name__.split(".")[-1], self.uid)
-
-    def __str__(self):
-        # TODO discuss exact __repr__ and __str__ representations
-        attribute_values = {field.name: getattr(self, field.name)
-                            for field in type(self).fields()}
-        return "<%s %s>" % (type(self).__name__.split(".")[-1],
-                                attribute_values)
 
 
 class PaginatedCollection:
@@ -89,13 +14,14 @@ class PaginatedCollection:
     __init__ map exactly to object attributes.
     """
 
-    def __init__(self, client, query, dereferencing, obj_class):
+    def __init__(self, client, query, params, dereferencing, obj_class):
         """ Creates a PaginatedCollection.
         Params:
             client (labelbox.Client): the client used for fetching data from DB.
             query (str): Base query used for pagination. It must contain two
                 '%d' placeholders, the first for pagination 'skip' clause and
                 the second for the 'first' clause.
+            params (dict): Query parameters.
             dereferencing (iterable): An iterable of str defining the keypath
                 that needs to be dereferenced in the query result in order to
                 reach the paginated objects of interest.
@@ -104,6 +30,7 @@ class PaginatedCollection:
         """
         self.client = client
         self.query = query
+        self.params = params
         self.dereferencing = dereferencing
         self.obj_class = obj_class
 
@@ -123,7 +50,7 @@ class PaginatedCollection:
             query = self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
             self._fetched_pages += 1
 
-            results = self.client.execute(query)["data"]
+            results = self.client.execute(query, self.params)["data"]
             for deref in self.dereferencing:
                 results = results[deref]
 
@@ -140,3 +67,79 @@ class PaginatedCollection:
         rval = self._data[self._data_ind]
         self._data_ind += 1
         return rval
+
+
+def get_single(db_object_type):
+    """ Constructs a query that fetches a single item based on ID. The ID
+    must be passed to query execution as a parameter like:
+        >>> query_str, param_name = get_single(Project)
+        >>> project = client.execute(query_str, {param_name: project_id})
+
+    Args:
+        db_object_type (type): The object type being queried.
+    Return:
+        tuple (query_string, id_param_name)
+    """
+    type_name = db_object_type.type_name()
+    id_param_name = "%sID" % type_name.lower()
+    query = "query Get%sPythonApi($%s: ID!) {%s(where: {id: $%s}) {%s}}" % (
+        type_name,
+        id_param_name,
+        type_name.lower(),
+        id_param_name,
+        " ".join(field.graphql_name for field in db_object_type.fields()))
+    return query, id_param_name
+
+
+def get_all(db_object_type):
+    """ Constructs a query that fetches all items of the given type. The
+    resulting query is intended to be used for pagination, it contains
+    two python-string int-placeholders (%d) for 'skip' and 'first'
+    pagination parameters.
+
+    Args:
+        db_object_type (type): The object type being queried.
+    Return:
+        query_string
+    """
+    type_name = db_object_type.type_name()
+    return """query Get%ssPyApi {%ss(where: {deleted: false}
+                                     skip: %%d first: %%d) {%s} }""" % (
+        type_name, type_name.lower(),
+        " ".join(field.graphql_name for field in db_object_type.fields()))
+
+
+def relationship(source, relationship, destination_type):
+    """ Constructs a query that fetches all items from a -to-many
+    relationship. To be used like:
+        >>> project = ...
+        >>> query_str, param_name = relationship(Project, "datasets", Dataset)
+        >>> datasets = PaginatedCollection(
+            client, query_str, {param_name: project.uid}, ["project", "datasets"],
+            Dataset)
+
+    The resulting query is intended to be used for pagination, it contains
+    two python-string int-placeholders (%d) for 'skip' and 'first'
+    pagination parameters.
+
+    Args:
+        source (DbObject): A database object.
+        relationship (str): Name of the to-many relationship.
+        destination_type (type): A DbObject subclass, type of the relationship
+            objects.
+    Return:
+        tuple (query_string, id_parameter_name)
+    """
+
+    source_type_name = type(source).type_name()
+    id_param_name = "%sID" % source_type_name
+    query_string = """query %s($%s: ID!)
+        {%s(where: {id: $%s}) {%s(skip: %%d first: %%d) {%s} } }""" % (
+        source_type_name + utils.title_case(relationship) + "PyApi",
+        id_param_name,
+        utils.camel_case(source_type_name),
+        id_param_name,
+        relationship,
+        " ".join(field.graphql_name for field in destination_type.fields()))
+
+    return query_string, id_param_name
