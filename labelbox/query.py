@@ -1,4 +1,9 @@
+from itertools import chain
+
 from labelbox import utils
+from labelbox.exceptions import InvalidQueryError
+from labelbox.filter import LogicalExpression, Comparison
+from labelbox.schema import DbObject
 
 
 # Size of a single page in a paginated query.
@@ -78,11 +83,11 @@ def get_single(db_object_type):
     Args:
         db_object_type (type): The object type being queried.
     Return:
-        tuple (query_string, id_param_name)
+        tuple (query_str, id_param_name)
     """
     type_name = db_object_type.type_name()
     id_param_name = "%sID" % type_name.lower()
-    query = "query Get%sPythonApi($%s: ID!) {%s(where: {id: $%s}) {%s}}" % (
+    query = "query Get%sPyApi($%s: ID!) {%s(where: {id: $%s}) {%s}}" % (
         type_name,
         id_param_name,
         type_name.lower(),
@@ -91,7 +96,122 @@ def get_single(db_object_type):
     return query, id_param_name
 
 
-def get_all(db_object_type):
+# Maps comparison operations to the suffixes appended to the field
+# name when generating a GraphQL query.
+COMPARISON_TO_SUFFIX = {
+    Comparison.Op.EQ: "",
+    Comparison.Op.NE: "_not",
+    Comparison.Op.LT: "_lt",
+    Comparison.Op.GT: "_gt",
+    Comparison.Op.LE: "_lte",
+    Comparison.Op.LE: "_lte",
+}
+
+
+def format_where(where, params=None):
+    """ Converts the given `where` clause into a query string. The clause
+    can be a single `labelbox.filter.Comparison` or a complex
+    `labelbox.filter.LogicalExpression` of arbitrary depth.
+
+    Args:
+        where (Comparison or LogicalExpression): The where clause
+            used for filtering data.
+    Return:
+        (str, dict) tuple that contains the query string and a parameters
+        dictionary. The dictionary now maps a {"name": (value, field)}, so
+        the name of the parameter in the query string maps to a tuple of
+        parameter value and `labelbox.schema.Field` object (which is
+        necessary for obtaining the parameter type).
+    """
+    params = {}
+
+    def recursion(node):
+        if isinstance(node, Comparison):
+            param_name = "param_%d" % len(params)
+            params[param_name] = (node.value, node.field)
+            return "{%s%s: $%s}" % (node.field.graphql_name,
+                                    COMPARISON_TO_SUFFIX[node.op],
+                                    param_name)
+
+        assert(isinstance(node, LogicalExpression))
+
+        if node.op == LogicalExpression.Op.NOT:
+            return "{NOT: [%s]}" % recursion(node.first)
+
+        return "{%s: [%s, %s]}" % (
+            node.op.name.upper(), recursion(node.first), recursion(node.second))
+
+    query_str = recursion(where)
+    return query_str, params
+
+
+def format_param_declaration(params):
+    """ Formats the parameters dictionary (as returned by the
+    `query.format_where` function) into a declaration of GraphQL function
+    parameters.
+
+    Args:
+        params (dict): Parameter dictionary, as returned by the
+            `query.format_where` function.
+    Return:
+        str, the declaration of query parameters.
+    """
+    params = ((key, field.field_type.name) for key, (_, field)
+              in sorted(params.items()))
+    return "(" + ", ".join("$%s: %s!" % pair for pair in params) + ")"
+
+
+def fields(where):
+    """ Returns a generator that yields all the Field objects from
+    a where clause.
+
+    Args:
+        where (LogicalExpression, Comparison or None): The where
+            clause used for filtering in a query.
+    Return:
+        See above.
+    """
+    if isinstance(where, LogicalExpression):
+        for f in chain(fields(where.first), fields(where.second)):
+            yield f
+    elif isinstance(where, Comparison):
+        yield where.field
+
+
+def logical_ops(where):
+    """ Returns a generator that yields all the logical operator
+    type objects (`LogicalExpression.Op` instances) from a where
+    clause.
+
+    Args:
+        where (LogicalExpression, Comparison or None): The where
+            clause used for filtering in a query.
+    Return:
+        See above.
+    """
+    if isinstance(where, LogicalExpression):
+        yield where.op
+        for f in chain(logical_ops(where.first), logical_ops(where.second)):
+            yield f
+
+def check_where_clause(db_object_type, where):
+    where_fields = list(fields(where))
+    invalid_fields = set(where_fields) - set(db_object_type.fields())
+    if invalid_fields:
+        raise InvalidQueryError("Where clause contains fields '%r' which aren't "
+                                "part of the '%s' DB object type" % (
+                                    invalid_fields, db_object_type.type_name()))
+
+    if len(set(where_fields)) != len(where_fields):
+        raise InvalidQueryError("Where clause contains multiple comparisons for "
+                                "the same field: %r." % where)
+
+    if set(logical_ops(where)) not in (set(), {LogicalExpression.Op.AND}):
+        raise InvalidQueryError("Currently only AND logical ops are allowed in "
+                                "the where clause of a query.")
+
+
+def get_all(db_object_type, where=None):
     """ Constructs a query that fetches all items of the given type. The
     resulting query is intended to be used for pagination, it contains
     two python-string int-placeholders (%d) for 'skip' and 'first'
@@ -99,23 +219,36 @@ def get_all(db_object_type):
 
     Args:
         db_object_type (type): The object type being queried.
+        where (Comparison, LogicalExpression or None): The `where` clause
+            for filtering.
     Return:
-        query_string
+        (str, dict) tuple that is the query string and parameters.
     """
+    check_where_clause(db_object_type, where)
+
+    deleted_filter = db_object_type.deleted == False
+    where = deleted_filter if where is None else (where & deleted_filter)
+    where_query_str, params = format_where(where)
+    param_declaration_str = format_param_declaration(params)
+
     type_name = db_object_type.type_name()
-    return """query Get%ssPyApi {%ss(where: {deleted: false}
-                                     skip: %%d first: %%d) {%s} }""" % (
-        type_name, type_name.lower(),
+    query_str = "query Get%ssPyApi%s {%ss(where: %s skip: %%d first: %%d) {%s} }" % (
+        type_name,
+        param_declaration_str,
+        type_name.lower(),
+        where_query_str,
         " ".join(field.graphql_name for field in db_object_type.fields()))
 
+    return query_str, {name: value for name, (value, _) in params.items()}
 
-def relationship(source, relationship, destination_type):
+
+def relationship(source, relationship, destination_type, where=None):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
         >>> project = ...
-        >>> query_str, param_name = relationship(Project, "datasets", Dataset)
+        >>> query_str, params = relationship(Project, "datasets", Dataset)
         >>> datasets = PaginatedCollection(
-            client, query_str, {param_name: project.uid}, ["project", "datasets"],
+            client, query_str, params, ["project", "datasets"],
             Dataset)
 
     The resulting query is intended to be used for pagination, it contains
@@ -127,19 +260,33 @@ def relationship(source, relationship, destination_type):
         relationship (str): Name of the to-many relationship.
         destination_type (type): A DbObject subclass, type of the relationship
             objects.
+        where (Comparison, LogicalExpression or None): The `where` clause
+            for filtering.
     Return:
-        tuple (query_string, id_parameter_name)
+        (str, dict) tuple that is the query string and parameters.
     """
-
+    check_where_clause(destination_type, where)
     source_type_name = type(source).type_name()
+
+    # Update the destination filtering params with deleted=false
+    deleted_filter = DbObject.deleted == False
+    where = deleted_filter if where is None else (where & deleted_filter)
+
+    # Prepare the destination filtering clause and params
+    where_query_str, params = format_where(where)
+
+    # Generate a name for the source filter and add it to params
     id_param_name = "%sID" % source_type_name
-    query_string = """query %s($%s: ID!)
-        {%s(where: {id: $%s}) {%s(skip: %%d first: %%d) {%s} } }""" % (
-        source_type_name + utils.title_case(relationship) + "PyApi",
-        id_param_name,
+    params[id_param_name] = (source.uid, type(source).uid)
+
+    query_str = """query %sPyApi%s
+        {%s(where: {id: $%s}) {%s(where: %s skip: %%d first: %%d) {%s} } }""" % (
+        source_type_name + utils.title_case(relationship),
+        format_param_declaration(params),
         utils.camel_case(source_type_name),
         id_param_name,
         relationship,
+        where_query_str,
         " ".join(field.graphql_name for field in destination_type.fields()))
 
-    return query_string, id_param_name
+    return query_str, {name: value for name, (value, _) in params.items()}
