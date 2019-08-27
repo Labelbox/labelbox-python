@@ -35,12 +35,12 @@ class Client:
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer %s' % api_key}
 
-    def execute(self, query, variables=None):
+    def execute(self, query, params=None):
         """ Execute a GraphQL query on the server.
 
         Args:
-            query: str, the query to execute.
-            variables: dict, variables referenced within the query.
+            query (str): the query to execute.
+            params (dict): query parameters referenced within the query.
         Return:
             dict, parsed JSON response.
         Raises:
@@ -49,8 +49,8 @@ class Client:
             labelbox.exception.AuthenticationError: If authentication
                 failed.
         """
-        logger.debug("Query: %s", query)
-        data = json.dumps({'query': query, 'variables': variables}).encode('utf-8')
+        logger.debug("Query: %s, params: %r", query, params)
+        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
         req = urllib.request.Request(self.endpoint, data, self.headers)
 
         try:
@@ -92,26 +92,34 @@ class Client:
         """ Convenience for `client.get_single(Dataset, dataset_id)`. """
         return self.get_single(Dataset, dataset_id)
 
-    def get_projects(self):
+    def get_projects(self, where=None):
         """ Fetches all the projects the user has access to.
 
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
         Return:
             An iterable of Projects (typically a PaginatedCollection).
         Raises:
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
+        query_str, params = query.get_all(Project, where)
         return query.PaginatedCollection(
-            self, query.get_all(Project), {}, ["projects"], Project)
+            self, query_str, params, ["projects"], Project)
 
-    def get_datasets(self):
+    def get_datasets(self, where=None):
         """ Fetches all the datasets the user has access to.
 
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
         Return:
             An iterable of Datasets (typically a PaginatedCollection).
         Raises:
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
+        query_str, params = query.get_all(Dataset, where)
         return query.PaginatedCollection(
-            self, query.get_all(Dataset), {}, ["datasets"], Dataset)
+            self, query_str, params, ["datasets"], Dataset)

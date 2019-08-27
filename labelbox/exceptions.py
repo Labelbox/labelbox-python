@@ -42,6 +42,13 @@ class ValidationFailedError(LabelboxError):
     pass
 
 
+class InvalidQueryError(LabelboxError):
+    """ Indicates a malconstructed or unsupported query (either by GraphQL in
+    general or by Labelbox specifically). This can be the result of either client
+    or server side query validation. """
+    pass
+
+
 class NetworkError(LabelboxError):
     """Raised when an HTTPError occurs."""
     def __init__(self, cause, message=None):

@@ -1,5 +1,3 @@
-from enum import Enum
-
 from labelbox import query, utils
 from labelbox.schema import Field, DbObject
 
@@ -27,16 +25,14 @@ def _create_relationship(destination_type_name, relationship_name=None):
     if relationship_name is None:
         relationship_name = utils.camel_case(destination_type_name) + "s"
 
-    def expansion(self):
+    def expansion(self, where=None):
         destination_type = next(
             t for t in DbObject.__subclasses__()
             if t.__name__.split(".")[-1] == destination_type_name)
-        # TODO support filtering filter
-        # TODO remove deleted objects from the other side
-        query_string, id_param_name = query.relationship(
-            self, relationship_name, destination_type)
+        query_string, params = query.relationship(
+            self, relationship_name, destination_type, where)
         return query.PaginatedCollection(
-            self.client, query_string, {id_param_name: self.uid},
+            self.client, query_string, params,
             [utils.camel_case(type(self).type_name()), relationship_name],
             destination_type)
 
@@ -44,13 +40,11 @@ def _create_relationship(destination_type_name, relationship_name=None):
 
 
 class Project(DbObject):
-    # Rarely changing attributes.
-    uid = Field("uid", "id")
-    name = Field("name")
-    description = Field("description")
-    updated_at = Field("updated_at")
-    created_at = Field("created_at")
-    setupComplete = Field("setup_complete")
+    name = Field.String("name")
+    description = Field.String("description")
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
+    setup_complete = Field.DateTime("setup_complete")
 
     # Relationships
     datasets = _create_relationship("Dataset")
@@ -68,10 +62,9 @@ class Project(DbObject):
 
 
 class Dataset(DbObject):
-    uid = Field("uid", "id")
-    name = Field("name")
-    updated_at = Field("updated_at")
-    created_at = Field("created_at")
+    name = Field.String("name")
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
 
     # Relationships
     projects = _create_relationship("Project")
