@@ -1,3 +1,5 @@
+import json
+
 from labelbox import query, utils
 from labelbox.schema import Field, DbObject
 
@@ -117,6 +119,21 @@ class Dataset(DbObject):
     # Relationships
     projects = _to_many("Project", True)
     data_rows = _to_many("DataRow", False)
+
+    def create_data_rows_from_urls(self, urls):
+        """ Creates multiple DataRow objects based on the given URLs.
+
+        Args:
+            urls (iterable of str): An iterable of URLs.
+        """
+        # Prepare and upload the desciptor file
+        data = json.dumps([{"imageUrl": url} for url in urls])
+        descriptor_url = self.client.upload_data(data)
+
+        # Create data source
+        query_str, params = query.create_data_rows(self.uid, descriptor_url)
+        result = self.client.execute(query_str, params)
+        return result["data"]["appendRowsToDataset"]["accepted"]
 
     # TODO Relationships
     # organization

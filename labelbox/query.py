@@ -297,3 +297,23 @@ def relationship(source, relationship, destination_type, to_many, where):
         " ".join(field.graphql_name for field in destination_type.fields()))
 
     return query_str, {name: value for name, (value, _) in params.items()}
+
+
+def create_data_rows(dataset_id, json_file_url):
+    """ Generates the query and parameters dictionary for creating multiple
+    DataRows for a Dataset.
+
+    Args:
+        dataset_id (str): ID of the Dataset object to create DataRows for.
+        json_file_url (str): URL of the file containing row data.
+    Return:
+        (query_string, parameters_dict)
+    """
+    dataset_param = "dataSetId"
+    url_param = "jsonURL"
+    query_str = """mutation AppendRowsToDatasetPyApi(
+                    $%s: ID!, $%s: String!){
+          appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
+        ){ accepted} } """ % (dataset_param, url_param, dataset_param, url_param)
+
+    return query_str, {dataset_param: dataset_id, url_param: json_file_url}
