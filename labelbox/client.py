@@ -3,6 +3,8 @@ import logging
 import os
 import urllib.request
 
+import requests
+
 from labelbox import query, utils
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError)
@@ -59,6 +61,16 @@ class Client:
         except urllib.error.HTTPError as e:
             # Convert HTTPError into a Labelbox error
             raise NetworkError(e)
+
+    def upload_data(self, data):
+        """ Uploads `data` as a file and returns the URL. """
+        # TODO replace with uploading directly to Labelbox
+        r = requests.post("https://file.io/?expires=1d", files={"file": data}).json()
+        if not r["success"]:
+            raise Exception("Failed to upload to file.io, message: %s",
+                            r["message"])
+
+        return r["link"]
 
     def get_single(self, db_object_type, uid):
         """ Fetches a single object of the given type, for the given ID.
