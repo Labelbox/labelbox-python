@@ -120,20 +120,49 @@ class Dataset(DbObject):
     projects = _to_many("Project", True)
     data_rows = _to_many("DataRow", False)
 
-    def create_data_rows_from_urls(self, urls):
-        """ Creates multiple DataRow objects based on the given URLs.
+    def create_data_rows(self, items):
+        """ Creates multiple DataRow objects based on the given items.
+        Each element in `items` can be either a `str` or a `dict`. If
+        it's a `str`, then it's interpreted as a file path. The file
+        is uploaded to Labelbox and a DataRow referencing it is created.
+        If an item is a `dict`, then it should map `DataRow` fields to values.
+        At the minimum it must contain a `DataRow.row_data` key and value.
 
         Args:
-            urls (iterable of str): An iterable of URLs.
+            items (iterable of (dict or str)): See above for details.
         """
+        def convert_item(item):
+            if isinstance(item, str):
+                with open(item, "rb") as f:
+                    item_data = f.read()
+                item_url = self.client.upload_data(item_data)
+                # Convert item from str into a dict so it gets processed
+                # like all other dicts.
+                item = {DataRow.row_data: item_url,
+                        DataRow.external_id: item}
+
+            if DataRow.row_data not in item:
+                raise InvalidQueryError(
+                    "DataRow.row_data missing when creating DataRow.")
+
+            invalid_keys = set(item) - set(DataRow.fields())
+            if invalid_keys:
+                raise InvalidQueryError(
+                    "Invalid fields found when creating DataRow: %r" % invalid_keys)
+
+            # Item is valid, convert it to a dict {graphql_field_name: value}
+            # Need to change the name of DataRow.row_data to "data"
+            return {"data" if key == DataRow.row_data else key.graphql_name: value
+                    for key, value in item.items()}
+
         # Prepare and upload the desciptor file
-        data = json.dumps([{"imageUrl": url} for url in urls])
+        data = json.dumps([convert_item(item) for item in items])
         descriptor_url = self.client.upload_data(data)
 
         # Create data source
-        query_str, params = query.create_data_rows(self.uid, descriptor_url)
-        result = self.client.execute(query_str, params)
-        return result["data"]["appendRowsToDataset"]["accepted"]
+        res = self.client.execute(*query.create_data_rows(self.uid, descriptor_url))
+
+        # TODO return a task ID
 
     # TODO Relationships
     # organization
