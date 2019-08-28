@@ -6,7 +6,7 @@ import urllib.request
 from labelbox import query, utils
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError)
-from labelbox.db_objects import Project, Dataset
+from labelbox.db_objects import Project, Dataset, User
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class Client:
         query_str, id_param_name = query.get_single(db_object_type)
         params = {id_param_name: uid}
         res = self.execute(query_str, params)["data"][
-            db_object_type.type_name().lower()]
+            utils.camel_case(db_object_type.type_name())]
         if res is None:
             raise ResourceNotFoundError(db_object_type, params)
         else:
@@ -90,6 +90,12 @@ class Client:
     def get_dataset(self, dataset_id):
         """ Convenience for `client.get_single(Dataset, dataset_id)`. """
         return self.get_single(Dataset, dataset_id)
+
+    def get_user(self):
+        """ Gets the current user database object. """
+        res = self.execute(query.get_user(User))["data"][
+            utils.camel_case(User.type_name())]
+        return User(self, res)
 
     def get_all(self, db_object_type, where):
         """ Fetches all the objects of the given type the user has access to.

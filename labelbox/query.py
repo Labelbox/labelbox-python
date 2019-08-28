@@ -96,6 +96,12 @@ def get_single(db_object_type):
     return query, id_param_name
 
 
+def get_user(user_db_type):
+    return "query GetUserPyApi {%s {%s}}" % (
+        utils.camel_case(user_db_type.type_name()),
+        " ".join(field.graphql_name for field in user_db_type.fields()))
+
+
 # Maps comparison operations to the suffixes appended to the field
 # name when generating a GraphQL query.
 COMPARISON_TO_SUFFIX = {
@@ -244,7 +250,7 @@ def get_all(db_object_type, where=None):
     return query_str, {name: value for name, (value, _) in params.items()}
 
 
-def relationship(source, relationship, destination_type, where=None):
+def relationship(source, relationship, destination_type, to_many, where):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
         >>> project = ...
@@ -262,6 +268,8 @@ def relationship(source, relationship, destination_type, where=None):
         relationship (str): Name of the to-many relationship.
         destination_type (type): A DbObject subclass, type of the relationship
             objects.
+        to_many (bool): Indicator if a paginated to-many query should be
+            constructed or a non-paginated to-one query.
         where (Comparison, LogicalExpression or None): The `where` clause
             for filtering.
     Return:
@@ -278,13 +286,14 @@ def relationship(source, relationship, destination_type, where=None):
     params[id_param_name] = (source.uid, type(source).uid)
 
     query_str = """query %sPyApi%s
-        {%s(where: {id: $%s}) {%s(where: %s skip: %%d first: %%d) {%s} } }""" % (
+        {%s(where: {id: $%s}) {%s(where: %s%s) {%s} } }""" % (
         source_type_name + utils.title_case(relationship),
         format_param_declaration(params),
         utils.camel_case(source_type_name),
         id_param_name,
         relationship,
         where_query_str,
+        " skip: %d first: %d" if to_many else "",
         " ".join(field.graphql_name for field in destination_type.fields()))
 
     return query_str, {name: value for name, (value, _) in params.items()}
