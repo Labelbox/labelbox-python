@@ -108,13 +108,13 @@ COMPARISON_TO_SUFFIX = {
 }
 
 
-def format_where(where, params=None):
+def format_where(where):
     """ Converts the given `where` clause into a query string. The clause
     can be a single `labelbox.filter.Comparison` or a complex
     `labelbox.filter.LogicalExpression` of arbitrary depth.
 
     Args:
-        where (Comparison or LogicalExpression): The where clause
+        where (None, Comparison or LogicalExpression): The where clause
             used for filtering data.
     Return:
         (str, dict) tuple that contains the query string and a parameters
@@ -124,6 +124,9 @@ def format_where(where, params=None):
         necessary for obtaining the parameter type).
     """
     params = {}
+
+    if where is None:
+        return "{}", {}
 
     def recursion(node):
         if isinstance(node, Comparison):
@@ -195,7 +198,8 @@ def logical_ops(where):
             yield f
 
 def check_where_clause(db_object_type, where):
-    where_fields = list(fields(where))
+    # The `deleted` field is a special case, ignore it.
+    where_fields = [f for f in fields(where) if f != DbObject.deleted]
     invalid_fields = set(where_fields) - set(db_object_type.fields())
     if invalid_fields:
         raise InvalidQueryError("Where clause contains fields '%r' which aren't "
@@ -226,8 +230,6 @@ def get_all(db_object_type, where=None):
     """
     check_where_clause(db_object_type, where)
 
-    deleted_filter = db_object_type.deleted == False
-    where = deleted_filter if where is None else (where & deleted_filter)
     where_query_str, params = format_where(where)
     param_declaration_str = format_param_declaration(params)
 
@@ -267,10 +269,6 @@ def relationship(source, relationship, destination_type, where=None):
     """
     check_where_clause(destination_type, where)
     source_type_name = type(source).type_name()
-
-    # Update the destination filtering params with deleted=false
-    deleted_filter = DbObject.deleted == False
-    where = deleted_filter if where is None else (where & deleted_filter)
 
     # Prepare the destination filtering clause and params
     where_query_str, params = format_where(where)

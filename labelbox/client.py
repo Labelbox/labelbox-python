@@ -3,7 +3,7 @@ import logging
 import os
 import urllib.request
 
-from labelbox import query
+from labelbox import query, utils
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError)
 from labelbox.db_objects import Project, Dataset
@@ -83,7 +83,6 @@ class Client:
         else:
             return db_object_type(self, res)
 
-
     def get_project(self, project_id):
         """ Convenience for `client.get_single(Project, project_id)`. """
         return self.get_single(Project, project_id)
@@ -91,6 +90,27 @@ class Client:
     def get_dataset(self, dataset_id):
         """ Convenience for `client.get_single(Dataset, dataset_id)`. """
         return self.get_single(Dataset, dataset_id)
+
+    def get_all(self, db_object_type, where):
+        """ Fetches all the objects of the given type the user has access to.
+
+        Args:
+            db_object_type (type): DbObject subclass.
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Return:
+            An iterable of `db_object_type` instances.
+        Raises:
+            labelbox.exception.LabelboxError: Any error raised by
+                `Client.execute` can also be raised by this function.
+        """
+        not_deleted = db_object_type.deleted == False
+        where = not_deleted if where is None else where & not_deleted
+        query_str, params = query.get_all(db_object_type, where)
+        return query.PaginatedCollection(
+            self, query_str, params,
+            [utils.camel_case(db_object_type.type_name()) + "s"],
+            db_object_type)
 
     def get_projects(self, where=None):
         """ Fetches all the projects the user has access to.
@@ -104,9 +124,7 @@ class Client:
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        query_str, params = query.get_all(Project, where)
-        return query.PaginatedCollection(
-            self, query_str, params, ["projects"], Project)
+        return self.get_all(Project, where)
 
     def get_datasets(self, where=None):
         """ Fetches all the datasets the user has access to.
@@ -120,6 +138,4 @@ class Client:
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        query_str, params = query.get_all(Dataset, where)
-        return query.PaginatedCollection(
-            self, query_str, params, ["datasets"], Dataset)
+        return self.get_all(Dataset, where)
