@@ -4,7 +4,8 @@ from labelbox.schema import Field, DbObject
 """ Defines client-side objects representing database content. """
 
 
-def _create_relationship(destination_type_name, relationship_name=None):
+def _create_relationship(destination_type_name, filter_deleted,
+                         relationship_name=None):
     """ Creates a method to be used within a DbObject subtype for
     getting DB objects related to so source DB object.
 
@@ -13,6 +14,9 @@ def _create_relationship(destination_type_name, relationship_name=None):
             on the other side of the relationship. Name is used instead
             of the type itself because the type might not be defined in
             the moment this function is called.
+        filter_deleted (bool): If or not an implicit `where` clause should
+            be added containing {`deleted`: false}. Required in some cases,
+            but not available in others.
         relationship_name (str): Name of the relationship to expand. If
             None, then it's derived from `destionation_type_name` by
             converting to camelCase and adding "s".
@@ -29,6 +33,11 @@ def _create_relationship(destination_type_name, relationship_name=None):
         destination_type = next(
             t for t in DbObject.__subclasses__()
             if t.__name__.split(".")[-1] == destination_type_name)
+
+        if filter_deleted:
+            not_deleted = destination_type.deleted == False
+            where = not_deleted if where is None else where & not_deleted
+
         query_string, params = query.relationship(
             self, relationship_name, destination_type, where)
         return query.PaginatedCollection(
@@ -47,7 +56,7 @@ class Project(DbObject):
     setup_complete = Field.DateTime("setup_complete")
 
     # Relationships
-    datasets = _create_relationship("Dataset")
+    datasets = _create_relationship("Dataset", True)
 
     # TODO Relationships
     # organization
@@ -67,7 +76,8 @@ class Dataset(DbObject):
     created_at = Field.DateTime("created_at")
 
     # Relationships
-    projects = _create_relationship("Project")
+    projects = _create_relationship("Project", True)
+    data_rows = _create_relationship("DataRow", False)
 
     # TODO Relationships
     # organization
@@ -78,3 +88,15 @@ class Dataset(DbObject):
     # TODO Fetched attributes
     # rowCount
     # createdLabelCount
+
+
+class DataRow(DbObject):
+    external_id = Field.String("external_id")
+    row_data = Field.String("row_data")
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
+
+    # Relationships
+    dataset = _create_relationship("Dataset", True)
+
+    # TODO other attributes
