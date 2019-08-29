@@ -1,10 +1,15 @@
+import logging
 import json
+import time
 
 from labelbox import query, utils
 from labelbox.schema import Field, DbObject
 
 
 """ Defines client-side objects representing database content. """
+
+
+logger = logging.getLogger(__name__)
 
 
 def _to_many(destination_type_name, filter_deleted, relationship_name=None):
@@ -182,10 +187,16 @@ class Dataset(DbObject):
 
         # Fetch and return the task.
         task_id = res["taskId"]
-        task = list(self.client.get_user().created_tasks(where=Task.uid == task_id))
+        user = self.client.get_user()
+        task = list(user.created_tasks(where=Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
         if len(task) != 1:
             raise ResourceNotFoundError(Task, task_id)
-        return task[0]
+        task = task[0]
+        task._user = user
+        return task
 
     # TODO Relationships
     # organization
@@ -236,6 +247,7 @@ class Organization(DbObject):
 
 
 class Task(DbObject):
+
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -243,6 +255,39 @@ class Task(DbObject):
     completion_percentage = Field.Float("completion_percentage")
 
     # Relationships
-    created_by = _to_one("User", "createdBy")
+
+    # "created_by" can't be treated as a relationship because there's
+    # currently no way on the server to make a query starting from
+    # a single task.
+    # created_by = _to_one("User", "createdBy")
+
+    def refresh(self):
+        """ Refreshes Task data from the server. """
+        tasks = list(self._user.created_tasks(where=Task.uid == self.uid))
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Task, task_id)
+        for field in self.fields():
+            setattr(self, field.name, getattr(tasks[0], field.name))
+
+    def wait_till_done(self, timeout_seconds=3600, check_frequency_seconds=1):
+        """ Waits until the task is completed. Periodically queries the server
+        to update the task attributes.
+        Args:
+            timeout_seconds (float): Maximum time this method can block, in
+                seconds. Defaults to one hour.
+            check_frequency_seconds (float): Sleep time between two checks,
+                in seconds. Defaults to one second.
+        """
+        while True:
+            if self.status != "IN_PROGRESS":
+                return
+            sleep_time_seconds = min(check_frequency_seconds, timeout_seconds)
+            logger.debug("Task.wait_till_done sleeping for %.2f seconds" %
+                         sleep_time_seconds)
+            if sleep_time_seconds <= 0:
+                break
+            timeout_seconds -= check_frequency_seconds
+            time.sleep(sleep_time_seconds)
+            self.refresh()
 
     # TODO other attributes
