@@ -157,3 +157,61 @@ class Client:
                 `Client.execute` can also be raised by this function.
         """
         return self.get_all(Dataset, where)
+
+    def create(self, db_object_type, data):
+        """ Creates a object on the server. Attribute values are
+            passed as keyword arguments:
+                >>> project = client.create(Project, name="MyDataset")
+
+        Args:
+            db_object_type (type): A DbObjectType subtype.
+            **data (dict): keyword arguments with new object attribute values.
+                Keys are field names (in Python, snake-case convention) and
+                values are desired attribute values.
+        Return:
+            a new object of the given DB object type.
+        Raises:
+            InvalidFieldError: in case the DB object type does not contain
+                any of the field names given in `data`.
+        """
+        data = {db_object_type.field(name): value
+                for name, value in data.items()}
+
+        query_string, params = query.create(db_object_type, data)
+        res = self.execute(query_string, params)
+        res = res["data"]["create%s" % db_object_type.type_name()]
+        return db_object_type(self, res)
+
+    def create_dataset(self, **data):
+        """ Creates a Dataset object on the server. Attribute values are
+            passed as keyword arguments:
+                >>> dataset = client.create_dataset(name="MyDataset")
+
+        Args:
+            **data (dict): keyword arguments with new Dataset attribute values.
+                Keys are field names (in Python, snake-case convention) and
+                values are desired attribute values.
+        Return:
+            a new Dataset object.
+        Raises:
+            InvalidFieldError: in case the Dataset type does not contain
+                any of the field names given in `data`.
+        """
+        return self.create(Dataset, data)
+
+    def create_project(self, **data):
+        """ Creates a Project object on the server. Attribute values are
+            passed as keyword arguments:
+                >>> project = client.create_project(name="MyProject")
+
+        Args:
+            **data (dict): keyword arguments with new Project attribute values.
+                Keys are field names (in Python, snake-case convention) and
+                values are desired attribute values.
+        Return:
+            a new Project object.
+        Raises:
+            InvalidFieldError: in case the Project type does not contain
+                any of the field names given in `data`.
+        """
+        return self.create(Project, data)
