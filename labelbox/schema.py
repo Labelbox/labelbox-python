@@ -32,6 +32,10 @@ class Field:
         ID = auto()
         DateTime = auto()
 
+    class Order(Enum):
+        Asc = auto()
+        Desc = auto()
+
     @classmethod
     def Int(cls, *args):
         return Field(Field.Type.Int, *args)
@@ -71,6 +75,22 @@ class Field:
         if graphql_name is None:
             graphql_name = utils.camel_case(name)
         self.graphql_name = graphql_name
+
+    @property
+    def asc(self):
+        """ Property that resolves to tuple (Field, Field.Order).
+        Used for easy definition of sort ordering:
+            >>> projects_ordered = client.get_projects(order_by=Project.name.asc)
+        """
+        return (self, Field.Order.Asc)
+
+    @property
+    def desc(self):
+        """ Property that resolves to tuple (Field, Field.Order).
+        Used for easy definition of sort ordering:
+            >>> projects_ordered = client.get_projects(order_by=Project.name.desc)
+        """
+        return (self, Field.Order.Desc)
 
     def __eq__(self, other):
         """ Equality of Fields has two meanings. If comparing to a Field object,

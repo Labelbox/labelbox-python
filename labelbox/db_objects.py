@@ -25,15 +25,17 @@ def _to_many(destination_type_name, filter_deleted, relationship_name=None):
             converting to camelCase and adding "s".
 
     Return:
-        A callable that accepts two arguments: the DB object that
-            is the source of the relationship expansion and a "where"
-            clause. It returns a callable used for querying a to-many
-            relationship.
+        A callable that accepts the following arguments:
+            self (DbObject): source of the relationship expansion
+            where (None, Comparison or LogicalExpression): The filtering
+                clause.
+            order_by (None or (Field, Field.Order)): The sorting clause.
+        The callable returns an iterable of DbObjects.
     """
     if relationship_name is None:
         relationship_name = utils.camel_case(destination_type_name) + "s"
 
-    def expansion(self, where=None):
+    def expansion(self, where=None, order_by=None):
         destination_type = next(
             t for t in DbObject.__subclasses__()
             if t.__name__.split(".")[-1] == destination_type_name)
@@ -43,7 +45,7 @@ def _to_many(destination_type_name, filter_deleted, relationship_name=None):
             where = not_deleted if where is None else where & not_deleted
 
         query_string, params = query.relationship(
-            self, relationship_name, destination_type, True, where)
+            self, relationship_name, destination_type, True, where, order_by)
         return query.PaginatedCollection(
             self.client, query_string, params,
             [utils.camel_case(type(self).type_name()), relationship_name],
@@ -80,7 +82,7 @@ def _to_one(destination_type_name, relationship_name=None):
             if t.__name__.split(".")[-1] == destination_type_name)
 
         query_string, params = query.relationship(
-            self, relationship_name, destination_type, False, None)
+            self, relationship_name, destination_type, False, None, None)
         result = self.client.execute(query_string, params)["data"]
         result = result[utils.camel_case(type(self).type_name())]
         result = result[relationship_name]
