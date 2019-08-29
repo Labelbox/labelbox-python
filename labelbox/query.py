@@ -170,6 +170,19 @@ def format_param_declaration(params):
     return "(" + ", ".join("$%s: %s!" % pair for pair in params) + ")"
 
 
+def format_order_by(order_by):
+    """ Formats the order_by query clause.
+    Args:
+        order_by (None or (Field, Field.Order): The `order_by` clause for
+            sorting results.
+    Return:
+        Order-by query substring in format " orderBy: <field_name>_<order>"
+    """
+    if order_by is None:
+        return ""
+    return " orderBy: %s_%s" % (order_by[0].graphql_name, order_by[1].name.upper())
+
+
 def fields(where):
     """ Returns a generator that yields all the Field objects from
     a where clause.
@@ -221,7 +234,7 @@ def check_where_clause(db_object_type, where):
                                 "the where clause of a query.")
 
 
-def get_all(db_object_type, where=None):
+def get_all(db_object_type, where):
     """ Constructs a query that fetches all items of the given type. The
     resulting query is intended to be used for pagination, it contains
     two python-string int-placeholders (%d) for 'skip' and 'first'
@@ -240,7 +253,8 @@ def get_all(db_object_type, where=None):
     param_declaration_str = format_param_declaration(params)
 
     type_name = db_object_type.type_name()
-    query_str = "query Get%ssPyApi%s {%ss(where: %s skip: %%d first: %%d) {%s} }" % (
+    query_str = "query Get%ssPyApi%s {%ss(where: %s skip: %%d first: %%d) {%s} }"
+    query_str = query_str % (
         type_name,
         param_declaration_str,
         type_name.lower(),
@@ -250,7 +264,7 @@ def get_all(db_object_type, where=None):
     return query_str, {name: value for name, (value, _) in params.items()}
 
 
-def relationship(source, relationship, destination_type, to_many, where):
+def relationship(source, relationship, destination_type, to_many, where, order_by):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
         >>> project = ...
@@ -272,6 +286,8 @@ def relationship(source, relationship, destination_type, to_many, where):
             constructed or a non-paginated to-one query.
         where (Comparison, LogicalExpression or None): The `where` clause
             for filtering.
+        order_by (None or (Field, Field.Order): The `order_by` clause for
+            sorting results.
     Return:
         (str, dict) tuple that is the query string and parameters.
     """
@@ -286,7 +302,7 @@ def relationship(source, relationship, destination_type, to_many, where):
     params[id_param_name] = (source.uid, type(source).uid)
 
     query_str = """query %sPyApi%s
-        {%s(where: {id: $%s}) {%s(where: %s%s) {%s} } }""" % (
+        {%s(where: {id: $%s}) {%s(where: %s%s%s) {%s} } }""" % (
         source_type_name + utils.title_case(relationship),
         format_param_declaration(params),
         utils.camel_case(source_type_name),
@@ -294,6 +310,7 @@ def relationship(source, relationship, destination_type, to_many, where):
         relationship,
         where_query_str,
         " skip: %d first: %d" if to_many else "",
+        format_order_by(order_by),
         " ".join(field.graphql_name for field in destination_type.fields()))
 
     return query_str, {name: value for name, (value, _) in params.items()}

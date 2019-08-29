@@ -32,6 +32,12 @@ def test_format_param_declaration():
         == "($param_0: String!, $param_1: ID!)"
 
 
+def test_format_order_by():
+    assert query.format_order_by(None) == ""
+    assert query.format_order_by(Project.name.asc) == " orderBy: name_ASC"
+    assert query.format_order_by(Project.uid.desc) == " orderBy: id_DESC"
+
+
 def test_fields():
     assert set(query.fields(None)) == set()
     comparison_1 = Comparison.Op.EQ(Project.name, "name")
