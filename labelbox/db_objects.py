@@ -132,6 +132,17 @@ class Dataset(DbObject):
 
         Args:
             items (iterable of (dict or str)): See above for details.
+        Return:
+            Task representing the data import on the server side. The Task
+            can be used for inspecting task progress and waiting until it's done.
+        Raise:
+            InvalidQueryError: if the `items` parameter does not conform to
+                the specification above.
+            MalformedRequestError: if the server did not accept the DataRow
+                creation request.
+            ResourceNotFoundError: if unable to retrieve the Task based on the
+                task_id of the import process. This could imply that the import
+                failed.
         """
         def convert_item(item):
             if isinstance(item, str):
@@ -163,8 +174,18 @@ class Dataset(DbObject):
 
         # Create data source
         res = self.client.execute(*query.create_data_rows(self.uid, descriptor_url))
+        res = res["data"]["appendRowsToDataset"]
 
-        # TODO return a task ID
+        if not res["accepted"]:
+            raise MalformedRequestError(
+                "Server did not accept DataRow creation request", data)
+
+        # Fetch and return the task.
+        task_id = res["taskId"]
+        task = list(self.client.get_user().created_tasks(where=Task.uid == task_id))
+        if len(task) != 1:
+            raise ResourceNotFoundError(Task, task_id)
+        return task[0]
 
     # TODO Relationships
     # organization
