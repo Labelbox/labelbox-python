@@ -331,6 +331,7 @@ def create_data_rows(dataset_id, json_file_url):
     query_str = """mutation AppendRowsToDatasetPyApi(
                     $%s: ID!, $%s: String!){
           appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
-        ){ accepted} } """ % (dataset_param, url_param, dataset_param, url_param)
+        ){ taskId accepted } } """ % (dataset_param, url_param, dataset_param,
+                                      url_param)
 
     return query_str, {dataset_param: dataset_id, url_param: json_file_url}
