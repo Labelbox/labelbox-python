@@ -182,7 +182,7 @@ class DataRow(DbObject):
     created_at = Field.DateTime("created_at")
 
     # Relationships
-    dataset = _to_one("Dataset", True)
+    dataset = _to_one("Dataset")
 
     # TODO other attributes
 
@@ -196,6 +196,7 @@ class User(DbObject):
 
     # Relationships
     organization = _to_one("Organization")
+    created_tasks = _to_many("Task", False, "createdTasks")
 
     # TODO other attributes
 
@@ -206,6 +207,19 @@ class Organization(DbObject):
     name = Field.String("name")
 
     # Relationships
-    users = _to_many("user", False)
+    users = _to_many("User", False)
+
+    # TODO other attributes
+
+
+class Task(DbObject):
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
+    name = Field.String("name")
+    status = Field.String("status")
+    completion_percentage = Field.Float("completion_percentage")
+
+    # Relationships
+    created_by = _to_one("User", "createdBy")
 
     # TODO other attributes
