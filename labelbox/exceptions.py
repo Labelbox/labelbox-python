@@ -57,3 +57,13 @@ class NetworkError(LabelboxError):
             message = str(cause)
         super().__init__(message)
         self.cause = cause
+
+
+class InvalidFieldError(LabelboxError):
+    """ Raised when a field (name or Field instance) is not valid or found
+    for a specific DB object type. """
+    def __init__(self, db_object_type, field):
+        super().__init__("Object '%r' is not a valid field on DB type '%s'" % (
+            field, db_object_type.type_name()))
+        self.db_object_type = db_object_type
+        self.field = field

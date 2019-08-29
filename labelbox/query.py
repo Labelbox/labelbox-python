@@ -161,7 +161,8 @@ def format_param_declaration(params):
 
     Args:
         params (dict): Parameter dictionary, as returned by the
-            `query.format_where` function.
+            `query.format_where` function. dict keys are query param names
+            and values are (value, field) tuples.
     Return:
         str, the declaration of query parameters.
     """
@@ -316,6 +317,23 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
     return query_str, {name: value for name, (value, _) in params.items()}
 
 
+def create(db_object_type, data):
+    type_name = db_object_type.type_name()
+
+    # Convert data to params
+    params = {field.graphql_name: (value, field) for field, value in data.items()}
+
+    query_str = """mutation Create%sPyApi%s{create%s(data: {%s}) {%s}} """ % (
+        type_name,
+        format_param_declaration(params),
+        type_name,
+        " ".join("%s: $%s" % (field.graphql_name, param)
+                 for param, (_, field) in params.items()),
+        " ".join(field.graphql_name for field in db_object_type.fields()))
+
+    return query_str, {name: value for name, (value, _) in params.items()}
+
+
 def create_data_rows(dataset_id, json_file_url):
     """ Generates the query and parameters dictionary for creating multiple
     DataRows for a Dataset.
@@ -335,3 +353,23 @@ def create_data_rows(dataset_id, json_file_url):
                                       url_param)
 
     return query_str, {dataset_param: dataset_id, url_param: json_file_url}
+
+
+def update_relationship(a, b, relationship_name, update):
+    a_uid_param = utils.camel_case(type(a).type_name()) + "Id"
+    b_uid_param = utils.camel_case(type(b).type_name()) + "Id"
+    a_params = {DbObject.uid: a.uid}
+    b_params = {DbObject.uid: b.uid}
+    query_str = """mutation %s%sAnd%s%s{update%s(
+        where: {id: $%s} data: {%s: {%s: {id: $%s}}}) {id}} """ % (
+        utils.title_case(update),
+        type(a).type_name(),
+        type(b).type_name(),
+        "($%s: ID!, $%s: ID!)" % (a_uid_param, b_uid_param),
+        utils.title_case(type(a).type_name()),
+        a_uid_param,
+        relationship_name,
+        update,
+        b_uid_param)
+
+    return query_str, {a_uid_param: a.uid, b_uid_param: b.uid}

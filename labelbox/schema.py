@@ -1,6 +1,7 @@
 from enum import Enum, auto
 
 from labelbox import utils
+from labelbox.exceptions import InvalidFieldError
 from labelbox.filter import Comparison
 
 
@@ -8,7 +9,7 @@ from labelbox.filter import Comparison
 
 
 class Field:
-    """ Represents field in a database table. Supports comparison operators
+    """ Represents a field in a database table. Supports comparison operators
     which return a `labelbox.filter.Comparison` object. For example:
         >>> field = Field.String("x") # short for Field(Field.Type.String, "x")
         >>> comparison = field == "John"
@@ -36,32 +37,32 @@ class Field:
         Asc = auto()
         Desc = auto()
 
-    @classmethod
-    def Int(cls, *args):
+    @staticmethod
+    def Int(*args):
         return Field(Field.Type.Int, *args)
 
-    @classmethod
-    def Float(cls, *args):
+    @staticmethod
+    def Float(*args):
         return Field(Field.Type.Float, *args)
 
-    @classmethod
-    def String(cls, *args):
+    @staticmethod
+    def String(*args):
         return Field(Field.Type.String, *args)
 
-    @classmethod
-    def Boolean(cls, *args):
+    @staticmethod
+    def Boolean(*args):
         return Field(Field.Type.Boolean, *args)
 
-    @classmethod
-    def ID(cls, *args):
+    @staticmethod
+    def ID(*args):
         return Field(Field.Type.ID, *args)
 
-    @classmethod
-    def DateTime(cls, *args):
+    @staticmethod
+    def DateTime(*args):
         return Field(Field.Type.DateTime, *args)
 
     def __init__(self, field_type, name, graphql_name=None):
-        """ Field constructor.
+        """ Field init.
         Args:
             field_type (Field.Type): The type of the field.
             name (str): client-side Python attribute name of a database
@@ -136,6 +137,43 @@ class Field:
         return "<Field: %r>" % self.name
 
 
+class Relationship:
+    """ Represents a relationship in a database table.
+
+    Attributes:
+        relationship_type (Relationship.Type): Indicator if to-one or to-many
+        destination_type_name (str): Name of the DbObject subtype that's on
+            the other side of the relationship. str is used instead of the
+            type object itself because that type might not be declared at
+            the point of a `Relationship` object initialization.
+        filter_deleted (bool): Indicator if the a `deleted=false` filtering
+            clause should be added to the query when fetching relationship
+            objects.
+        name (str): Name of the relationship in the snake_case format.
+    """
+    class Type(Enum):
+        ToOne = auto()
+        ToMany = auto()
+
+    @staticmethod
+    def ToOne(*args):
+        return Relationship(Relationship.Type.ToOne, *args)
+
+    @staticmethod
+    def ToMany(*args):
+        return Relationship(Relationship.Type.ToMany, *args)
+
+    def __init__(self, relationship_type, destination_type_name,
+                 filter_deleted=True, name=None):
+        self.relationship_type = relationship_type
+        self.destination_type_name = destination_type_name
+        self.filter_deleted = filter_deleted
+        if name is None:
+            name = utils.camel_case(destination_type_name) + (
+                "s" if relationship_type == Relationship.Type.ToMany else "")
+        self.name = name
+
+
 class DbObject:
     """ A client-side representation of a database object (row). Intended as
     base class for classes representing concrete database types (for example
@@ -167,12 +205,39 @@ class DbObject:
             setattr(self, field.name, field_values[field.graphql_name])
 
     @classmethod
-    def fields(cls):
-        """ Yields all the Fields declared in a concrete subclass. """
+    def _attributes_of_type(cls, attr_type):
+        """ Yields all the attributes in `cls` of the given `attr_type`. """
         for attr_name in dir(cls):
             attr = getattr(cls, attr_name)
-            if isinstance(attr, Field) and attr_name != "deleted":
+            if isinstance(attr, attr_type):
                 yield attr
+
+    @classmethod
+    def fields(cls):
+        """ Yields all the Fields declared in a concrete subclass. """
+        for attr in cls._attributes_of_type(Field):
+            if attr != DbObject.deleted:
+                yield attr
+
+    @classmethod
+    def relationships(cls):
+        return cls._attributes_of_type(Relationship)
+
+    @classmethod
+    def field(cls, field_name):
+        """ Returns a Field object for the given name.
+        Args:
+            field_name (str): Field name, Python (snake-case) convention.
+        Return:
+            Field object
+        Raises:
+            InvalidFieldError: in case this DB object type does not contain
+                a field with the given name.
+        """
+        field_obj = getattr(cls, field_name, None)
+        if not isinstance(field_obj, Field):
+            raise InvalidFieldError(cls, field_name)
+        return field_obj
 
     @classmethod
     def type_name(cls):
