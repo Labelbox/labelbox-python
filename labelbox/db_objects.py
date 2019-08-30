@@ -59,7 +59,7 @@ class RelationshipManager:
         return query.PaginatedCollection(
             self.source.client, query_string, params,
             [utils.camel_case(type(self.source).type_name()),
-             rel.name],
+             utils.camel_case(rel.name)],
             self.destination_type)
 
     def _to_one(self):
@@ -133,6 +133,10 @@ class Project(MutableDbObject):
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
+    # TODO enable created_by once the whole "where" clause can be
+    # removed from the relationship query, or the server-side is
+    # updated to allow "where" in Project->createdBy
+    # created_by = Relationship.ToOne("User", False, "created_by")
 
     # TODO Relationships
     # organization
@@ -259,6 +263,7 @@ class User(MutableDbObject):
     # Relationships
     organization = Relationship.ToOne("Organization")
     created_tasks = Relationship.ToMany("Task", False, "created_tasks")
+    projects = Relationship.ToMany("Project", False)
 
     # TODO other attributes
 
@@ -284,7 +289,7 @@ class Task(MutableDbObject):
 
     # Relationships
 
-    # "created_by" can't be treated as a relationship because there's
+    # TODO "created_by" can't be treated as a relationship because there's
     # currently no way on the server to make a query starting from
     # a single task.
     # created_by = Relationship.ToOne("User", "createdBy")
@@ -295,14 +300,14 @@ class Task(MutableDbObject):
         if len(tasks) != 1:
             raise ResourceNotFoundError(Task, task_id)
         for field in self.fields():
-            setattr(self, field.name, getattr(tasks[0], field.graphql_name))
+            setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=3600, check_frequency_seconds=1):
+    def wait_till_done(self, timeout_seconds=60, check_frequency_seconds=1):
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
         Args:
             timeout_seconds (float): Maximum time this method can block, in
-                seconds. Defaults to one hour.
+                seconds. Defaults to one minute.
             check_frequency_seconds (float): Sleep time between two checks,
                 in seconds. Defaults to one second.
         """
