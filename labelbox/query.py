@@ -265,7 +265,8 @@ def get_all(db_object_type, where):
     return query_str, {name: value for name, (value, _) in params.items()}
 
 
-def relationship(source, relationship, destination_type, to_many, where, order_by):
+def relationship(source, relationship_name, destination_type, to_many,
+                 where, order_by):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
         >>> project = ...
@@ -280,7 +281,7 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
 
     Args:
         source (DbObject): A database object.
-        relationship (str): Name of the to-many relationship.
+        relationship_name (str): Name of the to-many relationship.
         destination_type (type): A DbObject subclass, type of the relationship
             objects.
         to_many (bool): Indicator if a paginated to-many query should be
@@ -304,11 +305,11 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
 
     query_str = """query %sPyApi%s
         {%s(where: {id: $%s}) {%s(where: %s%s%s) {%s} } }""" % (
-        source_type_name + utils.title_case(relationship),
+        source_type_name + utils.title_case(relationship_name),
         format_param_declaration(params),
         utils.camel_case(source_type_name),
         id_param_name,
-        relationship,
+        utils.camel_case(relationship_name),
         where_query_str,
         " skip: %d first: %d" if to_many else "",
         format_order_by(order_by),
@@ -318,6 +319,15 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
 
 
 def create(db_object_type, data):
+    """ Generats a query and parameters for creating a new DB object.
+
+    Args:
+        db_object_type (type): A DbObject subtype indicating which kind of
+            DB object needs to be created.
+        data (dict): A dict that maps Fields to values, new object data.
+    Return:
+        (query_string, parameters)
+    """
     type_name = db_object_type.type_name()
 
     # Convert data to params
@@ -380,7 +390,7 @@ def update_relationship(a, b, relationship_name, update):
         "($%s: ID!, $%s: ID!)" % (a_uid_param, b_uid_param),
         utils.title_case(type(a).type_name()),
         a_uid_param,
-        relationship_name,
+        utils.camel_case(relationship_name),
         update,
         b_uid_param)
 

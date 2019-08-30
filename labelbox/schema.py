@@ -169,7 +169,7 @@ class Relationship:
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
         if name is None:
-            name = utils.camel_case(destination_type_name) + (
+            name = utils.snake_case(destination_type_name) + (
                 "s" if relationship_type == Relationship.Type.ToMany else "")
         self.name = name
 
