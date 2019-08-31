@@ -1,7 +1,7 @@
 from itertools import chain
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, InvalidFieldError
 from labelbox.filter import LogicalExpression, Comparison
 from labelbox.schema import DbObject
 
@@ -265,7 +265,8 @@ def get_all(db_object_type, where):
     return query_str, {name: value for name, (value, _) in params.items()}
 
 
-def relationship(source, relationship, destination_type, to_many, where, order_by):
+def relationship(source, relationship_name, destination_type, to_many,
+                 where, order_by):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
         >>> project = ...
@@ -280,7 +281,7 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
 
     Args:
         source (DbObject): A database object.
-        relationship (str): Name of the to-many relationship.
+        relationship_name (str): Name of the to-many relationship.
         destination_type (type): A DbObject subclass, type of the relationship
             objects.
         to_many (bool): Indicator if a paginated to-many query should be
@@ -304,11 +305,11 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
 
     query_str = """query %sPyApi%s
         {%s(where: {id: $%s}) {%s(where: %s%s%s) {%s} } }""" % (
-        source_type_name + utils.title_case(relationship),
+        source_type_name + utils.title_case(relationship_name),
         format_param_declaration(params),
         utils.camel_case(source_type_name),
         id_param_name,
-        relationship,
+        utils.camel_case(relationship_name),
         where_query_str,
         " skip: %d first: %d" if to_many else "",
         format_order_by(order_by),
@@ -318,6 +319,15 @@ def relationship(source, relationship, destination_type, to_many, where, order_b
 
 
 def create(db_object_type, data):
+    """ Generats a query and parameters for creating a new DB object.
+
+    Args:
+        db_object_type (type): A DbObject subtype indicating which kind of
+            DB object needs to be created.
+        data (dict): A dict that maps Fields to values, new object data.
+    Return:
+        (query_string, parameters)
+    """
     type_name = db_object_type.type_name()
 
     # Convert data to params
@@ -356,11 +366,23 @@ def create_data_rows(dataset_id, json_file_url):
 
 
 def update_relationship(a, b, relationship_name, update):
+    """ Updates the relationship in DB object `a` to connect or disconnect
+    DB object `b`.
+
+    Args:
+        a (DbObject): The object being updated.
+        b (DbObject): Object on the other side of the relationship.
+        relationship_name (str): Relationship name.
+        update (str): The type of update. Must be either `connect` or
+            `disconnect`.
+    Return:
+        (query_string, query_parameters)
+    """
     a_uid_param = utils.camel_case(type(a).type_name()) + "Id"
     b_uid_param = utils.camel_case(type(b).type_name()) + "Id"
     a_params = {DbObject.uid: a.uid}
     b_params = {DbObject.uid: b.uid}
-    query_str = """mutation %s%sAnd%s%s{update%s(
+    query_str = """mutation %s%sAnd%sPyApi%s{update%s(
         where: {id: $%s} data: {%s: {%s: {id: $%s}}}) {id}} """ % (
         utils.title_case(update),
         type(a).type_name(),
@@ -368,8 +390,64 @@ def update_relationship(a, b, relationship_name, update):
         "($%s: ID!, $%s: ID!)" % (a_uid_param, b_uid_param),
         utils.title_case(type(a).type_name()),
         a_uid_param,
-        relationship_name,
+        utils.camel_case(relationship_name),
         update,
         b_uid_param)
 
     return query_str, {a_uid_param: a.uid, b_uid_param: b.uid}
+
+
+def update_fields(db_object, values):
+    """ Creates a query that updates `db_object` fields with the
+    given values.
+
+    Args:
+        db_object (DbObject): The DB object being updated.
+        values (dict): Maps Fields to new values. All Fields
+            must be legit fields in `db_object`.
+    Return:
+        (query_string, query_parameters)
+    Raise:
+        InvalidFieldError: if there exists a key in `values`
+            that's not a field in `db_object`.
+    """
+    invalid_fields = set(values) - set(db_object.fields())
+    if invalid_fields:
+        raise InvalidFieldError(type(db_object), invalid_fields)
+
+    type_name = db_object.type_name()
+    id_param = "%sId" % type_name
+    values_str = " ".join("%s: $%s" % (field.graphql_name, field.name)
+                          for field, _ in values.items())
+    params = {field.graphql_name: (value, field) for field, value
+              in values.items()}
+    params[id_param] = (db_object.uid, DbObject.uid)
+
+    query_str = """mutation update%sPyApi(%s){update%s(
+        where: {id: $%s} data: {%s}) {%s}} """ % (
+        utils.title_case(type_name),
+        " ".join("$%s: %s!" % (name, field.field_type.name)
+                 for name, (_, field) in params.items()),
+        type_name,
+        id_param,
+        values_str,
+        " ".join(field.graphql_name for field in db_object.fields()))
+
+    return query_str, {name: value for name, (value, _) in params.items()}
+
+
+def delete(db_object):
+    """ Generates a query that deletes the given `db_object` from the DB.
+
+    Args:
+        db_object (DbObject): The DB object being deleted.
+    """
+    id_param = "%sId" % db_object.type_name()
+    query_str = """mutation delete%sPyApi%s{update%s(
+        where: {id: $%s} data: {deleted: true}) {id}} """ % (
+            db_object.type_name(),
+            "($%s: ID!)" % id_param,
+            db_object.type_name(),
+            id_param)
+
+    return query_str, {id_param: db_object.uid}

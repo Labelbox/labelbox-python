@@ -28,7 +28,7 @@ class RelationshipManager:
         self.source = source
         self.relationship = relationship
         self.destination_type = next(
-            t for t in RelatedDbObject.__subclasses__()
+            t for t in MutableDbObject.__subclasses__()
             if t.__name__.split(".")[-1] == relationship.destination_type_name)
 
     def __call__(self, *args, **kwargs ):
@@ -59,7 +59,7 @@ class RelationshipManager:
         return query.PaginatedCollection(
             self.source.client, query_string, params,
             [utils.camel_case(type(self.source).type_name()),
-             rel.name],
+             utils.camel_case(rel.name)],
             self.destination_type)
 
     def _to_one(self):
@@ -86,7 +86,7 @@ class RelationshipManager:
         self.source.client.execute(query_string, params)
 
 
-class RelatedDbObject(DbObject):
+class MutableDbObject(DbObject):
     """ A DbObject subtype that should be used as a base class for all DbObject
     types that contain relationships. Ensures that during initialization of
     a DB object instance the appropriate `RelationshipManager` instances are
@@ -99,8 +99,32 @@ class RelatedDbObject(DbObject):
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship))
 
+    def update(self, **kwargs):
+        """ Updates this DB object with new values. Values should be
+        passed as key-value arguments with field names as keys:
+            >>> db_object.update(name="New name", title="A title")
 
-class Project(RelatedDbObject):
+        Args:
+            kwargs (dict): Key-value arguments where keys are field
+                names (strings in snake_case) and values are new field
+                values.
+        """
+        updates = {self.field(name): value for name, value in kwargs.items()}
+        query_string, params = query.update_fields(self, updates)
+        res = self.client.execute(query_string, params)
+        res = res["data"]["update%s" % utils.title_case(self.type_name())]
+        for field in self.fields():
+            setattr(self, field.name, res[field.graphql_name])
+
+    def delete(self):
+        """ Deletes this DB object from the DB (server side). After
+        a call to this you should not use this DB object anymore.
+        """
+        query_string, params = query.delete(self)
+        self.client.execute(query_string, params)
+
+
+class Project(MutableDbObject):
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -109,6 +133,10 @@ class Project(RelatedDbObject):
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
+    # TODO enable created_by once the whole "where" clause can be
+    # removed from the relationship query, or the server-side is
+    # updated to allow "where" in Project->createdBy
+    # created_by = Relationship.ToOne("User", False, "created_by")
 
     # TODO Relationships
     # organization
@@ -122,7 +150,7 @@ class Project(RelatedDbObject):
     # ...many, define which are required for v0.1
 
 
-class Dataset(RelatedDbObject):
+class Dataset(MutableDbObject):
     name = Field.String("name")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
@@ -213,7 +241,7 @@ class Dataset(RelatedDbObject):
     # createdLabelCount
 
 
-class DataRow(RelatedDbObject):
+class DataRow(MutableDbObject):
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
     updated_at = Field.DateTime("updated_at")
@@ -225,7 +253,7 @@ class DataRow(RelatedDbObject):
     # TODO other attributes
 
 
-class User(RelatedDbObject):
+class User(MutableDbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     email = Field.String("email")
@@ -235,11 +263,12 @@ class User(RelatedDbObject):
     # Relationships
     organization = Relationship.ToOne("Organization")
     created_tasks = Relationship.ToMany("Task", False, "created_tasks")
+    projects = Relationship.ToMany("Project", False)
 
     # TODO other attributes
 
 
-class Organization(RelatedDbObject):
+class Organization(MutableDbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -250,7 +279,7 @@ class Organization(RelatedDbObject):
     # TODO other attributes
 
 
-class Task(RelatedDbObject):
+class Task(MutableDbObject):
 
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
@@ -260,7 +289,7 @@ class Task(RelatedDbObject):
 
     # Relationships
 
-    # "created_by" can't be treated as a relationship because there's
+    # TODO "created_by" can't be treated as a relationship because there's
     # currently no way on the server to make a query starting from
     # a single task.
     # created_by = Relationship.ToOne("User", "createdBy")
@@ -273,12 +302,12 @@ class Task(RelatedDbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=3600, check_frequency_seconds=1):
+    def wait_till_done(self, timeout_seconds=60, check_frequency_seconds=1):
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
         Args:
             timeout_seconds (float): Maximum time this method can block, in
-                seconds. Defaults to one hour.
+                seconds. Defaults to one minute.
             check_frequency_seconds (float): Sleep time between two checks,
                 in seconds. Defaults to one second.
         """
