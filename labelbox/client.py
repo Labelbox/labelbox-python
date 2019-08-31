@@ -32,6 +32,8 @@ class Client:
         if api_key is None:
             api_key = os.environ["LABELBOX_API_KEY"]
 
+        logging.info("Initializing Labelbox client at '%s'", endpoint)
+
         self.endpoint = endpoint
         self.headers = {'Accept': 'application/json',
                         'Content-Type': 'application/json',
