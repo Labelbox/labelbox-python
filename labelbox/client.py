@@ -52,7 +52,8 @@ class Client:
                 failed.
         """
         logger.debug("Query: %s, params: %r", query, params)
-        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
+        data = json.dumps(
+            {'query': query, 'variables': params}).encode('utf-8')
         req = urllib.request.Request(self.endpoint, data, self.headers)
 
         try:
@@ -62,15 +63,40 @@ class Client:
             # Convert HTTPError into a Labelbox error
             raise NetworkError(e)
 
-    def upload_data(self, data):
-        """ Uploads `data` as a file and returns the URL. """
-        # TODO replace with uploading directly to Labelbox
-        r = requests.post("https://file.io/?expires=1d", files={"file": data}).json()
-        if not r["success"]:
-            raise Exception("Failed to upload to file.io, message: %s",
-                            r["message"])
+    def upload_file(self, data):
+        request = requests.post(
+            self.endpoint,
+            headers={
+                "authorization": "Bearer %s" % os.environ["LABELBOX_API_KEY"],
+            },
+            data={
+                'operations': json.dumps({
+                    "variables": {"file": None, "contentLength": len(data), "sign": False},
+                    'query': """
+                        mutation UploadFile(
+                            $file: Upload!,
+                            $contentLength: Int!,
+                            $sign: Boolean
+                        )
+                        {
+                            uploadFile(file: $file,
+                                contentLength: $contentLength,
+                                sign: $sign
+                            ) {
+                                url
+                                filename
+                            }
+                        }
+                    """,
+                }),
+                "map": (None, json.dumps({"1": ["variables.file"]})),
+            },
+            files={'1': data}
+        )
+        if not r["data"] and not r["data"]["uploadFile"]:
+            raise Exception("Failed to upload, message: %s", r["error"])
 
-        return r["link"]
+        return json.loads(request.text)['data']['uploadFile']['url']
 
     def get_single(self, db_object_type, uid):
         """ Fetches a single object of the given type, for the given ID.
