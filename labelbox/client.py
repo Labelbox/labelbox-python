@@ -95,10 +95,12 @@ class Client:
             },
             files={'1': data}
         )
-        if not r["data"] and not r["data"]["uploadFile"]:
-            raise Exception("Failed to upload, message: %s", r["error"])
+        file_data = json.loads(request.text)
+        if not file_data["data"] and not file_data["data"]["uploadFile"]:
+            raise Exception("Failed to upload, message: %s",
+                            file_data["error"])
 
-        return json.loads(request.text)['data']['uploadFile']['url']
+        return file_data['data']['uploadFile']['url']
 
     def get_single(self, db_object_type, uid):
         """ Fetches a single object of the given type, for the given ID.
