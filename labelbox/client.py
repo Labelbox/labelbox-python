@@ -65,7 +65,7 @@ class Client:
             # Convert HTTPError into a Labelbox error
             raise NetworkError(e)
 
-    def upload_file(self, data):
+    def upload_data(self, data):
         request = requests.post(
             self.endpoint,
             headers={
