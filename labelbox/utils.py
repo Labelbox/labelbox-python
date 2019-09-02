@@ -2,7 +2,8 @@ import re
 
 
 def _convert(s, sep, title):
-    components = list(map(str.lower, filter(None, re.split(r"_|(?=[A-Z])", s))))
+    components = re.findall(r"[A-Z][a-z0-9]*|[a-z][a-z0-9]*", s)
+    components = list(map(str.lower, filter(None, components)))
     for i in range(len(components)):
         if title(i):
             components[i] = components[i][0].upper() + components[i][1:]
