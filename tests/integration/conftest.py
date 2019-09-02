@@ -29,8 +29,10 @@ def client():
 
 @pytest.fixture
 def rand_gen():
+    FIELD_TYPES = {Field.Type.String: str}
     def gen(field):
-        if field.field_type == Field.Type.String:
+        field_type = FIELD_TYPES.get(field, field)
+        if field_type == str:
             return "".join(ascii_letters[randint(0, len(ascii_letters) - 1)]
                             for _ in range(16))
 
