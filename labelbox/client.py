@@ -7,7 +7,7 @@ import requests
 
 from labelbox import query, utils
 from labelbox.exceptions import (NetworkError, AuthenticationError,
-                                 ResourceNotFoundError)
+                                 ResourceNotFoundError, LabelboxError)
 from labelbox.db_objects import Project, Dataset, User
 
 
@@ -31,6 +31,7 @@ class Client:
         """
         if api_key is None:
             api_key = os.environ["LABELBOX_API_KEY"]
+        self.api_key = api_key
 
         logging.info("Initializing Labelbox client at '%s'", endpoint)
 
@@ -66,41 +67,40 @@ class Client:
             raise NetworkError(e)
 
     def upload_data(self, data):
+        """ Uploads the given data (bytes) to Labelbox.
+        Args:
+            data (bytes): the data to upload.
+        Return:
+            str, the URL of uploaded data.
+        Raises:
+            LabelboxError: if upload failes.
+        """
+        request_data = {
+            "operations": json.dumps({
+            "variables": {"file": None, "contentLength": len(data), "sign": False},
+            "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                                            $sign: Boolean) {
+                            uploadFile(file: $file, contentLength: $contentLength,
+                                       sign: $sign) {url filename} } """,}),
+            "map": (None, json.dumps({"1": ["variables.file"]})),
+            }
         request = requests.post(
             self.endpoint,
-            headers={
-                "authorization": "Bearer %s" % os.environ["LABELBOX_API_KEY"],
-            },
-            data={
-                'operations': json.dumps({
-                    "variables": {"file": None, "contentLength": len(data), "sign": False},
-                    'query': """
-                        mutation UploadFile(
-                            $file: Upload!,
-                            $contentLength: Int!,
-                            $sign: Boolean
-                        )
-                        {
-                            uploadFile(file: $file,
-                                contentLength: $contentLength,
-                                sign: $sign
-                            ) {
-                                url
-                                filename
-                            }
-                        }
-                    """,
-                }),
-                "map": (None, json.dumps({"1": ["variables.file"]})),
-            },
-            files={'1': data}
+            headers={"authorization": "Bearer %s" % self.api_key},
+            data=request_data,
+            files={"1": data}
         )
-        file_data = json.loads(request.text)
-        if not file_data["data"] and not file_data["data"]["uploadFile"]:
-            raise Exception("Failed to upload, message: %s",
-                            file_data["error"])
 
-        return file_data['data']['uploadFile']['url']
+        try:
+            file_data = request.json().get("data", None)
+        except ValueError: # response is not valid JSON
+            raise LabelboxError("Failed to upload, unknown cause")
+
+        if not file_data or not file_data.get("uploadFile", None):
+            raise LabelboxError("Failed to upload, message: %s" % file_data.get(
+                "error", None))
+
+        return file_data["uploadFile"]["url"]
 
     def get_single(self, db_object_type, uid):
         """ Fetches a single object of the given type, for the given ID.
