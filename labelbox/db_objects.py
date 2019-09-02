@@ -136,7 +136,7 @@ class Project(MutableDbObject):
     # TODO enable created_by once the whole "where" clause can be
     # removed from the relationship query, or the server-side is
     # updated to allow "where" in Project->createdBy
-    # created_by = Relationship.ToOne("User", False, "created_by")
+    created_by = Relationship.ToOne("User", False, "created_by")
 
     # TODO Relationships
     # organization
