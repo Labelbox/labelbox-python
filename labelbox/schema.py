@@ -259,3 +259,6 @@ class DbObject:
                             for field in type(self).fields()}
         return "<%s %s>" % (type(self).type_name().split(".")[-1],
                                 attribute_values)
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.uid == other.uid
