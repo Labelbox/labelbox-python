@@ -262,3 +262,6 @@ class DbObject:
 
     def __eq__(self, other):
         return type(self) == type(other) and self.uid == other.uid
+
+    def __hash__(self):
+        return 7541 * hash(type(self)) + hash(self.uid)
