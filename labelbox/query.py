@@ -110,7 +110,7 @@ COMPARISON_TO_SUFFIX = {
     Comparison.Op.LT: "_lt",
     Comparison.Op.GT: "_gt",
     Comparison.Op.LE: "_lte",
-    Comparison.Op.LE: "_lte",
+    Comparison.Op.GE: "_gte",
 }
 
 
