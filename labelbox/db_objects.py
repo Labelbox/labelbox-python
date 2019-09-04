@@ -169,7 +169,10 @@ class Dataset(MutableDbObject):
         """ Creates a single DataRow belonging to this dataset.
         Args:
             data (dict): Key-value arguments containing new DataRow data.
-                At a minimum it must contain `row_data`.
+                At a minimum it must contain `row_data`. The value for
+                `row_data` is a string. If it's a path to an existing local
+                file then it's uploaded to Labelbox's server. Otherwise it's
+                treated as an external URL.
         Raises:
             InvalidQueryError: If `DataRow.row_data` field value is not provided
                 in `data`.
