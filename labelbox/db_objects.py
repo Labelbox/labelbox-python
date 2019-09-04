@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 import time
 
 from labelbox import query, utils
@@ -164,13 +165,40 @@ class Dataset(MutableDbObject):
     projects = Relationship.ToMany("Project", True)
     data_rows = Relationship.ToMany("DataRow", False)
 
+    def create_data_row(self, **data):
+        """ Creates a single DataRow belonging to this dataset.
+        Args:
+            data (dict): Key-value arguments containing new DataRow data.
+                At a minimum it must contain `row_data`.
+        Raises:
+            InvalidQueryError: If `DataRow.row_data` field value is not provided
+                in `data`.
+                any of the field names given in `data`.
+            InvalidAttributeError: in case the DB object type does not contain
+                any of the field names given in `data`.
+
+        """
+        if DataRow.row_data.name not in data:
+            raise InvalidQueryError(
+                "DataRow.row_data missing when creating DataRow.")
+
+        # If row data is a local file path, upload it to server.
+        row_data = data[DataRow.row_data.name]
+        if os.path.exists(row_data):
+            data[DataRow.row_data.name] = self.client.upload_data(row_data)
+
+        data[DataRow.dataset.name] = self
+
+        return self.client.create(DataRow, data)
+
     def create_data_rows(self, items):
         """ Creates multiple DataRow objects based on the given items.
         Each element in `items` can be either a `str` or a `dict`. If
         it's a `str`, then it's interpreted as a file path. The file
         is uploaded to Labelbox and a DataRow referencing it is created.
-        If an item is a `dict`, then it should map `DataRow` fields to values.
-        At the minimum it must contain a `DataRow.row_data` key and value.
+        If an item is a `dict`, then it should map `DataRow` fields (or their
+        names) to values. At the minimum it must contain a `DataRow.row_data`
+        key and value.
 
         Args:
             items (iterable of (dict or str)): See above for details.
@@ -185,6 +213,8 @@ class Dataset(MutableDbObject):
             ResourceNotFoundError: if unable to retrieve the Task based on the
                 task_id of the import process. This could imply that the import
                 failed.
+            InvalidAttributeError: if there are fields in `items` not valid for
+                a DataRow.
         """
         def convert_item(item):
             if isinstance(item, str):
@@ -196,14 +226,17 @@ class Dataset(MutableDbObject):
                 item = {DataRow.row_data: item_url,
                         DataRow.external_id: item}
 
+            # Convert string names to fields.
+            item = {key if isinstance(key, Field) else DataRow.field(key): value
+                    for key, value in item.items()}
+
             if DataRow.row_data not in item:
                 raise InvalidQueryError(
                     "DataRow.row_data missing when creating DataRow.")
 
             invalid_keys = set(item) - set(DataRow.fields())
             if invalid_keys:
-                raise InvalidQueryError(
-                    "Invalid fields found when creating DataRow: %r" % invalid_keys)
+                raise InvalidAttributeError(DataRow, invalid_fields)
 
             # Item is valid, convert it to a dict {graphql_field_name: value}
             # Need to change the name of DataRow.row_data to "data"
