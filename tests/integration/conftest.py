@@ -1,5 +1,6 @@
 import os
 from random import randint
+import re
 from string import ascii_letters
 
 import pytest
@@ -18,6 +19,7 @@ class IntegrationClient(Client):
         self.queries = []
 
     def execute(self, query, params=None):
+        assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
         self.queries.append((query, params))
         return super().execute(query, params)
 
