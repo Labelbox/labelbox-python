@@ -421,14 +421,7 @@ def update_fields(db_object, values):
             must be legit fields in `db_object`.
     Return:
         (query_string, query_parameters)
-    Raise:
-        InvalidAttributeError: if there exists a key in `values`
-            that's not a field in `db_object`.
     """
-    invalid_fields = set(values) - set(db_object.fields())
-    if invalid_fields:
-        raise InvalidAttributeError(type(db_object), invalid_fields)
-
     type_name = db_object.type_name()
     id_param = "%sId" % type_name
     values_str = " ".join("%s: $%s" % (field.graphql_name, field.name)
