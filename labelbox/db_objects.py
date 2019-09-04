@@ -99,18 +99,23 @@ class MutableDbObject(DbObject):
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship))
 
-    def update(self, **kwargs):
+    def update(self, **values):
         """ Updates this DB object with new values. Values should be
         passed as key-value arguments with field names as keys:
             >>> db_object.update(name="New name", title="A title")
 
         Args:
-            kwargs (dict): Key-value arguments where keys are field
-                names (strings in snake_case) and values are new field
-                values.
+            values (dict): Values for object field names.
+        Raise:
+            InvalidAttributeError: if there exists a key in `values`
+                that's not a field in this object type.
         """
-        updates = {self.field(name): value for name, value in kwargs.items()}
-        query_string, params = query.update_fields(self, updates)
+        values = {self.field(name): value for name, value in values.items()}
+        invalid_fields = set(values) - set(self.fields())
+        if invalid_fields:
+            raise InvalidAttributeError(type(self), invalid_fields)
+
+        query_string, params = query.update_fields(self, values)
         res = self.client.execute(query_string, params)
         res = res["data"]["update%s" % utils.title_case(self.type_name())]
         for field in self.fields():
