@@ -1,7 +1,7 @@
 from enum import Enum, auto
 
 from labelbox import utils
-from labelbox.exceptions import InvalidFieldError
+from labelbox.exceptions import InvalidAttributeError
 from labelbox.filter import Comparison
 
 
@@ -173,6 +173,10 @@ class Relationship:
                 "s" if relationship_type == Relationship.Type.ToMany else "")
         self.name = name
 
+    @property
+    def graphql_name(self):
+        return utils.camel_case(self.name)
+
 
 class DbObject:
     """ A client-side representation of a database object (row). Intended as
@@ -231,13 +235,30 @@ class DbObject:
         Return:
             Field object
         Raises:
-            InvalidFieldError: in case this DB object type does not contain
-                a field with the given name.
+            InvalidAttributeError: in case this DB object type does not
+            contain a field with the given name.
         """
         field_obj = getattr(cls, field_name, None)
         if not isinstance(field_obj, Field):
-            raise InvalidFieldError(cls, field_name)
+            raise InvalidAttributeError(cls, field_name)
         return field_obj
+
+    @classmethod
+    def attribute(cls, attribute_name):
+        """ Returns a Field or a Relationship object for the given name.
+        Args:
+            attribute_name (str): Field or Relationship name, Python
+                (snake-case) convention.
+        Return:
+            Field or Relationship object
+        Raises:
+            InvalidAttributeError: in case this DB object type does not
+                contain an attribute with the given name.
+        """
+        attribute_object = getattr(cls, attribute_name, None)
+        if not isinstance(attribute_object, (Field, Relationship)):
+            raise InvalidAttributeError(cls, attribute_name)
+        return attribute_object
 
     @classmethod
     def type_name(cls):

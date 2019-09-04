@@ -59,7 +59,7 @@ class NetworkError(LabelboxError):
         self.cause = cause
 
 
-class InvalidFieldError(LabelboxError):
+class InvalidAttributeError(LabelboxError):
     """ Raised when a field (name or Field instance) is not valid or found
     for a specific DB object type. """
     def __init__(self, db_object_type, field):

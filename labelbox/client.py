@@ -6,9 +6,10 @@ import urllib.request
 import requests
 
 from labelbox import query, utils
+from labelbox.db_objects import Project, Dataset, User
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError, LabelboxError)
-from labelbox.db_objects import Project, Dataset, User
+from labelbox.schema import DbObject
 
 
 logger = logging.getLogger(__name__)
@@ -196,15 +197,18 @@ class Client:
         Args:
             db_object_type (type): A DbObjectType subtype.
             **data (dict): keyword arguments with new object attribute values.
-                Keys are field names (in Python, snake-case convention) and
+                Keys are attribute names (in Python, snake-case convention) and
                 values are desired attribute values.
         Return:
             a new object of the given DB object type.
         Raises:
-            InvalidFieldError: in case the DB object type does not contain
+            InvalidAttributeError: in case the DB object type does not contain
                 any of the field names given in `data`.
         """
-        data = {db_object_type.field(name): value
+        # Convert string attribute names to Field or Relationship objects.
+        # Also convert Labelbox object values to their UIDs.
+        data = {db_object_type.attribute(name):
+                value.uid if isinstance(value, DbObject) else value
                 for name, value in data.items()}
 
         query_string, params = query.create(db_object_type, data)
@@ -224,7 +228,7 @@ class Client:
         Return:
             a new Dataset object.
         Raises:
-            InvalidFieldError: in case the Dataset type does not contain
+            InvalidAttributeError: in case the Dataset type does not contain
                 any of the field names given in `data`.
         """
         return self.create(Dataset, data)
@@ -241,7 +245,7 @@ class Client:
         Return:
             a new Project object.
         Raises:
-            InvalidFieldError: in case the Project type does not contain
+            InvalidAttributeError: in case the Project type does not contain
                 any of the field names given in `data`.
         """
         return self.create(Project, data)
