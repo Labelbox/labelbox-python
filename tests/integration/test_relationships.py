@@ -41,3 +41,24 @@ def test_project_dataset(client, rand_gen):
 
     project.delete()
     project_2.delete()
+
+
+def test_relationship_in_creation(client, rand_gen):
+    # First create dataset, then related project
+    dataset = client.create_dataset(name=rand_gen(str))
+    # TODO support dataset connecting during project creation
+    with pytest.raises(NetworkError):
+        project = client.create_project(name=rand_gen(str), datasets=dataset)
+    # assert list(dataset.projects) == [project]
+    # assert list(project.datasets) == [dataset]
+
+    dataset.delete()
+    # project.delete()
+
+    # FIrst create project, then related dataset
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    assert list(dataset.projects()) == [project]
+    assert list(project.datasets()) == [dataset]
+    dataset.delete()
+    project.delete()

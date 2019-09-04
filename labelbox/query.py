@@ -1,9 +1,9 @@
 from itertools import chain
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, InvalidFieldError
+from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
 from labelbox.filter import LogicalExpression, Comparison
-from labelbox.schema import DbObject
+from labelbox.schema import DbObject, Field, Relationship
 
 
 # Size of a single page in a paginated query.
@@ -162,11 +162,17 @@ def format_param_declaration(params):
     Args:
         params (dict): Parameter dictionary, as returned by the
             `query.format_where` function. dict keys are query param names
-            and values are (value, field) tuples.
+            and values are (value, (field|relationship)) tuples.
     Return:
         str, the declaration of query parameters.
     """
-    params = ((key, field.field_type.name) for key, (_, field)
+    def attribute_type(attribute):
+        if isinstance(attribute, Field):
+            return attribute.field_type.name
+        else:
+            return Field.Type.ID.name
+
+    params = ((key, attribute_type(attribute)) for key, (_, attribute)
               in sorted(params.items()))
     return "(" + ", ".join("$%s: %s!" % pair for pair in params) + ")"
 
@@ -324,11 +330,19 @@ def create(db_object_type, data):
     Args:
         db_object_type (type): A DbObject subtype indicating which kind of
             DB object needs to be created.
-        data (dict): A dict that maps Fields to values, new object data.
+        data (dict): A dict that maps Fields and Relationships to values, new
+            object data.
     Return:
         (query_string, parameters)
     """
     type_name = db_object_type.type_name()
+
+    def format_param_value(attribute, param):
+        if isinstance(attribute, Field):
+            return "%s: $%s" % (attribute.graphql_name, param)
+        else:
+            return "%s: {connect: {id: $%s}}" % (
+                utils.camel_case(attribute.graphql_name), param)
 
     # Convert data to params
     params = {field.graphql_name: (value, field) for field, value in data.items()}
@@ -337,8 +351,8 @@ def create(db_object_type, data):
         type_name,
         format_param_declaration(params),
         type_name,
-        " ".join("%s: $%s" % (field.graphql_name, param)
-                 for param, (_, field) in params.items()),
+        " ".join(format_param_value(attribute, param)
+                 for param, (_, attribute) in params.items()),
         " ".join(field.graphql_name for field in db_object_type.fields()))
 
     return query_str, {name: value for name, (value, _) in params.items()}
@@ -408,12 +422,12 @@ def update_fields(db_object, values):
     Return:
         (query_string, query_parameters)
     Raise:
-        InvalidFieldError: if there exists a key in `values`
+        InvalidAttributeError: if there exists a key in `values`
             that's not a field in `db_object`.
     """
     invalid_fields = set(values) - set(db_object.fields())
     if invalid_fields:
-        raise InvalidFieldError(type(db_object), invalid_fields)
+        raise InvalidAttributeError(type(db_object), invalid_fields)
 
     type_name = db_object.type_name()
     id_param = "%sId" % type_name
