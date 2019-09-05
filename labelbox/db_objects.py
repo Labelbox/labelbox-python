@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import logging
 import json
 import os
@@ -148,6 +149,9 @@ class Project(MutableDbObject):
     # removed from the relationship query, or the server-side is
     # updated to allow "where" in Project->createdBy
     created_by = Relationship.ToOne("User", False, "created_by")
+    labeling_frontend = Relationship.ToOne("LabelingFrontend")
+    labeling_frontend_options = Relationship.ToMany(
+        "LabelingFrontendOptions", False, "labeling_frontend_options")
 
     # TODO Relationships
     # organization
@@ -159,6 +163,31 @@ class Project(MutableDbObject):
 
     # TODO Mutable (fetched) attributes
     # ...many, define which are required for v0.1
+
+    def setup(self, labeling_frontend, labeling_frontend_options):
+        """ Finalizes the Project setup.
+        Args:
+            labeling_frontend (LabelingFrontend): The labeling frontend to use.
+            labeling_frontend_options (dict or str): Labeling frontend options,
+                a.k.a. project ontology. If given a `dict` it will be converted
+                to `str` using `json.dumps`.
+        """
+        organization = self.client.get_organization()
+        if not isinstance(labeling_frontend_options, str):
+            labeling_frontend_options = json.dumps(labeling_frontend_options)
+
+        labeling_frontend_options = self.client.create(
+            LabelingFrontendOptions,
+            {LabelingFrontendOptions.project: self,
+             LabelingFrontendOptions.labeling_frontend: labeling_frontend,
+             LabelingFrontendOptions.customization_options: labeling_frontend_options,
+             LabelingFrontendOptions.organization: organization
+            }
+        )
+
+        self.labeling_frontend.connect(labeling_frontend)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.update(setup_complete=timestamp)
 
 
 class Dataset(MutableDbObject):
@@ -370,3 +399,19 @@ class Task(MutableDbObject):
             self.refresh()
 
     # TODO other attributes
+
+
+class LabelingFrontend(MutableDbObject):
+    name = Field.String("name")
+    description = Field.String("description")
+    iframe_url_path = Field.String("iframe_url_path")
+
+    # TODO other fields and relationships
+
+
+class LabelingFrontendOptions(MutableDbObject):
+    customization_options = Field.String("customization_options")
+
+    project = Relationship.ToOne("Project")
+    labeling_frontend = Relationship.ToOne("LabelingFrontend")
+    organization = Relationship.ToOne("Organization")
