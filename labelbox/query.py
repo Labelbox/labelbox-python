@@ -405,3 +405,17 @@ def delete(db_object):
             id_param)
 
     return query_str, {id_param: db_object.uid}
+
+
+def export_labels():
+    """ Returns the query and ID param for exporting a Project's
+    labels.
+    Return:
+        (query_string, id_param_name)
+    """
+    id_param = "projectId"
+    query_str = """mutation GetLabelExportUrlPyApi($%s: ID!) {exportLabels(data:{
+        projectId: $%s } ) {
+        downloadUrl createdAt shouldPoll } }
+    """ %  (id_param, id_param)
+    return (query_str, id_param)

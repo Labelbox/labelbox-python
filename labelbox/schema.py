@@ -169,7 +169,7 @@ class Relationship:
         return Relationship(Relationship.Type.ToMany, *args)
 
     def __init__(self, relationship_type, destination_type_name,
-                 filter_deleted=True, name=None):
+                 filter_deleted=True, name=None, graphql_name=None):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
@@ -177,10 +177,9 @@ class Relationship:
             name = utils.snake_case(destination_type_name) + (
                 "s" if relationship_type == Relationship.Type.ToMany else "")
         self.name = name
-
-    @property
-    def graphql_name(self):
-        return utils.camel_case(self.name)
+        if graphql_name is None:
+            graphql_name = utils.camel_case(name)
+        self.graphql_name = graphql_name
 
 
 class DbObject:
