@@ -60,7 +60,7 @@ class RelationshipManager:
         return query.PaginatedCollection(
             self.source.client, query_string, params,
             [utils.camel_case(type(self.source).type_name()),
-             utils.camel_case(rel.name)],
+             rel.graphql_name],
             self.destination_type)
 
     def _to_one(self):
@@ -71,7 +71,7 @@ class RelationshipManager:
             self.source, rel.name, self.destination_type, False, None, None)
         result = self.source.client.execute(query_string, params)["data"]
         result = result[utils.camel_case(type(self.source).type_name())]
-        result = result[rel.name]
+        result = result[rel.graphql_name]
         return self.destination_type(self.source.client, result)
 
     def connect(self, other):

@@ -9,6 +9,11 @@ def test_user(client):
     assert user.uid is not None
 
 
+def test_organization(client):
+    organization = client.get_organization()
+    assert organization.uid is not None
+
+
 def test_user_projects(client, rand_gen):
     user = client.get_user()
     projects = list(user.projects())

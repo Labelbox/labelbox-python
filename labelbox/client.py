@@ -6,7 +6,7 @@ import urllib.request
 import requests
 
 from labelbox import query, utils
-from labelbox.db_objects import Project, Dataset, User
+from labelbox.db_objects import Project, Dataset, User, Organization
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError, LabelboxError)
 from labelbox.schema import DbObject
@@ -136,9 +136,15 @@ class Client:
 
     def get_user(self):
         """ Gets the current user database object. """
-        res = self.execute(query.get_user(User))["data"][
+        res = self.execute(query.get_single_no_id(User))["data"][
             utils.camel_case(User.type_name())]
         return User(self, res)
+
+    def get_organization(self):
+        """ Gets the organization DB object of the current user. """
+        res = self.execute(query.get_single_no_id(Organization))["data"][
+            utils.camel_case(Organization.type_name())]
+        return Organization(self, res)
 
     def get_all(self, db_object_type, where):
         """ Fetches all the objects of the given type the user has access to.
@@ -197,19 +203,19 @@ class Client:
         Args:
             db_object_type (type): A DbObjectType subtype.
             **data (dict): keyword arguments with new object attribute values.
-                Keys are attribute names (in Python, snake-case convention) and
-                values are desired attribute values.
+                Keys are attributes or their names (in Python, snake-case
+                convention) and values are desired attribute values.
         Return:
             a new object of the given DB object type.
         Raises:
             InvalidAttributeError: in case the DB object type does not contain
-                any of the field names given in `data`.
+                any of the attribute names given in `data`.
         """
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
-        data = {db_object_type.attribute(name):
+        data = {db_object_type.attribute(attr) if isinstance(attr, str) else attr:
                 value.uid if isinstance(value, DbObject) else value
-                for name, value in data.items()}
+                for attr, value in data.items()}
 
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)
