@@ -96,10 +96,18 @@ def get_single(db_object_type):
     return query, id_param_name
 
 
-def get_user(user_db_type):
-    return "query GetUserPyApi {%s {%s}}" % (
-        utils.camel_case(user_db_type.type_name()),
-        " ".join(field.graphql_name for field in user_db_type.fields()))
+def get_single_no_id(db_type):
+    """ Gets a single item without the ID filter. Used for items for which
+    the back-end knows the default return value (current user, organization).
+    Args:
+        db_type (type): The type to retrieve.
+    Return:
+        instance of db_type
+    """
+    return "query Get%sPyApi {%s {%s}}" % (
+        db_type.type_name(),
+        utils.camel_case(db_type.type_name()),
+        " ".join(field.graphql_name for field in db_type.fields()))
 
 
 # Maps comparison operations to the suffixes appended to the field
@@ -172,9 +180,8 @@ def format_param_declaration(params):
         else:
             return Field.Type.ID.name
 
-    params = ((key, attribute_type(attribute)) for key, (_, attribute)
-              in sorted(params.items()))
-    return "(" + ", ".join("$%s: %s!" % pair for pair in params) + ")"
+    return "(" + ", ".join("$%s: %s!" % (param, attribute_type(attribute))
+                           for param, (_, attribute) in params.items()) + ")"
 
 
 def format_order_by(order_by):
@@ -264,7 +271,7 @@ def get_all(db_object_type, where):
     query_str = query_str % (
         type_name,
         param_declaration_str,
-        type_name.lower(),
+        utils.camel_case(type_name),
         where_query_str,
         " ".join(field.graphql_name for field in db_object_type.fields()))
 
@@ -424,7 +431,7 @@ def update_fields(db_object, values):
     """
     type_name = db_object.type_name()
     id_param = "%sId" % type_name
-    values_str = " ".join("%s: $%s" % (field.graphql_name, field.name)
+    values_str = " ".join("%s: $%s" % (field.graphql_name, field.graphql_name)
                           for field, _ in values.items())
     params = {field.graphql_name: (value, field) for field, value
               in values.items()}
