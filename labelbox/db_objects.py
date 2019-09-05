@@ -6,6 +6,7 @@ import os
 import time
 
 from labelbox import query, utils
+from labelbox.exceptions import InvalidQueryError
 from labelbox.paginated_collection import PaginatedCollection
 from labelbox.schema import Field, DbObject, Relationship
 
@@ -35,6 +36,8 @@ class RelationshipManager:
             t for t in MutableDbObject.__subclasses__()
             if t.__name__.split(".")[-1] == relationship.destination_type_name)
 
+        self.supports_filtering = True
+
     def __call__(self, *args, **kwargs ):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
         depending on relationship type. """
@@ -52,6 +55,12 @@ class RelationshipManager:
             iterable over destination DbObject instances.
         """
         rel = self.relationship
+
+        if where is not None and not self.supports_filtering:
+            raise InvalidQueryError(
+                "Relationship %s.%s doesn't support filtering" % (
+                self.source.type_name(), rel.name))
+
         if rel.filter_deleted:
             not_deleted = self.destination_type.deleted == False
             where = not_deleted if where is None else where & not_deleted
@@ -138,6 +147,12 @@ class MutableDbObject(DbObject):
 
 
 class Project(MutableDbObject):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.labels.supports_filtering = False
+
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -152,10 +167,62 @@ class Project(MutableDbObject):
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
+    labels = Relationship.ToMany("Label", True)
+
+    def create_label(self, **kwargs):
+        """ Creates a label on this project.
+        Kwargs:
+            Label attributes. At the minimum the label `DataRow`
+            and `Type` relationships and `label`, `seconds_to_label`
+            fields.
+        """
+        # Copy-paste of Client._create code so we can inject
+        # a connection to Type. Type objects are on their way to being
+        # deprecated and we don't want the Py client lib user to know
+        # about them. At the same time they're connected to a Label at
+        # label creation in a non-standard way (connect via name).
+
+        kwargs[Label.project] = self
+        data = {Label.attribute(attr) if isinstance(attr, str) else attr:
+                value.uid if isinstance(value, DbObject) else value
+                for attr, value in kwargs.items()}
+
+        query_str, params = query.create(Label, data)
+        # Inject connection to Type
+        query_str = query_str.replace("data: {",
+                                      "data: {type: {connect: {name: \"Any\"}} ")
+        res = self.client.execute(query_str, params)
+        res = res["data"]["createLabel"]
+        return Label(self.client, res)
+
+    def export_labels(self, timeout_seconds=60):
+        """ Calls the server-side Label exporting that generates a JSON
+        payload, and returns the URL to that payload.
+        Args:
+            timeout_seconds (float): Max waiting time, in seconds.
+        Return:
+            URL of the data file with this Project's labels. If the server
+                didn't generate during the `timeout_seconds` period, None
+                is returned.
+        """
+        sleep_time = 2
+        query_str, id_param = query.export_labels()
+        while True:
+            res = self.client.execute(query_str, {id_param: self.uid})[
+                "data"]["exportLabels"]
+            if not res["shouldPoll"]:
+                return res["downloadUrl"]
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                return None
+
+            logger.debug("Project '%s' label export, waiting for server...",
+                         self.uid)
+            time.sleep(sleep_time)
 
     # TODO Relationships
     # labeledDatasets
-    # labels
     # ...a lot more, define which are required for v0.1
 
     # TODO Mutable (fetched) attributes
@@ -323,6 +390,18 @@ class DataRow(MutableDbObject):
     dataset = Relationship.ToOne("Dataset")
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
+    labels = Relationship.ToMany("Label", True)
+
+
+class Label(MutableDbObject):
+    label = Field.String("label")
+    seconds_to_label = Field.Float("seconds_to_label")
+    agreement = Field.Float("agreement")
+    benchmark_agreement = Field.Float("benchmark_agreement")
+    is_benchmark_reference = Field.Boolean("is_benchmark_reference")
+
+    project = Relationship.ToOne("Project")
+    data_row = Relationship.ToOne("DataRow")
 
 
 class User(MutableDbObject):
