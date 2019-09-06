@@ -94,24 +94,29 @@ class MutableDbObject(DbObject):
     created and injected. """
 
     def __init__(self, *args, **kwargs):
+        """ Forwards all arguments to DbObject initializer. Then adds a
+        RelationshipManager as attribute for each relationship of this
+        DbObject's type. """
         super().__init__(*args, **kwargs)
 
         for relationship in type(self).relationships():
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship))
 
-    def update(self, **values):
+    def update(self, **kwargs):
         """ Updates this DB object with new values. Values should be
         passed as key-value arguments with field names as keys:
             >>> db_object.update(name="New name", title="A title")
 
-        Args:
-            values (dict): Values for object field names.
+        Kwargs:
+            Key-value arguments defining which fields should be updated
+            for which values. Keys must be field names in this DB object's
+            type.
         Raise:
-            InvalidAttributeError: if there exists a key in `values`
+            InvalidAttributeError: if there exists a key in `kwargs`
                 that's not a field in this object type.
         """
-        values = {self.field(name): value for name, value in values.items()}
+        values = {self.field(name): value for name, value in kwargs.items()}
         invalid_fields = set(values) - set(self.fields())
         if invalid_fields:
             raise InvalidAttributeError(type(self), invalid_fields)
@@ -165,14 +170,14 @@ class Dataset(MutableDbObject):
     projects = Relationship.ToMany("Project", True)
     data_rows = Relationship.ToMany("DataRow", False)
 
-    def create_data_row(self, **data):
+    def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
-        Args:
-            data (dict): Key-value arguments containing new DataRow data.
-                At a minimum it must contain `row_data`. The value for
-                `row_data` is a string. If it's a path to an existing local
-                file then it's uploaded to Labelbox's server. Otherwise it's
-                treated as an external URL.
+        Kwargs:
+            Key-value arguments containing new `DataRow` data.
+            At a minimum they must contain `row_data`. The value for
+            `row_data` is a string. If it's a path to an existing local
+            file then it's uploaded to Labelbox's server. Otherwise it's
+            treated as an external URL.
         Raises:
             InvalidQueryError: If `DataRow.row_data` field value is not provided
                 in `data`.
@@ -181,18 +186,18 @@ class Dataset(MutableDbObject):
                 any of the field names given in `data`.
 
         """
-        if DataRow.row_data.name not in data:
+        if DataRow.row_data.name not in kwargs:
             raise InvalidQueryError(
                 "DataRow.row_data missing when creating DataRow.")
 
         # If row data is a local file path, upload it to server.
-        row_data = data[DataRow.row_data.name]
+        row_data = kwargs[DataRow.row_data.name]
         if os.path.exists(row_data):
-            data[DataRow.row_data.name] = self.client.upload_data(row_data)
+            kwargs[DataRow.row_data.name] = self.client.upload_data(row_data)
 
-        data[DataRow.dataset.name] = self
+        kwargs[DataRow.dataset.name] = self
 
-        return self.client.create(DataRow, data)
+        return self.client.create(DataRow, kwargs)
 
     def create_data_rows(self, items):
         """ Creates multiple DataRow objects based on the given items.
