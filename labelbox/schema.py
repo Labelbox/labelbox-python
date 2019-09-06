@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum, auto
 
 from labelbox import utils
@@ -205,8 +206,24 @@ class DbObject:
                 fields (their graphql_name version) to values.
         """
         self.client = client
+        self._set_field_values(field_values)
+
+    def _set_field_values(self, field_values):
+        """ Sets field values on this object. Ensures proper value conversions.
+        Args:
+            field_values (dict): Maps field names (GraphQL variant, snakeCase)
+                to values. *Must* contain all field values for this object's
+                DB type.
+        """
         for field in type(self).fields():
-            setattr(self, field.name, field_values[field.graphql_name])
+            value = field_values[field.graphql_name]
+            if field.field_type == Field.Type.DateTime and value is not None:
+                try:
+                    value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+                except ValueError:
+                    logger.warning("Failed to convert value '%s' to datetime for "
+                                   "field %s", value, field)
+            setattr(self, field.name, value)
 
     @classmethod
     def _attributes_of_type(cls, attr_type):

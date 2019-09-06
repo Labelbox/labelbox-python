@@ -124,8 +124,7 @@ class MutableDbObject(DbObject):
         query_string, params = query.update_fields(self, values)
         res = self.client.execute(query_string, params)
         res = res["data"]["update%s" % utils.title_case(self.type_name())]
-        for field in self.fields():
-            setattr(self, field.name, res[field.graphql_name])
+        self._set_field_values(res)
 
     def delete(self):
         """ Deletes this DB object from the DB (server side). After
