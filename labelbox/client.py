@@ -202,9 +202,8 @@ class Client:
 
         Args:
             db_object_type (type): A DbObjectType subtype.
-            **data (dict): keyword arguments with new object attribute values.
-                Keys are attributes or their names (in Python, snake-case
-                convention) and values are desired attribute values.
+            data (dict): Keys are attributes or their names (in Python,
+                snake-case convention) and values are desired attribute values.
         Return:
             a new object of the given DB object type.
         Raises:
@@ -222,36 +221,36 @@ class Client:
         res = res["data"]["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self, **data):
+    def create_dataset(self, **kwargs):
         """ Creates a Dataset object on the server. Attribute values are
             passed as keyword arguments:
                 >>> dataset = client.create_dataset(name="MyDataset")
 
-        Args:
-            **data (dict): keyword arguments with new Dataset attribute values.
-                Keys are field names (in Python, snake-case convention) and
-                values are desired attribute values.
+        Kwargs:
+            Keyword arguments with new Dataset attribute values.
+            Keys are attribute names (in Python, snake-case convention) and
+            values are desired attribute values.
         Return:
             a new Dataset object.
         Raises:
             InvalidAttributeError: in case the Dataset type does not contain
-                any of the field names given in `data`.
+                any of the field names given in kwargs.
         """
-        return self.create(Dataset, data)
+        return self.create(Dataset, kwargs)
 
-    def create_project(self, **data):
+    def create_project(self, **kwargs):
         """ Creates a Project object on the server. Attribute values are
             passed as keyword arguments:
                 >>> project = client.create_project(name="MyProject")
 
-        Args:
-            **data (dict): keyword arguments with new Project attribute values.
-                Keys are field names (in Python, snake-case convention) and
-                values are desired attribute values.
+        Kwargs:
+            Keyword arguments with new Project attribute values.
+            Keys are attribute names (in Python, snake-case convention) and
+            values are desired attribute values.
         Return:
             a new Project object.
         Raises:
             InvalidAttributeError: in case the Project type does not contain
-                any of the field names given in `data`.
+                any of the field names given in kwargs.
         """
-        return self.create(Project, data)
+        return self.create(Project, kwargs)
