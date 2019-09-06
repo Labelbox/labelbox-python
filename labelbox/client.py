@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import json
 import logging
 import os
@@ -55,6 +56,16 @@ class Client:
             labelbox.exception.AuthenticationError: If authentication
                 failed.
         """
+        # Convert datetimes to UTC strings.
+        def convert_value(value):
+            if isinstance(value, datetime):
+                value = value.astimezone(timezone.utc)
+                value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
+            return value
+
+        if params is not None:
+            params = {key: convert_value(value) for key, value in params.items()}
+
         logger.debug("Query: %s, params: %r", query, params)
         data = json.dumps(
             {'query': query, 'variables': params}).encode('utf-8')
