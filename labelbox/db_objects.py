@@ -4,6 +4,7 @@ import os
 import time
 
 from labelbox import query, utils
+from labelbox.paginated_collection import PaginatedCollection
 from labelbox.schema import Field, DbObject, Relationship
 
 
@@ -57,7 +58,7 @@ class RelationshipManager:
             self.source, rel.name,
             self.destination_type,
             True, where, order_by)
-        return query.PaginatedCollection(
+        return PaginatedCollection(
             self.source.client, query_string, params,
             [utils.camel_case(type(self.source).type_name()),
              rel.graphql_name],

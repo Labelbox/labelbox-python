@@ -10,6 +10,7 @@ from labelbox import query, utils
 from labelbox.db_objects import Project, Dataset, User, Organization
 from labelbox.exceptions import (NetworkError, AuthenticationError,
                                  ResourceNotFoundError, LabelboxError)
+from labelbox.paginated_collection import PaginatedCollection
 from labelbox.schema import DbObject
 
 
@@ -129,8 +130,7 @@ class Client:
             labelbox.exception.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        query_str, id_param_name = query.get_single(db_object_type)
-        params = {id_param_name: uid}
+        query_str, params = query.get_single(db_object_type, uid)
         res = self.execute(query_str, params)["data"][
             utils.camel_case(db_object_type.type_name())]
         if res is None:
@@ -148,15 +148,11 @@ class Client:
 
     def get_user(self):
         """ Gets the current user database object. """
-        res = self.execute(query.get_single_no_id(User))["data"][
-            utils.camel_case(User.type_name())]
-        return User(self, res)
+        return self.get_single(User, None)
 
     def get_organization(self):
         """ Gets the organization DB object of the current user. """
-        res = self.execute(query.get_single_no_id(Organization))["data"][
-            utils.camel_case(Organization.type_name())]
-        return Organization(self, res)
+        return self.get_single(Organization, None)
 
     def get_all(self, db_object_type, where):
         """ Fetches all the objects of the given type the user has access to.
@@ -174,7 +170,7 @@ class Client:
         not_deleted = db_object_type.deleted == False
         where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
-        return query.PaginatedCollection(
+        return PaginatedCollection(
             self, query_str, params,
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
