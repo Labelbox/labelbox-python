@@ -6,110 +6,6 @@ from labelbox.filter import LogicalExpression, Comparison
 from labelbox.schema import DbObject, Field, Relationship
 
 
-# Size of a single page in a paginated query.
-_PAGE_SIZE = 100
-
-
-class PaginatedCollection:
-    """ An iterable collection of database objects (Projects, Labels, etc...).
-    Implements automatic (transparent to the user) paginated fetching during
-    iteration. Intended for use by library internals and not by the end user.
-
-    For a list of attributes see __init__(...) documentation. The params of
-    __init__ map exactly to object attributes.
-    """
-
-    def __init__(self, client, query, params, dereferencing, obj_class):
-        """ Creates a PaginatedCollection.
-        Params:
-            client (labelbox.Client): the client used for fetching data from DB.
-            query (str): Base query used for pagination. It must contain two
-                '%d' placeholders, the first for pagination 'skip' clause and
-                the second for the 'first' clause.
-            params (dict): Query parameters.
-            dereferencing (iterable): An iterable of str defining the keypath
-                that needs to be dereferenced in the query result in order to
-                reach the paginated objects of interest.
-            obj_class (type): The class of object to be instantiated with each
-                dict containing db values.
-        """
-        self.client = client
-        self.query = query
-        self.params = params
-        self.dereferencing = dereferencing
-        self.obj_class = obj_class
-
-        self._fetched_pages = 0
-        self._fetched_all = False
-        self._data = []
-
-    def __iter__(self):
-        self._data_ind = 0
-        return self
-
-    def __next__(self):
-        if len(self._data) <= self._data_ind:
-            if self._fetched_all:
-                raise StopIteration()
-
-            query = self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
-            self._fetched_pages += 1
-
-            results = self.client.execute(query, self.params)["data"]
-            for deref in self.dereferencing:
-                results = results[deref]
-
-            page_data = [self.obj_class(self.client, result)
-                         for result in results]
-            self._data.extend(page_data)
-
-            if len(page_data) < _PAGE_SIZE:
-                self._fetched_all = True
-
-            if len(page_data) == 0:
-                raise StopIteration()
-
-        rval = self._data[self._data_ind]
-        self._data_ind += 1
-        return rval
-
-
-def get_single(db_object_type):
-    """ Constructs a query that fetches a single item based on ID. The ID
-    must be passed to query execution as a parameter like:
-        >>> query_str, param_name = get_single(Project)
-        >>> project = client.execute(query_str, {param_name: project_id})
-
-    Args:
-        db_object_type (type): The object type being queried.
-    Return:
-        tuple (query_str, id_param_name)
-    """
-    type_name = db_object_type.type_name()
-    id_param_name = "%sID" % type_name.lower()
-    query = "query Get%sPyApi($%s: ID!) {%s(where: {id: $%s}) {%s}}" % (
-        type_name,
-        id_param_name,
-        type_name.lower(),
-        id_param_name,
-        " ".join(field.graphql_name for field in db_object_type.fields()))
-    return query, id_param_name
-
-
-def get_single_no_id(db_type):
-    """ Gets a single item without the ID filter. Used for items for which
-    the back-end knows the default return value (current user, organization).
-    Args:
-        db_type (type): The type to retrieve.
-    Return:
-        instance of db_type
-    """
-    return "query Get%sPyApi {%s {%s}}" % (
-        db_type.type_name(),
-        utils.camel_case(db_type.type_name()),
-        " ".join(field.graphql_name for field in db_type.fields()))
-
-
 # Maps comparison operations to the suffixes appended to the field
 # name when generating a GraphQL query.
 COMPARISON_TO_SUFFIX = {
@@ -122,79 +18,143 @@ COMPARISON_TO_SUFFIX = {
 }
 
 
-def format_where(where):
-    """ Converts the given `where` clause into a query string. The clause
-    can be a single `labelbox.filter.Comparison` or a complex
-    `labelbox.filter.LogicalExpression` of arbitrary depth.
-
-    Args:
-        where (None, Comparison or LogicalExpression): The where clause
-            used for filtering data.
-    Return:
-        (str, dict) tuple that contains the query string and a parameters
-        dictionary. The dictionary now maps a {"name": (value, field)}, so
-        the name of the parameter in the query string maps to a tuple of
-        parameter value and `labelbox.schema.Field` object (which is
-        necessary for obtaining the parameter type).
-    """
-    params = {}
-
-    if where is None:
-        return "{}", {}
-
-    def recursion(node):
-        if isinstance(node, Comparison):
-            param_name = "param_%d" % len(params)
-            params[param_name] = (node.value, node.field)
-            return "{%s%s: $%s}" % (node.field.graphql_name,
-                                    COMPARISON_TO_SUFFIX[node.op],
-                                    param_name)
-
-        assert(isinstance(node, LogicalExpression))
-
-        if node.op == LogicalExpression.Op.NOT:
-            return "{NOT: [%s]}" % recursion(node.first)
-
-        return "{%s: [%s, %s]}" % (
-            node.op.name.upper(), recursion(node.first), recursion(node.second))
-
-    query_str = recursion(where)
-    return query_str, params
-
-
 def format_param_declaration(params):
-    """ Formats the parameters dictionary (as returned by the
-    `query.format_where` function) into a declaration of GraphQL function
-    parameters.
+    """ Formats the parameters dictionary into a declaration of GraphQL
+    query parameters.
 
     Args:
-        params (dict): Parameter dictionary, as returned by the
-            `query.format_where` function. dict keys are query param names
-            and values are (value, (field|relationship)) tuples.
+        params (dict): keys are query param names and values are
+            (value, (field|relationship)) tuples.
     Return:
         str, the declaration of query parameters.
     """
-    def attribute_type(attribute):
-        if isinstance(attribute, Field):
-            return attribute.field_type.name
+    if not params:
+        return ""
+
+    def attr_type(attr):
+        if isinstance(attr, Field):
+            return attr.field_type.name
         else:
             return Field.Type.ID.name
+    return "(" + ", ".join("$%s: %s!" % (param, attr_type(attr))
+                           for param, (_, attr) in params.items()) + ")"
 
-    return "(" + ", ".join("$%s: %s!" % (param, attribute_type(attribute))
-                           for param, (_, attribute) in params.items()) + ")"
+
+class Query:
+    """ A data structure used during the construction of a query. Supports
+    subquery (also Query object) nesting for relationship. """
+
+    def __init__(self, what, subquery, where=None, paginate=False,
+                 order_by=None):
+        """ Initializer.
+        Args:
+            what (str): What is being queried. Typically an object type in
+                singular or plural (i.e. "project" or "projects").
+            subquery (Query or type): Either a Query object that is formatted
+                recursively or a DbObject subtype in which case all it's public
+                fields are retrieved by the query.
+            where (None, Comparison or LogicalExpression): the filtering clause.
+            paginate (bool): If the "%skip %first" pagination substring should
+                be added to the query. Used for collection pagination in combination
+                with PaginatedCollection.
+            order_by (tuple): A tuple consisting of (Field, Field.Order) indicating
+                how the query should sort the collection.
+        """
+        self.what = what
+        self.subquery = subquery
+        self.paginate = paginate
+        self.where = where
+        self.order_by = order_by
+
+    def format_subquery(self):
+        """ Formats the subquery (a Query or DbObject subtype). """
+        if isinstance(self.subquery, Query):
+            return self.subquery.format()
+        elif issubclass(self.subquery, DbObject):
+            return " ".join(f.graphql_name for f in self.subquery.fields()), {}
+        else:
+            raise MalformedQueryException()
+
+    def format_clauses(self, params):
+        """ Formats the where, order_by and pagination clauses.
+        Args:
+            params (dict): The current parameter dictionary.
+        """
+
+        def format_where(node):
+            """ Helper that resursively constructs a where clause from a
+            LogicalExpression tree (leaf nodes are Comparisons). """
+            assert isinstance(node, (Comparison, LogicalExpression))
+            if isinstance(node, Comparison):
+                param_name = "param_%d" % len(params)
+                params[param_name] = (node.value, node.field)
+                return "{%s%s: $%s}" % (node.field.graphql_name,
+                                        COMPARISON_TO_SUFFIX[node.op],
+                                        param_name)
+            if node.op == LogicalExpression.Op.NOT:
+                return "{NOT: [%s]}" % format_where(node.first)
+
+            return "{%s: [%s, %s]}" % (
+                node.op.name.upper(), format_where(node.first),
+                format_where(node.second))
+
+        paginate = "skip: %d first: %d" if self.paginate else ""
+
+        where = "where: %s" % format_where(self.where) if self.where else ""
+
+        if self.order_by:
+            order_by = "orderBy: %s_%s" % (
+                self.order_by[0].graphql_name, self.order_by[1].name.upper())
+        else:
+            order_by = ""
+
+        clauses = " ".join(filter(None, (where, paginate, order_by)))
+        return "(" + clauses + ")" if clauses else ""
 
 
-def format_order_by(order_by):
-    """ Formats the order_by query clause.
+    def format(self):
+        """ Formats the full query but without "query" prefix, query name
+        and parameter declaration.
+        Return:
+            (str, dict) tuple. str is the query and dict maps parameter
+            names to (value, field) tuples.
+        """
+        subquery, params = self.format_subquery()
+        clauses = self.format_clauses(params)
+        query = "%s%s{%s}" % (self.what, clauses, subquery)
+        return query, params
+
+    def format_top(self, name):
+        """ Formats the full query including "query" prefix, query name
+        and parameter declaration. The result of this function can be
+        sent to the Client object for execution.
+
+        Args:
+            name (str): Query name, without the "PyApi" suffix, it's appended
+                automatically by this method.
+        Return:
+            (str, dict) tuple. str is the full query and dict maps parameter
+                names to parameter values.
+        """
+        query, params = self.format()
+        param_declaration = format_param_declaration(params)
+        query = "query %sPyApi%s{%s}" % (name, param_declaration, query)
+        return query, {param: value for param, (value, _) in params.items()}
+
+
+def get_single(db_object_type, uid):
+    """ Constructs the query and params dict for obtaining a single object. Either
+    on ID, or without params.
     Args:
-        order_by (None or (Field, Field.Order): The `order_by` clause for
-            sorting results.
-    Return:
-        Order-by query substring in format " orderBy: <field_name>_<order>"
+        db_object_type (type): A DbObject subtype being obtained.
+        uid (str): The ID of the sought object. It can be None, which is legal for
+            DB types that have a default object being returned (User and
+            Organization).
     """
-    if order_by is None:
-        return ""
-    return " orderBy: %s_%s" % (order_by[0].graphql_name, order_by[1].name.upper())
+    type_name = db_object_type.type_name()
+    where = db_object_type.uid == uid if uid else None
+    return Query(utils.camel_case(type_name), db_object_type, where).format_top(
+        "Get" + type_name)
 
 
 def fields(where):
@@ -262,20 +222,9 @@ def get_all(db_object_type, where):
         (str, dict) tuple that is the query string and parameters.
     """
     check_where_clause(db_object_type, where)
-
-    where_query_str, params = format_where(where)
-    param_declaration_str = format_param_declaration(params)
-
     type_name = db_object_type.type_name()
-    query_str = "query Get%ssPyApi%s {%ss(where: %s skip: %%d first: %%d) {%s} }"
-    query_str = query_str % (
-        type_name,
-        param_declaration_str,
-        utils.camel_case(type_name),
-        where_query_str,
-        " ".join(field.graphql_name for field in db_object_type.fields()))
-
-    return query_str, {name: value for name, (value, _) in params.items()}
+    query = Query(utils.camel_case(type_name) + "s", db_object_type, where, True)
+    return query.format_top("Get" + type_name + "s")
 
 
 def relationship(source, relationship_name, destination_type, to_many,
@@ -307,28 +256,13 @@ def relationship(source, relationship_name, destination_type, to_many,
         (str, dict) tuple that is the query string and parameters.
     """
     check_where_clause(destination_type, where)
+    subquery = Query(utils.camel_case(relationship_name), destination_type,
+                     where, True, order_by)
     source_type_name = type(source).type_name()
-
-    # Prepare the destination filtering clause and params
-    where_query_str, params = format_where(where)
-
-    # Generate a name for the source filter and add it to params
-    id_param_name = "%sID" % source_type_name
-    params[id_param_name] = (source.uid, type(source).uid)
-
-    query_str = """query %sPyApi%s
-        {%s(where: {id: $%s}) {%s(where: %s%s%s) {%s} } }""" % (
-        source_type_name + utils.title_case(relationship_name),
-        format_param_declaration(params),
-        utils.camel_case(source_type_name),
-        id_param_name,
-        utils.camel_case(relationship_name),
-        where_query_str,
-        " skip: %d first: %d" if to_many else "",
-        format_order_by(order_by),
-        " ".join(field.graphql_name for field in destination_type.fields()))
-
-    return query_str, {name: value for name, (value, _) in params.items()}
+    query = Query(utils.camel_case(source_type_name), subquery,
+                  type(source).uid == source.uid)
+    return query.format_top(
+        "Get" + source_type_name + utils.title_case(relationship_name))
 
 
 def create(db_object_type, data):

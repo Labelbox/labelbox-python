@@ -5,37 +5,46 @@ from labelbox.db_objects import Project, Dataset
 from labelbox.filter import Comparison, LogicalExpression
 
 
-def test_format_where():
-    query_str, params = query.format_where(Project.name > "name")
-    assert query_str == "{name_gt: $param_0}"
-    assert params == {"param_0": ("name", Project.name)}
-
-    query_str, params = query.format_where(
-        (Project.name != "name") & (Project.uid <= 42))
-    assert query_str == "{AND: [{name_not: $param_0}, {id_lte: $param_1}]}"
-    assert params == {"param_0": ("name", Project.name),
-                      "param_1": (42, Project.uid)}
-
-    query_str, params = query.format_where(~(3.4 < Project.name))
-    assert query_str == "{NOT: [{name_gt: $param_0}]}"
-    assert params == {"param_0": (3.4, Project.name)}
+def format(*args, **kwargs):
+    return query.Query(*args, **kwargs).format()[0]
 
 
-def param_declaration(where):
-    _, params = query.format_where(where)
-    return query.format_param_declaration(params)
+def test_query_what():
+    assert format("first", Project).startswith("first{")
+    assert format("other", Project).startswith("other{")
 
 
-def test_format_param_declaration():
-    assert param_declaration(Project.name > "name") == "($param_0: String!)"
-    assert param_declaration((Project.name > "name") & (Project.uid == 42)) \
-        == "($param_0: String!, $param_1: ID!)"
+def test_query_subquery():
+    assert format("x", query.Query("sub", Project)).startswith("x{sub{")
+    assert format("x", query.Query("bus", Project)).startswith("x{bus{")
 
 
-def test_format_order_by():
-    assert query.format_order_by(None) == ""
-    assert query.format_order_by(Project.name.asc) == " orderBy: name_ASC"
-    assert query.format_order_by(Project.uid.desc) == " orderBy: id_DESC"
+def test_query_where():
+    q, p = query.Query("x", Project, Project.name > "name").format()
+    assert q.startswith("x(where: {name_gt: $param_0}){")
+    assert p == {"param_0": ("name", Project.name)}
+
+    q, p = query.Query("x", Project,
+                       (Project.name != "name") & (Project.uid <= 42)).format()
+    assert q.startswith("x(where: {AND: [{name_not: $param_0}, {id_lte: $param_1}]}")
+    assert p == {"param_0": ("name", Project.name), "param_1": (42, Project.uid)}
+
+
+def test_query_param_declaration():
+    q, _ = query.Query("x", Project, Project.name > "name").format_top("y")
+    assert q.startswith("query yPyApi($param_0: String!){x")
+
+    q, _ = query.Query("x", Project, (Project.name > "name")
+                       & (Project.uid == 42)).format_top("y")
+    assert q.startswith("query yPyApi($param_0: String!, $param_1: ID!){x")
+
+
+def test_query_order_by():
+    q, _ = query.Query("x", Project, order_by=Project.name.asc).format()
+    assert q.startswith("x(orderBy: name_ASC){")
+
+    q, _ = query.Query("x", Project, order_by=Project.uid.desc).format()
+    assert q.startswith("x(orderBy: id_DESC){")
 
 
 def test_fields():
