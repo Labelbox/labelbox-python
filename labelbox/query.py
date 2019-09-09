@@ -364,6 +364,22 @@ def unset_labeling_parameter_overrides(project, data_rows):
     return query_str, {}
 
 
+def create_metadata(asset_type, meta_type, meta_value, data_row_id):
+    meta_type_param = "meta_type"
+    meta_value_param = "meta_value"
+    data_row_id_param = "data_row_id"
+    query_str = """mutation CreateAssetMetadataPyApi(
+        $%s: MetadataType!, $%s: String!, $%s: ID!) {
+        createAssetMetadata(data: {
+            metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
+        meta_type_param, meta_value_param, data_row_id_param,
+        meta_type_param, meta_value_param, data_row_id_param,
+        " ".join(field.graphql_name for field in asset_type.fields()))
+    return query_str, {meta_type_param: meta_type,
+                       meta_value_param: meta_value,
+                       data_row_id_param: data_row_id}
+
+
 def update_relationship(a, b, relationship_name, update):
     """ Updates the relationship in DB object `a` to connect or disconnect
     DB object `b`.

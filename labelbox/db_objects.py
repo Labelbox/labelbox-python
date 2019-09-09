@@ -37,6 +37,7 @@ class RelationshipManager:
             if t.__name__.split(".")[-1] == relationship.destination_type_name)
 
         self.supports_filtering = True
+        self.supports_sorting = True
 
     def __call__(self, *args, **kwargs ):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
@@ -59,6 +60,10 @@ class RelationshipManager:
         if where is not None and not self.supports_filtering:
             raise InvalidQueryError(
                 "Relationship %s.%s doesn't support filtering" % (
+                self.source.type_name(), rel.name))
+        if order_by is not None and not self.supports_sorting:
+            raise InvalidQueryError(
+                "Relationship %s.%s doesn't support sorting" % (
                 self.source.type_name(), rel.name))
 
         if rel.filter_deleted:
@@ -445,6 +450,26 @@ class DataRow(RelatedDbObject, Updateable, BulkDeletable):
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
+    metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.metadata.supports_filtering = False
+        self.metadata.supports_sorting = False
+
+    def create_metadata(self, meta_type, meta_value):
+        """ Creates an asset metadata for this DataRow.
+        Args:
+            meta_type (str): Asset metadata type, must be one of:
+                VIDEO, IMAGE, TEXT.
+            meta_value (str): Asset metadata value.
+        Return:
+            AssetMetadata DB object.
+        """
+        query_str, params = query.create_metadata(
+            AssetMetadata, meta_type, meta_value, self.uid)
+        res = self.client.execute(query_str, params)
+        return AssetMetadata(self.client, res["data"]["createAssetMetadata"])
 
 
 class Label(RelatedDbObject, Updateable, BulkDeletable):
@@ -456,6 +481,15 @@ class Label(RelatedDbObject, Updateable, BulkDeletable):
 
     project = Relationship.ToOne("Project")
     data_row = Relationship.ToOne("DataRow")
+
+
+class AssetMetadata(RelatedDbObject):
+    VIDEO = "VIDEO"
+    IMAGE = "IMAGE"
+    TEXT = "TEXT"
+
+    meta_type = Field.String("meta_type")
+    meta_value = Field.String("meta_value")
 
 
 class User(RelatedDbObject):
