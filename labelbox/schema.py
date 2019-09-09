@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 
 from labelbox import utils
@@ -220,6 +220,7 @@ class DbObject:
             if field.field_type == Field.Type.DateTime and value is not None:
                 try:
                     value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    value = value.replace(tzinfo=timezone.utc)
                 except ValueError:
                     logger.warning("Failed to convert value '%s' to datetime for "
                                    "field %s", value, field)
