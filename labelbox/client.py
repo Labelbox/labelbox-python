@@ -56,6 +56,8 @@ class Client:
             labelbox.exception.AuthenticationError: If authentication
                 failed.
         """
+        logger.debug("Query: %s, params: %r", query, params)
+
         # Convert datetimes to UTC strings.
         def convert_value(value):
             if isinstance(value, datetime):
@@ -66,7 +68,6 @@ class Client:
         if params is not None:
             params = {key: convert_value(value) for key, value in params.items()}
 
-        logger.debug("Query: %s, params: %r", query, params)
         data = json.dumps(
             {'query': query, 'variables': params}).encode('utf-8')
         req = urllib.request.Request(self.endpoint, data, self.headers)
