@@ -257,7 +257,7 @@ def relationship(source, relationship_name, destination_type, to_many,
     """
     check_where_clause(destination_type, where)
     subquery = Query(utils.camel_case(relationship_name), destination_type,
-                     where, True, order_by)
+                     where, to_many, order_by)
     source_type_name = type(source).type_name()
     query = Query(utils.camel_case(source_type_name), subquery,
                   type(source).uid == source.uid)
