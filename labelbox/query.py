@@ -326,6 +326,44 @@ def create_data_rows(dataset_id, json_file_url):
     return query_str, {dataset_param: dataset_id, url_param: json_file_url}
 
 
+def set_labeling_parameter_overrides(project, data):
+    """ Constructs a query for setting labeling parameter overrides.
+    Args:
+        project (Project): The project to set param overrides for.
+            data (iterable): An iterable of tuples. Each tuple must contain
+                (DataRow, priority, numberOfLabels) for the new override.
+    Return:
+        (query_string, query_parameters)
+    """
+    data_str = ",\n".join(
+        "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
+            data_row.uid, priority, num_labels)
+        for data_row, priority, num_labels in data)
+    query_str = """mutation setLabelingParameterOverridesPyApi {
+        project(where: { id: "%s" }) {
+            setLabelingParameterOverrides(data: [%s]) { success } } } """ % (
+                project.uid, data_str)
+    return query_str, {}
+
+
+def unset_labeling_parameter_overrides(project, data_rows):
+    """ Constructs a query for unsetting labeling parameter overrides.
+    Args:
+        project (Project): The project to set param overrides for.
+        data_rows (iterable): An iterable of DataRow objects
+            for which the to set as parameter overrides.
+    Return:
+        (query_string, query_parameters)
+    """
+    data_str = ",\n".join("{dataRowId: \"%s\"}" % data_row.uid
+                          for data_row in data_rows)
+    query_str = """mutation unsetLabelingParameterOverridesPyApi {
+        project(where: { id: "%s" }) {
+            unsetLabelingParameterOverrides(data: [%s]) { success } } } """ % (
+                project.uid, data_str)
+    return query_str, {}
+
+
 def update_relationship(a, b, relationship_name, update):
     """ Updates the relationship in DB object `a` to connect or disconnect
     DB object `b`.
