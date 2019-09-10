@@ -168,6 +168,8 @@ class Project(MutableDbObject):
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
     labels = Relationship.ToMany("Label", True)
+    labeling_parameter_overrides = Relationship.ToMany(
+        "LabelingParameterOverride", False, "labeling_parameter_overrides")
 
     def create_label(self, **kwargs):
         """ Creates a label on this project.
@@ -252,6 +254,29 @@ class Project(MutableDbObject):
         self.labeling_frontend.connect(labeling_frontend)
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
+
+    def set_labeling_parameter_overrides(self, data):
+        """ Adds labeling parameter overrides to this project.
+        Args:
+            data (iterable): An iterable of tuples. Each tuple must contain
+                (DataRow, priority, numberOfLabels) for the new override.
+        Return:
+            bool indicating if the operation was a success.
+        """
+        query_str, params = query.set_labeling_parameter_overrides(self, data)
+        res = self.client.execute(query_str, params)
+        return res["data"]["project"]["setLabelingParameterOverrides"]["success"]
+
+    def unset_labeling_parameter_overrides(self, data_rows):
+        """ Removes labeling parameter overrides to this project.
+        Args:
+            data_rows (iterable): An iterable of DataRows.
+        Return:
+            bool indicating if the operation was a success.
+        """
+        query_str, params = query.unset_labeling_parameter_overrides(self, data_rows)
+        res = self.client.execute(query_str, params)
+        return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
 
 
 class Dataset(MutableDbObject):
@@ -487,3 +512,8 @@ class LabelingFrontendOptions(MutableDbObject):
     project = Relationship.ToOne("Project")
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     organization = Relationship.ToOne("Organization")
+
+
+class LabelingParameterOverride(MutableDbObject):
+    priority = Field.Int("priority")
+    number_of_labels = Field.Int("number_of_labels")
