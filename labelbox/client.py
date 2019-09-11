@@ -113,6 +113,9 @@ class Client:
         errors = response.get("errors", [])
 
         def check_errors(keywords, *path):
+            """ Helper that looks for any of the given `keywords` in any of
+            current errors on paths (like error[path][component][to][keyword]).
+            """
             for error in errors:
                 obj = error
                 for path_elem in path:
