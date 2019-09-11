@@ -57,9 +57,7 @@ def test_data_row_single_creation(client, rand_gen):
 
     data_row = dataset.create_data_row(row_data=IMG_URL)
     assert len(list(dataset.data_rows())) == 1
-    # TODO support data-row lookup on ID
-    with pytest.raises(NetworkError):
-        assert data_row.dataset() == dataset
+    assert data_row.dataset() == dataset
 
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
