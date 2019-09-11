@@ -67,3 +67,18 @@ def test_data_row_single_creation(client, rand_gen):
         assert len(list(dataset.data_rows())) == 2
 
     dataset.delete()
+
+
+def test_data_row_update(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    external_id = rand_gen(str)
+    data_row = dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
+    assert data_row.external_id == external_id
+
+    external_id_2 = rand_gen(str)
+    # TODO enable DataRow updates
+    with pytest.raises(NetworkError):
+        data_row = data_row.update(external_id=external_id_2)
+        assert data_row.external_id == external_id_2
+
+    dataset.delete()
