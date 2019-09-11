@@ -2,19 +2,21 @@ from datetime import datetime, timezone
 import json
 import logging
 import os
-import urllib.request
 
 import requests
+import requests.exceptions
 
 from labelbox import query, utils
+import labelbox.exceptions
 from labelbox.db_objects import Project, Dataset, User, Organization
-from labelbox.exceptions import (NetworkError, AuthenticationError,
-                                 ResourceNotFoundError, LabelboxError)
 from labelbox.paginated_collection import PaginatedCollection
 from labelbox.schema import DbObject
 
 
 logger = logging.getLogger(__name__)
+
+
+_LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
@@ -33,7 +35,10 @@ class Client:
             endpoint (str): URL of the Labelbox server to connect to.
         """
         if api_key is None:
-            api_key = os.environ["LABELBOX_API_KEY"]
+            if _LABELBOX_API_KEY not in os.environ:
+                raise labelbox.exceptions.AuthenticationError(
+                    "Labelbox API key not provided")
+                api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
         logging.info("Initializing Labelbox client at '%s'", endpoint)
@@ -43,19 +48,31 @@ class Client:
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer %s' % api_key}
 
-    def execute(self, query, params=None):
-        """ Execute a GraphQL query on the server.
+    def execute(self, query, params=None, timeout=10.0):
+        """ Sends a request to the server for the execution of the
+        given query. Checks the response for errors and wraps errors
+        in appropriate labelbox.exceptions.LabelboxError subtypes.
 
         Args:
             query (str): the query to execute.
             params (dict): query parameters referenced within the query.
+            timeout (float): Max allowed time for query execution,
+                in seconds.
         Return:
             dict, parsed JSON response.
         Raises:
-            labelbox.exception.NetworkError: If an urllib.error.HTTPError
-                occurred.
-            labelbox.exception.AuthenticationError: If authentication
+            labelbox.exceptions.AuthenticationError: If authentication
                 failed.
+            labelbox.exceptions.InvalidQueryError: If `query` is not
+                syntactically or semantically valid (checked server-side).
+            labelbox.exceptions.ApiLimitError: If the server API limit was
+                exceeded. Check Labelbox documentation to see API limits.
+            labelbox.exceptions.TimeoutError: If response was not received
+                in `timeout` seconds.
+            labelbox.exceptions.NetworkError: If an unknown error occurred
+                most likely due to connection issues.
+            labelbox.exceptions.LabelboxError: If an unknown error of any
+                kind occurred.
         """
         logger.debug("Query: %s, params: %r", query, params)
 
@@ -71,14 +88,62 @@ class Client:
 
         data = json.dumps(
             {'query': query, 'variables': params}).encode('utf-8')
-        req = urllib.request.Request(self.endpoint, data, self.headers)
 
         try:
-            response = urllib.request.urlopen(req)
-            return json.loads(response.read().decode('utf-8'))
-        except urllib.error.HTTPError as e:
-            # Convert HTTPError into a Labelbox error
-            raise NetworkError(e)
+            response = requests.post(self.endpoint, data=data,
+                                        headers=self.headers,
+                                        timeout=timeout)
+        except requests.exceptions.Timeout as e:
+            raise labelbox.exceptions.TimeoutError(str(e))
+
+        except requests.exceptions.RequestException as e:
+            logger.error("Unknown error: %s", str(e))
+            raise labelbox.exceptions.NetworkError(e)
+
+        except Exception as e:
+            logger.error("Unknown error: %s", str(e))
+            raise labelbox.exceptions.LabelboxError(str(e))
+
+        try:
+            response = response.json()
+        except:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to parse response as JSON: %s", response.text)
+
+        errors = response.get("errors", [])
+
+        def check_errors(keywords, *path):
+            for error in errors:
+                obj = error
+                for path_elem in path:
+                    obj = obj.get(path_elem, {})
+                if obj in keywords:
+                    return error
+            return None
+
+        # Check for authentication error
+        if check_errors(["AUTHENTICATION_ERROR"],
+                        "extensions", "exception", "code") is not None:
+            raise labelbox.exceptions.AuthenticationError("Invalid API key")
+
+        # Check for malformed GraphQL error
+        graphql_error = check_errors(
+            ["GRAPHQL_PARSE_FAILED", "GRAPHQL_VALIDATION_FAILED"],
+                "extensions", "code")
+        if graphql_error is not None:
+            raise labelbox.exceptions.InvalidQueryError(
+                graphql_error["message"])
+
+        # Check if API limit was exceeded
+        response_msg = response.get("message", "")
+        if response_msg.startswith("You have exceeded"):
+            raise labelbox.exceptions.ApiLimitError(response_msg)
+
+        if len(errors) > 0:
+            raise labelbox.exceptions.LabelboxError(
+                "Unknown error: %s" % str(errors))
+
+        return response
 
     def upload_data(self, data):
         """ Uploads the given data (bytes) to Labelbox.
@@ -87,7 +152,7 @@ class Client:
         Return:
             str, the URL of uploaded data.
         Raises:
-            LabelboxError: if upload failes.
+            labelbox.exceptions.LabelboxError: if upload failes.
         """
         request_data = {
             "operations": json.dumps({
@@ -108,11 +173,12 @@ class Client:
         try:
             file_data = request.json().get("data", None)
         except ValueError: # response is not valid JSON
-            raise LabelboxError("Failed to upload, unknown cause")
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to upload, unknown cause")
 
         if not file_data or not file_data.get("uploadFile", None):
-            raise LabelboxError("Failed to upload, message: %s" % file_data.get(
-                "error", None))
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to upload, message: %s" % file_data.get("error", None))
 
         return file_data["uploadFile"]["url"]
 
@@ -125,16 +191,17 @@ class Client:
         Return:
             Object of `db_object_type`.
         Raises:
-            labelbox.exception.ResourceNotFoundError: If there is no object
+            labelbox.exceptions.ResourceNotFoundError: If there is no object
                 of the given type for the given ID.
-            labelbox.exception.LabelboxError: Any error raised by
+            labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
         query_str, params = query.get_single(db_object_type, uid)
         res = self.execute(query_str, params)["data"][
             utils.camel_case(db_object_type.type_name())]
         if res is None:
-            raise ResourceNotFoundError(db_object_type, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                db_object_type, params)
         else:
             return db_object_type(self, res)
 
@@ -164,7 +231,7 @@ class Client:
         Return:
             An iterable of `db_object_type` instances.
         Raises:
-            labelbox.exception.LabelboxError: Any error raised by
+            labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
         not_deleted = db_object_type.deleted == False
@@ -184,7 +251,7 @@ class Client:
         Return:
             An iterable of Projects (typically a PaginatedCollection).
         Raises:
-            labelbox.exception.LabelboxError: Any error raised by
+            labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
         return self.get_all(Project, where)
@@ -198,7 +265,7 @@ class Client:
         Return:
             An iterable of Datasets (typically a PaginatedCollection).
         Raises:
-            labelbox.exception.LabelboxError: Any error raised by
+            labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
         return self.get_all(Dataset, where)
