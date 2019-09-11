@@ -1,7 +1,7 @@
 import pytest
 
 from labelbox.client import Project, Dataset
-from labelbox.exceptions import NetworkError
+from labelbox.exceptions import InvalidQueryError
 
 
 def test_project_dataset(client, rand_gen):
@@ -21,8 +21,7 @@ def test_project_dataset(client, rand_gen):
     # Currently it's not possible to connect a project and dataset
     # by updating dataset.
     # TODO make this possible
-    # TODO this should raise something other then a NetworkError
-    with pytest.raises(NetworkError):
+    with pytest.raises(InvalidQueryError):
         dataset.projects.connect(project_2)
     project_2.datasets.connect(dataset)
 
@@ -47,7 +46,7 @@ def test_relationship_in_creation(client, rand_gen):
     # First create dataset, then related project
     dataset = client.create_dataset(name=rand_gen(str))
     # TODO support dataset connecting during project creation
-    with pytest.raises(NetworkError):
+    with pytest.raises(InvalidQueryError):
         project = client.create_project(name=rand_gen(str), datasets=dataset)
     # assert list(dataset.projects) == [project]
     # assert list(project.datasets) == [dataset]

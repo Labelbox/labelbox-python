@@ -59,6 +59,11 @@ class NetworkError(LabelboxError):
         self.cause = cause
 
 
+class TimeoutError(LabelboxError):
+    """Raised when a request times-out."""
+    pass
+
+
 class InvalidAttributeError(LabelboxError):
     """ Raised when a field (name or Field instance) is not valid or found
     for a specific DB object type. """
@@ -67,3 +72,9 @@ class InvalidAttributeError(LabelboxError):
             field, db_object_type.type_name()))
         self.db_object_type = db_object_type
         self.field = field
+
+
+class ApiLimitError(LabelboxError):
+    """ Raised when the user performs too many requests in a short period
+    of time. """
+    pass

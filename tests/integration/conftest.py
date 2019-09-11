@@ -18,10 +18,11 @@ class IntegrationClient(Client):
 
         self.queries = []
 
-    def execute(self, query, params=None):
-        assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
+    def execute(self, query, params=None, check_naming=True, **kwargs):
+        if check_naming:
+            assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
         self.queries.append((query, params))
-        return super().execute(query, params)
+        return super().execute(query, params, **kwargs)
 
 
 @pytest.fixture

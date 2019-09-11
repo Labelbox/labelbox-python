@@ -3,7 +3,7 @@ import json
 import pytest
 
 from labelbox import LabelingFrontend
-from labelbox.exceptions import NetworkError
+from labelbox.exceptions import InvalidQueryError
 
 def simple_ontology():
     classifications = [{
@@ -33,7 +33,7 @@ def test_project_setup(client, rand_gen):
     assert len(options) == 1
     options = options[0]
     # TODO ensure that LabelingFrontendOptions can be obtaind by ID
-    with pytest.raises(NetworkError):
+    with pytest.raises(InvalidQueryError):
         assert options.labeling_frontend() == labeling_frontend
         assert options.project() == project
         assert options.organization() == client.get_organization()

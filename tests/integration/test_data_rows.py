@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 import pytest
 
 from labelbox import Project, Dataset, DataRow
-from labelbox.exceptions import NetworkError
+from labelbox.exceptions import InvalidQueryError
 
 
 IMG_URL = "https://picsum.photos/200/300"
@@ -37,8 +37,7 @@ def test_data_row_bulk_creation(client, rand_gen):
 
     # Currently can't delete DataRow by setting deleted=true
     # TODO ensure DataRow can be deleted (server-side) by setting deleted=true
-    # TODO should this raise NetworkError or something else
-    with pytest.raises(NetworkError):
+    with pytest.raises(InvalidQueryError):
         datarows[0].delete()
 
     # Do a longer task and expect it not to be complete immediately
@@ -75,7 +74,7 @@ def test_data_row_update(client, rand_gen):
 
     external_id_2 = rand_gen(str)
     # TODO enable DataRow updates
-    with pytest.raises(NetworkError):
+    with pytest.raises(InvalidQueryError):
         data_row = data_row.update(external_id=external_id_2)
         assert data_row.external_id == external_id_2
 
