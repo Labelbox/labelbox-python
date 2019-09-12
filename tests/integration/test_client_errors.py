@@ -10,14 +10,16 @@ import labelbox.exceptions
 
 def test_missing_api_key(client, rand_gen):
     key = os.environ.get(labelbox.client._LABELBOX_API_KEY, None)
-    del os.environ[labelbox.client._LABELBOX_API_KEY]
+    if key is not None:
+        del os.environ[labelbox.client._LABELBOX_API_KEY]
 
     with pytest.raises(labelbox.exceptions.AuthenticationError) as excinfo:
         labelbox.client.Client()
 
     assert excinfo.value.message == "Labelbox API key not provided"
 
-    os.environ[labelbox.client._LABELBOX_API_KEY] = key
+    if key is not None:
+        os.environ[labelbox.client._LABELBOX_API_KEY] = key
 
 
 def test_bad_key(client, rand_gen):
