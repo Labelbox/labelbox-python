@@ -66,6 +66,16 @@ def test_data_row_single_creation(client, rand_gen):
     dataset.delete()
 
 
+def test_data_row_delete(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row = dataset.create_data_row(row_data=IMG_URL)
+    assert len(list(dataset.data_rows())) == 1
+    # TODO enable datarow deletions
+    with pytest.raises(InvalidQueryError):
+        data_row.delete()
+        assert len(list(dataset.data_rows())) == 0
+
+
 def test_data_row_update(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     external_id = rand_gen(str)
@@ -77,5 +87,30 @@ def test_data_row_update(client, rand_gen):
     with pytest.raises(InvalidQueryError):
         data_row = data_row.update(external_id=external_id_2)
         assert data_row.external_id == external_id_2
+
+    dataset.delete()
+
+
+def test_data_row_filtering_sorting(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    task = dataset.create_data_rows([
+        {DataRow.row_data: IMG_URL, DataRow.external_id: "row1"},
+        {DataRow.row_data: IMG_URL, DataRow.external_id: "row2"},
+    ])
+    task.wait_till_done()
+
+    # Test filtering
+    row1 = list(dataset.data_rows(where=DataRow.external_id=="row1"))
+    assert len(row1) == 1
+    row1 = row1[0]
+    assert row1.external_id == "row1"
+    row2 = list(dataset.data_rows(where=DataRow.external_id=="row2"))
+    assert len(row2) == 1
+    row2 = row2[0]
+    assert row2.external_id == "row2"
+
+    # Test sorting
+    assert list(dataset.data_rows(order_by=DataRow.external_id.asc)) == [row1, row2]
+    assert list(dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
 
     dataset.delete()

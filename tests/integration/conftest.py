@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from random import randint
 import re
@@ -32,12 +33,13 @@ def client():
 
 @pytest.fixture
 def rand_gen():
-    FIELD_TYPES = {Field.Type.String: str}
-    def gen(field):
-        field_type = FIELD_TYPES.get(field, field)
+    def gen(field_type):
         if field_type == str:
             return "".join(ascii_letters[randint(0, len(ascii_letters) - 1)]
                             for _ in range(16))
+
+        if field_type == datetime:
+            return datetime.now()
 
         raise Exception("Can't random generate for field type '%r'" %
                         field.field_type)
