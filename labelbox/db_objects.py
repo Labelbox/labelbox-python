@@ -374,24 +374,23 @@ class Task(MutableDbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=60, check_frequency_seconds=1):
+    def wait_till_done(self, timeout_seconds=60):
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
         Args:
             timeout_seconds (float): Maximum time this method can block, in
                 seconds. Defaults to one minute.
-            check_frequency_seconds (float): Sleep time between two checks,
-                in seconds. Defaults to one second.
         """
+        check_frequency = 2 # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
                 return
-            sleep_time_seconds = min(check_frequency_seconds, timeout_seconds)
+            sleep_time_seconds = min(check_frequency, timeout_seconds)
             logger.debug("Task.wait_till_done sleeping for %.2f seconds" %
                          sleep_time_seconds)
             if sleep_time_seconds <= 0:
                 break
-            timeout_seconds -= check_frequency_seconds
+            timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
 
