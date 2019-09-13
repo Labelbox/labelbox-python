@@ -129,3 +129,31 @@ def test_data_row_filtering_sorting(client, rand_gen):
     assert list(dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
 
     dataset.delete()
+
+
+def test_data_row_deletion(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    task = dataset.create_data_rows([
+        {DataRow.row_data: IMG_URL, DataRow.external_id: str(i)}
+        for i in range(10)])
+    task.wait_till_done()
+
+    data_rows = list(dataset.data_rows())
+    expected = set(map(str, range(10)))
+    assert {dr.external_id for dr in data_rows} == expected
+
+    for dr in data_rows:
+        if dr.external_id in "37":
+            dr.delete()
+    expected -= set("37")
+
+    data_rows = list(dataset.data_rows())
+    assert {dr.external_id for dr in data_rows} == expected
+
+    DataRow.bulk_delete([dr for dr in data_rows if dr.external_id in "2458"])
+    expected -= set("2458")
+
+    data_rows = list(dataset.data_rows())
+    assert {dr.external_id for dr in data_rows} == expected
+
+    dataset.delete()
