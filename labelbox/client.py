@@ -273,10 +273,9 @@ class Client:
         """
         return self.get_all(Dataset, where)
 
-    def create(self, db_object_type, data):
+    def _create(self, db_object_type, data):
         """ Creates a object on the server. Attribute values are
             passed as keyword arguments:
-                >>> project = client.create(Project, name="MyDataset")
 
         Args:
             db_object_type (type): A DbObjectType subtype.
@@ -314,7 +313,7 @@ class Client:
             InvalidAttributeError: in case the Dataset type does not contain
                 any of the field names given in kwargs.
         """
-        return self.create(Dataset, kwargs)
+        return self._create(Dataset, kwargs)
 
     def create_project(self, **kwargs):
         """ Creates a Project object on the server. Attribute values are
@@ -331,4 +330,4 @@ class Client:
             InvalidAttributeError: in case the Project type does not contain
                 any of the field names given in kwargs.
         """
-        return self.create(Project, kwargs)
+        return self._create(Project, kwargs)

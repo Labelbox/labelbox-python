@@ -173,7 +173,7 @@ class Project(MutableDbObject):
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
 
-        labeling_frontend_options = self.client.create(
+        labeling_frontend_options = self.client._create(
             LabelingFrontendOptions,
             {LabelingFrontendOptions.project: self,
              LabelingFrontendOptions.labeling_frontend: labeling_frontend,
@@ -223,7 +223,7 @@ class Dataset(MutableDbObject):
 
         kwargs[DataRow.dataset.name] = self
 
-        return self.client.create(DataRow, kwargs)
+        return self.client._create(DataRow, kwargs)
 
     def create_data_rows(self, items):
         """ Creates multiple DataRow objects based on the given items.
