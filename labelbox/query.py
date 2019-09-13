@@ -457,3 +457,27 @@ def export_labels():
         downloadUrl createdAt shouldPoll } }
     """ %  (id_param, id_param)
     return (query_str, id_param)
+
+
+def bulk_delete(db_objects, use_where_clause):
+    """ Generates a query that bulk-deletes the given `db_objects` from the
+    DB.
+
+    Args:
+        db_objects (list): A list of DB objects of the same type.
+        use_where_clause (bool): If the object IDs should be passed to the
+            mutation in a `where` clause or directly as a mutation value.
+    """
+    db_object_type = type(db_objects[0])
+    type_name = db_object_type.type_name()
+    if use_where_clause:
+        query_str = "mutation delete%ssPyApi{delete%ss(where: {%sIds: [%s]}){id}}"
+    else:
+        query_str = "mutation delete%ssPyApi{delete%ss(%sIds: [%s]){id}}"
+    query_str = query_str % (
+        utils.title_case(type_name),
+        utils.title_case(type_name),
+        utils.camel_case(type_name),
+        ", ".join('"%s"' % db_object.uid for db_object in db_objects)
+    )
+    return query_str, {}

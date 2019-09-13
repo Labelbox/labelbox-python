@@ -138,6 +138,10 @@ class MutableDbObject(DbObject):
         res = res["data"]["update%s" % utils.title_case(self.type_name())]
         self._set_field_values(res)
 
+
+class Deletable:
+    """ Implements deletion for objects that have a `deleted` attribute. """
+
     def delete(self):
         """ Deletes this DB object from the DB (server side). After
         a call to this you should not use this DB object anymore.
@@ -146,7 +150,30 @@ class MutableDbObject(DbObject):
         self.client.execute(query_string, params)
 
 
-class Project(MutableDbObject):
+class BulkDeletable:
+    """ Implements deletion for objects that have a custom, bulk deletion
+    mutation (accepts a list of IDs of objects to be deleted).
+    """
+    @staticmethod
+    def bulk_delete(objects):
+        types = {type(o) for o in objects}
+        if len(types) != 1:
+            raise InvalidQueryError(
+                "Can't bulk-delete objects of different types: %r" % types)
+
+        use_where_clause = types == {DataRow}
+        query_str, params = query.bulk_delete(objects, use_where_clause)
+        objects[0].client.execute(query_str, params)
+
+
+    def delete(self):
+        """ Deletes this DB object from the DB (server side). After
+        a call to this you should not use this DB object anymore.
+        """
+        BulkDeletable.bulk_delete([self])
+
+
+class Project(MutableDbObject, Deletable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -279,7 +306,7 @@ class Project(MutableDbObject):
         return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
 
 
-class Dataset(MutableDbObject):
+class Dataset(MutableDbObject, Deletable):
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -405,7 +432,7 @@ class Dataset(MutableDbObject):
         return task
 
 
-class DataRow(MutableDbObject):
+class DataRow(MutableDbObject, BulkDeletable):
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
     updated_at = Field.DateTime("updated_at")
@@ -418,7 +445,7 @@ class DataRow(MutableDbObject):
     labels = Relationship.ToMany("Label", True)
 
 
-class Label(MutableDbObject):
+class Label(MutableDbObject, BulkDeletable):
     label = Field.String("label")
     seconds_to_label = Field.Float("seconds_to_label")
     agreement = Field.Float("agreement")
