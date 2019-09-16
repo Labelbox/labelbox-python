@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
-import logging
 import json
+import logging
+from multiprocessing.dummy import Pool as ThreadPool
 import os
 import time
 
@@ -252,7 +253,9 @@ class Dataset(MutableDbObject):
             InvalidAttributeError: if there are fields in `items` not valid for
                 a DataRow.
         """
-        def convert_item(item):
+        file_upload_thread_count = 20
+
+        def upload_if_necessary(item):
             if isinstance(item, str):
                 with open(item, "rb") as f:
                     item_data = f.read()
@@ -261,7 +264,12 @@ class Dataset(MutableDbObject):
                 # like all other dicts.
                 item = {DataRow.row_data: item_url,
                         DataRow.external_id: item}
+            return item
 
+        with ThreadPool(file_upload_thread_count) as thread_pool:
+            items = thread_pool.map(upload_if_necessary, items)
+
+        def convert_item(item):
             # Convert string names to fields.
             item = {key if isinstance(key, Field) else DataRow.field(key): value
                     for key, value in item.items()}
