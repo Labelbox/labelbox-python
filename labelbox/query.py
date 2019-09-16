@@ -195,9 +195,7 @@ def check_where_clause(db_object_type, where):
     where_fields = [f for f in fields(where) if f != DbObject.deleted]
     invalid_fields = set(where_fields) - set(db_object_type.fields())
     if invalid_fields:
-        raise InvalidQueryError("Where clause contains fields '%r' which aren't "
-                                "part of the '%s' DB object type" % (
-                                    invalid_fields, db_object_type.type_name()))
+        raise InvalidAttributeError(db_object_type, invalid_fields)
 
     if len(set(where_fields)) != len(where_fields):
         raise InvalidQueryError("Where clause contains multiple comparisons for "
@@ -206,6 +204,13 @@ def check_where_clause(db_object_type, where):
     if set(logical_ops(where)) not in (set(), {LogicalExpression.Op.AND}):
         raise InvalidQueryError("Currently only AND logical ops are allowed in "
                                 "the where clause of a query.")
+
+
+def check_order_by_clause(db_object_type, order_by):
+    if order_by is not None:
+        field, _ = order_by
+        if field not in db_object_type.fields():
+            raise InvalidAttributeError(db_object_type, field)
 
 
 def get_all(db_object_type, where):
@@ -256,6 +261,7 @@ def relationship(source, relationship_name, destination_type, to_many,
         (str, dict) tuple that is the query string and parameters.
     """
     check_where_clause(destination_type, where)
+    check_order_by_clause(destination_type, order_by)
     subquery = Query(utils.camel_case(relationship_name), destination_type,
                      where, to_many, order_by)
     source_type_name = type(source).type_name()
