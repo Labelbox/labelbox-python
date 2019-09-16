@@ -1,6 +1,7 @@
 from tempfile import NamedTemporaryFile
 
 import pytest
+import requests
 
 from labelbox import Project, Dataset, DataRow
 from labelbox.exceptions import InvalidQueryError
@@ -26,30 +27,40 @@ def test_data_row_bulk_creation(client, rand_gen):
     task.wait_till_done()
     assert task.status == "COMPLETE"
 
-    datarows = list(dataset.data_rows())
-    assert len(datarows) == 2
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == 2
+    assert {data_row.row_data for data_row in data_rows} == {IMG_URL}
 
     # Test creation using file name
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
+        fp.flush()
         task = dataset.create_data_rows([fp.name])
         task.wait_till_done()
         assert task.status == "COMPLETE"
 
-    datarows = list(dataset.data_rows())
-    assert len(datarows) == 3
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == 3
+    url = ({data_row.row_data for data_row in data_rows} - {IMG_URL}).pop()
+    res = requests.get(url)
+    assert res.status_code == 200
+    assert res.text == "Test data"
 
     # Currently can't delete DataRow by setting deleted=true
     # TODO ensure DataRow can be deleted (server-side) by setting deleted=true
     with pytest.raises(InvalidQueryError):
-        datarows[0].delete()
+        data_rows[0].delete()
 
     # Do a longer task and expect it not to be complete immediately
-    task = dataset.create_data_rows([{DataRow.row_data: IMG_URL}] * 5000)
+    with NamedTemporaryFile() as fp:
+        fp.write("Test data".encode())
+        fp.flush()
+        task = dataset.create_data_rows(
+            [{DataRow.row_data: IMG_URL}] * 4500 + [fp.name] * 500)
     assert task.status == "IN_PROGRESS"
     task.wait_till_done()
     assert task.status == "COMPLETE"
-    datarows = len(list(dataset.data_rows())) == 5003
+    data_rows = len(list(dataset.data_rows())) == 5003
 
     dataset.delete()
 
