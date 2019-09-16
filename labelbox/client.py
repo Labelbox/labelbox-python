@@ -129,10 +129,15 @@ class Client:
                         "extensions", "exception", "code") is not None:
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
 
+        # Check for query complexity error
+        validation_error = check_errors(["GRAPHQL_VALIDATION_FAILED"],
+                                        "extensions", "code")
+        if validation_error is not None:
+            raise labelbox.exceptions.ValidationFailedError(
+                validation_error["message"])
+
         # Check for malformed GraphQL error
-        graphql_error = check_errors(
-            ["GRAPHQL_PARSE_FAILED", "GRAPHQL_VALIDATION_FAILED"],
-                "extensions", "code")
+        graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions", "code")
         if graphql_error is not None:
             raise labelbox.exceptions.InvalidQueryError(
                 graphql_error["message"])
@@ -143,6 +148,7 @@ class Client:
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
         if len(errors) > 0:
+            logging.warning("Unparsed errors on query execution: %r", errors)
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error: %s" % str(errors))
 

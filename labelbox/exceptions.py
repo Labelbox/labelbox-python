@@ -15,11 +15,6 @@ class AuthorizationError(LabelboxError):
     pass
 
 
-class MalformedRequestError(LabelboxError):
-    """Raised when an invalid request is made."""
-    pass
-
-
 class ResourceNotFoundError(LabelboxError):
     """Exception raised when a given resource is not found. """
 
