@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta, timezone
 import json
+import time
 
 import pytest
 
@@ -26,7 +28,12 @@ def test_project_setup(client, rand_gen):
     assert len(labeling_frontends) == 1
     labeling_frontend = labeling_frontends[0]
 
+    time.sleep(3)
+    now = datetime.now().astimezone(timezone.utc)
     project.setup(labeling_frontend, simple_ontology())
+    assert now - project.setup_complete <= timedelta(seconds=3)
+    assert now - project.last_activity_time <= timedelta(seconds=3)
+
 
     assert project.labeling_frontend() == labeling_frontend
     options = list(project.labeling_frontend_options())
@@ -38,5 +45,7 @@ def test_project_setup(client, rand_gen):
         assert options.project() == project
         assert options.organization() == client.get_organization()
     assert options.customization_options == json.dumps(simple_ontology())
+    assert project.organization() == client.get_organization()
+    assert project.created_by() == client.get_user()
 
     project.delete()

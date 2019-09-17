@@ -19,6 +19,10 @@ def test_data_row_bulk_creation(client, rand_gen):
         {DataRow.row_data: IMG_URL},
         {"row_data": IMG_URL},
     ])
+    assert task in client.get_user().created_tasks()
+    # TODO make Tasks expandable
+    with pytest.raises(InvalidQueryError):
+        assert task.created_by() == client.get_user()
     task.wait_till_done()
     assert task.status == "COMPLETE"
 
@@ -57,6 +61,8 @@ def test_data_row_single_creation(client, rand_gen):
     data_row = dataset.create_data_row(row_data=IMG_URL)
     assert len(list(dataset.data_rows())) == 1
     assert data_row.dataset() == dataset
+    assert data_row.created_by() == client.get_user()
+    assert data_row.organization() == client.get_organization()
 
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
