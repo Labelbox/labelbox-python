@@ -142,18 +142,17 @@ class Project(MutableDbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     setup_complete = Field.DateTime("setup_complete")
+    last_activity_time = Field.DateTime("last_activity_time")
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
     created_by = Relationship.ToOne("User", False, "created_by")
+    organization = Relationship.ToOne("Organization", False)
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
 
     # TODO Relationships
-    # organization
-    # createdBy
-    # datasets
     # labeledDatasets
     # labels
     # ...a lot more, define which are required for v0.1
@@ -189,12 +188,15 @@ class Project(MutableDbObject):
 
 class Dataset(MutableDbObject):
     name = Field.String("name")
+    description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
 
     # Relationships
     projects = Relationship.ToMany("Project", True)
     data_rows = Relationship.ToMany("DataRow", False)
+    created_by = Relationship.ToOne("User", False, "created_by")
+    organization = Relationship.ToOne("Organization", False)
 
     def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
@@ -302,16 +304,6 @@ class Dataset(MutableDbObject):
         task._user = user
         return task
 
-    # TODO Relationships
-    # organization
-    # createdBy
-    # projects
-    # dataRows
-
-    # TODO Fetched attributes
-    # rowCount
-    # createdLabelCount
-
 
 class DataRow(MutableDbObject):
     external_id = Field.String("external_id")
@@ -321,8 +313,8 @@ class DataRow(MutableDbObject):
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
-
-    # TODO other attributes
+    created_by = Relationship.ToOne("User", False, "created_by")
+    organization = Relationship.ToOne("Organization", False)
 
 
 class User(MutableDbObject):
@@ -331,6 +323,10 @@ class User(MutableDbObject):
     email = Field.String("email")
     name = Field.String("nickname")
     nickname = Field.String("name")
+    intercom_hash = Field.String("intercom_hash")
+    picture = Field.String("picture")
+    is_viewer = Field.Boolean("is_viewer")
+    is_external_user = Field.Boolean("is_external_user")
 
     # Relationships
     organization = Relationship.ToOne("Organization")
@@ -347,12 +343,10 @@ class Organization(MutableDbObject):
 
     # Relationships
     users = Relationship.ToMany("User", False)
-
-    # TODO other attributes
+    projects = Relationship.ToMany("Project", True)
 
 
 class Task(MutableDbObject):
-
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -360,11 +354,8 @@ class Task(MutableDbObject):
     completion_percentage = Field.Float("completion_percentage")
 
     # Relationships
-
-    # TODO "created_by" can't be treated as a relationship because there's
-    # currently no way on the server to make a query starting from
-    # a single task.
-    # created_by = Relationship.ToOne("User", "createdBy")
+    created_by = Relationship.ToOne("User", False, "created_by")
+    organization = Relationship.ToOne("Organization")
 
     def refresh(self):
         """ Refreshes Task data from the server. """
@@ -393,8 +384,6 @@ class Task(MutableDbObject):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
-
-    # TODO other attributes
 
 
 class LabelingFrontend(MutableDbObject):
