@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum, auto
+import logging
 
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError
@@ -7,6 +8,9 @@ from labelbox.filter import Comparison
 
 
 """ Classes for defining the client-side data schema. """
+
+
+logger = logging.getLogger(__name__)
 
 
 class Field:
