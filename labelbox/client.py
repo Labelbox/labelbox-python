@@ -124,19 +124,22 @@ class Client:
                     return error
             return None
 
-        # Check for authentication error
         if check_errors(["AUTHENTICATION_ERROR"],
                         "extensions", "exception", "code") is not None:
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
 
-        # Check for query complexity error
+        authorization_error = check_errors(["AUTHORIZATION_ERROR"],
+                                           "extensions", "code")
+        if authorization_error is not None:
+            raise labelbox.exceptions.AuthorizationError(
+                authorization_error["message"])
+
         validation_error = check_errors(["GRAPHQL_VALIDATION_FAILED"],
                                         "extensions", "code")
         if validation_error is not None:
             raise labelbox.exceptions.ValidationFailedError(
                 validation_error["message"])
 
-        # Check for malformed GraphQL error
         graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions", "code")
         if graphql_error is not None:
             raise labelbox.exceptions.InvalidQueryError(
