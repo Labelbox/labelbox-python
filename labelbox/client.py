@@ -137,8 +137,11 @@ class Client:
         validation_error = check_errors(["GRAPHQL_VALIDATION_FAILED"],
                                         "extensions", "code")
         if validation_error is not None:
-            raise labelbox.exceptions.ValidationFailedError(
-                validation_error["message"])
+            message = validation_error["message"]
+            if message == "Query complexity limit exceeded":
+                raise labelbox.exceptions.ValidationFailedError(message)
+            else:
+                raise labelbox.exceptions.InvalidQueryError(message)
 
         graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions", "code")
         if graphql_error is not None:

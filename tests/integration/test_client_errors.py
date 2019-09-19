@@ -38,7 +38,7 @@ def test_syntax_error(client):
 
 
 def test_semantic_error(client):
-    with pytest.raises(labelbox.exceptions.ValidationFailedError) as excinfo:
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as excinfo:
         client.execute("query {bbb {id}}", check_naming=False)
     assert excinfo.value.message.startswith("Cannot query field \"bbb\"")
 
