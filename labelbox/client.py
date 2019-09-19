@@ -38,7 +38,7 @@ class Client:
             if _LABELBOX_API_KEY not in os.environ:
                 raise labelbox.exceptions.AuthenticationError(
                     "Labelbox API key not provided")
-                api_key = os.environ[_LABELBOX_API_KEY]
+            api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
         logging.info("Initializing Labelbox client at '%s'", endpoint)
