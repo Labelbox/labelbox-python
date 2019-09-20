@@ -232,7 +232,7 @@ def get_all(db_object_type, where):
     return query.format_top("Get" + type_name + "s")
 
 
-def relationship(source, relationship_name, destination_type, to_many,
+def relationship(source, relationship, destination_type, to_many,
                  where, order_by):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
@@ -248,7 +248,7 @@ def relationship(source, relationship_name, destination_type, to_many,
 
     Args:
         source (DbObject): A database object.
-        relationship_name (str): Name of the to-many relationship.
+        relationship (Relationship): The relationship object.
         destination_type (type): A DbObject subclass, type of the relationship
             objects.
         to_many (bool): Indicator if a paginated to-many query should be
@@ -262,13 +262,13 @@ def relationship(source, relationship_name, destination_type, to_many,
     """
     check_where_clause(destination_type, where)
     check_order_by_clause(destination_type, order_by)
-    subquery = Query(utils.camel_case(relationship_name), destination_type,
+    subquery = Query(relationship.graphql_name, destination_type,
                      where, to_many, order_by)
     source_type_name = type(source).type_name()
     query = Query(utils.camel_case(source_type_name), subquery,
                   type(source).uid == source.uid)
     return query.format_top(
-        "Get" + source_type_name + utils.title_case(relationship_name))
+        "Get" + source_type_name + utils.title_case(relationship.graphql_name))
 
 
 def create(db_object_type, data):
