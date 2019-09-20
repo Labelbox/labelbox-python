@@ -39,14 +39,12 @@ def test_project(client, rand_gen):
     project = client.get_project(project.uid)
 
 
-def test_project_filtering_and_sorting(client):
+def test_project_filtering(client):
     p1 = client.create_project(name="p1")
     p2 = client.create_project(name="p2")
 
     assert list(client.get_projects(where=Project.name=="p1")) == [p1]
     assert list(client.get_projects(where=Project.name=="p2")) == [p2]
-
-    # TODO support project sorting
 
     p1.delete()
     p2.delete()

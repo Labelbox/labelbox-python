@@ -46,14 +46,12 @@ def test_dataset(client, rand_gen):
         dataset = client.get_dataset(dataset.uid)
 
 
-def test_dataset_filtering_and_sorting(client):
+def test_dataset_filtering(client):
     d1 = client.create_dataset(name="d1")
     d2 = client.create_dataset(name="d2")
 
     assert list(client.get_datasets(where=Dataset.name=="d1")) == [d1]
     assert list(client.get_datasets(where=Dataset.name=="d2")) == [d2]
-
-    # TODO support dataset sorting
 
     d1.delete()
     d2.delete()
