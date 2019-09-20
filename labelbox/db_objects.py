@@ -33,7 +33,7 @@ class RelationshipManager:
         self.source = source
         self.relationship = relationship
         self.destination_type = next(
-            t for t in MutableDbObject.__subclasses__()
+            t for t in RelatedDbObject.__subclasses__()
             if t.__name__.split(".")[-1] == relationship.destination_type_name)
 
         self.supports_filtering = True
@@ -99,7 +99,7 @@ class RelationshipManager:
         self.source.client.execute(query_string, params)
 
 
-class MutableDbObject(DbObject):
+class RelatedDbObject(DbObject):
     """ A DbObject subtype that should be used as a base class for all DbObject
     types that contain relationships. Ensures that during initialization of
     a DB object instance the appropriate `RelationshipManager` instances are
@@ -115,6 +115,8 @@ class MutableDbObject(DbObject):
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship))
 
+
+class Updateable:
     def update(self, **kwargs):
         """ Updates this DB object with new values. Values should be
         passed as key-value arguments with field names as keys:
@@ -173,7 +175,7 @@ class BulkDeletable:
         BulkDeletable.bulk_delete([self])
 
 
-class Project(MutableDbObject, Deletable):
+class Project(RelatedDbObject, Updateable, Deletable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -306,7 +308,7 @@ class Project(MutableDbObject, Deletable):
         return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
 
 
-class Dataset(MutableDbObject, Deletable):
+class Dataset(RelatedDbObject, Updateable, Deletable):
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -432,7 +434,7 @@ class Dataset(MutableDbObject, Deletable):
         return task
 
 
-class DataRow(MutableDbObject, BulkDeletable):
+class DataRow(RelatedDbObject, Updateable, BulkDeletable):
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
     updated_at = Field.DateTime("updated_at")
@@ -445,7 +447,7 @@ class DataRow(MutableDbObject, BulkDeletable):
     labels = Relationship.ToMany("Label", True)
 
 
-class Label(MutableDbObject, BulkDeletable):
+class Label(RelatedDbObject, Updateable, BulkDeletable):
     label = Field.String("label")
     seconds_to_label = Field.Float("seconds_to_label")
     agreement = Field.Float("agreement")
@@ -456,7 +458,7 @@ class Label(MutableDbObject, BulkDeletable):
     data_row = Relationship.ToOne("DataRow")
 
 
-class User(MutableDbObject):
+class User(RelatedDbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     email = Field.String("email")
@@ -475,7 +477,7 @@ class User(MutableDbObject):
     # TODO other attributes
 
 
-class Organization(MutableDbObject):
+class Organization(RelatedDbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -485,7 +487,7 @@ class Organization(MutableDbObject):
     projects = Relationship.ToMany("Project", True)
 
 
-class Task(MutableDbObject):
+class Task(RelatedDbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -525,7 +527,7 @@ class Task(MutableDbObject):
             self.refresh()
 
 
-class LabelingFrontend(MutableDbObject):
+class LabelingFrontend(RelatedDbObject):
     name = Field.String("name")
     description = Field.String("description")
     iframe_url_path = Field.String("iframe_url_path")
@@ -533,7 +535,7 @@ class LabelingFrontend(MutableDbObject):
     # TODO other fields and relationships
 
 
-class LabelingFrontendOptions(MutableDbObject):
+class LabelingFrontendOptions(RelatedDbObject):
     customization_options = Field.String("customization_options")
 
     project = Relationship.ToOne("Project")
@@ -541,6 +543,6 @@ class LabelingFrontendOptions(MutableDbObject):
     organization = Relationship.ToOne("Organization")
 
 
-class LabelingParameterOverride(MutableDbObject):
+class LabelingParameterOverride(RelatedDbObject):
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
