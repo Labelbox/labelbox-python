@@ -66,7 +66,7 @@ class RelationshipManager:
             where = not_deleted if where is None else where & not_deleted
 
         query_string, params = query.relationship(
-            self.source, rel.name,
+            self.source, rel,
             self.destination_type,
             True, where, order_by)
         return PaginatedCollection(
@@ -80,7 +80,7 @@ class RelationshipManager:
         rel = self.relationship
 
         query_string, params = query.relationship(
-            self.source, rel.name, self.destination_type, False, None, None)
+            self.source, rel, self.destination_type, False, None, None)
         result = self.source.client.execute(query_string, params)["data"]
         result = result[utils.camel_case(type(self.source).type_name())]
         result = result[rel.graphql_name]
