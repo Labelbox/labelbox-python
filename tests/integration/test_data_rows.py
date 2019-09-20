@@ -100,10 +100,8 @@ def test_data_row_update(client, rand_gen):
     assert data_row.external_id == external_id
 
     external_id_2 = rand_gen(str)
-    # TODO enable DataRow updates
-    with pytest.raises(InvalidQueryError):
-        data_row = data_row.update(external_id=external_id_2)
-        assert data_row.external_id == external_id_2
+    data_row.update(external_id=external_id_2)
+    assert data_row.external_id == external_id_2
 
     dataset.delete()
 
