@@ -12,11 +12,12 @@ sys.path.append(sys.argv[1])
 
 
 from labelbox import (Project, Dataset, DataRow, User, Organization, Task,
-                      LabelingFrontend)
+                      LabelingFrontend, Webhook)
 from labelbox.schema import Field, Relationship
 
 
-for cls in (Project, Dataset, DataRow, User, Organization, Task, LabelingFrontend):
+for cls in (Project, Dataset, DataRow, User, Organization, Task, LabelingFrontend,
+            Webhook):
     print("")
     print("##", cls.__name__)
 
