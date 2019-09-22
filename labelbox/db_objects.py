@@ -204,6 +204,7 @@ class Project(RelatedDbObject, Updateable, Deletable):
     labels = Relationship.ToMany("Label", True)
     labeling_parameter_overrides = Relationship.ToMany(
         "LabelingParameterOverride", False, "labeling_parameter_overrides")
+    webhooks = Relationship.ToMany("Webhook", False)
 
     def create_label(self, **kwargs):
         """ Creates a label on this project.
@@ -519,6 +520,7 @@ class Organization(RelatedDbObject):
     # Relationships
     users = Relationship.ToMany("User", False)
     projects = Relationship.ToMany("Project", True)
+    webhooks = Relationship.ToMany("Webhook", False)
 
 
 class Task(RelatedDbObject):
@@ -580,3 +582,42 @@ class LabelingFrontendOptions(RelatedDbObject):
 class LabelingParameterOverride(RelatedDbObject):
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
+
+
+# Webhook is Updateable, but with using custom GraphQL.
+class Webhook(RelatedDbObject):
+
+    # Status
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    REVOKED = "REVOKED"
+
+    # Topic
+    LABEL_CREATED = "LABEL_CREATED"
+    LABEL_UPDATED = "LABEL_UPDATED"
+    LABEL_DELETED = "LABEL_DELETED"
+
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
+    url = Field.String("url")
+    topics = Field.String("topics")
+    status = Field.String("status")
+
+    @staticmethod
+    def create(client, topics, url, secret, project):
+        query_str, params = query.create_webhook(Webhook, topics, url, secret,
+                                                 project)
+        res = client.execute(query_str, params)
+        return Webhook(client, res["data"]["createWebhook"])
+
+    created_by = Relationship.ToOne("User", False, "created_by")
+    organization = Relationship.ToOne("Organization")
+    project = Relationship.ToOne("Project")
+
+    def update(self, topics=None, url=None, status=None):
+        # Webhook has a custom `update` function due to custom types
+        # in `status` and `topics` fields.
+        query_str, params = query.edit_webhook(self, topics, url, status)
+        res = self.client.execute(query_str, params)
+        res = res["data"]["updateWebhook"]
+        self._set_field_values(res)

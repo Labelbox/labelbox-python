@@ -497,3 +497,30 @@ def bulk_delete(db_objects, use_where_clause):
         ", ".join('"%s"' % db_object.uid for db_object in db_objects)
     )
     return query_str, {}
+
+
+def create_webhook(db_object_type, topics, url, secret, project):
+    project_str = "" if project is None else ("project:{id:\"%s\"}," % project.uid)
+    fields_str = " ".join(field.graphql_name for field in db_object_type.fields())
+
+    query_str = """mutation CreateWebhookPyApi {
+        createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
+    } """ % (project_str, " ".join(topics), url, secret, fields_str)
+
+    return query_str, {}
+
+
+def edit_webhook(webhook, topics, url, status):
+    fields_str = " ".join(field.graphql_name for field in webhook.fields())
+
+    topics_str = "" if topics is None else "topics: {set: [%s]}" % " ".join(topics)
+    url_str = "" if url is None else "url: \"%s\"" % url
+    status_str = "" if status is None else "status: %s" % status
+
+    query_str = """mutation UpdateWebhookPyApi {
+        updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
+            webhook.uid,
+            ", ".join(filter(None, (topics_str, url_str, status_str))),
+            fields_str)
+
+    return query_str, {}
