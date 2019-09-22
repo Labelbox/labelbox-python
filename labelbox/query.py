@@ -36,6 +36,7 @@ def format_param_declaration(params):
             return attr.field_type.name
         else:
             return Field.Type.ID.name
+
     return "(" + ", ".join("$%s: %s!" % (param, attr_type(attr))
                            for param, (_, attr) in params.items()) + ")"
 
@@ -431,11 +432,10 @@ def update_fields(db_object, values):
               in values.items()}
     params[id_param] = (db_object.uid, DbObject.uid)
 
-    query_str = """mutation update%sPyApi(%s){update%s(
+    query_str = """mutation update%sPyApi%s{update%s(
         where: {id: $%s} data: {%s}) {%s}} """ % (
         utils.title_case(type_name),
-        " ".join("$%s: %s!" % (name, field.field_type.name)
-                 for name, (_, field) in params.items()),
+        format_param_declaration(params),
         type_name,
         id_param,
         values_str,
