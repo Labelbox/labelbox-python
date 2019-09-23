@@ -83,16 +83,6 @@ def test_data_row_single_creation(client, rand_gen):
     dataset.delete()
 
 
-def test_data_row_delete(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row = dataset.create_data_row(row_data=IMG_URL)
-    assert len(list(dataset.data_rows())) == 1
-    # TODO enable datarow deletions
-    with pytest.raises(InvalidQueryError):
-        data_row.delete()
-        assert len(list(dataset.data_rows())) == 0
-
-
 def test_data_row_update(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     external_id = rand_gen(str)
