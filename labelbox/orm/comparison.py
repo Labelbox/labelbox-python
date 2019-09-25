@@ -7,10 +7,12 @@ and not by the end user.
 """
 
 
-class LogicallyComparable:
-    """ A class that implements bitwise logical operator methods
-    (&, | and ~) so they return a LogicalExpression object.
+class LogicalExpressionComponent:
+    """ Implements bitwise logical operator methods (&, | and ~) so they
+    return a LogicalExpression object containing this
+    LogicalExpressionComponent.
     """
+
     def __and__(self, other):
         if not isinstance(other, (LogicalExpression, Comparison)):
             return NotImplemented
@@ -25,7 +27,7 @@ class LogicallyComparable:
         return LogicalExpression.Op.NOT(self)
 
 
-class LogicalExpression(LogicallyComparable):
+class LogicalExpression(LogicalExpressionComponent):
     """ A unary (NOT) or binary (AND, OR) logical expression between
     Comparison or LogicalExpression objects. """
 
@@ -67,7 +69,7 @@ class LogicalExpression(LogicallyComparable):
         return "%s %s %s" % (self.first, self.op.name, self.second)
 
 
-class Comparison(LogicallyComparable):
+class Comparison(LogicalExpressionComponent):
     """ A comparison between a database value (represented by a
     `labelbox.schema.Field` object) and a constant value. """
 

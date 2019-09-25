@@ -2,8 +2,8 @@ from itertools import chain
 
 from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
-from labelbox.filter import LogicalExpression, Comparison
-from labelbox.schema import DbObject, Field, Relationship
+from labelbox.orm.comparison import LogicalExpression, Comparison
+from labelbox.orm.model import Field, Relationship, Entity
 
 
 # Maps comparison operations to the suffixes appended to the field
@@ -52,7 +52,7 @@ class Query:
             what (str): What is being queried. Typically an object type in
                 singular or plural (i.e. "project" or "projects").
             subquery (Query or type): Either a Query object that is formatted
-                recursively or a DbObject subtype in which case all it's public
+                recursively or a Entity subtype in which case all it's public
                 fields are retrieved by the query.
             where (None, Comparison or LogicalExpression): the filtering clause.
             paginate (bool): If the "%skip %first" pagination substring should
@@ -68,10 +68,10 @@ class Query:
         self.order_by = order_by
 
     def format_subquery(self):
-        """ Formats the subquery (a Query or DbObject subtype). """
+        """ Formats the subquery (a Query or Entity subtype). """
         if isinstance(self.subquery, Query):
             return self.subquery.format()
-        elif issubclass(self.subquery, DbObject):
+        elif issubclass(self.subquery, Entity):
             return " ".join(f.graphql_name for f in self.subquery.fields()), {}
         else:
             raise MalformedQueryException()
@@ -143,36 +143,19 @@ class Query:
         return query, {param: value for param, (value, _) in params.items()}
 
 
-def get_single(db_object_type, uid):
+def get_single(entity, uid):
     """ Constructs the query and params dict for obtaining a single object. Either
     on ID, or without params.
     Args:
-        db_object_type (type): A DbObject subtype being obtained.
+        entity (type): An Entity subtype being obtained.
         uid (str): The ID of the sought object. It can be None, which is legal for
             DB types that have a default object being returned (User and
             Organization).
     """
-    type_name = db_object_type.type_name()
-    where = db_object_type.uid == uid if uid else None
-    return Query(utils.camel_case(type_name), db_object_type, where).format_top(
+    type_name = entity.type_name()
+    where = entity.uid == uid if uid else None
+    return Query(utils.camel_case(type_name), entity, where).format_top(
         "Get" + type_name)
-
-
-def fields(where):
-    """ Returns a generator that yields all the Field objects from
-    a where clause.
-
-    Args:
-        where (LogicalExpression, Comparison or None): The where
-            clause used for filtering in a query.
-    Return:
-        See above.
-    """
-    if isinstance(where, LogicalExpression):
-        for f in chain(fields(where.first), fields(where.second)):
-            yield f
-    elif isinstance(where, Comparison):
-        yield where.field
 
 
 def logical_ops(where):
@@ -191,12 +174,33 @@ def logical_ops(where):
         for f in chain(logical_ops(where.first), logical_ops(where.second)):
             yield f
 
-def check_where_clause(db_object_type, where):
+
+def check_where_clause(entity, where):
+    """ Checks the `where` clause of a query. A `where` clause is legal
+    if it only refers to fields found in the entity it's defined for.
+    Since only AND logical operations are supported server-side at the
+    moment, logical OR and NOT are illegal.
+
+    Args:
+        entity (type): An Entity subclass type.
+        where (LogicalExpression or Comparison): The `where` clause of
+            query.
+    Return:
+        bool indicating if `where` is legal for `entity`.
+    """
+    def fields(where):
+        """ Yields all the fields in a `where` clause. """
+        if isinstance(where, LogicalExpression):
+            for f in chain(fields(where.first), fields(where.second)):
+                yield f
+        elif isinstance(where, Comparison):
+            yield where.field
+
     # The `deleted` field is a special case, ignore it.
-    where_fields = [f for f in fields(where) if f != DbObject.deleted]
-    invalid_fields = set(where_fields) - set(db_object_type.fields())
+    where_fields = [f for f in fields(where) if f != Entity.deleted]
+    invalid_fields = set(where_fields) - set(entity.fields())
     if invalid_fields:
-        raise InvalidAttributeError(db_object_type, invalid_fields)
+        raise InvalidAttributeError(entity, invalid_fields)
 
     if len(set(where_fields)) != len(where_fields):
         raise InvalidQueryError("Where clause contains multiple comparisons for "
@@ -207,34 +211,42 @@ def check_where_clause(db_object_type, where):
                                 "the where clause of a query.")
 
 
-def check_order_by_clause(db_object_type, order_by):
+def check_order_by_clause(entity, order_by):
+    """ Checks that the `order_by` clause field is a part of `entity`.
+
+    Args:
+        entity (type): An Entity subclass type.
+        order_by ((field, ordering)): The ordering tuple consisting of
+            a field and sort ordering (ascending or descending).
+    Return:
+        bool indicating if `order_by` is legal for `entity`.
+    """
     if order_by is not None:
         field, _ = order_by
-        if field not in db_object_type.fields():
-            raise InvalidAttributeError(db_object_type, field)
+        if field not in entity.fields():
+            raise InvalidAttributeError(entity, field)
 
 
-def get_all(db_object_type, where):
+def get_all(entity, where):
     """ Constructs a query that fetches all items of the given type. The
     resulting query is intended to be used for pagination, it contains
     two python-string int-placeholders (%d) for 'skip' and 'first'
     pagination parameters.
 
     Args:
-        db_object_type (type): The object type being queried.
+        entity (type): The object type being queried.
         where (Comparison, LogicalExpression or None): The `where` clause
             for filtering.
     Return:
         (str, dict) tuple that is the query string and parameters.
     """
-    check_where_clause(db_object_type, where)
-    type_name = db_object_type.type_name()
-    query = Query(utils.camel_case(type_name) + "s", db_object_type, where, True)
+    check_where_clause(entity, where)
+    type_name = entity.type_name()
+    query = Query(utils.camel_case(type_name) + "s", entity, where, True)
     return query.format_top("Get" + type_name + "s")
 
 
-def relationship(source, relationship, destination_type, to_many,
-                 where, order_by):
+def relationship(source, relationship, where, order_by):
     """ Constructs a query that fetches all items from a -to-many
     relationship. To be used like:
         >>> project = ...
@@ -248,12 +260,8 @@ def relationship(source, relationship, destination_type, to_many,
     pagination parameters.
 
     Args:
-        source (DbObject): A database object.
-        relationship (Relationship): The relationship object.
-        destination_type (type): A DbObject subclass, type of the relationship
-            objects.
-        to_many (bool): Indicator if a paginated to-many query should be
-            constructed or a non-paginated to-one query.
+        source (DbObject): A database object whose related objects are sought.
+        relationship (Relationship): The relationship.
         where (Comparison, LogicalExpression or None): The `where` clause
             for filtering.
         order_by (None or (Field, Field.Order): The `order_by` clause for
@@ -261,9 +269,10 @@ def relationship(source, relationship, destination_type, to_many,
     Return:
         (str, dict) tuple that is the query string and parameters.
     """
-    check_where_clause(destination_type, where)
-    check_order_by_clause(destination_type, order_by)
-    subquery = Query(relationship.graphql_name, destination_type,
+    check_where_clause(relationship.destination_type, where)
+    check_order_by_clause(relationship.destination_type, order_by)
+    to_many = relationship.relationship_type == Relationship.Type.ToMany
+    subquery = Query(relationship.graphql_name, relationship.destination_type,
                      where, to_many, order_by)
     source_type_name = type(source).type_name()
     query = Query(utils.camel_case(source_type_name), subquery,
@@ -272,18 +281,18 @@ def relationship(source, relationship, destination_type, to_many,
         "Get" + source_type_name + utils.title_case(relationship.graphql_name))
 
 
-def create(db_object_type, data):
+def create(entity, data):
     """ Generats a query and parameters for creating a new DB object.
 
     Args:
-        db_object_type (type): A DbObject subtype indicating which kind of
+        entity (type): An Entity subtype indicating which kind of
             DB object needs to be created.
         data (dict): A dict that maps Fields and Relationships to values, new
             object data.
     Return:
         (query_string, parameters)
     """
-    type_name = db_object_type.type_name()
+    type_name = entity.type_name()
 
     def format_param_value(attribute, param):
         if isinstance(attribute, Field):
@@ -301,7 +310,7 @@ def create(db_object_type, data):
         type_name,
         " ".join(format_param_value(attribute, param)
                  for param, (_, attribute) in params.items()),
-        " ".join(field.graphql_name for field in db_object_type.fields()))
+        " ".join(field.graphql_name for field in entity.fields()))
 
     return query_str, {name: value for name, (value, _) in params.items()}
 
@@ -396,8 +405,8 @@ def update_relationship(a, b, relationship_name, update):
     """
     a_uid_param = utils.camel_case(type(a).type_name()) + "Id"
     b_uid_param = utils.camel_case(type(b).type_name()) + "Id"
-    a_params = {DbObject.uid: a.uid}
-    b_params = {DbObject.uid: b.uid}
+    a_params = {Entity.uid: a.uid}
+    b_params = {Entity.uid: b.uid}
     query_str = """mutation %s%sAnd%sPyApi%s{update%s(
         where: {id: $%s} data: {%s: {%s: {id: $%s}}}) {id}} """ % (
         utils.title_case(update),
@@ -430,7 +439,7 @@ def update_fields(db_object, values):
                           for field, _ in values.items())
     params = {field.graphql_name: (value, field) for field, value
               in values.items()}
-    params[id_param] = (db_object.uid, DbObject.uid)
+    params[id_param] = (db_object.uid, Entity.uid)
 
     query_str = """mutation update%sPyApi%s{update%s(
         where: {id: $%s} data: {%s}) {%s}} """ % (
@@ -484,8 +493,7 @@ def bulk_delete(db_objects, use_where_clause):
         use_where_clause (bool): If the object IDs should be passed to the
             mutation in a `where` clause or directly as a mutation value.
     """
-    db_object_type = type(db_objects[0])
-    type_name = db_object_type.type_name()
+    type_name = db_objects[0].type_name()
     if use_where_clause:
         query_str = "mutation delete%ssPyApi{delete%ss(where: {%sIds: [%s]}){id}}"
     else:
@@ -499,9 +507,9 @@ def bulk_delete(db_objects, use_where_clause):
     return query_str, {}
 
 
-def create_webhook(db_object_type, topics, url, secret, project):
+def create_webhook(entity, topics, url, secret, project):
     project_str = "" if project is None else ("project:{id:\"%s\"}," % project.uid)
-    fields_str = " ".join(field.graphql_name for field in db_object_type.fields())
+    fields_str = " ".join(field.graphql_name for field in entity.fields())
 
     query_str = """mutation CreateWebhookPyApi {
         createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
