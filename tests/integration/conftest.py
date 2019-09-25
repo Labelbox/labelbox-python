@@ -6,8 +6,8 @@ from string import ascii_letters
 
 import pytest
 
-from labelbox.client import Client
-from labelbox.schema import Field
+from labelbox import Client
+from labelbox.orm.model import Field
 
 
 class IntegrationClient(Client):

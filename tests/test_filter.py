@@ -1,7 +1,7 @@
 import pytest
 
-from labelbox.db_objects import Project
-from labelbox.filter import Comparison, LogicalExpression
+from labelbox import Project
+from labelbox.orm.comparison import Comparison, LogicalExpression
 
 
 def test_comparison_creation():

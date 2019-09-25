@@ -1,6 +1,6 @@
 name = "labelbox"
 
 from labelbox.client import Client
-from labelbox.db_objects import (
+from labelbox.schema import (
     Project, Dataset, DataRow, Label, User, Organization, Task, LabelingFrontend,
     AssetMetadata, Webhook)

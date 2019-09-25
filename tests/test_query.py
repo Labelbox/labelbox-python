@@ -1,8 +1,8 @@
 import pytest
 
-from labelbox import query
-from labelbox.db_objects import Project, Dataset
-from labelbox.filter import Comparison, LogicalExpression
+from labelbox import Project, Dataset
+from labelbox.orm import query
+from labelbox.orm.comparison import Comparison, LogicalExpression
 
 
 def format(*args, **kwargs):
@@ -45,16 +45,6 @@ def test_query_order_by():
 
     q, _ = query.Query("x", Project, order_by=Project.uid.desc).format()
     assert q.startswith("x(orderBy: id_DESC){")
-
-
-def test_fields():
-    assert set(query.fields(None)) == set()
-    comparison_1 = Comparison.Op.EQ(Project.name, "name")
-    assert set(query.fields(comparison_1)) == {Project.name}
-    comparison_2 = Comparison.Op.LT(Dataset.uid, "uid")
-    assert set(query.fields(comparison_2)) == {Dataset.uid}
-    op = LogicalExpression.Op.AND(comparison_1, comparison_2)
-    assert set(query.fields(op)) == {Project.name, Dataset.uid}
 
 
 def test_logical_ops():

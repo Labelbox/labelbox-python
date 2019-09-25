@@ -6,11 +6,12 @@ import os
 import requests
 import requests.exceptions
 
-from labelbox import query, utils
+from labelbox import utils
 import labelbox.exceptions
-from labelbox.db_objects import Project, Dataset, User, Organization
-from labelbox.paginated_collection import PaginatedCollection
-from labelbox.schema import DbObject
+from labelbox.orm import query
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema import Project, Dataset, User, Organization
+from labelbox.orm.db_object import DbObject
 
 
 logger = logging.getLogger(__name__)
