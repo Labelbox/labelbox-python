@@ -194,11 +194,7 @@ class Relationship:
 
     @property
     def destination_type(self):
-        for t in Entity.subclasses():
-            if t.type_name() == self.destination_type_name:
-                return t
-        raise LabelboxError("Failed to find Entity for name: %s" %
-                            self.destination_type_name)
+        return Entity.named(self.destination_type_name)
 
 
 class Entity:
@@ -279,3 +275,20 @@ class Entity:
             yield subclass
             for subsub in subclass.subclasses():
                 yield subsub
+
+    @classmethod
+    def named(cls, name):
+        """ Returns an Entity (direct or indirect subclass of `Entity`) that
+        whose class name is equal to `name`.
+
+        Args:
+            name (str): Name of the sought entity, for example "Project".
+        Return:
+            An Entity subtype that has the given `name`.
+        Raises:
+            LabelboxError: if there is no such class.
+        """
+        for t in Entity.subclasses():
+            if t.type_name() == name:
+                return t
+        raise LabelboxError("Failed to find Entity for name: %s" % name)

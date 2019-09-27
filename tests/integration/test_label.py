@@ -80,27 +80,33 @@ def test_label_update(client, rand_gen):
 
 def test_label_filter_order(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=IMG_URL)
+    dataset_1 = client.create_dataset(name=rand_gen(str), projects=project)
+    dataset_2 = client.create_dataset(name=rand_gen(str), projects=project)
+    data_row_1 = dataset_1.create_data_row(row_data=IMG_URL)
+    data_row_2 = dataset_2.create_data_row(row_data=IMG_URL)
 
-    l1 = project.create_label(data_row=data_row, label="l1", seconds_to_label=0.3)
-    l2 = project.create_label(data_row=data_row, label="l2", seconds_to_label=0.1)
+    l1 = project.create_label(data_row=data_row_1, label="l1",
+                              seconds_to_label=0.3)
+    l2 = project.create_label(data_row=data_row_2, label="l2",
+                              seconds_to_label=0.1)
 
     # Labels are not visible in the project immediately.
     time.sleep(10)
 
-    # Filtering is not supported
-    with pytest.raises(InvalidQueryError) as exc_info:
-        project.labels(where=Label.label=="l1")
-    assert exc_info.value.message == \
-        "Relationship Project.labels doesn't support filtering"
+    # Filtering supported on dataset
+    assert set(project.labels()) == {l1, l2}
+    assert set(project.labels(datasets=[])) == set()
+    assert set(project.labels(datasets=[dataset_1])) == {l1}
+    assert set(project.labels(datasets=[dataset_2])) == {l2}
+    assert set(project.labels(datasets=[dataset_1, dataset_2])) == {l1, l2}
 
     assert list(project.labels(order_by=Label.label.asc)) == [l1, l2]
     assert list(project.labels(order_by=Label.label.desc)) == [l2, l1]
     assert list(project.labels(order_by=Label.seconds_to_label.asc)) == [l2, l1]
     assert list(project.labels(order_by=Label.seconds_to_label.desc)) == [l1, l2]
 
-    dataset.delete()
+    dataset_1.delete()
+    dataset_2.delete()
     project.delete()
 
 

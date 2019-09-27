@@ -10,6 +10,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import (DbObject, Updateable, Deletable,
                                     BulkDeletable)
 from labelbox.orm.model import Field, Relationship
+from labelbox.pagination import PaginatedCollection
 
 
 """ Client-side object type definitions. """
@@ -19,12 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class Project(DbObject, Updateable, Deletable):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.labels.supports_filtering = False
-
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -41,7 +36,6 @@ class Project(DbObject, Updateable, Deletable):
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
-    labels = Relationship.ToMany("Label", True)
     labeling_parameter_overrides = Relationship.ToMany(
         "LabelingParameterOverride", False, "labeling_parameter_overrides")
     webhooks = Relationship.ToMany("Webhook", False)
@@ -71,6 +65,11 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, params)
         res = res["data"]["createLabel"]
         return Label(self.client, res)
+
+    def labels(self, datasets=None, order_by=None):
+        query_string, params = query.project_labels(self, datasets, order_by)
+        return PaginatedCollection(self.client, query_string, params,
+                                   ["project", "labels"], Label)
 
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
@@ -311,8 +310,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Return:
             AssetMetadata DB object.
         """
-        query_str, params = query.create_metadata(
-            AssetMetadata, meta_type, meta_value, self.uid)
+        query_str, params = query.create_metadata(meta_type, meta_value, self.uid)
         res = self.client.execute(query_str, params)
         return AssetMetadata(self.client, res["data"]["createAssetMetadata"])
 
@@ -454,8 +452,7 @@ class Webhook(DbObject):
 
     @staticmethod
     def create(client, topics, url, secret, project):
-        query_str, params = query.create_webhook(Webhook, topics, url, secret,
-                                                 project)
+        query_str, params = query.create_webhook(topics, url, secret, project)
         res = client.execute(query_str, params)
         return Webhook(client, res["data"]["createWebhook"])
 

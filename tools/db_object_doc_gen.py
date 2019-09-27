@@ -11,9 +11,15 @@ import sys
 sys.path.append(sys.argv[1])
 
 
-from labelbox import (Project, Dataset, DataRow, Label, User, Organization, Task,
-                      LabelingFrontend, Webhook)
+from labelbox import (Project, Dataset, DataRow, Label, User, Organization,
+                      Task, LabelingFrontend, Webhook)
 from labelbox.schema import Field, Relationship
+
+
+# Map {cls: [fields_info, ...]}
+more_fields = {}
+# Map {cls: [relationship_info, ...]}
+more_rels = {Project: [("labels", Label, "Many")]}
 
 
 for cls in (Project, Dataset, DataRow, Label, User, Organization, Task,
@@ -34,3 +40,6 @@ for cls in (Project, Dataset, DataRow, Label, User, Organization, Task,
                          if isinstance(r, Relationship)):
         print(relationship.name, "|", relationship.destination_type_name, "|",
               relationship.relationship_type.name[2:])
+
+    for name, dest_type, card in more_rels.get(cls, []):
+        print(name, "|", dest_type.type_name(), "|", card)
