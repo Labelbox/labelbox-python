@@ -374,7 +374,7 @@ def unset_labeling_parameter_overrides(project, data_rows):
     return query_str, {}
 
 
-def create_metadata(asset_type, meta_type, meta_value, data_row_id):
+def create_metadata(meta_type, meta_value, data_row_id):
     meta_type_param = "meta_type"
     meta_value_param = "meta_value"
     data_row_id_param = "data_row_id"
@@ -384,7 +384,8 @@ def create_metadata(asset_type, meta_type, meta_value, data_row_id):
             metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
         meta_type_param, meta_value_param, data_row_id_param,
         meta_type_param, meta_value_param, data_row_id_param,
-        " ".join(field.graphql_name for field in asset_type.fields()))
+        " ".join(field.graphql_name for field
+                 in Entity.named("AssetMetadata").fields()))
     return query_str, {meta_type_param: meta_type,
                        meta_value_param: meta_value,
                        data_row_id_param: data_row_id}
@@ -484,6 +485,39 @@ def delete(db_object):
     return query_str, {id_param: db_object.uid}
 
 
+def project_labels(project, datasets, order_by):
+    """ Returns the query and params for getting a Project's labels
+    relationship. A non-standard relationship query is used to support
+    filtering on Datasets.
+    Args:
+        datasets (list or None): The datasets filter. If None it's
+            ignored.
+    Return:
+        (query_string, params)
+    """
+    label_entity = Entity.named("Label")
+
+    if datasets is not None:
+        where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
+            '"%s"' % dataset.uid for dataset in datasets)
+    else:
+        where = ""
+
+    if order_by is not None:
+        check_order_by_clause(label_entity, order_by)
+        order_by_str = "orderBy: %s_%s" % (
+            order_by[0].graphql_name, order_by[1].name.upper())
+    else:
+        order_by_str = ""
+
+    query_str = """query GetProjectLabelsPyApi($project_id: ID!)
+        {project (where: {id: $project_id})
+            {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
+        where, order_by_str, " ".join(f.graphql_name
+                                      for f in label_entity.fields()))
+    return query_str, {"project_id": project.uid}
+
+
 def export_labels():
     """ Returns the query and ID param for exporting a Project's
     labels.
@@ -521,9 +555,10 @@ def bulk_delete(db_objects, use_where_clause):
     return query_str, {}
 
 
-def create_webhook(entity, topics, url, secret, project):
+def create_webhook(topics, url, secret, project):
     project_str = "" if project is None else ("project:{id:\"%s\"}," % project.uid)
-    fields_str = " ".join(field.graphql_name for field in entity.fields())
+    fields_str = " ".join(field.graphql_name for field
+                          in Entity.named("Webhook").fields())
 
     query_str = """mutation CreateWebhookPyApi {
         createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
