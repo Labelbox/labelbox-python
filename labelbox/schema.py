@@ -31,6 +31,8 @@ class Project(DbObject, Updateable, Deletable):
     created_at = Field.DateTime("created_at")
     setup_complete = Field.DateTime("setup_complete")
     last_activity_time = Field.DateTime("last_activity_time")
+    auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
+    auto_audit_percentage = Field.Float("auto_audit_percentage")
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
