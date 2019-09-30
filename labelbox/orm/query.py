@@ -390,36 +390,50 @@ def create_metadata(asset_type, meta_type, meta_value, data_row_id):
                        data_row_id_param: data_row_id}
 
 
-def update_relationship(a, b, relationship_name, update):
+def update_relationship(a, b, relationship, update):
     """ Updates the relationship in DB object `a` to connect or disconnect
     DB object `b`.
 
     Args:
         a (DbObject): The object being updated.
         b (DbObject): Object on the other side of the relationship.
-        relationship_name (str): Relationship name.
+        relationship (Relationship): The relationship from `a` to `b`.
         update (str): The type of update. Must be either `connect` or
             `disconnect`.
     Return:
         (query_string, query_parameters)
     """
+    to_one_disconnect = update == "disconnect" and \
+        relationship.relationship_type == Relationship.Type.ToOne
+
     a_uid_param = utils.camel_case(type(a).type_name()) + "Id"
-    b_uid_param = utils.camel_case(type(b).type_name()) + "Id"
-    a_params = {Entity.uid: a.uid}
-    b_params = {Entity.uid: b.uid}
+
+    if not to_one_disconnect:
+        b_uid_param = utils.camel_case(type(b).type_name()) + "Id"
+        param_declr = "($%s: ID!, $%s: ID!)" % (a_uid_param, b_uid_param)
+        b_query = "{id: $%s}" % b_uid_param
+    else:
+        param_declr = "($%s: ID!)" % a_uid_param
+        b_query = "true"
+
     query_str = """mutation %s%sAnd%sPyApi%s{update%s(
-        where: {id: $%s} data: {%s: {%s: {id: $%s}}}) {id}} """ % (
+        where: {id: $%s} data: {%s: {%s: %s}}) {id}} """ % (
         utils.title_case(update),
         type(a).type_name(),
         type(b).type_name(),
-        "($%s: ID!, $%s: ID!)" % (a_uid_param, b_uid_param),
+        param_declr,
         utils.title_case(type(a).type_name()),
         a_uid_param,
-        utils.camel_case(relationship_name),
+        relationship.graphql_name,
         update,
-        b_uid_param)
+        b_query)
 
-    return query_str, {a_uid_param: a.uid, b_uid_param: b.uid}
+    if to_one_disconnect:
+        params = {a_uid_param: a.uid}
+    else:
+        params = {a_uid_param: a.uid, b_uid_param: b.uid}
+
+    return query_str, params
 
 
 def update_fields(db_object, values):
