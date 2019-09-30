@@ -10,7 +10,7 @@ from labelbox import utils
 import labelbox.exceptions
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema import Project, Dataset, User, Organization
+from labelbox.schema import Project, Dataset, User, Organization, LabelingFrontend
 from labelbox.orm.db_object import DbObject
 
 
@@ -285,6 +285,20 @@ class Client:
                 `Client.execute` can also be raised by this function.
         """
         return self.get_all(Dataset, where)
+
+    def get_labeling_frontends(self, where=None):
+        """ Fetches all the labeling frontends.
+
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Return:
+            An iterable of LabelingFrontends (typically a PaginatedCollection).
+        Raises:
+            labelbox.exceptions.LabelboxError: Any error raised by
+                `Client.execute` can also be raised by this function.
+        """
+        return self.get_all(LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
         """ Creates a object on the server. Attribute values are

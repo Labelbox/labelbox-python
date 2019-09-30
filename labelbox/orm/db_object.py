@@ -151,18 +151,20 @@ class RelationshipManager:
         result = self.source.client.execute(query_string, params)["data"]
         result = result[utils.camel_case(type(self.source).type_name())]
         result = result[rel.graphql_name]
+        if result is None:
+            return None
         return rel.destination_type(self.source.client, result)
 
     def connect(self, other):
         """ Connects source object of this manager to the `other` object. """
         query_string, params = query.update_relationship(
-            self.source, other, self.relationship.name, "connect")
+            self.source, other, self.relationship, "connect")
         self.source.client.execute(query_string, params)
 
     def disconnect(self, other):
         """ Disconnects source object of this manager from the `other` object. """
         query_string, params = query.update_relationship(
-            self.source, other, self.relationship.name, "disconnect")
+            self.source, other, self.relationship, "disconnect")
         self.source.client.execute(query_string, params)
 
 
