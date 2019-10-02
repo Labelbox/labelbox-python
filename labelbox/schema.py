@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class Project(DbObject, Updateable, Deletable):
-    name = Field.String("name")
+    """ A Project is a container that includes a labeling frontend, an ontology,
+    datasets and labels.
+    """
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
@@ -170,6 +172,9 @@ class Project(DbObject, Updateable, Deletable):
 
 
 class Dataset(DbObject, Updateable, Deletable):
+    """ A dataset is a collection of DataRows. For example, if you have a CSV with
+    100 rows, you will have 1 Dataset and 100 DataRows.
+    """
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -324,6 +329,9 @@ class Dataset(DbObject, Updateable, Deletable):
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
+    """ A DataRow represents a single piece of data. For example, if you have
+    a CSV with 100 rows, you will have 1 Dataset and 100 DataRows.
+    """
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
     updated_at = Field.DateTime("updated_at")
@@ -360,7 +368,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
 
 class Label(DbObject, Updateable, BulkDeletable):
-
+    """ Label represents an assessment on a DataRow. For example one label could
+    contain 100 bounding boxes (annotations).
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.reviews.supports_filtering = False
@@ -408,6 +418,9 @@ class Review(DbObject, Deletable, Updateable):
 
 
 class AssetMetadata(DbObject):
+    """ AssetMetadata is a datatype to provide extra context about an asset
+    while labeling.
+    """
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
     TEXT = "TEXT"
@@ -417,6 +430,9 @@ class AssetMetadata(DbObject):
 
 
 class User(DbObject):
+    """ A User is a registered Labelbox user (for example you) associated with
+    data they create or import and an Organization they belong to.
+    """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     email = Field.String("email")
@@ -436,6 +452,10 @@ class User(DbObject):
 
 
 class Organization(DbObject):
+    """ An Organization is a group of Users associated with data created by
+    Users within that Organization. Typically all Users within an Organization
+    have access to data created by any User in the same Organization.
+    """
 
     # RelationshipManagers in Organization use the type in Query (and
     # not the source object) because the server-side does not support
@@ -456,6 +476,9 @@ class Organization(DbObject):
 
 
 class Task(DbObject):
+    """ Represents a server-side process that might take a longer time to process.
+    Allows the Task state to be updated and checked on the client side.
+    """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -496,6 +519,10 @@ class Task(DbObject):
 
 
 class LabelingFrontend(DbObject):
+    """ Is a type representing an HTML / JavaScript UI that is used to generate
+    labels. “Image Labeling” is the default Labeling Frontend that comes in every
+    organization. You can create new labeling frontends for an organization.
+    """
     name = Field.String("name")
     description = Field.String("description")
     iframe_url_path = Field.String("iframe_url_path")
@@ -519,6 +546,10 @@ class LabelingParameterOverride(DbObject):
 
 # Webhook is Updateable, but with using custom GraphQL.
 class Webhook(DbObject):
+    """ Represents a server-side rule for sending notifications to a web-server
+    whenever one of several predefined actions happens within a context of
+    a Project or an Organization.
+    """
 
     # Status
     ACTIVE = "ACTIVE"
