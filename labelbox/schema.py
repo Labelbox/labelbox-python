@@ -5,7 +5,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 import os
 import time
 
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError
 from labelbox.orm import query
 from labelbox.orm.db_object import (DbObject, Updateable, Deletable,
                                     BulkDeletable)
@@ -205,9 +205,11 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             items (iterable of (dict or str)): See above for details.
+
         Return:
             Task representing the data import on the server side. The Task
             can be used for inspecting task progress and waiting until it's done.
+
         Raise:
             InvalidQueryError: if the `items` parameter does not conform to
                 the specification above.
@@ -277,6 +279,32 @@ class Dataset(DbObject, Updateable, Deletable):
         task = task[0]
         task._user = user
         return task
+
+    def data_row_for_external_id(self, external_id):
+        """ Convenience method for getting a single `DataRow` belonging to this
+        `Dataset` that has the given `external_id`.
+
+        Args:
+            external_id (str): External ID of the sought `DataRow`.
+
+        Returns:
+            A single `DataRow` with the given ID.
+
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: if there is no `DataRow`
+                in this `DataSet` with the given external ID, or if there are
+                multiple `DataRows` for it.
+        """
+        where = DataRow.external_id==external_id
+
+        data_rows = self.data_rows(where=where)
+        # Get at most two data_rows.
+        data_rows = [row for row, _ in zip(data_rows, range(2))]
+
+        if len(data_rows) != 1:
+            raise ResourceNotFoundError(DataRow, where)
+
+        return data_rows[0]
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
