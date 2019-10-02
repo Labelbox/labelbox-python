@@ -4,6 +4,9 @@ from labelbox import Dataset
 from labelbox.exceptions import ResourceNotFoundError
 
 
+IMG_URL = "https://picsum.photos/200/300"
+
+
 def test_dataset(client, rand_gen):
     before = list(client.get_datasets())
     for o in before:
@@ -55,3 +58,22 @@ def test_dataset_filtering(client):
 
     d1.delete()
     d2.delete()
+
+
+def test_get_data_row_for_external_id(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    external_id = rand_gen(str)
+
+    with pytest.raises(ResourceNotFoundError):
+        data_row = dataset.data_row_for_external_id(external_id)
+
+    data_row = dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
+
+    found = dataset.data_row_for_external_id(external_id)
+    assert found.uid == data_row.uid
+    assert found.external_id == external_id
+
+    second = dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
+
+    with pytest.raises(ResourceNotFoundError):
+        data_row = dataset.data_row_for_external_id(external_id)
