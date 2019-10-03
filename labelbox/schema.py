@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from enum import Enum, auto
 import json
 import logging
 from multiprocessing.dummy import Pool as ThreadPool
@@ -33,6 +34,7 @@ class Project(DbObject, Updateable, Deletable):
     datasets = Relationship.ToMany("Dataset", True)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
+    reviews = Relationship.ToMany("Review", True)
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
@@ -103,6 +105,20 @@ class Project(DbObject, Updateable, Deletable):
 
     # TODO Mutable (fetched) attributes
     # ...many, define which are required for v0.1
+
+    def review_metrics(self, net_score):
+        """ Returns this Project's review metrics.
+        Args:
+            net_score (None or Review.NetScore): Indicates desired metric.
+        Return:
+            int, aggregation count of reviews for given net_score.
+        """
+        if net_score not in (None,) + tuple(Review.NetScore):
+            raise InvalidQueryError("Review metrics net score must be either None "
+                                    "or one of Review.NetScore values")
+        query_str, params = query.project_review_metrics(self, net_score)
+        res = self.client.execute(query_str, params)
+        return res["data"]["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
     def setup(self, labeling_frontend, labeling_frontend_options):
         """ Finalizes the Project setup.
@@ -344,6 +360,11 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
 
 class Label(DbObject, Updateable, BulkDeletable):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.reviews.supports_filtering = False
+
     label = Field.String("label")
     seconds_to_label = Field.Float("seconds_to_label")
     agreement = Field.Float("agreement")
@@ -352,10 +373,38 @@ class Label(DbObject, Updateable, BulkDeletable):
 
     project = Relationship.ToOne("Project")
     data_row = Relationship.ToOne("DataRow")
+    reviews = Relationship.ToMany("Review", False)
 
     @staticmethod
     def bulk_delete(objects):
         BulkDeletable.bulk_delete(objects, False)
+
+    def create_review(self, **kwargs):
+        """ Creates a Review for this label.
+        Kwargs:
+            Review attributes. At a minimum a `Review.score` field
+            value must be provided.
+        """
+        kwargs[Review.label.name] = self
+        kwargs[Review.project.name] = self.project()
+        return self.client._create(Review, kwargs)
+
+
+class Review(DbObject, Deletable, Updateable):
+
+    class NetScore(Enum):
+        Negative = auto()
+        Zero = auto()
+        Positive = auto()
+
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
+    score = Field.Float("score")
+
+    created_by = Relationship.ToOne("User", False, "created_by")
+    organization = Relationship.ToOne("Organization", False)
+    project = Relationship.ToOne("Project", False)
+    label = Relationship.ToOne("Label", False)
 
 
 class AssetMetadata(DbObject):

@@ -592,3 +592,14 @@ def edit_webhook(webhook, topics, url, status):
             results_query_part(type(webhook)))
 
     return query_str, {}
+
+
+def project_review_metrics(project, net_score):
+    project_id_param = "project_id"
+    net_score_literal = "None" if net_score is None else net_score.name
+    query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
+        project(where: {id:$%s})
+        {reviewMetrics {labelAggregate(netScore: %s) {count}}}
+    }""" % (project_id_param, project_id_param, net_score_literal)
+
+    return query_str, {project_id_param: project.uid}
