@@ -18,6 +18,7 @@ def test_webhook_create_update(client, rand_gen):
     assert webhook.topics == topics
     assert webhook.status == Webhook.ACTIVE
     assert list(project.webhooks()) == [webhook]
+    assert webhook in set(client.get_organization().webhooks())
 
     webhook.update(status=Webhook.REVOKED, topics=[Webhook.LABEL_UPDATED])
     assert webhook.topics == [Webhook.LABEL_UPDATED]

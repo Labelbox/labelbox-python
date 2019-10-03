@@ -387,6 +387,15 @@ class User(DbObject):
 
 
 class Organization(DbObject):
+
+    # RelationshipManagers in Organization use the type in Query (and
+    # not the source object) because the server-side does not support
+    # filtering on ID in the query for getting a single organization.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for relationship in self.relationships():
+            getattr(self, relationship.name).filter_on_id = False
+
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
