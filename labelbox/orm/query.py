@@ -260,7 +260,10 @@ def relationship(source, relationship, where, order_by):
     pagination parameters.
 
     Args:
-        source (DbObject): A database object whose related objects are sought.
+        source (DbObject or type): If a `DbObject` then the source of the
+            relationship (the query originates from that particular object).
+            If `type`, then the source of the relationship is implicit, even
+            without the ID. Used for expanding from Organization.
         relationship (Relationship): The relationship.
         where (Comparison, LogicalExpression or None): The `where` clause
             for filtering.
@@ -274,11 +277,11 @@ def relationship(source, relationship, where, order_by):
     to_many = relationship.relationship_type == Relationship.Type.ToMany
     subquery = Query(relationship.graphql_name, relationship.destination_type,
                      where, to_many, order_by)
-    source_type_name = type(source).type_name()
-    query = Query(utils.camel_case(source_type_name), subquery,
-                  type(source).uid == source.uid)
+    query_where = type(source).uid == source.uid if isinstance(source, Entity) \
+        else None
+    query = Query(utils.camel_case(source.type_name()), subquery, query_where)
     return query.format_top(
-        "Get" + source_type_name + utils.title_case(relationship.graphql_name))
+        "Get" + source.type_name() + utils.title_case(relationship.graphql_name))
 
 
 def create(entity, data):

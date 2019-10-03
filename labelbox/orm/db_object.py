@@ -103,6 +103,7 @@ class RelationshipManager:
         self.relationship = relationship
         self.supports_filtering = True
         self.supports_sorting = True
+        self.filter_on_id = True
 
     def __call__(self, *args, **kwargs ):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
@@ -135,10 +136,12 @@ class RelationshipManager:
             not_deleted = rel.destination_type.deleted == False
             where = not_deleted if where is None else where & not_deleted
 
-        query_string, params = query.relationship(self.source, rel, where, order_by)
+        query_string, params = query.relationship(
+            self.source if self.filter_on_id else type(self.source),
+            rel, where, order_by)
         return PaginatedCollection(
             self.source.client, query_string, params,
-            [utils.camel_case(type(self.source).type_name()),
+            [utils.camel_case(self.source.type_name()),
              rel.graphql_name],
             rel.destination_type)
 

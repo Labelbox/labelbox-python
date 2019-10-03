@@ -13,19 +13,19 @@ def test_user(client):
 def test_organization(client):
     organization = client.get_organization()
     assert organization.uid is not None
-
-    # TODO make organization fetchable on ID
-    with pytest.raises(InvalidQueryError):
-        list(organization.users())
-        list(organization.projects())
+    assert client.get_user() in set(organization.users())
 
 
 def test_user_and_org_projects(client, rand_gen):
     user = client.get_user()
-    projects = set(user.projects())
+    org = client.get_organization()
+    user_projects = set(user.projects())
+    org_projects = set(org.projects())
 
     project = client.create_project(name=rand_gen(Project.name))
     assert project.created_by() == user
-    assert set(user.projects()) == projects.union({project})
+    assert project.organization() == org
+    assert set(user.projects()) == user_projects.union({project})
+    assert set(org.projects()) == org_projects.union({project})
 
     project.delete()
