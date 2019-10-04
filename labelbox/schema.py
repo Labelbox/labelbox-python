@@ -44,6 +44,7 @@ class Project(DbObject, Updateable, Deletable):
     labeling_parameter_overrides = Relationship.ToMany(
         "LabelingParameterOverride", False, "labeling_parameter_overrides")
     webhooks = Relationship.ToMany("Webhook", False)
+    benchmarks = Relationship.ToMany("Benchmark", False)
 
     def create_label(self, **kwargs):
         """ Creates a label on this project.
@@ -408,6 +409,15 @@ class Label(DbObject, Updateable, BulkDeletable):
         kwargs[Review.project.name] = self.project()
         return self.client._create(Review, kwargs)
 
+    def create_benchmark(self):
+        """ Creates a Benchmark for this Label.
+        Return:
+            The newly created Benchmark.
+        """
+        query_str, params = query.create_benchmark(self)
+        res = self.client.execute(query_str, params)
+        res = res["data"]["createBenchmark"]
+        return Benchmark(self.client, res)
 
 class Review(DbObject, Deletable, Updateable):
 
@@ -424,6 +434,26 @@ class Review(DbObject, Deletable, Updateable):
     organization = Relationship.ToOne("Organization", False)
     project = Relationship.ToOne("Project", False)
     label = Relationship.ToOne("Label", False)
+
+class Benchmark(DbObject):
+    """ Benchmarks (also known as Golden Standard) is a quality assurance tool
+    for training data. Training data quality is the measure of accuracy and
+    consistency of the training data. Benchmarks works by interspersing data
+    to be labeled, for which there is a benchmark label, to each person labeling.
+    These labeled data are compared against their respective benchmark and an
+    accuracy score between 0 and 100 percent is calculated.
+    """
+    created_at = Field.DateTime("created_at")
+    created_by = Relationship.ToOne("User", False, "created_by")
+    last_activity = Field.DateTime("last_activity")
+    average_agreement = Field.Float("average_agreement")
+    completed_count = Field.Int("completed_count")
+
+    reference_label = Relationship.ToOne("Label", False, "reference_label")
+
+    def delete(self):
+        query_str, params = query.delete_benchmark(self.reference_label())
+        self.client.execute(query_str, params)
 
 
 class AssetMetadata(DbObject):

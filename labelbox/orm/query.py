@@ -603,3 +603,20 @@ def project_review_metrics(project, net_score):
     }""" % (project_id_param, project_id_param, net_score_literal)
 
     return query_str, {project_id_param: project.uid}
+
+
+def create_benchmark(label):
+    label_id_param = "labelId"
+    query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
+        createBenchmark(data: {labelId: $%s}) {%s}} """ % (
+            label_id_param, label_id_param,
+            results_query_part(Entity.named("Benchmark")))
+    return query_str, {label_id_param: label.uid}
+
+
+def delete_benchmark(label):
+    label_id_param = "labelId"
+    query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
+        deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
+            label_id_param, label_id_param)
+    return query_str, {label_id_param: label.uid}
