@@ -41,6 +41,19 @@ def format_param_declaration(params):
                            for param, (_, attr) in params.items()) + ")"
 
 
+def results_query_part(entity):
+    """ Generates the results part of the query. The results contain
+    all the entity's fields as well as prefetched relationships.
+
+    Note that this is a recursive function. If there is a cycle in the
+    prefetched relationship graph, this function will recurse infinitely.
+
+    Args:
+        entity (type): The entity which needs fetching.
+    """
+    return " ".join(field.graphql_name for field in entity.fields())
+
+
 class Query:
     """ A data structure used during the construction of a query. Supports
     subquery (also Query object) nesting for relationship. """
@@ -52,8 +65,8 @@ class Query:
             what (str): What is being queried. Typically an object type in
                 singular or plural (i.e. "project" or "projects").
             subquery (Query or type): Either a Query object that is formatted
-                recursively or a Entity subtype in which case all it's public
-                fields are retrieved by the query.
+                recursively or a Entity subtype in which case the standard
+                results (see `results_query_part`) are retrieved.
             where (None, Comparison or LogicalExpression): the filtering clause.
             paginate (bool): If the "%skip %first" pagination substring should
                 be added to the query. Used for collection pagination in combination
@@ -72,7 +85,7 @@ class Query:
         if isinstance(self.subquery, Query):
             return self.subquery.format()
         elif issubclass(self.subquery, Entity):
-            return " ".join(f.graphql_name for f in self.subquery.fields()), {}
+            return results_query_part(self.subquery), {}
         else:
             raise MalformedQueryException()
 
@@ -313,7 +326,7 @@ def create(entity, data):
         type_name,
         " ".join(format_param_value(attribute, param)
                  for param, (_, attribute) in params.items()),
-        " ".join(field.graphql_name for field in entity.fields()))
+        results_query_part(entity))
 
     return query_str, {name: value for name, (value, _) in params.items()}
 
@@ -387,8 +400,7 @@ def create_metadata(meta_type, meta_value, data_row_id):
             metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
         meta_type_param, meta_value_param, data_row_id_param,
         meta_type_param, meta_value_param, data_row_id_param,
-        " ".join(field.graphql_name for field
-                 in Entity.named("AssetMetadata").fields()))
+        results_query_part(Entity.named("AssetMetadata")))
     return query_str, {meta_type_param: meta_type,
                        meta_value_param: meta_value,
                        data_row_id_param: data_row_id}
@@ -466,7 +478,7 @@ def update_fields(db_object, values):
         type_name,
         id_param,
         values_str,
-        " ".join(field.graphql_name for field in db_object.fields()))
+        results_query_part(type(db_object)))
 
     return query_str, {name: value for name, (value, _) in params.items()}
 
@@ -516,8 +528,7 @@ def project_labels(project, datasets, order_by):
     query_str = """query GetProjectLabelsPyApi($project_id: ID!)
         {project (where: {id: $project_id})
             {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
-        where, order_by_str, " ".join(f.graphql_name
-                                      for f in label_entity.fields()))
+        where, order_by_str, results_query_part(label_entity))
     return query_str, {"project_id": project.uid}
 
 
@@ -560,19 +571,16 @@ def bulk_delete(db_objects, use_where_clause):
 
 def create_webhook(topics, url, secret, project):
     project_str = "" if project is None else ("project:{id:\"%s\"}," % project.uid)
-    fields_str = " ".join(field.graphql_name for field
-                          in Entity.named("Webhook").fields())
 
     query_str = """mutation CreateWebhookPyApi {
         createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
-    } """ % (project_str, " ".join(topics), url, secret, fields_str)
+    } """ % (project_str, " ".join(topics), url, secret,
+             results_query_part(Entity.named("Webhook")))
 
     return query_str, {}
 
 
 def edit_webhook(webhook, topics, url, status):
-    fields_str = " ".join(field.graphql_name for field in webhook.fields())
-
     topics_str = "" if topics is None else "topics: {set: [%s]}" % " ".join(topics)
     url_str = "" if url is None else "url: \"%s\"" % url
     status_str = "" if status is None else "status: %s" % status
@@ -581,6 +589,6 @@ def edit_webhook(webhook, topics, url, status):
         updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
             webhook.uid,
             ", ".join(filter(None, (topics_str, url_str, status_str))),
-            fields_str)
+            results_query_part(type(webhook)))
 
     return query_str, {}
