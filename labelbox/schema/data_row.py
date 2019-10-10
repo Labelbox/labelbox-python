@@ -19,6 +19,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
+    predictions = Relationship.ToMany("Prediction", False)
 
     @staticmethod
     def bulk_delete(data_rows):
