@@ -24,6 +24,7 @@ class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
     """
+    name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
