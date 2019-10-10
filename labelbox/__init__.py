@@ -12,3 +12,4 @@ from labelbox.schema.task import Task
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.asset_metadata import AssetMetadata
 from labelbox.schema.webhook import Webhook
+from labelbox.schema.prediction import Prediction, PredictionModel
