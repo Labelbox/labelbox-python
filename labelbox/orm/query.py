@@ -620,3 +620,17 @@ def delete_benchmark(label):
         deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
             label_id_param, label_id_param)
     return query_str, {label_id_param: label.uid}
+
+
+def labeler_performance(project):
+    project_id_param = "projectId"
+    query_str = """query LabelerPerformancePyApi($%s: ID!) {
+        project(where: {id: $%s}) {
+            labelerPerformance(skip: %%d first: %%d) {
+                count user {%s} secondsPerLabel totalTimeLabeling consensus
+                averageBenchmarkAgreement lastActivityTime}
+        }
+    }""" % (project_id_param, project_id_param,
+            results_query_part(Entity.named("User")))
+
+    return query_str, {project_id_param: project.uid}
