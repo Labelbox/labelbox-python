@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import datetime, timezone
 from enum import Enum, auto
 import json
@@ -6,6 +7,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 import os
 import time
 
+from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError
 from labelbox.orm import query
 from labelbox.orm.db_object import (DbObject, Updateable, Deletable,
@@ -102,6 +104,24 @@ class Project(DbObject, Updateable, Deletable):
             logger.debug("Project '%s' label export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    def labeler_performance(self):
+        """ Returns the labeler performances for this Project.
+        Returns:
+            A PaginatedCollection of LabelerPerformance objects.
+        """
+        query_str, params = query.labeler_performance(self)
+
+        def create_labeler_performance(client, result):
+            result["user"] = User(client, result["user"])
+            result["lastActivityTime"] = datetime.fromtimestamp(
+                result["lastActivityTime"] / 1000, timezone.utc)
+            return LabelerPerformance(**{utils.snake_case(key): value
+                                         for key, value in result.items()})
+
+        return PaginatedCollection(self.client, query_str, params,
+                                   ["project", "labelerPerformance"],
+                                   create_labeler_performance)
 
     # TODO Relationships
     # labeledDatasets
@@ -491,6 +511,13 @@ class User(DbObject):
     projects = Relationship.ToMany("Project", False)
 
     # TODO other attributes
+
+
+LabelerPerformance = namedtuple(
+    "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
+    "consensus average_benchmark_agreement last_activity_time")
+LabelerPerformance.__doc__ = "Named tuple containing info about a labeler's " \
+    "performance."
 
 
 class Organization(DbObject):

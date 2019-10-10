@@ -35,13 +35,16 @@ import labelbox
 from labelbox.utils import snake_case
 from labelbox.exceptions import LabelboxError
 from labelbox.orm.db_object import Deletable, BulkDeletable, Updateable
+from labelbox.orm.model import Entity
+import labelbox.schema
 
 
 GENERAL_CLASSES = [labelbox.Client]
 SCHEMA_CLASSES = [
     labelbox.Project, labelbox.Dataset, labelbox.DataRow, labelbox.Label,
     labelbox.AssetMetadata, labelbox.LabelingFrontend, labelbox.Task,
-    labelbox.Webhook, labelbox.User, labelbox.Organization, labelbox.Review]
+    labelbox.Webhook, labelbox.User, labelbox.Organization, labelbox.Review,
+    labelbox.schema.LabelerPerformance]
 
 ERROR_CLASSES = [LabelboxError] + LabelboxError.__subclasses__()
 
@@ -366,16 +369,16 @@ def generate_constants(cls):
     return unordered_list(values)
 
 
-def generate_class(cls, schema_class):
+def generate_class(cls):
     """ Generates HelpDocs style documentation for the given class.
     Args:
         cls (type): The class to generate docs for.
-        schema_class (bool): If `cls` is a DbObject subclass.
     Return:
         HelpDocs style documentation for `cls` containing class description,
         methods and fields and relationships if `schema_class`.
     """
     text = []
+    schema_class = issubclass(cls, Entity)
 
     title = "Class " + cls.__module__ + "." + cls.__name__
     title_id = re.sub(r"\s+", "_", snake_case(title).lower())
@@ -423,11 +426,11 @@ def generate_all():
     text.append(unordered_list([qual_class_name(cls) for cls in ERROR_CLASSES]))
 
     text.append(header(1, "General classes"))
-    text.extend(generate_class(cls, False) for cls in GENERAL_CLASSES)
+    text.extend(generate_class(cls) for cls in GENERAL_CLASSES)
     text.append(header(1, "Data Classes"))
-    text.extend(generate_class(cls, True) for cls in SCHEMA_CLASSES)
+    text.extend(generate_class(cls) for cls in SCHEMA_CLASSES)
     text.append(header(1, "Error Classes"))
-    text.extend(generate_class(cls, False) for cls in ERROR_CLASSES)
+    text.extend(generate_class(cls) for cls in ERROR_CLASSES)
     return "\n".join(text)
 
 
