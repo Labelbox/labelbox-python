@@ -1,5 +1,10 @@
 # Changelog
 
+## Not yet released
+
+### Added
+* `Prediction` and `PredictionModel` data types.
+
 ## Version 2.3 (2019-11-12)
 
 ### Changed
