@@ -346,8 +346,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
 
     @staticmethod
-    def bulk_delete(objects):
-        BulkDeletable.bulk_delete(objects, True)
+    def bulk_delete(data_rows):
+        """ Deletes all the given DataRows.
+        Args:
+            data_rows (list of DataRow): The DataRows to delete.
+        """
+        BulkDeletable._bulk_delete(data_rows, True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -387,8 +391,12 @@ class Label(DbObject, Updateable, BulkDeletable):
     reviews = Relationship.ToMany("Review", False)
 
     @staticmethod
-    def bulk_delete(objects):
-        BulkDeletable.bulk_delete(objects, False)
+    def bulk_delete(labels):
+        """ Deletes all the given Labels.
+        Args:
+            labels (list of Label): The Labels to delete.
+        """
+        BulkDeletable._bulk_delete(labels, False)
 
     def create_review(self, **kwargs):
         """ Creates a Review for this label.
@@ -570,6 +578,21 @@ class Webhook(DbObject):
 
     @staticmethod
     def create(client, topics, url, secret, project):
+        """ Creates a Webhook.
+        Args:
+            client (Client): The Labelbox client used to connect
+                to the server.
+            topics (list of str): A list of topics this Webhook should
+                get notifications for.
+            url (str): The URL to which notifications should be sent
+                by the Labelbox server.
+            secret (str): A secret key used for signing notifications.
+            project (Project or None): The project for which notifications
+                should be sent. If None notifications are sent for all
+                events in your organization.
+        Return:
+            A newly created Webhook.
+        """
         query_str, params = query.create_webhook(topics, url, secret, project)
         res = client.execute(query_str, params)
         return Webhook(client, res["data"]["createWebhook"])

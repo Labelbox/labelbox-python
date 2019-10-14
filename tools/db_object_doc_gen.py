@@ -85,7 +85,7 @@ def header(level, text):
 
 
 def paragraph(text):
-    return tag(text, "p")
+    return tag(inject_class_links(text), "p")
 
 
 def strong(text):
@@ -121,15 +121,15 @@ def header_link(text, header_id):
     return tag(text, "a", {"href":"#" + header_id})
 
 
-def class_link(cls):
+def class_link(cls, text):
     """ Generates an intra-document link for the given class. Example:
         >>> from labelbox import Project
-        >>> class_link(Project)
-        >>> <a href="#class_labelbox_schema_project">Project</a>
+        >>> class_link(Project, "blah")
+        >>> <a href="#class_labelbox_schema_project">blah</a>
     """
     header_id = "class_" + labelbox.utils.snake_case(qual_class_name(cls).
                                                      replace(".", "_"))
-    return header_link(cls.__name__, header_id)
+    return header_link(text, header_id)
 
 
 def inject_class_links(text):
@@ -141,7 +141,7 @@ def inject_class_links(text):
         matches = list(re.finditer(pattern, text))
         for match in reversed(matches):
             start, end = match.span()
-            text = text[:start] + class_link(cls) + text[end:]
+            text = text[:start] + class_link(cls, match.group()) + text[end:]
     return text
 
 
@@ -149,7 +149,7 @@ def is_method(attribute):
     """ Determines if the given attribute is most likely a method. It's
     approximative since from Python 3 there are no more unbound methods. """
     return inspect.isfunction(attribute) and "." in attribute.__qualname__ \
-        and inspect.getfullargspec(attribute).args[0] == 'self'
+        and inspect.getfullargspec(attribute).args[:1] == ['self']
 
 
 def preprocess_docstring(docstring):
@@ -230,26 +230,51 @@ def preprocess_docstring(docstring):
 
         return "".join(result)
 
+    def parse_maybe_block(text):
+        """ Adapts to text. Calls `parse_block` if there is a codeblock
+        indented, otherwise just joins lines into a single line and
+        reduces whitespace.
+        """
+        if text is None:
+            return ""
+        if re.findall(r"\n\s+>>>", text):
+            return parse_block()
+        return re.sub(r"\s+", " ", text).strip()
+
     parts = (("Args: ", parse_list(args)),
-             ("Kwargs: ", parse_block(kwargs)),
-             ("Returns: ", parse_block(returns)),
+             ("Kwargs: ", parse_maybe_block(kwargs)),
+             ("Returns: ", parse_maybe_block(returns)),
              ("Raises: ", parse_list(raises)))
 
     return parse_block(docstring) + unordered_list([
         strong(name) + item for name, item in parts if bool(item)])
 
 
-def generate_methods(cls):
-    """ Generates HelpDocs style documentation for all the methods
-    of the given class.
+def generate_functions(cls, predicate):
+    """ Generates HelpDocs style documentation for the functions
+    of the given class that satisfy the given predicate. The functions
+    also must not being with "_", with the exception of Client.__init__.
+
+    Args:
+        cls (type): The class being generated.
+        predicate (callable): A callable accepting a single argument
+            (class attribute) and returning a bool indicating if
+            that attribute should be included in documentation
+            generation.
+    Return:
+        Textual documentation of functions belonging to the given
+        class that satisfy the given predicate.
     """
     text = []
-    for attr_name in dir(cls):
-        attr = getattr(cls, attr_name)
-        if ((is_method(attr) and not attr_name.startswith("_")) or
-            (cls == labelbox.Client and attr_name == "__init__")):
-            text.append(paragraph(generate_signature(attr)))
-            text.append(preprocess_docstring(attr.__doc__))
+    for name, attr in cls.__dict__.items():
+        if predicate(attr):
+            # static and class methods gave the __func__ attribute
+            # with the original definition that we need.
+            attr = getattr(attr, "__func__", attr)
+            if not name.startswith("_") or (cls == labelbox.Client and
+                                            name == "__init__"):
+                text.append(paragraph(generate_signature(attr)))
+                text.append(preprocess_docstring(attr.__doc__))
 
     return "".join(text)
 
@@ -319,29 +344,35 @@ def generate_class(cls, schema_class):
         text.append(generate_fields(cls))
         text.append(header(3, "Relationships"))
         text.append(generate_relationships(cls))
-    methods = generate_methods(cls).strip()
-    if len(methods):
-        text.append(header(3, "Methods"))
-        text.append(methods)
+
+    for name, predicate in (
+        ("Static Methods", lambda attr: type(attr) == staticmethod),
+        ("Class Methods", lambda attr: type(attr) == classmethod),
+        ("Object Methods", is_method)):
+        functions = generate_functions(cls, predicate).strip()
+        if len(functions):
+            text.append(header(3, name))
+            text.append(functions)
+
     return "\n".join(text)
 
 
-def generate_all(general_classes, schema_classes, error_classes):
+def generate_all():
     """ Generates the full HelpDocs API documentation article body. """
     text = []
     text.append(header(3, "General Classes"))
-    text.append(unordered_list([qual_class_name(cls) for cls in general_classes]))
+    text.append(unordered_list([qual_class_name(cls) for cls in GENERAL_CLASSES]))
     text.append(header(3, "Data Classes"))
-    text.append(unordered_list([qual_class_name(cls) for cls in schema_classes]))
+    text.append(unordered_list([qual_class_name(cls) for cls in SCHEMA_CLASSES]))
     text.append(header(3, "Error Classes"))
-    text.append(unordered_list([qual_class_name(cls) for cls in error_classes]))
+    text.append(unordered_list([qual_class_name(cls) for cls in ERROR_CLASSES]))
 
     text.append(header(1, "General classes"))
-    text.extend(generate_class(cls, False) for cls in general_classes)
+    text.extend(generate_class(cls, False) for cls in GENERAL_CLASSES)
     text.append(header(1, "Data Classes"))
-    text.extend(generate_class(cls, True) for cls in schema_classes)
+    text.extend(generate_class(cls, True) for cls in SCHEMA_CLASSES)
     text.append(header(1, "Error Classes"))
-    text.extend(generate_class(cls, False) for cls in error_classes)
+    text.extend(generate_class(cls, False) for cls in ERROR_CLASSES)
     return "\n".join(text)
 
 
@@ -353,7 +384,7 @@ def main():
 
     args = argp.parse_args()
 
-    body  = generate_all(GENERAL_CLASSES, SCHEMA_CLASSES, ERROR_CLASSES)
+    body  = generate_all()
 
     if args.helpdocs_api_key is not None:
         url = "https://api.helpdocs.io/v1/article/zg9hp7yx3u?key=" + \

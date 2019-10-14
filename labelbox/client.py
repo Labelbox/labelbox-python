@@ -21,9 +21,9 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
-    """ A Labelbox client. Containes info necessary for connecting to
-    the server (URL, authentication key). Provides functions for querying
-    and creating top-level data objects (Projects, Datasets).
+    """ A Labelbox client. Contains info necessary for connecting to
+    a Labelbox server (URL, authentication key). Provides functions for
+    querying and creating top-level data objects (Projects, Datasets).
     """
 
     def __init__(self, api_key=None,
@@ -34,6 +34,10 @@ class Client:
             api_key (str): API key. If None, the key is obtained from
                 the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
+        Raises:
+            labelbox.exceptions.AuthenticationError: If no `api_key`
+                is provided as an argument or via the environment
+                variable.
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
@@ -198,7 +202,7 @@ class Client:
 
         return file_data["uploadFile"]["url"]
 
-    def get_single(self, db_object_type, uid):
+    def _get_single(self, db_object_type, uid):
         """ Fetches a single object of the given type, for the given ID.
 
         Args:
@@ -222,22 +226,38 @@ class Client:
             return db_object_type(self, res)
 
     def get_project(self, project_id):
-        """ Convenience for `client.get_single(Project, project_id)`. """
-        return self.get_single(Project, project_id)
+        """ Gets a single Project with the given ID.
+        Args:
+            project_id (str): Unique ID of the Project.
+        Return:
+            The sought Project.
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no
+                Project with the given ID.
+        """
+        return self._get_single(Project, project_id)
 
     def get_dataset(self, dataset_id):
-        """ Convenience for `client.get_single(Dataset, dataset_id)`. """
-        return self.get_single(Dataset, dataset_id)
+        """ Gets a single Dataset with the given ID.
+        Args:
+            dataset_id (str): Unique ID of the Dataset.
+        Return:
+            The sought Dataset.
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no
+                Dataset with the given ID.
+        """
+        return self._get_single(Dataset, dataset_id)
 
     def get_user(self):
-        """ Gets the current user database object. """
-        return self.get_single(User, None)
+        """ Gets the current User database object. """
+        return self._get_single(User, None)
 
     def get_organization(self):
-        """ Gets the organization DB object of the current user. """
-        return self.get_single(Organization, None)
+        """ Gets the Organization DB object of the current user. """
+        return self._get_single(Organization, None)
 
-    def get_all(self, db_object_type, where):
+    def _get_all(self, db_object_type, where):
         """ Fetches all the objects of the given type the user has access to.
 
         Args:
@@ -270,7 +290,7 @@ class Client:
             labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        return self.get_all(Project, where)
+        return self._get_all(Project, where)
 
     def get_datasets(self, where=None):
         """ Fetches all the datasets the user has access to.
@@ -284,7 +304,7 @@ class Client:
             labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        return self.get_all(Dataset, where)
+        return self._get_all(Dataset, where)
 
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
@@ -298,7 +318,7 @@ class Client:
             labelbox.exceptions.LabelboxError: Any error raised by
                 `Client.execute` can also be raised by this function.
         """
-        return self.get_all(LabelingFrontend, where)
+        return self._get_all(LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
         """ Creates a object on the server. Attribute values are
@@ -328,7 +348,9 @@ class Client:
     def create_dataset(self, **kwargs):
         """ Creates a Dataset object on the server. Attribute values are
             passed as keyword arguments:
-                >>> dataset = client.create_dataset(name="MyDataset")
+                >>> project = client.get_project("uid_of_my_project")
+                >>> dataset = client.create_dataset(name="MyDataset",
+                >>>                                 projects=project)
 
         Kwargs:
             Keyword arguments with new Dataset attribute values.
@@ -338,7 +360,7 @@ class Client:
             a new Dataset object.
         Raises:
             InvalidAttributeError: in case the Dataset type does not contain
-                any of the field names given in kwargs.
+                any of the attribute names given in kwargs.
         """
         return self._create(Dataset, kwargs)
 
@@ -355,6 +377,6 @@ class Client:
             a new Project object.
         Raises:
             InvalidAttributeError: in case the Project type does not contain
-                any of the field names given in kwargs.
+                any of the attribute names given in kwargs.
         """
         return self._create(Project, kwargs)
