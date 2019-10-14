@@ -68,7 +68,7 @@ class DbObject(Entity):
 
     def __repr__(self):
         type_name = self.type_name()
-        if "uid" in dir(self):
+        if "uid" in self.__dict__:
             return "<%s ID: %s>" % (type_name, self.uid)
         else:
             return "<%s>" % type_name
@@ -217,7 +217,7 @@ class BulkDeletable:
     type.
     """
     @staticmethod
-    def bulk_delete(objects, use_where_clause):
+    def _bulk_delete(objects, use_where_clause):
         """
         Args:
             objects (list): Objects to delete. All objects must be of the same

@@ -196,6 +196,12 @@ class Relationship:
     def destination_type(self):
         return Entity.named(self.destination_type_name)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<Relationship: %r>" % self.name
+
 
 class Entity:
     """ An entity that contains fields and relationships. """
