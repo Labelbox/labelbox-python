@@ -22,8 +22,8 @@ def test_project_setup(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
 
     # TODO this can only run against the staging server
-    labeling_frontends = list(client.get_all(
-        LabelingFrontend, where=LabelingFrontend.iframe_url_path ==
+    labeling_frontends = list(client.get_labeling_frontends(
+        where=LabelingFrontend.iframe_url_path ==
         "https://staging-image-segmentation-v4.labelbox.com"))
     assert len(labeling_frontends) == 1
     labeling_frontend = labeling_frontends[0]

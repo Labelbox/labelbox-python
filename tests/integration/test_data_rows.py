@@ -46,10 +46,7 @@ def test_data_row_bulk_creation(client, rand_gen):
     assert res.status_code == 200
     assert res.text == "Test data"
 
-    # Currently can't delete DataRow by setting deleted=true
-    # TODO ensure DataRow can be deleted (server-side) by setting deleted=true
-    with pytest.raises(InvalidQueryError):
-        data_rows[0].delete()
+    data_rows[0].delete()
 
     # Do a longer task and expect it not to be complete immediately
     with NamedTemporaryFile() as fp:
