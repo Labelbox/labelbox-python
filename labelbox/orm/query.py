@@ -580,7 +580,7 @@ def create_webhook(topics, url, secret, project):
     return query_str, {}
 
 
-def edit_webhook(webhook, topics, url, status):
+def update_webhook(webhook, topics, url, status):
     topics_str = "" if topics is None else "topics: {set: [%s]}" % " ".join(topics)
     url_str = "" if url is None else "url: \"%s\"" % url
     status_str = "" if status is None else "status: %s" % status

@@ -18,8 +18,10 @@ Usage:
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from enum import Enum
 import importlib
 import inspect
+from itertools import chain
 import json
 import os
 import re
@@ -30,8 +32,9 @@ import requests
 sys.path.insert(0, os.path.abspath(".."))
 
 import labelbox
-import labelbox.utils
+from labelbox.utils import snake_case
 from labelbox.exceptions import LabelboxError
+from labelbox.orm.db_object import Deletable, BulkDeletable, Updateable
 
 
 GENERAL_CLASSES = [labelbox.Client]
@@ -70,7 +73,7 @@ def qual_class_name(cls):
     return cls.__module__ + "." + cls.__name__
 
 
-def header(level, text):
+def header(level, text, header_id=None):
     """ Wraps `text` into a <h> (header) tag ov the given level.
     Automatically increases the level by 2 to be inline with HelpDocs
     standards (h1 -> h3).
@@ -78,8 +81,16 @@ def header(level, text):
     Example:
         >>> header(2, "My Chapter")
         >>> "<h4>My Chapter</h4>
+
+    Args:
+        level (int): Level of header.
+        text (str): Header text.
+        header_id (str or None): The ID of the header. If None it's
+            generated from text by converting to snake_case and
+            replacing all whitespace with "_".
     """
-    header_id = labelbox.utils.snake_case(text).replace(" ", "_")
+    if header_id == None:
+        header_id = snake_case(text).replace(" ", "_")
     # Convert to level + 2 for HelpDocs standard.
     return tag(text, "h" + str(level + 2), {"id": header_id})
 
@@ -127,8 +138,7 @@ def class_link(cls, text):
         >>> class_link(Project, "blah")
         >>> <a href="#class_labelbox_schema_project">blah</a>
     """
-    header_id = "class_" + labelbox.utils.snake_case(qual_class_name(cls).
-                                                     replace(".", "_"))
+    header_id = "class_" + snake_case(qual_class_name(cls).replace(".", "_"))
     return header_link(text, header_id)
 
 
@@ -265,18 +275,33 @@ def generate_functions(cls, predicate):
         Textual documentation of functions belonging to the given
         class that satisfy the given predicate.
     """
-    text = []
-    for name, attr in cls.__dict__.items():
-        if predicate(attr):
-            # static and class methods gave the __func__ attribute
-            # with the original definition that we need.
-            attr = getattr(attr, "__func__", attr)
-            if not name.startswith("_") or (cls == labelbox.Client and
-                                            name == "__init__"):
-                text.append(paragraph(generate_signature(attr)))
-                text.append(preprocess_docstring(attr.__doc__))
+    def name_predicate(attr):
+        return not name.startswith("_") or (cls == labelbox.Client and
+                                            name == "__init__")
 
-    return "".join(text)
+    # Get all class atrributes plus selected superclass attributes.
+    attributes = chain(
+        cls.__dict__.values(),
+        (getattr(cls, name) for name in ("delete", "update")
+         if name in dir(cls) and name not in cls.__dict__))
+
+    # Remove attributes not satisfying the predicate
+    attributes = filter(predicate, attributes)
+
+    # Extract function from staticmethod and classmethod wrappers
+    attributes = map(lambda attr: getattr(attr, "__func__", attr), attributes)
+
+    # Apply name filter
+    attributes = filter(lambda attr: not attr.__name__.startswith("_") or \
+                        (cls == labelbox.Client and attr.__name__ == "__init__"),
+                        attributes)
+
+    # Sort on name
+    attributes = sorted(attributes, key=lambda attr: attr.__name__)
+
+    return "".join(paragraph(generate_signature(function)) +
+                   preprocess_docstring(function.__doc__)
+                   for function in attributes)
 
 
 def generate_signature(method):
@@ -327,6 +352,20 @@ def generate_relationships(cls):
     return unordered_list(relationships)
 
 
+def generate_constants(cls):
+    values = []
+    for name, value in cls.__dict__.items():
+        if name.isupper() and isinstance(value, (str, int, float, bool)):
+            values.append("%s %s" % (name, em("(" + type(value).__name__ + ")")))
+
+    for name, value in cls.__dict__.items():
+        if isinstance(value, type) and issubclass(value, Enum):
+            enumeration_items = unordered_list([item.name for item in value])
+            values.append("Enumeration %s%s" % (name, enumeration_items))
+
+    return unordered_list(values)
+
+
 def generate_class(cls, schema_class):
     """ Generates HelpDocs style documentation for the given class.
     Args:
@@ -337,8 +376,24 @@ def generate_class(cls, schema_class):
         methods and fields and relationships if `schema_class`.
     """
     text = []
-    text.append(header(2, "Class " + cls.__module__ + "." + cls.__name__))
+
+    title = "Class " + cls.__module__ + "." + cls.__name__
+    title_id = re.sub(r"\s+", "_", snake_case(title).lower())
+    if schema_class:
+        superclasses = [plugin.__name__ for plugin
+                        in (Updateable, Deletable, BulkDeletable)
+                        if issubclass(cls, plugin )]
+        if superclasses:
+            title += " (%s)" % ", ".join(superclasses)
+    text.append(header(2, title, title_id))
+
     text.append(preprocess_docstring(cls.__doc__))
+
+    constants = generate_constants(cls)
+    if constants:
+        text.append(header(3, "Constants"))
+        text.append(constants)
+
     if schema_class:
         text.append(header(3, "Fields"))
         text.append(generate_fields(cls))

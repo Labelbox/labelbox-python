@@ -420,6 +420,9 @@ class Label(DbObject, Updateable, BulkDeletable):
         return Benchmark(self.client, res)
 
 class Review(DbObject, Deletable, Updateable):
+    """ Reviewing labeled data is a collaborative quality assurance technique.
+    A Review object indicates the quality of the assigned Label. The aggregated
+    review numbers can be obtained on a Project object. """
 
     class NetScore(Enum):
         Negative = auto()
@@ -632,9 +635,15 @@ class Webhook(DbObject):
     project = Relationship.ToOne("Project")
 
     def update(self, topics=None, url=None, status=None):
+        """ Updates this Webhook.
+        Args:
+            topics (list of str): The new topics value, optional.
+            url (str): The new URL value, optional.
+            status (str): The new status value, optional.
+        """
         # Webhook has a custom `update` function due to custom types
         # in `status` and `topics` fields.
-        query_str, params = query.edit_webhook(self, topics, url, status)
+        query_str, params = query.update_webhook(self, topics, url, status)
         res = self.client.execute(query_str, params)
         res = res["data"]["updateWebhook"]
         self._set_field_values(res)
