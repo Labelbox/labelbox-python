@@ -204,7 +204,8 @@ class Relationship:
 
 
 class Entity:
-    """ An entity that contains fields and relationships. """
+    """ An entity that contains fields and relationships. Base class
+    for DbObject (which is base class for concrete schema classes). """
 
     # Every Entity has an "id" and a "deleted" field
     # Name the "id" field "uid" in Python to avoid conflict with keyword.
@@ -225,13 +226,18 @@ class Entity:
 
     @classmethod
     def fields(cls):
-        """ Yields all the Fields declared in a concrete subclass. """
+        """ Returns a generateor that yields all the Fields declared in a
+        concrete subclass.
+        """
         for attr in cls._attributes_of_type(Field):
             if attr != Entity.deleted:
                 yield attr
 
     @classmethod
     def relationships(cls):
+        """ Returns a generateor that yields all the Relationships declared in
+        a concrete subclass.
+        """
         return cls._attributes_of_type(Relationship)
 
     @classmethod
@@ -274,13 +280,6 @@ class Entity:
         """
         return cls.__name__.split(".")[-1]
 
-    @classmethod
-    def subclasses(cls):
-        """ Generates all the subclasses (also not immediate) of this class. """
-        for subclass in cls.__subclasses__():
-            yield subclass
-            for subsub in subclass.subclasses():
-                yield subsub
 
     @classmethod
     def named(cls, name):
@@ -294,7 +293,13 @@ class Entity:
         Raises:
             LabelboxError: if there is no such class.
         """
-        for t in Entity.subclasses():
+        def subclasses(cls):
+            for subclass in cls.__subclasses__():
+                yield subclass
+                for subsub in subclasses(subclass):
+                    yield subsub
+
+        for t in subclasses(Entity):
             if t.type_name() == name:
                 return t
         raise LabelboxError("Failed to find Entity for name: %s" % name)
