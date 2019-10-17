@@ -36,7 +36,7 @@ from labelbox.utils import snake_case
 from labelbox.exceptions import LabelboxError
 from labelbox.orm.db_object import Deletable, BulkDeletable, Updateable
 from labelbox.orm.model import Entity
-import labelbox.schema
+from labelbox.schema.project import LabelerPerformance
 
 
 GENERAL_CLASSES = [labelbox.Client]
@@ -44,7 +44,7 @@ SCHEMA_CLASSES = [
     labelbox.Project, labelbox.Dataset, labelbox.DataRow, labelbox.Label,
     labelbox.AssetMetadata, labelbox.LabelingFrontend, labelbox.Task,
     labelbox.Webhook, labelbox.User, labelbox.Organization, labelbox.Review,
-    labelbox.schema.LabelerPerformance]
+    LabelerPerformance]
 
 ERROR_CLASSES = [LabelboxError] + LabelboxError.__subclasses__()
 
