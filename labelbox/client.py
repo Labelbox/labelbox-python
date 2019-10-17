@@ -9,9 +9,13 @@ import requests.exceptions
 from labelbox import utils
 import labelbox.exceptions
 from labelbox.orm import query
-from labelbox.pagination import PaginatedCollection
-from labelbox.schema import Project, Dataset, User, Organization, LabelingFrontend
 from labelbox.orm.db_object import DbObject
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.project import Project
+from labelbox.schema.dataset import Dataset
+from labelbox.schema.user import User
+from labelbox.schema.organization import Organization
+from labelbox.schema.labeling_frontend import LabelingFrontend
 
 
 logger = logging.getLogger(__name__)

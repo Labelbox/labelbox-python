@@ -1,6 +1,14 @@
 name = "labelbox"
 
 from labelbox.client import Client
-from labelbox.schema import (
-    Project, Dataset, DataRow, Label, Review, User, Organization, Task,
-    LabelingFrontend, AssetMetadata, Webhook)
+from labelbox.schema.project import Project
+from labelbox.schema.dataset import Dataset
+from labelbox.schema.data_row import DataRow
+from labelbox.schema.label import Label
+from labelbox.schema.review import Review
+from labelbox.schema.user import User
+from labelbox.schema.organization import Organization
+from labelbox.schema.task import Task
+from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.asset_metadata import AssetMetadata
+from labelbox.schema.webhook import Webhook

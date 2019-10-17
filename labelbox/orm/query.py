@@ -6,16 +6,7 @@ from labelbox.orm.comparison import LogicalExpression, Comparison
 from labelbox.orm.model import Field, Relationship, Entity
 
 
-# Maps comparison operations to the suffixes appended to the field
-# name when generating a GraphQL query.
-COMPARISON_TO_SUFFIX = {
-    Comparison.Op.EQ: "",
-    Comparison.Op.NE: "_not",
-    Comparison.Op.LT: "_lt",
-    Comparison.Op.GT: "_gt",
-    Comparison.Op.LE: "_lte",
-    Comparison.Op.GE: "_gte",
-}
+""" Common query creation functionality. """
 
 
 def format_param_declaration(params):
@@ -98,6 +89,14 @@ class Query:
         def format_where(node):
             """ Helper that resursively constructs a where clause from a
             LogicalExpression tree (leaf nodes are Comparisons). """
+            COMPARISON_TO_SUFFIX = {
+                Comparison.Op.EQ: "",
+                Comparison.Op.NE: "_not",
+                Comparison.Op.LT: "_lt",
+                Comparison.Op.GT: "_gt",
+                Comparison.Op.LE: "_lte",
+                Comparison.Op.GE: "_gte",
+            }
             assert isinstance(node, (Comparison, LogicalExpression))
             if isinstance(node, Comparison):
                 param_name = "param_%d" % len(params)
@@ -331,81 +330,6 @@ def create(entity, data):
     return query_str, {name: value for name, (value, _) in params.items()}
 
 
-def create_data_rows(dataset_id, json_file_url):
-    """ Generates the query and parameters dictionary for creating multiple
-    DataRows for a Dataset.
-
-    Args:
-        dataset_id (str): ID of the Dataset object to create DataRows for.
-        json_file_url (str): URL of the file containing row data.
-    Return:
-        (query_string, parameters_dict)
-    """
-    dataset_param = "dataSetId"
-    url_param = "jsonURL"
-    query_str = """mutation AppendRowsToDatasetPyApi(
-                    $%s: ID!, $%s: String!){
-          appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
-        ){ taskId accepted } } """ % (dataset_param, url_param, dataset_param,
-                                      url_param)
-
-    return query_str, {dataset_param: dataset_id, url_param: json_file_url}
-
-
-def set_labeling_parameter_overrides(project, data):
-    """ Constructs a query for setting labeling parameter overrides.
-    Args:
-        project (Project): The project to set param overrides for.
-            data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority, numberOfLabels) for the new override.
-    Return:
-        (query_string, query_parameters)
-    """
-    data_str = ",\n".join(
-        "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
-            data_row.uid, priority, num_labels)
-        for data_row, priority, num_labels in data)
-    query_str = """mutation setLabelingParameterOverridesPyApi {
-        project(where: { id: "%s" }) {
-            setLabelingParameterOverrides(data: [%s]) { success } } } """ % (
-                project.uid, data_str)
-    return query_str, {}
-
-
-def unset_labeling_parameter_overrides(project, data_rows):
-    """ Constructs a query for unsetting labeling parameter overrides.
-    Args:
-        project (Project): The project to set param overrides for.
-        data_rows (iterable): An iterable of DataRow objects
-            for which the to set as parameter overrides.
-    Return:
-        (query_string, query_parameters)
-    """
-    data_str = ",\n".join("{dataRowId: \"%s\"}" % data_row.uid
-                          for data_row in data_rows)
-    query_str = """mutation unsetLabelingParameterOverridesPyApi {
-        project(where: { id: "%s" }) {
-            unsetLabelingParameterOverrides(data: [%s]) { success } } } """ % (
-                project.uid, data_str)
-    return query_str, {}
-
-
-def create_metadata(meta_type, meta_value, data_row_id):
-    meta_type_param = "meta_type"
-    meta_value_param = "meta_value"
-    data_row_id_param = "data_row_id"
-    query_str = """mutation CreateAssetMetadataPyApi(
-        $%s: MetadataType!, $%s: String!, $%s: ID!) {
-        createAssetMetadata(data: {
-            metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
-        meta_type_param, meta_value_param, data_row_id_param,
-        meta_type_param, meta_value_param, data_row_id_param,
-        results_query_part(Entity.named("AssetMetadata")))
-    return query_str, {meta_type_param: meta_type,
-                       meta_value_param: meta_value,
-                       data_row_id_param: data_row_id}
-
-
 def update_relationship(a, b, relationship, update):
     """ Updates the relationship in DB object `a` to connect or disconnect
     DB object `b`.
@@ -500,51 +424,6 @@ def delete(db_object):
     return query_str, {id_param: db_object.uid}
 
 
-def project_labels(project, datasets, order_by):
-    """ Returns the query and params for getting a Project's labels
-    relationship. A non-standard relationship query is used to support
-    filtering on Datasets.
-    Args:
-        datasets (list or None): The datasets filter. If None it's
-            ignored.
-    Return:
-        (query_string, params)
-    """
-    label_entity = Entity.named("Label")
-
-    if datasets is not None:
-        where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
-            '"%s"' % dataset.uid for dataset in datasets)
-    else:
-        where = ""
-
-    if order_by is not None:
-        check_order_by_clause(label_entity, order_by)
-        order_by_str = "orderBy: %s_%s" % (
-            order_by[0].graphql_name, order_by[1].name.upper())
-    else:
-        order_by_str = ""
-
-    query_str = """query GetProjectLabelsPyApi($project_id: ID!)
-        {project (where: {id: $project_id})
-            {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
-        where, order_by_str, results_query_part(label_entity))
-    return query_str, {"project_id": project.uid}
-
-
-def export_labels():
-    """ Returns the query and ID param for exporting a Project's
-    labels.
-    Return:
-        (query_string, id_param_name)
-    """
-    id_param = "projectId"
-    query_str = """mutation GetLabelExportUrlPyApi($%s: ID!) {exportLabels(data:{
-        projectId: $%s } ) {
-        downloadUrl createdAt shouldPoll } }
-    """ %  (id_param, id_param)
-    return (query_str, id_param)
-
 
 def bulk_delete(db_objects, use_where_clause):
     """ Generates a query that bulk-deletes the given `db_objects` from the
@@ -567,70 +446,3 @@ def bulk_delete(db_objects, use_where_clause):
         ", ".join('"%s"' % db_object.uid for db_object in db_objects)
     )
     return query_str, {}
-
-
-def create_webhook(topics, url, secret, project):
-    project_str = "" if project is None else ("project:{id:\"%s\"}," % project.uid)
-
-    query_str = """mutation CreateWebhookPyApi {
-        createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
-    } """ % (project_str, " ".join(topics), url, secret,
-             results_query_part(Entity.named("Webhook")))
-
-    return query_str, {}
-
-
-def update_webhook(webhook, topics, url, status):
-    topics_str = "" if topics is None else "topics: {set: [%s]}" % " ".join(topics)
-    url_str = "" if url is None else "url: \"%s\"" % url
-    status_str = "" if status is None else "status: %s" % status
-
-    query_str = """mutation UpdateWebhookPyApi {
-        updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
-            webhook.uid,
-            ", ".join(filter(None, (topics_str, url_str, status_str))),
-            results_query_part(type(webhook)))
-
-    return query_str, {}
-
-
-def project_review_metrics(project, net_score):
-    project_id_param = "project_id"
-    net_score_literal = "None" if net_score is None else net_score.name
-    query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
-        project(where: {id:$%s})
-        {reviewMetrics {labelAggregate(netScore: %s) {count}}}
-    }""" % (project_id_param, project_id_param, net_score_literal)
-
-    return query_str, {project_id_param: project.uid}
-
-
-def create_benchmark(label):
-    label_id_param = "labelId"
-    query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
-        createBenchmark(data: {labelId: $%s}) {%s}} """ % (
-            label_id_param, label_id_param,
-            results_query_part(Entity.named("Benchmark")))
-    return query_str, {label_id_param: label.uid}
-
-
-def delete_benchmark(label):
-    label_id_param = "labelId"
-    query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
-        deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
-            label_id_param, label_id_param)
-    return query_str, {label_id_param: label.uid}
-
-
-def labeler_performance(project):
-    project_id_param = "projectId"
-    query_str = """query LabelerPerformancePyApi($%s: ID!) {
-        project(where: {id: $%s}) {
-            labelerPerformance(skip: %%d first: %%d) {
-                count user {%s} secondsPerLabel totalTimeLabeling consensus
-                averageBenchmarkAgreement lastActivityTime}
-        }
-    }""" % (project_id_param, project_id_param,
-            results_query_part(Entity.named("User")))
-
-    return query_str, {project_id_param: project.uid}
