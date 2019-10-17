@@ -46,7 +46,7 @@ class Client:
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
-        logging.info("Initializing Labelbox client at '%s'", endpoint)
+        logger.info("Initializing Labelbox client at '%s'", endpoint)
 
         self.endpoint = endpoint
         self.headers = {'Accept': 'application/json',
@@ -98,6 +98,7 @@ class Client:
             response = requests.post(self.endpoint, data=data,
                                         headers=self.headers,
                                         timeout=timeout)
+            logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
 
@@ -159,7 +160,7 @@ class Client:
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
         if len(errors) > 0:
-            logging.warning("Unparsed errors on query execution: %r", errors)
+            logger.warning("Unparsed errors on query execution: %r", errors)
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error: %s" % str(errors))
 
