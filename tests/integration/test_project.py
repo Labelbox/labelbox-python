@@ -1,4 +1,7 @@
+import pytest
+
 from labelbox import Project
+from labelbox.exceptions import InvalidQueryError
 
 
 def test_project(client, rand_gen):
@@ -55,4 +58,13 @@ def test_project_filtering(client, rand_gen):
 def test_upsert_review_queue(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
     project.upsert_review_queue(0.6)
+    project.delete()
+
+
+def test_extend_reservations(client, rand_gen):
+    project = client.create_project(name=rand_gen(str))
+    assert project.extend_reservations("LabelingQueue") == 0
+    assert project.extend_reservations("ReviewQueue") == 0
+    with pytest.raises(InvalidQueryError):
+        project.extend_reservations("InvalidQueueType")
     project.delete()
