@@ -1,20 +1,20 @@
--i https://pypi.org/simple
-affine==2.2.2
-attrs==19.1.0; python_version != '3.3.*'
-certifi==2019.3.9
+-i https://pypi.org/simple/
+affine==2.3.0
+attrs==19.3.0
+certifi==2019.9.11
 chardet==3.0.4
-click-plugins==1.0.4; python_version != '3.3.*'
-click==7.0; python_version >= '2.7'
-cligj==0.5.0; python_version != '3.3.*'
-idna==2.8; python_version != '3.0.*'
+click-plugins==1.1.1
+click==7.0
+cligj==0.5.0
+idna==2.8
 jinja2==2.10.1
-markupsafe==1.1.1; python_version != '3.3.*'
-numpy==1.16.2; python_version != '3.2.*'
-pillow==5.4.1
-pyparsing==2.3.1
-rasterio==1.0.21
+markupsafe==1.1.1
+numpy==1.17.3
+pillow==6.2.0
+pyparsing==2.4.2
+rasterio==1.0.24
 requests==2.22.0
 shapely==1.6.4.post2
 simplification==0.4.2
-snuggs==1.4.3
-urllib3==1.25.3; python_version != '3.0.*'
+snuggs==1.4.7
+urllib3==1.25.6
