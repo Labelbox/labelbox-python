@@ -50,3 +50,9 @@ def test_project_filtering(client, rand_gen):
 
     p1.delete()
     p2.delete()
+
+
+def test_upsert_review_queue(client, rand_gen):
+    project = client.create_project(name=rand_gen(str))
+    project.upsert_review_queue(0.6)
+    project.delete()

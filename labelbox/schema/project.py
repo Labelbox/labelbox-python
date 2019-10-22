@@ -225,6 +225,21 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {project_param: self.uid})
         return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
 
+    def upsert_review_queue(self, quota_factor):
+        """ Reinitiate the review queue for this project.
+        Args:
+            quota_factor (float): Which part (percentage) of the queue
+                to reinitiate. Between 0 and 1.
+        """
+        project_param = "projectId"
+        quota_param = "quotaFactor"
+        query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
+            upsertReviewQueue(where:{project: {id: $%s}}
+                            data:{quotaFactor: $%s}) {id}}""" % (
+            project_param, quota_param, project_param, quota_param)
+        res = self.client.execute(
+            query_str, {project_param: self.uid, quota_param: quota_factor})
+
 
 class LabelingParameterOverride(DbObject):
     priority = Field.Int("priority")
