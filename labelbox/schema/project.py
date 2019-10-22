@@ -241,6 +241,25 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {project_param: self.uid, quota_param: quota_factor})
 
 
+    def extend_reservations(self, queue_type):
+        """ Extend all the current reservations for the current user on the given
+        queue type.
+        Args:
+            queue_type (str): Either "LabelingQueue" or "ReviewQueue"
+        Return:
+            int, the number of reservations that were extended.
+        """
+        if queue_type not in ("LabelingQueue", "ReviewQueue"):
+            raise InvalidQueryError("Unsupported queue type: %s" % queue_type)
+
+        project_param = "projectId"
+        query_str = """mutation ExtendReservationsPyApi($%s: ID!){
+            extendReservations(projectId:$%s queueType:%s)}""" % (
+                project_param, project_param, queue_type)
+        res = self.client.execute(query_str, {project_param: self.uid})
+        return res["data"]["extendReservations"]
+
+
 class LabelingParameterOverride(DbObject):
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
