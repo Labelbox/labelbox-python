@@ -1,6 +1,5 @@
 from labelbox.orm import query
-from labelbox.orm.db_object import (DbObject, Updateable, Deletable,
-                                    BulkDeletable)
+from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
@@ -43,23 +42,19 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Return:
             AssetMetadata DB object.
         """
-        query_str, params = _create_metadata(meta_type, meta_value, self.uid)
-        res = self.client.execute(query_str, params)
+        meta_type_param = "meta_type"
+        meta_value_param = "meta_value"
+        data_row_id_param = "data_row_id"
+        query_str = """mutation CreateAssetMetadataPyApi(
+            $%s: MetadataType!, $%s: String!, $%s: ID!) {
+            createAssetMetadata(data: {
+                metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
+            meta_type_param, meta_value_param, data_row_id_param,
+            meta_type_param, meta_value_param, data_row_id_param,
+            query.results_query_part(Entity.named("AssetMetadata")))
+
+        res = self.client.execute(
+            query_str, {meta_type_param: meta_type, meta_value_param: meta_value,
+                        data_row_id_param: self.uid})
         return Entity.named("AssetMetadata")(
             self.client, res["data"]["createAssetMetadata"])
-
-
-def _create_metadata(meta_type, meta_value, data_row_id):
-    meta_type_param = "meta_type"
-    meta_value_param = "meta_value"
-    data_row_id_param = "data_row_id"
-    query_str = """mutation CreateAssetMetadataPyApi(
-        $%s: MetadataType!, $%s: String!, $%s: ID!) {
-        createAssetMetadata(data: {
-            metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
-        meta_type_param, meta_value_param, data_row_id_param,
-        meta_type_param, meta_value_param, data_row_id_param,
-        query.results_query_part(Entity.named("AssetMetadata")))
-    return query_str, {meta_type_param: meta_type,
-                       meta_value_param: meta_value,
-                       data_row_id_param: data_row_id}

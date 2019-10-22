@@ -19,13 +19,8 @@ class Benchmark(DbObject):
     reference_label = Relationship.ToOne("Label", False, "reference_label")
 
     def delete(self):
-        query_str, params = _delete_benchmark(self.reference_label())
-        self.client.execute(query_str, params)
-
-
-def _delete_benchmark(label):
-    label_id_param = "labelId"
-    query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
-        deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
-            label_id_param, label_id_param)
-    return query_str, {label_id_param: label.uid}
+        label_param = "labelId"
+        query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
+            deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
+                label_param, label_param)
+        self.client.execute(query_str, {label_param: self.reference_label().uid})

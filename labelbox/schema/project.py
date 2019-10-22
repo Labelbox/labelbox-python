@@ -69,9 +69,29 @@ class Project(DbObject, Updateable, Deletable):
         return Label(self.client, res)
 
     def labels(self, datasets=None, order_by=None):
-        query_string, params = _project_labels(self, datasets, order_by)
-        return PaginatedCollection(self.client, query_string, params,
-                                   ["project", "labels"], Entity.named("Label"))
+        Label = Entity.named("Label")
+
+        if datasets is not None:
+            where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
+                '"%s"' % dataset.uid for dataset in datasets)
+        else:
+            where = ""
+
+        if order_by is not None:
+            query.check_order_by_clause(Label, order_by)
+            order_by_str = "orderBy: %s_%s" % (
+                order_by[0].graphql_name, order_by[1].name.upper())
+        else:
+            order_by_str = ""
+
+        query_str = """query GetProjectLabelsPyApi($project_id: ID!)
+            {project (where: {id: $project_id})
+                {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
+            where, order_by_str, query.results_query_part(Label))
+
+        return PaginatedCollection(
+            self.client, query_str, {"project_id": self.uid},
+            ["project", "labels"], Label)
 
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
@@ -84,7 +104,11 @@ class Project(DbObject, Updateable, Deletable):
                 is returned.
         """
         sleep_time = 2
-        query_str, id_param = _export_labels()
+        id_param = "projectId"
+        query_str = """mutation GetLabelExportUrlPyApi($%s: ID!)
+            {exportLabels(data:{projectId: $%s }) {downloadUrl createdAt shouldPoll} }
+        """ %  (id_param, id_param)
+
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})[
                 "data"]["exportLabels"]
@@ -104,7 +128,14 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             A PaginatedCollection of LabelerPerformance objects.
         """
-        query_str, params = _labeler_performance(self)
+        project_id_param = "projectId"
+        query_str = """query LabelerPerformancePyApi($%s: ID!) {
+            project(where: {id: $%s}) {
+                labelerPerformance(skip: %%d first: %%d) {
+                    count user {%s} secondsPerLabel totalTimeLabeling consensus
+                    averageBenchmarkAgreement lastActivityTime}
+            }}""" % (project_id_param, project_id_param,
+                     query.results_query_part(Entity.named("User")))
 
         def create_labeler_performance(client, result):
             result["user"] = Entity.named("User")(client, result["user"])
@@ -113,9 +144,9 @@ class Project(DbObject, Updateable, Deletable):
             return LabelerPerformance(**{utils.snake_case(key): value
                                          for key, value in result.items()})
 
-        return PaginatedCollection(self.client, query_str, params,
-                                   ["project", "labelerPerformance"],
-                                   create_labeler_performance)
+        return PaginatedCollection(
+            self.client, query_str, {project_id_param: self.uid},
+            ["project", "labelerPerformance"], create_labeler_performance)
 
     def review_metrics(self, net_score):
         """ Returns this Project's review metrics.
@@ -127,8 +158,13 @@ class Project(DbObject, Updateable, Deletable):
         if net_score not in (None,) + tuple(Entity.named("Review").NetScore):
             raise InvalidQueryError("Review metrics net score must be either None "
                                     "or one of Review.NetScore values")
-        query_str, params = _project_review_metrics(self, net_score)
-        res = self.client.execute(query_str, params)
+        project_id_param = "project_id"
+        net_score_literal = "None" if net_score is None else net_score.name
+        query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
+            project(where: {id:$%s})
+            {reviewMetrics {labelAggregate(netScore: %s) {count}}}
+        }""" % (project_id_param, project_id_param, net_score_literal)
+        res = self.client.execute(query_str, {project_id_param: self.uid})
         return res["data"]["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
     def setup(self, labeling_frontend, labeling_frontend_options):
@@ -162,8 +198,15 @@ class Project(DbObject, Updateable, Deletable):
         Return:
             bool indicating if the operation was a success.
         """
-        query_str, params = _set_labeling_parameter_overrides(self, data)
-        res = self.client.execute(query_str, params)
+        data_str = ",\n".join(
+            "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
+                data_row.uid, priority, num_labels)
+            for data_row, priority, num_labels in data)
+        project_param = "projectId"
+        query_str = """mutation setLabelingParameterOverridesPyApi($%s: ID!){
+            project(where: { id: $%s }) {setLabelingParameterOverrides
+            (data: [%s]) {success}}} """ % (project_param, project_param, data_str)
+        res = self.client.execute(query_str, {project_param: self.uid})
         return res["data"]["project"]["setLabelingParameterOverrides"]["success"]
 
     def unset_labeling_parameter_overrides(self, data_rows):
@@ -173,8 +216,13 @@ class Project(DbObject, Updateable, Deletable):
         Return:
             bool indicating if the operation was a success.
         """
-        query_str, params = _unset_labeling_parameter_overrides(self, data_rows)
-        res = self.client.execute(query_str, params)
+        project_param = "projectId"
+        query_str = """mutation unsetLabelingParameterOverridesPyApi($%s: ID!){
+            project(where: { id: $%s}) {
+            unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
+            project_param, project_param,
+            ",\n".join("{dataRowId: \"%s\"}" % row.uid for row in data_rows))
+        res = self.client.execute(query_str, {project_param: self.uid})
         return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
 
 
@@ -188,112 +236,3 @@ LabelerPerformance = namedtuple(
     "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = "Named tuple containing info about a labeler's " \
     "performance."
-
-
-def _project_labels(project, datasets, order_by):
-    """ Returns the query and params for getting a Project's labels
-    relationship. A non-standard relationship query is used to support
-    filtering on Datasets.
-    Args:
-        datasets (list or None): The datasets filter. If None it's
-            ignored.
-    Return:
-        (query_string, params)
-    """
-    Label = Entity.named("Label")
-
-    if datasets is not None:
-        where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
-            '"%s"' % dataset.uid for dataset in datasets)
-    else:
-        where = ""
-
-    if order_by is not None:
-        query.check_order_by_clause(Label, order_by)
-        order_by_str = "orderBy: %s_%s" % (
-            order_by[0].graphql_name, order_by[1].name.upper())
-    else:
-        order_by_str = ""
-
-    query_str = """query GetProjectLabelsPyApi($project_id: ID!)
-        {project (where: {id: $project_id})
-            {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
-        where, order_by_str, query.results_query_part(Label))
-    return query_str, {"project_id": project.uid}
-
-
-def _export_labels():
-    """ Returns the query and ID param for exporting a Project's
-    labels.
-    Return:
-        (query_string, id_param_name)
-    """
-    id_param = "projectId"
-    query_str = """mutation GetLabelExportUrlPyApi($%s: ID!) {exportLabels(data:{
-        projectId: $%s } ) {
-        downloadUrl createdAt shouldPoll } }
-    """ %  (id_param, id_param)
-    return (query_str, id_param)
-
-
-def _labeler_performance(project):
-    project_id_param = "projectId"
-    query_str = """query LabelerPerformancePyApi($%s: ID!) {
-        project(where: {id: $%s}) {
-            labelerPerformance(skip: %%d first: %%d) {
-                count user {%s} secondsPerLabel totalTimeLabeling consensus
-                averageBenchmarkAgreement lastActivityTime}
-        }
-    }""" % (project_id_param, project_id_param,
-            query.results_query_part(Entity.named("User")))
-
-    return query_str, {project_id_param: project.uid}
-
-
-def _project_review_metrics(project, net_score):
-    project_id_param = "project_id"
-    net_score_literal = "None" if net_score is None else net_score.name
-    query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
-        project(where: {id:$%s})
-        {reviewMetrics {labelAggregate(netScore: %s) {count}}}
-    }""" % (project_id_param, project_id_param, net_score_literal)
-
-    return query_str, {project_id_param: project.uid}
-
-
-def _set_labeling_parameter_overrides(project, data):
-    """ Constructs a query for setting labeling parameter overrides.
-    Args:
-        project (Project): The project to set param overrides for.
-            data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority, numberOfLabels) for the new override.
-    Return:
-        (query_string, query_parameters)
-    """
-    data_str = ",\n".join(
-        "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
-            data_row.uid, priority, num_labels)
-        for data_row, priority, num_labels in data)
-    query_str = """mutation setLabelingParameterOverridesPyApi {
-        project(where: { id: "%s" }) {
-            setLabelingParameterOverrides(data: [%s]) { success } } } """ % (
-                project.uid, data_str)
-    return query_str, {}
-
-
-def _unset_labeling_parameter_overrides(project, data_rows):
-    """ Constructs a query for unsetting labeling parameter overrides.
-    Args:
-        project (Project): The project to set param overrides for.
-        data_rows (iterable): An iterable of DataRow objects
-            for which the to set as parameter overrides.
-    Return:
-        (query_string, query_parameters)
-    """
-    data_str = ",\n".join("{dataRowId: \"%s\"}" % data_row.uid
-                          for data_row in data_rows)
-    query_str = """mutation unsetLabelingParameterOverridesPyApi {
-        project(where: { id: "%s" }) {
-            unsetLabelingParameterOverrides(data: [%s]) { success } } } """ % (
-                project.uid, data_str)
-    return query_str, {}

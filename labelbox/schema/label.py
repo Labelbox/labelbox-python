@@ -48,16 +48,11 @@ class Label(DbObject, Updateable, BulkDeletable):
         Return:
             The newly created Benchmark.
         """
-        query_str, params = _create_benchmark(self)
-        res = self.client.execute(query_str, params)
+        label_id_param = "labelId"
+        query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
+            createBenchmark(data: {labelId: $%s}) {%s}} """ % (
+                label_id_param, label_id_param,
+                query.results_query_part(Entity.named("Benchmark")))
+        res = self.client.execute(query_str, {label_id_param: self.uid})
         res = res["data"]["createBenchmark"]
         return Entity.named("Benchmark")(self.client, res)
-
-
-def _create_benchmark(label):
-    label_id_param = "labelId"
-    query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
-        createBenchmark(data: {labelId: $%s}) {%s}} """ % (
-            label_id_param, label_id_param,
-            query.results_query_part(Entity.named("Benchmark")))
-    return query_str, {label_id_param: label.uid}
