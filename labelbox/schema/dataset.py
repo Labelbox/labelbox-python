@@ -3,7 +3,6 @@ from multiprocessing.dummy import Pool as ThreadPool
 import os
 
 from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError
-from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
@@ -121,9 +120,15 @@ class Dataset(DbObject, Updateable, Deletable):
         descriptor_url = self.client.upload_data(data)
 
         # Create data source
-        res = self.client.execute(*_create_data_rows(self.uid, descriptor_url))
+        dataset_param = "dataSetId"
+        url_param = "jsonURL"
+        query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
+            appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
+            ){ taskId accepted } } """ % (
+                dataset_param, url_param, dataset_param, url_param)
+        res = self.client.execute(
+            query_str, {dataset_param: self.uid, url_param: descriptor_url})
         res = res["data"]["appendRowsToDataset"]
-
         if not res["accepted"]:
             raise MalformedRequestError(
                 "Server did not accept DataRow creation request", data)
@@ -167,25 +172,3 @@ class Dataset(DbObject, Updateable, Deletable):
             raise ResourceNotFoundError(DataRow, where)
 
         return data_rows[0]
-
-
-def _create_data_rows(dataset_id, json_file_url):
-    """ Generates the query and parameters dictionary for creating multiple
-    DataRows for a Dataset.
-
-    Args:
-        dataset_id (str): ID of the Dataset object to create DataRows for.
-        json_file_url (str): URL of the file containing row data.
-    Return:
-        (query_string, parameters_dict)
-    """
-    dataset_param = "dataSetId"
-    url_param = "jsonURL"
-    query_str = """mutation AppendRowsToDatasetPyApi(
-                    $%s: ID!, $%s: String!){
-          appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
-        ){ taskId accepted } } """ % (dataset_param, url_param, dataset_param,
-                                      url_param)
-
-    return query_str, {dataset_param: dataset_id, url_param: json_file_url}
-

@@ -14,7 +14,7 @@ def test_labeler_performance(client, rand_gen):
     label = project.create_label(data_row=data_row, label="test",
                                  seconds_to_label=0.0)
     # Sleep a bit as it seems labeler performance isn't updated immediately.
-    time.sleep(5)
+    time.sleep(10)
 
     labeler_performance = list(project.labeler_performance())
     assert len(labeler_performance) == 1

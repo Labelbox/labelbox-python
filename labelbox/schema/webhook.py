@@ -42,8 +42,15 @@ class Webhook(DbObject, Updateable):
         Return:
             A newly created Webhook.
         """
-        query_str, params = _create_webhook(topics, url, secret, project)
-        res = client.execute(query_str, params)
+        project_str = "" if project is None \
+            else ("project:{id:\"%s\"}," % project.uid)
+
+        query_str = """mutation CreateWebhookPyApi {
+            createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
+        } """ % (project_str, " ".join(topics), url, secret,
+                query.results_query_part(Entity.named("Webhook")))
+
+        res = client.execute(query_str)
         return Webhook(client, res["data"]["createWebhook"])
 
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -59,32 +66,16 @@ class Webhook(DbObject, Updateable):
         """
         # Webhook has a custom `update` function due to custom types
         # in `status` and `topics` fields.
-        query_str, params = _update_webhook(self, topics, url, status)
-        res = self.client.execute(query_str, params)
+        topics_str = "" if topics is None \
+            else "topics: {set: [%s]}" % " ".join(topics)
+        url_str = "" if url is None else "url: \"%s\"" % url
+        status_str = "" if status is None else "status: %s" % status
+
+        query_str = """mutation UpdateWebhookPyApi {
+            updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
+            self.uid, ", ".join(filter(None, (topics_str, url_str, status_str))),
+            query.results_query_part(Entity.named("Webhook")))
+
+        res = self.client.execute(query_str)
         res = res["data"]["updateWebhook"]
         self._set_field_values(res)
-
-
-def _create_webhook(topics, url, secret, project):
-    project_str = "" if project is None else ("project:{id:\"%s\"}," % project.uid)
-
-    query_str = """mutation CreateWebhookPyApi {
-        createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
-    } """ % (project_str, " ".join(topics), url, secret,
-             query.results_query_part(Entity.named("Webhook")))
-
-    return query_str, {}
-
-
-def _update_webhook(webhook, topics, url, status):
-    topics_str = "" if topics is None else "topics: {set: [%s]}" % " ".join(topics)
-    url_str = "" if url is None else "url: \"%s\"" % url
-    status_str = "" if status is None else "status: %s" % status
-
-    query_str = """mutation UpdateWebhookPyApi {
-        updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
-            webhook.uid,
-            ", ".join(filter(None, (topics_str, url_str, status_str))),
-            query.results_query_part(type(webhook)))
-
-    return query_str, {}
