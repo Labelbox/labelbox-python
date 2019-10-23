@@ -7,8 +7,7 @@ from labelbox.exceptions import InvalidQueryError
 IMG_URL = "https://picsum.photos/200/300"
 
 
-def test_asset_metadata_crud(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+def test_asset_metadata_crud(dataset, rand_gen):
     data_row = dataset.create_data_row(row_data=IMG_URL)
     assert len(list(data_row.metadata())) == 0
 
@@ -27,5 +26,3 @@ def test_asset_metadata_crud(client, rand_gen):
         data_row.metadata(order_by=AssetMetadata.meta_value.asc)
     assert exc_info.value.message == \
         "Relationship DataRow.metadata doesn't support sorting"
-
-    dataset.delete()

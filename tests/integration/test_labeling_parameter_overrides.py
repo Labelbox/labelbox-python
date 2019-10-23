@@ -1,15 +1,11 @@
-import pytest
-
 from labelbox import DataRow
-from labelbox.exceptions import InvalidQueryError
 
 
 IMG_URL = "https://picsum.photos/200/300"
 
 
-def test_labeling_parameter_overrides(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+def test_labeling_parameter_overrides(project, rand_gen):
+    dataset = project.client.create_dataset(name=rand_gen(str), projects=project)
 
     task = dataset.create_data_rows([{DataRow.row_data: IMG_URL}] * 20)
     task.wait_till_done()
@@ -36,3 +32,5 @@ def test_labeling_parameter_overrides(client, rand_gen):
     # TODO ensure that the labeling parameter overrides are removed
     # currently this doesn't work so the count remains 3
     assert len(list(project.labeling_parameter_overrides())) == 1
+
+    dataset.delete()

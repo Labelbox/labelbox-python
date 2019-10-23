@@ -62,8 +62,7 @@ def test_dataset_filtering(client, rand_gen):
     d2.delete()
 
 
-def test_get_data_row_for_external_id(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+def test_get_data_row_for_external_id(dataset, rand_gen):
     external_id = rand_gen(str)
 
     with pytest.raises(ResourceNotFoundError):

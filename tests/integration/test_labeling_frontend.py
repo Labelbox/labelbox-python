@@ -1,5 +1,3 @@
-import pytest
-
 from labelbox import LabelingFrontend
 
 
@@ -13,11 +11,10 @@ def test_get_labeling_frontends(client):
     assert len(single) == 1
 
 
-def test_labeling_frontend_connecting_to_project(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+def test_labeling_frontend_connecting_to_project(project):
     assert project.labeling_frontend() == None
 
-    frontend = list(client.get_labeling_frontends())[0]
+    frontend = list(project.client.get_labeling_frontends())[0]
 
     project.labeling_frontend.connect(frontend)
     assert project.labeling_frontend() == frontend
@@ -26,5 +23,3 @@ def test_labeling_frontend_connecting_to_project(client, rand_gen):
     project.labeling_frontend.disconnect(frontend)
     assert project.labeling_frontend() == None
     assert project not in set(frontend.projects())
-
-    project.delete()

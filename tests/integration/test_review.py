@@ -4,15 +4,8 @@ from labelbox import Review
 from labelbox.exceptions import InvalidQueryError
 
 
-IMG_URL = "https://picsum.photos/200/300"
-
-
-def test_reviews(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=IMG_URL)
-    label = project.create_label(data_row=data_row, label="test",
-                                 seconds_to_label=0.0)
+def test_reviews(label_pack):
+    project, _, _, label = label_pack
 
     assert set(label.reviews()) == set()
     assert set(project.reviews()) == set()
@@ -44,16 +37,9 @@ def test_reviews(client, rand_gen):
     assert set(label.reviews()) == {r2}
     assert set(project.reviews()) == {r2}
 
-    dataset.delete()
-    project.delete()
 
-
-def test_review_metrics(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=IMG_URL)
-    label = project.create_label(data_row=data_row, label="test",
-                                 seconds_to_label=0.0)
+def test_review_metrics(label_pack):
+    project, _, data_row, _ = label_pack
 
     assert project.review_metrics(None) == 1
     assert project.review_metrics(Review.NetScore.Negative) == 0
@@ -73,6 +59,3 @@ def test_review_metrics(client, rand_gen):
 
     with pytest.raises(InvalidQueryError):
         project.review_metrics(12)
-
-    dataset.delete()
-    project.delete()
