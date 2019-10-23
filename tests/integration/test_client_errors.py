@@ -9,7 +9,7 @@ import labelbox.client
 import labelbox.exceptions
 
 
-def test_missing_api_key(client, rand_gen):
+def test_missing_api_key(client):
     key = os.environ.get(labelbox.client._LABELBOX_API_KEY, None)
     if key is not None:
         del os.environ[labelbox.client._LABELBOX_API_KEY]

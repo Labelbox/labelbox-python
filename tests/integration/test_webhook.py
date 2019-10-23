@@ -1,12 +1,8 @@
-from threading import Thread
-import time
-
 from labelbox import Webhook
 
 
-def test_webhook_create_update(client, rand_gen):
-
-    project = client.create_project(name=rand_gen(str))
+def test_webhook_create_update(project, rand_gen):
+    client = project.client
     url = "https:/" + rand_gen(str)
     secret = rand_gen(str)
     topics = [Webhook.LABEL_CREATED, Webhook.LABEL_DELETED]
@@ -23,5 +19,3 @@ def test_webhook_create_update(client, rand_gen):
     webhook.update(status=Webhook.REVOKED, topics=[Webhook.LABEL_UPDATED])
     assert webhook.topics == [Webhook.LABEL_UPDATED]
     assert webhook.status == Webhook.REVOKED
-
-    project.delete()

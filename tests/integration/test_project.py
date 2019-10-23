@@ -55,16 +55,12 @@ def test_project_filtering(client, rand_gen):
     p2.delete()
 
 
-def test_upsert_review_queue(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+def test_upsert_review_queue(project):
     project.upsert_review_queue(0.6)
-    project.delete()
 
 
-def test_extend_reservations(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+def test_extend_reservations(project):
     assert project.extend_reservations("LabelingQueue") == 0
     assert project.extend_reservations("ReviewQueue") == 0
     with pytest.raises(InvalidQueryError):
         project.extend_reservations("InvalidQueueType")
-    project.delete()

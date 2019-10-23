@@ -3,16 +3,15 @@ from tempfile import NamedTemporaryFile
 import pytest
 import requests
 
-from labelbox import Project, Dataset, DataRow
+from labelbox import DataRow
 from labelbox.exceptions import InvalidQueryError
 
 
 IMG_URL = "https://picsum.photos/200/300"
 
 
-def test_data_row_bulk_creation(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
-
+def test_data_row_bulk_creation(dataset, rand_gen):
+    client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
     # Test creation using URL
@@ -59,11 +58,9 @@ def test_data_row_bulk_creation(client, rand_gen):
     assert task.status == "COMPLETE"
     data_rows = len(list(dataset.data_rows())) == 5003
 
-    dataset.delete()
 
-
-def test_data_row_single_creation(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+def test_data_row_single_creation(dataset, rand_gen):
+    client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
     data_row = dataset.create_data_row(row_data=IMG_URL)
@@ -77,11 +74,8 @@ def test_data_row_single_creation(client, rand_gen):
         data_row_2 = dataset.create_data_row(row_data=fp.name)
         assert len(list(dataset.data_rows())) == 2
 
-    dataset.delete()
 
-
-def test_data_row_update(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+def test_data_row_update(dataset, rand_gen):
     external_id = rand_gen(str)
     data_row = dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
     assert data_row.external_id == external_id
@@ -90,11 +84,8 @@ def test_data_row_update(client, rand_gen):
     data_row.update(external_id=external_id_2)
     assert data_row.external_id == external_id_2
 
-    dataset.delete()
 
-
-def test_data_row_filtering_sorting(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+def test_data_row_filtering_sorting(dataset, rand_gen):
     task = dataset.create_data_rows([
         {DataRow.row_data: IMG_URL, DataRow.external_id: "row1"},
         {DataRow.row_data: IMG_URL, DataRow.external_id: "row2"},
@@ -115,11 +106,8 @@ def test_data_row_filtering_sorting(client, rand_gen):
     assert list(dataset.data_rows(order_by=DataRow.external_id.asc)) == [row1, row2]
     assert list(dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
 
-    dataset.delete()
 
-
-def test_data_row_deletion(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+def test_data_row_deletion(dataset, rand_gen):
     task = dataset.create_data_rows([
         {DataRow.row_data: IMG_URL, DataRow.external_id: str(i)}
         for i in range(10)])
@@ -142,5 +130,3 @@ def test_data_row_deletion(client, rand_gen):
 
     data_rows = list(dataset.data_rows())
     assert {dr.external_id for dr in data_rows} == expected
-
-    dataset.delete()

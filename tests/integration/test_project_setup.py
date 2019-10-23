@@ -7,6 +7,7 @@ import pytest
 from labelbox import LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
 
+
 def simple_ontology():
     classifications = [{
         "name": "test_ontology",
@@ -18,10 +19,9 @@ def simple_ontology():
 
     return {"tools": [], "classifications": classifications}
 
-def test_project_setup(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
 
-    # TODO this can only run against the staging server
+def test_project_setup(project):
+    client = project.client
     labeling_frontends = list(client.get_labeling_frontends(
         where=LabelingFrontend.iframe_url_path ==
         "https://staging-image-segmentation-v4.labelbox.com"))
@@ -47,5 +47,3 @@ def test_project_setup(client, rand_gen):
     assert options.customization_options == json.dumps(simple_ontology())
     assert project.organization() == client.get_organization()
     assert project.created_by() == client.get_user()
-
-    project.delete()

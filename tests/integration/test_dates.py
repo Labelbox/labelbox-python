@@ -1,19 +1,15 @@
 from datetime import datetime, timedelta, timezone
 
 
-def test_dates(client):
-    project = client.create_project(name="Test")
+def test_dates(project):
     assert isinstance(project.created_at, datetime)
     assert isinstance(project.updated_at, datetime)
 
     project.update(setup_complete=datetime.now())
     assert isinstance(project.setup_complete, datetime)
 
-    project.delete()
 
-
-def test_utc_conversion(client):
-    project = client.create_project(name="Test")
+def test_utc_conversion(project):
     assert isinstance(project.created_at, datetime)
     assert project.created_at.tzinfo == timezone.utc
 
@@ -29,5 +25,3 @@ def test_utc_conversion(client):
     project.update(setup_complete=datetime.utcnow().replace(tzinfo=tz))
     diff = datetime.utcnow() - project.setup_complete.replace(tzinfo=None)
     assert diff > timedelta(hours=5, minutes=58)
-
-    project.delete()
