@@ -119,8 +119,8 @@ class Dataset(DbObject, Updateable, Deletable):
         descriptor_url = self.client.upload_data(data)
 
         # Create data source
-        dataset_param = "dataSetId"
-        url_param = "jsonURL"
+        dataset_param = "datasetId"
+        url_param = "jsonUrl"
         query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
             appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
             ){ taskId accepted } } """ % (

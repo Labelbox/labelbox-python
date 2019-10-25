@@ -42,9 +42,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Return:
             AssetMetadata DB object.
         """
-        meta_type_param = "meta_type"
-        meta_value_param = "meta_value"
-        data_row_id_param = "data_row_id"
+        meta_type_param = "metaType"
+        meta_value_param = "metaValue"
+        data_row_id_param = "dataRowId"
         query_str = """mutation CreateAssetMetadataPyApi(
             $%s: MetadataType!, $%s: String!, $%s: ID!) {
             createAssetMetadata(data: {
