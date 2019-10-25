@@ -84,13 +84,15 @@ class Project(DbObject, Updateable, Deletable):
         else:
             order_by_str = ""
 
-        query_str = """query GetProjectLabelsPyApi($project_id: ID!)
-            {project (where: {id: $project_id})
+        id_param = "projectId"
+        query_str = """query GetProjectLabelsPyApi($%s: ID!)
+            {project (where: {id: $%s})
                 {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
-            where, order_by_str, query.results_query_part(Label))
+            id_param, id_param, where, order_by_str,
+            query.results_query_part(Label))
 
         return PaginatedCollection(
-            self.client, query_str, {"project_id": self.uid},
+            self.client, query_str, {id_param: self.uid},
             ["project", "labels"], Label)
 
     def export_labels(self, timeout_seconds=60):
@@ -128,13 +130,13 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             A PaginatedCollection of LabelerPerformance objects.
         """
-        project_id_param = "projectId"
+        id_param = "projectId"
         query_str = """query LabelerPerformancePyApi($%s: ID!) {
             project(where: {id: $%s}) {
                 labelerPerformance(skip: %%d first: %%d) {
                     count user {%s} secondsPerLabel totalTimeLabeling consensus
                     averageBenchmarkAgreement lastActivityTime}
-            }}""" % (project_id_param, project_id_param,
+            }}""" % (id_param, id_param,
                      query.results_query_part(Entity.User))
 
         def create_labeler_performance(client, result):
@@ -145,7 +147,7 @@ class Project(DbObject, Updateable, Deletable):
                                          for key, value in result.items()})
 
         return PaginatedCollection(
-            self.client, query_str, {project_id_param: self.uid},
+            self.client, query_str, {id_param: self.uid},
             ["project", "labelerPerformance"], create_labeler_performance)
 
     def review_metrics(self, net_score):
@@ -158,13 +160,13 @@ class Project(DbObject, Updateable, Deletable):
         if net_score not in (None,) + tuple(Entity.Review.NetScore):
             raise InvalidQueryError("Review metrics net score must be either None "
                                     "or one of Review.NetScore values")
-        project_id_param = "project_id"
+        id_param = "projectId"
         net_score_literal = "None" if net_score is None else net_score.name
         query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
             project(where: {id:$%s})
             {reviewMetrics {labelAggregate(netScore: %s) {count}}}
-        }""" % (project_id_param, project_id_param, net_score_literal)
-        res = self.client.execute(query_str, {project_id_param: self.uid})
+        }""" % (id_param, id_param, net_score_literal)
+        res = self.client.execute(query_str, {id_param: self.uid})
         return res["data"]["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
     def setup(self, labeling_frontend, labeling_frontend_options):
@@ -202,11 +204,11 @@ class Project(DbObject, Updateable, Deletable):
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
                 data_row.uid, priority, num_labels)
             for data_row, priority, num_labels in data)
-        project_param = "projectId"
-        query_str = """mutation setLabelingParameterOverridesPyApi($%s: ID!){
+        id_param = "projectId"
+        query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s }) {setLabelingParameterOverrides
-            (data: [%s]) {success}}} """ % (project_param, project_param, data_str)
-        res = self.client.execute(query_str, {project_param: self.uid})
+            (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
+        res = self.client.execute(query_str, {id_param: self.uid})
         return res["data"]["project"]["setLabelingParameterOverrides"]["success"]
 
     def unset_labeling_parameter_overrides(self, data_rows):
@@ -216,13 +218,13 @@ class Project(DbObject, Updateable, Deletable):
         Return:
             bool indicating if the operation was a success.
         """
-        project_param = "projectId"
-        query_str = """mutation unsetLabelingParameterOverridesPyApi($%s: ID!){
+        id_param = "projectId"
+        query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s}) {
             unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            project_param, project_param,
+            id_param, id_param,
             ",\n".join("{dataRowId: \"%s\"}" % row.uid for row in data_rows))
-        res = self.client.execute(query_str, {project_param: self.uid})
+        res = self.client.execute(query_str, {id_param: self.uid})
         return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
 
     def upsert_review_queue(self, quota_factor):
@@ -231,14 +233,14 @@ class Project(DbObject, Updateable, Deletable):
             quota_factor (float): Which part (percentage) of the queue
                 to reinitiate. Between 0 and 1.
         """
-        project_param = "projectId"
+        id_param = "projectId"
         quota_param = "quotaFactor"
         query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
             upsertReviewQueue(where:{project: {id: $%s}}
                             data:{quotaFactor: $%s}) {id}}""" % (
-            project_param, quota_param, project_param, quota_param)
+            id_param, quota_param, id_param, quota_param)
         res = self.client.execute(
-            query_str, {project_param: self.uid, quota_param: quota_factor})
+            query_str, {id_param: self.uid, quota_param: quota_factor})
 
 
     def extend_reservations(self, queue_type):
@@ -252,11 +254,11 @@ class Project(DbObject, Updateable, Deletable):
         if queue_type not in ("LabelingQueue", "ReviewQueue"):
             raise InvalidQueryError("Unsupported queue type: %s" % queue_type)
 
-        project_param = "projectId"
+        id_param = "projectId"
         query_str = """mutation ExtendReservationsPyApi($%s: ID!){
             extendReservations(projectId:$%s queueType:%s)}""" % (
-                project_param, project_param, queue_type)
-        res = self.client.execute(query_str, {project_param: self.uid})
+                id_param, id_param, queue_type)
+        res = self.client.execute(query_str, {id_param: self.uid})
         return res["data"]["extendReservations"]
 
 
