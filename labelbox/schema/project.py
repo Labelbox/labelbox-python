@@ -54,7 +54,7 @@ class Project(DbObject, Updateable, Deletable):
         # about them. At the same time they're connected to a Label at
         # label creation in a non-standard way (connect via name).
 
-        Label = Entity.named("Label")
+        Label = Entity.Label
         kwargs[Label.project] = self
         data = {Label.attribute(attr) if isinstance(attr, str) else attr:
                 value.uid if isinstance(value, DbObject) else value
@@ -69,7 +69,7 @@ class Project(DbObject, Updateable, Deletable):
         return Label(self.client, res)
 
     def labels(self, datasets=None, order_by=None):
-        Label = Entity.named("Label")
+        Label = Entity.Label
 
         if datasets is not None:
             where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
@@ -135,10 +135,10 @@ class Project(DbObject, Updateable, Deletable):
                     count user {%s} secondsPerLabel totalTimeLabeling consensus
                     averageBenchmarkAgreement lastActivityTime}
             }}""" % (project_id_param, project_id_param,
-                     query.results_query_part(Entity.named("User")))
+                     query.results_query_part(Entity.User))
 
         def create_labeler_performance(client, result):
-            result["user"] = Entity.named("User")(client, result["user"])
+            result["user"] = Entity.User(client, result["user"])
             result["lastActivityTime"] = datetime.fromtimestamp(
                 result["lastActivityTime"] / 1000, timezone.utc)
             return LabelerPerformance(**{utils.snake_case(key): value
@@ -155,7 +155,7 @@ class Project(DbObject, Updateable, Deletable):
         Return:
             int, aggregation count of reviews for given net_score.
         """
-        if net_score not in (None,) + tuple(Entity.named("Review").NetScore):
+        if net_score not in (None,) + tuple(Entity.Review.NetScore):
             raise InvalidQueryError("Review metrics net score must be either None "
                                     "or one of Review.NetScore values")
         project_id_param = "project_id"
@@ -179,7 +179,7 @@ class Project(DbObject, Updateable, Deletable):
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
 
-        LFO = Entity.named("LabelingFrontendOptions")
+        LFO = Entity.LabelingFrontendOptions
         labeling_frontend_options = self.client._create(
             LFO, {LFO.project: self, LFO.labeling_frontend: labeling_frontend,
                   LFO.customization_options: labeling_frontend_options,

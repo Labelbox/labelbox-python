@@ -51,10 +51,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
             meta_type_param, meta_value_param, data_row_id_param,
             meta_type_param, meta_value_param, data_row_id_param,
-            query.results_query_part(Entity.named("AssetMetadata")))
+            query.results_query_part(Entity.AssetMetadata))
 
         res = self.client.execute(
             query_str, {meta_type_param: meta_type, meta_value_param: meta_value,
                         data_row_id_param: self.uid})
-        return Entity.named("AssetMetadata")(
+        return Entity.AssetMetadata(
             self.client, res["data"]["createAssetMetadata"])

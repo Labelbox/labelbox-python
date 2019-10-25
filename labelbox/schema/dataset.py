@@ -38,7 +38,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 any of the field names given in `data`.
 
         """
-        DataRow = Entity.named("DataRow")
+        DataRow = Entity.DataRow
         if DataRow.row_data.name not in kwargs:
             raise InvalidQueryError(
                 "DataRow.row_data missing when creating DataRow.")
@@ -80,8 +80,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 a DataRow.
         """
         file_upload_thread_count = 20
-        DataRow = Entity.named("DataRow")
-        Task = Entity.named("Task")
+        DataRow = Entity.DataRow
 
         def upload_if_necessary(item):
             if isinstance(item, str):
@@ -136,12 +135,12 @@ class Dataset(DbObject, Updateable, Deletable):
         # Fetch and return the task.
         task_id = res["taskId"]
         user = self.client.get_user()
-        task = list(user.created_tasks(where=Task.uid == task_id))
+        task = list(user.created_tasks(where=Entity.Task.uid == task_id))
         # Cache user in a private variable as the relationship can't be
         # resolved due to server-side limitations (see Task.created_by)
         # for more info.
         if len(task) != 1:
-            raise ResourceNotFoundError(Task, task_id)
+            raise ResourceNotFoundError(Entity.Task, task_id)
         task = task[0]
         task._user = user
         return task
@@ -161,7 +160,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
-        DataRow = Entity.named("DataRow")
+        DataRow = Entity.DataRow
         where = DataRow.external_id==external_id
 
         data_rows = self.data_rows(where=where)

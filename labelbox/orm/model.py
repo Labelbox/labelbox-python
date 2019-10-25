@@ -194,7 +194,7 @@ class Relationship:
 
     @property
     def destination_type(self):
-        return Entity.named(self.destination_type_name)
+        return getattr(Entity, self.destination_type_name)
 
     def __str__(self):
         return self.name
@@ -203,7 +203,18 @@ class Relationship:
         return "<Relationship: %r>" % self.name
 
 
-class Entity:
+class EntityMeta(type):
+    """ Entity metaclass. Registers Entity subclasses as attributes
+    of the Entity class object so they can be referenced for example like:
+        Entity.Project.
+    """
+    def __init__(cls, clsname, superclasses, attributedict):
+        super().__init__(clsname, superclasses, attributedict)
+        if clsname != "Entity":
+            setattr(Entity, clsname, cls)
+
+
+class Entity(metaclass=EntityMeta):
     """ An entity that contains fields and relationships. Base class
     for DbObject (which is base class for concrete schema classes). """
 
@@ -279,27 +290,3 @@ class Entity:
             Project, DataRow, ...
         """
         return cls.__name__.split(".")[-1]
-
-
-    @classmethod
-    def named(cls, name):
-        """ Returns an Entity (direct or indirect subclass of `Entity`) that
-        whose class name is equal to `name`.
-
-        Args:
-            name (str): Name of the sought entity, for example "Project".
-        Return:
-            An Entity subtype that has the given `name`.
-        Raises:
-            LabelboxError: if there is no such class.
-        """
-        def subclasses(cls):
-            for subclass in cls.__subclasses__():
-                yield subclass
-                for subsub in subclasses(subclass):
-                    yield subsub
-
-        for t in subclasses(Entity):
-            if t.type_name() == name:
-                return t
-        raise LabelboxError("Failed to find Entity for name: %s" % name)

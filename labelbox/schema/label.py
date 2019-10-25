@@ -38,10 +38,9 @@ class Label(DbObject, Updateable, BulkDeletable):
             Review attributes. At a minimum a `Review.score` field
             value must be provided.
         """
-        Review = Entity.named("Review")
-        kwargs[Review.label.name] = self
-        kwargs[Review.project.name] = self.project()
-        return self.client._create(Review, kwargs)
+        kwargs[Entity.Review.label.name] = self
+        kwargs[Entity.Review.project.name] = self.project()
+        return self.client._create(Entity.Review, kwargs)
 
     def create_benchmark(self):
         """ Creates a Benchmark for this Label.
@@ -52,7 +51,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
             createBenchmark(data: {labelId: $%s}) {%s}} """ % (
                 label_id_param, label_id_param,
-                query.results_query_part(Entity.named("Benchmark")))
+                query.results_query_part(Entity.Benchmark))
         res = self.client.execute(query_str, {label_id_param: self.uid})
         res = res["data"]["createBenchmark"]
-        return Entity.named("Benchmark")(self.client, res)
+        return Entity.Benchmark(self.client, res)
