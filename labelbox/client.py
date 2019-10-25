@@ -188,7 +188,7 @@ class Client:
                                        sign: $sign) {url filename} } """,}),
             "map": (None, json.dumps({"1": ["variables.file"]})),
             }
-        request = requests.post(
+        response = requests.post(
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
@@ -196,7 +196,7 @@ class Client:
         )
 
         try:
-            file_data = request.json().get("data", None)
+            file_data = response.json().get("data", None)
         except ValueError: # response is not valid JSON
             raise labelbox.exceptions.LabelboxError(
                 "Failed to upload, unknown cause")
