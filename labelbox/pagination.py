@@ -47,7 +47,7 @@ class PaginatedCollection:
             query = self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
             self._fetched_pages += 1
 
-            results = self.client.execute(query, self.params)["data"]
+            results = self.client.execute(query, self.params)
             for deref in self.dereferencing:
                 results = results[deref]
 

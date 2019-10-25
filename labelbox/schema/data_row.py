@@ -56,5 +56,4 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         res = self.client.execute(
             query_str, {meta_type_param: meta_type, meta_value_param: meta_value,
                         data_row_id_param: self.uid})
-        return Entity.AssetMetadata(
-            self.client, res["data"]["createAssetMetadata"])
+        return Entity.AssetMetadata(self.client, res["createAssetMetadata"])

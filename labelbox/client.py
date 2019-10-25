@@ -168,7 +168,7 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error: %s" % str(errors))
 
-        return response
+        return response["data"]
 
     def upload_data(self, data):
         """ Uploads the given data (bytes) to Labelbox.
@@ -222,8 +222,8 @@ class Client:
                 `Client.execute` can also be raised by this function.
         """
         query_str, params = query.get_single(db_object_type, uid)
-        res = self.execute(query_str, params)["data"][
-            utils.camel_case(db_object_type.type_name())]
+        res = self.execute(query_str, params)
+        res = res[utils.camel_case(db_object_type.type_name())]
         if res is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 db_object_type, params)
@@ -347,7 +347,7 @@ class Client:
 
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)
-        res = res["data"]["create%s" % db_object_type.type_name()]
+        res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
     def create_dataset(self, **kwargs):

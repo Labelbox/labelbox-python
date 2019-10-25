@@ -151,7 +151,7 @@ class RelationshipManager:
 
         query_string, params = query.relationship(
             self.source, rel, None, None)
-        result = self.source.client.execute(query_string, params)["data"]
+        result = self.source.client.execute(query_string, params)
         result = result[utils.camel_case(type(self.source).type_name())]
         result = result[rel.graphql_name]
         if result is None:
@@ -192,7 +192,7 @@ class Updateable:
 
         query_string, params = query.update_fields(self, values)
         res = self.client.execute(query_string, params)
-        res = res["data"]["update%s" % utils.title_case(self.type_name())]
+        res = res["update%s" % utils.title_case(self.type_name())]
         self._set_field_values(res)
 
 
