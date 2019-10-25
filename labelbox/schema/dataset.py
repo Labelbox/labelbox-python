@@ -127,7 +127,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 dataset_param, url_param, dataset_param, url_param)
         res = self.client.execute(
             query_str, {dataset_param: self.uid, url_param: descriptor_url})
-        res = res["data"]["appendRowsToDataset"]
+        res = res["appendRowsToDataset"]
         if not res["accepted"]:
             raise MalformedRequestError(
                 "Server did not accept DataRow creation request", data)

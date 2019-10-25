@@ -65,8 +65,7 @@ class Project(DbObject, Updateable, Deletable):
         query_str = query_str.replace("data: {",
                                       "data: {type: {connect: {name: \"Any\"}} ")
         res = self.client.execute(query_str, params)
-        res = res["data"]["createLabel"]
-        return Label(self.client, res)
+        return Label(self.client, res["createLabel"])
 
     def labels(self, datasets=None, order_by=None):
         Label = Entity.Label
@@ -112,8 +111,8 @@ class Project(DbObject, Updateable, Deletable):
         """ %  (id_param, id_param)
 
         while True:
-            res = self.client.execute(query_str, {id_param: self.uid})[
-                "data"]["exportLabels"]
+            res = self.client.execute(query_str, {id_param: self.uid})
+            res = res["exportLabels"]
             if not res["shouldPoll"]:
                 return res["downloadUrl"]
 
@@ -167,7 +166,7 @@ class Project(DbObject, Updateable, Deletable):
             {reviewMetrics {labelAggregate(netScore: %s) {count}}}
         }""" % (id_param, id_param, net_score_literal)
         res = self.client.execute(query_str, {id_param: self.uid})
-        return res["data"]["project"]["reviewMetrics"]["labelAggregate"]["count"]
+        return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
     def setup(self, labeling_frontend, labeling_frontend_options):
         """ Finalizes the Project setup.
@@ -209,7 +208,7 @@ class Project(DbObject, Updateable, Deletable):
             project(where: { id: $%s }) {setLabelingParameterOverrides
             (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
         res = self.client.execute(query_str, {id_param: self.uid})
-        return res["data"]["project"]["setLabelingParameterOverrides"]["success"]
+        return res["project"]["setLabelingParameterOverrides"]["success"]
 
     def unset_labeling_parameter_overrides(self, data_rows):
         """ Removes labeling parameter overrides to this project.
@@ -225,7 +224,7 @@ class Project(DbObject, Updateable, Deletable):
             id_param, id_param,
             ",\n".join("{dataRowId: \"%s\"}" % row.uid for row in data_rows))
         res = self.client.execute(query_str, {id_param: self.uid})
-        return res["data"]["project"]["unsetLabelingParameterOverrides"]["success"]
+        return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
     def upsert_review_queue(self, quota_factor):
         """ Reinitiate the review queue for this project.
@@ -259,7 +258,7 @@ class Project(DbObject, Updateable, Deletable):
             extendReservations(projectId:$%s queueType:%s)}""" % (
                 id_param, id_param, queue_type)
         res = self.client.execute(query_str, {id_param: self.uid})
-        return res["data"]["extendReservations"]
+        return res["extendReservations"]
 
 
 class LabelingParameterOverride(DbObject):

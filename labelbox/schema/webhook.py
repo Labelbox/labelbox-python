@@ -50,8 +50,7 @@ class Webhook(DbObject, Updateable):
         } """ % (project_str, " ".join(topics), url, secret,
                 query.results_query_part(Entity.Webhook))
 
-        res = client.execute(query_str)
-        return Webhook(client, res["data"]["createWebhook"])
+        return Webhook(client, client.execute(query_str)["createWebhook"])
 
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
@@ -76,6 +75,4 @@ class Webhook(DbObject, Updateable):
             self.uid, ", ".join(filter(None, (topics_str, url_str, status_str))),
             query.results_query_part(Entity.Webhook))
 
-        res = self.client.execute(query_str)
-        res = res["data"]["updateWebhook"]
-        self._set_field_values(res)
+        self._set_field_values(self.client.execute(query_str)["updateWebhook"])

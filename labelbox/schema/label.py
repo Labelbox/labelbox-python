@@ -53,5 +53,4 @@ class Label(DbObject, Updateable, BulkDeletable):
                 label_id_param, label_id_param,
                 query.results_query_part(Entity.Benchmark))
         res = self.client.execute(query_str, {label_id_param: self.uid})
-        res = res["data"]["createBenchmark"]
-        return Entity.Benchmark(self.client, res)
+        return Entity.Benchmark(self.client, res["createBenchmark"])
