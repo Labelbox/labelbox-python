@@ -20,6 +20,7 @@ def test_labels(label_pack):
 
     assert label.project() == project
     assert label.data_row() == data_row
+    assert label.created_by() == label.client.get_user()
 
     label.delete()
 
