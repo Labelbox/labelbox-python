@@ -109,7 +109,7 @@ def test_api_limit_error(client, rand_gen):
     def get(arg):
         try:
             return client.get_project(project_id)
-        except Exception as e:
+        except labelbox.exceptions.ApiLimitError as e:
             return e
 
     with Pool(300) as pool:
