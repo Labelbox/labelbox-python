@@ -44,8 +44,7 @@ class Project(DbObject, Updateable, Deletable):
     def create_label(self, **kwargs):
         """ Creates a label on this Project.
         Kwargs:
-            Label attributes. At the minimum the label `DataRow`
-            relationship and `seconds_to_label` field.
+            Label attributes. At the minimum the label `DataRow`.
         """
         # Copy-paste of Client._create code so we can inject
         # a connection to Type. Type objects are on their way to being
@@ -54,7 +53,10 @@ class Project(DbObject, Updateable, Deletable):
         # label creation in a non-standard way (connect via name).
 
         Label = Entity.Label
+
         kwargs[Label.project] = self
+        kwargs[Label.seconds_to_label] = kwargs.get(
+            Label.seconds_to_label.name, 0.0)
         data = {Label.attribute(attr) if isinstance(attr, str) else attr:
                 value.uid if isinstance(value, DbObject) else value
                 for attr, value in kwargs.items()}

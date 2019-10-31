@@ -72,7 +72,6 @@ def label_pack(project, rand_gen):
     client = project.client
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
     data_row = dataset.create_data_row(row_data=IMG_URL)
-    label = project.create_label(data_row=data_row, label=rand_gen(str),
-                                 seconds_to_label=0.0)
+    label = project.create_label(data_row=data_row, label=rand_gen(str))
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
