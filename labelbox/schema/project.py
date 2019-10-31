@@ -42,11 +42,10 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
 
     def create_label(self, **kwargs):
-        """ Creates a label on this project.
+        """ Creates a label on this Project.
         Kwargs:
             Label attributes. At the minimum the label `DataRow`
-            and `Type` relationships and `label`, `seconds_to_label`
-            fields.
+            relationship and `seconds_to_label` field.
         """
         # Copy-paste of Client._create code so we can inject
         # a connection to Type. Type objects are on their way to being
