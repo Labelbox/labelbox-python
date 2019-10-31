@@ -48,8 +48,7 @@ def test_review_metrics(label_pack):
 
     for count, score in ((4, 0), (2, 1), (3, -1)):
         for _ in range(count):
-            l = project.create_label(data_row=data_row, label="l",
-                                     seconds_to_label=0.0)
+            l = project.create_label(data_row=data_row, label="l")
             l.create_review(score=score)
 
     assert project.review_metrics(None) == 1

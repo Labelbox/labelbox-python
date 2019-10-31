@@ -7,6 +7,8 @@
 returned `dict`. This *breaks* existing code that directly uses the
 `Client.execute` method.
 * Major code reorganization, naming and test improvements.
+* `Label.seconds_to_label` field value is now optional when creating
+a `Label`. Default value is 0.0.
 
 ### Added
 * `Project.upsert_review_queue` method.
