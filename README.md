@@ -68,6 +68,6 @@ task.wait_till_done()
 ### Documentation and API specification
 
 Documentation for the Labelbox Python Client package can be found at
-https://labelbox.helpdocs.io/docs/python-client-api. The API documentation
+https://labelbox.helpdocs.io/docs/python-api. The API documentation
 is available at
-https://labelbox.helpdocs.io/docs/python-client-api/api-specification.
+https://labelbox.helpdocs.io/docs/python-api/api-reference.
