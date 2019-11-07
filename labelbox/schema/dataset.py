@@ -32,10 +32,9 @@ class Dataset(DbObject, Updateable, Deletable):
             treated as an external URL.
         Raises:
             InvalidQueryError: If `DataRow.row_data` field value is not provided
-                in `data`.
-                any of the field names given in `data`.
+                in `kwargs`.
             InvalidAttributeError: in case the DB object type does not contain
-                any of the field names given in `data`.
+                any of the field names given in `kwargs`.
 
         """
         DataRow = Entity.DataRow

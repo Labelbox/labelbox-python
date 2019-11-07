@@ -193,7 +193,11 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def set_labeling_parameter_overrides(self, data):
-        """ Adds labeling parameter overrides to this project.
+        """ Adds labeling parameter overrides to this project. Example:
+
+            >>> project.set_labeling_parameter_overrides([
+            >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
+
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
                 (DataRow, priority, numberOfLabels) for the new override.

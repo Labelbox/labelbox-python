@@ -218,8 +218,6 @@ class Client:
         Raises:
             labelbox.exceptions.ResourceNotFoundError: If there is no object
                 of the given type for the given ID.
-            labelbox.exceptions.LabelboxError: Any error raised by
-                `Client.execute` can also be raised by this function.
         """
         query_str, params = query.get_single(db_object_type, uid)
         res = self.execute(query_str, params)
@@ -271,9 +269,6 @@ class Client:
                 for filtering.
         Return:
             An iterable of `db_object_type` instances.
-        Raises:
-            labelbox.exceptions.LabelboxError: Any error raised by
-                `Client.execute` can also be raised by this function.
         """
         not_deleted = db_object_type.deleted == False
         where = not_deleted if where is None else where & not_deleted
@@ -291,9 +286,6 @@ class Client:
                 for filtering.
         Return:
             An iterable of Projects (typically a PaginatedCollection).
-        Raises:
-            labelbox.exceptions.LabelboxError: Any error raised by
-                `Client.execute` can also be raised by this function.
         """
         return self._get_all(Project, where)
 
@@ -305,9 +297,6 @@ class Client:
                 for filtering.
         Return:
             An iterable of Datasets (typically a PaginatedCollection).
-        Raises:
-            labelbox.exceptions.LabelboxError: Any error raised by
-                `Client.execute` can also be raised by this function.
         """
         return self._get_all(Dataset, where)
 
@@ -319,9 +308,6 @@ class Client:
                 for filtering.
         Return:
             An iterable of LabelingFrontends (typically a PaginatedCollection).
-        Raises:
-            labelbox.exceptions.LabelboxError: Any error raised by
-                `Client.execute` can also be raised by this function.
         """
         return self._get_all(LabelingFrontend, where)
 
