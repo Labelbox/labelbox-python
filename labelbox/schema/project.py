@@ -69,6 +69,15 @@ class Project(DbObject, Updateable, Deletable):
         return Label(self.client, res["createLabel"])
 
     def labels(self, datasets=None, order_by=None):
+        """
+        Custom relationship expansion method to support limited filtering.
+
+        Args:
+            datasets (iterable of Dataset): Optional collection of Datasets
+                whose Labels are sought. If not provided, all Labels in
+                this Project are returned.
+            order_by (None or (Field, Field.Order)): Ordering clause.
+        """
         Label = Entity.Label
 
         if datasets is not None:
