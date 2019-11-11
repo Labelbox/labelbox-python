@@ -69,12 +69,10 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Raise:
             InvalidQueryError: if the `items` parameter does not conform to
-                the specification above.
-            MalformedRequestError: if the server did not accept the DataRow
-                creation request.
-            ResourceNotFoundError: if unable to retrieve the Task based on the
-                task_id of the import process. This could imply that the import
-                failed.
+                the specification above or if the server did not accept the
+                DataRow creation request (unknown reason).
+            ResourceNotFoundError: if unable to retrieve the Task for the
+                import process. This could imply that the import failed.
             InvalidAttributeError: if there are fields in `items` not valid for
                 a DataRow.
         """
@@ -128,8 +126,8 @@ class Dataset(DbObject, Updateable, Deletable):
             query_str, {dataset_param: self.uid, url_param: descriptor_url})
         res = res["appendRowsToDataset"]
         if not res["accepted"]:
-            raise MalformedRequestError(
-                "Server did not accept DataRow creation request", data)
+            raise InvalidQueryError(
+                "Server did not accept DataRow creation request")
 
         # Fetch and return the task.
         task_id = res["taskId"]
