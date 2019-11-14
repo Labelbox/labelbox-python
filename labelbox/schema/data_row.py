@@ -23,6 +23,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     @staticmethod
     def bulk_delete(data_rows):
         """ Deletes all the given DataRows.
+
         Args:
             data_rows (list of DataRow): The DataRows to delete.
         """
@@ -35,11 +36,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     def create_metadata(self, meta_type, meta_value):
         """ Creates an asset metadata for this DataRow.
+
         Args:
             meta_type (str): Asset metadata type, must be one of:
                 VIDEO, IMAGE, TEXT.
             meta_value (str): Asset metadata value.
-        Return:
+        Returns:
             AssetMetadata DB object.
         """
         meta_type_param = "metaType"
