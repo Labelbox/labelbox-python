@@ -43,6 +43,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_label(self, **kwargs):
         """ Creates a label on this Project.
+
         Kwargs:
             Label attributes. At the minimum the label `DataRow`.
         """
@@ -107,9 +108,10 @@ class Project(DbObject, Updateable, Deletable):
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
+
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
-        Return:
+        Returns:
             URL of the data file with this Project's labels. If the server
                 didn't generate during the `timeout_seconds` period, None
                 is returned.
@@ -136,6 +138,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def labeler_performance(self):
         """ Returns the labeler performances for this Project.
+
         Returns:
             A PaginatedCollection of LabelerPerformance objects.
         """
@@ -161,9 +164,10 @@ class Project(DbObject, Updateable, Deletable):
 
     def review_metrics(self, net_score):
         """ Returns this Project's review metrics.
+
         Args:
             net_score (None or Review.NetScore): Indicates desired metric.
-        Return:
+        Returns:
             int, aggregation count of reviews for given net_score.
         """
         if net_score not in (None,) + tuple(Entity.Review.NetScore):
@@ -180,8 +184,10 @@ class Project(DbObject, Updateable, Deletable):
 
     def setup(self, labeling_frontend, labeling_frontend_options):
         """ Finalizes the Project setup.
+
         Args:
-            labeling_frontend (LabelingFrontend): The labeling frontend to use.
+            labeling_frontend (LabelingFrontend): Which UI to use to label the 
+                data.
             labeling_frontend_options (dict or str): Labeling frontend options,
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
@@ -210,8 +216,8 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
                 (DataRow, priority, numberOfLabels) for the new override.
-        Return:
-            bool indicating if the operation was a success.
+        Returns:
+            bool, indicates if the operation was a success.
         """
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
@@ -226,10 +232,11 @@ class Project(DbObject, Updateable, Deletable):
 
     def unset_labeling_parameter_overrides(self, data_rows):
         """ Removes labeling parameter overrides to this project.
+
         Args:
             data_rows (iterable): An iterable of DataRows.
-        Return:
-            bool indicating if the operation was a success.
+        Returns:
+            bool, indicates if the operation was a success.
         """
         id_param = "projectId"
         query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
@@ -241,7 +248,8 @@ class Project(DbObject, Updateable, Deletable):
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
     def upsert_review_queue(self, quota_factor):
-        """ Reinitiate the review queue for this project.
+        """ Reinitiates the review queue for this project.
+
         Args:
             quota_factor (float): Which part (percentage) of the queue
                 to reinitiate. Between 0 and 1.
@@ -257,11 +265,12 @@ class Project(DbObject, Updateable, Deletable):
 
 
     def extend_reservations(self, queue_type):
-        """ Extend all the current reservations for the current user on the given
+        """ Extends all the current reservations for the current user on the given
         queue type.
+
         Args:
             queue_type (str): Either "LabelingQueue" or "ReviewQueue"
-        Return:
+        Returns:
             int, the number of reservations that were extended.
         """
         if queue_type not in ("LabelingQueue", "ReviewQueue"):
