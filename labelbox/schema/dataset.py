@@ -24,6 +24,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
+
         Kwargs:
             Key-value arguments containing new `DataRow` data.
             At a minimum they must contain `row_data`. The value for
@@ -63,17 +64,17 @@ class Dataset(DbObject, Updateable, Deletable):
         Args:
             items (iterable of (dict or str)): See above for details.
 
-        Return:
+        Returns:
             Task representing the data import on the server side. The Task
             can be used for inspecting task progress and waiting until it's done.
 
-        Raise:
-            InvalidQueryError: if the `items` parameter does not conform to
+        Raises:
+            InvalidQueryError: If the `items` parameter does not conform to
                 the specification above or if the server did not accept the
                 DataRow creation request (unknown reason).
-            ResourceNotFoundError: if unable to retrieve the Task for the
+            ResourceNotFoundError: If unable to retrieve the Task for the
                 import process. This could imply that the import failed.
-            InvalidAttributeError: if there are fields in `items` not valid for
+            InvalidAttributeError: If there are fields in `items` not valid for
                 a DataRow.
         """
         file_upload_thread_count = 20
@@ -153,7 +154,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A single `DataRow` with the given ID.
 
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: if there is no `DataRow`
+            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
