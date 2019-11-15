@@ -72,11 +72,11 @@ class Client:
         Raises:
             labelbox.exceptions.AuthenticationError: If authentication
                 failed.
-            labelbox.exceptions.InvalidQueryError: If `query` was not
+            labelbox.exceptions.InvalidQueryError: If `query` is not
                 syntactically or semantically valid (checked server-side).
             labelbox.exceptions.ApiLimitError: If the server API limit was
-                exceeded. See "How to import data" documentation to see 
-                API limits.
+                exceeded. See "How to import data" in the online documentation 
+                to see API limits.
             labelbox.exceptions.TimeoutError: If response was not received
                 in `timeout` seconds.
             labelbox.exceptions.NetworkError: If an unknown error occurred
