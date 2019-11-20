@@ -17,6 +17,7 @@ a `Label`. Default value is 0.0.
 * Changelog.
 
 ### Fixed
+* `Dataset.create_data_row` upload of local file data.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
