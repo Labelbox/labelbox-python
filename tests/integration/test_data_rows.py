@@ -7,7 +7,7 @@ from labelbox import DataRow
 from labelbox.exceptions import InvalidQueryError
 
 
-IMG_URL = "https://picsum.photos/200/300"
+IMG_URL = "https://picsum.photos/id/829/200/300"
 
 
 def test_data_row_bulk_creation(dataset, rand_gen):
@@ -32,7 +32,8 @@ def test_data_row_bulk_creation(dataset, rand_gen):
 
     # Test creation using file name
     with NamedTemporaryFile() as fp:
-        fp.write("Test data".encode())
+        data = rand_gen(str).encode()
+        fp.write(data)
         fp.flush()
         task = dataset.create_data_rows([fp.name])
         task.wait_till_done()
@@ -41,9 +42,7 @@ def test_data_row_bulk_creation(dataset, rand_gen):
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == 3
     url = ({data_row.row_data for data_row in data_rows} - {IMG_URL}).pop()
-    res = requests.get(url)
-    assert res.status_code == 200
-    assert res.text == "Test data"
+    assert requests.get(url).content == data
 
     data_rows[0].delete()
 
@@ -68,11 +67,16 @@ def test_data_row_single_creation(dataset, rand_gen):
     assert data_row.dataset() == dataset
     assert data_row.created_by() == client.get_user()
     assert data_row.organization() == client.get_organization()
+    assert requests.get(IMG_URL).content == \
+        requests.get(data_row.row_data).content
 
     with NamedTemporaryFile() as fp:
-        fp.write("Test data".encode())
+        data = rand_gen(str).encode()
+        fp.write(data)
+        fp.flush()
         data_row_2 = dataset.create_data_row(row_data=fp.name)
         assert len(list(dataset.data_rows())) == 2
+        assert requests.get(data_row_2.row_data).content == data
 
 
 def test_data_row_update(dataset, rand_gen):

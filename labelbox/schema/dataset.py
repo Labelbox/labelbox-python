@@ -45,7 +45,8 @@ class Dataset(DbObject, Updateable, Deletable):
         # If row data is a local file path, upload it to server.
         row_data = kwargs[DataRow.row_data.name]
         if os.path.exists(row_data):
-            kwargs[DataRow.row_data.name] = self.client.upload_data(row_data)
+            with open(row_data, "rb") as f:
+                kwargs[DataRow.row_data.name] = self.client.upload_data(f.read())
 
         kwargs[DataRow.dataset.name] = self
 
