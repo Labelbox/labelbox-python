@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Version 2.3 (2019-11-12)
 
 ### Changed
 * `Client.execute` now automatically extracts the 'data' value from the
