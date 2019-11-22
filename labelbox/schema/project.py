@@ -45,7 +45,8 @@ class Project(DbObject, Updateable, Deletable):
         """ Creates a label on this Project.
 
         Kwargs:
-            Label attributes. At the minimum the label `DataRow`.
+            Label attributes. At the minimum, the Label `data_row` must
+            be provided.
         """
         # Copy-paste of Client._create code so we can inject
         # a connection to Type. Type objects are on their way to being
