@@ -32,7 +32,7 @@ class Client:
 
     def __init__(self, api_key=None,
                  endpoint='https://api.labelbox.com/graphql'):
-        """ Create and initialize a Labelbox Client.
+        """ Creates and initializes a Labelbox Client.
 
         Args:
             api_key (str): API key. If None, the key is obtained from
@@ -63,11 +63,11 @@ class Client:
         in appropriate labelbox.exceptions.LabelboxError subtypes.
 
         Args:
-            query (str): the query to execute.
-            params (dict): query parameters referenced within the query.
+            query (str): The query to execute.
+            params (dict): Query parameters referenced within the query.
             timeout (float): Max allowed time for query execution,
                 in seconds.
-        Return:
+        Returns:
             dict, parsed JSON response.
         Raises:
             labelbox.exceptions.AuthenticationError: If authentication
@@ -75,7 +75,8 @@ class Client:
             labelbox.exceptions.InvalidQueryError: If `query` is not
                 syntactically or semantically valid (checked server-side).
             labelbox.exceptions.ApiLimitError: If the server API limit was
-                exceeded. Check Labelbox documentation to see API limits.
+                exceeded. See "How to import data" in the online documentation 
+                to see API limits.
             labelbox.exceptions.TimeoutError: If response was not received
                 in `timeout` seconds.
             labelbox.exceptions.NetworkError: If an unknown error occurred
@@ -172,12 +173,13 @@ class Client:
 
     def upload_data(self, data):
         """ Uploads the given data (bytes) to Labelbox.
+        
         Args:
-            data (bytes): the data to upload.
-        Return:
+            data (bytes): The data to upload.
+        Returns:
             str, the URL of uploaded data.
         Raises:
-            labelbox.exceptions.LabelboxError: if upload failes.
+            labelbox.exceptions.LabelboxError: If upload failed.
         """
         request_data = {
             "operations": json.dumps({
@@ -213,7 +215,7 @@ class Client:
         Args:
             db_object_type (type): DbObject subclass.
             uid (str): Unique ID of the row.
-        Return:
+        Returns:
             Object of `db_object_type`.
         Raises:
             labelbox.exceptions.ResourceNotFoundError: If there is no object
@@ -230,9 +232,10 @@ class Client:
 
     def get_project(self, project_id):
         """ Gets a single Project with the given ID.
+
         Args:
             project_id (str): Unique ID of the Project.
-        Return:
+        Returns:
             The sought Project.
         Raises:
             labelbox.exceptions.ResourceNotFoundError: If there is no
@@ -242,9 +245,10 @@ class Client:
 
     def get_dataset(self, dataset_id):
         """ Gets a single Dataset with the given ID.
+
         Args:
             dataset_id (str): Unique ID of the Dataset.
-        Return:
+        Returns:
             The sought Dataset.
         Raises:
             labelbox.exceptions.ResourceNotFoundError: If there is no
@@ -267,7 +271,7 @@ class Client:
             db_object_type (type): DbObject subclass.
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
-        Return:
+        Returns:
             An iterable of `db_object_type` instances.
         """
         not_deleted = db_object_type.deleted == False
@@ -284,7 +288,7 @@ class Client:
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
-        Return:
+        Returns:
             An iterable of Projects (typically a PaginatedCollection).
         """
         return self._get_all(Project, where)
@@ -295,7 +299,7 @@ class Client:
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
-        Return:
+        Returns:
             An iterable of Datasets (typically a PaginatedCollection).
         """
         return self._get_all(Dataset, where)
@@ -306,23 +310,23 @@ class Client:
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
-        Return:
+        Returns:
             An iterable of LabelingFrontends (typically a PaginatedCollection).
         """
         return self._get_all(LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
-        """ Creates a object on the server. Attribute values are
+        """ Creates an object on the server. Attribute values are
             passed as keyword arguments:
 
         Args:
             db_object_type (type): A DbObjectType subtype.
             data (dict): Keys are attributes or their names (in Python,
                 snake-case convention) and values are desired attribute values.
-        Return:
-            a new object of the given DB object type.
+        Returns:
+            A new object of the given DB object type.
         Raises:
-            InvalidAttributeError: in case the DB object type does not contain
+            InvalidAttributeError: If the DB object type does not contain
                 any of the attribute names given in `data`.
         """
         # Convert string attribute names to Field or Relationship objects.
@@ -347,10 +351,10 @@ class Client:
             Keyword arguments with new Dataset attribute values.
             Keys are attribute names (in Python, snake-case convention) and
             values are desired attribute values.
-        Return:
-            a new Dataset object.
+        Returns:
+            A new Dataset object.
         Raises:
-            InvalidAttributeError: in case the Dataset type does not contain
+            InvalidAttributeError: If the Dataset type does not contain
                 any of the attribute names given in kwargs.
         """
         return self._create(Dataset, kwargs)
@@ -364,10 +368,10 @@ class Client:
             Keyword arguments with new Project attribute values.
             Keys are attribute names (in Python, snake-case convention) and
             values are desired attribute values.
-        Return:
-            a new Project object.
+        Returns:
+            A new Project object.
         Raises:
-            InvalidAttributeError: in case the Project type does not contain
+            InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
         return self._create(Project, kwargs)

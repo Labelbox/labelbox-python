@@ -28,6 +28,7 @@ class Label(DbObject, Updateable, BulkDeletable):
     @staticmethod
     def bulk_delete(labels):
         """ Deletes all the given Labels.
+
         Args:
             labels (list of Label): The Labels to delete.
         """
@@ -35,6 +36,7 @@ class Label(DbObject, Updateable, BulkDeletable):
 
     def create_review(self, **kwargs):
         """ Creates a Review for this label.
+
         Kwargs:
             Review attributes. At a minimum a `Review.score` field
             value must be provided.
@@ -45,7 +47,8 @@ class Label(DbObject, Updateable, BulkDeletable):
 
     def create_benchmark(self):
         """ Creates a Benchmark for this Label.
-        Return:
+
+        Returns:
             The newly created Benchmark.
         """
         label_id_param = "labelId"

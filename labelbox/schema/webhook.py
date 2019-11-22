@@ -28,6 +28,7 @@ class Webhook(DbObject, Updateable):
     @staticmethod
     def create(client, topics, url, secret, project):
         """ Creates a Webhook.
+
         Args:
             client (Client): The Labelbox client used to connect
                 to the server.
@@ -39,7 +40,7 @@ class Webhook(DbObject, Updateable):
             project (Project or None): The project for which notifications
                 should be sent. If None notifications are sent for all
                 events in your organization.
-        Return:
+        Returns:
             A newly created Webhook.
         """
         project_str = "" if project is None \
@@ -58,6 +59,7 @@ class Webhook(DbObject, Updateable):
 
     def update(self, topics=None, url=None, status=None):
         """ Updates this Webhook.
+        
         Args:
             topics (list of str): The new topics value, optional.
             url (str): The new URL value, optional.
