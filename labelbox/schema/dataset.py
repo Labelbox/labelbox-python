@@ -25,11 +25,13 @@ class Dataset(DbObject, Updateable, Deletable):
     def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
 
+        >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
+
         Kwargs:
             Key-value arguments containing new `DataRow` data.
-            At a minimum they must contain `row_data`. The value for
-            `row_data` is a string. If it's a path to an existing local
-            file then it's uploaded to Labelbox's server. Otherwise it's
+            At a minimum `kwargs` must contain `row_data`. The value for
+            `row_data` is a string. If it is a path to an existing local
+            file then it is uploaded to Labelbox's server. Otherwise it is
             treated as an external URL.
         Raises:
             InvalidQueryError: If `DataRow.row_data` field value is not provided
@@ -54,13 +56,18 @@ class Dataset(DbObject, Updateable, Deletable):
         return self.client._create(DataRow, kwargs)
 
     def create_data_rows(self, items):
-        """ Creates multiple DataRow objects based on the given items.
+        """ Creates multiple DataRow objects based on the given `items`.
+        
         Each element in `items` can be either a `str` or a `dict`. If
-        it's a `str`, then it's interpreted as a file path. The file
+        it is a `str`, then it is interpreted as a local file path. The file
         is uploaded to Labelbox and a DataRow referencing it is created.
         If an item is a `dict`, then it should map `DataRow` fields (or their
-        names) to values. At the minimum it must contain a `DataRow.row_data`
-        key and value.
+        names) to values. At the minimum an `item` passed as a `dict` must 
+        contain a `DataRow.row_data` key and value.
+
+        >>> dataset.create_data_rows([
+                {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
+                "path/to/file2.jpg"])
 
         Args:
             items (iterable of (dict or str)): See above for details.
