@@ -66,8 +66,9 @@ class Dataset(DbObject, Updateable, Deletable):
         contain a `DataRow.row_data` key and value.
 
         >>> dataset.create_data_rows([
-                {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
-                "path/to/file2.jpg"])
+        >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
+        >>>     "path/to/file2.jpg"
+        >>>     ])
 
         Args:
             items (iterable of (dict or str)): See above for details.
