@@ -284,6 +284,53 @@ class Project(DbObject, Updateable, Deletable):
         return res["extendReservations"]
 
 
+    def bulk_delete_labels(self, labels=None, label_contains=None,
+                           make_templates=False):
+        """
+        Deletes labels in bulk from this Project. Labels can be
+        filtered via the `labels` parameter, or the label content.
+        Examples:
+
+            >>> project.bulk_delete_labels(labels=[l1, l2])
+            >>> project.bulk_delete_labels(label_contains="content")
+            >>> project.bulk_delete_labels(labels=data_row.labels())
+
+        Args:
+            labels (iterable of Label): Labels to delete.
+            label_contains (str): Label content. If not None, only
+                those labels containing this value (as a substring)
+                will be deleted.
+            make_templates (bool): ?
+        Returns:
+            The number of labels that were deleted.
+        """
+        where = {}
+        if label_contains is not None:
+            where["label_contains"] = label_contains
+        if labels is not None:
+            where["id_in"] = [label.uid for label in labels]
+
+        id_param = "projectId"
+        where_param = "where"
+        make_templates_param = "makeTemplates"
+
+        query = """mutation BulkDeleteLabelsPyApi
+            ($%s: ID!, $%s: WhereBulkLabelDelete!, $%s: Boolean!) {
+            project(where: {id: $%s}) {
+            bulkDeleteLabels(where: $%s, makeTemplates: $%s) {count success }}}
+        """ % (id_param, where_param, make_templates_param,
+               id_param, where_param, make_templates_param)
+
+        res = self.client.execute(query, {id_param: self.uid, where_param: where,
+                                          make_templates_param: make_templates})
+
+        res = res["project"]["bulkDeleteLabels"]
+        if res["success"]:
+            return res["count"]
+        else:
+            return 0
+
+
 class LabelingParameterOverride(DbObject):
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")

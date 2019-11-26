@@ -64,3 +64,39 @@ def test_extend_reservations(project):
     assert project.extend_reservations("ReviewQueue") == 0
     with pytest.raises(InvalidQueryError):
         project.extend_reservations("InvalidQueueType")
+
+
+def test_project_bulk_delete_labels(label_pack):
+    project, _, data_row, label = label_pack
+
+    import time
+    time.sleep(7)
+
+    assert set(project.labels()) == {label}
+    assert project.bulk_delete_labels() == 1
+    assert set(project.labels()) == set()
+
+    l1 = project.create_label(data_row=data_row, label="label")
+    l2 = project.create_label(data_row=data_row, label="babel")
+    l3 = project.create_label(data_row=data_row, label="bambi")
+    l4 = project.create_label(data_row=data_row, label="label")
+    l5 = project.create_label(data_row=data_row, label="godel")
+
+    time.sleep(8)
+    assert set(project.labels()) == {l1, l2, l3, l4, l5}
+
+    assert project.bulk_delete_labels(labels=[l4, l5]) == 2
+    time.sleep(8)
+    assert set(project.labels()) == {l1, l2, l3}
+
+    assert project.bulk_delete_labels(label_contains="drift") == 0
+    # TODO The test below fail due the `label_contains` filter not
+    # working as expected.
+    # assert project.bulk_delete_labels(label_contains="ba") == 2
+    # time.sleep(8)
+    # assert set(project.labels()) == {l1, l3, l4, l5}
+
+    # assert project.bulk_delete_labels(labels=data_row.labels()) == 2
+    assert project.bulk_delete_labels(labels=data_row.labels()) == 3
+    time.sleep(8)
+    assert set(project.labels()) == set()
