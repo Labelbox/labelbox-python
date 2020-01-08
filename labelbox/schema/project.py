@@ -294,7 +294,7 @@ class Project(DbObject, Updateable, Deletable):
         Return:
             A newly created PredictionModel.
         """
-        PM = Entity.named("PredictionModel")
+        PM = Entity.PredictionModel
         model =  self.client._create(
             PM, {PM.name.name: name, PM.version.name: version})
         self.active_prediction_model.connect(model)
@@ -326,7 +326,7 @@ class Project(DbObject, Updateable, Deletable):
         project_param = "project_id"
         data_row_param = "data_row_id"
 
-        Prediction = Entity.named("Prediction")
+        Prediction = Entity.Prediction
         query_str = """mutation CreatePredictionPyApi(
             $%s: String!, $%s: ID!, $%s: ID!, $%s: ID!) {createPrediction(
             data: {label: $%s, predictionModelId: $%s, projectId: $%s,
@@ -337,7 +337,7 @@ class Project(DbObject, Updateable, Deletable):
         params = {label_param: label, model_param: prediction_model.uid,
                   data_row_param: data_row.uid, project_param: self.uid}
         res = self.client.execute(query_str, params)
-        return Prediction(self.client, res["data"]["createPrediction"])
+        return Prediction(self.client, res["createPrediction"])
 
 
 class LabelingParameterOverride(DbObject):
