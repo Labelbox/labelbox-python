@@ -71,11 +71,6 @@ def tag(text, tag, values={}):
     return "<%s%s>%s</%s>" % (tag, values, text, tag)
 
 
-def qual_class_name(cls):
-    """ Returns the fully qualifieid class name (module + class name). """
-    return cls.__module__ + "." + cls.__name__
-
-
 def header(level, text, header_id=None):
     """ Wraps `text` into a <h> (header) tag ov the given level.
     Automatically increases the level by 2 to be inline with HelpDocs
@@ -98,8 +93,10 @@ def header(level, text, header_id=None):
     return tag(text, "h" + str(level + 2), {"id": header_id})
 
 
-def paragraph(text):
-    return tag(inject_class_links(text), "p")
+def paragraph(text, link_classes=True):
+    if link_classes:
+        text = inject_class_links(text)
+    return tag(text, "p")
 
 
 def strong(text):
@@ -126,25 +123,6 @@ def code_block(lines):
     return tag("<br>".join(lines), "pre", {"class": "hljs python"})
 
 
-def header_link(text, header_id):
-    """ Converts the given text into a header link (intra-document relative
-    link). Example:
-        >>> header_link("Some text", "chapter_id")
-        >>> <a href="#chapter_id">Some text</a>
-    """
-    return tag(text, "a", {"href":"#" + header_id})
-
-
-def class_link(cls, text):
-    """ Generates an intra-document link for the given class. Example:
-        >>> from labelbox import Project
-        >>> class_link(Project, "blah")
-        >>> <a href="#class_labelbox_schema_project">blah</a>
-    """
-    header_id = "class_" + snake_case(qual_class_name(cls).replace(".", "_"))
-    return header_link(text, header_id)
-
-
 def inject_class_links(text):
     """ Finds all occurences of known class names in the given text and
     replaces them with relative links to those classes.
@@ -154,7 +132,9 @@ def inject_class_links(text):
         matches = list(re.finditer(pattern, text))
         for match in reversed(matches):
             start, end = match.span()
-            text = text[:start] + class_link(cls, match.group()) + text[end:]
+            link = tag(match.group(), "a",
+                       {"href":"#" + snake_case(cls.__name__)})
+            text = text[:start] + link + text[end:]
     return text
 
 
@@ -380,15 +360,17 @@ def generate_class(cls):
     text = []
     schema_class = issubclass(cls, Entity)
 
-    title = "Class " + cls.__module__ + "." + cls.__name__
-    title_id = re.sub(r"\s+", "_", snake_case(title).lower())
+    text.append(header(2, cls.__name__, snake_case(cls.__name__)))
+
+    package_and_superclasses = "Class " + cls.__module__ + "." + cls.__name__
     if schema_class:
         superclasses = [plugin.__name__ for plugin
                         in (Updateable, Deletable, BulkDeletable)
                         if issubclass(cls, plugin )]
         if superclasses:
-            title += " (%s)" % ", ".join(superclasses)
-    text.append(header(2, title, title_id))
+            package_and_superclasses += " (%s)" % ", ".join(superclasses)
+    package_and_superclasses += "."
+    text.append(paragraph(package_and_superclasses, False))
 
     text.append(preprocess_docstring(cls.__doc__))
 
@@ -419,11 +401,11 @@ def generate_all():
     """ Generates the full HelpDocs API documentation article body. """
     text = []
     text.append(header(3, "General Classes"))
-    text.append(unordered_list([qual_class_name(cls) for cls in GENERAL_CLASSES]))
+    text.append(unordered_list([cls.__name__ for cls in GENERAL_CLASSES]))
     text.append(header(3, "Data Classes"))
-    text.append(unordered_list([qual_class_name(cls) for cls in SCHEMA_CLASSES]))
+    text.append(unordered_list([cls.__name__ for cls in SCHEMA_CLASSES]))
     text.append(header(3, "Error Classes"))
-    text.append(unordered_list([qual_class_name(cls) for cls in ERROR_CLASSES]))
+    text.append(unordered_list([cls.__name__ for cls in ERROR_CLASSES]))
 
     text.append(header(1, "General classes"))
     text.extend(generate_class(cls) for cls in GENERAL_CLASSES)
