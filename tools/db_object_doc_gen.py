@@ -127,13 +127,19 @@ def inject_class_links(text):
     """ Finds all occurences of known class names in the given text and
     replaces them with relative links to those classes.
     """
-    for cls in _ALL_CLASSES:
-        pattern = r"\b(%s.)?%ss?\b" % (cls.__module__, cls.__name__)
+    pattern_link_pairs = [
+        (r"\b(%s.)?%ss?\b" % (cls.__module__, cls.__name__),
+         "#" + snake_case(cls.__name__))
+        for cls in _ALL_CLASSES
+    ]
+    pattern_link_pairs.append((r"\bPaginatedCollection\b",
+                               "general-concepts#pagination"))
+
+    for pattern, link in pattern_link_pairs:
         matches = list(re.finditer(pattern, text))
         for match in reversed(matches):
             start, end = match.span()
-            link = tag(match.group(), "a",
-                       {"href":"#" + snake_case(cls.__name__)})
+            link = tag(match.group(), "a", {"href": link})
             text = text[:start] + link + text[end:]
     return text
 
