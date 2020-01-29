@@ -186,7 +186,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Finalizes the Project setup.
 
         Args:
-            labeling_frontend (LabelingFrontend): Which UI to use to label the 
+            labeling_frontend (LabelingFrontend): Which UI to use to label the
                 data.
             labeling_frontend_options (dict or str): Labeling frontend options,
                 a.k.a. project ontology. If given a `dict` it will be converted
