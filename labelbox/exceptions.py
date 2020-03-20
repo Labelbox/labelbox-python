@@ -1,8 +1,18 @@
 class LabelboxError(Exception):
     """Base class for exceptions."""
-    def __init__(self, message, *args):
-        super().__init__(*args)
+    def __init__(self, message, cause=None):
+        """
+        Args:
+            message (str): Informative message about the exception.
+            cause (Exception): The cause of the exception (an Exception
+                raised by Python or another library). Optional.
+        """
+        super().__init__(message, cause)
         self.message = message
+        self.cause = cause
+
+    def __str__(self):
+        return self._message + str(self.args)
 
 
 class AuthenticationError(LabelboxError):
@@ -31,9 +41,8 @@ class ResourceNotFoundError(LabelboxError):
 
 
 class ValidationFailedError(LabelboxError):
-    """Exception raised for when a GraphQL query fails validation (query cost, etc.)
-
-       E.g. a query that is too expensive, or depth is too deep.
+    """Exception raised for when a GraphQL query fails validation (query cost,
+    etc.) E.g. a query that is too expensive, or depth is too deep.
     """
     pass
 
@@ -47,10 +56,8 @@ class InvalidQueryError(LabelboxError):
 
 class NetworkError(LabelboxError):
     """Raised when an HTTPError occurs."""
-    def __init__(self, cause, message=None):
-        if message is None:
-            message = str(cause)
-        super().__init__(message)
+    def __init__(self, cause):
+        super().__init__(str(cause), cause)
         self.cause = cause
 
 
