@@ -75,7 +75,7 @@ class Client:
             labelbox.exceptions.InvalidQueryError: If `query` is not
                 syntactically or semantically valid (checked server-side).
             labelbox.exceptions.ApiLimitError: If the server API limit was
-                exceeded. See "How to import data" in the online documentation 
+                exceeded. See "How to import data" in the online documentation
                 to see API limits.
             labelbox.exceptions.TimeoutError: If response was not received
                 in `timeout` seconds.
@@ -112,14 +112,14 @@ class Client:
             raise labelbox.exceptions.NetworkError(e)
 
         except Exception as e:
-            logger.error("Unknown error: %s", str(e))
-            raise labelbox.exceptions.LabelboxError(str(e))
+            raise labelbox.exceptions.LabelboxError(
+                "Unknown error during Client.query(): " + str(e), e)
 
         try:
             response = response.json()
         except:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s", response.text)
+                "Failed to parse response as JSON: %s" % response.text)
 
         errors = response.get("errors", [])
 
@@ -173,7 +173,7 @@ class Client:
 
     def upload_data(self, data):
         """ Uploads the given data (bytes) to Labelbox.
-        
+
         Args:
             data (bytes): The data to upload.
         Returns:
@@ -199,9 +199,9 @@ class Client:
 
         try:
             file_data = response.json().get("data", None)
-        except ValueError: # response is not valid JSON
+        except ValueError as e: # response is not valid JSON
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, unknown cause")
+                "Failed to upload, unknown cause", e)
 
         if not file_data or not file_data.get("uploadFile", None):
             raise labelbox.exceptions.LabelboxError(
