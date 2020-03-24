@@ -12,7 +12,7 @@ class LabelboxError(Exception):
         self.cause = cause
 
     def __str__(self):
-        return self._message + str(self.args)
+        return self.message + str(self.args)
 
 
 class AuthenticationError(LabelboxError):
