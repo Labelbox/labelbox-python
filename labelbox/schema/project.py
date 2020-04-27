@@ -10,6 +10,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.data_row import DataRow
 
 
 logger = logging.getLogger(__name__)
@@ -216,17 +217,35 @@ class Project(DbObject, Updateable, Deletable):
 
             >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
+            OR
+            >>> project.set_labeling_parameter_overrides([
+            >>>     (data_row_1.uid, 2, 3), (data_row_2.uid, 1, 4)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority, numberOfLabels) for the new override.
+                (DataRow or DataRow.uid, priority, numberOfLabels) for the new override.
         Returns:
             bool, indicates if the operation was a success.
         """
+        def _unpack_data(data):
+            """ Unpacks input data tuple into uid, priority, and num_labels.
+
+            Args:
+                data: a tuple of
+                    (DataRow or DataRow.uid, priority, numberOfLabels)
+            Returns:
+                tuple of (uid, priority, numberOfLabels)
+            """
+            _data_row_or_uid, priority, num_labels = data
+            uid = (_data_row_or_uid.uid
+                   if isinstance(_data_row_or_uid, DataRow)
+                   else _data_row_or_uid)
+            return uid, priority, num_labels
+
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
-                data_row.uid, priority, num_labels)
-            for data_row, priority, num_labels in data)
+                _unpack_data(data_ele))
+            for data_ele in data)
         id_param = "projectId"
         query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s }) {setLabelingParameterOverrides

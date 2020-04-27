@@ -26,6 +26,18 @@ from labelbox import Client
 client = Client()
 ```
 
+## Unit tests
+Nearly all tests are [integration tests](tests/integration) that require an API key and will ping the Labelbox backend.  [Unit tests](tests/unit) are being added.  To run unit tests, follow these steps:
+1. Build a Docker image from [Dockerfile_test](Dockerfile_test)
+```
+    docker build -t local/labelbox-python -f Dockerfile_test .
+```
+1. Run unit tests using the test image
+```
+    docker run -it -v ${PWD}:/usr/src -w /usr/src local/labelbox-python pytest ./tests/test_labeling_parameter_overrides.py -svv
+```
+
+
 ## Documentation
 
 [Visit our docs](https://labelbox.com/docs/python-api) to learn how to [create a project](https://labelbox.com/docs/python-api/create-first-project), read through some helpful user guides, and view our [API reference](https://labelbox.com/docs/python-api/api-reference).
