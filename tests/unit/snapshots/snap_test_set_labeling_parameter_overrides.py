@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_labeling_parameter_overrides 1'] = [
+snapshots['test_set_labeling_parameter_overrides 1'] = [
     (
         (
             'https://api.labelbox.com/graphql'
@@ -24,7 +24,7 @@ snapshots['test_labeling_parameter_overrides 1'] = [
     )
 ]
 
-snapshots['test_labeling_parameter_overrides 2'] = [
+snapshots['test_set_labeling_parameter_overrides 2'] = [
     (
         (
             'https://api.labelbox.com/graphql'
