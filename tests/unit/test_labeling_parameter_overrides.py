@@ -1,6 +1,6 @@
 from snapshottest import snapshot
 
-from conftest import MockResponse, mock_project
+from test_utils import MockResponse, mock_project
 from labelbox import DataRow
 
 def test_labeling_parameter_overrides(snapshot):
