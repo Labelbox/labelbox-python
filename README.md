@@ -1,4 +1,4 @@
-# Labelbox Python API
+# Labelbox Python SDK
 
 Labelbox is the enterprise-grade training data solution with fast AI enabled labeling tools, labeling automation, human workforce, data management, a powerful API for integration & SDK for extensibility. Visit http://labelbox.com/ for more information.
 
@@ -29,3 +29,6 @@ client = Client()
 ## Documentation
 
 [Visit our docs](https://labelbox.com/docs/python-api) to learn how to [create a project](https://labelbox.com/docs/python-api/create-first-project), read through some helpful user guides, and view our [API reference](https://labelbox.com/docs/python-api/api-reference).
+
+## Repo Organization and Contribution
+Please consult `CONTRIB.md`
