@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from typing import Union
 
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError, LabelboxError
@@ -41,6 +42,12 @@ class Field:
         Boolean = auto()
         ID = auto()
         DateTime = auto()
+        BulkImportRequestState = auto()
+
+    class EnumType:
+        def __init__(self, enum_cls: type(Enum)):
+            self.name = enum_cls.__name__
+            self.values = [member.value for member in enum_cls]
 
     class Order(Enum):
         """ Type of sort ordering. """
@@ -71,7 +78,11 @@ class Field:
     def DateTime(*args):
         return Field(Field.Type.DateTime, *args)
 
-    def __init__(self, field_type, name, graphql_name=None):
+    @staticmethod
+    def Enum(enum_cls: type(Enum), *args):
+        return Field(Field.EnumType(enum_cls), *args)
+
+    def __init__(self, field_type: Union[Type, EnumType], name, graphql_name=None):
         """ Field init.
         Args:
             field_type (Field.Type): The type of the field.
