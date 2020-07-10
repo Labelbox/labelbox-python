@@ -1,1 +1,2 @@
 requests==2.22.0
+ndjson==0.3.1

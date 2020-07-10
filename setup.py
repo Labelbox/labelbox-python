@@ -13,7 +13,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://labelbox.com",
     packages=setuptools.find_packages(),
-    install_requires=["requests>=2.22.0"],
+    install_requires=[
+        "ndjson>=0.3.1",
+        "requests>=2.22.0"
+    ],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: Apache Software License',
