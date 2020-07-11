@@ -112,6 +112,8 @@ class Project(DbObject, Updateable, Deletable):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
+        Will only generate a new URL at a max frequency of 30 min.
+        
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
