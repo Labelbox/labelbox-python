@@ -30,8 +30,7 @@ class BulkImportRequest(DbObject):
             predictions: Iterable[dict]) -> 'BulkImportRequest':
         data_str = '\n'.join(json.dumps(prediction) for prediction in predictions)
         data = data_str.encode('utf-8')
-        input_file_url = client.upload_data(
-            data, uploaded_file_type=UploadedFileType.PREDICTIONS)
+        input_file_url = client.upload_data(data)
         query_str = """
         mutation CreateBulkImportRequestPyApi {
             createBulkImportRequest(data: {
