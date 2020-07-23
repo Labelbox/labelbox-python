@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import json
 import logging
+import mimetypes
 import os
 
 import requests
@@ -171,9 +172,15 @@ class Client:
 
         return response["data"]
 
+    def upload_file(self, path):
+        content_type, _ = mimetypes.guess_type(path)
+        with open(path, "rb") as f:
+            data = (None, f.read(), content_type)
+        return self.upload_data(data)
+
     def upload_data(self, data):
         """ Uploads the given data (bytes) to Labelbox.
-        
+
         Args:
             data (bytes): The data to upload.
         Returns:
@@ -181,10 +188,11 @@ class Client:
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
+
         request_data = {
             "operations": json.dumps({
-            "variables": {"file": None, "contentLength": len(data), "sign": False},
-            "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                "variables": {"file": None, "contentLength": len(data), "sign": False},
+                "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,}),
