@@ -11,7 +11,6 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
-from labelbox.schema.enums import UploadedFileType
 
 
 class BulkImportRequest(DbObject):
