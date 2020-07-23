@@ -48,8 +48,7 @@ class Dataset(DbObject, Updateable, Deletable):
         # If row data is a local file path, upload it to server.
         row_data = kwargs[DataRow.row_data.name]
         if os.path.exists(row_data):
-            with open(row_data, "rb") as f:
-                kwargs[DataRow.row_data.name] = self.client.upload_data(f.read())
+            kwargs[DataRow.row_data.name] = self.client.upload_file(row_data)
 
         kwargs[DataRow.dataset.name] = self
 
@@ -57,7 +56,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def create_data_rows(self, items):
         """ Creates multiple DataRow objects based on the given `items`.
-        
+
         Each element in `items` can be either a `str` or a `dict`. If
         it is a `str`, then it is interpreted as a local file path. The file
         is uploaded to Labelbox and a DataRow referencing it is created.
@@ -91,9 +90,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def upload_if_necessary(item):
             if isinstance(item, str):
-                with open(item, "rb") as f:
-                    item_data = f.read()
-                item_url = self.client.upload_data(item_data)
+                item_url = self.client.upload_file(item)
                 # Convert item from str into a dict so it gets processed
                 # like all other dicts.
                 item = {DataRow.row_data: item_url,
