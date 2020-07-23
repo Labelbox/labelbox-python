@@ -69,8 +69,9 @@ class BulkImportRequest(DbObject):
         with local_predictions_file_path.open("rb") as f:
             try:
                 data = ndjson.load(f)
-                return client.upload_data(
-                    data, uploaded_file_type=UploadedFileType.PREDICTIONS)
             except ValueError:
                 raise LabelboxError(
                     f"File {local_predictions_file_path} is not a valid ndjson file")
+            else:
+                return client.upload_data(
+                    data, uploaded_file_type=UploadedFileType.PREDICTIONS)
