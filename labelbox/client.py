@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import json
 import logging
+import mimetypes
 import os
 
 import requests
@@ -75,7 +76,7 @@ class Client:
             labelbox.exceptions.InvalidQueryError: If `query` is not
                 syntactically or semantically valid (checked server-side).
             labelbox.exceptions.ApiLimitError: If the server API limit was
-                exceeded. See "How to import data" in the online documentation 
+                exceeded. See "How to import data" in the online documentation
                 to see API limits.
             labelbox.exceptions.TimeoutError: If response was not received
                 in `timeout` seconds.
@@ -112,14 +113,14 @@ class Client:
             raise labelbox.exceptions.NetworkError(e)
 
         except Exception as e:
-            logger.error("Unknown error: %s", str(e))
-            raise labelbox.exceptions.LabelboxError(str(e))
+            raise labelbox.exceptions.LabelboxError(
+                "Unknown error during Client.query(): " + str(e), e)
 
         try:
             response = response.json()
         except:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s", response.text)
+                "Failed to parse response as JSON: %s" % response.text)
 
         errors = response.get("errors", [])
 
@@ -171,9 +172,27 @@ class Client:
 
         return response["data"]
 
+    def upload_file(self, path):
+        """Uploads given path to local file.
+
+        Also includes best guess at the content type of the file.
+
+        Args:
+            path (str): path to local file to be uploaded.
+        Returns:
+            str, the URL of uploaded data.
+        Raises:
+            labelbox.exceptions.LabelboxError: If upload failed.
+
+        """
+        content_type, _ = mimetypes.guess_type(path)
+        basename = os.path.basename(path)
+        with open(path, "rb") as f:
+            return self.upload_data(data=(basename, f.read(), content_type))
+
     def upload_data(self, data):
         """ Uploads the given data (bytes) to Labelbox.
-        
+
         Args:
             data (bytes): The data to upload.
         Returns:
@@ -183,8 +202,8 @@ class Client:
         """
         request_data = {
             "operations": json.dumps({
-            "variables": {"file": None, "contentLength": len(data), "sign": False},
-            "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                "variables": {"file": None, "contentLength": len(data), "sign": False},
+                "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,}),
@@ -199,9 +218,9 @@ class Client:
 
         try:
             file_data = response.json().get("data", None)
-        except ValueError: # response is not valid JSON
+        except ValueError as e: # response is not valid JSON
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, unknown cause")
+                "Failed to upload, unknown cause", e)
 
         if not file_data or not file_data.get("uploadFile", None):
             raise labelbox.exceptions.LabelboxError(

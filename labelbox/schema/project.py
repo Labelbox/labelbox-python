@@ -112,6 +112,8 @@ class Project(DbObject, Updateable, Deletable):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
+        Will only generate a new URL at a max frequency of 30 min.
+        
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
@@ -199,6 +201,8 @@ class Project(DbObject, Updateable, Deletable):
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
 
+        self.labeling_frontend.connect(labeling_frontend)
+
         LFO = Entity.LabelingFrontendOptions
         labeling_frontend_options = self.client._create(
             LFO, {LFO.project: self, LFO.labeling_frontend: labeling_frontend,
@@ -206,7 +210,6 @@ class Project(DbObject, Updateable, Deletable):
                   LFO.organization: organization
                   })
 
-        self.labeling_frontend.connect(labeling_frontend)
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
