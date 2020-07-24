@@ -14,7 +14,6 @@ setuptools.setup(
     url="https://labelbox.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "ndjson>=0.3.1",
         "requests>=2.22.0"
     ],
     classifiers=[
