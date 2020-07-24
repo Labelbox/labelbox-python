@@ -1,11 +1,4 @@
-import json
-from pathlib import Path
-from typing import Iterable
-
-import ndjson
-
 from labelbox import Client
-from labelbox.exceptions import LabelboxError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
@@ -23,19 +16,16 @@ class BulkImportRequest(DbObject):
     status_file_url = Field.String("status_file_url")
     state = Field.Enum(BulkImportRequestState, "state")
 
-    @staticmethod
-    def create(
-            client: Client, project_id: str, name: str,
-            predictions: Iterable[dict]) -> 'BulkImportRequest':
-        data_str = '\n'.join(json.dumps(prediction) for prediction in predictions)
-        data = data_str.encode('utf-8')
-        input_file_url = client.upload_data(data)
+    @classmethod
+    def create_from_url(
+            cls, client: Client, project_id: str, name: str,
+            url: str) -> 'BulkImportRequest':
         query_str = """
         mutation CreateBulkImportRequestPyApi {
             createBulkImportRequest(data: {
-                projectId: %s,
-                name: %s,
-                fileUrl: %s
+                projectId: "%s",
+                name: "%s",
+                fileUrl: "%s"
             }) {
                 %s
             }
@@ -43,33 +33,8 @@ class BulkImportRequest(DbObject):
         """ % (
             project_id,
             name,
-            input_file_url,
+            url,
             query.results_query_part(BulkImportRequest)
         )
         bulk_import_request_kwargs = client.execute(query_str)["createBulkImportRequest"]
         return BulkImportRequest(client, bulk_import_request_kwargs)
-
-    @staticmethod
-    def upload_local_predictions_file(
-            client: Client, local_predictions_file_path: Path) -> str:
-        """
-        Uploads local NDJSON file containing predictions to Labelbox' object store
-        and returns a URL of created file.
-
-        Args:
-            client (Client): The Labelbox client
-            local_predictions_file_path (str): local NDJSON file containing predictions
-        Returns:
-            A URL of uploaded NDJSON file
-        Raises:
-            LabelboxError: if local file is not a valid NDJSON file
-        """
-        with local_predictions_file_path.open("rb") as f:
-            try:
-                data = ndjson.load(f)
-            except ValueError:
-                raise LabelboxError(
-                    f"File {local_predictions_file_path} is not a valid ndjson file")
-            else:
-                return client.upload_data(
-                    data, uploaded_file_type=UploadedFileType.PREDICTIONS)

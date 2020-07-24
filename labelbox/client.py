@@ -13,7 +13,6 @@ import labelbox.exceptions
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.enums import UploadedFileType
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.user import User
