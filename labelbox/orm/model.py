@@ -42,7 +42,6 @@ class Field:
         Boolean = auto()
         ID = auto()
         DateTime = auto()
-        BulkImportRequestState = auto()
 
     class EnumType:
         def __init__(self, enum_cls: type(Enum)):

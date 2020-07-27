@@ -5,6 +5,7 @@ from typing import Iterable
 from typing import Tuple
 from typing import Union
 
+import ndjson
 import requests
 
 import labelbox.exceptions
@@ -55,10 +56,10 @@ class BulkImportRequest(DbObject):
     def create_from_objects(
             cls, client: Client, project_id: str, name: str,
             predictions: Iterable[dict]) -> 'BulkImportRequest':
-        data_str = '\n'.join(json.dumps(prediction) for prediction in predictions)
+        data_str = ndjson.dumps(predictions)
         data = data_str.encode('utf-8')
         file_name = cls.__make_file_name(project_id, name)
-        request_data = cls.__make_request_data(project_id, name, file_name)
+        request_data = cls.__make_request_data(project_id, name, len(data_str), file_name)
         file_data = (file_name, data, NDJSON_MIME_TYPE)
         response_data = cls.__send_create_file_command(
             client, request_data, file_name, file_data)
@@ -67,11 +68,20 @@ class BulkImportRequest(DbObject):
     @classmethod
     def create_from_local_file(
             cls, client: Client, project_id: str, name: str,
-            file: Path) -> 'BulkImportRequest':
+            file: Path, validate_file=True) -> 'BulkImportRequest':
         file_name = cls.__make_file_name(project_id, name)
-        request_data = cls.__make_request_data(project_id, name, file_name)
+        content_length = file.stat().st_size
+        request_data = cls.__make_request_data(project_id, name, content_length, file_name)
         with file.open('rb') as f:
-            file_data = (file.name, f, NDJSON_MIME_TYPE)
+            if validate_file:
+                data = f.read()
+                try:
+                    ndjson.loads(data)
+                except ValueError:
+                    raise ValueError(f"{file} is not a valid ndjson file")
+                file_data = (file.name, data, NDJSON_MIME_TYPE)
+            else:
+                file_data = (file.name, f, NDJSON_MIME_TYPE)
             response_data = cls.__send_create_file_command(
                 client, request_data, file_name, file_data)
         return BulkImportRequest(client, response_data["createBulkImportRequest"])
@@ -83,14 +93,18 @@ class BulkImportRequest(DbObject):
     # TODO(gszpak): move it to client.py
     @classmethod
     def __make_request_data(
-            cls, project_id: str, name: str, file_name: str) -> dict:
+            cls, project_id: str, name: str,
+            content_length: int, file_name: str) -> dict:
         query_str = """
         mutation createBulkImportRequestFromFile($projectId: ID!,
-                $name: String!, $file: Upload) {
+                $name: String!, $file: Upload!, $contentLength: Int!) {
             createBulkImportRequest(data: {
                 projectId: $projectId,
                 name: $name,
-                file: $file
+                filePayload: {
+                    file: $file,
+                    contentLength: $contentLength
+                }
             }) {
                 %s
             }
@@ -99,7 +113,8 @@ class BulkImportRequest(DbObject):
         variables = {
             "projectId": project_id,
             "name": name,
-            "file": None
+            "file": None,
+            "contentLength": content_length
         }
         operations = json.dumps({
             "variables": variables,
