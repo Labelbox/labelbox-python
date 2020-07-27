@@ -46,24 +46,25 @@ class BulkImportRequest(DbObject):
     def create_from_url(
             cls, client: Client, project_id: str, name: str,
             url: str) -> 'BulkImportRequest':
-        query_str = """
-        mutation {
+        query_str = """mutation createBulkImportRequestPyApi(
+                $projectId: ID!, $name: String!, $fileUrl: String!) {
             createBulkImportRequest(data: {
-                projectId: "%s",
-                name: "%s",
-                fileUrl: "%s"
+                projectId: $projectId,
+                name: $name,
+                fileUrl: $fileUrl
             }) {
                 %s
             }
         }
-        """ % (
-            project_id,
-            name,
-            url,
-            cls.__build_results_query_part()
-        )
-        bulk_import_request_kwargs = client.execute(query_str)["createBulkImportRequest"]
-        return cls.__build_bulk_import_request_from_result(client, bulk_import_request_kwargs)
+        """ % cls.__build_results_query_part()
+        params = {
+            "projectId": project_id,
+            "name": name,
+            "fileUrl": url
+        }
+        bulk_import_request_response = client.execute(query_str, params=params)
+        return cls.__build_bulk_import_request_from_result(
+            client, bulk_import_request_response["createBulkImportRequest"])
 
     @classmethod
     def create_from_objects(
@@ -104,21 +105,22 @@ class BulkImportRequest(DbObject):
     # TODO(gszpak): building query body should be handled by the client
     @classmethod
     def get(cls, client: Client, project_id: str, name: str) -> 'BulkImportRequest':
-        query_str = """
-            query {
-                bulkImportRequest(where: {
-                    projectId: "%s",
-                    name: "%s"
-                }) {
-                    %s
-                }
+        query_str = """query getBulkImportRequestPyApi(
+                $projectId: ID!, $name: String!) {
+            bulkImportRequest(where: {
+                projectId: $projectId,
+                name: $name
+            }) {
+                %s
             }
-        """ % (
-            project_id,
-            name,
-            cls.__build_results_query_part()
-        )
-        bulk_import_request_kwargs = client.execute(query_str).get("bulkImportRequest")
+        }
+        """ % cls.__build_results_query_part()
+        params = {
+            "projectId": project_id,
+            "name": name
+        }
+        bulk_import_request_kwargs = \
+            client.execute(query_str, params=params).get("bulkImportRequest")
         if bulk_import_request_kwargs is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 BulkImportRequest, {
@@ -141,9 +143,8 @@ class BulkImportRequest(DbObject):
     def __make_request_data(
             cls, project_id: str, name: str,
             content_length: int, file_name: str) -> dict:
-        query_str = """
-        mutation createBulkImportRequestFromFile($projectId: ID!,
-                $name: String!, $file: Upload!, $contentLength: Int!) {
+        query_str = """mutation createBulkImportRequestFromFilePyApi(
+                $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createBulkImportRequest(data: {
                 projectId: $projectId,
                 name: $name,
@@ -155,7 +156,7 @@ class BulkImportRequest(DbObject):
                 %s
             }
         }
-        """ % (cls.__build_results_query_part())
+        """ % cls.__build_results_query_part()
         variables = {
             "projectId": project_id,
             "name": name,

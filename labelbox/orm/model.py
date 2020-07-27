@@ -45,8 +45,11 @@ class Field:
 
     class EnumType:
         def __init__(self, enum_cls: type(Enum)):
-            self.name = enum_cls.__name__
-            self.values = [member.value for member in enum_cls]
+            self.enum_cls = enum_cls
+
+        @property
+        def name(self):
+            return self.enum_cls.__name__
 
     class Order(Enum):
         """ Type of sort ordering. """

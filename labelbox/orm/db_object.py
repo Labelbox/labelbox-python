@@ -64,6 +64,8 @@ class DbObject(Entity):
                     logger.warning(
                         "Failed to convert value '%s' to datetime for "
                         "field %s", value, field)
+            elif isinstance(field.field_type, Field.EnumType):
+                value = field.field_type.enum_cls[value]
             setattr(self, field.name, value)
 
     def __repr__(self):
