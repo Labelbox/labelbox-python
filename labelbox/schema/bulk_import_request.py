@@ -10,6 +10,8 @@ import requests
 
 import labelbox.exceptions
 from labelbox import Client
+from labelbox import Project
+from labelbox import User
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
@@ -20,7 +22,7 @@ NDJSON_MIME_TYPE = "application/x-ndjson"
 
 
 class BulkImportRequest(DbObject):
-    project = Relationship.ToOne("Project", False)
+    project = Relationship.ToOne("Project")
     name = Field.String("name")
     created_at = Field.DateTime("created_at")
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -28,6 +30,17 @@ class BulkImportRequest(DbObject):
     error_file_url = Field.String("error_file_url")
     status_file_url = Field.String("status_file_url")
     state = Field.Enum(BulkImportRequestState, "state")
+
+    # TODO(gszpak): project() and user() methods are hacky ways to eagerly load the relationships
+    def project(self):
+        if self.__project is not None:
+            return self.__project
+        return None
+
+    def created_by(self):
+        if self.__user is not None:
+            return self.__user
+        return None
 
     @classmethod
     def create_from_url(
@@ -47,10 +60,10 @@ class BulkImportRequest(DbObject):
             project_id,
             name,
             url,
-            query.results_query_part(BulkImportRequest)
+            cls.__build_results_query_part()
         )
         bulk_import_request_kwargs = client.execute(query_str)["createBulkImportRequest"]
-        return BulkImportRequest(client, bulk_import_request_kwargs)
+        return cls.__build_bulk_import_request_from_result(client, bulk_import_request_kwargs)
 
     @classmethod
     def create_from_objects(
@@ -63,7 +76,8 @@ class BulkImportRequest(DbObject):
         file_data = (file_name, data, NDJSON_MIME_TYPE)
         response_data = cls.__send_create_file_command(
             client, request_data, file_name, file_data)
-        return BulkImportRequest(client, response_data["createBulkImportRequest"])
+        return cls.__build_bulk_import_request_from_result(
+            client, response_data["createBulkImportRequest"])
 
     @classmethod
     def create_from_local_file(
@@ -84,7 +98,39 @@ class BulkImportRequest(DbObject):
                 file_data = (file.name, f, NDJSON_MIME_TYPE)
             response_data = cls.__send_create_file_command(
                 client, request_data, file_name, file_data)
-        return BulkImportRequest(client, response_data["createBulkImportRequest"])
+        return cls.__build_bulk_import_request_from_result(
+            client, response_data["createBulkImportRequest"])
+
+    # TODO(gszpak): building query body should be handled by the client
+    @classmethod
+    def get(cls, client: Client, project_id: str, name: str) -> 'BulkImportRequest':
+        query_str = """
+            query {
+                bulkImportRequest(where: {
+                    projectId: "%s",
+                    name: "%s"
+                }) {
+                    %s
+                }
+            }
+        """ % (
+            project_id,
+            name,
+            cls.__build_results_query_part()
+        )
+        bulk_import_request_kwargs = client.execute(query_str).get("bulkImportRequest")
+        if bulk_import_request_kwargs is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                BulkImportRequest, {
+                    "projectId": project_id,
+                    "name": name
+                })
+        return cls.__build_bulk_import_request_from_result(client, bulk_import_request_kwargs)
+
+    def refresh(self, client: Client) -> None:
+        bulk_import_request = self.get(client, self.project.uid, self.name)
+        for field in self.fields():
+            setattr(self, field.name, getattr(bulk_import_request, field.name))
 
     @classmethod
     def __make_file_name(cls, project_id: str, name: str) -> str:
@@ -109,7 +155,7 @@ class BulkImportRequest(DbObject):
                 %s
             }
         }
-        """ % (query.results_query_part(BulkImportRequest))
+        """ % (cls.__build_results_query_part())
         variables = {
             "projectId": project_id,
             "name": name,
@@ -164,3 +210,32 @@ class BulkImportRequest(DbObject):
                 response_json.get("errors", None) or response_data.get("error", None))
 
         return response_data
+
+    # TODO(gszpak): all the code below should be handled automatically by Relationship
+    @classmethod
+    def __build_results_query_part(cls) -> str:
+        return """
+            project {
+                %s
+            }
+            createdBy {
+                %s
+            }
+            %s
+        """ % (
+            query.results_query_part(Project),
+            query.results_query_part(User),
+            query.results_query_part(BulkImportRequest)
+        )
+
+    @classmethod
+    def __build_bulk_import_request_from_result(
+            cls, client: Client, result: dict) -> 'BulkImportRequest':
+        project = result.pop("project")
+        user = result.pop("createdBy")
+        bulk_import_request = BulkImportRequest(client, result)
+        if project is not None:
+            bulk_import_request.__project = Project(client, project)
+        if user is not None:
+            bulk_import_request.__user = User(client, user)
+        return bulk_import_request
