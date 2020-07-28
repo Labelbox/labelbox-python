@@ -108,6 +108,16 @@ def test_get(client, project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
+def test_validate_ndjson(tmp_path, client, project):
+    file_name = f"broken.ndjson"
+    file_path = tmp_path / file_name
+    with file_path.open("w") as f:
+        f.write("test")
+
+    with pytest.raises(ValueError):
+        BulkImportRequest.create_from_local_file(
+            client, project.uid, "name", file_path)
+
 @pytest.mark.slow
 def test_refresh(client, project):
     name = str(uuid.uuid4())
@@ -122,7 +132,7 @@ def test_refresh(client, project):
     while bulk_import_request.state == BulkImportRequestState.RUNNING and \
             timeout > 0:
         time.sleep(sleep_time)
-        bulk_import_request.refresh(client)
+        bulk_import_request.refresh()
 
     assert timeout > 0
 

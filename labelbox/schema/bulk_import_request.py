@@ -31,21 +31,22 @@ class BulkImportRequest(DbObject):
     status_file_url = Field.String("status_file_url")
     state = Field.Enum(BulkImportRequestState, "state")
 
-    # TODO(gszpak): project() and user() methods are hacky ways to eagerly load the relationships
-    def project(self):
-        if self.__project is not None:
-            return self.__project
-        return None
-
-    def created_by(self):
-        if self.__user is not None:
-            return self.__user
-        return None
-
     @classmethod
     def create_from_url(
             cls, client: Client, project_id: str, name: str,
             url: str) -> 'BulkImportRequest':
+        """
+        Creates a BulkImportRequest from a publicly accessible URL
+        to an ndjson file with predictions.
+
+        Args:
+            client (Client): a Labelbox client
+            project_id (str): id of project for which predictions will be imported
+            name (str): name of BulkImportRequest
+            url (str): publicly accessible URL pointing to ndjson file containing predictions
+        Returns:
+            BulkImportRequest object
+        """
         query_str = """mutation createBulkImportRequestPyApi(
                 $projectId: ID!, $name: String!, $fileUrl: String!) {
             createBulkImportRequest(data: {
@@ -70,6 +71,31 @@ class BulkImportRequest(DbObject):
     def create_from_objects(
             cls, client: Client, project_id: str, name: str,
             predictions: Iterable[dict]) -> 'BulkImportRequest':
+        """
+        Creates a BulkImportRequest from an iterable of dictionaries conforming to
+        JSON predictions format, e.g.:
+        ``{
+            "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",
+            "schemaId": "ckappz7d700gn0zbocmqkwd9i",
+            "dataRow": {
+                "id": "ck1s02fqxm8fi0757f0e6qtdc"
+            },
+            "bbox": {
+                "top": 48,
+                "left": 58,
+                "height": 865,
+                "width": 1512
+            }
+        }``
+
+        Args:
+            client (Client): a Labelbox client
+            project_id (str): id of project for which predictions will be imported
+            name (str): name of BulkImportRequest
+            predictions (Iterable[dict]): iterable of dictionaries representing predictions
+        Returns:
+            BulkImportRequest object
+        """
         data_str = ndjson.dumps(predictions)
         data = data_str.encode('utf-8')
         file_name = cls.__make_file_name(project_id, name)
@@ -84,6 +110,19 @@ class BulkImportRequest(DbObject):
     def create_from_local_file(
             cls, client: Client, project_id: str, name: str,
             file: Path, validate_file=True) -> 'BulkImportRequest':
+        """
+        Creates a BulkImportRequest from a local ndjson file with predictions.
+
+        Args:
+            client (Client): a Labelbox client
+            project_id (str): id of project for which predictions will be imported
+            name (str): name of BulkImportRequest
+            file (Path): local ndjson file with predictions
+            validate_file (bool): a flag indicating if there should be a validation
+                if ``file`` is a valid ndjson file
+        Returns:
+            BulkImportRequest object
+        """
         file_name = cls.__make_file_name(project_id, name)
         content_length = file.stat().st_size
         request_data = cls.__make_request_data(project_id, name, content_length, file_name)
@@ -105,6 +144,16 @@ class BulkImportRequest(DbObject):
     # TODO(gszpak): building query body should be handled by the client
     @classmethod
     def get(cls, client: Client, project_id: str, name: str) -> 'BulkImportRequest':
+        """
+        Fetches existing BulkImportRequest.
+
+        Args:
+            client (Client): a Labelbox client
+            project_id (str): BulkImportRequest's project id
+            name (str): name of BulkImportRequest
+        Returns:
+            BulkImportRequest object
+        """
         query_str = """query getBulkImportRequestPyApi(
                 $projectId: ID!, $name: String!) {
             bulkImportRequest(where: {
@@ -129,10 +178,24 @@ class BulkImportRequest(DbObject):
                 })
         return cls.__build_bulk_import_request_from_result(client, bulk_import_request_kwargs)
 
-    def refresh(self, client: Client) -> None:
-        bulk_import_request = self.get(client, self.project().uid, self.name)
+    def refresh(self) -> None:
+        """
+       Synchronizes values of all fields with the database.
+       """
+        bulk_import_request = self.get(self.client, self.project().uid, self.name)
         for field in self.fields():
             setattr(self, field.name, getattr(bulk_import_request, field.name))
+
+    # TODO(gszpak): project() and user() methods are hacky ways to eagerly load the relationships
+    def project(self):
+        if self.__project is not None:
+            return self.__project
+        return None
+
+    def created_by(self):
+        if self.__user is not None:
+            return self.__user
+        return None
 
     @classmethod
     def __make_file_name(cls, project_id: str, name: str) -> str:
