@@ -47,7 +47,7 @@ PREDICTIONS = [
 
 def test_create_from_url(client, project):
     name = str(uuid.uuid4())
-    url = "http://foo.bar/predictions.ndjson"
+    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
     bulk_import_request = BulkImportRequest.create_from_url(
         client, project.uid, name, url)
@@ -94,7 +94,7 @@ def test_create_from_local_file(tmp_path, client, project):
 
 def test_get(client, project):
     name = str(uuid.uuid4())
-    url = "http://foo.bar/predictions.ndjson"
+    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     BulkImportRequest.create_from_url(
         client, project.uid, name, url)
 
@@ -118,10 +118,11 @@ def test_validate_ndjson(tmp_path, client, project):
         BulkImportRequest.create_from_local_file(
             client, project.uid, "name", file_path)
 
+
 @pytest.mark.slow
 def test_refresh(client, project):
     name = str(uuid.uuid4())
-    url = "http://foo.bar/predictions.ndjson"
+    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     bulk_import_request = BulkImportRequest.create_from_url(
         client, project.uid, name, url)
     # 30 seconds
