@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 2.4.3 (2020-08-04)
+
+### Added
+* `BulkImportRequest` data type
+
 ## Version 2.4.2 (2020-08-01)
 ### Fixed
 * `Client.upload_data` will now pass the correct `content-length` when uploading data.
