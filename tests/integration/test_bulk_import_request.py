@@ -1,3 +1,4 @@
+import time
 import uuid
 
 import ndjson
@@ -105,6 +106,25 @@ def test_get(client, project):
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
+
+
+@pytest.mark.slow
+def test_refresh(client, project):
+    name = str(uuid.uuid4())
+    url = "https://google.com"
+    bulk_import_request = BulkImportRequest.create_from_url(
+        client, project.uid, name, url)
+    # 30 seconds
+    sleep_time = 30
+    # 10 minutes
+    timeout = 60 * 10
+
+    while bulk_import_request.state == BulkImportRequestState.RUNNING and \
+            timeout > 0:
+        time.sleep(sleep_time)
+        bulk_import_request.refresh(client)
+
+    assert timeout > 0
 
 
 def __assert_file_content(url: str):

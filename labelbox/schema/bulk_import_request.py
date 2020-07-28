@@ -130,7 +130,7 @@ class BulkImportRequest(DbObject):
         return cls.__build_bulk_import_request_from_result(client, bulk_import_request_kwargs)
 
     def refresh(self, client: Client) -> None:
-        bulk_import_request = self.get(client, self.project.uid, self.name)
+        bulk_import_request = self.get(client, self.project().uid, self.name)
         for field in self.fields():
             setattr(self, field.name, getattr(bulk_import_request, field.name))
 
