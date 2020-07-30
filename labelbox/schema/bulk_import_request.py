@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from pathlib import Path
 from typing import BinaryIO
 from typing import Iterable
@@ -200,7 +201,8 @@ class BulkImportRequest(DbObject):
             sleep_time_seconds (str): a time to block between subsequent API calls
         """
         while self.state == BulkImportRequestState.RUNNING:
-            logger.info(f"Sleeping for {sleep_time_seconds}...")
+            logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
+            time.sleep(sleep_time_seconds)
             self.__exponential_backoff_refresh()
 
     @backoff.on_exception(
