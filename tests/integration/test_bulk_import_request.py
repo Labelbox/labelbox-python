@@ -1,4 +1,3 @@
-import time
 import uuid
 
 import ndjson
@@ -120,22 +119,18 @@ def test_validate_ndjson(tmp_path, client, project):
 
 
 @pytest.mark.slow
-def test_refresh(client, project):
+def test_wait_till_done(client, project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     bulk_import_request = BulkImportRequest.create_from_url(
         client, project.uid, name, url)
-    # 30 seconds
-    sleep_time = 30
-    # 10 minutes
-    timeout = 60 * 10
 
-    while bulk_import_request.state == BulkImportRequestState.RUNNING and \
-            timeout > 0:
-        time.sleep(sleep_time)
-        bulk_import_request.refresh()
+    bulk_import_request.wait_until_done()
 
-    assert timeout > 0
+    assert (
+        bulk_import_request.state == BulkImportRequestState.FINISHED or
+        bulk_import_request.state == BulkImportRequestState.FAILED
+    )
 
 
 def __assert_file_content(url: str):

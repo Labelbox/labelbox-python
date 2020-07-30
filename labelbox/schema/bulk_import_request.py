@@ -1,10 +1,12 @@
 import json
+import logging
 from pathlib import Path
 from typing import BinaryIO
 from typing import Iterable
 from typing import Tuple
 from typing import Union
 
+import backoff as backoff
 import ndjson
 import requests
 
@@ -19,6 +21,7 @@ from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
+logger = logging.getLogger(__name__)
 
 
 class BulkImportRequest(DbObject):
@@ -119,7 +122,7 @@ class BulkImportRequest(DbObject):
             name (str): name of BulkImportRequest
             file (Path): local ndjson file with predictions
             validate_file (bool): a flag indicating if there should be a validation
-                if ``file`` is a valid ndjson file
+                if `file` is a valid ndjson file
         Returns:
             BulkImportRequest object
         """
@@ -180,11 +183,38 @@ class BulkImportRequest(DbObject):
 
     def refresh(self) -> None:
         """
-       Synchronizes values of all fields with the database.
-       """
+        Synchronizes values of all fields with the database.
+        """
         bulk_import_request = self.get(self.client, self.project().uid, self.name)
         for field in self.fields():
             setattr(self, field.name, getattr(bulk_import_request, field.name))
+
+    def wait_until_done(
+            self, sleep_time_seconds: int = 30) -> None:
+        """
+        Blocks until the BulkImportRequest.state changes either to
+        `BulkImportRequestState.FINISHED` or `BulkImportRequestState.FAILED`,
+        periodically refreshing object's state.
+
+        Args:
+            sleep_time_seconds (str): a time to block between subsequent API calls
+        """
+        while self.state == BulkImportRequestState.RUNNING:
+            logger.info(f"Sleeping for {sleep_time_seconds}...")
+            self.__exponential_backoff_refresh()
+
+    @backoff.on_exception(
+        backoff.expo,
+        (
+                labelbox.exceptions.ApiLimitError,
+                labelbox.exceptions.TimeoutError,
+                labelbox.exceptions.NetworkError
+        ),
+        max_tries=10,
+        jitter=None
+    )
+    def __exponential_backoff_refresh(self) -> None:
+        self.refresh()
 
     # TODO(gszpak): project() and user() methods are hacky ways to eagerly load the relationships
     def project(self):
