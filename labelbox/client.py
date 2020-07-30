@@ -188,9 +188,12 @@ class Client:
         content_type, _ = mimetypes.guess_type(path)
         basename = os.path.basename(path)
         with open(path, "rb") as f:
-            return self.upload_data(data=(basename, f.read(), content_type))
+            return self.upload_data(
+                content=f.read(),
+                basename=basename,
+                content_type=content_type)
 
-    def upload_data(self, data):
+    def upload_data(self, content: str, basename: str = None, content_type: str = None) -> str:
         """ Uploads the given data (bytes) to Labelbox.
 
         Args:
@@ -200,9 +203,14 @@ class Client:
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
+        if basename and content_type:
+            upload_data = (basename, content, content_type)
+        else:
+            upload_data = content
+
         request_data = {
             "operations": json.dumps({
-                "variables": {"file": None, "contentLength": len(data), "sign": False},
+                "variables": {"file": None, "contentLength": len(content), "sign": False},
                 "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
@@ -213,7 +221,7 @@ class Client:
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
-            files={"1": data}
+            files={"1": upload_data}
         )
 
         try:
