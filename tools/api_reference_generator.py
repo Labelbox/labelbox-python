@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Generates API documentation for the Labelbox Python Client in a form
 tailored for HelpDocs (https://www.helpdocs.io). Supports automatic
@@ -38,24 +37,21 @@ from labelbox.orm.db_object import Deletable, BulkDeletable, Updateable
 from labelbox.orm.model import Entity
 from labelbox.schema.project import LabelerPerformance
 
-
 GENERAL_CLASSES = [labelbox.Client]
 SCHEMA_CLASSES = [
     labelbox.Project, labelbox.Dataset, labelbox.DataRow, labelbox.Label,
     labelbox.AssetMetadata, labelbox.LabelingFrontend, labelbox.Task,
     labelbox.Webhook, labelbox.User, labelbox.Organization, labelbox.Review,
-    labelbox.Prediction, labelbox.PredictionModel,
-    LabelerPerformance]
+    labelbox.Prediction, labelbox.PredictionModel, LabelerPerformance
+]
 
 ERROR_CLASSES = [LabelboxError] + LabelboxError.__subclasses__()
 
 _ALL_CLASSES = GENERAL_CLASSES + SCHEMA_CLASSES + ERROR_CLASSES
 
-
 # Additional relationships injected into the Relationships part
 # of a schema class.
-ADDITIONAL_RELATIONSHIPS = {
-    "Project": ["labels <em>(Label, ToMany)</em>"]}
+ADDITIONAL_RELATIONSHIPS = {"Project": ["labels <em>(Label, ToMany)</em>"]}
 
 
 def tag(text, tag, values={}):
@@ -115,8 +111,8 @@ def unordered_list(items):
     """
     if len(items) == 0:
         return ""
-    return tag("".join(tag(inject_class_links(item), "li")
-                       for item in items), "ul")
+    return tag("".join(tag(inject_class_links(item), "li") for item in items),
+               "ul")
 
 
 def code_block(lines):
@@ -128,13 +124,11 @@ def inject_class_links(text):
     """ Finds all occurences of known class names in the given text and
     replaces them with relative links to those classes.
     """
-    pattern_link_pairs = [
-        (r"\b(%s.)?%ss?\b" % (cls.__module__, cls.__name__),
-         "#" + snake_case(cls.__name__))
-        for cls in _ALL_CLASSES
-    ]
-    pattern_link_pairs.append((r"\bPaginatedCollection\b",
-                               "general-concepts#pagination"))
+    pattern_link_pairs = [(r"\b(%s.)?%ss?\b" % (cls.__module__, cls.__name__),
+                           "#" + snake_case(cls.__name__))
+                          for cls in _ALL_CLASSES]
+    pattern_link_pairs.append(
+        (r"\bPaginatedCollection\b", "general-concepts#pagination"))
 
     for pattern, link in pattern_link_pairs:
         matches = list(re.finditer(pattern, text))
@@ -198,8 +192,10 @@ def preprocess_docstring(docstring):
             else:
                 result.append(line.strip())
 
-        return unordered_list([em(name + ":") + descr for name, descr
-                in map(lambda r: r.split(":", 1), filter(None, result))])
+        return unordered_list([
+            em(name + ":") + descr for name, descr in map(
+                lambda r: r.split(":", 1), filter(None, result))
+        ])
 
     def parse_block(block):
         """ Helper for parsing a block of documentation that possibly contains
@@ -241,13 +237,13 @@ def preprocess_docstring(docstring):
             return parse_block()
         return re.sub(r"\s+", " ", text).strip()
 
-    parts = (("Args: ", parse_list(args)),
-             ("Kwargs: ", parse_maybe_block(kwargs)),
-             ("Returns: ", parse_maybe_block(returns)),
-             ("Raises: ", parse_list(raises)))
+    parts = (("Args: ", parse_list(args)), ("Kwargs: ",
+                                            parse_maybe_block(kwargs)),
+             ("Returns: ", parse_maybe_block(returns)), ("Raises: ",
+                                                         parse_list(raises)))
 
-    return parse_block(docstring) + unordered_list([
-        strong(name) + item for name, item in parts if bool(item)])
+    return parse_block(docstring) + unordered_list(
+        [strong(name) + item for name, item in parts if bool(item)])
 
 
 def generate_functions(cls, predicate):
@@ -267,10 +263,10 @@ def generate_functions(cls, predicate):
     """
 
     # Get all class atrributes plus selected superclass attributes.
-    attributes = chain(
-        cls.__dict__.values(),
-        (getattr(cls, name) for name in ("delete", "update")
-         if name in dir(cls) and name not in cls.__dict__))
+    attributes = chain(cls.__dict__.values(),
+                       (getattr(cls, name)
+                        for name in ("delete", "update")
+                        if name in dir(cls) and name not in cls.__dict__))
 
     # Remove attributes not satisfying the predicate
     attributes = filter(predicate, attributes)
@@ -286,33 +282,36 @@ def generate_functions(cls, predicate):
     # Sort on name
     attributes = sorted(attributes, key=lambda attr: attr.__name__)
 
-    return "".join(paragraph(generate_signature(function)) +
-                   preprocess_docstring(function.__doc__)
-                   for function in attributes)
+    return "".join(
+        paragraph(generate_signature(function)) +
+        preprocess_docstring(function.__doc__) for function in attributes)
 
 
 def generate_signature(method):
     """ Generates HelpDocs style description of a method signature. """
+
     def fill_defaults(args, defaults):
         if defaults == None:
             defaults = tuple()
-        return (None, ) * (len(args) - len(defaults)) + defaults
+        return (None,) * (len(args) - len(defaults)) + defaults
 
     argspec = inspect.getfullargspec(method)
 
     def format_arg(arg, default):
         return arg if default is None else arg + "=" + repr(default)
 
-    components = list(map(format_arg, argspec.args,
-                          fill_defaults(argspec.args, argspec.defaults)))
+    components = list(
+        map(format_arg, argspec.args,
+            fill_defaults(argspec.args, argspec.defaults)))
 
     if argspec.varargs:
         components.append("*" + argspec.varargs)
     if argspec.varkw:
         components.append("**" + argspec.varkw)
 
-    components.extend(map(format_arg, argspec.kwonlyargs, fill_defaults(
-        argspec.kwonlyargs, argspec.kwonlydefaults)))
+    components.extend(
+        map(format_arg, argspec.kwonlyargs,
+            fill_defaults(argspec.kwonlyargs, argspec.kwonlydefaults)))
 
     return tag(method.__name__ + "(" + ", ".join(components) + ")", "strong")
 
@@ -323,7 +322,8 @@ def generate_fields(cls):
     """
     return unordered_list([
         field.name + " " + em("(" + field.field_type.name + ")")
-        for field in cls.fields()])
+        for field in cls.fields()
+    ])
 
 
 def generate_relationships(cls):
@@ -332,9 +332,10 @@ def generate_relationships(cls):
     """
     relationships = list(ADDITIONAL_RELATIONSHIPS.get(cls.__name__, []))
     relationships.extend([
-        r.name + " " + em("(%s %s)" % (r.destination_type_name,
-                                       r.relationship_type.name))
-        for r in cls.relationships()])
+        r.name + " " + em("(%s %s)" %
+                          (r.destination_type_name, r.relationship_type.name))
+        for r in cls.relationships()
+    ])
 
     return unordered_list(relationships)
 
@@ -343,7 +344,8 @@ def generate_constants(cls):
     values = []
     for name, value in cls.__dict__.items():
         if name.isupper() and isinstance(value, (str, int, float, bool)):
-            values.append("%s %s" % (name, em("(" + type(value).__name__ + ")")))
+            values.append("%s %s" %
+                          (name, em("(" + type(value).__name__ + ")")))
 
     for name, value in cls.__dict__.items():
         if isinstance(value, type) and issubclass(value, Enum):
@@ -368,9 +370,11 @@ def generate_class(cls):
 
     package_and_superclasses = "Class " + cls.__module__ + "." + cls.__name__
     if schema_class:
-        superclasses = [plugin.__name__ for plugin
-                        in (Updateable, Deletable, BulkDeletable)
-                        if issubclass(cls, plugin )]
+        superclasses = [
+            plugin.__name__
+            for plugin in (Updateable, Deletable, BulkDeletable)
+            if issubclass(cls, plugin)
+        ]
         if superclasses:
             package_and_superclasses += " (%s)" % ", ".join(superclasses)
     package_and_superclasses += "."
@@ -389,10 +393,11 @@ def generate_class(cls):
         text.append(header(3, "Relationships"))
         text.append(generate_relationships(cls))
 
-    for name, predicate in (
-        ("Static Methods", lambda attr: type(attr) == staticmethod),
-        ("Class Methods", lambda attr: type(attr) == classmethod),
-        ("Object Methods", is_method)):
+    for name, predicate in (("Static Methods",
+                             lambda attr: type(attr) == staticmethod),
+                            ("Class Methods",
+                             lambda attr: type(attr) == classmethod),
+                            ("Object Methods", is_method)):
         functions = generate_functions(cls, predicate).strip()
         if len(functions):
             text.append(header(3, name))
@@ -423,22 +428,24 @@ def generate_all():
 def main():
     argp = ArgumentParser(description=__doc__,
                           formatter_class=RawDescriptionHelpFormatter)
-    argp.add_argument("helpdocs_api_key", nargs="?",
+    argp.add_argument("helpdocs_api_key",
+                      nargs="?",
                       help="Helpdocs API key, used in uploading directly ")
 
     args = argp.parse_args()
 
-    body  = generate_all()
+    body = generate_all()
 
     if args.helpdocs_api_key is not None:
         url = "https://api.helpdocs.io/v1/article/zg9hp7yx3u?key=" + \
             args.helpdocs_api_key
-        response = requests.patch(url, data=json.dumps({"body": body}),
+        response = requests.patch(url,
+                                  data=json.dumps({"body": body}),
                                   headers={'content-type': 'application/json'})
         if response.status_code != 200:
-            raise Exception("Failed to upload article with status code: %d "
-                            " and message: %s", response.status_code,
-                            response.text)
+            raise Exception(
+                "Failed to upload article with status code: %d "
+                " and message: %s", response.status_code, response.text)
     else:
         sys.stdout.write(body)
         sys.stdout.write("\n")

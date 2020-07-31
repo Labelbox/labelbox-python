@@ -26,16 +26,20 @@ def test_query_where():
 
     q, p = query.Query("x", Project,
                        (Project.name != "name") & (Project.uid <= 42)).format()
-    assert q.startswith("x(where: {AND: [{name_not: $param_0}, {id_lte: $param_1}]}")
-    assert p == {"param_0": ("name", Project.name), "param_1": (42, Project.uid)}
+    assert q.startswith(
+        "x(where: {AND: [{name_not: $param_0}, {id_lte: $param_1}]}")
+    assert p == {
+        "param_0": ("name", Project.name),
+        "param_1": (42, Project.uid)
+    }
 
 
 def test_query_param_declaration():
     q, _ = query.Query("x", Project, Project.name > "name").format_top("y")
     assert q.startswith("query yPyApi($param_0: String!){x")
 
-    q, _ = query.Query("x", Project, (Project.name > "name")
-                       & (Project.uid == 42)).format_top("y")
+    q, _ = query.Query("x", Project, (Project.name > "name") &
+                       (Project.uid == 42)).format_top("y")
     assert q.startswith("query yPyApi($param_0: String!, $param_1: ID!){x")
 
 

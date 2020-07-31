@@ -3,8 +3,6 @@ from enum import Enum, auto
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError, LabelboxError
 from labelbox.orm.comparison import Comparison
-
-
 """ Defines Field, Relationship and Entity. These classes are building
 blocks for defining the Labelbox schema, DB object operations and
 queries. """
@@ -165,6 +163,7 @@ class Relationship:
         graphql_name (str): Name of the relationships server-side. Most often
             (not always) just a camelCase version of `name`.
     """
+
     class Type(Enum):
         ToOne = auto()
         ToMany = auto()
@@ -177,8 +176,12 @@ class Relationship:
     def ToMany(*args):
         return Relationship(Relationship.Type.ToMany, *args)
 
-    def __init__(self, relationship_type, destination_type_name,
-                 filter_deleted=True, name=None, graphql_name=None):
+    def __init__(self,
+                 relationship_type,
+                 destination_type_name,
+                 filter_deleted=True,
+                 name=None,
+                 graphql_name=None):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
@@ -208,6 +211,7 @@ class EntityMeta(type):
     of the Entity class object so they can be referenced for example like:
         Entity.Project.
     """
+
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)
         if clsname != "Entity":

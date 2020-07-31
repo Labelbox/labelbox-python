@@ -48,8 +48,8 @@ def test_project_filtering(client, rand_gen):
     p1 = client.create_project(name=name_1)
     p2 = client.create_project(name=name_2)
 
-    assert list(client.get_projects(where=Project.name==name_1)) == [p1]
-    assert list(client.get_projects(where=Project.name==name_2)) == [p2]
+    assert list(client.get_projects(where=Project.name == name_1)) == [p1]
+    assert list(client.get_projects(where=Project.name == name_2)) == [p2]
 
     p1.delete()
     p2.delete()
