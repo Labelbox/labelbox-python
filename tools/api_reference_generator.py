@@ -17,6 +17,12 @@ Usage:
     $ python3 db_object_doc_gen.py <api_key> # uploads to HelpDocs
 """
 
+from labelbox.schema.project import LabelerPerformance
+from labelbox.orm.model import Entity
+from labelbox.orm.db_object import Deletable, BulkDeletable, Updateable
+from labelbox.exceptions import LabelboxError
+from labelbox.utils import snake_case
+import labelbox
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from enum import Enum
 import importlib
@@ -30,13 +36,6 @@ import sys
 import requests
 
 sys.path.insert(0, os.path.abspath(".."))
-
-import labelbox
-from labelbox.utils import snake_case
-from labelbox.exceptions import LabelboxError
-from labelbox.orm.db_object import Deletable, BulkDeletable, Updateable
-from labelbox.orm.model import Entity
-from labelbox.schema.project import LabelerPerformance
 
 
 GENERAL_CLASSES = [labelbox.Client]
@@ -88,7 +87,7 @@ def header(level, text, header_id=None):
             generated from text by converting to snake_case and
             replacing all whitespace with "_".
     """
-    if header_id == None:
+    if header_id is None:
         header_id = snake_case(text).replace(" ", "_")
     # Convert to level + 2 for HelpDocs standard.
     return tag(text, "h" + str(level + 2), {"id": header_id})
@@ -199,7 +198,7 @@ def preprocess_docstring(docstring):
                 result.append(line.strip())
 
         return unordered_list([em(name + ":") + descr for name, descr
-                in map(lambda r: r.split(":", 1), filter(None, result))])
+                               in map(lambda r: r.split(":", 1), filter(None, result))])
 
     def parse_block(block):
         """ Helper for parsing a block of documentation that possibly contains
@@ -279,9 +278,8 @@ def generate_functions(cls, predicate):
     attributes = map(lambda attr: getattr(attr, "__func__", attr), attributes)
 
     # Apply name filter
-    attributes = filter(lambda attr: not attr.__name__.startswith("_") or \
-                        (cls == labelbox.Client and attr.__name__ == "__init__"),
-                        attributes)
+    attributes = filter(lambda attr: not attr.__name__.startswith("_") or (
+        cls == labelbox.Client and attr.__name__ == "__init__"), attributes)
 
     # Sort on name
     attributes = sorted(attributes, key=lambda attr: attr.__name__)
@@ -294,7 +292,7 @@ def generate_functions(cls, predicate):
 def generate_signature(method):
     """ Generates HelpDocs style description of a method signature. """
     def fill_defaults(args, defaults):
-        if defaults == None:
+        if defaults is None:
             defaults = tuple()
         return (None, ) * (len(args) - len(defaults)) + defaults
 
@@ -343,7 +341,8 @@ def generate_constants(cls):
     values = []
     for name, value in cls.__dict__.items():
         if name.isupper() and isinstance(value, (str, int, float, bool)):
-            values.append("%s %s" % (name, em("(" + type(value).__name__ + ")")))
+            values.append("%s %s" %
+                          (name, em("(" + type(value).__name__ + ")")))
 
     for name, value in cls.__dict__.items():
         if isinstance(value, type) and issubclass(value, Enum):
@@ -370,7 +369,7 @@ def generate_class(cls):
     if schema_class:
         superclasses = [plugin.__name__ for plugin
                         in (Updateable, Deletable, BulkDeletable)
-                        if issubclass(cls, plugin )]
+                        if issubclass(cls, plugin)]
         if superclasses:
             package_and_superclasses += " (%s)" % ", ".join(superclasses)
     package_and_superclasses += "."
@@ -390,9 +389,9 @@ def generate_class(cls):
         text.append(generate_relationships(cls))
 
     for name, predicate in (
-        ("Static Methods", lambda attr: type(attr) == staticmethod),
-        ("Class Methods", lambda attr: type(attr) == classmethod),
-        ("Object Methods", is_method)):
+        ("Static Methods", lambda attr: isinstance(attr, staticmethod)),
+        ("Class Methods", lambda attr: isinstance(attr, classmethod)),
+            ("Object Methods", is_method)):
         functions = generate_functions(cls, predicate).strip()
         if len(functions):
             text.append(header(3, name))
@@ -428,7 +427,7 @@ def main():
 
     args = argp.parse_args()
 
-    body  = generate_all()
+    body = generate_all()
 
     if args.helpdocs_api_key is not None:
         url = "https://api.helpdocs.io/v1/article/zg9hp7yx3u?key=" + \

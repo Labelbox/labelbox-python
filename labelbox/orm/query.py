@@ -124,7 +124,6 @@ class Query:
         clauses = " ".join(filter(None, (where, paginate, order_by)))
         return "(" + clauses + ")" if clauses else ""
 
-
     def format(self):
         """ Formats the full query but without "query" prefix, query name
         and parameter declaration.
@@ -215,12 +214,15 @@ def check_where_clause(entity, where):
         raise InvalidAttributeError(entity, invalid_fields)
 
     if len(set(where_fields)) != len(where_fields):
-        raise InvalidQueryError("Where clause contains multiple comparisons for "
-                                "the same field: %r." % where)
+        raise InvalidQueryError(
+            "Where clause contains multiple comparisons for "
+            "the same field: %r." %
+            where)
 
     if set(logical_ops(where)) not in (set(), {LogicalExpression.Op.AND}):
-        raise InvalidQueryError("Currently only AND logical ops are allowed in "
-                                "the where clause of a query.")
+        raise InvalidQueryError(
+            "Currently only AND logical ops are allowed in "
+            "the where clause of a query.")
 
 
 def check_order_by_clause(entity, order_by):
@@ -289,11 +291,14 @@ def relationship(source, relationship, where, order_by):
     to_many = relationship.relationship_type == Relationship.Type.ToMany
     subquery = Query(relationship.graphql_name, relationship.destination_type,
                      where, to_many, order_by)
-    query_where = type(source).uid == source.uid if isinstance(source, Entity) \
-        else None
+    query_where = type(source).uid == source.uid if isinstance(
+        source, Entity) else None
     query = Query(utils.camel_case(source.type_name()), subquery, query_where)
     return query.format_top(
-        "Get" + source.type_name() + utils.title_case(relationship.graphql_name))
+        "Get" +
+        source.type_name() +
+        utils.title_case(
+            relationship.graphql_name))
 
 
 def create(entity, data):
@@ -317,7 +322,8 @@ def create(entity, data):
                 utils.camel_case(attribute.graphql_name), param)
 
     # Convert data to params
-    params = {field.graphql_name: (value, field) for field, value in data.items()}
+    params = {field.graphql_name: (value, field)
+              for field, value in data.items()}
 
     query_str = """mutation Create%sPyApi%s{create%s(data: {%s}) {%s}} """ % (
         type_name,
@@ -416,13 +422,12 @@ def delete(db_object):
     id_param = "%sId" % db_object.type_name()
     query_str = """mutation delete%sPyApi%s{update%s(
         where: {id: $%s} data: {deleted: true}) {id}} """ % (
-            db_object.type_name(),
-            "($%s: ID!)" % id_param,
-            db_object.type_name(),
-            id_param)
+        db_object.type_name(),
+        "($%s: ID!)" % id_param,
+        db_object.type_name(),
+        id_param)
 
     return query_str, {id_param: db_object.uid}
-
 
 
 def bulk_delete(db_objects, use_where_clause):

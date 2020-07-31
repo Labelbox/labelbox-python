@@ -10,6 +10,7 @@ class Label(DbObject, Updateable, BulkDeletable):
     """ Label represents an assessment on a DataRow. For example one label could
     contain 100 bounding boxes (annotations).
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.reviews.supports_filtering = False
@@ -54,7 +55,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         label_id_param = "labelId"
         query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
             createBenchmark(data: {labelId: $%s}) {%s}} """ % (
-                label_id_param, label_id_param,
-                query.results_query_part(Entity.Benchmark))
+            label_id_param, label_id_param,
+            query.results_query_part(Entity.Benchmark))
         res = self.client.execute(query_str, {label_id_param: self.uid})
         return Entity.Benchmark(self.client, res["createBenchmark"])

@@ -35,7 +35,6 @@ def test_project_setup(project, iframe_url) -> None:
     assert now - project.setup_complete <= timedelta(seconds=3)
     assert now - project.last_activity_time <= timedelta(seconds=3)
 
-
     assert project.labeling_frontend() == labeling_frontend
     options = list(project.labeling_frontend_options())
     assert len(options) == 1

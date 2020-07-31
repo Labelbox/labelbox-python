@@ -82,7 +82,8 @@ def test_data_row_single_creation(dataset, rand_gen):
 
 def test_data_row_update(dataset, rand_gen):
     external_id = rand_gen(str)
-    data_row = dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
+    data_row = dataset.create_data_row(
+        row_data=IMG_URL, external_id=external_id)
     assert data_row.external_id == external_id
 
     external_id_2 = rand_gen(str)
@@ -98,18 +99,24 @@ def test_data_row_filtering_sorting(dataset, rand_gen):
     task.wait_till_done()
 
     # Test filtering
-    row1 = list(dataset.data_rows(where=DataRow.external_id=="row1"))
+    row1 = list(dataset.data_rows(where=DataRow.external_id == "row1"))
     assert len(row1) == 1
     row1 = row1[0]
     assert row1.external_id == "row1"
-    row2 = list(dataset.data_rows(where=DataRow.external_id=="row2"))
+    row2 = list(dataset.data_rows(where=DataRow.external_id == "row2"))
     assert len(row2) == 1
     row2 = row2[0]
     assert row2.external_id == "row2"
 
     # Test sorting
-    assert list(dataset.data_rows(order_by=DataRow.external_id.asc)) == [row1, row2]
-    assert list(dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
+    assert list(
+        dataset.data_rows(
+            order_by=DataRow.external_id.asc)) == [
+        row1, row2]
+    assert list(
+        dataset.data_rows(
+            order_by=DataRow.external_id.desc)) == [
+        row2, row1]
 
 
 def test_data_row_deletion(dataset, rand_gen):

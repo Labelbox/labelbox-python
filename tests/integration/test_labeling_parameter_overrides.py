@@ -5,7 +5,8 @@ IMG_URL = "https://picsum.photos/200/300"
 
 
 def test_labeling_parameter_overrides(project, rand_gen):
-    dataset = project.client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = project.client.create_dataset(
+        name=rand_gen(str), projects=project)
 
     task = dataset.create_data_rows([{DataRow.row_data: IMG_URL}] * 20)
     task.wait_till_done()

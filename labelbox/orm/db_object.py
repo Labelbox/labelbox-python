@@ -62,8 +62,9 @@ class DbObject(Entity):
                     value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
                     value = value.replace(tzinfo=timezone.utc)
                 except ValueError:
-                    logger.warning("Failed to convert value '%s' to datetime for "
-                                   "field %s", value, field)
+                    logger.warning(
+                        "Failed to convert value '%s' to datetime for "
+                        "field %s", value, field)
             setattr(self, field.name, value)
 
     def __repr__(self):
@@ -77,7 +78,7 @@ class DbObject(Entity):
         attribute_values = {field.name: getattr(self, field.name)
                             for field in self.fields()}
         return "<%s %s>" % (self.type_name().split(".")[-1],
-                                attribute_values)
+                            attribute_values)
 
     def __eq__(self, other):
         return self.type_name() == other.type_name() and self.uid == other.uid
@@ -105,7 +106,7 @@ class RelationshipManager:
         self.supports_sorting = True
         self.filter_on_id = True
 
-    def __call__(self, *args, **kwargs ):
+    def __call__(self, *args, **kwargs):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
         depending on relationship type. """
         if self.relationship.relationship_type == Relationship.Type.ToMany:
@@ -126,11 +127,11 @@ class RelationshipManager:
         if where is not None and not self.supports_filtering:
             raise InvalidQueryError(
                 "Relationship %s.%s doesn't support filtering" % (
-                self.source.type_name(), rel.name))
+                    self.source.type_name(), rel.name))
         if order_by is not None and not self.supports_sorting:
             raise InvalidQueryError(
                 "Relationship %s.%s doesn't support sorting" % (
-                self.source.type_name(), rel.name))
+                    self.source.type_name(), rel.name))
 
         if rel.filter_deleted:
             not_deleted = rel.destination_type.deleted == False
@@ -234,7 +235,6 @@ class BulkDeletable:
 
         query_str, params = query.bulk_delete(objects, use_where_clause)
         objects[0].client.execute(query_str, params)
-
 
     def delete(self):
         """ Deletes this DB object from the DB (server side). After

@@ -8,7 +8,7 @@ def test_benchmark(label_pack):
     assert benchmark.reference_label() == label
     # Refresh label data to check it's benchmark reference
     label = list(data_row.labels())[0]
-    assert label.is_benchmark_reference == True
+    assert label.is_benchmark_reference
 
     benchmark.delete()
     assert set(project.benchmarks()) == set()

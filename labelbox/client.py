@@ -95,15 +95,16 @@ class Client:
             return value
 
         if params is not None:
-            params = {key: convert_value(value) for key, value in params.items()}
+            params = {key: convert_value(value)
+                      for key, value in params.items()}
 
         data = json.dumps(
             {'query': query, 'variables': params}).encode('utf-8')
 
         try:
             response = requests.post(self.endpoint, data=data,
-                                        headers=self.headers,
-                                        timeout=timeout)
+                                     headers=self.headers,
+                                     timeout=timeout)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -118,7 +119,7 @@ class Client:
 
         try:
             response = response.json()
-        except:
+        except BaseException:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
@@ -155,7 +156,8 @@ class Client:
             else:
                 raise labelbox.exceptions.InvalidQueryError(message)
 
-        graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions", "code")
+        graphql_error = check_errors(
+            ["GRAPHQL_PARSE_FAILED"], "extensions", "code")
         if graphql_error is not None:
             raise labelbox.exceptions.InvalidQueryError(
                 graphql_error["message"])
@@ -206,9 +208,9 @@ class Client:
                 "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
-                                       sign: $sign) {url filename} } """,}),
+                                       sign: $sign) {url filename} } """, }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
-            }
+        }
         response = requests.post(
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
@@ -218,7 +220,7 @@ class Client:
 
         try:
             file_data = response.json().get("data", None)
-        except ValueError as e: # response is not valid JSON
+        except ValueError as e:  # response is not valid JSON
             raise labelbox.exceptions.LabelboxError(
                 "Failed to upload, unknown cause", e)
 
@@ -350,9 +352,13 @@ class Client:
         """
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
-        data = {db_object_type.attribute(attr) if isinstance(attr, str) else attr:
-                value.uid if isinstance(value, DbObject) else value
-                for attr, value in data.items()}
+        data = {
+            db_object_type.attribute(attr) if isinstance(
+                attr,
+                str) else attr: value.uid if isinstance(
+                value,
+                DbObject) else value for attr,
+            value in data.items()}
 
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)

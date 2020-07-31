@@ -61,7 +61,7 @@ class Dataset(DbObject, Updateable, Deletable):
         it is a `str`, then it is interpreted as a local file path. The file
         is uploaded to Labelbox and a DataRow referencing it is created.
         If an item is a `dict`, then it should map `DataRow` fields (or their
-        names) to values. At the minimum an `item` passed as a `dict` must 
+        names) to values. At the minimum an `item` passed as a `dict` must
         contain a `DataRow.row_data` key and value.
 
         >>> dataset.create_data_rows([
@@ -102,8 +102,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def convert_item(item):
             # Convert string names to fields.
-            item = {key if isinstance(key, Field) else DataRow.field(key): value
-                    for key, value in item.items()}
+            item = {key if isinstance(key, Field) else DataRow.field(
+                key): value for key, value in item.items()}
 
             if DataRow.row_data not in item:
                 raise InvalidQueryError(
@@ -128,7 +128,7 @@ class Dataset(DbObject, Updateable, Deletable):
         query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
             appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
             ){ taskId accepted } } """ % (
-                dataset_param, url_param, dataset_param, url_param)
+            dataset_param, url_param, dataset_param, url_param)
         res = self.client.execute(
             query_str, {dataset_param: self.uid, url_param: descriptor_url})
         res = res["appendRowsToDataset"]
@@ -165,7 +165,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 multiple `DataRows` for it.
         """
         DataRow = Entity.DataRow
-        where = DataRow.external_id==external_id
+        where = DataRow.external_id == external_id
 
         data_rows = self.data_rows(where=where)
         # Get at most two data_rows.
