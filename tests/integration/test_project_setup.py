@@ -6,6 +6,7 @@ import pytest
 
 from labelbox import LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
+from labelbox.tests.integration.environ import Environ, get_environ
 
 
 def simple_ontology():
@@ -21,11 +22,17 @@ def simple_ontology():
 
 
 def test_project_setup(project):
+
+    iframe_url = {
+        Environ.PROD: "https://image-segmentation-v4.labelbox.com",
+        Environ.STAGING: "https://staging-image-segmentation-v4.labelbox.com"
+    }[get_environ()]
+
     client = project.client
     labeling_frontends = list(client.get_labeling_frontends(
-        where=LabelingFrontend.iframe_url_path ==
-        "https://staging-image-segmentation-v4.labelbox.com"))
-    assert len(labeling_frontends) == 1
+        where=LabelingFrontend.iframe_url_path == iframe_url))
+    assert len(labeling_frontends) == 1, (
+        f'Checking for {iframe_url} and received {labeling_frontends}')
     labeling_frontend = labeling_frontends[0]
 
     time.sleep(3)

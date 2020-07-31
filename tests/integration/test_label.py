@@ -31,6 +31,7 @@ def test_labels(label_pack):
     assert list(data_row.labels()) == []
 
 
+@pytest.mark.skip
 def test_label_export(label_pack):
     project, dataset, data_row, label = label_pack
     project.create_label(data_row=data_row, label="l2")
