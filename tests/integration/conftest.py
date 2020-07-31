@@ -93,7 +93,11 @@ def environ() -> Environ:
 
     """
     try:
-        return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
+        #return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
+        # TODO: for some reason all other environs can be set but
+        # this one cannot in github actions
+        return Environ.PROD
+
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
