@@ -3,7 +3,6 @@ import pytest
 from labelbox import AssetMetadata
 from labelbox.exceptions import InvalidQueryError
 
-
 IMG_URL = "https://picsum.photos/200/300"
 
 

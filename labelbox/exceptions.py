@@ -35,8 +35,8 @@ class ResourceNotFoundError(LabelboxError):
             db_object_type (type): A labelbox.schema.DbObject subtype.
             params (dict): Dict of params identifying the sought resource.
         """
-        super().__init__("Resouce '%s' not found for params: %r" % (
-            db_object_type.type_name(), params))
+        super().__init__("Resouce '%s' not found for params: %r" %
+                         (db_object_type.type_name(), params))
         self.db_object_type = db_object_type
         self.params = params
 
@@ -73,8 +73,8 @@ class InvalidAttributeError(LabelboxError):
     for a specific DB object type. """
 
     def __init__(self, db_object_type, field):
-        super().__init__("Field(s) '%r' not valid on DB type '%s'" % (
-            field, db_object_type.type_name()))
+        super().__init__("Field(s) '%r' not valid on DB type '%s'" %
+                         (field, db_object_type.type_name()))
         self.db_object_type = db_object_type
         self.field = field
 

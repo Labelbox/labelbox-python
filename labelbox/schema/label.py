@@ -1,8 +1,6 @@
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-
-
 """ Client-side object type definitions. """
 
 

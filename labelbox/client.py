@@ -18,9 +18,7 @@ from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
 
-
 logger = logging.getLogger(__name__)
-
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
@@ -31,7 +29,8 @@ class Client:
     querying and creating top-level data objects (Projects, Datasets).
     """
 
-    def __init__(self, api_key=None,
+    def __init__(self,
+                 api_key=None,
                  endpoint='https://api.labelbox.com/graphql'):
         """ Creates and initializes a Labelbox Client.
 
@@ -54,9 +53,11 @@ class Client:
         logger.info("Initializing Labelbox client at '%s'", endpoint)
 
         self.endpoint = endpoint
-        self.headers = {'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer %s' % api_key}
+        self.headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer %s' % api_key
+        }
 
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
@@ -95,14 +96,15 @@ class Client:
             return value
 
         if params is not None:
-            params = {key: convert_value(value)
-                      for key, value in params.items()}
+            params = {
+                key: convert_value(value) for key, value in params.items()
+            }
 
-        data = json.dumps(
-            {'query': query, 'variables': params}).encode('utf-8')
+        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            response = requests.post(self.endpoint, data=data,
+            response = requests.post(self.endpoint,
+                                     data=data,
                                      headers=self.headers,
                                      timeout=timeout)
             logger.debug("Response: %s", response.text)
@@ -137,8 +139,8 @@ class Client:
                     return error
             return None
 
-        if check_errors(["AUTHENTICATION_ERROR"],
-                        "extensions", "exception", "code") is not None:
+        if check_errors(["AUTHENTICATION_ERROR"], "extensions", "exception",
+                        "code") is not None:
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
 
         authorization_error = check_errors(["AUTHORIZATION_ERROR"],
@@ -156,8 +158,8 @@ class Client:
             else:
                 raise labelbox.exceptions.InvalidQueryError(message)
 
-        graphql_error = check_errors(
-            ["GRAPHQL_PARSE_FAILED"], "extensions", "code")
+        graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions",
+                                     "code")
         if graphql_error is not None:
             raise labelbox.exceptions.InvalidQueryError(
                 graphql_error["message"])
@@ -169,8 +171,8 @@ class Client:
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
-            raise labelbox.exceptions.LabelboxError(
-                "Unknown error: %s" % str(errors))
+            raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
+                                                    str(errors))
 
         return response["data"]
 
@@ -203,20 +205,26 @@ class Client:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
         request_data = {
-            "operations": json.dumps({
-                "variables": {"file": None, "contentLength": len(data), "sign": False},
-                "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
+            "operations":
+                json.dumps({
+                    "variables": {
+                        "file": None,
+                        "contentLength": len(data),
+                        "sign": False
+                    },
+                    "query":
+                        """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
-                                       sign: $sign) {url filename} } """, }),
+                                       sign: $sign) {url filename} } """,
+                }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
         response = requests.post(
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
-            files={"1": data}
-        )
+            files={"1": data})
 
         try:
             file_data = response.json().get("data", None)
@@ -353,12 +361,10 @@ class Client:
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
         data = {
-            db_object_type.attribute(attr) if isinstance(
-                attr,
-                str) else attr: value.uid if isinstance(
-                value,
-                DbObject) else value for attr,
-            value in data.items()}
+            db_object_type.attribute(attr) if isinstance(attr, str) else attr:
+            value.uid if isinstance(value, DbObject) else value
+            for attr, value in data.items()
+        }
 
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)

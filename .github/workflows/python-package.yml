@@ -32,7 +32,7 @@ jobs:
       id: yapf
       uses: AlexanderMelde/yapf-action@master
       with:
-        args: --in-place --recursive --parallel --verbose --style "google"
+        args: --verbose --recursive --parallel --style "google"
 
     - name: Commit yapf changes
       if: steps.yapf.outputs.exit-code == 0

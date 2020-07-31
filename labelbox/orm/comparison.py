@@ -1,6 +1,4 @@
 from enum import Enum, auto
-
-
 """ Classes for defining the client-side comparison operations used
 for filtering data in fetches. Intended for use by library internals
 and not by the end user.

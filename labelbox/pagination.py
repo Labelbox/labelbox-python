@@ -51,8 +51,9 @@ class PaginatedCollection:
             for deref in self.dereferencing:
                 results = results[deref]
 
-            page_data = [self.obj_class(self.client, result)
-                         for result in results]
+            page_data = [
+                self.obj_class(self.client, result) for result in results
+            ]
             self._data.extend(page_data)
 
             if len(page_data) < _PAGE_SIZE:

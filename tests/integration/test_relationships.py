@@ -26,10 +26,7 @@ def test_project_dataset(client, rand_gen):
 
     assert {ds.uid for ds in project.datasets()} == {dataset.uid}
     assert {ds.uid for ds in project_2.datasets()} == {dataset.uid}
-    assert {
-        pr.uid for pr in dataset.projects()} == {
-        project.uid,
-        project_2.uid}
+    assert {pr.uid for pr in dataset.projects()} == {project.uid, project_2.uid}
 
     project.datasets.disconnect(dataset)
     assert {ds.uid for ds in project.datasets()} == set()
