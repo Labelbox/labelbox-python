@@ -265,9 +265,6 @@ def generate_functions(cls, predicate):
         Textual documentation of functions belonging to the given
         class that satisfy the given predicate.
     """
-    def name_predicate(attr):
-        return not name.startswith("_") or (cls == labelbox.Client and
-                                            name == "__init__")
 
     # Get all class atrributes plus selected superclass attributes.
     attributes = chain(
