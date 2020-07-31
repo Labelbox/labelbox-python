@@ -97,7 +97,6 @@ def environ() -> Environ:
         # TODO: for some reason all other environs can be set but
         # this one cannot in github actions
         return Environ.PROD
-
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
@@ -105,6 +104,6 @@ def environ() -> Environ:
 @pytest.fixture
 def iframe_url(environ) -> str:
     return {
-        Environ.PROD: "https://image-segmentation-v4.labelbox.com",
-        Environ.STAGING: "https://staging-image-segmentation-v4.labelbox.com",
+        Environ.PROD: "https://editor.labelbox.com",
+        Environ.STAGING: "https://staging-editor.labelbox.com",
     }[environ]
