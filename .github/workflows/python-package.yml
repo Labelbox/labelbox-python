@@ -50,7 +50,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install mypy==0.782
-        mypy -p labelbox --python-version $${ matrix.python-version }} --pretty --show-error-codes
+        mypy -p labelbox --pretty --show-error-codes
 
     - name: Install package and test dependencies
       run: |
