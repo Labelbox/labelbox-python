@@ -28,18 +28,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: autopep8
-      id: autopep8
-      uses: peter-evans/autopep8@v1
+    - name: yapf
+      id: yapf
+      uses: AlexanderMelde/yapf-action@master
       with:
-        args: --exit-code --recursive --in-place --aggressive --aggressive .
+        args: --in-place --recursive --diff --parallel --verbose --style "google"
 
-    - name: Commit autopep8 changes
-      if: steps.autopep8.outputs.exit-code == 2
+    - name: Commit yapf changes
+      if: steps.yapf.outputs.exit-code != 0
       run: |
         git config --global user.name 'rllin'
         git config --global user.email 'rllin@labelbox.com'
-        git commit -am "Automated autopep8 fixes"
+        git commit -am "Automated yapf fixes"
         git push
 
     - name: install labelbox package
