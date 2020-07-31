@@ -80,3 +80,8 @@ class ApiLimitError(LabelboxError):
     """ Raised when the user performs too many requests in a short period
     of time. """
     pass
+
+
+class MalformedQueryException(Exception):
+    """ Raised when the user submits a malformed query."""
+    pass

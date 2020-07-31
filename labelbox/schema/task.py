@@ -27,7 +27,7 @@ class Task(DbObject):
         """ Refreshes Task data from the server. """
         tasks = list(self._user.created_tasks(where=Task.uid == self.uid))
         if len(tasks) != 1:
-            raise ResourceNotFoundError(Task, task_id)
+            raise ResourceNotFoundError(Task, self.uid)
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 

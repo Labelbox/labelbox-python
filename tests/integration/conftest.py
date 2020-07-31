@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 from datetime import datetime
 import os
 from random import randint
@@ -45,7 +46,7 @@ def rand_gen():
             return datetime.now()
 
         raise Exception("Can't random generate for field type '%r'" %
-                        field.field_type)
+                        field_type)
 
     return gen
 
@@ -75,3 +76,34 @@ def label_pack(project, rand_gen):
     label = project.create_label(data_row=data_row, label=rand_gen(str))
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
+
+
+class Environ(Enum):
+    PROD = 'prod'
+    STAGING = 'staging'
+
+
+@pytest.fixture
+def environ() -> Environ:
+    """
+    Checks environment variables for LABELBOX_ENVIRON to be
+    'prod' or 'staging'
+
+    Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
+
+    """
+    try:
+        #return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
+        # TODO: for some reason all other environs can be set but
+        # this one cannot in github actions
+        return Environ.PROD
+    except KeyError:
+        raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
+
+
+@pytest.fixture
+def iframe_url(environ) -> str:
+    return {
+        Environ.PROD: 'https://editor.labelbox.com',
+        Environ.STAGING: 'https://staging-editor.labelbox.com',
+    }[environ]

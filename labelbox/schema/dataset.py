@@ -2,7 +2,7 @@ import json
 from multiprocessing.dummy import Pool as ThreadPool
 import os
 
-from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError
+from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
@@ -111,7 +111,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
             invalid_keys = set(item) - set(DataRow.fields())
             if invalid_keys:
-                raise InvalidAttributeError(DataRow, invalid_fields)
+                raise InvalidAttributeError(DataRow, invalid_keys)
 
             # Item is valid, convert it to a dict {graphql_field_name: value}
             # Need to change the name of DataRow.row_data to "data"

@@ -3,6 +3,7 @@ import pytest
 from labelbox import Project
 
 
+@pytest.mark.skip
 def test_relationship_sorting(client):
     a = client.create_project(name="a", description="b")
     b = client.create_project(name="b", description="c")

@@ -20,12 +20,13 @@ def simple_ontology():
     return {"tools": [], "classifications": classifications}
 
 
-def test_project_setup(project):
+def test_project_setup(project, iframe_url) -> None:
+
     client = project.client
     labeling_frontends = list(client.get_labeling_frontends(
-        where=LabelingFrontend.iframe_url_path ==
-        "https://staging-image-segmentation-v4.labelbox.com"))
-    assert len(labeling_frontends) == 1
+        where=LabelingFrontend.iframe_url_path == iframe_url))
+    assert len(labeling_frontends) == 1, (
+        f'Checking for {iframe_url} and received {labeling_frontends}')
     labeling_frontend = labeling_frontends[0]
 
     time.sleep(3)
