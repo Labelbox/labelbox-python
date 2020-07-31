@@ -190,21 +190,25 @@ class Client:
         with open(path, "rb") as f:
             return self.upload_data(
                 content=f.read(),
-                basename=basename,
+                filename=basename,
                 content_type=content_type)
 
-    def upload_data(self, content: str, basename: str = None, content_type: str = None) -> str:
+    def upload_data(self, content: str, filename: str = None, content_type: str = None) -> str:
         """ Uploads the given data (bytes) to Labelbox.
 
         Args:
-            data (bytes): The data to upload.
+            content: bytestring to upload
+            filename: name of the upload
+            content_type: content type of data uploaded
+
         Returns:
             str, the URL of uploaded data.
+
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
-        if basename and content_type:
-            upload_data = (basename, content, content_type)
+        if filename and content_type:
+            upload_data = (filename, content, content_type)
         else:
             upload_data = content
 
