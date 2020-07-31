@@ -49,7 +49,7 @@ class Webhook(DbObject, Updateable):
         query_str = """mutation CreateWebhookPyApi {
             createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
         } """ % (project_str, " ".join(topics), url, secret,
-                query.results_query_part(Entity.Webhook))
+                 query.results_query_part(Entity.Webhook))
 
         return Webhook(client, client.execute(query_str)["createWebhook"])
 
@@ -59,7 +59,7 @@ class Webhook(DbObject, Updateable):
 
     def update(self, topics=None, url=None, status=None):
         """ Updates this Webhook.
-        
+
         Args:
             topics (list of str): The new topics value, optional.
             url (str): The new URL value, optional.

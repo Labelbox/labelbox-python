@@ -38,7 +38,7 @@ class Task(DbObject):
             timeout_seconds (float): Maximum time this method can block, in
                 seconds. Defaults to one minute.
         """
-        check_frequency = 2 # frequency of checking, in seconds
+        check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
                 return
@@ -50,4 +50,3 @@ class Task(DbObject):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
-

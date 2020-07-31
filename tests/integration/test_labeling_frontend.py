@@ -12,7 +12,7 @@ def test_get_labeling_frontends(client):
 
 
 def test_labeling_frontend_connecting_to_project(project):
-    assert project.labeling_frontend() == None
+    assert project.labeling_frontend() is None
 
     frontend = list(project.client.get_labeling_frontends())[0]
 
@@ -21,5 +21,5 @@ def test_labeling_frontend_connecting_to_project(project):
     assert project in set(frontend.projects())
 
     project.labeling_frontend.disconnect(frontend)
-    assert project.labeling_frontend() == None
+    assert project.labeling_frontend() is None
     assert project not in set(frontend.projects())

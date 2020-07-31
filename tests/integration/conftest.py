@@ -40,7 +40,7 @@ def rand_gen():
     def gen(field_type):
         if field_type is str:
             return "".join(ascii_letters[randint(0, len(ascii_letters) - 1)]
-                            for _ in range(16))
+                           for _ in range(16))
 
         if field_type is datetime:
             return datetime.now()
@@ -93,7 +93,7 @@ def environ() -> Environ:
 
     """
     try:
-        #return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
+        # return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
         # TODO: for some reason all other environs can be set but
         # this one cannot in github actions
         return Environ.PROD

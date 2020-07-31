@@ -80,7 +80,8 @@ def test_label_filter_order(client, rand_gen):
 
 
 def test_label_bulk_deletion(project, rand_gen):
-    dataset = project.client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = project.client.create_dataset(
+        name=rand_gen(str), projects=project)
     row_1 = dataset.create_data_row(row_data=IMG_URL)
     row_2 = dataset.create_data_row(row_data=IMG_URL)
 

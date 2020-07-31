@@ -60,7 +60,8 @@ class LogicalExpression(LogicalExpressionComponent):
             (self.first == other.second and self.second == other.first))
 
     def __hash__(self):
-        return hash(self.op) + 2833 * hash(self.first) + 2837 * hash(self.second)
+        return hash(self.op) + 2833 * hash(self.first) + \
+            2837 * hash(self.second)
 
     def __repr__(self):
         return "%r %s %r" % (self.first, self.op.name, self.second)
@@ -104,7 +105,8 @@ class Comparison(LogicalExpressionComponent):
             self.field == other.field and self.value == other.value
 
     def __hash__(self):
-        return hash(self.op) + 2861 * hash(self.field) + 2927 * hash(self.value)
+        return hash(self.op) + 2861 * hash(self.field) + \
+            2927 * hash(self.value)
 
     def __repr__(self):
         return "%r %s %r" % (self.field, self.op.name, self.value)

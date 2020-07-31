@@ -67,8 +67,8 @@ class Project(DbObject, Updateable, Deletable):
 
         query_str, params = query.create(Label, data)
         # Inject connection to Type
-        query_str = query_str.replace("data: {",
-                                      "data: {type: {connect: {name: \"Any\"}} ")
+        query_str = query_str.replace(
+            "data: {", "data: {type: {connect: {name: \"Any\"}} ")
         res = self.client.execute(query_str, params)
         return Label(self.client, res["createLabel"])
 
@@ -113,7 +113,7 @@ class Project(DbObject, Updateable, Deletable):
         payload, and returns the URL to that payload.
 
         Will only generate a new URL at a max frequency of 30 min.
-        
+
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
@@ -125,7 +125,7 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """mutation GetLabelExportUrlPyApi($%s: ID!)
             {exportLabels(data:{projectId: $%s }) {downloadUrl createdAt shouldPoll} }
-        """ %  (id_param, id_param)
+        """ % (id_param, id_param)
 
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
@@ -176,8 +176,9 @@ class Project(DbObject, Updateable, Deletable):
             int, aggregation count of reviews for given net_score.
         """
         if net_score not in (None,) + tuple(Entity.Review.NetScore):
-            raise InvalidQueryError("Review metrics net score must be either None "
-                                    "or one of Review.NetScore values")
+            raise InvalidQueryError(
+                "Review metrics net score must be either None "
+                "or one of Review.NetScore values")
         id_param = "projectId"
         net_score_literal = "None" if net_score is None else net_score.name
         query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
@@ -269,7 +270,6 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(
             query_str, {id_param: self.uid, quota_param: quota_factor})
 
-
     def extend_reservations(self, queue_type):
         """ Extends all the current reservations for the current user on the given
         queue type.
@@ -285,7 +285,7 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """mutation ExtendReservationsPyApi($%s: ID!){
             extendReservations(projectId:$%s queueType:%s)}""" % (
-                id_param, id_param, queue_type)
+            id_param, id_param, queue_type)
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
 
@@ -298,7 +298,7 @@ class Project(DbObject, Updateable, Deletable):
             A newly created PredictionModel.
         """
         PM = Entity.PredictionModel
-        model =  self.client._create(
+        model = self.client._create(
             PM, {PM.name.name: name, PM.version.name: version})
         self.active_prediction_model.connect(model)
         return model
