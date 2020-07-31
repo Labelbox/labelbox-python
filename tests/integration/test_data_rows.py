@@ -58,6 +58,7 @@ def test_data_row_bulk_creation(dataset, rand_gen):
     data_rows = len(list(dataset.data_rows())) == 5003
 
 
+@pytest.mark.skip
 def test_data_row_single_creation(dataset, rand_gen):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0

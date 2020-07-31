@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import logging
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
 from labelbox.orm import query
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.pagination import PaginatedCollection
