@@ -45,4 +45,4 @@ jobs:
         # used in tests/integration/environ.py
         LABELBOX_TEST_ENVIRON: ${{ matrix.labelbox-environ }}
       run: |
-        tox -svv
+        tox -- -svv
