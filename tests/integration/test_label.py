@@ -95,6 +95,8 @@ def test_label_bulk_deletion(project, rand_gen):
 
     Label.bulk_delete([l1, l3])
 
+    time.sleep(1)
+
     assert set(project.labels()) == {l2}
 
     dataset.delete()

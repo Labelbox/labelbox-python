@@ -3,7 +3,7 @@ from labelbox import LabelingFrontend
 
 def test_get_labeling_frontends(client):
     frontends = list(client.get_labeling_frontends())
-    assert len(frontends) > 1, frontends
+    assert len(frontends) == 1, frontends
 
     # Test filtering
     single = list(client.get_labeling_frontends(

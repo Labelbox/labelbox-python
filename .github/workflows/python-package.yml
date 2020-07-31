@@ -37,7 +37,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with tox
       env:
+        # make sure to tell tox to use these environs in tox.ini
         LABELBOX_TEST_API_KEY: ${{ secrets.LABELBOX_API_KEY }}
         LABELBOX_TEST_ENDPOINT: "https://api.labelbox.com/graphql"
+        LABELBOX_TEST_ENVIRON: "PROD"
       run: |
         tox -- -svv
