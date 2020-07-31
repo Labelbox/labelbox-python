@@ -38,5 +38,6 @@ jobs:
     - name: Test with tox
       env:
         LABELBOX_TEST_API_KEY: ${{ secrets.LABELBOX_API_KEY }}
+        LABELBOX_TEST_ENDPOINT: "https://api.labelbox.com/graphql"
       run: |
         tox
