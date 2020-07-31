@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-        
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -37,6 +37,6 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with tox
       env:
-        LABELBOX_API_KEY: ${{ secrets.LABELBOX_API_KEY }}
+        LABELBOX_TEST_API_KEY: ${{ secrets.LABELBOX_API_KEY }}
       run: |
         tox
