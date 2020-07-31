@@ -42,6 +42,6 @@ jobs:
         # TODO: this should really be controlled by what branch is being merged
         # for now, let's just only test against prod
         # used in tests/integration/environ.py
-        LABELBOX_TEST_ENVIRON: 'PROD'
+        LABELBOX_TEST_ENVIRON: "PROD"
       run: |
         tox -- -svv
