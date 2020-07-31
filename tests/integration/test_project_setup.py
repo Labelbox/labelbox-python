@@ -6,7 +6,6 @@ import pytest
 
 from labelbox import LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
-from labelbox.tests.integration.environ import Environ, get_environ
 
 
 def simple_ontology():
