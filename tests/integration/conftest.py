@@ -104,6 +104,6 @@ def environ() -> Environ:
 @pytest.fixture
 def iframe_url(environ) -> str:
     return {
-        Environ.PROD: "https://editor.labelbox.com",
-        Environ.STAGING: "https://staging-editor.labelbox.com",
+        Environ.PROD: 'https://editor.labelbox.com',
+        Environ.STAGING: 'https://staging-editor.labelbox.com',
     }[environ]
