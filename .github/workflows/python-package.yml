@@ -34,14 +34,6 @@ jobs:
       with:
         args: --verbose --recursive --parallel --style "google"
 
-    - name: Commit yapf changes
-      if: steps.yapf.outputs.exit-code == 0
-      run: |
-        git config --global user.name 'rllin'
-        git config --global user.email 'rllin@labelbox.com'
-        git commit -am "Automated yapf fixes"
-        git push
-
     - name: install labelbox package
       run: |
         python setup.py install
