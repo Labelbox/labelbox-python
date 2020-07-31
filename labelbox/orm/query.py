@@ -1,7 +1,7 @@
 from itertools import chain
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
+from labelbox.exceptions import InvalidQueryError, InvalidAttributeError, MalformedQueryException
 from labelbox.orm.comparison import LogicalExpression, Comparison
 from labelbox.orm.model import Field, Relationship, Entity
 

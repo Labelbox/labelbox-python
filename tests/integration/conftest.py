@@ -45,7 +45,7 @@ def rand_gen():
             return datetime.now()
 
         raise Exception("Can't random generate for field type '%r'" %
-                        field.field_type)
+                        field_type)
 
     return gen
 
