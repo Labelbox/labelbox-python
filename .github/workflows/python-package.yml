@@ -1,7 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Python package
+name: Labelbox Python SDK
 
 on:
   push:
@@ -23,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
         ref: ${{ github.head_ref }}
 
     - name: Set up Python ${{ matrix.python-version }}
