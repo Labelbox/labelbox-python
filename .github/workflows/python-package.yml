@@ -32,10 +32,10 @@ jobs:
       id: yapf
       uses: AlexanderMelde/yapf-action@master
       with:
-        args: --in-place --recursive --diff --parallel --verbose --style "google"
+        args: --in-place --recursive --parallel --verbose --style "google"
 
     - name: Commit yapf changes
-      if: steps.yapf.outputs.exit-code != 0
+      if: steps.yapf.outputs.exit-code == 0
       run: |
         git config --global user.name 'rllin'
         git config --global user.email 'rllin@labelbox.com'
