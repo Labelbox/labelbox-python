@@ -21,12 +21,7 @@ def simple_ontology():
     return {"tools": [], "classifications": classifications}
 
 
-def test_project_setup(project):
-
-    iframe_url = {
-        Environ.PROD: "https://image-segmentation-v4.labelbox.com",
-        Environ.STAGING: "https://staging-image-segmentation-v4.labelbox.com"
-    }[get_environ()]
+def test_project_setup(project, iframe_url) -> None:
 
     client = project.client
     labeling_frontends = list(client.get_labeling_frontends(

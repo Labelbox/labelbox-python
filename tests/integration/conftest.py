@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 from datetime import datetime
 import os
 from random import randint
@@ -75,3 +76,28 @@ def label_pack(project, rand_gen):
     label = project.create_label(data_row=data_row, label=rand_gen(str))
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
+
+
+class Environ(Enum):
+    PROD = 'prod'
+    STAGING = 'staging'
+
+
+@pytest.fixture
+def environ() -> Environ:
+    """
+    Checks environment variables for LABELBOX_ENVIRON to be
+    'prod' or 'staging'
+
+    Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
+
+    """
+    return Environ(os.environ.get['LABELBOX_TEST_ENVIRON'])
+
+
+@pytest.fixture
+def iframe_url() -> str:
+    return {
+        Environ.PROD: "https://image-segmentation-v4.labelbox.com",
+        Environ.STAGING: "https://staging-image-segmentation-v4.labelbox.com",
+    }[get_environ()]
