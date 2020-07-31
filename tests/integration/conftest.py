@@ -96,8 +96,8 @@ def environ() -> Environ:
 
 
 @pytest.fixture
-def iframe_url() -> str:
+def iframe_url(environ) -> str:
     return {
         Environ.PROD: "https://image-segmentation-v4.labelbox.com",
         Environ.STAGING: "https://staging-image-segmentation-v4.labelbox.com",
-    }[get_environ()]
+    }[environ]
