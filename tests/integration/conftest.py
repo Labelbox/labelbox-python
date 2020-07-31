@@ -92,7 +92,7 @@ def environ() -> Environ:
     Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
 
     """
-    return Environ(os.environ.get['LABELBOX_TEST_ENVIRON'])
+    return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
 
 
 @pytest.fixture
