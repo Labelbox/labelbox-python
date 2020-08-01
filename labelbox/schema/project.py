@@ -11,7 +11,6 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -59,16 +58,18 @@ class Project(DbObject, Updateable, Deletable):
         Label = Entity.Label
 
         kwargs[Label.project] = self
-        kwargs[Label.seconds_to_label] = kwargs.get(
-            Label.seconds_to_label.name, 0.0)
-        data = {Label.attribute(attr) if isinstance(attr, str) else attr:
-                value.uid if isinstance(value, DbObject) else value
-                for attr, value in kwargs.items()}
+        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
+                                                    0.0)
+        data = {
+            Label.attribute(attr) if isinstance(attr, str) else attr:
+            value.uid if isinstance(value, DbObject) else value
+            for attr, value in kwargs.items()
+        }
 
         query_str, params = query.create(Label, data)
         # Inject connection to Type
-        query_str = query_str.replace("data: {",
-                                      "data: {type: {connect: {name: \"Any\"}} ")
+        query_str = query_str.replace(
+            "data: {", "data: {type: {connect: {name: \"Any\"}} ")
         res = self.client.execute(query_str, params)
         return Label(self.client, res["createLabel"])
 
@@ -92,8 +93,8 @@ class Project(DbObject, Updateable, Deletable):
 
         if order_by is not None:
             query.check_order_by_clause(Label, order_by)
-            order_by_str = "orderBy: %s_%s" % (
-                order_by[0].graphql_name, order_by[1].name.upper())
+            order_by_str = "orderBy: %s_%s" % (order_by[0].graphql_name,
+                                               order_by[1].name.upper())
         else:
             order_by_str = ""
 
@@ -104,9 +105,8 @@ class Project(DbObject, Updateable, Deletable):
             id_param, id_param, where, order_by_str,
             query.results_query_part(Label))
 
-        return PaginatedCollection(
-            self.client, query_str, {id_param: self.uid},
-            ["project", "labels"], Label)
+        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
+                                   ["project", "labels"], Label)
 
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
@@ -125,7 +125,7 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """mutation GetLabelExportUrlPyApi($%s: ID!)
             {exportLabels(data:{projectId: $%s }) {downloadUrl createdAt shouldPoll} }
-        """ %  (id_param, id_param)
+        """ % (id_param, id_param)
 
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
@@ -153,19 +153,19 @@ class Project(DbObject, Updateable, Deletable):
                 labelerPerformance(skip: %%d first: %%d) {
                     count user {%s} secondsPerLabel totalTimeLabeling consensus
                     averageBenchmarkAgreement lastActivityTime}
-            }}""" % (id_param, id_param,
-                     query.results_query_part(Entity.User))
+            }}""" % (id_param, id_param, query.results_query_part(Entity.User))
 
         def create_labeler_performance(client, result):
             result["user"] = Entity.User(client, result["user"])
             result["lastActivityTime"] = datetime.fromtimestamp(
                 result["lastActivityTime"] / 1000, timezone.utc)
-            return LabelerPerformance(**{utils.snake_case(key): value
-                                         for key, value in result.items()})
+            return LabelerPerformance(
+                **
+                {utils.snake_case(key): value for key, value in result.items()})
 
-        return PaginatedCollection(
-            self.client, query_str, {id_param: self.uid},
-            ["project", "labelerPerformance"], create_labeler_performance)
+        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
+                                   ["project", "labelerPerformance"],
+                                   create_labeler_performance)
 
     def review_metrics(self, net_score):
         """ Returns this Project's review metrics.
@@ -176,8 +176,9 @@ class Project(DbObject, Updateable, Deletable):
             int, aggregation count of reviews for given net_score.
         """
         if net_score not in (None,) + tuple(Entity.Review.NetScore):
-            raise InvalidQueryError("Review metrics net score must be either None "
-                                    "or one of Review.NetScore values")
+            raise InvalidQueryError(
+                "Review metrics net score must be either None "
+                "or one of Review.NetScore values")
         id_param = "projectId"
         net_score_literal = "None" if net_score is None else net_score.name
         query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
@@ -205,10 +206,12 @@ class Project(DbObject, Updateable, Deletable):
 
         LFO = Entity.LabelingFrontendOptions
         labeling_frontend_options = self.client._create(
-            LFO, {LFO.project: self, LFO.labeling_frontend: labeling_frontend,
-                  LFO.customization_options: labeling_frontend_options,
-                  LFO.organization: organization
-                  })
+            LFO, {
+                LFO.project: self,
+                LFO.labeling_frontend: labeling_frontend,
+                LFO.customization_options: labeling_frontend_options,
+                LFO.organization: organization
+            })
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
@@ -226,8 +229,8 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
         data_str = ",\n".join(
-            "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" % (
-                data_row.uid, priority, num_labels)
+            "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
+            (data_row.uid, priority, num_labels)
             for data_row, priority, num_labels in data)
         id_param = "projectId"
         query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
@@ -248,8 +251,8 @@ class Project(DbObject, Updateable, Deletable):
         query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s}) {
             unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            id_param, id_param,
-            ",\n".join("{dataRowId: \"%s\"}" % row.uid for row in data_rows))
+            id_param, id_param, ",\n".join(
+                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
@@ -266,9 +269,10 @@ class Project(DbObject, Updateable, Deletable):
             upsertReviewQueue(where:{project: {id: $%s}}
                             data:{quotaFactor: $%s}) {id}}""" % (
             id_param, quota_param, id_param, quota_param)
-        res = self.client.execute(
-            query_str, {id_param: self.uid, quota_param: quota_factor})
-
+        res = self.client.execute(query_str, {
+            id_param: self.uid,
+            quota_param: quota_factor
+        })
 
     def extend_reservations(self, queue_type):
         """ Extends all the current reservations for the current user on the given
@@ -285,7 +289,7 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """mutation ExtendReservationsPyApi($%s: ID!){
             extendReservations(projectId:$%s queueType:%s)}""" % (
-                id_param, id_param, queue_type)
+            id_param, id_param, queue_type)
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
 
@@ -298,8 +302,10 @@ class Project(DbObject, Updateable, Deletable):
             A newly created PredictionModel.
         """
         PM = Entity.PredictionModel
-        model =  self.client._create(
-            PM, {PM.name.name: name, PM.version.name: version})
+        model = self.client._create(PM, {
+            PM.name.name: name,
+            PM.version.name: version
+        })
         self.active_prediction_model.connect(model)
         return model
 
@@ -337,8 +343,12 @@ class Project(DbObject, Updateable, Deletable):
             {%s}}""" % (label_param, model_param, project_param, data_row_param,
                         label_param, model_param, project_param, data_row_param,
                         query.results_query_part(Prediction))
-        params = {label_param: label, model_param: prediction_model.uid,
-                  data_row_param: data_row.uid, project_param: self.uid}
+        params = {
+            label_param: label,
+            model_param: prediction_model.uid,
+            data_row_param: data_row.uid,
+            project_param: self.uid
+        }
         res = self.client.execute(query_str, params)
         return Prediction(self.client, res["createPrediction"])
 

@@ -1,6 +1,4 @@
 from enum import Enum, auto
-
-
 """ Classes for defining the client-side comparison operations used
 for filtering data in fetches. Intended for use by library internals
 and not by the end user.
@@ -60,7 +58,8 @@ class LogicalExpression(LogicalExpressionComponent):
             (self.first == other.second and self.second == other.first))
 
     def __hash__(self):
-        return hash(self.op) + 2833 * hash(self.first) + 2837 * hash(self.second)
+        return hash(
+            self.op) + 2833 * hash(self.first) + 2837 * hash(self.second)
 
     def __repr__(self):
         return "%r %s %r" % (self.first, self.op.name, self.second)

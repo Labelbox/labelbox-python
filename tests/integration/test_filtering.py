@@ -53,8 +53,8 @@ def test_unsupported_where(client):
 
     # TODO support logical OR and NOT in where
     with pytest.raises(InvalidQueryError):
-        client.get_projects(
-            where=(Project.name == "a") | (Project.description == "b"))
+        client.get_projects(where=(Project.name == "a") |
+                            (Project.description == "b"))
 
     with pytest.raises(InvalidQueryError):
         client.get_projects(where=~(Project.name == "a"))

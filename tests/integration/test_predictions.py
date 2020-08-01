@@ -23,7 +23,8 @@ def test_predictions(label_pack, rand_gen):
     assert pred_1.prediction_model() == model_1
     assert pred_1.data_row() == data_row
     assert pred_1.project() == project
-    label_2 = project.create_label(data_row=data_row, label="test",
+    label_2 = project.create_label(data_row=data_row,
+                                   label="test",
                                    seconds_to_label=0.0)
 
     model_2 = project.create_prediction_model(rand_gen(str), 12)
