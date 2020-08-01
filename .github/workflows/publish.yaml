@@ -34,4 +34,5 @@ jobs:
 
     - name: Update help docs
       run: |
+        python setup.py install
         python ./tools/api_reference_generator.py ${{ secrets.HELPDOCS_API_KEY }}
