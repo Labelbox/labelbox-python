@@ -192,12 +192,14 @@ class Client:
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
         with open(path, "rb") as f:
-            return self.upload_data(
-                content=f.read(),
-                filename=filename,
-                content_type=content_type)
+            return self.upload_data(content=f.read(),
+                                    filename=filename,
+                                    content_type=content_type)
 
-    def upload_data(self, content: str, filename: str = None, content_type: str = None) -> str:
+    def upload_data(self,
+                    content: str,
+                    filename: str = None,
+                    content_type: str = None) -> str:
         """ Uploads the given data (bytes) to Labelbox.
 
         Args:
@@ -236,8 +238,7 @@ class Client:
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
-            files={"1": upload_data}
-        )
+            files={"1": upload_data})
 
         try:
             file_data = response.json().get("data", None)
