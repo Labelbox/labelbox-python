@@ -3,6 +3,7 @@ import json
 import logging
 import mimetypes
 import os
+from typing import Tuple
 
 import requests
 import requests.exceptions
@@ -176,7 +177,7 @@ class Client:
 
         return response["data"]
 
-    def upload_file(self, path):
+    def upload_file(self, path: str) -> str:
         """Uploads given path to local file.
 
         Also includes best guess at the content type of the file.
@@ -190,26 +191,36 @@ class Client:
 
         """
         content_type, _ = mimetypes.guess_type(path)
-        basename = os.path.basename(path)
+        filename = os.path.basename(path)
         with open(path, "rb") as f:
-            return self.upload_data(data=(basename, f.read(), content_type))
+            return self.upload_data(content=f.read(),
+                                    filename=filename,
+                                    content_type=content_type)
 
-    def upload_data(self, data):
+    def upload_data(self,
+                    content: bytes,
+                    filename: str = None,
+                    content_type: str = None) -> str:
         """ Uploads the given data (bytes) to Labelbox.
 
         Args:
-            data (bytes): The data to upload.
+            content: bytestring to upload
+            filename: name of the upload
+            content_type: content type of data uploaded
+
         Returns:
             str, the URL of uploaded data.
+
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
+
         request_data = {
             "operations":
                 json.dumps({
                     "variables": {
                         "file": None,
-                        "contentLength": len(data),
+                        "contentLength": len(content),
                         "sign": False
                     },
                     "query":
@@ -224,7 +235,10 @@ class Client:
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
-            files={"1": data})
+            files={
+                "1": (filename, content, content_type) if
+                     (filename and content_type) else content
+            })
 
         try:
             file_data = response.json().get("data", None)
