@@ -197,7 +197,7 @@ class Client:
                                     content_type=content_type)
 
     def upload_data(self,
-                    content: str,
+                    content: bytes,
                     filename: str = None,
                     content_type: str = None) -> str:
         """ Uploads the given data (bytes) to Labelbox.
@@ -214,9 +214,9 @@ class Client:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
         if filename and content_type:
-            upload_data = (filename, content, content_type)
+            upload_data: Tuple[str, bytes, str] = (filename, content, content_type)
         else:
-            upload_data = content
+            upload_data: bytes = content
 
         request_data = {
             "operations":
