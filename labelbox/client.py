@@ -214,7 +214,8 @@ class Client:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
         if filename and content_type:
-            upload_data: Tuple[str, bytes, str] = (filename, content, content_type)
+            upload_data: Tuple[str, bytes,
+                               str] = (filename, content, content_type)
         else:
             upload_data: bytes = content
 
