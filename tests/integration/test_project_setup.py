@@ -13,19 +13,24 @@ def simple_ontology():
         "name": "test_ontology",
         "instructions": "Which class is this?",
         "type": "radio",
-        "options": [{"value": c, "label": c} for c in ["one", "two", "three"]],
+        "options": [{
+            "value": c,
+            "label": c
+        } for c in ["one", "two", "three"]],
         "required": True,
     }]
 
     return {"tools": [], "classifications": classifications}
 
 
-def test_project_setup(project):
+def test_project_setup(project, iframe_url) -> None:
+
     client = project.client
-    labeling_frontends = list(client.get_labeling_frontends(
-        where=LabelingFrontend.iframe_url_path ==
-        "https://staging-image-segmentation-v4.labelbox.com"))
-    assert len(labeling_frontends) == 1
+    labeling_frontends = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.iframe_url_path == iframe_url))
+    assert len(labeling_frontends) == 1, (
+        f'Checking for {iframe_url} and received {labeling_frontends}')
     labeling_frontend = labeling_frontends[0]
 
     time.sleep(3)
@@ -33,7 +38,6 @@ def test_project_setup(project):
     project.setup(labeling_frontend, simple_ontology())
     assert now - project.setup_complete <= timedelta(seconds=3)
     assert now - project.last_activity_time <= timedelta(seconds=3)
-
 
     assert project.labeling_frontend() == labeling_frontend
     options = list(project.labeling_frontend_options())

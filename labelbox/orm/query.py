@@ -1,11 +1,9 @@
 from itertools import chain
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
+from labelbox.exceptions import InvalidQueryError, InvalidAttributeError, MalformedQueryException
 from labelbox.orm.comparison import LogicalExpression, Comparison
 from labelbox.orm.model import Field, Relationship, Entity
-
-
 """ Common query creation functionality. """
 
 
@@ -49,7 +47,11 @@ class Query:
     """ A data structure used during the construction of a query. Supports
     subquery (also Query object) nesting for relationship. """
 
-    def __init__(self, what, subquery, where=None, paginate=False,
+    def __init__(self,
+                 what,
+                 subquery,
+                 where=None,
+                 paginate=False,
                  order_by=None):
         """ Initializer.
         Args:
@@ -107,23 +109,22 @@ class Query:
             if node.op == LogicalExpression.Op.NOT:
                 return "{NOT: [%s]}" % format_where(node.first)
 
-            return "{%s: [%s, %s]}" % (
-                node.op.name.upper(), format_where(node.first),
-                format_where(node.second))
+            return "{%s: [%s, %s]}" % (node.op.name.upper(),
+                                       format_where(node.first),
+                                       format_where(node.second))
 
         paginate = "skip: %d first: %d" if self.paginate else ""
 
         where = "where: %s" % format_where(self.where) if self.where else ""
 
         if self.order_by:
-            order_by = "orderBy: %s_%s" % (
-                self.order_by[0].graphql_name, self.order_by[1].name.upper())
+            order_by = "orderBy: %s_%s" % (self.order_by[0].graphql_name,
+                                           self.order_by[1].name.upper())
         else:
             order_by = ""
 
         clauses = " ".join(filter(None, (where, paginate, order_by)))
         return "(" + clauses + ")" if clauses else ""
-
 
     def format(self):
         """ Formats the full query but without "query" prefix, query name
@@ -166,8 +167,8 @@ def get_single(entity, uid):
     """
     type_name = entity.type_name()
     where = entity.uid == uid if uid else None
-    return Query(utils.camel_case(type_name), entity, where).format_top(
-        "Get" + type_name)
+    return Query(utils.camel_case(type_name), entity,
+                 where).format_top("Get" + type_name)
 
 
 def logical_ops(where):
@@ -200,6 +201,7 @@ def check_where_clause(entity, where):
     Return:
         bool indicating if `where` is legal for `entity`.
     """
+
     def fields(where):
         """ Yields all the fields in a `where` clause. """
         if isinstance(where, LogicalExpression):
@@ -215,8 +217,9 @@ def check_where_clause(entity, where):
         raise InvalidAttributeError(entity, invalid_fields)
 
     if len(set(where_fields)) != len(where_fields):
-        raise InvalidQueryError("Where clause contains multiple comparisons for "
-                                "the same field: %r." % where)
+        raise InvalidQueryError(
+            "Where clause contains multiple comparisons for "
+            "the same field: %r." % where)
 
     if set(logical_ops(where)) not in (set(), {LogicalExpression.Op.AND}):
         raise InvalidQueryError("Currently only AND logical ops are allowed in "
@@ -292,8 +295,8 @@ def relationship(source, relationship, where, order_by):
     query_where = type(source).uid == source.uid if isinstance(source, Entity) \
         else None
     query = Query(utils.camel_case(source.type_name()), subquery, query_where)
-    return query.format_top(
-        "Get" + source.type_name() + utils.title_case(relationship.graphql_name))
+    return query.format_top("Get" + source.type_name() +
+                            utils.title_case(relationship.graphql_name))
 
 
 def create(entity, data):
@@ -313,18 +316,18 @@ def create(entity, data):
         if isinstance(attribute, Field):
             return "%s: $%s" % (attribute.graphql_name, param)
         else:
-            return "%s: {connect: {id: $%s}}" % (
-                utils.camel_case(attribute.graphql_name), param)
+            return "%s: {connect: {id: $%s}}" % (utils.camel_case(
+                attribute.graphql_name), param)
 
     # Convert data to params
-    params = {field.graphql_name: (value, field) for field, value in data.items()}
+    params = {
+        field.graphql_name: (value, field) for field, value in data.items()
+    }
 
     query_str = """mutation Create%sPyApi%s{create%s(data: {%s}) {%s}} """ % (
-        type_name,
-        format_param_declaration(params),
-        type_name,
-        " ".join(format_param_value(attribute, param)
-                 for param, (_, attribute) in params.items()),
+        type_name, format_param_declaration(params), type_name, " ".join(
+            format_param_value(attribute, param)
+            for param, (_, attribute) in params.items()),
         results_query_part(entity))
 
     return query_str, {name: value for name, (value, _) in params.items()}
@@ -358,15 +361,9 @@ def update_relationship(a, b, relationship, update):
 
     query_str = """mutation %s%sAnd%sPyApi%s{update%s(
         where: {id: $%s} data: {%s: {%s: %s}}) {id}} """ % (
-        utils.title_case(update),
-        type(a).type_name(),
-        type(b).type_name(),
-        param_declr,
-        utils.title_case(type(a).type_name()),
-        a_uid_param,
-        relationship.graphql_name,
-        update,
-        b_query)
+        utils.title_case(update), type(a).type_name(), type(b).type_name(),
+        param_declr, utils.title_case(type(a).type_name()), a_uid_param,
+        relationship.graphql_name, update, b_query)
 
     if to_one_disconnect:
         params = {a_uid_param: a.uid}
@@ -391,18 +388,15 @@ def update_fields(db_object, values):
     id_param = "%sId" % type_name
     values_str = " ".join("%s: $%s" % (field.graphql_name, field.graphql_name)
                           for field, _ in values.items())
-    params = {field.graphql_name: (value, field) for field, value
-              in values.items()}
+    params = {
+        field.graphql_name: (value, field) for field, value in values.items()
+    }
     params[id_param] = (db_object.uid, Entity.uid)
 
     query_str = """mutation update%sPyApi%s{update%s(
         where: {id: $%s} data: {%s}) {%s}} """ % (
-        utils.title_case(type_name),
-        format_param_declaration(params),
-        type_name,
-        id_param,
-        values_str,
-        results_query_part(type(db_object)))
+        utils.title_case(type_name), format_param_declaration(params),
+        type_name, id_param, values_str, results_query_part(type(db_object)))
 
     return query_str, {name: value for name, (value, _) in params.items()}
 
@@ -416,13 +410,10 @@ def delete(db_object):
     id_param = "%sId" % db_object.type_name()
     query_str = """mutation delete%sPyApi%s{update%s(
         where: {id: $%s} data: {deleted: true}) {id}} """ % (
-            db_object.type_name(),
-            "($%s: ID!)" % id_param,
-            db_object.type_name(),
-            id_param)
+        db_object.type_name(), "($%s: ID!)" % id_param, db_object.type_name(),
+        id_param)
 
     return query_str, {id_param: db_object.uid}
-
 
 
 def bulk_delete(db_objects, use_where_clause):
@@ -440,9 +431,7 @@ def bulk_delete(db_objects, use_where_clause):
     else:
         query_str = "mutation delete%ssPyApi{delete%ss(%sIds: [%s]){id}}"
     query_str = query_str % (
-        utils.title_case(type_name),
-        utils.title_case(type_name),
-        utils.camel_case(type_name),
-        ", ".join('"%s"' % db_object.uid for db_object in db_objects)
-    )
+        utils.title_case(type_name), utils.title_case(type_name),
+        utils.camel_case(type_name), ", ".join(
+            '"%s"' % db_object.uid for db_object in db_objects))
     return query_str, {}

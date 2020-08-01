@@ -21,6 +21,7 @@ class Benchmark(DbObject):
     def delete(self):
         label_param = "labelId"
         query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
-            deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
-                label_param, label_param)
-        self.client.execute(query_str, {label_param: self.reference_label().uid})
+            deleteBenchmark(where: {labelId: $%s}) {id}} """ % (label_param,
+                                                                label_param)
+        self.client.execute(query_str,
+                            {label_param: self.reference_label().uid})

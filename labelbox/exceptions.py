@@ -1,5 +1,6 @@
 class LabelboxError(Exception):
     """Base class for exceptions."""
+
     def __init__(self, message, cause=None):
         """
         Args:
@@ -34,8 +35,8 @@ class ResourceNotFoundError(LabelboxError):
             db_object_type (type): A labelbox.schema.DbObject subtype.
             params (dict): Dict of params identifying the sought resource.
         """
-        super().__init__("Resouce '%s' not found for params: %r" % (
-            db_object_type.type_name(), params))
+        super().__init__("Resouce '%s' not found for params: %r" %
+                         (db_object_type.type_name(), params))
         self.db_object_type = db_object_type
         self.params = params
 
@@ -56,6 +57,7 @@ class InvalidQueryError(LabelboxError):
 
 class NetworkError(LabelboxError):
     """Raised when an HTTPError occurs."""
+
     def __init__(self, cause):
         super().__init__(str(cause), cause)
         self.cause = cause
@@ -69,9 +71,10 @@ class TimeoutError(LabelboxError):
 class InvalidAttributeError(LabelboxError):
     """ Raised when a field (name or Field instance) is not valid or found
     for a specific DB object type. """
+
     def __init__(self, db_object_type, field):
-        super().__init__("Field(s) '%r' not valid on DB type '%s'" % (
-            field, db_object_type.type_name()))
+        super().__init__("Field(s) '%r' not valid on DB type '%s'" %
+                         (field, db_object_type.type_name()))
         self.db_object_type = db_object_type
         self.field = field
 
@@ -79,4 +82,9 @@ class InvalidAttributeError(LabelboxError):
 class ApiLimitError(LabelboxError):
     """ Raised when the user performs too many requests in a short period
     of time. """
+    pass
+
+
+class MalformedQueryException(Exception):
+    """ Raised when the user submits a malformed query."""
     pass

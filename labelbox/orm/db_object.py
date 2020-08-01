@@ -2,11 +2,10 @@ from datetime import datetime, timezone
 import logging
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
 from labelbox.orm import query
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.pagination import PaginatedCollection
-
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +61,9 @@ class DbObject(Entity):
                     value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
                     value = value.replace(tzinfo=timezone.utc)
                 except ValueError:
-                    logger.warning("Failed to convert value '%s' to datetime for "
-                                   "field %s", value, field)
+                    logger.warning(
+                        "Failed to convert value '%s' to datetime for "
+                        "field %s", value, field)
             setattr(self, field.name, value)
 
     def __repr__(self):
@@ -74,10 +74,10 @@ class DbObject(Entity):
             return "<%s>" % type_name
 
     def __str__(self):
-        attribute_values = {field.name: getattr(self, field.name)
-                            for field in self.fields()}
-        return "<%s %s>" % (self.type_name().split(".")[-1],
-                                attribute_values)
+        attribute_values = {
+            field.name: getattr(self, field.name) for field in self.fields()
+        }
+        return "<%s %s>" % (self.type_name().split(".")[-1], attribute_values)
 
     def __eq__(self, other):
         return self.type_name() == other.type_name() and self.uid == other.uid
@@ -105,7 +105,7 @@ class RelationshipManager:
         self.supports_sorting = True
         self.filter_on_id = True
 
-    def __call__(self, *args, **kwargs ):
+    def __call__(self, *args, **kwargs):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
         depending on relationship type. """
         if self.relationship.relationship_type == Relationship.Type.ToMany:
@@ -125,32 +125,30 @@ class RelationshipManager:
 
         if where is not None and not self.supports_filtering:
             raise InvalidQueryError(
-                "Relationship %s.%s doesn't support filtering" % (
-                self.source.type_name(), rel.name))
+                "Relationship %s.%s doesn't support filtering" %
+                (self.source.type_name(), rel.name))
         if order_by is not None and not self.supports_sorting:
             raise InvalidQueryError(
-                "Relationship %s.%s doesn't support sorting" % (
-                self.source.type_name(), rel.name))
+                "Relationship %s.%s doesn't support sorting" %
+                (self.source.type_name(), rel.name))
 
         if rel.filter_deleted:
             not_deleted = rel.destination_type.deleted == False
             where = not_deleted if where is None else where & not_deleted
 
         query_string, params = query.relationship(
-            self.source if self.filter_on_id else type(self.source),
-            rel, where, order_by)
+            self.source if self.filter_on_id else type(self.source), rel, where,
+            order_by)
         return PaginatedCollection(
             self.source.client, query_string, params,
-            [utils.camel_case(self.source.type_name()),
-             rel.graphql_name],
+            [utils.camel_case(self.source.type_name()), rel.graphql_name],
             rel.destination_type)
 
     def _to_one(self):
         """ Returns the relationship destination object. """
         rel = self.relationship
 
-        query_string, params = query.relationship(
-            self.source, rel, None, None)
+        query_string, params = query.relationship(self.source, rel, None, None)
         result = self.source.client.execute(query_string, params)
         result = result[utils.camel_case(type(self.source).type_name())]
         result = result[rel.graphql_name]
@@ -172,6 +170,7 @@ class RelationshipManager:
 
 
 class Updateable:
+
     def update(self, **kwargs):
         """ Updates this DB object with new values. Values should be
         passed as key-value arguments with field names as keys:
@@ -216,6 +215,7 @@ class BulkDeletable:
     with the appropriate `use_where_clause` argument for that particular
     type.
     """
+
     @staticmethod
     def _bulk_delete(objects, use_where_clause):
         """
@@ -234,7 +234,6 @@ class BulkDeletable:
 
         query_str, params = query.bulk_delete(objects, use_where_clause)
         objects[0].client.execute(query_str, params)
-
 
     def delete(self):
         """ Deletes this DB object from the DB (server side). After

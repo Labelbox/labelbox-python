@@ -1,11 +1,11 @@
 from labelbox import DataRow
 
-
 IMG_URL = "https://picsum.photos/200/300"
 
 
 def test_labeling_parameter_overrides(project, rand_gen):
-    dataset = project.client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = project.client.create_dataset(name=rand_gen(str),
+                                            projects=project)
 
     task = dataset.create_data_rows([{DataRow.row_data: IMG_URL}] * 20)
     task.wait_till_done()
@@ -25,8 +25,8 @@ def test_labeling_parameter_overrides(project, rand_gen):
     assert {o.number_of_labels for o in overrides} == {3, 2, 5}
     assert {o.priority for o in overrides} == {4, 3, 8}
 
-    success = project.unset_labeling_parameter_overrides([
-        data[0][0], data[1][0]])
+    success = project.unset_labeling_parameter_overrides(
+        [data[0][0], data[1][0]])
     assert success
 
     # TODO ensure that the labeling parameter overrides are removed

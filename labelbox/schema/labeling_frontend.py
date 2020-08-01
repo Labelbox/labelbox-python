@@ -21,5 +21,3 @@ class LabelingFrontendOptions(DbObject):
     project = Relationship.ToOne("Project")
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     organization = Relationship.ToOne("Organization")
-
-

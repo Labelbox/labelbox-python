@@ -5,7 +5,6 @@ from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +26,7 @@ class Task(DbObject):
         """ Refreshes Task data from the server. """
         tasks = list(self._user.created_tasks(where=Task.uid == self.uid))
         if len(tasks) != 1:
-            raise ResourceNotFoundError(Task, task_id)
+            raise ResourceNotFoundError(Task, self.uid)
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
@@ -38,7 +37,7 @@ class Task(DbObject):
             timeout_seconds (float): Maximum time this method can block, in
                 seconds. Defaults to one minute.
         """
-        check_frequency = 2 # frequency of checking, in seconds
+        check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
                 return
@@ -50,4 +49,3 @@ class Task(DbObject):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
-

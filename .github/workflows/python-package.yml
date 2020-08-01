@@ -1,0 +1,58 @@
+name: Labelbox Python SDK
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        python-version: [3.6, 3.7]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+        ref: ${{ github.head_ref }}
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: yapf
+      id: yapf
+      uses: AlexanderMelde/yapf-action@master
+      with:
+        args: --verbose --recursive --parallel --style "google"
+
+    - name: install labelbox package
+      run: |
+        python setup.py install
+    - name: mypy
+      run: |
+        python -m pip install --upgrade pip
+        pip install mypy==0.782
+        mypy -p labelbox --pretty --show-error-codes
+    - name: Install package and test dependencies
+      run: |
+        pip install tox==3.18.1 tox-gh-actions==1.3.0
+
+    - name: Test with tox
+      env:
+        # make sure to tell tox to use these environs in tox.ini
+        LABELBOX_TEST_API_KEY: ${{ secrets.LABELBOX_API_KEY }}
+        LABELBOX_TEST_ENDPOINT: "https://api.labelbox.com/graphql"
+        # TODO: create a staging environment (develop)
+        # we only test against prod right now because the merges are right into
+        # the main branch which is develop right now
+        LABELBOX_TEST_ENVIRON: "PROD"
+      run: |
+        tox -- -svv

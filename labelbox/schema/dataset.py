@@ -2,7 +2,7 @@ import json
 from multiprocessing.dummy import Pool as ThreadPool
 import os
 
-from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError
+from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
@@ -93,8 +93,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 item_url = self.client.upload_file(item)
                 # Convert item from str into a dict so it gets processed
                 # like all other dicts.
-                item = {DataRow.row_data: item_url,
-                        DataRow.external_id: item}
+                item = {DataRow.row_data: item_url, DataRow.external_id: item}
             return item
 
         with ThreadPool(file_upload_thread_count) as thread_pool:
@@ -102,8 +101,10 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def convert_item(item):
             # Convert string names to fields.
-            item = {key if isinstance(key, Field) else DataRow.field(key): value
-                    for key, value in item.items()}
+            item = {
+                key if isinstance(key, Field) else DataRow.field(key): value
+                for key, value in item.items()
+            }
 
             if DataRow.row_data not in item:
                 raise InvalidQueryError(
@@ -111,12 +112,14 @@ class Dataset(DbObject, Updateable, Deletable):
 
             invalid_keys = set(item) - set(DataRow.fields())
             if invalid_keys:
-                raise InvalidAttributeError(DataRow, invalid_fields)
+                raise InvalidAttributeError(DataRow, invalid_keys)
 
             # Item is valid, convert it to a dict {graphql_field_name: value}
             # Need to change the name of DataRow.row_data to "data"
-            return {"data" if key == DataRow.row_data else key.graphql_name: value
-                    for key, value in item.items()}
+            return {
+                "data" if key == DataRow.row_data else key.graphql_name: value
+                for key, value in item.items()
+            }
 
         # Prepare and upload the desciptor file
         data = json.dumps([convert_item(item) for item in items])
@@ -127,10 +130,12 @@ class Dataset(DbObject, Updateable, Deletable):
         url_param = "jsonUrl"
         query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
             appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
-            ){ taskId accepted } } """ % (
-                dataset_param, url_param, dataset_param, url_param)
-        res = self.client.execute(
-            query_str, {dataset_param: self.uid, url_param: descriptor_url})
+            ){ taskId accepted } } """ % (dataset_param, url_param,
+                                          dataset_param, url_param)
+        res = self.client.execute(query_str, {
+            dataset_param: self.uid,
+            url_param: descriptor_url
+        })
         res = res["appendRowsToDataset"]
         if not res["accepted"]:
             raise InvalidQueryError(
@@ -165,7 +170,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 multiple `DataRows` for it.
         """
         DataRow = Entity.DataRow
-        where = DataRow.external_id==external_id
+        where = DataRow.external_id == external_id
 
         data_rows = self.data_rows(where=where)
         # Get at most two data_rows.

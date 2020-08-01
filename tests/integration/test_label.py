@@ -5,7 +5,6 @@ import requests
 
 from labelbox import Label
 
-
 IMG_URL = "https://picsum.photos/200/300"
 
 
@@ -31,6 +30,7 @@ def test_labels(label_pack):
     assert list(data_row.labels()) == []
 
 
+@pytest.mark.skip
 def test_label_export(label_pack):
     project, dataset, data_row, label = label_pack
     project.create_label(data_row=data_row, label="l2")
@@ -79,7 +79,8 @@ def test_label_filter_order(client, rand_gen):
 
 
 def test_label_bulk_deletion(project, rand_gen):
-    dataset = project.client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = project.client.create_dataset(name=rand_gen(str),
+                                            projects=project)
     row_1 = dataset.create_data_row(row_data=IMG_URL)
     row_2 = dataset.create_data_row(row_data=IMG_URL)
 
@@ -93,6 +94,11 @@ def test_label_bulk_deletion(project, rand_gen):
     assert set(project.labels()) == {l1, l2, l3}
 
     Label.bulk_delete([l1, l3])
+
+    # TODO: the sdk client should really abstract all these timing issues away
+    # but for now bulk deletes take enough time that this test is flaky
+    # add sleep here to avoid that flake
+    time.sleep(2)
 
     assert set(project.labels()) == {l2}
 
