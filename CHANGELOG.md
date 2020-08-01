@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.4.2 (2020-08-01)
+### Fixed
+* `Client.upload_data` will now pass the correct `content-length` when uploading data.
+
 ## Version 2.4.1 (2020-07-22)
 ### Fixed
 * `Dataset.create_data_row` and `Dataset.create_data_rows` will now upload with content type to ensure the Labelbox editor can show videos.

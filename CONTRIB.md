@@ -45,12 +45,13 @@ Each release should follow the following steps:
 2. Make sure the `CHANGELOG.md` contains appropriate info 
 3. Commit these changes and tag the commit in Git as `vX.Y`
 4. Merge `develop` to `master` (fast-forward only).
-5. Generate a GitHub release.
-6. Build the library in the [standard
-   way](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
-7. Upload the distribution archives in the [standard
-   way](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
-You will need credentials for the `labelbox` PyPI user.
-8. Run the `REPO_ROOT/tools/api_reference_generator.py` script to update
-   [HelpDocs documentation](https://labelbox.helpdocs.io/docs/). You will need
-   to provide a HelpDocs API key for.
+5. Create a GitHub release.
+6. This will kick off a Github Actions workflow that will:
+  - Build the library in the [standard
+  way](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
+  - Upload the distribution archives in the [standard
+  way](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives)
+  with credentials for the `labelbox` PyPI user.
+  - Run the `REPO_ROOT/tools/api_reference_generator.py` script to update
+  [HelpDocs documentation](https://labelbox.helpdocs.io/docs/). You will need
+  to provide a HelpDocs API key for.
