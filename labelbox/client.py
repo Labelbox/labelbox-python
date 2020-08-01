@@ -236,8 +236,8 @@ class Client:
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
             files={
-                "1": (filename, content,
-                      content_type) if filename and content_type else content
+                "1": (filename, content, content_type) if
+                     (filename and content_type) else content
             })
 
         try:
