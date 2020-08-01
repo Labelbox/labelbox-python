@@ -108,3 +108,10 @@ def iframe_url(environ) -> str:
         Environ.PROD: 'https://editor.labelbox.com',
         Environ.STAGING: 'https://staging-editor.labelbox.com',
     }[environ]
+
+
+@pytest.fixture
+def sample_video() -> str:
+    path_to_video = 'tests/integration/media/cat.mp4'
+    assert os.path.exists(path_to_video)
+    return path_to_video

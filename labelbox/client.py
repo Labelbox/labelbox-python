@@ -3,6 +3,7 @@ import json
 import logging
 import mimetypes
 import os
+from typing import Tuple
 
 import requests
 import requests.exceptions
@@ -213,11 +214,6 @@ class Client:
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
-        if filename and content_type:
-            upload_data: Tuple[str, bytes,
-                               str] = (filename, content, content_type)
-        else:
-            upload_data: bytes = content
 
         request_data = {
             "operations":
@@ -239,7 +235,10 @@ class Client:
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
-            files={"1": upload_data})
+            files={
+                "1": (filename, content,
+                      content_type) if filename and content_type else content
+            })
 
         try:
             file_data = response.json().get("data", None)
