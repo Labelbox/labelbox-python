@@ -49,7 +49,7 @@ class Webhook(DbObject, Updateable):
         query_str = """mutation CreateWebhookPyApi {
             createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
         } """ % (project_str, " ".join(topics), url, secret,
-                query.results_query_part(Entity.Webhook))
+                 query.results_query_part(Entity.Webhook))
 
         return Webhook(client, client.execute(query_str)["createWebhook"])
 
@@ -74,7 +74,8 @@ class Webhook(DbObject, Updateable):
 
         query_str = """mutation UpdateWebhookPyApi {
             updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
-            self.uid, ", ".join(filter(None, (topics_str, url_str, status_str))),
+            self.uid, ", ".join(filter(None,
+                                       (topics_str, url_str, status_str))),
             query.results_query_part(Entity.Webhook))
 
         self._set_field_values(self.client.execute(query_str)["updateWebhook"])

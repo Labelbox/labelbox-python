@@ -1,6 +1,5 @@
 from labelbox import utils
 
-
 SNAKE = "this_is_a_string"
 TITLE = "ThisIsAString"
 CAMEL = "thisIsAString"
