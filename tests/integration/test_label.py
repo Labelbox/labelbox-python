@@ -98,7 +98,7 @@ def test_label_bulk_deletion(project, rand_gen):
     # TODO: the sdk client should really abstract all these timing issues away
     # but for now bulk deletes take enough time that this test is flaky
     # add sleep here to avoid that flake
-    time.sleep(2)
+    time.sleep(5)
 
     assert set(project.labels()) == {l2}
 
