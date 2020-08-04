@@ -313,8 +313,8 @@ class BulkImportRequest(DbObject):
         user = result.pop("createdBy")
         bulk_import_request = BulkImportRequest(client, result)
         if project is not None:
-            bulk_import_request.__project = Project(client,
-                                                    project)  # type: ignore
+            bulk_import_request.__project = Project(  # type: ignore
+                client, project)
         if user is not None:
             bulk_import_request.__user = User(client, user)  # type: ignore
         return bulk_import_request
