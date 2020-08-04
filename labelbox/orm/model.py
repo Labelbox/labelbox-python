@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import Union
 
 from labelbox import utils
-from labelbox.exceptions import InvalidAttributeError, LabelboxError
+from labelbox.exceptions import InvalidAttributeError
 from labelbox.orm.comparison import Comparison
 """ Defines Field, Relationship and Entity. These classes are building
 blocks for defining the Labelbox schema, DB object operations and
@@ -45,7 +45,7 @@ class Field:
 
     class EnumType:
 
-        def __init__(self, enum_cls: type(Enum)):
+        def __init__(self, enum_cls: type):
             self.enum_cls = enum_cls
 
         @property
@@ -82,7 +82,7 @@ class Field:
         return Field(Field.Type.DateTime, *args)
 
     @staticmethod
-    def Enum(enum_cls: type(Enum), *args):
+    def Enum(enum_cls: type, *args):
         return Field(Field.EnumType(enum_cls), *args)
 
     def __init__(self,

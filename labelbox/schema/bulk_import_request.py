@@ -7,7 +7,7 @@ from typing import Iterable
 from typing import Tuple
 from typing import Union
 
-import backoff as backoff
+import backoff
 import ndjson
 import requests
 
@@ -130,6 +130,7 @@ class BulkImportRequest(DbObject):
         request_data = cls.__make_request_data(project_id, name, content_length,
                                                file_name)
         with file.open('rb') as f:
+            file_data: Tuple[str, Union[bytes, BinaryIO], str]
             if validate_file:
                 data = f.read()
                 try:
@@ -212,13 +213,14 @@ class BulkImportRequest(DbObject):
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
 
-    # TODO(gszpak): project() and user() methods are hacky ways to eagerly load the relationships
-    def project(self):
+    # TODO(gszpak): project() and created_by() methods
+    # TODO(gszpak): are hacky ways to eagerly load the relationships
+    def project(self):  # type: ignore
         if self.__project is not None:
             return self.__project
         return None
 
-    def created_by(self):
+    def created_by(self):  # type: ignore
         if self.__user is not None:
             return self.__user
         return None
@@ -311,7 +313,8 @@ class BulkImportRequest(DbObject):
         user = result.pop("createdBy")
         bulk_import_request = BulkImportRequest(client, result)
         if project is not None:
-            bulk_import_request.__project = Project(client, project)
+            bulk_import_request.__project = Project(client,
+                                                    project)  # type: ignore
         if user is not None:
-            bulk_import_request.__user = User(client, user)
+            bulk_import_request.__user = User(client, user)  # type: ignore
         return bulk_import_request
