@@ -44,6 +44,7 @@ class Field:
         DateTime = auto()
 
     class EnumType:
+
         def __init__(self, enum_cls: type(Enum)):
             self.enum_cls = enum_cls
 
@@ -84,7 +85,10 @@ class Field:
     def Enum(enum_cls: type(Enum), *args):
         return Field(Field.EnumType(enum_cls), *args)
 
-    def __init__(self, field_type: Union[Type, EnumType], name, graphql_name=None):
+    def __init__(self,
+                 field_type: Union[Type, EnumType],
+                 name,
+                 graphql_name=None):
         """ Field init.
         Args:
             field_type (Field.Type): The type of the field.

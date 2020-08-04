@@ -36,9 +36,8 @@ class BulkImportRequest(DbObject):
     state = Field.Enum(BulkImportRequestState, "state")
 
     @classmethod
-    def create_from_url(
-            cls, client: Client, project_id: str, name: str,
-            url: str) -> 'BulkImportRequest':
+    def create_from_url(cls, client: Client, project_id: str, name: str,
+                        url: str) -> 'BulkImportRequest':
         """
         Creates a BulkImportRequest from a publicly accessible URL
         to an ndjson file with predictions.
@@ -62,19 +61,14 @@ class BulkImportRequest(DbObject):
             }
         }
         """ % cls.__build_results_query_part()
-        params = {
-            "projectId": project_id,
-            "name": name,
-            "fileUrl": url
-        }
+        params = {"projectId": project_id, "name": name, "fileUrl": url}
         bulk_import_request_response = client.execute(query_str, params=params)
         return cls.__build_bulk_import_request_from_result(
             client, bulk_import_request_response["createBulkImportRequest"])
 
     @classmethod
-    def create_from_objects(
-            cls, client: Client, project_id: str, name: str,
-            predictions: Iterable[dict]) -> 'BulkImportRequest':
+    def create_from_objects(cls, client: Client, project_id: str, name: str,
+                            predictions: Iterable[dict]) -> 'BulkImportRequest':
         """
         Creates a BulkImportRequest from an iterable of dictionaries conforming to
         JSON predictions format, e.g.:
@@ -103,17 +97,21 @@ class BulkImportRequest(DbObject):
         data_str = ndjson.dumps(predictions)
         data = data_str.encode('utf-8')
         file_name = cls.__make_file_name(project_id, name)
-        request_data = cls.__make_request_data(project_id, name, len(data_str), file_name)
+        request_data = cls.__make_request_data(project_id, name, len(data_str),
+                                               file_name)
         file_data = (file_name, data, NDJSON_MIME_TYPE)
-        response_data = cls.__send_create_file_command(
-            client, request_data, file_name, file_data)
+        response_data = cls.__send_create_file_command(client, request_data,
+                                                       file_name, file_data)
         return cls.__build_bulk_import_request_from_result(
             client, response_data["createBulkImportRequest"])
 
     @classmethod
-    def create_from_local_file(
-            cls, client: Client, project_id: str, name: str,
-            file: Path, validate_file=True) -> 'BulkImportRequest':
+    def create_from_local_file(cls,
+                               client: Client,
+                               project_id: str,
+                               name: str,
+                               file: Path,
+                               validate_file=True) -> 'BulkImportRequest':
         """
         Creates a BulkImportRequest from a local ndjson file with predictions.
 
@@ -129,7 +127,8 @@ class BulkImportRequest(DbObject):
         """
         file_name = cls.__make_file_name(project_id, name)
         content_length = file.stat().st_size
-        request_data = cls.__make_request_data(project_id, name, content_length, file_name)
+        request_data = cls.__make_request_data(project_id, name, content_length,
+                                               file_name)
         with file.open('rb') as f:
             if validate_file:
                 data = f.read()
@@ -147,7 +146,8 @@ class BulkImportRequest(DbObject):
 
     # TODO(gszpak): building query body should be handled by the client
     @classmethod
-    def get(cls, client: Client, project_id: str, name: str) -> 'BulkImportRequest':
+    def get(cls, client: Client, project_id: str,
+            name: str) -> 'BulkImportRequest':
         """
         Fetches existing BulkImportRequest.
 
@@ -168,10 +168,7 @@ class BulkImportRequest(DbObject):
             }
         }
         """ % cls.__build_results_query_part()
-        params = {
-            "projectId": project_id,
-            "name": name
-        }
+        params = {"projectId": project_id, "name": name}
         bulk_import_request_kwargs = \
             client.execute(query_str, params=params).get("bulkImportRequest")
         if bulk_import_request_kwargs is None:
@@ -180,18 +177,19 @@ class BulkImportRequest(DbObject):
                     "projectId": project_id,
                     "name": name
                 })
-        return cls.__build_bulk_import_request_from_result(client, bulk_import_request_kwargs)
+        return cls.__build_bulk_import_request_from_result(
+            client, bulk_import_request_kwargs)
 
     def refresh(self) -> None:
         """
         Synchronizes values of all fields with the database.
         """
-        bulk_import_request = self.get(self.client, self.project().uid, self.name)
+        bulk_import_request = self.get(self.client,
+                                       self.project().uid, self.name)
         for field in self.fields():
             setattr(self, field.name, getattr(bulk_import_request, field.name))
 
-    def wait_until_done(
-            self, sleep_time_seconds: int = 30) -> None:
+    def wait_until_done(self, sleep_time_seconds: int = 30) -> None:
         """
         Blocks until the BulkImportRequest.state changes either to
         `BulkImportRequestState.FINISHED` or `BulkImportRequestState.FAILED`,
@@ -207,14 +205,10 @@ class BulkImportRequest(DbObject):
 
     @backoff.on_exception(
         backoff.expo,
-        (
-                labelbox.exceptions.ApiLimitError,
-                labelbox.exceptions.TimeoutError,
-                labelbox.exceptions.NetworkError
-        ),
+        (labelbox.exceptions.ApiLimitError, labelbox.exceptions.TimeoutError,
+         labelbox.exceptions.NetworkError),
         max_tries=10,
-        jitter=None
-    )
+        jitter=None)
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
 
@@ -235,9 +229,8 @@ class BulkImportRequest(DbObject):
 
     # TODO(gszpak): move it to client.py
     @classmethod
-    def __make_request_data(
-            cls, project_id: str, name: str,
-            content_length: int, file_name: str) -> dict:
+    def __make_request_data(cls, project_id: str, name: str,
+                            content_length: int, file_name: str) -> dict:
         query_str = """mutation createBulkImportRequestFromFilePyApi(
                 $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createBulkImportRequest(data: {
@@ -258,36 +251,23 @@ class BulkImportRequest(DbObject):
             "file": None,
             "contentLength": content_length
         }
-        operations = json.dumps({
-            "variables": variables,
-            "query": query_str
-        })
+        operations = json.dumps({"variables": variables, "query": query_str})
 
         return {
             "operations": operations,
-            "map": (
-                None,
-                json.dumps({
-                    file_name: ["variables.file"]
-                })
-            )
+            "map": (None, json.dumps({file_name: ["variables.file"]}))
         }
 
     # TODO(gszpak): move it to client.py
     @classmethod
     def __send_create_file_command(
-            cls, client: Client, request_data: dict,
-            file_name: str, file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
+            cls, client: Client, request_data: dict, file_name: str,
+            file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
         response = requests.post(
             client.endpoint,
-            headers={
-                "authorization": "Bearer %s" % client.api_key
-            },
+            headers={"authorization": "Bearer %s" % client.api_key},
             data=request_data,
-            files={
-                file_name: file_data
-            }
-        )
+            files={file_name: file_data})
 
         try:
             response_json = response.json()
@@ -298,12 +278,14 @@ class BulkImportRequest(DbObject):
         response_data = response_json.get("data", None)
         if response_data is None:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % response_json.get("errors", None))
+                "Failed to upload, message: %s" %
+                response_json.get("errors", None))
 
         if not response_data.get("createBulkImportRequest", None):
             raise labelbox.exceptions.LabelboxError(
                 "Failed to create BulkImportRequest, message: %s" %
-                response_json.get("errors", None) or response_data.get("error", None))
+                response_json.get("errors", None) or
+                response_data.get("error", None))
 
         return response_data
 
@@ -318,11 +300,9 @@ class BulkImportRequest(DbObject):
                 %s
             }
             %s
-        """ % (
-            query.results_query_part(Project),
-            query.results_query_part(User),
-            query.results_query_part(BulkImportRequest)
-        )
+        """ % (query.results_query_part(Project),
+               query.results_query_part(User),
+               query.results_query_part(BulkImportRequest))
 
     @classmethod
     def __build_bulk_import_request_from_result(
