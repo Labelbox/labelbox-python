@@ -353,45 +353,66 @@ class Project(DbObject, Updateable, Deletable):
         return Prediction(self.client, res["createPrediction"])
 
     def upload_annotations(
-            self,
-            name: str,
-            url: str = None,
-            path: str = None,
-            annotations: Iterable[dict] = None
-    ) -> None:
+        self,
+        name: str,
+        annotations: Union[str, Iterable[dict]],
+        validate_file: bool = True,
+    ) -> 'BulkImportRequest':
+        """ Uploads annotations to a project.
 
-        exclusionary_args = iter((url, path, annotations))
-        # any will stop iteration when it finds a single truthy value
-        # not any will continue with where the iteration left off and
-        # check the rest are falsy
-        assert (any(exclusionary_args)
-                and not any(exclusionary_args)), (
-            'Only one of url, path, or annotations can be specified.'
-            )
+        Args:
+            name: name of the BulkImportRequest job
+            annotations:
+                url that is publically accessible by Labelbox containing an
+                ndjson file
+                OR local path to an ndjson file
+                OR iterable of annotation rows
+            validate_file: a flag indicating if validation should be performed
+                on the local ndjson file specified as `annotations`
+        Returns:
+            BulkImportRequest
 
+        """
         shared_args = {
             'client': self.client,
             'project_id': self.uid,
-            'name': name
+            'name': name,
         }
 
-        if url:
-            return BulkImportRequest.create_from_url(
-                **shared_args,
-                url=url,
-            )
-        if file:
-            return BulkImportRequest.create_from_local_file(
-                **shared_args,
-                file=file,
-                validate_file=True,
-            )
-        if annotations:
+        if isinstance(annotations, str):
+
+            def _is_url_valid(url: str) -> bool:
+                """ Verifies that the given string is a valid url.
+
+                Args:
+                    url: string to be checked
+                Returns:
+                    True if the given url is valid otherwise False
+
+                """
+                parsed = urlparse(url)
+                return parsed.http and parsed.netloc
+
+            if _is_url_valid(annotations):
+                return BulkImportRequest.create_from_url(
+                    **shared_args,
+                    url=annotations,
+                )
+            else:
+                if not os.path.exists(annotations):
+                    raise FileNotFoundError(
+                        f'{annotations} is not a valid url nor existing local file'
+                    )
+                return BulkImportRequest.create_from_local_file(
+                    **shared_args,
+                    file=annotations,
+                    validate_file=True,
+                )
+        else:
             return BulkImportRequest.create_from_objects(
                 **shared_args,
                 predictions=annotations,
             )
-
 
 
 class LabelingParameterOverride(DbObject):
