@@ -2,6 +2,7 @@ from collections import namedtuple
 from datetime import datetime, timezone
 import json
 import logging
+from urllib.parse import ulrparse
 import time
 from typing import Union, Iterable
 
@@ -357,19 +358,16 @@ class Project(DbObject, Updateable, Deletable):
         self,
         name: str,
         annotations: Union[str, Iterable[dict]],
-        validate_file: bool = True,
     ) -> 'BulkImportRequest':
         """ Uploads annotations to a project.
 
         Args:
             name: name of the BulkImportRequest job
             annotations:
-                url that is publically accessible by Labelbox containing an
+                url that is publicly accessible by Labelbox containing an
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
-            validate_file: a flag indicating if validation should be performed
-                on the local ndjson file specified as `annotations`
         Returns:
             BulkImportRequest
 
@@ -400,13 +398,14 @@ class Project(DbObject, Updateable, Deletable):
                     url=annotations,
                 )
             else:
-                if not os.path.exists(annotations):
+                path = Path(annotations)
+                if not path.exists():
                     raise FileNotFoundError(
                         f'{annotations} is not a valid url nor existing local file'
                     )
                 return BulkImportRequest.create_from_local_file(
                     **shared_args,
-                    file=annotations,
+                    file=path,
                     validate_file=True,
                 )
         else:
@@ -424,5 +423,5 @@ class LabelingParameterOverride(DbObject):
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
     "consensus average_benchmark_agreement last_activity_time")
-LabelerPerformance.__doc__ = "Named tuple containing info about a labeler's " \
-    "performance."
+LabelerPerformance.__doc__ = (
+    "Named tuple containing info about a labeler's performance.")

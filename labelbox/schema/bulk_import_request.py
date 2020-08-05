@@ -25,6 +25,85 @@ NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
 
+def __make_file_name(project_id: str, name: str) -> str:
+    return f"{project_id}__{name}.ndjson"
+
+
+# TODO(gszpak): all the code below should be handled automatically by Relationship
+def __build_results_query_part() -> str:
+    return """
+        project {
+            %s
+        }
+        createdBy {
+            %s
+        }
+        %s
+    """ % (query.results_query_part(Project), query.results_query_part(User),
+           query.results_query_part(BulkImportRequest))
+
+
+# TODO(gszpak): move it to client.py
+def _make_request_data(project_id: str, name: str, content_length: int,
+                       file_name: str) -> dict:
+    query_str = """mutation createBulkImportRequestFromFilePyApi(
+            $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        createBulkImportRequest(data: {
+            projectId: $projectId,
+            name: $name,
+            filePayload: {
+                file: $file,
+                contentLength: $contentLength
+            }
+        }) {
+            %s
+        }
+    }
+    """ % __build_results_query_part()
+    variables = {
+        "projectId": project_id,
+        "name": name,
+        "file": None,
+        "contentLength": content_length
+    }
+    operations = json.dumps({"variables": variables, "query": query_str})
+
+    return {
+        "operations": operations,
+        "map": (None, json.dumps({file_name: ["variables.file"]}))
+    }
+
+
+# TODO(gszpak): move it to client.py
+def __send_create_file_command(
+        cls, client: Client, request_data: dict, file_name: str,
+        file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
+    response = requests.post(
+        client.endpoint,
+        headers={"authorization": "Bearer %s" % client.api_key},
+        data=request_data,
+        files={file_name: file_data})
+
+    try:
+        response_json = response.json()
+    except ValueError:
+        raise labelbox.exceptions.LabelboxError(
+            "Failed to parse response as JSON: %s" % response.text)
+
+    response_data = response_json.get("data", None)
+    if response_data is None:
+        raise labelbox.exceptions.LabelboxError(
+            "Failed to upload, message: %s" % response_json.get("errors", None))
+
+    if not response_data.get("createBulkImportRequest", None):
+        raise labelbox.exceptions.LabelboxError(
+            "Failed to create BulkImportRequest, message: %s" %
+            response_json.get("errors", None) or
+            response_data.get("error", None))
+
+    return response_data
+
+
 class BulkImportRequest(DbObject):
     project = Relationship.ToOne("Project")
     name = Field.String("name")
@@ -35,120 +114,9 @@ class BulkImportRequest(DbObject):
     status_file_url = Field.String("status_file_url")
     state = Field.Enum(BulkImportRequestState, "state")
 
-    @classmethod
-    def create_from_url(cls, client: Client, project_id: str, name: str,
-                        url: str) -> 'BulkImportRequest':
-        """
-        Creates a BulkImportRequest from a publicly accessible URL
-        to an ndjson file with predictions.
-
-        Args:
-            client (Client): a Labelbox client
-            project_id (str): id of project for which predictions will be imported
-            name (str): name of BulkImportRequest
-            url (str): publicly accessible URL pointing to ndjson file containing predictions
-        Returns:
-            BulkImportRequest object
-        """
-        query_str = """mutation createBulkImportRequestPyApi(
-                $projectId: ID!, $name: String!, $fileUrl: String!) {
-            createBulkImportRequest(data: {
-                projectId: $projectId,
-                name: $name,
-                fileUrl: $fileUrl
-            }) {
-                %s
-            }
-        }
-        """ % cls.__build_results_query_part()
-        params = {"projectId": project_id, "name": name, "fileUrl": url}
-        bulk_import_request_response = client.execute(query_str, params=params)
-        return cls.__build_bulk_import_request_from_result(
-            client, bulk_import_request_response["createBulkImportRequest"])
-
-    @classmethod
-    def create_from_objects(cls, client: Client, project_id: str, name: str,
-                            predictions: Iterable[dict]) -> 'BulkImportRequest':
-        """
-        Creates a BulkImportRequest from an iterable of dictionaries conforming to
-        JSON predictions format, e.g.:
-        ``{
-            "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",
-            "schemaId": "ckappz7d700gn0zbocmqkwd9i",
-            "dataRow": {
-                "id": "ck1s02fqxm8fi0757f0e6qtdc"
-            },
-            "bbox": {
-                "top": 48,
-                "left": 58,
-                "height": 865,
-                "width": 1512
-            }
-        }``
-
-        Args:
-            client (Client): a Labelbox client
-            project_id (str): id of project for which predictions will be imported
-            name (str): name of BulkImportRequest
-            predictions (Iterable[dict]): iterable of dictionaries representing predictions
-        Returns:
-            BulkImportRequest object
-        """
-        data_str = ndjson.dumps(predictions)
-        data = data_str.encode('utf-8')
-        file_name = cls.__make_file_name(project_id, name)
-        request_data = cls.__make_request_data(project_id, name, len(data_str),
-                                               file_name)
-        file_data = (file_name, data, NDJSON_MIME_TYPE)
-        response_data = cls.__send_create_file_command(client, request_data,
-                                                       file_name, file_data)
-        return cls.__build_bulk_import_request_from_result(
-            client, response_data["createBulkImportRequest"])
-
-    @classmethod
-    def create_from_local_file(cls,
-                               client: Client,
-                               project_id: str,
-                               name: str,
-                               file: Path,
-                               validate_file=True) -> 'BulkImportRequest':
-        """
-        Creates a BulkImportRequest from a local ndjson file with predictions.
-
-        Args:
-            client (Client): a Labelbox client
-            project_id (str): id of project for which predictions will be imported
-            name (str): name of BulkImportRequest
-            file (Path): local ndjson file with predictions
-            validate_file (bool): a flag indicating if there should be a validation
-                if `file` is a valid ndjson file
-        Returns:
-            BulkImportRequest object
-        """
-        file_name = cls.__make_file_name(project_id, name)
-        content_length = file.stat().st_size
-        request_data = cls.__make_request_data(project_id, name, content_length,
-                                               file_name)
-        with file.open('rb') as f:
-            file_data: Tuple[str, Union[bytes, BinaryIO], str]
-            if validate_file:
-                data = f.read()
-                try:
-                    ndjson.loads(data)
-                except ValueError:
-                    raise ValueError(f"{file} is not a valid ndjson file")
-                file_data = (file.name, data, NDJSON_MIME_TYPE)
-            else:
-                file_data = (file.name, f, NDJSON_MIME_TYPE)
-            response_data = cls.__send_create_file_command(
-                client, request_data, file_name, file_data)
-        return cls.__build_bulk_import_request_from_result(
-            client, response_data["createBulkImportRequest"])
-
     # TODO(gszpak): building query body should be handled by the client
-    @classmethod
-    def get(cls, client: Client, project_id: str,
-            name: str) -> 'BulkImportRequest':
+    @staticmethod
+    def get(client: Client, project_id: str, name: str) -> 'BulkImportRequest':
         """
         Fetches existing BulkImportRequest.
 
@@ -168,18 +136,17 @@ class BulkImportRequest(DbObject):
                 %s
             }
         }
-        """ % cls.__build_results_query_part()
+        """ % __build_results_query_part()
         params = {"projectId": project_id, "name": name}
-        bulk_import_request_kwargs = \
-            client.execute(query_str, params=params).get("bulkImportRequest")
+        bulk_import_request_kwargs = client.execute(
+            query_str, params=params).get("bulkImportRequest")
         if bulk_import_request_kwargs is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 BulkImportRequest, {
                     "projectId": project_id,
                     "name": name
                 })
-        return cls.__build_bulk_import_request_from_result(
-            client, bulk_import_request_kwargs)
+        return BulkImportRequest.from_result(client, bulk_import_request_kwargs)
 
     def refresh(self) -> None:
         """
@@ -225,90 +192,8 @@ class BulkImportRequest(DbObject):
             return self.__user
         return None
 
-    @classmethod
-    def __make_file_name(cls, project_id: str, name: str) -> str:
-        return f"{project_id}__{name}.ndjson"
-
-    # TODO(gszpak): move it to client.py
-    @classmethod
-    def __make_request_data(cls, project_id: str, name: str,
-                            content_length: int, file_name: str) -> dict:
-        query_str = """mutation createBulkImportRequestFromFilePyApi(
-                $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
-            createBulkImportRequest(data: {
-                projectId: $projectId,
-                name: $name,
-                filePayload: {
-                    file: $file,
-                    contentLength: $contentLength
-                }
-            }) {
-                %s
-            }
-        }
-        """ % cls.__build_results_query_part()
-        variables = {
-            "projectId": project_id,
-            "name": name,
-            "file": None,
-            "contentLength": content_length
-        }
-        operations = json.dumps({"variables": variables, "query": query_str})
-
-        return {
-            "operations": operations,
-            "map": (None, json.dumps({file_name: ["variables.file"]}))
-        }
-
-    # TODO(gszpak): move it to client.py
-    @classmethod
-    def __send_create_file_command(
-            cls, client: Client, request_data: dict, file_name: str,
-            file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
-        response = requests.post(
-            client.endpoint,
-            headers={"authorization": "Bearer %s" % client.api_key},
-            data=request_data,
-            files={file_name: file_data})
-
-        try:
-            response_json = response.json()
-        except ValueError:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s" % response.text)
-
-        response_data = response_json.get("data", None)
-        if response_data is None:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" %
-                response_json.get("errors", None))
-
-        if not response_data.get("createBulkImportRequest", None):
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to create BulkImportRequest, message: %s" %
-                response_json.get("errors", None) or
-                response_data.get("error", None))
-
-        return response_data
-
-    # TODO(gszpak): all the code below should be handled automatically by Relationship
-    @classmethod
-    def __build_results_query_part(cls) -> str:
-        return """
-            project {
-                %s
-            }
-            createdBy {
-                %s
-            }
-            %s
-        """ % (query.results_query_part(Project),
-               query.results_query_part(User),
-               query.results_query_part(BulkImportRequest))
-
-    @classmethod
-    def __build_bulk_import_request_from_result(
-            cls, client: Client, result: dict) -> 'BulkImportRequest':
+    @staticmethod
+    def from_result(client: Client, result: dict) -> 'BulkImportRequest':
         project = result.pop("project")
         user = result.pop("createdBy")
         bulk_import_request = BulkImportRequest(client, result)
@@ -318,3 +203,115 @@ class BulkImportRequest(DbObject):
         if user is not None:
             bulk_import_request.__user = User(client, user)  # type: ignore
         return bulk_import_request
+
+
+def create_from_url(cls, client: Client, project_id: str, name: str,
+                    url: str) -> 'BulkImportRequest':
+    """
+    Creates a BulkImportRequest from a publicly accessible URL
+    to an ndjson file with predictions.
+
+    Args:
+        client (Client): a Labelbox client
+        project_id (str): id of project for which predictions will be imported
+        name (str): name of BulkImportRequest
+        url (str): publicly accessible URL pointing to ndjson file containing predictions
+    Returns:
+        BulkImportRequest object
+    """
+    query_str = """mutation createBulkImportRequestPyApi(
+            $projectId: ID!, $name: String!, $fileUrl: String!) {
+        createBulkImportRequest(data: {
+            projectId: $projectId,
+            name: $name,
+            fileUrl: $fileUrl
+        }) {
+            %s
+        }
+    }
+    """ % _build_results_query_part()
+    params = {"projectId": project_id, "name": name, "fileUrl": url}
+    bulk_import_request_response = client.execute(query_str, params=params)
+    return BulkImportRequest.from_result(
+        client, bulk_import_request_response["createBulkImportRequest"])
+
+
+def create_from_objects(cls, client: Client, project_id: str, name: str,
+                        predictions: Iterable[dict]) -> 'BulkImportRequest':
+    """
+    Creates a BulkImportRequest from an iterable of dictionaries conforming to
+    JSON predictions format, e.g.:
+    ``{
+        "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",
+        "schemaId": "ckappz7d700gn0zbocmqkwd9i",
+        "dataRow": {
+            "id": "ck1s02fqxm8fi0757f0e6qtdc"
+        },
+        "bbox": {
+            "top": 48,
+            "left": 58,
+            "height": 865,
+            "width": 1512
+        }
+    }``
+
+    Args:
+        client (Client): a Labelbox client
+        project_id (str): id of project for which predictions will be imported
+        name (str): name of BulkImportRequest
+        predictions (Iterable[dict]): iterable of dictionaries representing predictions
+    Returns:
+        BulkImportRequest object
+    """
+    data_str = ndjson.dumps(predictions)
+    data = data_str.encode('utf-8')
+    file_name = __make_file_name(project_id, name)
+    request_data = __make_request_data(project_id, name, len(data_str),
+                                       file_name)
+    file_data = (file_name, data, NDJSON_MIME_TYPE)
+    response_data = __send_create_file_command(client, request_data, file_name,
+                                               file_data)
+    return BulkImportRequest.from_result(
+        client, response_data["createBulkImportRequest"])
+
+
+def create_from_local_file(cls,
+                           client: Client,
+                           project_id: str,
+                           name: str,
+                           file: Path,
+                           validate_file=True) -> 'BulkImportRequest':
+    """
+    Creates a BulkImportRequest from a local ndjson file with predictions.
+
+    Args:
+        client (Client): a Labelbox client
+        project_id (str): id of project for which predictions will be imported
+        name (str): name of BulkImportRequest
+        file (Path): local ndjson file with predictions
+        validate_file (bool): a flag indicating if there should be a validation
+            if `file` is a valid ndjson file
+    Returns:
+        BulkImportRequest object
+    """
+    file_name = __make_file_name(project_id, name)
+    content_length = file.stat().st_size
+    request_data = __make_request_data(project_id, name, content_length,
+                                       file_name)
+    if validate_file:
+        with file.open('rb') as f:
+            reader = ndjson.reader(f)
+            try:
+                for line in reader:
+                    # ensure that the underlying json load call is valid
+                    # https://github.com/rhgrant10/ndjson/blob/ff2f03c56b21f28f7271b27da35ca4a8bf9a05d0/ndjson/api.py#L53
+                    pass
+            except ValueError:
+                raise ValueError(f"{file} is not a valid ndjson file")
+
+    with file.open('rb') as f:
+        file_data: Tuple[str, BinaryIO, str] = (file.name, f, NDJSON_MIME_TYPE)
+        response_data = __send_create_file_command(client, request_data,
+                                                   file_name, file_data)
+    return BulkImportRequest.from_result(
+        client, response_data["createBulkImportRequest"])
