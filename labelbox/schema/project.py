@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import json
 import logging
 import time
+from typing import Union, Iterable
 
 from labelbox import utils
 from labelbox.exceptions import InvalidQueryError
