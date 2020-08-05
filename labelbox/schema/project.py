@@ -357,7 +357,7 @@ class Project(DbObject, Updateable, Deletable):
     def upload_annotations(
         self,
         name: str,
-        annotations: Union[str, Iterable[dict]],
+        annotations: Union[str, Union[str, Path], Iterable[dict]],
     ) -> 'BulkImportRequest':
         """ Uploads annotations to a project.
 
