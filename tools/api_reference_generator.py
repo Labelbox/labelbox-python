@@ -435,7 +435,6 @@ def main():
     args = argp.parse_args()
 
     body = generate_all()
-
     if args.helpdocs_api_key is not None:
         url = "https://api.helpdocs.io/v1/article/zg9hp7yx3u?key=" + \
             args.helpdocs_api_key
