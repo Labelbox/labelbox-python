@@ -50,8 +50,7 @@ def __build_results_query_part() -> str:
     """ % (
         #query.results_query_part(Project),
         query.results_query_part(User),
-        query.results_query_part(BulkImportRequest)
-    )
+        query.results_query_part(BulkImportRequest))
 
 
 # TODO(gszpak): move it to client.py
