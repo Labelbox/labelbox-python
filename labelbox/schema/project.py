@@ -2,9 +2,10 @@ from collections import namedtuple
 from datetime import datetime, timezone
 import json
 import logging
-from urllib.parse import ulrparse
+from pathlib import Path
 import time
 from typing import Union, Iterable
+from urllib.parse import urlparse
 
 from labelbox import utils
 from labelbox.exceptions import InvalidQueryError
