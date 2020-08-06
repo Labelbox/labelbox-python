@@ -8,6 +8,7 @@ from typing import Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
+from labelbox import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -391,7 +392,7 @@ class Project(DbObject, Updateable, Deletable):
 
                 """
                 parsed = urlparse(url)
-                return parsed.http and parsed.netloc
+                return parsed.scheme and parsed.netloc
 
             if _is_url_valid(annotations):
                 return BulkImportRequest.create_from_url(

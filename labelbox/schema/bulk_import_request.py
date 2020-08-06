@@ -33,7 +33,6 @@ def __make_file_name(project_id: str, name: str) -> str:
 def __build_results_query_part() -> str:
     return """
         project {
-            %s
             name
             description
             updatedAt
@@ -86,7 +85,7 @@ def _make_request_data(project_id: str, name: str, content_length: int,
 
 # TODO(gszpak): move it to client.py
 def __send_create_file_command(
-        cls, client: Client, request_data: dict, file_name: str,
+        client: Client, request_data: dict, file_name: str,
         file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
     response = requests.post(
         client.endpoint,
@@ -215,7 +214,7 @@ class BulkImportRequest(DbObject):
         return bulk_import_request
 
 
-def create_from_url(cls, client: Client, project_id: str, name: str,
+def create_from_url(client: Client, project_id: str, name: str,
                     url: str) -> 'BulkImportRequest':
     """
     Creates a BulkImportRequest from a publicly accessible URL
@@ -246,7 +245,7 @@ def create_from_url(cls, client: Client, project_id: str, name: str,
         client, bulk_import_request_response["createBulkImportRequest"])
 
 
-def create_from_objects(cls, client: Client, project_id: str, name: str,
+def create_from_objects(client: Client, project_id: str, name: str,
                         predictions: Iterable[dict]) -> 'BulkImportRequest':
     """
     Creates a BulkImportRequest from an iterable of dictionaries conforming to
@@ -279,14 +278,17 @@ def create_from_objects(cls, client: Client, project_id: str, name: str,
     request_data = __make_request_data(project_id, name, len(data_str),
                                        file_name)
     file_data = (file_name, data, NDJSON_MIME_TYPE)
-    response_data = __send_create_file_command(client, request_data, file_name,
-                                               file_data)
+    response_data = __send_create_file_command(
+        client=client,
+        request_data=request_data,
+        file_name=file_name,
+        file_data=file_data)
+
     return BulkImportRequest.from_result(
         client, response_data["createBulkImportRequest"])
 
 
-def create_from_local_file(cls,
-                           client: Client,
+def create_from_local_file(client: Client,
                            project_id: str,
                            name: str,
                            file: Path,
@@ -320,7 +322,7 @@ def create_from_local_file(cls,
                 raise ValueError(f"{file} is not a valid ndjson file")
 
     with file.open('rb') as f:
-        file_data: Tuple[str, BinaryIO, str] = (file.name, f, NDJSON_MIME_TYPE)
+        file_data = (file.name, f, NDJSON_MIME_TYPE)
         response_data = __send_create_file_command(client, request_data,
                                                    file_name, file_data)
     return BulkImportRequest.from_result(
