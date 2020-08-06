@@ -215,7 +215,7 @@ class BulkImportRequest(DbObject):
 
 
 def create_from_url(client: Client, project_id: str, name: str,
-                    url: str) -> 'BulkImportRequest':
+                    url: str) -> BulkImportRequest:
     """
     Creates a BulkImportRequest from a publicly accessible URL
     to an ndjson file with predictions.
@@ -246,7 +246,7 @@ def create_from_url(client: Client, project_id: str, name: str,
 
 
 def create_from_objects(client: Client, project_id: str, name: str,
-                        predictions: Iterable[dict]) -> 'BulkImportRequest':
+                        predictions: Iterable[dict]) -> BulkImportRequest:
     """
     Creates a BulkImportRequest from an iterable of dictionaries conforming to
     JSON predictions format, e.g.:
@@ -291,7 +291,7 @@ def create_from_local_file(client: Client,
                            project_id: str,
                            name: str,
                            file: Path,
-                           validate_file=True) -> 'BulkImportRequest':
+                           validate_file=True) -> BulkImportRequest:
     """
     Creates a BulkImportRequest from a local ndjson file with predictions.
 
