@@ -374,12 +374,6 @@ class Project(DbObject, Updateable, Deletable):
             BulkImportRequest
 
         """
-        shared_args = {
-            'client': self.client,
-            'project_id': self.uid,
-            'name': name,
-        }
-
         if isinstance(annotations, str):
 
             def _is_url_valid(url: str) -> bool:
@@ -396,7 +390,9 @@ class Project(DbObject, Updateable, Deletable):
 
             if _is_url_valid(annotations):
                 return create_from_url(
-                    **shared_args,
+                    client=self.client,
+                    project_id=self.uid,
+                    name=name,
                     url=annotations,
                 )
             else:
@@ -406,14 +402,18 @@ class Project(DbObject, Updateable, Deletable):
                         f'{annotations} is not a valid url nor existing local file'
                     )
                 return create_from_local_file(
-                    **shared_args,
+                    client=self.client,
+                    project_id=self.uid,
+                    name=name,
                     file=path,
                     validate_file=True,
                 )
         else:
             return create_from_objects(
-                **shared_args,
-                predictions=annotations,
+                client=self.client,
+                project_id=self.uid,
+                name=name,
+                predictions=annotations,  # type: ignore
             )
 
 
