@@ -54,7 +54,7 @@ def __build_results_query_part() -> str:
 
 # TODO(gszpak): move it to client.py
 def __make_request_data(project_id: str, name: str, content_length: int,
-                       file_name: str) -> dict:
+                        file_name: str) -> dict:
     query_str = """mutation createBulkImportRequestFromFilePyApi(
             $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
         createBulkImportRequest(data: {
