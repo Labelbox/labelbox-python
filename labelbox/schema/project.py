@@ -360,7 +360,7 @@ class Project(DbObject, Updateable, Deletable):
         self,
         name: str,
         annotations: Union[str, Union[str, Path], Iterable[dict]],
-    ) -> 'BulkImportRequest':
+    ) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a project.
 
         Args:
