@@ -85,7 +85,7 @@ def __make_request_data(project_id: str, name: str, content_length: int,
 
 # TODO(gszpak): move it to client.py
 def __send_create_file_command(
-        client: 'Client', request_data: dict, file_name: str,
+        client, request_data: dict, file_name: str,
         file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
     response = requests.post(
         client.endpoint,
@@ -125,8 +125,7 @@ class BulkImportRequest(DbObject):
 
     # TODO(gszpak): building query body should be handled by the client
     @staticmethod
-    def get(client: 'Client', project_id: str,
-            name: str) -> 'BulkImportRequest':
+    def get(client, project_id: str, name: str) -> 'BulkImportRequest':
         """
         Fetches existing BulkImportRequest.
 
@@ -203,7 +202,7 @@ class BulkImportRequest(DbObject):
         return None
 
     @staticmethod
-    def from_result(client: 'Client', result: dict) -> 'BulkImportRequest':
+    def from_result(client, result: dict) -> 'BulkImportRequest':
         project = result.pop("project")
         user = result.pop("createdBy")
         bulk_import_request = BulkImportRequest(client, result)
@@ -215,7 +214,7 @@ class BulkImportRequest(DbObject):
         return bulk_import_request
 
 
-def create_from_url(client: 'Client', project_id: str, name: str,
+def create_from_url(client, project_id: str, name: str,
                     url: str) -> BulkImportRequest:
     """
     Creates a BulkImportRequest from a publicly accessible URL
@@ -246,7 +245,7 @@ def create_from_url(client: 'Client', project_id: str, name: str,
         client, bulk_import_request_response["createBulkImportRequest"])
 
 
-def create_from_objects(client: 'Client', project_id: str, name: str,
+def create_from_objects(client, project_id: str, name: str,
                         predictions: Iterable[dict]) -> BulkImportRequest:
     """
     Creates a BulkImportRequest from an iterable of dictionaries conforming to
@@ -288,7 +287,7 @@ def create_from_objects(client: 'Client', project_id: str, name: str,
         client, response_data["createBulkImportRequest"])
 
 
-def create_from_local_file(client: 'Client',
+def create_from_local_file(client,
                            project_id: str,
                            name: str,
                            file: Path,
