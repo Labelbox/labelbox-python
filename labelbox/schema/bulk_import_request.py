@@ -278,11 +278,10 @@ def create_from_objects(client: Client, project_id: str, name: str,
     request_data = __make_request_data(project_id, name, len(data_str),
                                        file_name)
     file_data = (file_name, data, NDJSON_MIME_TYPE)
-    response_data = __send_create_file_command(
-        client=client,
-        request_data=request_data,
-        file_name=file_name,
-        file_data=file_data)
+    response_data = __send_create_file_command(client=client,
+                                               request_data=request_data,
+                                               file_name=file_name,
+                                               file_data=file_data)
 
     return BulkImportRequest.from_result(
         client, response_data["createBulkImportRequest"])
