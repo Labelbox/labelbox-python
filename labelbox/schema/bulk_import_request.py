@@ -53,7 +53,7 @@ def __build_results_query_part() -> str:
 
 
 # TODO(gszpak): move it to client.py
-def _make_request_data(project_id: str, name: str, content_length: int,
+def __make_request_data(project_id: str, name: str, content_length: int,
                        file_name: str) -> dict:
     query_str = """mutation createBulkImportRequestFromFilePyApi(
             $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
@@ -238,7 +238,7 @@ def create_from_url(client: Client, project_id: str, name: str,
             %s
         }
     }
-    """ % _build_results_query_part()
+    """ % __build_results_query_part()
     params = {"projectId": project_id, "name": name, "fileUrl": url}
     bulk_import_request_response = client.execute(query_str, params=params)
     return BulkImportRequest.from_result(
