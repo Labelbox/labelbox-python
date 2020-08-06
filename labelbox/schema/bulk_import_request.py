@@ -13,7 +13,7 @@ import requests
 
 import labelbox.exceptions
 from labelbox import Client
-from labelbox import Project
+#from labelbox import Project
 from labelbox import User
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
@@ -34,13 +34,24 @@ def __build_results_query_part() -> str:
     return """
         project {
             %s
+            name
+            description
+            updatedAt
+            createdAt
+            setupComplete
+            lastActivityTime
+            autoAuditNumberOfLabels
+            autoAuditPercentage
         }
         createdBy {
             %s
         }
         %s
-    """ % (query.results_query_part(Project), query.results_query_part(User),
-           query.results_query_part(BulkImportRequest))
+    """ % (
+        #query.results_query_part(Project),
+        query.results_query_part(User),
+        query.results_query_part(BulkImportRequest)
+    )
 
 
 # TODO(gszpak): move it to client.py
