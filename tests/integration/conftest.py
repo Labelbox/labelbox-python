@@ -12,13 +12,36 @@ from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300"
 
+class Environ(Enum):
+    PROD = 'prod'
+    STAGING = 'staging'
+
+
+@pytest.fixture
+def environ() -> Environ:
+    """
+    Checks environment variables for LABELBOX_ENVIRON to be
+    'prod' or 'staging'
+
+    Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
+
+    """
+    try:
+        return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
+        # TODO: for some reason all other environs can be set but
+        # this one cannot in github actions
+        #return Environ.PROD
+    except KeyError:
+        raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
+
 
 class IntegrationClient(Client):
 
     def __init__(self):
         api_url = os.environ["LABELBOX_TEST_ENDPOINT"]
+        api_key = os.environ["LABELBOX_TEST_API_KEY"]
                                  #"https://staging-api.labelbox.com/graphql")
-        super().__init__(os.environ["LABELBOX_TEST_API_KEY"], api_url)
+        super().__init__(api_key, api_url)
 
         self.queries = []
 
@@ -77,29 +100,6 @@ def label_pack(project, rand_gen):
     label = project.create_label(data_row=data_row, label=rand_gen(str))
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
-
-
-class Environ(Enum):
-    PROD = 'prod'
-    STAGING = 'staging'
-
-
-@pytest.fixture
-def environ() -> Environ:
-    """
-    Checks environment variables for LABELBOX_ENVIRON to be
-    'prod' or 'staging'
-
-    Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
-
-    """
-    try:
-        return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
-        # TODO: for some reason all other environs can be set but
-        # this one cannot in github actions
-        #return Environ.PROD
-    except KeyError:
-        raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
 
 @pytest.fixture
