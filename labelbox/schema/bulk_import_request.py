@@ -28,20 +28,6 @@ def __make_file_name(project_id: str, name: str) -> str:
     return f"{project_id}__{name}.ndjson"
 
 
-# TODO(gszpak): all the code below should be handled automatically by Relationship
-def __build_results_query_part() -> str:
-    return """
-        project {
-            %s
-        }
-        createdBy {
-            %s
-        }
-        %s
-    """ % (query.results_query_part(Project), query.results_query_part(User),
-           query.results_query_part(BulkImportRequest))
-
-
 # TODO(gszpak): move it to client.py
 def __make_request_data(project_id: str, name: str, content_length: int,
                         file_name: str) -> dict:
@@ -58,7 +44,7 @@ def __make_request_data(project_id: str, name: str, content_length: int,
             %s
         }
     }
-    """ % __build_results_query_part()
+    """ % query.results_query_part(BulkImportRequest)
     variables = {
         "projectId": project_id,
         "name": name,
@@ -113,40 +99,6 @@ class BulkImportRequest(DbObject):
     status_file_url = Field.String("status_file_url")
     state = Field.Enum(BulkImportRequestState, "state")
 
-    # TODO(gszpak): building query body should be handled by the client
-    def get(self, project_id: str, name: str) -> 'BulkImportRequest':
-        """
-        Fetches existing BulkImportRequest.
-
-        Args:
-            client (Client): a Labelbox client
-            project_id (str): BulkImportRequest's project id
-            name (str): name of BulkImportRequest
-        Returns:
-            BulkImportRequest object
-        """
-        query_str = """query getBulkImportRequestPyApi(
-                $projectId: ID!, $name: String!) {
-            bulkImportRequest(where: {
-                projectId: $projectId,
-                name: $name
-            }) {
-                %s
-            }
-        }
-        """ % __build_results_query_part()
-        params = {"projectId": project_id, "name": name}
-        bulk_import_request_kwargs = self.client.execute(
-            query_str, params=params).get("bulkImportRequest")
-        if bulk_import_request_kwargs is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                BulkImportRequest, {
-                    "projectId": project_id,
-                    "name": name
-                })
-        return BulkImportRequest.from_result(self.client,
-                                             bulk_import_request_kwargs)
-
     def refresh(self) -> None:
         """
         Synchronizes values of all fields with the database.
@@ -177,18 +129,6 @@ class BulkImportRequest(DbObject):
         jitter=None)
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
-
-    # TODO(gszpak): project() and created_by() methods
-    # TODO(gszpak): are hacky ways to eagerly load the relationships
-    def project(self):  # type: ignore
-        if self.__project is not None:
-            return self.__project
-        return None
-
-    def created_by(self):  # type: ignore
-        if self.__user is not None:
-            return self.__user
-        return None
 
     def from_result(client, result: dict) -> 'BulkImportRequest':
         project = result.pop("project")
@@ -226,7 +166,7 @@ def create_from_url(client, project_id: str, name: str,
             %s
         }
     }
-    """ % __build_results_query_part()
+    """ % query.results_query_part(BulkImportRequest)
     params = {"projectId": project_id, "name": name, "fileUrl": url}
     bulk_import_request_response = client.execute(query_str, params=params)
     return BulkImportRequest.from_result(

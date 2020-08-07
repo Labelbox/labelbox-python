@@ -16,8 +16,8 @@ IMG_URL = "https://picsum.photos/200/300"
 class IntegrationClient(Client):
 
     def __init__(self):
-        api_url = os.environ.get("LABELBOX_TEST_ENDPOINT",
-                                 "https://staging-api.labelbox.com/graphql")
+        api_url = os.environ["LABELBOX_TEST_ENDPOINT"]
+                                 #"https://staging-api.labelbox.com/graphql")
         super().__init__(os.environ["LABELBOX_TEST_API_KEY"], api_url)
 
         self.queries = []
@@ -94,10 +94,10 @@ def environ() -> Environ:
 
     """
     try:
-        #return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
+        return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
         # TODO: for some reason all other environs can be set but
         # this one cannot in github actions
-        return Environ.PROD
+        #return Environ.PROD
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
