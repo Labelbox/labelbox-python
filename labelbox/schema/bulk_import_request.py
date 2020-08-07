@@ -11,6 +11,7 @@ import backoff
 import ndjson
 import requests
 
+from labelbox import utils
 import labelbox.exceptions
 from labelbox import Project
 from labelbox import User
@@ -103,9 +104,10 @@ class BulkImportRequest(DbObject):
         """
         Synchronizes values of all fields with the database.
         """
-        bulk_import_request = self.get(self.project().uid, self.name)
-        for field in self.fields():
-            setattr(self, field.name, getattr(bulk_import_request, field.name))
+        query_str, params = query.get_single(BulkImportRequest, self.uid)
+        res = self.client.execute(query_str, params)
+        res = res[utils.camel_case(BulkImportRequest.type_name())]
+        self._set_field_values(res)
 
     def wait_until_done(self, sleep_time_seconds: int = 30) -> None:
         """
@@ -129,17 +131,6 @@ class BulkImportRequest(DbObject):
         jitter=None)
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
-
-    def from_result(client, result: dict) -> 'BulkImportRequest':
-        project = result.pop("project")
-        user = result.pop("createdBy")
-        bulk_import_request = BulkImportRequest(client, result)
-        if project is not None:
-            bulk_import_request.__project = Project(  # type: ignore
-                client, project)
-        if user is not None:
-            bulk_import_request.__user = User(client, user)  # type: ignore
-        return bulk_import_request
 
 
 def create_from_url(client, project_id: str, name: str,
@@ -169,7 +160,7 @@ def create_from_url(client, project_id: str, name: str,
     """ % query.results_query_part(BulkImportRequest)
     params = {"projectId": project_id, "name": name, "fileUrl": url}
     bulk_import_request_response = client.execute(query_str, params=params)
-    return BulkImportRequest.from_result(
+    return BulkImportRequest(
         client, bulk_import_request_response["createBulkImportRequest"])
 
 
@@ -211,8 +202,7 @@ def create_from_objects(client, project_id: str, name: str,
                                                file_name=file_name,
                                                file_data=file_data)
 
-    return BulkImportRequest.from_result(
-        client, response_data["createBulkImportRequest"])
+    return BulkImportRequest(client, response_data["createBulkImportRequest"])
 
 
 def create_from_local_file(client,
@@ -254,5 +244,4 @@ def create_from_local_file(client,
         file_data = (file.name, f, NDJSON_MIME_TYPE)
         response_data = __send_create_file_command(client, request_data,
                                                    file_name, file_data)
-    return BulkImportRequest.from_result(
-        client, response_data["createBulkImportRequest"])
+    return BulkImportRequest(client, response_data["createBulkImportRequest"])

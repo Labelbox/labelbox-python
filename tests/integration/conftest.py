@@ -12,6 +12,7 @@ from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300"
 
+
 class Environ(Enum):
     PROD = 'prod'
     STAGING = 'staging'
@@ -40,7 +41,7 @@ class IntegrationClient(Client):
     def __init__(self):
         api_url = os.environ["LABELBOX_TEST_ENDPOINT"]
         api_key = os.environ["LABELBOX_TEST_API_KEY"]
-                                 #"https://staging-api.labelbox.com/graphql")
+        #"https://staging-api.labelbox.com/graphql")
         super().__init__(api_key, api_url)
 
         self.queries = []
