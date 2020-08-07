@@ -13,8 +13,6 @@ import requests
 
 from labelbox import utils
 import labelbox.exceptions
-from labelbox import Project
-from labelbox import User
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
