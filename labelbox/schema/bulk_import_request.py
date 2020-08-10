@@ -241,7 +241,7 @@ def create_from_local_file(client,
             except ValueError:
                 raise ValueError(f"{file} is not a valid ndjson file")
             else:
-                file.seek(0)
+                f.seek(0)
         file_data = (file.name, f, NDJSON_MIME_TYPE)
         response_data = __send_create_file_command(client, request_data,
                                                    file_name, file_data)
