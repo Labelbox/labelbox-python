@@ -89,14 +89,15 @@ def __send_create_file_command(
 
 
 class BulkImportRequest(DbObject):
-    project = Relationship.ToOne("Project")
     name = Field.String("name")
-    created_at = Field.DateTime("created_at")
-    created_by = Relationship.ToOne("User", False, "created_by")
+    state = Field.Enum(BulkImportRequestState, "state")
     input_file_url = Field.String("input_file_url")
     error_file_url = Field.String("error_file_url")
     status_file_url = Field.String("status_file_url")
-    state = Field.Enum(BulkImportRequestState, "state")
+    created_at = Field.DateTime("created_at")
+
+    project = Relationship.ToOne("Project")
+    created_by = Relationship.ToOne("User", False, "created_by")
 
     def refresh(self) -> None:
         """
