@@ -3,7 +3,16 @@ from labelbox.orm.model import Field, Relationship
 
 
 class PredictionModel(DbObject):
-    """ A prediction model represents a specific version of a model. """
+    """ A prediction model represents a specific version of a model.
+
+    NOTE: This is used for the legacy editor [1], if you wish to
+    import annotations, refer to [2]
+
+
+    [1] https://labelbox.com/docs/legacy/import-model-prediction
+    [2] https://labelbox.com/docs/automation/model-assisted-labeling
+
+    """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -18,7 +27,16 @@ class PredictionModel(DbObject):
 
 
 class Prediction(DbObject):
-    """ A prediction created by a PredictionModel. """
+    """ A prediction created by a PredictionModel.
+
+    NOTE: This is used for the legacy editor [1], if you wish to
+    import annotations, refer to [2]
+
+
+    [1] https://labelbox.com/docs/legacy/import-model-prediction
+    [2] https://labelbox.com/docs/automation/model-assisted-labeling
+
+    """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     organization = Relationship.ToOne("Organization", False)
