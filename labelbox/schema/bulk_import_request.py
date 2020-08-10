@@ -220,13 +220,15 @@ def create_from_local_file(client,
             if `file` is a valid ndjson file
     Returns:
         BulkImportRequest object
+
     """
     file_name = __make_file_name(project_id, name)
     content_length = file.stat().st_size
     request_data = __make_request_data(project_id, name, content_length,
                                        file_name)
-    if validate_file:
-        with file.open('rb') as f:
+
+    with file.open('rb') as f:
+        if validate_file:
             reader = ndjson.reader(f)
             # ensure that the underlying json load call is valid
             # https://github.com/rhgrant10/ndjson/blob/ff2f03c56b21f28f7271b27da35ca4a8bf9a05d0/ndjson/api.py#L53
@@ -237,8 +239,8 @@ def create_from_local_file(client,
                     pass
             except ValueError:
                 raise ValueError(f"{file} is not a valid ndjson file")
-
-    with file.open('rb') as f:
+            else:
+                file.seek(0)
         file_data = (file.name, f, NDJSON_MIME_TYPE)
         response_data = __send_create_file_command(client, request_data,
                                                    file_name, file_data)
