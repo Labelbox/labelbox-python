@@ -94,7 +94,9 @@ def test_get(client, project):
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     project.upload_annotations(name=name, annotations=url)
 
-    bulk_import_request = BulkImportRequest.from_name(client, project_id=project.uid, name=name)
+    bulk_import_request = BulkImportRequest.from_name(client,
+                                                      project_id=project.uid,
+                                                      name=name)
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name

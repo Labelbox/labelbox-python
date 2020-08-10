@@ -29,7 +29,7 @@ def _make_file_name(project_id: str, name: str) -> str:
 
 # TODO(gszpak): move it to client.py
 def _make_request_data(project_id: str, name: str, content_length: int,
-                        file_name: str) -> dict:
+                       file_name: str) -> dict:
     query_str = """mutation createBulkImportRequestFromFilePyApi(
             $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
         createBulkImportRequest(data: {
@@ -132,7 +132,8 @@ class BulkImportRequest(DbObject):
         self.refresh()
 
     @classmethod
-    def from_name(cls, client, project_id: str, name: str) -> 'BulkImportRequest':
+    def from_name(cls, client, project_id: str,
+                  name: str) -> 'BulkImportRequest':
         """ Fetches existing BulkImportRequest.
 
         Args:
@@ -187,7 +188,8 @@ class BulkImportRequest(DbObject):
         bulk_import_request_response = client.execute(query_str, params=params)
         print('query_str', query_str, params)
         print('response data', bulk_import_request_response)
-        return cls(client, bulk_import_request_response["createBulkImportRequest"])
+        return cls(client,
+                   bulk_import_request_response["createBulkImportRequest"])
 
     @classmethod
     def create_from_objects(cls, client, project_id: str, name: str,
@@ -221,12 +223,12 @@ class BulkImportRequest(DbObject):
         data = data_str.encode('utf-8')
         file_name = _make_file_name(project_id, name)
         request_data = _make_request_data(project_id, name, len(data_str),
-                                           file_name)
+                                          file_name)
         file_data = (file_name, data, NDJSON_MIME_TYPE)
         response_data = _send_create_file_command(client,
-                                                   request_data=request_data,
-                                                   file_name=file_name,
-                                                   file_data=file_data)
+                                                  request_data=request_data,
+                                                  file_name=file_name,
+                                                  file_data=file_data)
 
         return cls(client, response_data["createBulkImportRequest"])
 
@@ -254,7 +256,7 @@ class BulkImportRequest(DbObject):
         file_name = _make_file_name(project_id, name)
         content_length = file.stat().st_size
         request_data = _make_request_data(project_id, name, content_length,
-                                           file_name)
+                                          file_name)
 
         with file.open('rb') as f:
             if validate_file:
@@ -272,5 +274,5 @@ class BulkImportRequest(DbObject):
                     f.seek(0)
             file_data = (file.name, f, NDJSON_MIME_TYPE)
             response_data = _send_create_file_command(client, request_data,
-                                                       file_name, file_data)
+                                                      file_name, file_data)
         return cls(client, response_data["createBulkImportRequest"])
