@@ -79,7 +79,7 @@ def test_create_from_local_file(tmp_path, project):
         ndjson.dump(PREDICTIONS, f)
 
     bulk_import_request = project.upload_annotations(name=name,
-                                                     annotations=file_path)
+                                                     annotations=str(file_path))
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
@@ -94,7 +94,7 @@ def test_get(client, project):
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     project.upload_annotations(name=name, annotations=url)
 
-    bulk_import_request = BulkImportRequest.get(client, project.uid, name)
+    bulk_import_request = BulkImportRequest.from_name(client, project_id=project.uid, name=name)
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
@@ -111,7 +111,7 @@ def test_validate_ndjson(tmp_path, project):
         f.write("test")
 
     with pytest.raises(ValueError):
-        project.upload_annotations(name="name", annotations=file_path)
+        project.upload_annotations(name="name", annotations=str(file_path))
 
 
 @pytest.mark.slow

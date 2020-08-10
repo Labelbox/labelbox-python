@@ -8,7 +8,7 @@ from typing import Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
-from labelbox.schema.bulk_import_request import create_from_url, create_from_objects, create_from_local_file
+from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -389,7 +389,7 @@ class Project(DbObject, Updateable, Deletable):
                 return bool(parsed.scheme) and bool(parsed.netloc)
 
             if _is_url_valid(annotations):
-                return create_from_url(
+                return BulkImportRequest.create_from_url(
                     client=self.client,
                     project_id=self.uid,
                     name=name,
@@ -401,7 +401,7 @@ class Project(DbObject, Updateable, Deletable):
                     raise FileNotFoundError(
                         f'{annotations} is not a valid url nor existing local file'
                     )
-                return create_from_local_file(
+                return BulkImportRequest.create_from_local_file(
                     client=self.client,
                     project_id=self.uid,
                     name=name,
@@ -409,7 +409,7 @@ class Project(DbObject, Updateable, Deletable):
                     validate_file=True,
                 )
         else:
-            return create_from_objects(
+            return BulkImportRequest.create_from_objects(
                 client=self.client,
                 project_id=self.uid,
                 name=name,
