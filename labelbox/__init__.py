@@ -1,6 +1,7 @@
 name = "labelbox"
 
 from labelbox.client import Client
+from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow

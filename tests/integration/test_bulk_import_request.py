@@ -43,12 +43,11 @@ PREDICTIONS = [{
 }]
 
 
-def test_create_from_url(client, project):
+def test_create_from_url(project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
-    bulk_import_request = BulkImportRequest.create_from_url(
-        client, project.uid, name, url)
+    bulk_import_request = project.upload_annotations(name=name, annotations=url)
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
@@ -58,11 +57,11 @@ def test_create_from_url(client, project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_create_from_objects(client, project):
+def test_create_from_objects(project):
     name = str(uuid.uuid4())
 
-    bulk_import_request = BulkImportRequest.create_from_objects(
-        client, project.uid, name, PREDICTIONS)
+    bulk_import_request = project.upload_annotations(name=name,
+                                                     annotations=PREDICTIONS)
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
@@ -72,15 +71,15 @@ def test_create_from_objects(client, project):
     __assert_file_content(bulk_import_request.input_file_url)
 
 
-def test_create_from_local_file(tmp_path, client, project):
+def test_create_from_local_file(tmp_path, project):
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         ndjson.dump(PREDICTIONS, f)
 
-    bulk_import_request = BulkImportRequest.create_from_local_file(
-        client, project.uid, name, file_path)
+    bulk_import_request = project.upload_annotations(name=name,
+                                                     annotations=str(file_path))
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
@@ -93,9 +92,11 @@ def test_create_from_local_file(tmp_path, client, project):
 def test_get(client, project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    BulkImportRequest.create_from_url(client, project.uid, name, url)
+    project.upload_annotations(name=name, annotations=url)
 
-    bulk_import_request = BulkImportRequest.get(client, project.uid, name)
+    bulk_import_request = BulkImportRequest.from_name(client,
+                                                      project_id=project.uid,
+                                                      name=name)
 
     assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
@@ -105,23 +106,24 @@ def test_get(client, project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_validate_ndjson(tmp_path, client, project):
+def test_validate_ndjson(tmp_path, project):
     file_name = f"broken.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         f.write("test")
 
     with pytest.raises(ValueError):
-        BulkImportRequest.create_from_local_file(client, project.uid, "name",
-                                                 file_path)
+        project.upload_annotations(name="name", annotations=str(file_path))
 
 
 @pytest.mark.slow
-def test_wait_till_done(client, project):
+def test_wait_till_done(project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    bulk_import_request = BulkImportRequest.create_from_url(
-        client, project.uid, name, url)
+    bulk_import_request = project.upload_annotations(
+        name=name,
+        annotations=url,
+    )
 
     bulk_import_request.wait_until_done()
 

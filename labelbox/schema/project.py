@@ -2,9 +2,13 @@ from collections import namedtuple
 from datetime import datetime, timezone
 import json
 import logging
+from pathlib import Path
 import time
+from typing import Union, Iterable
+from urllib.parse import urlparse
 
 from labelbox import utils
+from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -113,7 +117,7 @@ class Project(DbObject, Updateable, Deletable):
         payload, and returns the URL to that payload.
 
         Will only generate a new URL at a max frequency of 30 min.
-        
+
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
@@ -352,6 +356,66 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, params)
         return Prediction(self.client, res["createPrediction"])
 
+    def upload_annotations(
+        self,
+        name: str,
+        annotations: Union[str, Union[str, Path], Iterable[dict]],
+    ) -> 'BulkImportRequest':  # type: ignore
+        """ Uploads annotations to a project.
+
+        Args:
+            name: name of the BulkImportRequest job
+            annotations:
+                url that is publicly accessible by Labelbox containing an
+                ndjson file
+                OR local path to an ndjson file
+                OR iterable of annotation rows
+        Returns:
+            BulkImportRequest
+
+        """
+        if isinstance(annotations, str):
+
+            def _is_url_valid(url: str) -> bool:
+                """ Verifies that the given string is a valid url.
+
+                Args:
+                    url: string to be checked
+                Returns:
+                    True if the given url is valid otherwise False
+
+                """
+                parsed = urlparse(url)
+                return bool(parsed.scheme) and bool(parsed.netloc)
+
+            if _is_url_valid(annotations):
+                return BulkImportRequest.create_from_url(
+                    client=self.client,
+                    project_id=self.uid,
+                    name=name,
+                    url=annotations,
+                )
+            else:
+                path = Path(annotations)
+                if not path.exists():
+                    raise FileNotFoundError(
+                        f'{annotations} is not a valid url nor existing local file'
+                    )
+                return BulkImportRequest.create_from_local_file(
+                    client=self.client,
+                    project_id=self.uid,
+                    name=name,
+                    file=path,
+                    validate_file=True,
+                )
+        else:
+            return BulkImportRequest.create_from_objects(
+                client=self.client,
+                project_id=self.uid,
+                name=name,
+                predictions=annotations,  # type: ignore
+            )
+
 
 class LabelingParameterOverride(DbObject):
     priority = Field.Int("priority")
@@ -361,5 +425,5 @@ class LabelingParameterOverride(DbObject):
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
     "consensus average_benchmark_agreement last_activity_time")
-LabelerPerformance.__doc__ = "Named tuple containing info about a labeler's " \
-    "performance."
+LabelerPerformance.__doc__ = (
+    "Named tuple containing info about a labeler's performance.")
