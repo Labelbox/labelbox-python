@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="labelbox",
-    version="2.4.3",
+    version="2.4.4",
     author="Labelbox",
     author_email="engineering@labelbox.com",
     description="Labelbox Python API",
