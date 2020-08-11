@@ -1,12 +1,10 @@
 # Changelog
 
-## Version 2.4.4 (2020-08-11)
-* `Project.upload_annotation` supports uploading via a local ndjson file, url, or a iterable of annotations
-
 ## Version 2.4.3 (2020-08-04)
 
 ### Added
 * `BulkImportRequest` data type
+* `Project.upload_annotation` supports uploading via a local ndjson file, url, or a iterable of annotations
 
 ## Version 2.4.2 (2020-08-01)
 ### Fixed
