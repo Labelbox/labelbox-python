@@ -374,7 +374,7 @@ class Project(DbObject, Updateable, Deletable):
             BulkImportRequest
 
         """
-        if isinstance(annotations, str):
+        if isinstance(annotations, str) or isinstance(annotations, Path):
 
             def _is_url_valid(url: str) -> bool:
                 """ Verifies that the given string is a valid url.
