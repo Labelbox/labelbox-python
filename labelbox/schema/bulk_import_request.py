@@ -186,8 +186,6 @@ class BulkImportRequest(DbObject):
         """ % query.results_query_part(cls)
         params = {"projectId": project_id, "name": name, "fileUrl": url}
         bulk_import_request_response = client.execute(query_str, params=params)
-        print('query_str', query_str, params)
-        print('response data', bulk_import_request_response)
         return cls(client,
                    bulk_import_request_response["createBulkImportRequest"])
 
