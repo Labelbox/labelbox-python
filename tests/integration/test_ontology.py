@@ -54,3 +54,16 @@ def test_create_ontology(client, project) -> None:
 
     removed = _remove_schema_ids(normalized_ontology)
     assert removed == sample_ontology()
+
+    ontology = project.ontology()
+
+    for tool in ontology.tools:
+        assert tool.feature_schema_id
+        assert tool.schema_node_id
+
+    for classification in ontology.classifications:
+        assert classification.feature_schema_id
+        assert classification.schema_node_id
+        for option in classification.options:
+            assert option.feature_schema_id
+            assert option.schema_node_id
