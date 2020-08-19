@@ -129,6 +129,9 @@ def test_validate_ndjson_uuid(tmp_path, project):
     with pytest.raises(UuidError):
         project.upload_annotations(name="name", annotations=str(file_path))
 
+    with pytest.raises(UuidError):
+        project.upload_annotations(name="name", annotations=repeat_uuid)
+
 
 @pytest.mark.slow
 def test_wait_till_done(project):
