@@ -288,6 +288,11 @@ class UuidError(NdjsonError):
 
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
+    """Validate individual ndjson lines.
+
+        - verifies that uuids are unique
+
+    """"
     uuids: Set[str] = set()
     for line in lines:
         uuid = line['uuid']
