@@ -279,7 +279,6 @@ class BulkImportRequest(DbObject):
         return cls(client, response_data["createBulkImportRequest"])
 
 
-
 def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
     """Validate individual ndjson lines.
 
