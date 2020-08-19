@@ -88,3 +88,8 @@ class ApiLimitError(LabelboxError):
 class MalformedQueryException(Exception):
     """ Raised when the user submits a malformed query."""
     pass
+
+
+class UuidError(LabelboxError):
+    """ Raised when there are repeat Uuid's in bulk import request."""
+    pass

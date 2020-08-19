@@ -279,13 +279,6 @@ class BulkImportRequest(DbObject):
         return cls(client, response_data["createBulkImportRequest"])
 
 
-class NdjsonError(Exception):
-    pass
-
-
-class UuidError(NdjsonError):
-    pass
-
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
     """Validate individual ndjson lines.
@@ -297,6 +290,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
     for line in lines:
         uuid = line['uuid']
         if uuid in uuids:
-            raise UuidError(f'{uuid} already used in this import job, '
-                            'must be unique for the project.')
-        uuids.add(line['uuid'])
+            raise labelbox.exceptions.UuidError(
+                f'{uuid} already used in this import job, '
+                'must be unique for the project.')
+        uuids.add(uuid)
