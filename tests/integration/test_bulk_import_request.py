@@ -4,7 +4,7 @@ import ndjson
 import pytest
 import requests
 
-from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.bulk_import_request import BulkImportRequest, UuidError
 from labelbox.schema.enums import BulkImportRequestState
 
 PREDICTIONS = [{
@@ -113,6 +113,20 @@ def test_validate_ndjson(tmp_path, project):
         f.write("test")
 
     with pytest.raises(ValueError):
+        project.upload_annotations(name="name", annotations=str(file_path))
+
+
+def test_validate_ndjson_uuid(tmp_path, project):
+    file_name = f"repeat_uuid.ndjson"
+    file_path = tmp_path / file_name
+    repeat_uuid = PREDICTIONS.copy()
+    repeat_uuid[0]['uuid'] = 'test_uuid'
+    repeat_uuid[1]['uuid'] = 'test_uuid'
+
+    with file_path.open("w") as f:
+        ndjson.dump(repeat_uuid, f)
+
+    with pytest.raises(UuidError):
         project.upload_annotations(name="name", annotations=str(file_path))
 
 
