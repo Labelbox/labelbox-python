@@ -4,6 +4,7 @@ import ndjson
 import pytest
 import requests
 
+from labelbox.exceptions import UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest, UuidError
 from labelbox.schema.enums import BulkImportRequestState
 
