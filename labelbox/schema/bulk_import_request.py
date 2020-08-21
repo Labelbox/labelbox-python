@@ -218,6 +218,9 @@ class BulkImportRequest(DbObject):
             BulkImportRequest object
         """
         data_str = ndjson.dumps(predictions)
+        if not data_str:
+            raise ValueError('annotations cannot be empty')
+
         data = data_str.encode('utf-8')
         file_name = _make_file_name(project_id, name)
         request_data = _make_request_data(project_id, name, len(data_str),
