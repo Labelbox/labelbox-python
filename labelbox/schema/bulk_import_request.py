@@ -2,8 +2,11 @@ import json
 import logging
 import time
 from pathlib import Path
+from typing import Any
 from typing import BinaryIO
+from typing import Dict
 from typing import Iterable
+from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -217,6 +220,7 @@ class BulkImportRequest(DbObject):
         Returns:
             BulkImportRequest object
         """
+        _validate_ndjson(predictions)
         data_str = ndjson.dumps(predictions)
         if not data_str:
             raise ValueError('annotations cannot be empty')
@@ -267,8 +271,7 @@ class BulkImportRequest(DbObject):
                 # by iterating through the file so we only store
                 # each line in memory rather than the entire file
                 try:
-                    for line in reader:
-                        pass
+                    _validate_ndjson(reader)
                 except ValueError:
                     raise ValueError(f"{file} is not a valid ndjson file")
                 else:
@@ -277,3 +280,19 @@ class BulkImportRequest(DbObject):
             response_data = _send_create_file_command(client, request_data,
                                                       file_name, file_data)
         return cls(client, response_data["createBulkImportRequest"])
+
+
+def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
+    """Validate individual ndjson lines.
+
+        - verifies that uuids are unique
+
+    """
+    uuids: Set[str] = set()
+    for line in lines:
+        uuid = line['uuid']
+        if uuid in uuids:
+            raise labelbox.exceptions.UuidError(
+                f'{uuid} already used in this import job, '
+                'must be unique for the project.')
+        uuids.add(uuid)
