@@ -175,6 +175,9 @@ class Client:
             raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
                                                     str(errors))
 
+        if not response.get('data'):
+            print('response', response)
+            raise
         return response["data"]
 
     def upload_file(self, path: str) -> str:
