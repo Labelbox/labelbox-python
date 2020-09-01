@@ -1,11 +1,5 @@
 # Changelog
 
-## Version 2.4.5 (2020-08-04)
-### Added
-* retry capabilities for common flaky API failures
-* protection against improper types passed into `Project.upload_anntations`
-* pass thru API error messages when possible
-
 ## Version 2.4.3 (2020-08-04)
 
 ### Added
