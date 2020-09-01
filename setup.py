@@ -17,6 +17,7 @@ setuptools.setup(
         "backoff==1.10.0",
         "ndjson==0.3.1",
         "requests>=2.22.0",
+        "google-api-core>=1.22.1",
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
