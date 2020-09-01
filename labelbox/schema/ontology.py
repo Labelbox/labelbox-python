@@ -1,7 +1,6 @@
 """Client side object for interacting with the ontology."""
 import abc
 from dataclasses import dataclass
-from functools import cached_property
 
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -88,16 +87,25 @@ class Ontology(DbObject):
     projects = Relationship.ToMany("Project", True)
     created_by = Relationship.ToOne("User", False, "created_by")
 
-    @cached_property
-    def tools(self) -> List[Tool]:
-        return [Tool.from_json(tool) for tool in self.normalized['tools']]
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._tools = None
+        self._classifications = None
 
-    @cached_property
+    def tools(self) -> List[Tool]:
+        if self._tools is None:
+            self._tools = [
+                Tool.from_json(tool) for tool in self.normalized['tools']
+            ]
+        return self._tools
+
     def classifications(self) -> List[Classification]:
-        return [
-            Classification.from_json(classification)
-            for classification in self.normalized['classifications']
-        ]
+        if self._classifications is None:
+            self._classfications = [
+                Classification.from_json(classification)
+                for classification in self.normalized['classifications']
+            ]
+        return self._classifications
 
 
 def convert_keys(json_dict: Dict[str, Any],
