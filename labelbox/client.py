@@ -120,27 +120,13 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
 
-        # if we do return a proper error code, reraise
-        if response.status_code != requests.codes.ok:
-            if response.status_code == 400:
-                print('400', response)
-            message = f"{response.status_code} {response.reason}"
-            cause = None
-            try:
-                r_json = response.json()
-            except:
-                pass
-            else:
-                cause = r_json.get('message')
-            raise labelbox.exceptions.LabelboxError(message, cause)
-
         try:
-            response = response.json()
+            r_json = response.json()
         except:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
-        errors = response.get("errors", [])
+        errors = r_json.get("errors", [])
 
         def check_errors(keywords, *path):
             """ Helper that looks for any of the given `keywords` in any of
@@ -180,7 +166,7 @@ class Client:
                 graphql_error["message"])
 
         # Check if API limit was exceeded
-        response_msg = response.get("message", "")
+        response_msg = r_json.get("message", "")
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
@@ -189,7 +175,17 @@ class Client:
             raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
                                                     str(errors))
 
-        return response["data"]
+        # if we do return a proper error code, and didn't catch this above
+        # reraise
+        # this mainly catches a 401 for API access disabled for free tier
+        # TODO: need to unify API errors to handle things more uniformly
+        # in the SDK
+        if response.status_code != requests.codes.ok:
+            message = f"{response.status_code} {response.reason}"
+            cause = r_json.get('message')
+            raise labelbox.exceptions.LabelboxError(message, cause)
+
+        return r_json["data"]
 
     def upload_file(self, path: str) -> str:
         """Uploads given path to local file.
