@@ -122,8 +122,6 @@ class Client:
 
         # if we do return a proper error code, reraise
         if response.status_code != requests.codes.ok:
-            if response.status_code == 400:
-                print('400', response)
             message = f"{response.status_code} {response.reason}"
             cause = None
             try:
