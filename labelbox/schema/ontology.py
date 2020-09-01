@@ -89,15 +89,15 @@ class Ontology(DbObject):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._tools = None
-        self._classifications = None
+        self._tools: Optional[List[Tool]] = None
+        self._classifications: Optional[List[Classification]] = None
 
     def tools(self) -> List[Tool]:
         if self._tools is None:
             self._tools = [
                 Tool.from_json(tool) for tool in self.normalized['tools']
             ]
-        return self._tools
+        return self._tools  # type: ignore
 
     def classifications(self) -> List[Classification]:
         if self._classifications is None:
@@ -105,7 +105,7 @@ class Ontology(DbObject):
                 Classification.from_json(classification)
                 for classification in self.normalized['classifications']
             ]
-        return self._classifications
+        return self._classifications  # type: ignore
 
 
 def convert_keys(json_dict: Dict[str, Any],
