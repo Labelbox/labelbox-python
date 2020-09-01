@@ -9,8 +9,7 @@ def test_get_labeling_frontends(client):
     # Test filtering
     target_frontend = frontends[0]
     filtered_frontends = client.get_labeling_frontends(
-        where=LabelingFrontend.iframe_url_path ==
-        target_frontend.iframe_url_path)
+        where=LabelingFrontend.iframe_url_path == target_frontend.iframe_url_path)
     for frontend in filtered_frontends:
         assert target_frontend == frontend
 
