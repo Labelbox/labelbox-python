@@ -48,16 +48,6 @@ class ValidationFailedError(LabelboxError):
     pass
 
 
-class InternalServerError(LabelboxError):
-    """Nondescript prisma or 502 related errors.
-
-    Meant to be retryable.
-
-    TODO: these errors need better messages from platform
-    """
-    pass
-
-
 class InvalidQueryError(LabelboxError):
     """ Indicates a malconstructed or unsupported query (either by GraphQL in
     general or by Labelbox specifically). This can be the result of either client

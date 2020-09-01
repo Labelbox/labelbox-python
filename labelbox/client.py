@@ -5,7 +5,6 @@ import mimetypes
 import os
 from typing import Tuple
 
-from google.api_core import retry
 import requests
 import requests.exceptions
 
@@ -61,8 +60,6 @@ class Client:
             'Authorization': 'Bearer %s' % api_key
         }
 
-    @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
         given query. Checks the response for errors and wraps errors
@@ -126,9 +123,6 @@ class Client:
         try:
             r_json = response.json()
         except:
-            error_502 = '502 Bad Gateway'
-            if error_502 in response.text:
-                raise labelbox.exceptions.InternalServerError(error_502)
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
@@ -175,12 +169,6 @@ class Client:
         response_msg = r_json.get("message", "")
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
-
-        prisma_error = check_errors(["INTERNAL_SERVER_ERROR"], "extensions",
-                                    "code")
-        if prisma_error:
-            raise labelbox.exceptions.InternalServerError(
-                prisma_error["message"])
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
