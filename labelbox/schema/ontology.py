@@ -11,7 +11,6 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.utils import snake_case, camel_case
 
 
-
 @dataclass
 class OntologyEntity:
     required: bool
@@ -43,8 +42,7 @@ class Classification(OntologyEntity):
     def from_json(cls, json_dict):
         _dict = convert_keys(json_dict, snake_case)
         _dict['options'] = [
-            Option.from_json(option)
-            for option in _dict['options']
+            Option.from_json(option) for option in _dict['options']
         ]
         return cls(**_dict)
 
@@ -92,10 +90,7 @@ class Ontology(DbObject):
 
     @cached_property
     def tools(self) -> List[Tool]:
-        return [
-            Tool.from_json(tool)
-            for tool in self.normalized['tools']
-        ]
+        return [Tool.from_json(tool) for tool in self.normalized['tools']]
 
     @cached_property
     def classifications(self) -> List[Classification]:
@@ -105,15 +100,13 @@ class Ontology(DbObject):
         ]
 
 
-def convert_keys(json_dict: Dict[str, Any], converter: Callable) -> Dict[str, Any]:
+def convert_keys(json_dict: Dict[str, Any],
+                 converter: Callable) -> Dict[str, Any]:
     if isinstance(json_dict, dict):
         return {
             converter(key): convert_keys(value, converter)
             for key, value in json_dict.items()
         }
     if isinstance(json_dict, list):
-        return [
-            convert_keys(ele, converter)
-            for ele in json_dict
-        ]
+        return [convert_keys(ele, converter) for ele in json_dict]
     return json_dict
