@@ -120,18 +120,6 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
 
-        # if we do return a proper error code, reraise
-        if response.status_code != requests.codes.ok:
-            message = f"{response.status_code} {response.reason}"
-            cause = None
-            try:
-                r_json = response.json()
-            except:
-                pass
-            else:
-                cause = r_json.get('message')
-            raise labelbox.exceptions.LabelboxError(message, cause)
-
         try:
             response = response.json()
         except:
