@@ -5,6 +5,7 @@ import mimetypes
 import os
 from typing import Tuple
 
+from google.api_core import retry
 import requests
 import requests.exceptions
 
@@ -60,6 +61,8 @@ class Client:
             'Authorization': 'Bearer %s' % api_key
         }
 
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
         given query. Checks the response for errors and wraps errors
@@ -121,12 +124,15 @@ class Client:
                 "Unknown error during Client.query(): " + str(e), e)
 
         try:
-            response = response.json()
+            r_json = response.json()
         except:
+            error_502 = '502 Bad Gateway'
+            if error_502 in response.text:
+                raise labelbox.exceptions.InternalServerError(error_502)
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
-        errors = response.get("errors", [])
+        errors = r_json.get("errors", [])
 
         def check_errors(keywords, *path):
             """ Helper that looks for any of the given `keywords` in any of
@@ -166,16 +172,32 @@ class Client:
                 graphql_error["message"])
 
         # Check if API limit was exceeded
-        response_msg = response.get("message", "")
+        response_msg = r_json.get("message", "")
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
+
+        prisma_error = check_errors(["INTERNAL_SERVER_ERROR"], "extensions",
+                                    "code")
+        if prisma_error:
+            raise labelbox.exceptions.InternalServerError(
+                prisma_error["message"])
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
             raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
                                                     str(errors))
 
-        return response["data"]
+        # if we do return a proper error code, and didn't catch this above
+        # reraise
+        # this mainly catches a 401 for API access disabled for free tier
+        # TODO: need to unify API errors to handle things more uniformly
+        # in the SDK
+        if response.status_code != requests.codes.ok:
+            message = f"{response.status_code} {response.reason}"
+            cause = r_json.get('message')
+            raise labelbox.exceptions.LabelboxError(message, cause)
+
+        return r_json["data"]
 
     def upload_file(self, path: str) -> str:
         """Uploads given path to local file.
