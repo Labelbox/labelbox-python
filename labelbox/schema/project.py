@@ -410,13 +410,16 @@ class Project(DbObject, Updateable, Deletable):
                     file=path,
                     validate_file=True,
                 )
-        else:
+        elif isinstance(annotations, Iterable):
             return BulkImportRequest.create_from_objects(
                 client=self.client,
                 project_id=self.uid,
                 name=name,
                 predictions=annotations,  # type: ignore
             )
+        else:
+            raise ValueError(
+                f'Invalid annotations given of type: {type(annotations)}')
 
 
 class LabelingParameterOverride(DbObject):
