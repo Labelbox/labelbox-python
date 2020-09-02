@@ -1,12 +1,13 @@
 from lb_logger import logger
 import unittest
 
-global_msg = "GLOBAL MESSAGE"
-
 class TestLoggerMessages(unittest.TestCase):
+    """
+    Test that the logger's out put will match the expected levels set by logger
+    """
 
     def setUp(self):
-        self.msg = global_msg
+        self.msg = "Test message""
         self.test_logger = logger
     
     def test_info_msg(self):
@@ -28,7 +29,3 @@ class TestLoggerMessages(unittest.TestCase):
         with self.assertLogs(self.test_logger) as assert_log:
             self.test_logger.critical(self.msg)
         self.assertEqual(assert_log.output, ['CRITICAL:lb_logger:%s' %(self.msg)])           
-
-
-if __name__ == "__main__":
-    unittest.main()
