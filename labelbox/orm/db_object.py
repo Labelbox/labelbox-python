@@ -7,7 +7,9 @@ from labelbox.orm import query
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.pagination import PaginatedCollection
 
-logger = logging.getLogger(__name__)
+from lb_logger import logger
+
+logger = logger
 
 
 class DbObject(Entity):

@@ -20,7 +20,7 @@ from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
 
-logger = logging.getLogger(__name__)
+from lb_logger import logger
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
@@ -33,6 +33,7 @@ class Client:
 
     def __init__(self,
                  api_key=None,
+                 verbose=False,
                  endpoint='https://api.labelbox.com/graphql'):
         """ Creates and initializes a Labelbox Client.
 
@@ -51,6 +52,11 @@ class Client:
                     "Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
+
+        if verbose:
+            logger = logger
+        else:
+            logger = logging.getLogger(__name__)
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
 

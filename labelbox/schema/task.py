@@ -5,7 +5,9 @@ from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 
-logger = logging.getLogger(__name__)
+from lb_logger import logger
+
+logger = logger
 
 
 class Task(DbObject):

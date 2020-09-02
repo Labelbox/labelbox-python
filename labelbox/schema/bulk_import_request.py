@@ -22,8 +22,10 @@ from labelbox.orm.model import Field
 from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 
+from lb_logger import logger
+
 NDJSON_MIME_TYPE = "application/x-ndjson"
-logger = logging.getLogger(__name__)
+logger = logger
 
 
 def _make_file_name(project_id: str, name: str) -> str:
