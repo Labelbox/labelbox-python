@@ -50,6 +50,8 @@ class PaginatedCollection:
             results = self.client.execute(query, self.params)
             for deref in self.dereferencing:
                 results = results[deref]
+                if results is None:
+                    raise StopIteration()
 
             page_data = [
                 self.obj_class(self.client, result) for result in results
