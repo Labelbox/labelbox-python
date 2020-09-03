@@ -54,11 +54,10 @@ class Client:
         self.api_key = api_key
 
         if verbose:
-            logger = logger
+            logger.setLevel(level=logging.INFO)
+            # logging.basicConfig(level=logging.INFO)
         else:
-            logger = logging.getLogger(__name__)
-
-        logger.info("Initializing Labelbox client at '%s'", endpoint)
+            logger.info("Initializing Labelbox client at '%s'", endpoint)
 
         self.endpoint = endpoint
         self.headers = {

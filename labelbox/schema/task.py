@@ -7,9 +7,6 @@ from labelbox.orm.model import Field, Relationship
 
 from lb_logger import logger
 
-logger = logger
-
-
 class Task(DbObject):
     """ Represents a server-side process that might take a longer time to process.
     Allows the Task state to be updated and checked on the client side.

@@ -9,9 +9,6 @@ from labelbox.pagination import PaginatedCollection
 
 from lb_logger import logger
 
-logger = logger
-
-
 class DbObject(Entity):
     """ A client-side representation of a database object (row). Intended as
     base class for classes representing concrete database types (for example
