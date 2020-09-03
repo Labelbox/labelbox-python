@@ -32,3 +32,20 @@ client = Client()
 
 ## Repo Organization and Contribution
 Please consult `CONTRIB.md`
+
+## Testing
+1. Update the `Makefile` with your `staging` or `prod` API key.  Make sure the key is not from a free tier account.
+2. To test on `staging`:
+```
+make test-staging
+```
+
+3. To test on `prod`:
+```
+make test-prod
+```
+
+4. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
+```
+make -B {build|test-staging|test_prod}
+```
