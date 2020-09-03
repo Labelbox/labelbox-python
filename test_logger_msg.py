@@ -37,11 +37,3 @@ class TestLoggerMessages(unittest.TestCase):
         assert self.test_logger.level == logging.NOTSET
         client = Client(api_key=api_key, verbose=True)
         assert self.test_logger.level == logging.INFO 
-        
-        self.test_logger.info("info")
-        self.test_logger.warning("warning")
-        
-
-
-if __name__ == "__main__":
-    unittest.main()
