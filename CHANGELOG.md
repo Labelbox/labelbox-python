@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.4.6 (2020-09-03)
+### Fix
+* fix failing `create_metadata` calls
+
 ## Version 2.4.5 (2020-09-01)
 ### Added
 * retry capabilities for common flaky API failures
