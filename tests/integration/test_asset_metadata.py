@@ -5,9 +5,10 @@ from labelbox.exceptions import InvalidQueryError
 
 IMG_URL = "https://picsum.photos/200/300"
 
-
-@pytest.mark.skip(reason='TODO: already failing')
-def test_asset_metadata_crud(dataset, rand_gen):
+def test_asset_metadata_crud(project, dataset, rand_gen):
+    # must attach a dataset to a project before it can be queryable
+    # due to permissions
+    project.datasets.connect(dataset)
     data_row = dataset.create_data_row(row_data=IMG_URL)
     assert len(list(data_row.metadata())) == 0
 
