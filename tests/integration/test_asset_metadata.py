@@ -5,6 +5,7 @@ from labelbox.exceptions import InvalidQueryError
 
 IMG_URL = "https://picsum.photos/200/300"
 
+
 def test_asset_metadata_crud(project, dataset, rand_gen):
     # must attach a dataset to a project before it can be queryable
     # due to permissions
