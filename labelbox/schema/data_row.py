@@ -49,7 +49,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         meta_value_param = "metaValue"
         data_row_id_param = "dataRowId"
         query_str = """mutation CreateAssetMetadataPyApi(
-            $%s: MetadataType!, $%s: String!, $%s: ID!) {
+            $%s: AttachmentType!, $%s: String!, $%s: ID!) {
             createAssetMetadata(data: {
                 metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
             meta_type_param, meta_value_param, data_row_id_param,
