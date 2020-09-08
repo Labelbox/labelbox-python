@@ -34,7 +34,7 @@ client = Client()
 Please consult `CONTRIB.md`
 
 ## Testing
-1. Update the `Makefile` with your `staging` or `prod` API key.  Make sure the key is not from a free tier account.
+1. Update the `Makefile` with your `staging` or `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
 2. To test on `staging`:
 ```
 make test-staging
