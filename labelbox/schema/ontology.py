@@ -101,7 +101,7 @@ class Ontology(DbObject):
 
     def classifications(self) -> List[Classification]:
         if self._classifications is None:
-            self._classfications = [
+            self._classifications = [
                 Classification.from_json(classification)
                 for classification in self.normalized['classifications']
             ]

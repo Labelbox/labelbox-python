@@ -57,11 +57,15 @@ def test_create_ontology(client, project) -> None:
 
     ontology = project.ontology()
 
-    for tool in ontology.tools:
+    tools = ontology.tools()
+    assert tools
+    for tool in tools:
         assert tool.feature_schema_id
         assert tool.schema_node_id
 
-    for classification in ontology.classifications:
+    classifications = ontology.classifications()
+    assert classifications
+    for classification in classifications:
         assert classification.feature_schema_id
         assert classification.schema_node_id
         for option in classification.options:
