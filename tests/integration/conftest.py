@@ -113,10 +113,9 @@ def label_pack(project, rand_gen):
 
 @pytest.fixture
 def iframe_url(environ) -> str:
-    return {
-        Environ.PROD: 'https://editor.labelbox.com',
-        Environ.STAGING: 'https://staging-editor.labelbox.com',
-    }[environ]
+    if environ == Environ.PROD:
+        return 'https://editor.labelbox.com'
+    return 'https://staging-editor.labelbox.com'
 
 
 @pytest.fixture
