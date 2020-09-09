@@ -33,25 +33,24 @@ def environ() -> Environ:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
 
-def graphql_url(env: str) -> str:
-    return {
-        Environ.PROD: 'https://editor.labelbox.com',
-        Environ.STAGING: 'https://staging-editor.labelbox.com',
-    }[env]
+def graphql_url(environ: str) -> str:
+    if environ == Environ.PROD:
+        return 'https://editor.labelbox.com'
+    return 'https://staging-editor.labelbox.com'
 
 
-def testing_api_key(env: str) -> str:
-    return {
-        Environ.PROD: os.environ["LABELBOX_TEST_API_KEY_PROD"],
-        Environ.STAGING: os.environ["LABELBOX_TEST_API_KEY_STAGING"],
-    }[env]
+def testing_api_key(environ: str) -> str:
+    if environ == Environ.PROD:
+        return os.environ["LABELBOX_TEST_API_KEY_PROD"]
+    return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
 
 
 class IntegrationClient(Client):
 
-    def __init__(self):
-        api_url = graphql_url(environ())
-        api_key = testing_api_key(environ())
+    def __init__(self, environ: str) -> None:
+        print('environ', environ)
+        api_url = graphql_url(environ)
+        api_key = testing_api_key(environ)
         super().__init__(api_key, api_url)
 
         self.queries = []
@@ -64,8 +63,8 @@ class IntegrationClient(Client):
 
 
 @pytest.fixture
-def client():
-    return IntegrationClient()
+def client(environ: str):
+    return IntegrationClient(environ)
 
 
 @pytest.fixture
