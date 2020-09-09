@@ -65,7 +65,7 @@ jobs:
     - name: Test with tox
       env:
         # make sure to tell tox to use these environs in tox.ini
-        LABELBOX_TEST_ENVIRON: "prod"
+        #
         # randall@labelbox.com
         LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
 

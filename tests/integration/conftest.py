@@ -48,7 +48,6 @@ def testing_api_key(environ: str) -> str:
 class IntegrationClient(Client):
 
     def __init__(self, environ: str) -> None:
-        print('environ', environ)
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         super().__init__(api_key, api_url)
