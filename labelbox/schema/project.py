@@ -161,8 +161,9 @@ class Project(DbObject, Updateable, Deletable):
 
         def create_labeler_performance(client, result):
             result["user"] = Entity.User(client, result["user"])
-            result["lastActivityTime"] = datetime.fromtimestamp(
-                result["lastActivityTime"] / 1000, timezone.utc)
+            # python isoformat doesn't accept Z as utc timezone
+            result["lastActivityTime"] = datetime.fromisoformat(
+                result["lastActivityTime"].replace('Z', '+00:00'))
             return LabelerPerformance(
                 **
                 {utils.snake_case(key): value for key, value in result.items()})

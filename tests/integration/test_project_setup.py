@@ -23,9 +23,8 @@ def simple_ontology():
     return {"tools": [], "classifications": classifications}
 
 
-def test_project_setup(project) -> None:
+def test_project_setup(project, iframe_url) -> None:
     client = project.client
-    iframe_url = 'https://editor.labelbox.com'
     labeling_frontends = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.iframe_url_path == iframe_url))
