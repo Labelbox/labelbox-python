@@ -29,19 +29,27 @@ def environ() -> Environ:
     """
     try:
         return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
-        # TODO: for some reason all other environs can be set but
-        # this one cannot in github actions
-        #return Environ.PROD
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
 
+def graphql_url(environ: str) -> str:
+    if environ == Environ.PROD:
+        return 'https://api.labelbox.com/graphql'
+    return 'https://staging-api.labelbox.com/graphql'
+
+
+def testing_api_key(environ: str) -> str:
+    if environ == Environ.PROD:
+        return os.environ["LABELBOX_TEST_API_KEY_PROD"]
+    return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+
+
 class IntegrationClient(Client):
 
-    def __init__(self):
-        api_url = os.environ["LABELBOX_TEST_ENDPOINT"]
-        api_key = os.environ["LABELBOX_TEST_API_KEY"]
-        #"https://staging-api.labelbox.com/graphql")
+    def __init__(self, environ: str) -> None:
+        api_url = graphql_url(environ)
+        api_key = testing_api_key(environ)
         super().__init__(api_key, api_url)
 
         self.queries = []
@@ -54,8 +62,8 @@ class IntegrationClient(Client):
 
 
 @pytest.fixture
-def client():
-    return IntegrationClient()
+def client(environ: str):
+    return IntegrationClient(environ)
 
 
 @pytest.fixture
@@ -105,10 +113,9 @@ def label_pack(project, rand_gen):
 
 @pytest.fixture
 def iframe_url(environ) -> str:
-    return {
-        Environ.PROD: 'https://editor.labelbox.com',
-        Environ.STAGING: 'https://staging-editor.labelbox.com',
-    }[environ]
+    if environ == Environ.PROD:
+        return 'https://editor.labelbox.com'
+    return 'https://staging.labelbox.dev/editor'
 
 
 @pytest.fixture
