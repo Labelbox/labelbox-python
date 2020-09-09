@@ -2,7 +2,8 @@ from labelbox import Client
 import pytest
 import logging
 
-def test_client_log(caplog, project):  
+
+def test_client_log(caplog, project):
     """
     This file tests that the logger will properly output to the console after updating logging level
 
