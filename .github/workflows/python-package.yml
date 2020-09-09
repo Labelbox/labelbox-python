@@ -26,9 +26,9 @@ jobs:
     - name: set environment for branch
       run: |
           if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
-            echo "::set-env name=LABELBOX_TEST_ENVIRON:::prod"
+            echo "::set-env name=LABELBOX_TEST_ENVIRON::prod"
           else
-            echo "::set-env name=LABELBOX_TEST_ENVIRON:::staging"
+            echo "::set-env name=LABELBOX_TEST_ENVIRON::staging"
           fi
 
     - uses: actions/checkout@v2
