@@ -5,13 +5,11 @@ build:
 test-staging: build
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="staging" \
-		-e LABELBOX_TEST_ENDPOINT="https://staging-api.labelbox.com/graphql" \
-		-e LABELBOX_TEST_API_KEY="<REPLACE>" \
-		local/labelbox-python:test pytest $(PATH_TO_TEST)
+		-e LABELBOX_TEST_API_KEY_STAGING="<REPLACE>" \
+		local/labelbox-python:test pytest $(PATH_TO_TEST) -svvx
 
 test-prod: build
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="prod" \
-		-e LABELBOX_TEST_ENDPOINT="https://api.labelbox.com/graphql" \
-		-e LABELBOX_TEST_API_KEY="<REPLACE>" \
-		local/labelbox-python:test pytest $(PATH_TO_TEST)
+		-e LABELBOX_TEST_API_KEY_PROD="<REPLACE>" \
+		local/labelbox-python:test pytest $(PATH_TO_TEST) -svvx
