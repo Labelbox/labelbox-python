@@ -3,6 +3,13 @@ import pytest
 import logging
 
 def test_client_log(caplog, project):  
+    """
+    This file tests that the logger will properly output to the console after updating logging level
+
+    The default level is set to WARNING
+
+    There is an expected output after setting logging level to DEBUG
+    """
 
     project.export_labels()
     assert '' == caplog.text
