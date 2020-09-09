@@ -17,6 +17,20 @@ jobs:
         python-version: [3.6, 3.7]
 
     steps:
+
+    - name: Cancel previous workflow
+      uses: styfle/cancel-workflow-action@0.4.0
+      with:
+        access_token: ${{ github.token }}
+
+    - name: set environment for branch
+      run: |
+          if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
+            echo "::set-env name=LABEL_TEST_ENVIRON:::prod"
+          else
+            echo "::set-env name=LABEL_TEST_ENVIRON:::staging"
+          fi
+
     - uses: actions/checkout@v2
       with:
         token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
@@ -51,16 +65,11 @@ jobs:
     - name: Test with tox
       env:
         # make sure to tell tox to use these environs in tox.ini
-        LABELBOX_TEST_API_KEY: ${{ secrets.LABELBOX_API_KEY }}
-        LABELBOX_TEST_ENDPOINT: "https://api.labelbox.com/graphql"
-        # TODO: create a staging environment (develop)
-        # we only test against prod right now because the merges are right into
-        # the main branch which is develop right now
         LABELBOX_TEST_ENVIRON: "prod"
-        #
+        # randall@labelbox.com
+        LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
+
         # randall+staging-python@labelbox.com
-        #LABELBOX_TEST_API_KEY: ${{ secrets.STAGING_LABELBOX_API_KEY }}
-        #LABELBOX_TEST_ENDPOINT: "https://staging-api.labelbox.com/graphql"
-        #LABELBOX_TEST_ENVIRON: "staging"
+        LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
       run: |
         tox -- -svv

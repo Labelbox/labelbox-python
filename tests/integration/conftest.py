@@ -29,19 +29,29 @@ def environ() -> Environ:
     """
     try:
         return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
-        # TODO: for some reason all other environs can be set but
-        # this one cannot in github actions
-        #return Environ.PROD
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
+
+
+def graphql_url(env: str) -> str:
+    return {
+        Environ.PROD: 'https://editor.labelbox.com',
+        Environ.STAGING: 'https://staging-editor.labelbox.com',
+    }[env]
+
+
+def testing_api_key(env: str) -> str:
+    return {
+        Environ.PROD: os.environ["LABELBOX_TEST_API_KEY_PROD"],
+        Environ.STAGING: os.environ["LABELBOX_TEST_API_KEY_STAGING"],
+    }[env]
 
 
 class IntegrationClient(Client):
 
     def __init__(self):
-        api_url = os.environ["LABELBOX_TEST_ENDPOINT"]
-        api_key = os.environ["LABELBOX_TEST_API_KEY"]
-        #"https://staging-api.labelbox.com/graphql")
+        api_url = graphql_url(environ())
+        api_key = testing_api_key(environ())
         super().__init__(api_key, api_url)
 
         self.queries = []
