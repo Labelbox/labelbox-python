@@ -35,8 +35,8 @@ def environ() -> Environ:
 
 def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
-        return 'https://editor.labelbox.com'
-    return 'https://staging-editor.labelbox.com'
+        return 'https://api.labelbox.com/graphql'
+    return 'https://staging-api.labelbox.com/graphql'
 
 
 def testing_api_key(environ: str) -> str:
