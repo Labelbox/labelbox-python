@@ -24,7 +24,6 @@ def simple_ontology():
 
 
 def test_project_setup(project, iframe_url) -> None:
-
     client = project.client
     labeling_frontends = list(
         client.get_labeling_frontends(
