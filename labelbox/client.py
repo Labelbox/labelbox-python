@@ -44,6 +44,18 @@ class Client:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
+
+        Logging:
+            Logging is defaulted to level WARNING. To receive more verbose 
+                output to console, update logging.level to the 
+                appropriate level.
+
+            Example:
+                #get updated on console when client is instantiated
+                import logger
+
+                logging.basicConfig(level = logging.INFO)
+                client = Client("<APIKEY>")                
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
