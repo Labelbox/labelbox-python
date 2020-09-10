@@ -12,3 +12,4 @@ import labelbox.schema.task
 import labelbox.schema.user
 import labelbox.schema.webhook
 import labelbox.schema.prediction
+import labelbox.schema.ontology
