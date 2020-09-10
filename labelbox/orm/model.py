@@ -42,6 +42,7 @@ class Field:
         Boolean = auto()
         ID = auto()
         DateTime = auto()
+        Json = auto()
 
     class EnumType:
 
@@ -84,6 +85,10 @@ class Field:
     @staticmethod
     def Enum(enum_cls: type, *args):
         return Field(Field.EnumType(enum_cls), *args)
+
+    @staticmethod
+    def Json(*args):
+        return Field(Field.Type.Json, *args)
 
     def __init__(self,
                  field_type: Union[Type, EnumType],

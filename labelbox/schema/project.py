@@ -46,6 +46,7 @@ class Project(DbObject, Updateable, Deletable):
     active_prediction_model = Relationship.ToOne("PredictionModel", False,
                                                  "active_prediction_model")
     predictions = Relationship.ToMany("Prediction", False)
+    ontology = Relationship.ToOne("Ontology", True)
 
     def create_label(self, **kwargs):
         """ Creates a label on this Project.
