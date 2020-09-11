@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.4.7 (2020-09-10)
+### Added
+* `Ontology` schema for interacting with ontologies and their schema nodes
+
 ## Version 2.4.6 (2020-09-03)
 ### Fix
 * fix failing `create_metadata` calls
