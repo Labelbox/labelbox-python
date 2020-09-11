@@ -21,7 +21,6 @@ except AttributeError:
     from backports.datetime_fromisoformat import MonkeyPatch
     MonkeyPatch.patch_fromisoformat()
 
-
 logger = logging.getLogger(__name__)
 
 
