@@ -15,8 +15,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "backoff==1.10.0",
-        "backports-datetime-fromisoformat",
-        "dataclasses",
+        "backports-datetime-fromisoformat==1.0.0",
+        "dataclasses==0.7",
         "ndjson==0.3.1",
         "requests>=2.22.0",
         "google-api-core>=1.22.1",
