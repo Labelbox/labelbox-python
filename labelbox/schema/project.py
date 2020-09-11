@@ -15,6 +15,12 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
+try:
+    datetime.fromisoformat  # type: ignore[attr-defined]
+except AttributeError:
+    from backports.datetime_fromisoformat import MonkeyPatch
+    MonkeyPatch.patch_fromisoformat()
+
 logger = logging.getLogger(__name__)
 
 

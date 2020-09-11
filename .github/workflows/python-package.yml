@@ -14,7 +14,8 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: [3.7, 3.8]
+        # TODO: unlock parallel testing by using more API keys
+        python-version: [3.6]
 
     steps:
 
@@ -57,7 +58,7 @@ jobs:
         mypy -p labelbox --pretty --show-error-codes
     - name: Install package and test dependencies
       run: |
-        pip install tox==3.18.1 tox-gh-actions==1.3.0
+        pip install tox==3.18.1 tox-gh-actions==1.3.0 pytest-parallel==0.1.0
 
     # TODO: replace tox.ini with what the Makefile does
     # to make sure local testing is
@@ -72,4 +73,4 @@ jobs:
         # randall+staging-python@labelbox.com
         LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
       run: |
-        tox -- -svv
+        pytest --workers 2 -svv

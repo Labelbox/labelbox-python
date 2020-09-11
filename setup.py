@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="labelbox",
-    version="2.4.6",
+    version="2.4.7",
     author="Labelbox",
     author_email="engineering@labelbox.com",
     description="Labelbox Python API",
@@ -15,6 +15,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "backoff==1.10.0",
+        "backports-datetime-fromisoformat",
+        "dataclasses",
         "ndjson==0.3.1",
         "requests>=2.22.0",
         "google-api-core>=1.22.1",
@@ -23,9 +25,10 @@ setuptools.setup(
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.6',
     keywords=["labelbox"],
 )
