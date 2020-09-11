@@ -14,8 +14,8 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: [3.6, 3.7, 3.8]
-        group: [1, 2, 3, 4, 5]
+        # TODO: unlock parallel testing by using more API keys
+        python-version: [3.6]
 
     steps:
 
@@ -73,4 +73,4 @@ jobs:
         # randall+staging-python@labelbox.com
         LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
       run: |
-        pytest --splits 5 --group ${{ matrix.group }} -svv
+        pytest -svv
