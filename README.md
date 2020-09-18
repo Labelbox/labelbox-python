@@ -12,6 +12,20 @@ The Labelbox Python API offers a simple, user-friendly way to interact with the 
 
 ## Installation & authentication
 
+0. Prerequisite: Install pip
+
+`pip` is a package manager for Python. **On macOS**, you can set it up to use the default python3 install via -
+```
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python3 get-pip.py
+```
+
+If the installation completes with a warning re: pip not being in your path, you'll need to add it by modifying your shell config (`.zshrc`, `.bashrc` or similar). You might have to modify the command below depending on the version of python3 on your machine.
+
+```
+export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
+```
+
 1. Install using Python's Pip manager.
 ```
 pip install labelbox
