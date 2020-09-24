@@ -212,7 +212,11 @@ def check_where_clause(entity, where):
 
     # The `deleted` field is a special case, ignore it.
     where_fields = [f for f in fields(where) if f != Entity.deleted]
+    print(f"where fields:  {set(where_fields)}")
+    print(f"entity fields: {set(entity.fields())}")
     invalid_fields = set(where_fields) - set(entity.fields())
+    print(f"invalid fields:{invalid_fields}\n")
+
     if invalid_fields:
         raise InvalidAttributeError(entity, invalid_fields)
 
