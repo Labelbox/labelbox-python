@@ -55,7 +55,8 @@ class Project(DbObject, Updateable, Deletable):
     ontology = Relationship.ToOne("Ontology", True)
 
     def create_label(self, **kwargs):
-        """ Creates a label on this Project.
+        """ Creates a label on a Legacy Editor project. Not
+            supported in the new Editor.
 
         Kwargs:
             Label attributes. At the minimum the label `DataRow`.
@@ -306,7 +307,8 @@ class Project(DbObject, Updateable, Deletable):
         return res["extendReservations"]
 
     def create_prediction_model(self, name, version):
-        """ Creates a PredictionModel connected to this Project.
+        """ Creates a PredictionModel connected to a Legacy Editor
+            Project.
         Args:
             name (str): The new PredictionModel's name.
             version (int): The new PredictionModel's version.
@@ -322,7 +324,8 @@ class Project(DbObject, Updateable, Deletable):
         return model
 
     def create_prediction(self, label, data_row, prediction_model=None):
-        """ Creates a Prediction within this Project.
+        """ Creates a Prediction within a Legacy Editor Project.
+        
         Args:
             label (str): The `label` field of the new Prediction.
             data_row (DataRow): The DataRow for which the Prediction is created.
@@ -369,7 +372,7 @@ class Project(DbObject, Updateable, Deletable):
         name: str,
         annotations: Union[str, Union[str, Path], Iterable[dict]],
     ) -> 'BulkImportRequest':  # type: ignore
-        """ Uploads annotations to a project.
+        """ Uploads annotations to a new Editor project.
 
         Args:
             name: name of the BulkImportRequest job
