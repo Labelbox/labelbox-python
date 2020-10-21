@@ -149,3 +149,16 @@ def test_data_row_deletion(dataset, rand_gen):
 
     data_rows = list(dataset.data_rows())
     assert {dr.external_id for dr in data_rows} == expected
+
+
+def test_data_row_iteration(dataset, rand_gen) -> None:
+    task = dataset.create_data_rows([
+        {
+            DataRow.row_data: IMG_URL
+        },
+        {
+            "row_data": IMG_URL
+        },
+    ])
+    task.wait_till_done()
+    data_row = next(dataset.data_rows())
