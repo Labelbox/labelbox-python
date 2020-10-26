@@ -29,7 +29,7 @@ class AuthorizationError(LabelboxError):
 class ResourceNotFoundError(LabelboxError):
     """Exception raised when a given resource is not found. """
 
-    def __init__(self, db_object_type = None, params = None, message: str = None):
+    def __init__(self, db_object_type=None, params=None, message: str = None):
         """ Constructor.
         Args:
             db_object_type (type): A labelbox.schema.DbObject subtype.
