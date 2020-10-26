@@ -34,6 +34,7 @@ class PaginatedCollection:
         self._fetched_pages = 0
         self._fetched_all = False
         self._data = []
+        self._data_ind = 0
 
     def __iter__(self):
         self._data_ind = 0
