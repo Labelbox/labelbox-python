@@ -146,6 +146,8 @@ class Client:
 
         errors = r_json.get("errors", [])
 
+        print('errors', errors)
+
         def check_errors(keywords, *path):
             """ Helper that looks for any of the given `keywords` in any of
             current errors on paths (like error[path][component][to][keyword]).
