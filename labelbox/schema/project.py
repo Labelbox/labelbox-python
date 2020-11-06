@@ -367,19 +367,19 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, params)
         return Prediction(self.client, res["createPrediction"])
 
-    def enable_model_assisted_labeling(self, toggle:bool=True) -> bool:
+    def enable_model_assisted_labeling(self, toggle: bool=True) -> bool:
         """ Turns model assisted labeling either on or off based on input
 
         Args:
             toggle (Boolean): True or False boolean 
         Returns:
-            True or False depending on the condition given
+            True if toggled on or False if toggled off
         """
 
         project_param = "project_id"
         show_param = "show"
 
-        query_str = """mutation toggle_model_assisted_labeling($%s: ID!, $%s: Boolean!) {
+        query_str = """mutation toggle_model_assisted_labelingPyApi($%s: ID!, $%s: Boolean!) {
             project(where: {id: $%s }) {
                 showPredictionsToLabelers(show: $%s) { 
                     id, showingPredictionsToLabelers
