@@ -37,7 +37,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     def create_metadata(self, meta_type, meta_value):
         """ Creates an asset metadata for this DataRow.
-
+        
+        >>> datarow.create_metadata("TEXT", "This is a text message")
+        
         Args:
             meta_type (str): Asset metadata type, must be one of:
                 VIDEO, IMAGE, TEXT.
