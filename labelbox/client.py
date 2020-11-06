@@ -36,6 +36,14 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql'):
         """ Creates and initializes a Labelbox Client.
 
+            Logging is defaulted to level WARNING. To receive more verbose
+                output to console, update logging.level to the
+                appropriate level.
+
+            >>> import logger
+            >>> logging.basicConfig(level = logging.INFO)
+            >>> client = Client("<APIKEY>")
+
         Args:
             api_key (str): API key. If None, the key is obtained from
                 the "LABELBOX_API_KEY" environment variable.
@@ -45,17 +53,6 @@ class Client:
                 is provided as an argument or via the environment
                 variable.
 
-        Logging:
-            Logging is defaulted to level WARNING. To receive more verbose 
-                output to console, update logging.level to the 
-                appropriate level.
-
-            Example:
-                #get updated on console when client is instantiated
-                import logger
-
-                logging.basicConfig(level = logging.INFO)
-                client = Client("<APIKEY>")                
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
@@ -310,7 +307,7 @@ class Client:
     def get_project(self, project_id):
         """ Gets a single Project with the given ID.
 
-        >>> project = client.get_project("<project_id>")
+            >>> project = client.get_project("<project_id>")
 
         Args:
             project_id (str): Unique ID of the Project.
@@ -325,7 +322,7 @@ class Client:
     def get_dataset(self, dataset_id):
         """ Gets a single Dataset with the given ID.
 
-        >>> dataset = client.get_dataset("<dataset_id>")
+            >>> dataset = client.get_dataset("<dataset_id>")
 
         Args:
             dataset_id (str): Unique ID of the Dataset.
@@ -339,7 +336,7 @@ class Client:
 
     def get_user(self):
         """ Gets the current User database object.
-        >>> user = client.get_user()
+            >>> user = client.get_user()
 
         """
         return self._get_single(User, None)
@@ -347,7 +344,7 @@ class Client:
     def get_organization(self):
         """ Gets the Organization DB object of the current user.
 
-        >>> organization = client.get_organization()
+            >>> organization = client.get_organization()
 
         """
         return self._get_single(Organization, None)
@@ -373,7 +370,7 @@ class Client:
     def get_projects(self, where=None):
         """ Fetches all the projects the user has access to.
 
-        >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
+            >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -386,7 +383,7 @@ class Client:
     def get_datasets(self, where=None):
         """ Fetches one or more datasets.
 
-        >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description"))
+            >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -399,7 +396,7 @@ class Client:
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
 
-        >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
+            >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -440,8 +437,8 @@ class Client:
         """ Creates a Dataset object on the server. Attribute values are
             passed as keyword arguments:
 
-        >>> project = client.get_project("<project_uid>")
-        >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
+            >>> project = client.get_project("<project_uid>")
+            >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
 
         Kwargs:
             Keyword arguments with new Dataset attribute values.
@@ -459,7 +456,7 @@ class Client:
         """ Creates a Project object on the server. Attribute values are
             passed as keyword arguments:
 
-        >>> project = client.create_project(name="<project_name>", description="<project_description>")
+            >>> project = client.create_project(name="<project_name>", description="<project_description>")
 
         Kwargs:
             Keyword arguments with new Project attribute values.
