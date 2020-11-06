@@ -27,7 +27,7 @@ jobs:
     - name: Build
       run: |
         python setup.py sdist bdist_wheel
-        
+
     - name: Update help docs
       run: |
         python setup.py install
