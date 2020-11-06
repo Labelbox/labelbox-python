@@ -367,6 +367,34 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, params)
         return Prediction(self.client, res["createPrediction"])
 
+    def enable_model_assisted_labeling(self, toggle:bool=True) -> bool:
+        """ Turns model assisted labeling either on or off based on input
+
+        Args:
+            toggle (Boolean): True or False boolean 
+        Returns:
+            True or False depending on the condition given
+        """
+
+        project_param = "project_id"
+        show_param = "show"
+
+        query_str = """mutation toggle_model_assisted_labeling($%s: ID!, $%s: Boolean!) {
+            project(where: {id: $%s }) {
+                showPredictionsToLabelers(show: $%s) { 
+                    id, showingPredictionsToLabelers
+                }
+            }
+        }""" % (project_param, show_param,project_param, show_param)
+
+        params = {
+            project_param: self.uid, 
+            show_param: toggle
+        }
+
+        res = self.client.execute(query_str, params)
+        return res["project"]["showPredictionsToLabelers"]["showingPredictionsToLabelers"]
+
     def upload_annotations(
         self,
         name: str,
@@ -431,7 +459,6 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
-
 
 class LabelingParameterOverride(DbObject):
     priority = Field.Int("priority")
