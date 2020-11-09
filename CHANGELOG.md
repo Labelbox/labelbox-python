@@ -2,6 +2,8 @@
 ## Version 2.4.9 (2020-09-10)
 ### Fix
 * 2.4.8 was broken for > Python 3.6
+### Added
+* include new `enable_model_assisted_labeling` method for turning on [model-assisted labeling](https://labelbox.com/docs/automation/model-assisted-labeling)
 
 ## Version 2.4.8 (2020-09-10)
 ### Fix
