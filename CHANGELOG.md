@@ -1,4 +1,8 @@
 # Changelog
+## Version 2.4.9 (2020-09-10)
+### Fix
+* 2.4.8 was broken for > Python 3.6
+
 ## Version 2.4.8 (2020-09-10)
 ### Fix
 * fix failing `next` call https://github.com/Labelbox/labelbox-python/issues/74
