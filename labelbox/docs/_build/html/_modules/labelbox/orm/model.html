@@ -1,0 +1,515 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>labelbox.orm.model &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>labelbox.orm.model</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for labelbox.orm.model</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">labelbox</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">labelbox.exceptions</span> <span class="kn">import</span> <span class="n">InvalidAttributeError</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.comparison</span> <span class="kn">import</span> <span class="n">Comparison</span>
+<span class="sd">&quot;&quot;&quot; Defines Field, Relationship and Entity. These classes are building</span>
+<span class="sd">blocks for defining the Labelbox schema, DB object operations and</span>
+<span class="sd">queries. &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Field"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field">[docs]</a><span class="k">class</span> <span class="nc">Field</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Represents a field in a database table. A Field has a name, a type</span>
+<span class="sd">    (corresponds to server-side GraphQL type) and a server-side name. The</span>
+<span class="sd">    server-side name is most often just a camelCase version of the client-side</span>
+<span class="sd">    snake_case name.</span>
+
+<span class="sd">    Supports comparison operators which return a `labelbox.comparison.Comparison`</span>
+<span class="sd">    object. For example:</span>
+<span class="sd">        &gt;&gt;&gt; class Project:</span>
+<span class="sd">        &gt;&gt;&gt;     name = Field.String(&quot;name&quot;)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; comparison = Project.name == &quot;MyProject&quot;</span>
+
+<span class="sd">    These `Comparison` objects can then be used for filtering:</span>
+<span class="sd">        &gt;&gt;&gt; project = client.get_projects(comparison)</span>
+
+<span class="sd">    Also exposes the ordering property used for sorting:</span>
+<span class="sd">        &gt;&gt;&gt; labels = project.labels(order_by=Label.label.asc)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        field_type (Field.Type): The type of the field.</span>
+<span class="sd">        name (str): name that the attribute has in client-side Python objects</span>
+<span class="sd">        grapgql_name (str): name that the attribute has in queries (and in</span>
+<span class="sd">            server-side database definition).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Field.Type"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Type">[docs]</a>    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">Int</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">Float</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">String</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">Boolean</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">ID</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">DateTime</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">Json</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Field.EnumType"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.EnumType">[docs]</a>    <span class="k">class</span> <span class="nc">EnumType</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enum_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enum_cls</span> <span class="o">=</span> <span class="n">enum_cls</span>
+
+        <span class="nd">@property</span>
+        <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enum_cls</span><span class="o">.</span><span class="vm">__name__</span></div>
+
+<div class="viewcode-block" id="Field.Order"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Order">[docs]</a>    <span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Type of sort ordering. &quot;&quot;&quot;</span>
+        <span class="n">Asc</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">Desc</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Field.Int"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Int">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Int</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">Int</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.Float"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Float">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Float</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.String"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.String">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">String</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.Boolean"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Boolean">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Boolean</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.ID"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.ID">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">ID</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.DateTime"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.DateTime">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">DateTime</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.Enum"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Enum">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Enum</span><span class="p">(</span><span class="n">enum_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">EnumType</span><span class="p">(</span><span class="n">enum_cls</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.Json"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Field.Json">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Json</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">Json</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">field_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">EnumType</span><span class="p">],</span>
+                 <span class="n">name</span><span class="p">,</span>
+                 <span class="n">graphql_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Field init.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            field_type (Field.Type): The type of the field.</span>
+<span class="sd">            name (str): client-side Python attribute name of a database</span>
+<span class="sd">                object.</span>
+<span class="sd">            graphql_name (str): query and server-side name of a database object.</span>
+<span class="sd">                If None, it is constructed from the client-side name by converting</span>
+<span class="sd">                snake_case (Python convention) into camelCase (GraphQL convention).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_type</span> <span class="o">=</span> <span class="n">field_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">graphql_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">graphql_name</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graphql_name</span> <span class="o">=</span> <span class="n">graphql_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">asc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Property that resolves to tuple (Field, Field.Order).</span>
+<span class="sd">        Used for easy definition of sort ordering:</span>
+<span class="sd">            &gt;&gt;&gt; projects_ordered = client.get_projects(order_by=Project.name.asc)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Field</span><span class="o">.</span><span class="n">Order</span><span class="o">.</span><span class="n">Asc</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">desc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Property that resolves to tuple (Field, Field.Order).</span>
+<span class="sd">        Used for easy definition of sort ordering:</span>
+<span class="sd">            &gt;&gt;&gt; projects_ordered = client.get_projects(order_by=Project.name.desc)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Field</span><span class="o">.</span><span class="n">Order</span><span class="o">.</span><span class="n">Desc</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Equality of Fields has two meanings. If comparing to a Field object,</span>
+<span class="sd">        then a boolean indicator if the fields are identical is returned. If</span>
+<span class="sd">        comparing to any other type, a Comparison object is created.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span> <span class="ow">is</span> <span class="n">other</span>
+
+        <span class="k">return</span> <span class="n">Comparison</span><span class="o">.</span><span class="n">Op</span><span class="o">.</span><span class="n">EQ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Equality of Fields has two meanings. If comparing to a Field object,</span>
+<span class="sd">        then a boolean indicator if the fields are identical is returned. If</span>
+<span class="sd">        comparing to any other type, a Comparison object is created.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">other</span>
+
+        <span class="k">return</span> <span class="n">Comparison</span><span class="o">.</span><span class="n">Op</span><span class="o">.</span><span class="n">NE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Hash is implemeted as ID, because for each DB field exactly one</span>
+        <span class="c1"># Field object should exist in the Python API.</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Comparison</span><span class="o">.</span><span class="n">Op</span><span class="o">.</span><span class="n">LT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Comparison</span><span class="o">.</span><span class="n">Op</span><span class="o">.</span><span class="n">GT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Comparison</span><span class="o">.</span><span class="n">Op</span><span class="o">.</span><span class="n">LE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Comparison</span><span class="o">.</span><span class="n">Op</span><span class="o">.</span><span class="n">GE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;Field: </span><span class="si">%r</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+<div class="viewcode-block" id="Relationship"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Relationship">[docs]</a><span class="k">class</span> <span class="nc">Relationship</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Represents a relationship in a database table.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        relationship_type (Relationship.Type): Indicator if to-one or to-many</span>
+<span class="sd">        destination_type_name (str): Name of the Entity subtype that&#39;s on</span>
+<span class="sd">            the other side of the relationship. str is used instead of the</span>
+<span class="sd">            type object itself because that type might not be declared at</span>
+<span class="sd">            the point of a `Relationship` object initialization.</span>
+<span class="sd">        filter_deleted (bool): Indicator if the a `deleted=false` filtering</span>
+<span class="sd">            clause should be added to the query when fetching relationship</span>
+<span class="sd">            objects.</span>
+<span class="sd">        name (str): Name of the relationship in the snake_case format.</span>
+<span class="sd">        graphql_name (str): Name of the relationships server-side. Most often</span>
+<span class="sd">            (not always) just a camelCase version of `name`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Relationship.Type"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Relationship.Type">[docs]</a>    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">ToOne</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+        <span class="n">ToMany</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Relationship.ToOne"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Relationship.ToOne">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">ToOne</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Relationship</span><span class="p">(</span><span class="n">Relationship</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">ToOne</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Relationship.ToMany"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Relationship.ToMany">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">ToMany</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Relationship</span><span class="p">(</span><span class="n">Relationship</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">ToMany</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">relationship_type</span><span class="p">,</span>
+                 <span class="n">destination_type_name</span><span class="p">,</span>
+                 <span class="n">filter_deleted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">graphql_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relationship_type</span> <span class="o">=</span> <span class="n">relationship_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_type_name</span> <span class="o">=</span> <span class="n">destination_type_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_deleted</span> <span class="o">=</span> <span class="n">filter_deleted</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">snake_case</span><span class="p">(</span><span class="n">destination_type_name</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="s2">&quot;s&quot;</span> <span class="k">if</span> <span class="n">relationship_type</span> <span class="o">==</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">ToMany</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">graphql_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">graphql_name</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graphql_name</span> <span class="o">=</span> <span class="n">graphql_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">destination_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_type_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;Relationship: </span><span class="si">%r</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+<div class="viewcode-block" id="EntityMeta"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.EntityMeta">[docs]</a><span class="k">class</span> <span class="nc">EntityMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Entity metaclass. Registers Entity subclasses as attributes</span>
+<span class="sd">    of the Entity class object so they can be referenced for example like:</span>
+<span class="sd">        Entity.Project.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">superclasses</span><span class="p">,</span> <span class="n">attributedict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">clsname</span><span class="p">,</span> <span class="n">superclasses</span><span class="p">,</span> <span class="n">attributedict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">clsname</span> <span class="o">!=</span> <span class="s2">&quot;Entity&quot;</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Entity"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Entity">[docs]</a><span class="k">class</span> <span class="nc">Entity</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">EntityMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; An entity that contains fields and relationships. Base class</span>
+<span class="sd">    for DbObject (which is base class for concrete schema classes). &quot;&quot;&quot;</span>
+
+    <span class="c1"># Every Entity has an &quot;id&quot; and a &quot;deleted&quot; field</span>
+    <span class="c1"># Name the &quot;id&quot; field &quot;uid&quot; in Python to avoid conflict with keyword.</span>
+    <span class="n">uid</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">ID</span><span class="p">(</span><span class="s2">&quot;uid&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Some Labelbox objects have a &quot;deleted&quot; attribute for soft deletions.</span>
+    <span class="c1"># It&#39;s declared in Entity so it can be filtered out in class methods</span>
+    <span class="c1"># suchs as `fields()`.</span>
+    <span class="n">deleted</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Boolean</span><span class="p">(</span><span class="s2">&quot;deleted&quot;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_attributes_of_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Yields all the attributes in `cls` of the given `attr_type`. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">attr_type</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">attr</span>
+
+<div class="viewcode-block" id="Entity.fields"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Entity.fields">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a generateor that yields all the Fields declared in a</span>
+<span class="sd">        concrete subclass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_attributes_of_type</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">deleted</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">attr</span></div>
+
+<div class="viewcode-block" id="Entity.relationships"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Entity.relationships">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">relationships</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a generateor that yields all the Relationships declared in</span>
+<span class="sd">        a concrete subclass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_attributes_of_type</span><span class="p">(</span><span class="n">Relationship</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Entity.field"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Entity.field">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a Field object for the given name.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            field_name (str): Field name, Python (snake-case) convention.</span>
+<span class="sd">        Return:</span>
+<span class="sd">            Field object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidAttributeError: in case this DB object type does not</span>
+<span class="sd">            contain a field with the given name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">field_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_obj</span><span class="p">,</span> <span class="n">Field</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidAttributeError</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">field_obj</span></div>
+
+<div class="viewcode-block" id="Entity.attribute"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Entity.attribute">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a Field or a Relationship object for the given name.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            attribute_name (str): Field or Relationship name, Python</span>
+<span class="sd">                (snake-case) convention.</span>
+<span class="sd">        Return:</span>
+<span class="sd">            Field or Relationship object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidAttributeError: in case this DB object type does not</span>
+<span class="sd">                contain an attribute with the given name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">attribute_object</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attribute_object</span><span class="p">,</span> <span class="p">(</span><span class="n">Field</span><span class="p">,</span> <span class="n">Relationship</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">InvalidAttributeError</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">attribute_object</span></div>
+
+<div class="viewcode-block" id="Entity.type_name"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.model.Entity.type_name">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">type_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns this DB object type name in TitleCase. For example:</span>
+<span class="sd">            Project, DataRow, ...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

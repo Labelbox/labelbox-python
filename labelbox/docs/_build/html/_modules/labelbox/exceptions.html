@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>labelbox.exceptions &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>labelbox.exceptions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for labelbox.exceptions</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="LabelboxError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.LabelboxError">[docs]</a><span></span><span class="k">class</span> <span class="nc">LabelboxError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for exceptions.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            message (str): Informative message about the exception.</span>
+<span class="sd">            cause (Exception): The cause of the exception (an Exception</span>
+<span class="sd">                raised by Python or another library). Optional.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">cause</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.AuthenticationError">[docs]</a><span class="k">class</span> <span class="nc">AuthenticationError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when an API key fails authentication.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AuthorizationError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.AuthorizationError">[docs]</a><span class="k">class</span> <span class="nc">AuthorizationError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when a user is unauthorized to perform the given request.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ResourceNotFoundError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.ResourceNotFoundError">[docs]</a><span class="k">class</span> <span class="nc">ResourceNotFoundError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised when a given resource is not found. &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_object_type</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Constructor.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            db_object_type (type): A labelbox.schema.DbObject subtype.</span>
+<span class="sd">            params (dict): Dict of params identifying the sought resource.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;Resouce &#39;</span><span class="si">%s</span><span class="s2">&#39; not found for params: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">db_object_type</span><span class="o">.</span><span class="n">type_name</span><span class="p">(),</span> <span class="n">params</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_object_type</span> <span class="o">=</span> <span class="n">db_object_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span></div>
+
+
+<div class="viewcode-block" id="ValidationFailedError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.ValidationFailedError">[docs]</a><span class="k">class</span> <span class="nc">ValidationFailedError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised for when a GraphQL query fails validation (query cost,</span>
+<span class="sd">    etc.) E.g. a query that is too expensive, or depth is too deep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InternalServerError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.InternalServerError">[docs]</a><span class="k">class</span> <span class="nc">InternalServerError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Nondescript prisma or 502 related errors.</span>
+
+<span class="sd">    Meant to be retryable.</span>
+
+<span class="sd">    TODO: these errors need better messages from platform</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InvalidQueryError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.InvalidQueryError">[docs]</a><span class="k">class</span> <span class="nc">InvalidQueryError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Indicates a malconstructed or unsupported query (either by GraphQL in</span>
+<span class="sd">    general or by Labelbox specifically). This can be the result of either client</span>
+<span class="sd">    or server side query validation. &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NetworkError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.NetworkError">[docs]</a><span class="k">class</span> <span class="nc">NetworkError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when an HTTPError occurs.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cause</span><span class="p">),</span> <span class="n">cause</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span></div>
+
+
+<div class="viewcode-block" id="TimeoutError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.TimeoutError">[docs]</a><span class="k">class</span> <span class="nc">TimeoutError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when a request times-out.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InvalidAttributeError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.InvalidAttributeError">[docs]</a><span class="k">class</span> <span class="nc">InvalidAttributeError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Raised when a field (name or Field instance) is not valid or found</span>
+<span class="sd">    for a specific DB object type. &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_object_type</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;Field(s) &#39;</span><span class="si">%r</span><span class="s2">&#39; not valid on DB type &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">db_object_type</span><span class="o">.</span><span class="n">type_name</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_object_type</span> <span class="o">=</span> <span class="n">db_object_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">field</span></div>
+
+
+<div class="viewcode-block" id="ApiLimitError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.ApiLimitError">[docs]</a><span class="k">class</span> <span class="nc">ApiLimitError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Raised when the user performs too many requests in a short period</span>
+<span class="sd">    of time. &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MalformedQueryException"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.MalformedQueryException">[docs]</a><span class="k">class</span> <span class="nc">MalformedQueryException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Raised when the user submits a malformed query.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UuidError"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.exceptions.UuidError">[docs]</a><span class="k">class</span> <span class="nc">UuidError</span><span class="p">(</span><span class="n">LabelboxError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Raised when there are repeat Uuid&#39;s in bulk import request.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

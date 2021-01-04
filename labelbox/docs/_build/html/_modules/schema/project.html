@@ -1,0 +1,669 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>schema.project &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>schema.project</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for schema.project</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+
+<span class="kn">from</span> <span class="nn">labelbox</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.bulk_import_request</span> <span class="kn">import</span> <span class="n">BulkImportRequest</span>
+<span class="kn">from</span> <span class="nn">labelbox.exceptions</span> <span class="kn">import</span> <span class="n">InvalidQueryError</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm</span> <span class="kn">import</span> <span class="n">query</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.db_object</span> <span class="kn">import</span> <span class="n">DbObject</span><span class="p">,</span> <span class="n">Updateable</span><span class="p">,</span> <span class="n">Deletable</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Entity</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Relationship</span>
+<span class="kn">from</span> <span class="nn">labelbox.pagination</span> <span class="kn">import</span> <span class="n">PaginatedCollection</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span>  <span class="c1"># type: ignore[attr-defined]</span>
+<span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">backports.datetime_fromisoformat</span> <span class="kn">import</span> <span class="n">MonkeyPatch</span>
+    <span class="n">MonkeyPatch</span><span class="o">.</span><span class="n">patch_fromisoformat</span><span class="p">()</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Project"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project">[docs]</a><span class="k">class</span> <span class="nc">Project</span><span class="p">(</span><span class="n">DbObject</span><span class="p">,</span> <span class="n">Updateable</span><span class="p">,</span> <span class="n">Deletable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A Project is a container that includes a labeling frontend, an ontology,</span>
+<span class="sd">    datasets and labels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;updated_at&quot;</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">)</span>
+    <span class="n">setup_complete</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;setup_complete&quot;</span><span class="p">)</span>
+    <span class="n">last_activity_time</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;last_activity_time&quot;</span><span class="p">)</span>
+    <span class="n">auto_audit_number_of_labels</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Int</span><span class="p">(</span><span class="s2">&quot;auto_audit_number_of_labels&quot;</span><span class="p">)</span>
+    <span class="n">auto_audit_percentage</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="s2">&quot;auto_audit_percentage&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Relationships</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Dataset&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">created_by</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;created_by&quot;</span><span class="p">)</span>
+    <span class="n">organization</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;Organization&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">reviews</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Review&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">labeling_frontend</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;LabelingFrontend&quot;</span><span class="p">)</span>
+    <span class="n">labeling_frontend_options</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span>
+        <span class="s2">&quot;LabelingFrontendOptions&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;labeling_frontend_options&quot;</span><span class="p">)</span>
+    <span class="n">labeling_parameter_overrides</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span>
+        <span class="s2">&quot;LabelingParameterOverride&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;labeling_parameter_overrides&quot;</span><span class="p">)</span>
+    <span class="n">webhooks</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Webhook&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">benchmarks</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Benchmark&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">active_prediction_model</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;PredictionModel&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span>
+                                                 <span class="s2">&quot;active_prediction_model&quot;</span><span class="p">)</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Prediction&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">ontology</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;Ontology&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Project.create_label"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.create_label">[docs]</a>    <span class="k">def</span> <span class="nf">create_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a label on a Legacy Editor project. Not</span>
+<span class="sd">            supported in the new Editor.</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            Label attributes. At the minimum the label `DataRow`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Copy-paste of Client._create code so we can inject</span>
+        <span class="c1"># a connection to Type. Type objects are on their way to being</span>
+        <span class="c1"># deprecated and we don&#39;t want the Py client lib user to know</span>
+        <span class="c1"># about them. At the same time they&#39;re connected to a Label at</span>
+        <span class="c1"># label creation in a non-standard way (connect via name).</span>
+
+        <span class="n">Label</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">Label</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="n">Label</span><span class="o">.</span><span class="n">project</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="n">Label</span><span class="o">.</span><span class="n">seconds_to_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Label</span><span class="o">.</span><span class="n">seconds_to_label</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                                    <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">Label</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">attr</span><span class="p">:</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">uid</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">DbObject</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="n">query_str</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">Label</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="c1"># Inject connection to Type</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="n">query_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="s2">&quot;data: {&quot;</span><span class="p">,</span> <span class="s2">&quot;data: {type: {connect: {name: </span><span class="se">\&quot;</span><span class="s2">Any</span><span class="se">\&quot;</span><span class="s2">}} &quot;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;createLabel&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Project.labels"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.labels">[docs]</a>    <span class="k">def</span> <span class="nf">labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Custom relationship expansion method to support limited filtering.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasets (iterable of Dataset): Optional collection of Datasets</span>
+<span class="sd">                whose Labels are sought. If not provided, all Labels in</span>
+<span class="sd">                this Project are returned.</span>
+<span class="sd">            order_by (None or (Field, Field.Order)): Ordering clause.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Label</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">Label</span>
+
+        <span class="k">if</span> <span class="n">datasets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">where</span> <span class="o">=</span> <span class="s2">&quot; where:{dataRow: {dataset: {id_in: [</span><span class="si">%s</span><span class="s2">]}}}&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">dataset</span><span class="o">.</span><span class="n">uid</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">where</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">order_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">check_order_by_clause</span><span class="p">(</span><span class="n">Label</span><span class="p">,</span> <span class="n">order_by</span><span class="p">)</span>
+            <span class="n">order_by_str</span> <span class="o">=</span> <span class="s2">&quot;orderBy: </span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">order_by</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">graphql_name</span><span class="p">,</span>
+                                               <span class="n">order_by</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">order_by_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;query GetProjectLabelsPyApi($</span><span class="si">%s</span><span class="s2">: ID!)</span>
+<span class="s2">            {project (where: {id: $</span><span class="si">%s</span><span class="s2">})</span>
+<span class="s2">                {labels (skip: </span><span class="si">%%</span><span class="s2">d first: </span><span class="si">%%</span><span class="s2">d</span><span class="si">%s%s</span><span class="s2">) {</span><span class="si">%s</span><span class="s2">}}}&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">order_by_str</span><span class="p">,</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="n">Label</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">PaginatedCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">},</span>
+                                   <span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span><span class="p">],</span> <span class="n">Label</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Project.export_labels"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.export_labels">[docs]</a>    <span class="k">def</span> <span class="nf">export_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calls the server-side Label exporting that generates a JSON</span>
+<span class="sd">        payload, and returns the URL to that payload.</span>
+
+<span class="sd">        Will only generate a new URL at a max frequency of 30 min.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timeout_seconds (float): Max waiting time, in seconds.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            URL of the data file with this Project&#39;s labels. If the server</span>
+<span class="sd">                didn&#39;t generate during the `timeout_seconds` period, None</span>
+<span class="sd">                is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sleep_time</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation GetLabelExportUrlPyApi($</span><span class="si">%s</span><span class="s2">: ID!)</span>
+<span class="s2">            {exportLabels(data:{projectId: $</span><span class="si">%s</span><span class="s2"> }) {downloadUrl createdAt shouldPoll} }</span>
+<span class="s2">        &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">})</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;exportLabels&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;shouldPoll&quot;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;downloadUrl&quot;</span><span class="p">]</span>
+
+            <span class="n">timeout_seconds</span> <span class="o">-=</span> <span class="n">sleep_time</span>
+            <span class="k">if</span> <span class="n">timeout_seconds</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Project &#39;</span><span class="si">%s</span><span class="s2">&#39; label export, waiting for server...&quot;</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep_time</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Project.labeler_performance"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.labeler_performance">[docs]</a>    <span class="k">def</span> <span class="nf">labeler_performance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the labeler performances for this Project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A PaginatedCollection of LabelerPerformance objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;query LabelerPerformancePyApi($</span><span class="si">%s</span><span class="s2">: ID!) {</span>
+<span class="s2">            project(where: {id: $</span><span class="si">%s</span><span class="s2">}) {</span>
+<span class="s2">                labelerPerformance(skip: </span><span class="si">%%</span><span class="s2">d first: </span><span class="si">%%</span><span class="s2">d) {</span>
+<span class="s2">                    count user {</span><span class="si">%s</span><span class="s2">} secondsPerLabel totalTimeLabeling consensus</span>
+<span class="s2">                    averageBenchmarkAgreement lastActivityTime}</span>
+<span class="s2">            }}&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">User</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">create_labeler_performance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">User</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">])</span>
+            <span class="c1"># python isoformat doesn&#39;t accept Z as utc timezone</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;lastActivityTime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span>
+                <span class="n">result</span><span class="p">[</span><span class="s2">&quot;lastActivityTime&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;+00:00&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">LabelerPerformance</span><span class="p">(</span>
+                <span class="o">**</span>
+                <span class="p">{</span><span class="n">utils</span><span class="o">.</span><span class="n">snake_case</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+
+        <span class="k">return</span> <span class="n">PaginatedCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">},</span>
+                                   <span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">,</span> <span class="s2">&quot;labelerPerformance&quot;</span><span class="p">],</span>
+                                   <span class="n">create_labeler_performance</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Project.review_metrics"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.review_metrics">[docs]</a>    <span class="k">def</span> <span class="nf">review_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">net_score</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns this Project&#39;s review metrics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            net_score (None or Review.NetScore): Indicates desired metric.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int, aggregation count of reviews for given net_score.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">net_score</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">Review</span><span class="o">.</span><span class="n">NetScore</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="s2">&quot;Review metrics net score must be either None &quot;</span>
+                <span class="s2">&quot;or one of Review.NetScore values&quot;</span><span class="p">)</span>
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">net_score_literal</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span> <span class="k">if</span> <span class="n">net_score</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">net_score</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;query ProjectReviewMetricsPyApi($</span><span class="si">%s</span><span class="s2">: ID!){</span>
+<span class="s2">            project(where: {id:$</span><span class="si">%s</span><span class="s2">})</span>
+<span class="s2">            {reviewMetrics {labelAggregate(netScore: </span><span class="si">%s</span><span class="s2">) </span><span class="si">{count}</span><span class="s2">}}</span>
+<span class="s2">        }&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="n">net_score_literal</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">][</span><span class="s2">&quot;reviewMetrics&quot;</span><span class="p">][</span><span class="s2">&quot;labelAggregate&quot;</span><span class="p">][</span><span class="s2">&quot;count&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Project.setup"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labeling_frontend</span><span class="p">,</span> <span class="n">labeling_frontend_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Finalizes the Project setup.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labeling_frontend (LabelingFrontend): Which UI to use to label the</span>
+<span class="sd">                data.</span>
+<span class="sd">            labeling_frontend_options (dict or str): Labeling frontend options,</span>
+<span class="sd">                a.k.a. project ontology. If given a `dict` it will be converted</span>
+<span class="sd">                to `str` using `json.dumps`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">organization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get_organization</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labeling_frontend_options</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">labeling_frontend_options</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">labeling_frontend_options</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">labeling_frontend</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">labeling_frontend</span><span class="p">)</span>
+
+        <span class="n">LFO</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">LabelingFrontendOptions</span>
+        <span class="n">labeling_frontend_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+            <span class="n">LFO</span><span class="p">,</span> <span class="p">{</span>
+                <span class="n">LFO</span><span class="o">.</span><span class="n">project</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                <span class="n">LFO</span><span class="o">.</span><span class="n">labeling_frontend</span><span class="p">:</span> <span class="n">labeling_frontend</span><span class="p">,</span>
+                <span class="n">LFO</span><span class="o">.</span><span class="n">customization_options</span><span class="p">:</span> <span class="n">labeling_frontend_options</span><span class="p">,</span>
+                <span class="n">LFO</span><span class="o">.</span><span class="n">organization</span><span class="p">:</span> <span class="n">organization</span>
+            <span class="p">})</span>
+
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%SZ&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">setup_complete</span><span class="o">=</span><span class="n">timestamp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Project.set_labeling_parameter_overrides"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.set_labeling_parameter_overrides">[docs]</a>    <span class="k">def</span> <span class="nf">set_labeling_parameter_overrides</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Adds labeling parameter overrides to this project. Example:</span>
+
+<span class="sd">            &gt;&gt;&gt; project.set_labeling_parameter_overrides([</span>
+<span class="sd">            &gt;&gt;&gt;     (data_row_1, 2, 3), (data_row_2, 1, 4)])</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (iterable): An iterable of tuples. Each tuple must contain</span>
+<span class="sd">                (DataRow, priority, numberOfLabels) for the new override.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool, indicates if the operation was a success.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data_str</span> <span class="o">=</span> <span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="s2">&quot;{dataRow: {id: </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">}, priority: </span><span class="si">%d</span><span class="s2">, numLabels: </span><span class="si">%d</span><span class="s2"> }&quot;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">data_row</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">num_labels</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">data_row</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">num_labels</span> <span class="ow">in</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation SetLabelingParameterOverridesPyApi($</span><span class="si">%s</span><span class="s2">: ID!){</span>
+<span class="s2">            project(where: { id: $</span><span class="si">%s</span><span class="s2"> }) {setLabelingParameterOverrides</span>
+<span class="s2">            (data: [</span><span class="si">%s</span><span class="s2">]) </span><span class="si">{success}</span><span class="s2">}} &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="n">data_str</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">][</span><span class="s2">&quot;setLabelingParameterOverrides&quot;</span><span class="p">][</span><span class="s2">&quot;success&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Project.unset_labeling_parameter_overrides"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.unset_labeling_parameter_overrides">[docs]</a>    <span class="k">def</span> <span class="nf">unset_labeling_parameter_overrides</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_rows</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Removes labeling parameter overrides to this project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_rows (iterable): An iterable of DataRows.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool, indicates if the operation was a success.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation UnsetLabelingParameterOverridesPyApi($</span><span class="si">%s</span><span class="s2">: ID!){</span>
+<span class="s2">            project(where: { id: $</span><span class="si">%s</span><span class="s2">}) {</span>
+<span class="s2">            unsetLabelingParameterOverrides(data: [</span><span class="si">%s</span><span class="s2">]) { success }}}&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="s2">&quot;{dataRowId: </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">}&quot;</span> <span class="o">%</span> <span class="n">row</span><span class="o">.</span><span class="n">uid</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data_rows</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">][</span><span class="s2">&quot;unsetLabelingParameterOverrides&quot;</span><span class="p">][</span><span class="s2">&quot;success&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Project.upsert_review_queue"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.upsert_review_queue">[docs]</a>    <span class="k">def</span> <span class="nf">upsert_review_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quota_factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Reinitiates the review queue for this project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            quota_factor (float): Which part (percentage) of the queue</span>
+<span class="sd">                to reinitiate. Between 0 and 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">quota_param</span> <span class="o">=</span> <span class="s2">&quot;quotaFactor&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation UpsertReviewQueuePyApi($</span><span class="si">%s</span><span class="s2">: ID!, $</span><span class="si">%s</span><span class="s2">: Float!){</span>
+<span class="s2">            upsertReviewQueue(where:{project: {id: $</span><span class="si">%s</span><span class="s2">}}</span>
+<span class="s2">                            data:{quotaFactor: $</span><span class="si">%s</span><span class="s2">}) </span><span class="si">{id}</span><span class="s2">}&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">id_param</span><span class="p">,</span> <span class="n">quota_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="n">quota_param</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span>
+            <span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+            <span class="n">quota_param</span><span class="p">:</span> <span class="n">quota_factor</span>
+        <span class="p">})</span></div>
+
+<div class="viewcode-block" id="Project.extend_reservations"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.extend_reservations">[docs]</a>    <span class="k">def</span> <span class="nf">extend_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Extends all the current reservations for the current user on the given</span>
+<span class="sd">        queue type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            queue_type (str): Either &quot;LabelingQueue&quot; or &quot;ReviewQueue&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int, the number of reservations that were extended.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">queue_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;LabelingQueue&quot;</span><span class="p">,</span> <span class="s2">&quot;ReviewQueue&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span><span class="s2">&quot;Unsupported queue type: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">queue_type</span><span class="p">)</span>
+
+        <span class="n">id_param</span> <span class="o">=</span> <span class="s2">&quot;projectId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation ExtendReservationsPyApi($</span><span class="si">%s</span><span class="s2">: ID!){</span>
+<span class="s2">            extendReservations(projectId:$</span><span class="si">%s</span><span class="s2"> queueType:</span><span class="si">%s</span><span class="s2">)}&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">id_param</span><span class="p">,</span> <span class="n">id_param</span><span class="p">,</span> <span class="n">queue_type</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;extendReservations&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Project.create_prediction_model"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.create_prediction_model">[docs]</a>    <span class="k">def</span> <span class="nf">create_prediction_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a PredictionModel connected to a Legacy Editor</span>
+<span class="sd">            Project.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The new PredictionModel&#39;s name.</span>
+<span class="sd">            version (int): The new PredictionModel&#39;s version.</span>
+<span class="sd">        Return:</span>
+<span class="sd">            A newly created PredictionModel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">PM</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">PredictionModel</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">PM</span><span class="p">,</span> <span class="p">{</span>
+            <span class="n">PM</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="n">PM</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">version</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_prediction_model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">model</span></div>
+
+<div class="viewcode-block" id="Project.create_prediction"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.create_prediction">[docs]</a>    <span class="k">def</span> <span class="nf">create_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">data_row</span><span class="p">,</span> <span class="n">prediction_model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a Prediction within a Legacy Editor Project.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            label (str): The `label` field of the new Prediction.</span>
+<span class="sd">            data_row (DataRow): The DataRow for which the Prediction is created.</span>
+<span class="sd">            prediction_model (PredictionModel or None): The PredictionModel</span>
+<span class="sd">                within which the new Prediction is created. If None then this</span>
+<span class="sd">                Project&#39;s active_prediction_model is used.</span>
+<span class="sd">        Return:</span>
+<span class="sd">            A newly created Prediction.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.excepions.InvalidQueryError: if given `prediction_model`</span>
+<span class="sd">                is None and this Project&#39;s active_prediction_model is also</span>
+<span class="sd">                None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">prediction_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prediction_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_prediction_model</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">prediction_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                    <span class="s2">&quot;Project &#39;</span><span class="si">%s</span><span class="s2">&#39; has no active prediction model&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">label_param</span> <span class="o">=</span> <span class="s2">&quot;label&quot;</span>
+        <span class="n">model_param</span> <span class="o">=</span> <span class="s2">&quot;prediction_model_id&quot;</span>
+        <span class="n">project_param</span> <span class="o">=</span> <span class="s2">&quot;project_id&quot;</span>
+        <span class="n">data_row_param</span> <span class="o">=</span> <span class="s2">&quot;data_row_id&quot;</span>
+
+        <span class="n">Prediction</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">Prediction</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation CreatePredictionPyApi(</span>
+<span class="s2">            $</span><span class="si">%s</span><span class="s2">: String!, $</span><span class="si">%s</span><span class="s2">: ID!, $</span><span class="si">%s</span><span class="s2">: ID!, $</span><span class="si">%s</span><span class="s2">: ID!) {createPrediction(</span>
+<span class="s2">            data: {label: $</span><span class="si">%s</span><span class="s2">, predictionModelId: $</span><span class="si">%s</span><span class="s2">, projectId: $</span><span class="si">%s</span><span class="s2">,</span>
+<span class="s2">                   dataRowId: $</span><span class="si">%s</span><span class="s2">})</span>
+<span class="s2">            {</span><span class="si">%s</span><span class="s2">}}&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">label_param</span><span class="p">,</span> <span class="n">model_param</span><span class="p">,</span> <span class="n">project_param</span><span class="p">,</span> <span class="n">data_row_param</span><span class="p">,</span>
+                        <span class="n">label_param</span><span class="p">,</span> <span class="n">model_param</span><span class="p">,</span> <span class="n">project_param</span><span class="p">,</span> <span class="n">data_row_param</span><span class="p">,</span>
+                        <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="n">Prediction</span><span class="p">))</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">label_param</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+            <span class="n">model_param</span><span class="p">:</span> <span class="n">prediction_model</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+            <span class="n">data_row_param</span><span class="p">:</span> <span class="n">data_row</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+            <span class="n">project_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span>
+        <span class="p">}</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Prediction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;createPrediction&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Project.enable_model_assisted_labeling"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.enable_model_assisted_labeling">[docs]</a>    <span class="k">def</span> <span class="nf">enable_model_assisted_labeling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">toggle</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Turns model assisted labeling either on or off based on input</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            toggle (Boolean): True or False boolean </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            True if toggled on or False if toggled off</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">project_param</span> <span class="o">=</span> <span class="s2">&quot;project_id&quot;</span>
+        <span class="n">show_param</span> <span class="o">=</span> <span class="s2">&quot;show&quot;</span>
+
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation toggle_model_assisted_labelingPyApi($</span><span class="si">%s</span><span class="s2">: ID!, $</span><span class="si">%s</span><span class="s2">: Boolean!) {</span>
+<span class="s2">            project(where: {id: $</span><span class="si">%s</span><span class="s2"> }) {</span>
+<span class="s2">                showPredictionsToLabelers(show: $</span><span class="si">%s</span><span class="s2">) { </span>
+<span class="s2">                    id, showingPredictionsToLabelers</span>
+<span class="s2">                }</span>
+<span class="s2">            }</span>
+<span class="s2">        }&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">project_param</span><span class="p">,</span> <span class="n">show_param</span><span class="p">,</span><span class="n">project_param</span><span class="p">,</span> <span class="n">show_param</span><span class="p">)</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">project_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> 
+            <span class="n">show_param</span><span class="p">:</span> <span class="n">toggle</span>
+        <span class="p">}</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">][</span><span class="s2">&quot;showPredictionsToLabelers&quot;</span><span class="p">][</span><span class="s2">&quot;showingPredictionsToLabelers&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Project.upload_annotations"><a class="viewcode-back" href="../../source/schema.html#schema.project.Project.upload_annotations">[docs]</a>    <span class="k">def</span> <span class="nf">upload_annotations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">annotations</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BulkImportRequest&#39;</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
+        <span class="sd">&quot;&quot;&quot; Uploads annotations to a new Editor project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: name of the BulkImportRequest job</span>
+<span class="sd">            annotations:</span>
+<span class="sd">                url that is publicly accessible by Labelbox containing an</span>
+<span class="sd">                ndjson file</span>
+<span class="sd">                OR local path to an ndjson file</span>
+<span class="sd">                OR iterable of annotation rows</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BulkImportRequest</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">annotations</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">annotations</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">_is_url_valid</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="sd">&quot;&quot;&quot; Verifies that the given string is a valid url.</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    url: string to be checked</span>
+<span class="sd">                Returns:</span>
+<span class="sd">                    True if the given url is valid otherwise False</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="n">parsed</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+                <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">bool</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">_is_url_valid</span><span class="p">(</span><span class="n">annotations</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">BulkImportRequest</span><span class="o">.</span><span class="n">create_from_url</span><span class="p">(</span>
+                    <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span>
+                    <span class="n">project_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">url</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">annotations</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">annotations</span><span class="si">}</span><span class="s1"> is not a valid url nor existing local file&#39;</span>
+                    <span class="p">)</span>
+                <span class="k">return</span> <span class="n">BulkImportRequest</span><span class="o">.</span><span class="n">create_from_local_file</span><span class="p">(</span>
+                    <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span>
+                    <span class="n">project_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">file</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+                    <span class="n">validate_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">annotations</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">BulkImportRequest</span><span class="o">.</span><span class="n">create_from_objects</span><span class="p">(</span>
+                <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span>
+                <span class="n">project_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">predictions</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Invalid annotations given of type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="LabelingParameterOverride"><a class="viewcode-back" href="../../source/schema.html#schema.project.LabelingParameterOverride">[docs]</a><span class="k">class</span> <span class="nc">LabelingParameterOverride</span><span class="p">(</span><span class="n">DbObject</span><span class="p">):</span>
+    <span class="n">priority</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Int</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">)</span>
+    <span class="n">number_of_labels</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Int</span><span class="p">(</span><span class="s2">&quot;number_of_labels&quot;</span><span class="p">)</span></div>
+
+
+<span class="n">LabelerPerformance</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;LabelerPerformance&quot;</span><span class="p">,</span> <span class="s2">&quot;user count seconds_per_label, total_time_labeling &quot;</span>
+    <span class="s2">&quot;consensus average_benchmark_agreement last_activity_time&quot;</span><span class="p">)</span>
+<span class="n">LabelerPerformance</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Named tuple containing info about a labeler&#39;s performance.&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

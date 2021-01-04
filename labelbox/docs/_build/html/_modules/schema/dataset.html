@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>schema.dataset &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>schema.dataset</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for schema.dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.dummy</span> <span class="kn">import</span> <span class="n">Pool</span> <span class="k">as</span> <span class="n">ThreadPool</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">labelbox.exceptions</span> <span class="kn">import</span> <span class="n">InvalidQueryError</span><span class="p">,</span> <span class="n">ResourceNotFoundError</span><span class="p">,</span> <span class="n">InvalidAttributeError</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.db_object</span> <span class="kn">import</span> <span class="n">DbObject</span><span class="p">,</span> <span class="n">Updateable</span><span class="p">,</span> <span class="n">Deletable</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Entity</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Relationship</span>
+
+
+<div class="viewcode-block" id="Dataset"><a class="viewcode-back" href="../../source/schema.html#schema.dataset.Dataset">[docs]</a><span class="k">class</span> <span class="nc">Dataset</span><span class="p">(</span><span class="n">DbObject</span><span class="p">,</span> <span class="n">Updateable</span><span class="p">,</span> <span class="n">Deletable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A dataset is a collection of DataRows. For example, if you have a CSV with</span>
+<span class="sd">    100 rows, you will have 1 Dataset and 100 DataRows.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;updated_at&quot;</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Relationships</span>
+    <span class="n">projects</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Project&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">data_rows</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;DataRow&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">created_by</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;created_by&quot;</span><span class="p">)</span>
+    <span class="n">organization</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;Organization&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Dataset.create_data_row"><a class="viewcode-back" href="../../source/schema.html#schema.dataset.Dataset.create_data_row">[docs]</a>    <span class="k">def</span> <span class="nf">create_data_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a single DataRow belonging to this dataset.</span>
+
+<span class="sd">        &gt;&gt;&gt; dataset.create_data_row(row_data=&quot;http://my_site.com/photos/img_01.jpg&quot;)</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            Key-value arguments containing new `DataRow` data.</span>
+<span class="sd">            At a minimum `kwargs` must contain `row_data`. The value for</span>
+<span class="sd">            `row_data` is a string. If it is a path to an existing local</span>
+<span class="sd">            file then it is uploaded to Labelbox&#39;s server. Otherwise it is</span>
+<span class="sd">            treated as an external URL.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidQueryError: If `DataRow.row_data` field value is not provided</span>
+<span class="sd">                in `kwargs`.</span>
+<span class="sd">            InvalidAttributeError: in case the DB object type does not contain</span>
+<span class="sd">                any of the field names given in `kwargs`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DataRow</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">DataRow</span>
+        <span class="k">if</span> <span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="s2">&quot;DataRow.row_data missing when creating DataRow.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># If row data is a local file path, upload it to server.</span>
+        <span class="n">row_data</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">row_data</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">row_data</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="n">DataRow</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">DataRow</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Dataset.create_data_rows"><a class="viewcode-back" href="../../source/schema.html#schema.dataset.Dataset.create_data_rows">[docs]</a>    <span class="k">def</span> <span class="nf">create_data_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates multiple DataRow objects based on the given `items`.</span>
+
+<span class="sd">        Each element in `items` can be either a `str` or a `dict`. If</span>
+<span class="sd">        it is a `str`, then it is interpreted as a local file path. The file</span>
+<span class="sd">        is uploaded to Labelbox and a DataRow referencing it is created.</span>
+<span class="sd">        If an item is a `dict`, then it should map `DataRow` fields (or their</span>
+<span class="sd">        names) to values. At the minimum an `item` passed as a `dict` must </span>
+<span class="sd">        contain a `DataRow.row_data` key and value.</span>
+
+<span class="sd">        &gt;&gt;&gt; dataset.create_data_rows([</span>
+<span class="sd">        &gt;&gt;&gt;     {DataRow.row_data:&quot;http://my_site.com/photos/img_01.jpg&quot;},</span>
+<span class="sd">        &gt;&gt;&gt;     &quot;path/to/file2.jpg&quot;</span>
+<span class="sd">        &gt;&gt;&gt;     ])</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            items (iterable of (dict or str)): See above for details.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Task representing the data import on the server side. The Task</span>
+<span class="sd">            can be used for inspecting task progress and waiting until it&#39;s done.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidQueryError: If the `items` parameter does not conform to</span>
+<span class="sd">                the specification above or if the server did not accept the</span>
+<span class="sd">                DataRow creation request (unknown reason).</span>
+<span class="sd">            ResourceNotFoundError: If unable to retrieve the Task for the</span>
+<span class="sd">                import process. This could imply that the import failed.</span>
+<span class="sd">            InvalidAttributeError: If there are fields in `items` not valid for</span>
+<span class="sd">                a DataRow.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_upload_thread_count</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="n">DataRow</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">DataRow</span>
+
+        <span class="k">def</span> <span class="nf">upload_if_necessary</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">item_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="c1"># Convert item from str into a dict so it gets processed</span>
+                <span class="c1"># like all other dicts.</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="p">{</span><span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span><span class="p">:</span> <span class="n">item_url</span><span class="p">,</span> <span class="n">DataRow</span><span class="o">.</span><span class="n">external_id</span><span class="p">:</span> <span class="n">item</span><span class="p">}</span>
+            <span class="k">return</span> <span class="n">item</span>
+
+        <span class="k">with</span> <span class="n">ThreadPool</span><span class="p">(</span><span class="n">file_upload_thread_count</span><span class="p">)</span> <span class="k">as</span> <span class="n">thread_pool</span><span class="p">:</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="n">thread_pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">upload_if_necessary</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">convert_item</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="c1"># Convert string names to fields.</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">key</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">Field</span><span class="p">)</span> <span class="k">else</span> <span class="n">DataRow</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">value</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                    <span class="s2">&quot;DataRow.row_data missing when creating DataRow.&quot;</span><span class="p">)</span>
+
+            <span class="n">invalid_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">DataRow</span><span class="o">.</span><span class="n">fields</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">invalid_keys</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidAttributeError</span><span class="p">(</span><span class="n">DataRow</span><span class="p">,</span> <span class="n">invalid_keys</span><span class="p">)</span>
+
+            <span class="c1"># Item is valid, convert it to a dict {graphql_field_name: value}</span>
+            <span class="c1"># Need to change the name of DataRow.row_data to &quot;data&quot;</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;data&quot;</span> <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span> <span class="k">else</span> <span class="n">key</span><span class="o">.</span><span class="n">graphql_name</span><span class="p">:</span> <span class="n">value</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Prepare and upload the desciptor file</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">convert_item</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">])</span>
+        <span class="n">descriptor_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Create data source</span>
+        <span class="n">dataset_param</span> <span class="o">=</span> <span class="s2">&quot;datasetId&quot;</span>
+        <span class="n">url_param</span> <span class="o">=</span> <span class="s2">&quot;jsonUrl&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation AppendRowsToDatasetPyApi($</span><span class="si">%s</span><span class="s2">: ID!, $</span><span class="si">%s</span><span class="s2">: String!){</span>
+<span class="s2">            appendRowsToDataset(data:{datasetId: $</span><span class="si">%s</span><span class="s2">, jsonFileUrl: $</span><span class="si">%s</span><span class="s2">}</span>
+<span class="s2">            ){ taskId accepted } } &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dataset_param</span><span class="p">,</span> <span class="n">url_param</span><span class="p">,</span>
+                                          <span class="n">dataset_param</span><span class="p">,</span> <span class="n">url_param</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span>
+            <span class="n">dataset_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+            <span class="n">url_param</span><span class="p">:</span> <span class="n">descriptor_url</span>
+        <span class="p">})</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;appendRowsToDataset&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;accepted&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="s2">&quot;Server did not accept DataRow creation request&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Fetch and return the task.</span>
+        <span class="n">task_id</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;taskId&quot;</span><span class="p">]</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get_user</span><span class="p">()</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">created_tasks</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">Entity</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">uid</span> <span class="o">==</span> <span class="n">task_id</span><span class="p">))</span>
+        <span class="c1"># Cache user in a private variable as the relationship can&#39;t be</span>
+        <span class="c1"># resolved due to server-side limitations (see Task.created_by)</span>
+        <span class="c1"># for more info.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">task</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ResourceNotFoundError</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">Task</span><span class="p">,</span> <span class="n">task_id</span><span class="p">)</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">task</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">_user</span> <span class="o">=</span> <span class="n">user</span>
+        <span class="k">return</span> <span class="n">task</span></div>
+
+<div class="viewcode-block" id="Dataset.data_row_for_external_id"><a class="viewcode-back" href="../../source/schema.html#schema.dataset.Dataset.data_row_for_external_id">[docs]</a>    <span class="k">def</span> <span class="nf">data_row_for_external_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">external_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convenience method for getting a single `DataRow` belonging to this</span>
+<span class="sd">        `Dataset` that has the given `external_id`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            external_id (str): External ID of the sought `DataRow`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A single `DataRow` with the given ID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`</span>
+<span class="sd">                in this `DataSet` with the given external ID, or if there are</span>
+<span class="sd">                multiple `DataRows` for it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DataRow</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">DataRow</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="n">DataRow</span><span class="o">.</span><span class="n">external_id</span> <span class="o">==</span> <span class="n">external_id</span>
+
+        <span class="n">data_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_rows</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">)</span>
+        <span class="c1"># Get at most two data_rows.</span>
+        <span class="n">data_rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data_rows</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ResourceNotFoundError</span><span class="p">(</span><span class="n">DataRow</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data_rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

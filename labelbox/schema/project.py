@@ -27,6 +27,31 @@ logger = logging.getLogger(__name__)
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
+
+    Attributes: 
+        name (String)
+        description (String)
+        updated_at (DateTime)
+        created_at (DateTime)
+        setup_complete (DateTime)
+        last_activity_time (DateTime)
+        auto_audit_number_of_labels (Int)
+        auto_audit_percentage (Float)
+
+        datasets (Relationship): `ToMany` relationship to Dataset
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization
+        reviews (Relationship): `ToMany` relationship to Review
+        labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
+        labeling_frontend_options (Relationship): `ToMany` relationship to LabelingFrontendOptions
+        labeling_parameter_overrides (Relationship): `ToMany` relationship to LabelingParameterOverride
+        webhooks (Relationship): `ToMany` relationship to Webhook
+        benchmarks (Relationship): `ToMany` relationship to Benchmark
+        active_prediction_model (Relationship): `ToOne` relationship to PredictionModel
+        predictions (Relationship): `ToMany` relationship to Prediction
+        ontology (Relationship): `ToOne` relationship to Ontology
+
+    
     """
     name = Field.String("name")
     description = Field.String("description")
@@ -58,8 +83,9 @@ class Project(DbObject, Updateable, Deletable):
         """ Creates a label on a Legacy Editor project. Not
             supported in the new Editor.
 
-        Kwargs:
-            Label attributes. At the minimum the label `DataRow`.
+        Args:
+            kwargs: Label attributes. At the minimum the label `DataRow`.
+        
         """
         # Copy-paste of Client._create code so we can inject
         # a connection to Type. Type objects are on their way to being
@@ -129,9 +155,7 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
-            URL of the data file with this Project's labels. If the server
-                didn't generate during the `timeout_seconds` period, None
-                is returned.
+            URL of the data file with this Project's labels. If the server didn't generate during the `timeout_seconds` period, None is returned.
         """
         sleep_time = 2
         id_param = "projectId"
@@ -230,7 +254,7 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def set_labeling_parameter_overrides(self, data):
-        """ Adds labeling parameter overrides to this project. Example:
+        """ Adds labeling parameter overrides to this project.
 
             >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
@@ -307,11 +331,11 @@ class Project(DbObject, Updateable, Deletable):
         return res["extendReservations"]
 
     def create_prediction_model(self, name, version):
-        """ Creates a PredictionModel connected to a Legacy Editor
-            Project.
+        """ Creates a `PredictionModel` connected to a Legacy Editor Project.
+            
         Args:
-            name (str): The new PredictionModel's name.
-            version (int): The new PredictionModel's version.
+            name (String): The new PredictionModel's name.
+            version (Int): The new PredictionModel's version.
         Return:
             A newly created PredictionModel.
         """
@@ -461,6 +485,13 @@ class Project(DbObject, Updateable, Deletable):
                 f'Invalid annotations given of type: {type(annotations)}')
 
 class LabelingParameterOverride(DbObject):
+    """ Customize the label queue by setting labeling parameter overrides.
+
+    Attributes:
+        priority (Int)
+        number_of_labels (Int)
+
+    """
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
 

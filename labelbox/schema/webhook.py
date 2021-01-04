@@ -7,6 +7,14 @@ class Webhook(DbObject, Updateable):
     """ Represents a server-side rule for sending notifications to a web-server
     whenever one of several predefined actions happens within a context of
     a Project or an Organization.
+
+    Attributes:
+        updated_at (DateTime)
+        created_at (DateTime)
+        url (String)
+        topics (String): LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED
+        status (String): ACTIVE, INACTIVE, REVOKED
+
     """
 
     # Status
@@ -34,9 +42,9 @@ class Webhook(DbObject, Updateable):
                 to the server.
             topics (list of str): A list of topics this Webhook should
                 get notifications for.
-            url (str): The URL to which notifications should be sent
+            url (String): The URL to which notifications should be sent
                 by the Labelbox server.
-            secret (str): A secret key used for signing notifications.
+            secret (String): A secret key used for signing notifications.
             project (Project or None): The project for which notifications
                 should be sent. If None notifications are sent for all
                 events in your organization.
@@ -62,8 +70,8 @@ class Webhook(DbObject, Updateable):
         
         Args:
             topics (list of str): The new topics value, optional.
-            url (str): The new URL value, optional.
-            status (str): The new status value, optional.
+            url (String): The new URL value, optional.
+            status (String): The new status value, optional.
         """
         # Webhook has a custom `update` function due to custom types
         # in `status` and `topics` fields.

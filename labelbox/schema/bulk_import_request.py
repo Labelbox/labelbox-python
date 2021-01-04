@@ -92,6 +92,22 @@ def _send_create_file_command(
 
 
 class BulkImportRequest(DbObject):
+    """ Represents an import job.
+
+    Attributes:
+        name (String)
+        state (Enum): FAILED, RUNNING, or FINISHED (Refers to the whole import job)
+        input_file_url (String): URL to your web-hosted NDJSON file
+        error_file_url (String): NDJSON that contains error messages for failed annotations
+        status_file_url (String): NDJSON that contains status for each annotation
+        created_at (DateTime): UTC timestamp for date BulkImportRequest was created
+        
+        project (Relationship): `ToOne` relationship to Project
+        created_by (Relationship): `ToOne` relationship to User
+
+    """
+
+
     name = Field.String("name")
     state = Field.Enum(BulkImportRequestState, "state")
     input_file_url = Field.String("input_file_url")
@@ -174,7 +190,8 @@ class BulkImportRequest(DbObject):
             name (str): name of BulkImportRequest
             url (str): publicly accessible URL pointing to ndjson file containing predictions
         Returns:
-            BulkImportRequest object
+            `BulkImportRequest` object
+        
         """
         query_str = """mutation createBulkImportRequestPyApi(
                 $projectId: ID!, $name: String!, $fileUrl: String!) {
@@ -196,21 +213,23 @@ class BulkImportRequest(DbObject):
     def create_from_objects(cls, client, project_id: str, name: str,
                             predictions: Iterable[dict]) -> 'BulkImportRequest':
         """
-        Creates a BulkImportRequest from an iterable of dictionaries conforming to
-        JSON predictions format, e.g.:
-        ``{
-            "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",
-            "schemaId": "ckappz7d700gn0zbocmqkwd9i",
-            "dataRow": {
-                "id": "ck1s02fqxm8fi0757f0e6qtdc"
-            },
-            "bbox": {
-                "top": 48,
-                "left": 58,
-                "height": 865,
-                "width": 1512
+        Creates a `BulkImportRequest` from an iterable of dictionaries. 
+        
+        Conforms to JSON predictions format, e.g.:
+        
+        >>> {
+                "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",
+                "schemaId": "ckappz7d700gn0zbocmqkwd9i",
+                "dataRow": {
+                    "id": "ck1s02fqxm8fi0757f0e6qtdc"
+                },
+                "bbox": {
+                    "top": 48,
+                    "left": 58,
+                    "height": 865,
+                    "width": 1512
+                }
             }
-        }``
 
         Args:
             client (Client): a Labelbox client
@@ -218,7 +237,8 @@ class BulkImportRequest(DbObject):
             name (str): name of BulkImportRequest
             predictions (Iterable[dict]): iterable of dictionaries representing predictions
         Returns:
-            BulkImportRequest object
+            `BulkImportRequest` object
+        
         """
         _validate_ndjson(predictions)
         data_str = ndjson.dumps(predictions)
@@ -255,7 +275,7 @@ class BulkImportRequest(DbObject):
             validate_file (bool): a flag indicating if there should be a validation
                 if `file` is a valid ndjson file
         Returns:
-            BulkImportRequest object
+            `BulkImportRequest` object
 
         """
         file_name = _make_file_name(project_id, name)

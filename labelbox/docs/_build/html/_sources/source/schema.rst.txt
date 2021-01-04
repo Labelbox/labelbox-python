@@ -1,0 +1,141 @@
+.. schema package
+.. ==============
+
+.. Submodules
+.. ----------
+
+.. schema.asset\_metadata module
+.. -----------------------------
+
+.. .. automodule:: schema.asset_metadata
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.benchmark module
+.. -----------------------
+
+.. .. automodule:: schema.benchmark
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.bulk\_import\_request module
+.. -----------------------------------
+
+.. .. automodule:: schema.bulk_import_request
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.data\_row module
+.. -----------------------
+
+.. .. automodule:: schema.data_row
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.dataset module
+.. ---------------------
+
+.. .. automodule:: schema.dataset
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.enums module
+.. -------------------
+
+.. .. automodule:: schema.enums
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.label module
+.. -------------------
+
+.. .. automodule:: schema.label
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.labeling\_frontend module
+.. --------------------------------
+
+.. .. automodule:: schema.labeling_frontend
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.ontology module
+.. ----------------------
+
+.. .. automodule:: schema.ontology
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.organization module
+.. --------------------------
+
+.. .. automodule:: schema.organization
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.prediction module
+.. ------------------------
+
+.. .. automodule:: schema.prediction
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.project module
+.. ---------------------
+
+.. .. automodule:: schema.project
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.review module
+.. --------------------
+
+.. .. automodule:: schema.review
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.task module
+.. ------------------
+
+.. .. automodule:: schema.task
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.user module
+.. ------------------
+
+.. .. automodule:: schema.user
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. schema.webhook module
+.. ---------------------
+
+.. .. automodule:: schema.webhook
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Module contents
+.. ---------------
+
+.. .. automodule:: schema
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:

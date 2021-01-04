@@ -1,0 +1,269 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>labelbox.schema.label &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>labelbox.schema.label</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for labelbox.schema.label</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">labelbox.orm</span> <span class="kn">import</span> <span class="n">query</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.db_object</span> <span class="kn">import</span> <span class="n">DbObject</span><span class="p">,</span> <span class="n">Updateable</span><span class="p">,</span> <span class="n">BulkDeletable</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Entity</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Relationship</span>
+<span class="sd">&quot;&quot;&quot; Client-side object type definitions. &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Label"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.label.Label">[docs]</a><span class="k">class</span> <span class="nc">Label</span><span class="p">(</span><span class="n">DbObject</span><span class="p">,</span> <span class="n">Updateable</span><span class="p">,</span> <span class="n">BulkDeletable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Label represents an assessment on a DataRow. For example one label could</span>
+<span class="sd">    contain 100 bounding boxes (annotations).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        label (String)</span>
+<span class="sd">        seconds_to_label (Float)</span>
+<span class="sd">        agreement (Float)</span>
+<span class="sd">        benchmark_agreement (Float)</span>
+<span class="sd">        is_benchmark_reference (Boolean)</span>
+<span class="sd">        </span>
+<span class="sd">        project (Relationship): `ToOne` relationship to Project</span>
+<span class="sd">        data_row (Relationship): `ToOne` relationship to DataRow</span>
+<span class="sd">        reviews (Relationship): `ToMany` relationship to Review</span>
+<span class="sd">        created_by (Relationship): `ToOne` relationship to User</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reviews</span><span class="o">.</span><span class="n">supports_filtering</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">label</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">)</span>
+    <span class="n">seconds_to_label</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="s2">&quot;seconds_to_label&quot;</span><span class="p">)</span>
+    <span class="n">agreement</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="s2">&quot;agreement&quot;</span><span class="p">)</span>
+    <span class="n">benchmark_agreement</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="s2">&quot;benchmark_agreement&quot;</span><span class="p">)</span>
+    <span class="n">is_benchmark_reference</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Boolean</span><span class="p">(</span><span class="s2">&quot;is_benchmark_reference&quot;</span><span class="p">)</span>
+
+    <span class="n">project</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;Project&quot;</span><span class="p">)</span>
+    <span class="n">data_row</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;DataRow&quot;</span><span class="p">)</span>
+    <span class="n">reviews</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToMany</span><span class="p">(</span><span class="s2">&quot;Review&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">created_by</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;created_by&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Label.bulk_delete"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.label.Label.bulk_delete">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">bulk_delete</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Deletes all the given Labels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labels (list of Label): The Labels to delete.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BulkDeletable</span><span class="o">.</span><span class="n">_bulk_delete</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Label.create_review"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.label.Label.create_review">[docs]</a>    <span class="k">def</span> <span class="nf">create_review</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a Review for this label.</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            Review attributes. At a minimum a `Review.score` field</span>
+<span class="sd">            value must be provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="n">Entity</span><span class="o">.</span><span class="n">Review</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="n">Entity</span><span class="o">.</span><span class="n">Review</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">Review</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Label.create_benchmark"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.label.Label.create_benchmark">[docs]</a>    <span class="k">def</span> <span class="nf">create_benchmark</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a Benchmark for this Label.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The newly created Benchmark.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">label_id_param</span> <span class="o">=</span> <span class="s2">&quot;labelId&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation CreateBenchmarkPyApi($</span><span class="si">%s</span><span class="s2">: ID!) {</span>
+<span class="s2">            createBenchmark(data: {labelId: $</span><span class="si">%s</span><span class="s2">}) {</span><span class="si">%s</span><span class="s2">}} &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">label_id_param</span><span class="p">,</span> <span class="n">label_id_param</span><span class="p">,</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">Benchmark</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="p">{</span><span class="n">label_id_param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">Entity</span><span class="o">.</span><span class="n">Benchmark</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;createBenchmark&quot;</span><span class="p">])</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

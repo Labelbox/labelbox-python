@@ -1,0 +1,495 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>schema.bulk_import_request &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>schema.bulk_import_request</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for schema.bulk_import_request</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">BinaryIO</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">backoff</span>
+<span class="kn">import</span> <span class="nn">ndjson</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">labelbox</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">import</span> <span class="nn">labelbox.exceptions</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm</span> <span class="kn">import</span> <span class="n">query</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.db_object</span> <span class="kn">import</span> <span class="n">DbObject</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Relationship</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.enums</span> <span class="kn">import</span> <span class="n">BulkImportRequestState</span>
+
+<span class="n">NDJSON_MIME_TYPE</span> <span class="o">=</span> <span class="s2">&quot;application/x-ndjson&quot;</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_file_name</span><span class="p">(</span><span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_id</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.ndjson&quot;</span>
+
+
+<span class="c1"># TODO(gszpak): move it to client.py</span>
+<span class="k">def</span> <span class="nf">_make_request_data</span><span class="p">(</span><span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">content_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                       <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation createBulkImportRequestFromFilePyApi(</span>
+<span class="s2">            $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {</span>
+<span class="s2">        createBulkImportRequest(data: {</span>
+<span class="s2">            projectId: $projectId,</span>
+<span class="s2">            name: $name,</span>
+<span class="s2">            filePayload: {</span>
+<span class="s2">                file: $file,</span>
+<span class="s2">                contentLength: $contentLength</span>
+<span class="s2">            }</span>
+<span class="s2">        }) {</span>
+<span class="s2">            </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">        }</span>
+<span class="s2">    }</span>
+<span class="s2">    &quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="n">BulkImportRequest</span><span class="p">)</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;projectId&quot;</span><span class="p">:</span> <span class="n">project_id</span><span class="p">,</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;file&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;contentLength&quot;</span><span class="p">:</span> <span class="n">content_length</span>
+    <span class="p">}</span>
+    <span class="n">operations</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="n">variables</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query_str</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;operations&quot;</span><span class="p">:</span> <span class="n">operations</span><span class="p">,</span>
+        <span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="n">file_name</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;variables.file&quot;</span><span class="p">]}))</span>
+    <span class="p">}</span>
+
+
+<span class="c1"># TODO(gszpak): move it to client.py</span>
+<span class="k">def</span> <span class="nf">_send_create_file_command</span><span class="p">(</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">request_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">file_data</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">BinaryIO</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">endpoint</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;authorization&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">client</span><span class="o">.</span><span class="n">api_key</span><span class="p">},</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">request_data</span><span class="p">,</span>
+        <span class="n">files</span><span class="o">=</span><span class="p">{</span><span class="n">file_name</span><span class="p">:</span> <span class="n">file_data</span><span class="p">})</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to parse response as JSON: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="n">response_data</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">response_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to upload, message: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">response_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;createBulkImportRequest&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to create BulkImportRequest, message: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+            <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span>
+            <span class="n">response_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">response_data</span>
+
+
+<div class="viewcode-block" id="BulkImportRequest"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest">[docs]</a><span class="k">class</span> <span class="nc">BulkImportRequest</span><span class="p">(</span><span class="n">DbObject</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="n">BulkImportRequestState</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">)</span>
+    <span class="n">input_file_url</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;input_file_url&quot;</span><span class="p">)</span>
+    <span class="n">error_file_url</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;error_file_url&quot;</span><span class="p">)</span>
+    <span class="n">status_file_url</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;status_file_url&quot;</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">)</span>
+
+    <span class="n">project</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;Project&quot;</span><span class="p">)</span>
+    <span class="n">created_by</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;created_by&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BulkImportRequest.refresh"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Synchronizes values of all fields with the database.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_str</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">get_single</span><span class="p">(</span><span class="n">BulkImportRequest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="n">BulkImportRequest</span><span class="o">.</span><span class="n">type_name</span><span class="p">())]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_field_values</span><span class="p">(</span><span class="n">res</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BulkImportRequest.wait_until_done"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest.wait_until_done">[docs]</a>    <span class="k">def</span> <span class="nf">wait_until_done</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sleep_time_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Blocks until the BulkImportRequest.state changes either to</span>
+<span class="sd">        `BulkImportRequestState.FINISHED` or `BulkImportRequestState.FAILED`,</span>
+<span class="sd">        periodically refreshing object&#39;s state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sleep_time_seconds (str): a time to block between subsequent API calls</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">BulkImportRequestState</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sleeping for </span><span class="si">{</span><span class="n">sleep_time_seconds</span><span class="si">}</span><span class="s2"> seconds...&quot;</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep_time_seconds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__exponential_backoff_refresh</span><span class="p">()</span></div>
+
+    <span class="nd">@backoff</span><span class="o">.</span><span class="n">on_exception</span><span class="p">(</span>
+        <span class="n">backoff</span><span class="o">.</span><span class="n">expo</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ApiLimitError</span><span class="p">,</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">,</span>
+         <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NetworkError</span><span class="p">),</span>
+        <span class="n">max_tries</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">jitter</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__exponential_backoff_refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BulkImportRequest.from_name"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest.from_name">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                  <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BulkImportRequest&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Fetches existing BulkImportRequest.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client (Client): a Labelbox client</span>
+<span class="sd">            project_id (str): BulkImportRequest&#39;s project id</span>
+<span class="sd">            name (str): name of BulkImportRequest</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BulkImportRequest object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;query getBulkImportRequestPyApi(</span>
+<span class="s2">                $projectId: ID!, $name: String!) {</span>
+<span class="s2">            bulkImportRequest(where: {</span>
+<span class="s2">                projectId: $projectId,</span>
+<span class="s2">                name: $name</span>
+<span class="s2">            }) {</span>
+<span class="s2">                </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">            }</span>
+<span class="s2">        }</span>
+<span class="s2">        &quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;projectId&quot;</span><span class="p">:</span> <span class="n">project_id</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;bulkImportRequest&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="BulkImportRequest.create_from_url"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest.create_from_url">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_url</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BulkImportRequest&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a BulkImportRequest from a publicly accessible URL</span>
+<span class="sd">        to an ndjson file with predictions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client (Client): a Labelbox client</span>
+<span class="sd">            project_id (str): id of project for which predictions will be imported</span>
+<span class="sd">            name (str): name of BulkImportRequest</span>
+<span class="sd">            url (str): publicly accessible URL pointing to ndjson file containing predictions</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BulkImportRequest object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;mutation createBulkImportRequestPyApi(</span>
+<span class="s2">                $projectId: ID!, $name: String!, $fileUrl: String!) {</span>
+<span class="s2">            createBulkImportRequest(data: {</span>
+<span class="s2">                projectId: $projectId,</span>
+<span class="s2">                name: $name,</span>
+<span class="s2">                fileUrl: $fileUrl</span>
+<span class="s2">            }) {</span>
+<span class="s2">                </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">            }</span>
+<span class="s2">        }</span>
+<span class="s2">        &quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">query</span><span class="o">.</span><span class="n">results_query_part</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;projectId&quot;</span><span class="p">:</span> <span class="n">project_id</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;fileUrl&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">}</span>
+        <span class="n">bulk_import_request_response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+                   <span class="n">bulk_import_request_response</span><span class="p">[</span><span class="s2">&quot;createBulkImportRequest&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="BulkImportRequest.create_from_objects"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest.create_from_objects">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_objects</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                            <span class="n">predictions</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;BulkImportRequest&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a BulkImportRequest from an iterable of dictionaries conforming to</span>
+<span class="sd">        JSON predictions format, e.g.:</span>
+<span class="sd">        ``{</span>
+<span class="sd">            &quot;uuid&quot;: &quot;9fd9a92e-2560-4e77-81d4-b2e955800092&quot;,</span>
+<span class="sd">            &quot;schemaId&quot;: &quot;ckappz7d700gn0zbocmqkwd9i&quot;,</span>
+<span class="sd">            &quot;dataRow&quot;: {</span>
+<span class="sd">                &quot;id&quot;: &quot;ck1s02fqxm8fi0757f0e6qtdc&quot;</span>
+<span class="sd">            },</span>
+<span class="sd">            &quot;bbox&quot;: {</span>
+<span class="sd">                &quot;top&quot;: 48,</span>
+<span class="sd">                &quot;left&quot;: 58,</span>
+<span class="sd">                &quot;height&quot;: 865,</span>
+<span class="sd">                &quot;width&quot;: 1512</span>
+<span class="sd">            }</span>
+<span class="sd">        }``</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client (Client): a Labelbox client</span>
+<span class="sd">            project_id (str): id of project for which predictions will be imported</span>
+<span class="sd">            name (str): name of BulkImportRequest</span>
+<span class="sd">            predictions (Iterable[dict]): iterable of dictionaries representing predictions</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BulkImportRequest object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_validate_ndjson</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+        <span class="n">data_str</span> <span class="o">=</span> <span class="n">ndjson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;annotations cannot be empty&#39;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data_str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">_make_file_name</span><span class="p">(</span><span class="n">project_id</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">request_data</span> <span class="o">=</span> <span class="n">_make_request_data</span><span class="p">(</span><span class="n">project_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_str</span><span class="p">),</span>
+                                          <span class="n">file_name</span><span class="p">)</span>
+        <span class="n">file_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">NDJSON_MIME_TYPE</span><span class="p">)</span>
+        <span class="n">response_data</span> <span class="o">=</span> <span class="n">_send_create_file_command</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+                                                  <span class="n">request_data</span><span class="o">=</span><span class="n">request_data</span><span class="p">,</span>
+                                                  <span class="n">file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">,</span>
+                                                  <span class="n">file_data</span><span class="o">=</span><span class="n">file_data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response_data</span><span class="p">[</span><span class="s2">&quot;createBulkImportRequest&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="BulkImportRequest.create_from_local_file"><a class="viewcode-back" href="../../source/schema.html#schema.bulk_import_request.BulkImportRequest.create_from_local_file">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_local_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                               <span class="n">client</span><span class="p">,</span>
+                               <span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                               <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                               <span class="n">file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                               <span class="n">validate_file</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BulkImportRequest&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a BulkImportRequest from a local ndjson file with predictions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client (Client): a Labelbox client</span>
+<span class="sd">            project_id (str): id of project for which predictions will be imported</span>
+<span class="sd">            name (str): name of BulkImportRequest</span>
+<span class="sd">            file (Path): local ndjson file with predictions</span>
+<span class="sd">            validate_file (bool): a flag indicating if there should be a validation</span>
+<span class="sd">                if `file` is a valid ndjson file</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BulkImportRequest object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">_make_file_name</span><span class="p">(</span><span class="n">project_id</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">content_length</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span>
+        <span class="n">request_data</span> <span class="o">=</span> <span class="n">_make_request_data</span><span class="p">(</span><span class="n">project_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">content_length</span><span class="p">,</span>
+                                          <span class="n">file_name</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">validate_file</span><span class="p">:</span>
+                <span class="n">reader</span> <span class="o">=</span> <span class="n">ndjson</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="c1"># ensure that the underlying json load call is valid</span>
+                <span class="c1"># https://github.com/rhgrant10/ndjson/blob/ff2f03c56b21f28f7271b27da35ca4a8bf9a05d0/ndjson/api.py#L53</span>
+                <span class="c1"># by iterating through the file so we only store</span>
+                <span class="c1"># each line in memory rather than the entire file</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_validate_ndjson</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2"> is not a valid ndjson file&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">file_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">NDJSON_MIME_TYPE</span><span class="p">)</span>
+            <span class="n">response_data</span> <span class="o">=</span> <span class="n">_send_create_file_command</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">request_data</span><span class="p">,</span>
+                                                      <span class="n">file_name</span><span class="p">,</span> <span class="n">file_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response_data</span><span class="p">[</span><span class="s2">&quot;createBulkImportRequest&quot;</span><span class="p">])</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">_validate_ndjson</span><span class="p">(</span><span class="n">lines</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Validate individual ndjson lines.</span>
+
+<span class="sd">        - verifies that uuids are unique</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uuids</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">uuid</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">uuids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">UuidError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s1"> already used in this import job, &#39;</span>
+                <span class="s1">&#39;must be unique for the project.&#39;</span><span class="p">)</span>
+        <span class="n">uuids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

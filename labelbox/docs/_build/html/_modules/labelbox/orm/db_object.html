@@ -1,0 +1,441 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>labelbox.orm.db_object &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>labelbox.orm.db_object</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for labelbox.orm.db_object</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">labelbox</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">labelbox.exceptions</span> <span class="kn">import</span> <span class="n">InvalidQueryError</span><span class="p">,</span> <span class="n">InvalidAttributeError</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm</span> <span class="kn">import</span> <span class="n">query</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Relationship</span><span class="p">,</span> <span class="n">Entity</span>
+<span class="kn">from</span> <span class="nn">labelbox.pagination</span> <span class="kn">import</span> <span class="n">PaginatedCollection</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DbObject"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.DbObject">[docs]</a><span class="k">class</span> <span class="nc">DbObject</span><span class="p">(</span><span class="n">Entity</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A client-side representation of a database object (row). Intended as</span>
+<span class="sd">    base class for classes representing concrete database types (for example</span>
+<span class="sd">    a Project). Exposes support functionalities so that the concrete subclass</span>
+<span class="sd">    definition be as simple and DRY as possible. It should come down to just</span>
+<span class="sd">    listing Fields of that particular database type. For example:</span>
+
+<span class="sd">        &gt;&gt;&gt; class Project(DbObject):</span>
+<span class="sd">        &gt;&gt;&gt;     name = Field.String(&quot;name&quot;)</span>
+<span class="sd">        &gt;&gt;&gt;     labels = Relationship.ToMany(&quot;Label&quot;, True)</span>
+
+<span class="sd">    This defines a `Project` class that has class attributes which are</span>
+<span class="sd">    `Field`s and `Relationship`s. An instance of `Project` represents</span>
+<span class="sd">    a database record. It has the same attributes as the `Project` class,</span>
+<span class="sd">    but they are now attribute values of that record:</span>
+
+<span class="sd">        &gt;&gt;&gt; project = client.create_project(name=&quot;MyProject&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; project.name</span>
+<span class="sd">        &quot;MyProject&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">field_values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Constructor of a database object. Generally it should only be used</span>
+<span class="sd">        by library internals and not by the end user.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client (labelbox.Client): the client used for fetching data from DB.</span>
+<span class="sd">            field_values (dict): Data obtained from the DB. Maps database object</span>
+<span class="sd">                fields (their graphql_name version) to values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_field_values</span><span class="p">(</span><span class="n">field_values</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">relationship</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relationships</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relationship</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">RelationshipManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relationship</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_set_field_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sets field values on this object. Ensures proper value conversions.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            field_values (dict): Maps field names (GraphQL variant, snakeCase)</span>
+<span class="sd">                to values. *Must* contain all field values for this object&#39;s</span>
+<span class="sd">                DB type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">field_values</span><span class="p">[</span><span class="n">field</span><span class="o">.</span><span class="n">graphql_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">field_type</span> <span class="o">==</span> <span class="n">Field</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">DateTime</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">Z&quot;</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;Failed to convert value &#39;</span><span class="si">%s</span><span class="s2">&#39; to datetime for &quot;</span>
+                        <span class="s2">&quot;field </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">field_type</span><span class="p">,</span> <span class="n">Field</span><span class="o">.</span><span class="n">EnumType</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">field_type</span><span class="o">.</span><span class="n">enum_cls</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_name</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">&quot;uid&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">%s</span><span class="s2"> ID: </span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">type_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="n">type_name</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">attribute_values</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_name</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">attribute_values</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_name</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">type_name</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">uid</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">7541</span> <span class="o">*</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_name</span><span class="p">())</span> <span class="o">+</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RelationshipManager"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.RelationshipManager">[docs]</a><span class="k">class</span> <span class="nc">RelationshipManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Manages relationships (object fetching and updates) for a `DbObject`</span>
+<span class="sd">    instance. There is one RelationshipManager for each relationship in</span>
+<span class="sd">    each `DbObject` instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">relationship</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Args:</span>
+<span class="sd">            source (DbObject subclass instance): The object that&#39;s the source</span>
+<span class="sd">                of the relationship.</span>
+<span class="sd">            relationship (labelbox.schema.Relationship): The relationship</span>
+<span class="sd">                schema descriptor object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relationship</span> <span class="o">=</span> <span class="n">relationship</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">supports_filtering</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">supports_sorting</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_on_id</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Forwards the call to either `_to_many` or `_to_one` methods,</span>
+<span class="sd">        depending on relationship type. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relationship</span><span class="o">.</span><span class="n">relationship_type</span> <span class="o">==</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">ToMany</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_many</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_one</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_to_many</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns an iterable over the destination relationship objects.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            where (None, Comparison or LogicalExpression): Filtering clause.</span>
+<span class="sd">            order_by (None or (Field, Field.Order)): Ordering clause.</span>
+<span class="sd">        Return:</span>
+<span class="sd">            iterable over destination DbObject instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relationship</span>
+
+        <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_filtering</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="s2">&quot;Relationship </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2"> doesn&#39;t support filtering&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">type_name</span><span class="p">(),</span> <span class="n">rel</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">order_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_sorting</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="s2">&quot;Relationship </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2"> doesn&#39;t support sorting&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">type_name</span><span class="p">(),</span> <span class="n">rel</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">rel</span><span class="o">.</span><span class="n">filter_deleted</span><span class="p">:</span>
+            <span class="n">not_deleted</span> <span class="o">=</span> <span class="n">rel</span><span class="o">.</span><span class="n">destination_type</span><span class="o">.</span><span class="n">deleted</span> <span class="o">==</span> <span class="kc">False</span>
+            <span class="n">where</span> <span class="o">=</span> <span class="n">not_deleted</span> <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">where</span> <span class="o">&amp;</span> <span class="n">not_deleted</span>
+
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_on_id</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">),</span> <span class="n">rel</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span>
+            <span class="n">order_by</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PaginatedCollection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">type_name</span><span class="p">()),</span> <span class="n">rel</span><span class="o">.</span><span class="n">graphql_name</span><span class="p">],</span>
+            <span class="n">rel</span><span class="o">.</span><span class="n">destination_type</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_to_one</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the relationship destination object. &quot;&quot;&quot;</span>
+        <span class="n">rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relationship</span>
+
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">rel</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">type_name</span><span class="p">())]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">rel</span><span class="o">.</span><span class="n">graphql_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">rel</span><span class="o">.</span><span class="n">destination_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RelationshipManager.connect"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.RelationshipManager.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Connects source object of this manager to the `other` object. &quot;&quot;&quot;</span>
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">update_relationship</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relationship</span><span class="p">,</span> <span class="s2">&quot;connect&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RelationshipManager.disconnect"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.RelationshipManager.disconnect">[docs]</a>    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Disconnects source object of this manager from the `other` object. &quot;&quot;&quot;</span>
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">update_relationship</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relationship</span><span class="p">,</span> <span class="s2">&quot;disconnect&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Updateable"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.Updateable">[docs]</a><span class="k">class</span> <span class="nc">Updateable</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Updateable.update"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.Updateable.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Updates this DB object with new values. Values should be</span>
+<span class="sd">        passed as key-value arguments with field names as keys:</span>
+<span class="sd">            &gt;&gt;&gt; db_object.update(name=&quot;New name&quot;, title=&quot;A title&quot;)</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            Key-value arguments defining which fields should be updated</span>
+<span class="sd">            for which values. Keys must be field names in this DB object&#39;s</span>
+<span class="sd">            type.</span>
+<span class="sd">        Raise:</span>
+<span class="sd">            InvalidAttributeError: if there exists a key in `kwargs`</span>
+<span class="sd">                that&#39;s not a field in this object type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="p">):</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">invalid_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">invalid_fields</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidAttributeError</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">invalid_fields</span><span class="p">)</span>
+
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">update_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;update</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">utils</span><span class="o">.</span><span class="n">title_case</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_name</span><span class="p">())]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_field_values</span><span class="p">(</span><span class="n">res</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Deletable"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.Deletable">[docs]</a><span class="k">class</span> <span class="nc">Deletable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Implements deletion for objects that have a `deleted` attribute. &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Deletable.delete"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.Deletable.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Deletes this DB object from the DB (server side). After</span>
+<span class="sd">        a call to this you should not use this DB object anymore.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BulkDeletable"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.BulkDeletable">[docs]</a><span class="k">class</span> <span class="nc">BulkDeletable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Implements deletion for objects that have a custom, bulk deletion</span>
+<span class="sd">    mutation (accepts a list of IDs of objects to be deleted).</span>
+
+<span class="sd">    A subclass must override the `bulk_delete` static method so it</span>
+<span class="sd">    accepts only the `objects` argument and then invoke BulkDeletable.bulk_delete</span>
+<span class="sd">    with the appropriate `use_where_clause` argument for that particular</span>
+<span class="sd">    type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_bulk_delete</span><span class="p">(</span><span class="n">objects</span><span class="p">,</span> <span class="n">use_where_clause</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            objects (list): Objects to delete. All objects must be of the same</span>
+<span class="sd">                DbObject subtype.</span>
+<span class="sd">            use_where_clause (bool): If the GraphQL query object IDs should be</span>
+<span class="sd">                passed under `where` or directly. Necessary because the bulk</span>
+<span class="sd">                deletion mutation is implemented differently for different</span>
+<span class="sd">                object types (DataRow.bulkDelete vs Label.bulkDelete).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">types</span> <span class="o">=</span> <span class="p">{</span><span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">objects</span><span class="p">}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">types</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="s2">&quot;Can&#39;t bulk-delete objects of different types: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">types</span><span class="p">)</span>
+
+        <span class="n">query_str</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">bulk_delete</span><span class="p">(</span><span class="n">objects</span><span class="p">,</span> <span class="n">use_where_clause</span><span class="p">)</span>
+        <span class="n">objects</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BulkDeletable.delete"><a class="viewcode-back" href="../../../source/labelbox.orm.html#labelbox.orm.db_object.BulkDeletable.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Deletes this DB object from the DB (server side). After</span>
+<span class="sd">        a call to this you should not use this DB object anymore.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">bulk_delete</span><span class="p">([</span><span class="bp">self</span><span class="p">])</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

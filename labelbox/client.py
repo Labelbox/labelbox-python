@@ -29,6 +29,7 @@ class Client:
     """ A Labelbox client. Contains info necessary for connecting to
     a Labelbox server (URL, authentication key). Provides functions for
     querying and creating top-level data objects (Projects, Datasets).
+
     """
 
     def __init__(self,
@@ -36,18 +37,16 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql'):
         """ Creates and initializes a Labelbox Client.
 
-            Logging is defaulted to level WARNING. To receive more verbose
-                output to console, update logging.level to the
-                appropriate level.
+        Logging is defaulted to level WARNING. To receive more verbose
+        output to console, update logging.level to the appropriate level.
 
-            >>> import logger
-            >>> logging.basicConfig(level = logging.INFO)
-            >>> client = Client("<APIKEY>")
+        >>> import logger
+        >>> logging.basicConfig(level = logging.INFO)
+        >>> client = Client("<APIKEY>")
 
         Args:
-            api_key (str): API key. If None, the key is obtained from
-                the "LABELBOX_API_KEY" environment variable.
-            endpoint (str): URL of the Labelbox server to connect to.
+            api_key (String): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
+            endpoint (String): URL of the Labelbox server to connect to.
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
@@ -310,7 +309,7 @@ class Client:
             >>> project = client.get_project("<project_id>")
 
         Args:
-            project_id (str): Unique ID of the Project.
+            project_id (String): Unique ID of the Project.
         Returns:
             The sought Project.
         Raises:
@@ -325,7 +324,7 @@ class Client:
             >>> dataset = client.get_dataset("<dataset_id>")
 
         Args:
-            dataset_id (str): Unique ID of the Dataset.
+            dataset_id (String): Unique ID of the Dataset.
         Returns:
             The sought Dataset.
         Raises:
@@ -336,6 +335,7 @@ class Client:
 
     def get_user(self):
         """ Gets the current User database object.
+            
             >>> user = client.get_user()
 
         """
@@ -396,7 +396,7 @@ class Client:
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
 
-            >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
+        >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -407,8 +407,9 @@ class Client:
         return self._get_all(LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
-        """ Creates an object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates an object on the server. 
+        
+            Attribute values are passed as keyword arguments:
 
         Args:
             db_object_type (type): A DbObjectType subtype.
@@ -434,16 +435,15 @@ class Client:
         return db_object_type(self, res)
 
     def create_dataset(self, **kwargs):
-        """ Creates a Dataset object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates a Dataset object on the server.
+            
+        Attribute values are passed as keyword arguments.
 
-            >>> project = client.get_project("<project_uid>")
-            >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
+        >>> project = client.get_project("<project_uid>")
+        >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
 
-        Kwargs:
-            Keyword arguments with new Dataset attribute values.
-            Keys are attribute names (in Python, snake-case convention) and
-            values are desired attribute values.
+        Args:
+            kwargs: Keyword arguments with Dataset attribute values.
         Returns:
             A new Dataset object.
         Raises:
@@ -453,15 +453,14 @@ class Client:
         return self._create(Dataset, kwargs)
 
     def create_project(self, **kwargs):
-        """ Creates a Project object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates a Project object on the server. 
+        
+        Attribute values are passed as keyword arguments.
 
-            >>> project = client.create_project(name="<project_name>", description="<project_description>")
+        >>> project = client.create_project(name="<project_name>", description="<project_description>")
 
-        Kwargs:
-            Keyword arguments with new Project attribute values.
-            Keys are attribute names (in Python, snake-case convention) and
-            values are desired attribute values.
+        Args:
+            kwargs: Keyword arguments with new Project attribute values.
         Returns:
             A new Project object.
         Raises:

@@ -1,0 +1,2672 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Labelbox &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Welcome to Labelbox Python API Reference’s documentation!" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Labelbox</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.client">Client</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.asset_metadata">AssetMetadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.benchmark">Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.bulk_import_request">BulkImportRequest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.data_row">DataRow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.dataset">Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.label">Label</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.labeling_frontend">LabelingFrontend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.ontology">Ontology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.organization">Organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.project">Project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.review">Review</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.task">Task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.user">User</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.webhook">Webhook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.exceptions">Exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.pagination">Pagination</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-labelbox.schema.enums">Enums</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Labelbox</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/labelbox.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="labelbox">
+<h1>Labelbox<a class="headerlink" href="#labelbox" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<div class="section" id="module-labelbox.client">
+<span id="client"></span><h2>Client<a class="headerlink" href="#module-labelbox.client" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.client.Client">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.client.</code><code class="sig-name descname">Client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">api_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">endpoint</span><span class="o">=</span><span class="default_value">'https://api.labelbox.com/graphql'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A Labelbox client. Contains info necessary for connecting to
+a Labelbox server (URL, authentication key). Provides functions for
+querying and creating top-level data objects (Projects, Datasets).</p>
+<dl class="py method">
+<dt id="labelbox.client.Client.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">api_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">endpoint</span><span class="o">=</span><span class="default_value">'https://api.labelbox.com/graphql'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and initializes a Labelbox Client.</p>
+<p>Logging is defaulted to level WARNING. To receive more verbose
+output to console, update logging.level to the appropriate level.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">logger</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="s2">&quot;&lt;APIKEY&gt;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>api_key</strong> (<em>String</em>) – API key. If None, the key is obtained from the “LABELBOX_API_KEY” environment variable.</p></li>
+<li><p><strong>endpoint</strong> (<em>String</em>) – URL of the Labelbox server to connect to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#labelbox.exceptions.AuthenticationError" title="labelbox.exceptions.AuthenticationError"><strong>labelbox.exceptions.AuthenticationError</strong></a> – If no <cite>api_key</cite>
+    is provided as an argument or via the environment
+    variable.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.create_dataset">
+<code class="sig-name descname">create_dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.create_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.create_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Dataset object on the server.</p>
+<p>Attribute values are passed as keyword arguments.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_project</span><span class="p">(</span><span class="s2">&quot;&lt;project_uid&gt;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;&lt;dataset_name&gt;&quot;</span><span class="p">,</span> <span class="n">projects</span><span class="o">=</span><span class="n">project</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Keyword arguments with Dataset attribute values.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A new Dataset object.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#labelbox.exceptions.InvalidAttributeError" title="labelbox.exceptions.InvalidAttributeError"><strong>InvalidAttributeError</strong></a> – If the Dataset type does not contain
+    any of the attribute names given in kwargs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.create_project">
+<code class="sig-name descname">create_project</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.create_project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.create_project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Project object on the server.</p>
+<p>Attribute values are passed as keyword arguments.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_project</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;&lt;project_name&gt;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&lt;project_description&gt;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Keyword arguments with new Project attribute values.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A new Project object.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#labelbox.exceptions.InvalidAttributeError" title="labelbox.exceptions.InvalidAttributeError"><strong>InvalidAttributeError</strong></a> – If the Project type does not contain
+    any of the attribute names given in kwargs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">10.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to the server for the execution of the
+given query. Checks the response for errors and wraps errors
+in appropriate labelbox.exceptions.LabelboxError subtypes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query</strong> (<em>str</em>) – The query to execute.</p></li>
+<li><p><strong>params</strong> (<em>dict</em>) – Query parameters referenced within the query.</p></li>
+<li><p><strong>timeout</strong> (<em>float</em>) – Max allowed time for query execution,
+in seconds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict, parsed JSON response.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#labelbox.exceptions.AuthenticationError" title="labelbox.exceptions.AuthenticationError"><strong>labelbox.exceptions.AuthenticationError</strong></a> – If authentication
+    failed.</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.InvalidQueryError" title="labelbox.exceptions.InvalidQueryError"><strong>labelbox.exceptions.InvalidQueryError</strong></a> – If <cite>query</cite> is not
+    syntactically or semantically valid (checked server-side).</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.ApiLimitError" title="labelbox.exceptions.ApiLimitError"><strong>labelbox.exceptions.ApiLimitError</strong></a> – If the server API limit was
+    exceeded. See “How to import data” in the online documentation
+    to see API limits.</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.TimeoutError" title="labelbox.exceptions.TimeoutError"><strong>labelbox.exceptions.TimeoutError</strong></a> – If response was not received
+    in <cite>timeout</cite> seconds.</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.NetworkError" title="labelbox.exceptions.NetworkError"><strong>labelbox.exceptions.NetworkError</strong></a> – If an unknown error occurred
+    most likely due to connection issues.</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><strong>labelbox.exceptions.LabelboxError</strong></a> – If an unknown error of any
+    kind occurred.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_dataset">
+<code class="sig-name descname">get_dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a single Dataset with the given ID.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="s2">&quot;&lt;dataset_id&gt;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – Unique ID of the Dataset.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The sought Dataset.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#labelbox.exceptions.ResourceNotFoundError" title="labelbox.exceptions.ResourceNotFoundError"><strong>labelbox.exceptions.ResourceNotFoundError</strong></a> – If there is no
+    Dataset with the given ID.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_datasets">
+<code class="sig-name descname">get_datasets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">where</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_datasets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_datasets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetches one or more datasets.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">datasets</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_datasets</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="p">(</span><span class="n">Dataset</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&lt;dataset_name&gt;&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Dataset</span><span class="o">.</span><span class="n">description</span> <span class="o">==</span> <span class="s2">&quot;&lt;dataset_description&gt;&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>where</strong> (<em>Comparison</em><em>, </em><em>LogicalOperation</em><em> or </em><em>None</em>) – The <cite>where</cite> clause
+for filtering.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterable of Datasets (typically a PaginatedCollection).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_labeling_frontends">
+<code class="sig-name descname">get_labeling_frontends</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">where</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_labeling_frontends"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_labeling_frontends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetches all the labeling frontends.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frontend</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_labeling_frontends</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">LabelingFrontend</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Editor&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>where</strong> (<em>Comparison</em><em>, </em><em>LogicalOperation</em><em> or </em><em>None</em>) – The <cite>where</cite> clause
+for filtering.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterable of LabelingFrontends (typically a PaginatedCollection).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_organization">
+<code class="sig-name descname">get_organization</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_organization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_organization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the Organization DB object of the current user.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">organization</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_organization</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_project">
+<code class="sig-name descname">get_project</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a single Project with the given ID.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_project</span><span class="p">(</span><span class="s2">&quot;&lt;project_id&gt;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>project_id</strong> (<em>str</em>) – Unique ID of the Project.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The sought Project.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#labelbox.exceptions.ResourceNotFoundError" title="labelbox.exceptions.ResourceNotFoundError"><strong>labelbox.exceptions.ResourceNotFoundError</strong></a> – If there is no
+    Project with the given ID.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_projects">
+<code class="sig-name descname">get_projects</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">where</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_projects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_projects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetches all the projects the user has access to.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">projects</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_projects</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="p">(</span><span class="n">Project</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&lt;project_name&gt;&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Project</span><span class="o">.</span><span class="n">description</span> <span class="o">==</span> <span class="s2">&quot;&lt;project_description&gt;&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>where</strong> (<em>Comparison</em><em>, </em><em>LogicalOperation</em><em> or </em><em>None</em>) – The <cite>where</cite> clause
+for filtering.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterable of Projects (typically a PaginatedCollection).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.client.Client.get_user">
+<code class="sig-name descname">get_user</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/client.html#Client.get_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.client.Client.get_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the current User database object.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_user</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.asset_metadata">
+<span id="assetmetadata"></span><h2>AssetMetadata<a class="headerlink" href="#module-labelbox.schema.asset_metadata" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.asset_metadata.AssetMetadata">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.asset_metadata.</code><code class="sig-name descname">AssetMetadata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/asset_metadata.html#AssetMetadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.asset_metadata.AssetMetadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Provide extra context about an asset while labeling.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.asset_metadata.AssetMetadata.meta_type">
+<code class="sig-name descname">meta_type</code><a class="headerlink" href="#labelbox.schema.asset_metadata.AssetMetadata.meta_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>“IMAGE”, “VIDEO”, “TEXT”, or “IMAGE_OVERLAY”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.asset_metadata.AssetMetadata.meta_value">
+<code class="sig-name descname">meta_value</code><a class="headerlink" href="#labelbox.schema.asset_metadata.AssetMetadata.meta_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>URL to an external file or a string of text</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.benchmark">
+<span id="benchmark"></span><h2>Benchmark<a class="headerlink" href="#module-labelbox.schema.benchmark" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.benchmark.Benchmark">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.benchmark.</code><code class="sig-name descname">Benchmark</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/benchmark.html#Benchmark"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Represents a benchmark label.</p>
+<p>The Benchmarks tool works by interspersing data
+to be labeled, for which there is a benchmark label, to each person labeling.
+These labeled data are compared against their respective benchmark and an
+accuracy score between 0 and 100 percent is calculated.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.benchmark.Benchmark.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.benchmark.Benchmark.last_activity">
+<code class="sig-name descname">last_activity</code><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.last_activity" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.benchmark.Benchmark.average_agreement">
+<code class="sig-name descname">average_agreement</code><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.average_agreement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.benchmark.Benchmark.completed_count">
+<code class="sig-name descname">completed_count</code><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.completed_count" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.benchmark.Benchmark.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.benchmark.Benchmark.reference_label">
+<code class="sig-name descname">reference_label</code><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.reference_label" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Label</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Methods:</p>
+<dl class="py method">
+<dt id="labelbox.schema.benchmark.Benchmark.delete">
+<code class="sig-name descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/benchmark.html#Benchmark.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.benchmark.Benchmark.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the benchmark.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.bulk_import_request">
+<span id="bulkimportrequest"></span><h2>BulkImportRequest<a class="headerlink" href="#module-labelbox.schema.bulk_import_request" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.bulk_import_request.</code><code class="sig-name descname">BulkImportRequest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/bulk_import_request.html#BulkImportRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Represents an import job.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.state">
+<code class="sig-name descname">state</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.state" title="Permalink to this definition">¶</a></dt>
+<dd><p>FAILED, RUNNING, or FINISHED (Refers to the whole import job)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Enum</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.input_file_url">
+<code class="sig-name descname">input_file_url</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.input_file_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>URL to your web-hosted NDJSON file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.error_file_url">
+<code class="sig-name descname">error_file_url</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.error_file_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>NDJSON that contains error messages for failed annotations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.status_file_url">
+<code class="sig-name descname">status_file_url</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.status_file_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>NDJSON that contains status for each annotation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>UTC timestamp for date BulkImportRequest was created</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.project">
+<code class="sig-name descname">project</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.project" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.refresh">
+<code class="sig-name descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/labelbox/schema/bulk_import_request.html#BulkImportRequest.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronizes values of all fields with the database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.bulk_import_request.BulkImportRequest.wait_until_done">
+<code class="sig-name descname">wait_until_done</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sleep_time_seconds</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">30</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/labelbox/schema/bulk_import_request.html#BulkImportRequest.wait_until_done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.bulk_import_request.BulkImportRequest.wait_until_done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the BulkImportRequest.state changes either to
+<cite>BulkImportRequestState.FINISHED</cite> or <cite>BulkImportRequestState.FAILED</cite>,
+periodically refreshing object’s state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sleep_time_seconds</strong> (<em>str</em>) – a time to block between subsequent API calls</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.data_row">
+<span id="datarow"></span><h2>DataRow<a class="headerlink" href="#module-labelbox.schema.data_row" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.data_row.DataRow">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.data_row.</code><code class="sig-name descname">DataRow</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/data_row.html#DataRow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.data_row.DataRow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Updateable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.BulkDeletable</span></code></p>
+<p>Internal Labelbox representation of a single piece of data (e.g. image, video, text).</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.external_id">
+<code class="sig-name descname">external_id</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.external_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>User-generated file name or identifier</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.row_data">
+<code class="sig-name descname">row_data</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.row_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paths to local files are uploaded to Labelbox’s server. Otherwise, it’s treated as an external URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.dataset">
+<code class="sig-name descname">dataset</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.labels">
+<code class="sig-name descname">labels</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.labels" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Label</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.metadata">
+<code class="sig-name descname">metadata</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to AssetMetadata</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.data_row.DataRow.predictions">
+<code class="sig-name descname">predictions</code><a class="headerlink" href="#labelbox.schema.data_row.DataRow.predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Prediction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.data_row.DataRow.bulk_delete">
+<em class="property">static </em><code class="sig-name descname">bulk_delete</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_rows</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/data_row.html#DataRow.bulk_delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.data_row.DataRow.bulk_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes all the given DataRows.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_rows</strong> (<em>list of DataRow</em>) – The DataRows to delete.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.data_row.DataRow.create_metadata">
+<code class="sig-name descname">create_metadata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">meta_type</span></em>, <em class="sig-param"><span class="n">meta_value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/data_row.html#DataRow.create_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.data_row.DataRow.create_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>Creates an asset metadata for this DataRow.</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">datarow</span><span class="o">.</span><span class="n">create_metadata</span><span class="p">(</span><span class="s2">&quot;TEXT&quot;</span><span class="p">,</span> <span class="s2">&quot;This is a text message&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meta_type</strong> (<em>String</em>) – Asset metadata type, must be one of:
+VIDEO, IMAGE, TEXT.</p></li>
+<li><p><strong>meta_value</strong> (<em>String</em>) – Asset metadata value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>AssetMetadata DB object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.dataset">
+<span id="dataset"></span><h2>Dataset<a class="headerlink" href="#module-labelbox.schema.dataset" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.dataset.Dataset">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.dataset.</code><code class="sig-name descname">Dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/dataset.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.dataset.Dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Updateable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Deletable</span></code></p>
+<p>A Dataset is a collection of DataRows.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.description">
+<code class="sig-name descname">description</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.description" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.projects">
+<code class="sig-name descname">projects</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.projects" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.data_rows">
+<code class="sig-name descname">data_rows</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.data_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to DataRow</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.dataset.Dataset.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.dataset.Dataset.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.dataset.Dataset.create_data_row">
+<code class="sig-name descname">create_data_row</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/dataset.html#Dataset.create_data_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.dataset.Dataset.create_data_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a single DataRow belonging to this dataset.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">create_data_row</span><span class="p">(</span><span class="n">row_data</span><span class="o">=</span><span class="s2">&quot;http://my_site.com/photos/img_01.jpg&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Key-value arguments containing new <cite>DataRow</cite> data. At a minimum, must contain <code class="docutils literal notranslate"><span class="pre">row_data</span></code>.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#labelbox.exceptions.InvalidQueryError" title="labelbox.exceptions.InvalidQueryError"><strong>InvalidQueryError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">DataRow.row_data</span></code> field value is not provided
+    in <cite>kwargs</cite>.</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.InvalidAttributeError" title="labelbox.exceptions.InvalidAttributeError"><strong>InvalidAttributeError</strong></a> – in case the DB object type does not contain
+    any of the field names given in <cite>kwargs</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.dataset.Dataset.create_data_rows">
+<code class="sig-name descname">create_data_rows</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">items</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/dataset.html#Dataset.create_data_rows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.dataset.Dataset.create_data_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates multiple DataRow objects based on the given <cite>items</cite>.</p>
+<p>Each element in <cite>items</cite> can be either a <cite>str</cite> or a <cite>dict</cite>. If
+it is a <cite>str</cite>, then it is interpreted as a local file path. The file
+is uploaded to Labelbox and a DataRow referencing it is created.
+If an item is a <cite>dict</cite>, then it should map <cite>DataRow</cite> fields (or their
+names) to values. At the minimum an <cite>item</cite> passed as a <cite>dict</cite> must
+contain a <code class="docutils literal notranslate"><span class="pre">DataRow.row_data</span></code> key and value.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">create_data_rows</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">{</span><span class="n">DataRow</span><span class="o">.</span><span class="n">row_data</span><span class="p">:</span><span class="s2">&quot;http://my_site.com/photos/img_01.jpg&quot;</span><span class="p">},</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="s2">&quot;path/to/file2.jpg&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">])</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>items</strong> (<em>iterable of</em><em> (</em><em>dict</em><em> or </em><em>str</em><em>)</em>) – See above for details.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Task representing the data import on the server side. The Task
+can be used for inspecting task progress and waiting until it’s done.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#labelbox.exceptions.InvalidQueryError" title="labelbox.exceptions.InvalidQueryError"><strong>InvalidQueryError</strong></a> – If the <cite>items</cite> parameter does not conform to
+    the specification above or if the server did not accept the
+    DataRow creation request (unknown reason).</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.ResourceNotFoundError" title="labelbox.exceptions.ResourceNotFoundError"><strong>ResourceNotFoundError</strong></a> – If unable to retrieve the Task for the
+    import process. This could imply that the import failed.</p></li>
+<li><p><a class="reference internal" href="#labelbox.exceptions.InvalidAttributeError" title="labelbox.exceptions.InvalidAttributeError"><strong>InvalidAttributeError</strong></a> – If there are fields in <cite>items</cite> not valid for
+    a DataRow.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.dataset.Dataset.data_row_for_external_id">
+<code class="sig-name descname">data_row_for_external_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">external_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/dataset.html#Dataset.data_row_for_external_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.dataset.Dataset.data_row_for_external_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience method for getting a single <cite>DataRow</cite> belonging to this
+<cite>Dataset</cite> that has the given <cite>external_id</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>external_id</strong> (<em>str</em>) – External ID of the sought <cite>DataRow</cite>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A single <cite>DataRow</cite> with the given ID.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#labelbox.exceptions.ResourceNotFoundError" title="labelbox.exceptions.ResourceNotFoundError"><strong>labelbox.exceptions.ResourceNotFoundError</strong></a> – If there is no <cite>DataRow</cite>
+    in this <cite>DataSet</cite> with the given external ID, or if there are
+    multiple <cite>DataRows</cite> for it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.label">
+<span id="label"></span><h2>Label<a class="headerlink" href="#module-labelbox.schema.label" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.label.Label">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.label.</code><code class="sig-name descname">Label</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/label.html#Label"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.label.Label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Updateable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.BulkDeletable</span></code></p>
+<p>Label represents an assessment on a DataRow. For example one label could
+contain 100 bounding boxes (annotations).</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.label">
+<code class="sig-name descname">label</code><a class="headerlink" href="#labelbox.schema.label.Label.label" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.seconds_to_label">
+<code class="sig-name descname">seconds_to_label</code><a class="headerlink" href="#labelbox.schema.label.Label.seconds_to_label" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.agreement">
+<code class="sig-name descname">agreement</code><a class="headerlink" href="#labelbox.schema.label.Label.agreement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.benchmark_agreement">
+<code class="sig-name descname">benchmark_agreement</code><a class="headerlink" href="#labelbox.schema.label.Label.benchmark_agreement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.is_benchmark_reference">
+<code class="sig-name descname">is_benchmark_reference</code><a class="headerlink" href="#labelbox.schema.label.Label.is_benchmark_reference" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.project">
+<code class="sig-name descname">project</code><a class="headerlink" href="#labelbox.schema.label.Label.project" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.data_row">
+<code class="sig-name descname">data_row</code><a class="headerlink" href="#labelbox.schema.label.Label.data_row" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to DataRow</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.reviews">
+<code class="sig-name descname">reviews</code><a class="headerlink" href="#labelbox.schema.label.Label.reviews" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Review</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.label.Label.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.label.Label.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.label.Label.bulk_delete">
+<em class="property">static </em><code class="sig-name descname">bulk_delete</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labels</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/label.html#Label.bulk_delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.label.Label.bulk_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes all the given Labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>labels</strong> (<em>list of Label</em>) – The Labels to delete.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.label.Label.create_benchmark">
+<code class="sig-name descname">create_benchmark</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/label.html#Label.create_benchmark"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.label.Label.create_benchmark" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Benchmark for this Label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The newly created Benchmark.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.label.Label.create_review">
+<code class="sig-name descname">create_review</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/label.html#Label.create_review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.label.Label.create_review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Review for this label.</p>
+<dl class="simple">
+<dt>Kwargs:</dt><dd><p>Review attributes. At a minimum a <cite>Review.score</cite> field
+value must be provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.labeling_frontend">
+<span id="labelingfrontend"></span><h2>LabelingFrontend<a class="headerlink" href="#module-labelbox.schema.labeling_frontend" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontend">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.labeling_frontend.</code><code class="sig-name descname">LabelingFrontend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/labeling_frontend.html#LabelingFrontend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Label editor.</p>
+<p>Represents an HTML / JavaScript UI that is used to generate
+labels. “Editor” is the default Labeling Frontend that comes in every
+organization. You can create new labeling frontends for an organization.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontend.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontend.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontend.description">
+<code class="sig-name descname">description</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontend.description" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontend.iframe_url_path">
+<code class="sig-name descname">iframe_url_path</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontend.iframe_url_path" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontend.projects">
+<code class="sig-name descname">projects</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontend.projects" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontendOptions">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.labeling_frontend.</code><code class="sig-name descname">LabelingFrontendOptions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/labeling_frontend.html#LabelingFrontendOptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontendOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Label interface options.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontendOptions.customization_options">
+<code class="sig-name descname">customization_options</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontendOptions.customization_options" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Field</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontendOptions.project">
+<code class="sig-name descname">project</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontendOptions.project" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontendOptions.labeling_frontend">
+<code class="sig-name descname">labeling_frontend</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontendOptions.labeling_frontend" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to LabelingFrontend</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.labeling_frontend.LabelingFrontendOptions.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.labeling_frontend.LabelingFrontendOptions.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.ontology">
+<span id="ontology"></span><h2>Ontology<a class="headerlink" href="#module-labelbox.schema.ontology" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.ontology.Ontology">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.ontology.</code><code class="sig-name descname">Ontology</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/ontology.html#Ontology"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.ontology.Ontology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>An ontology specifies which tools and classifications are available
+to a project. This is read only for now.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.description">
+<code class="sig-name descname">description</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.description" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.normalized">
+<code class="sig-name descname">normalized</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.normalized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Json</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.object_schema_count">
+<code class="sig-name descname">object_schema_count</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.object_schema_count" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.classification_schema_count">
+<code class="sig-name descname">classification_schema_count</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.classification_schema_count" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.projects">
+<code class="sig-name descname">projects</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.projects" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.ontology.Ontology.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.ontology.Ontology.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_project</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;&lt;project_name&gt;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ontology</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ontology</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ontology</span><span class="o">.</span><span class="n">normalized</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.organization">
+<span id="organization"></span><h2>Organization<a class="headerlink" href="#module-labelbox.schema.organization" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.organization.Organization">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.organization.</code><code class="sig-name descname">Organization</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/organization.html#Organization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.organization.Organization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>An Organization is a group of Users.
+It is associated with data created by Users within that Organization.
+Typically all Users within an Organization have access to data created by any User in the same Organization.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.organization.Organization.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.organization.Organization.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.organization.Organization.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.organization.Organization.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.organization.Organization.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.organization.Organization.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.organization.Organization.users">
+<code class="sig-name descname">users</code><a class="headerlink" href="#labelbox.schema.organization.Organization.users" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.organization.Organization.projects">
+<code class="sig-name descname">projects</code><a class="headerlink" href="#labelbox.schema.organization.Organization.projects" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.organization.Organization.webhooks">
+<code class="sig-name descname">webhooks</code><a class="headerlink" href="#labelbox.schema.organization.Organization.webhooks" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Webhook</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.prediction">
+<span id="prediction"></span><h2>Prediction<a class="headerlink" href="#module-labelbox.schema.prediction" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.prediction.Prediction">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.prediction.</code><code class="sig-name descname">Prediction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/prediction.html#Prediction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.prediction.Prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>A prediction created by a PredictionModel.</p>
+<p>NOTE: This is used for the legacy editor [1], if you wish to
+import annotations, refer to [2]</p>
+<p>[1] <a class="reference external" href="https://labelbox.com/docs/legacy/import-model-prediction">https://labelbox.com/docs/legacy/import-model-prediction</a>
+[2] <a class="reference external" href="https://labelbox.com/docs/automation/model-assisted-labeling">https://labelbox.com/docs/automation/model-assisted-labeling</a></p>
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.label">
+<code class="sig-name descname">label</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.label" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.agreement">
+<code class="sig-name descname">agreement</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.agreement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.prediction_model">
+<code class="sig-name descname">prediction_model</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.prediction_model" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to PredictionModel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.data_row">
+<code class="sig-name descname">data_row</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.data_row" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to PredictionModel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.Prediction.project">
+<code class="sig-name descname">project</code><a class="headerlink" href="#labelbox.schema.prediction.Prediction.project" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="labelbox.schema.prediction.PredictionModel">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.prediction.</code><code class="sig-name descname">PredictionModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/prediction.html#PredictionModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>A prediction model represents a specific version of a model.</p>
+<p>NOTE: This is used for the legacy editor [1], if you wish to
+import annotations, refer to [2]</p>
+<p>[1] <a class="reference external" href="https://labelbox.com/docs/legacy/import-model-prediction">https://labelbox.com/docs/legacy/import-model-prediction</a>
+[2] <a class="reference external" href="https://labelbox.com/docs/automation/model-assisted-labeling">https://labelbox.com/docs/automation/model-assisted-labeling</a></p>
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.slug">
+<code class="sig-name descname">slug</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.slug" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Field</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.version">
+<code class="sig-name descname">version</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.version" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Field</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.prediction.PredictionModel.created_predictions">
+<code class="sig-name descname">created_predictions</code><a class="headerlink" href="#labelbox.schema.prediction.PredictionModel.created_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationsip to Prediction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.project">
+<span id="project"></span><h2>Project<a class="headerlink" href="#module-labelbox.schema.project" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.project.LabelingParameterOverride">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.project.</code><code class="sig-name descname">LabelingParameterOverride</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#LabelingParameterOverride"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.LabelingParameterOverride" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Customize the label queue by setting labeling parameter overrides.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.project.LabelingParameterOverride.priority">
+<code class="sig-name descname">priority</code><a class="headerlink" href="#labelbox.schema.project.LabelingParameterOverride.priority" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.LabelingParameterOverride.number_of_labels">
+<code class="sig-name descname">number_of_labels</code><a class="headerlink" href="#labelbox.schema.project.LabelingParameterOverride.number_of_labels" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="labelbox.schema.project.Project">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.project.</code><code class="sig-name descname">Project</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Updateable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Deletable</span></code></p>
+<p>A Project is a container that includes a labeling frontend, an ontology,
+datasets and labels.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.project.Project.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.description">
+<code class="sig-name descname">description</code><a class="headerlink" href="#labelbox.schema.project.Project.description" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.project.Project.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.project.Project.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.setup_complete">
+<code class="sig-name descname">setup_complete</code><a class="headerlink" href="#labelbox.schema.project.Project.setup_complete" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.last_activity_time">
+<code class="sig-name descname">last_activity_time</code><a class="headerlink" href="#labelbox.schema.project.Project.last_activity_time" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.auto_audit_number_of_labels">
+<code class="sig-name descname">auto_audit_number_of_labels</code><a class="headerlink" href="#labelbox.schema.project.Project.auto_audit_number_of_labels" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.auto_audit_percentage">
+<code class="sig-name descname">auto_audit_percentage</code><a class="headerlink" href="#labelbox.schema.project.Project.auto_audit_percentage" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.datasets">
+<code class="sig-name descname">datasets</code><a class="headerlink" href="#labelbox.schema.project.Project.datasets" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.project.Project.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.project.Project.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.reviews">
+<code class="sig-name descname">reviews</code><a class="headerlink" href="#labelbox.schema.project.Project.reviews" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Review</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.labeling_frontend">
+<code class="sig-name descname">labeling_frontend</code><a class="headerlink" href="#labelbox.schema.project.Project.labeling_frontend" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to LabelingFrontend</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.labeling_frontend_options">
+<code class="sig-name descname">labeling_frontend_options</code><a class="headerlink" href="#labelbox.schema.project.Project.labeling_frontend_options" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to LabelingFrontendOptions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.labeling_parameter_overrides">
+<code class="sig-name descname">labeling_parameter_overrides</code><a class="headerlink" href="#labelbox.schema.project.Project.labeling_parameter_overrides" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to LabelingParameterOverride</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.webhooks">
+<code class="sig-name descname">webhooks</code><a class="headerlink" href="#labelbox.schema.project.Project.webhooks" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Webhook</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.benchmarks">
+<code class="sig-name descname">benchmarks</code><a class="headerlink" href="#labelbox.schema.project.Project.benchmarks" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Benchmark</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.active_prediction_model">
+<code class="sig-name descname">active_prediction_model</code><a class="headerlink" href="#labelbox.schema.project.Project.active_prediction_model" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to PredictionModel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.predictions">
+<code class="sig-name descname">predictions</code><a class="headerlink" href="#labelbox.schema.project.Project.predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Prediction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.project.Project.ontology">
+<code class="sig-name descname">ontology</code><a class="headerlink" href="#labelbox.schema.project.Project.ontology" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Ontology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.create_label">
+<code class="sig-name descname">create_label</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.create_label"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.create_label" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Creates a label on a Legacy Editor project. Not</dt><dd><p>supported in the new Editor.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Label attributes. At the minimum the label <cite>DataRow</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.create_prediction">
+<code class="sig-name descname">create_prediction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">data_row</span></em>, <em class="sig-param"><span class="n">prediction_model</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.create_prediction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.create_prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Prediction within a Legacy Editor Project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> (<em>str</em>) – The <cite>label</cite> field of the new Prediction.</p></li>
+<li><p><strong>data_row</strong> (<a class="reference internal" href="#labelbox.schema.data_row.DataRow" title="labelbox.schema.data_row.DataRow"><em>DataRow</em></a>) – The DataRow for which the Prediction is created.</p></li>
+<li><p><strong>prediction_model</strong> (<a class="reference internal" href="#labelbox.schema.prediction.PredictionModel" title="labelbox.schema.prediction.PredictionModel"><em>PredictionModel</em></a><em> or </em><em>None</em>) – The PredictionModel
+within which the new Prediction is created. If None then this
+Project’s active_prediction_model is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A newly created Prediction.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>labelbox.excepions.InvalidQueryError</strong> – if given <cite>prediction_model</cite>
+    is None and this Project’s active_prediction_model is also
+    None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.create_prediction_model">
+<code class="sig-name descname">create_prediction_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">version</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.create_prediction_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.create_prediction_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a <cite>PredictionModel</cite> connected to a Legacy Editor Project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>String</em>) – The new PredictionModel’s name.</p></li>
+<li><p><strong>version</strong> (<em>Int</em>) – The new PredictionModel’s version.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A newly created PredictionModel.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.enable_model_assisted_labeling">
+<code class="sig-name descname">enable_model_assisted_labeling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">toggle</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.enable_model_assisted_labeling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.enable_model_assisted_labeling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns model assisted labeling either on or off based on input</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>toggle</strong> (<em>Boolean</em>) – True or False boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if toggled on or False if toggled off</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.export_labels">
+<code class="sig-name descname">export_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_seconds</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.export_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.export_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the server-side Label exporting that generates a JSON
+payload, and returns the URL to that payload.</p>
+<p>Will only generate a new URL at a max frequency of 30 min.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>timeout_seconds</strong> (<em>float</em>) – Max waiting time, in seconds.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>URL of the data file with this Project’s labels. If the server didn’t generate during the <cite>timeout_seconds</cite> period, None is returned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.extend_reservations">
+<code class="sig-name descname">extend_reservations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">queue_type</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.extend_reservations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.extend_reservations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends all the current reservations for the current user on the given
+queue type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>queue_type</strong> (<em>str</em>) – Either “LabelingQueue” or “ReviewQueue”</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>int, the number of reservations that were extended.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.labeler_performance">
+<code class="sig-name descname">labeler_performance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.labeler_performance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.labeler_performance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the labeler performances for this Project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A PaginatedCollection of LabelerPerformance objects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.labels">
+<code class="sig-name descname">labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">order_by</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Custom relationship expansion method to support limited filtering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datasets</strong> (<em>iterable of Dataset</em>) – Optional collection of Datasets
+whose Labels are sought. If not provided, all Labels in
+this Project are returned.</p></li>
+<li><p><strong>order_by</strong> (<em>None</em><em> or </em><em>(</em><em>Field</em><em>, </em><em>Field.Order</em><em>)</em>) – Ordering clause.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.review_metrics">
+<code class="sig-name descname">review_metrics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">net_score</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.review_metrics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.review_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this Project’s review metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>net_score</strong> (<em>None</em><em> or </em><a class="reference internal" href="#labelbox.schema.review.Review.NetScore" title="labelbox.schema.review.Review.NetScore"><em>Review.NetScore</em></a>) – Indicates desired metric.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>int, aggregation count of reviews for given net_score.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.set_labeling_parameter_overrides">
+<code class="sig-name descname">set_labeling_parameter_overrides</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.set_labeling_parameter_overrides"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.set_labeling_parameter_overrides" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds labeling parameter overrides to this project.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">set_labeling_parameter_overrides</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="n">data_row_1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="n">data_row_2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)])</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>iterable</em>) – An iterable of tuples. Each tuple must contain
+(DataRow, priority, numberOfLabels) for the new override.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool, indicates if the operation was a success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labeling_frontend</span></em>, <em class="sig-param"><span class="n">labeling_frontend_options</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finalizes the Project setup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labeling_frontend</strong> (<a class="reference internal" href="#labelbox.schema.labeling_frontend.LabelingFrontend" title="labelbox.schema.labeling_frontend.LabelingFrontend"><em>LabelingFrontend</em></a>) – Which UI to use to label the
+data.</p></li>
+<li><p><strong>labeling_frontend_options</strong> (<em>dict</em><em> or </em><em>str</em>) – Labeling frontend options,
+a.k.a. project ontology. If given a <cite>dict</cite> it will be converted
+to <cite>str</cite> using <cite>json.dumps</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.unset_labeling_parameter_overrides">
+<code class="sig-name descname">unset_labeling_parameter_overrides</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_rows</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.unset_labeling_parameter_overrides"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.unset_labeling_parameter_overrides" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes labeling parameter overrides to this project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_rows</strong> (<em>iterable</em>) – An iterable of DataRows.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool, indicates if the operation was a success.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.upload_annotations">
+<code class="sig-name descname">upload_annotations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">annotations</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>Iterable<span class="p">[</span>dict<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#labelbox.schema.bulk_import_request.BulkImportRequest" title="labelbox.schema.bulk_import_request.BulkImportRequest">labelbox.schema.bulk_import_request.BulkImportRequest</a><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.upload_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.upload_annotations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uploads annotations to a new Editor project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – name of the BulkImportRequest job</p></li>
+<li><p><strong>annotations</strong> – url that is publicly accessible by Labelbox containing an
+ndjson file
+OR local path to an ndjson file
+OR iterable of annotation rows</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>BulkImportRequest</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.project.Project.upsert_review_queue">
+<code class="sig-name descname">upsert_review_queue</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quota_factor</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/project.html#Project.upsert_review_queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.project.Project.upsert_review_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinitiates the review queue for this project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>quota_factor</strong> (<em>float</em>) – Which part (percentage) of the queue
+to reinitiate. Between 0 and 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.review">
+<span id="review"></span><h2>Review<a class="headerlink" href="#module-labelbox.schema.review" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.review.Review">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.review.</code><code class="sig-name descname">Review</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/review.html#Review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.review.Review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Deletable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Updateable</span></code></p>
+<p>Reviewing labeled data is a collaborative quality assurance technique.</p>
+<p>A Review object indicates the quality of the assigned Label. The aggregated
+review numbers can be obtained on a Project object.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.review.Review.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.review.Review.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.score">
+<code class="sig-name descname">score</code><a class="headerlink" href="#labelbox.schema.review.Review.score" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.review.Review.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.review.Review.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.project">
+<code class="sig-name descname">project</code><a class="headerlink" href="#labelbox.schema.review.Review.project" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.review.Review.label">
+<code class="sig-name descname">label</code><a class="headerlink" href="#labelbox.schema.review.Review.label" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Label</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="labelbox.schema.review.Review.NetScore">
+<em class="property">class </em><code class="sig-name descname">NetScore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/review.html#Review.NetScore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.review.Review.NetScore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Negative, Zero, or Positive.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.task">
+<span id="task"></span><h2>Task<a class="headerlink" href="#module-labelbox.schema.task" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.task.Task">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.task.</code><code class="sig-name descname">Task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/task.html#Task"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.task.Task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>Represents a server-side process that might take a longer time to process.
+Allows the Task state to be updated and checked on the client side.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.task.Task.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.task.Task.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.task.Task.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.status">
+<code class="sig-name descname">status</code><a class="headerlink" href="#labelbox.schema.task.Task.status" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.completion_percentage">
+<code class="sig-name descname">completion_percentage</code><a class="headerlink" href="#labelbox.schema.task.Task.completion_percentage" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.created_by">
+<code class="sig-name descname">created_by</code><a class="headerlink" href="#labelbox.schema.task.Task.created_by" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to User</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.task.Task.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.task.Task.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.task.Task.refresh">
+<code class="sig-name descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/task.html#Task.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.task.Task.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refreshes Task data from the server.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.task.Task.wait_till_done">
+<code class="sig-name descname">wait_till_done</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_seconds</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/task.html#Task.wait_till_done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.task.Task.wait_till_done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits until the task is completed. Periodically queries the server
+to update the task attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>timeout_seconds</strong> (<em>Float</em>) – Maximum time this method can block, in seconds. Defaults to one minute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.user">
+<span id="user"></span><h2>User<a class="headerlink" href="#module-labelbox.schema.user" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.user.User">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.user.</code><code class="sig-name descname">User</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/user.html#User"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.user.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code></p>
+<p>A User is a registered Labelbox user (for example you) associated with
+data they create or import and an Organization they belong to.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.user.User.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.user.User.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.email">
+<code class="sig-name descname">email</code><a class="headerlink" href="#labelbox.schema.user.User.email" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#labelbox.schema.user.User.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.nickname">
+<code class="sig-name descname">nickname</code><a class="headerlink" href="#labelbox.schema.user.User.nickname" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.intercom_hash">
+<code class="sig-name descname">intercom_hash</code><a class="headerlink" href="#labelbox.schema.user.User.intercom_hash" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.picture">
+<code class="sig-name descname">picture</code><a class="headerlink" href="#labelbox.schema.user.User.picture" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.is_viewer">
+<code class="sig-name descname">is_viewer</code><a class="headerlink" href="#labelbox.schema.user.User.is_viewer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.is_external_viewer">
+<code class="sig-name descname">is_external_viewer</code><a class="headerlink" href="#labelbox.schema.user.User.is_external_viewer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.organization">
+<code class="sig-name descname">organization</code><a class="headerlink" href="#labelbox.schema.user.User.organization" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToOne</cite> relationship to Organization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.created_tasks">
+<code class="sig-name descname">created_tasks</code><a class="headerlink" href="#labelbox.schema.user.User.created_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Task</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.user.User.projects">
+<code class="sig-name descname">projects</code><a class="headerlink" href="#labelbox.schema.user.User.projects" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>ToMany</cite> relationship to Project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Relationship</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.webhook">
+<span id="webhook"></span><h2>Webhook<a class="headerlink" href="#module-labelbox.schema.webhook" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.webhook.Webhook">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.webhook.</code><code class="sig-name descname">Webhook</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">field_values</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/webhook.html#Webhook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.webhook.Webhook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.DbObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.orm.db_object.Updateable</span></code></p>
+<p>Represents a server-side rule for sending notifications to a web-server
+whenever one of several predefined actions happens within a context of
+a Project or an Organization.</p>
+<dl class="py attribute">
+<dt id="labelbox.schema.webhook.Webhook.updated_at">
+<code class="sig-name descname">updated_at</code><a class="headerlink" href="#labelbox.schema.webhook.Webhook.updated_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.webhook.Webhook.created_at">
+<code class="sig-name descname">created_at</code><a class="headerlink" href="#labelbox.schema.webhook.Webhook.created_at" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DateTime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.webhook.Webhook.url">
+<code class="sig-name descname">url</code><a class="headerlink" href="#labelbox.schema.webhook.Webhook.url" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.webhook.Webhook.topics">
+<code class="sig-name descname">topics</code><a class="headerlink" href="#labelbox.schema.webhook.Webhook.topics" title="Permalink to this definition">¶</a></dt>
+<dd><p>LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="labelbox.schema.webhook.Webhook.status">
+<code class="sig-name descname">status</code><a class="headerlink" href="#labelbox.schema.webhook.Webhook.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>ACTIVE, INACTIVE, REVOKED</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>String</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.webhook.Webhook.create">
+<em class="property">static </em><code class="sig-name descname">create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">topics</span></em>, <em class="sig-param"><span class="n">url</span></em>, <em class="sig-param"><span class="n">secret</span></em>, <em class="sig-param"><span class="n">project</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/webhook.html#Webhook.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.webhook.Webhook.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Webhook.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<a class="reference internal" href="#labelbox.client.Client" title="labelbox.client.Client"><em>Client</em></a>) – The Labelbox client used to connect
+to the server.</p></li>
+<li><p><strong>topics</strong> (<em>list of str</em>) – A list of topics this Webhook should
+get notifications for.</p></li>
+<li><p><strong>url</strong> (<em>String</em>) – The URL to which notifications should be sent
+by the Labelbox server.</p></li>
+<li><p><strong>secret</strong> (<em>String</em>) – A secret key used for signing notifications.</p></li>
+<li><p><strong>project</strong> (<a class="reference internal" href="#labelbox.schema.project.Project" title="labelbox.schema.project.Project"><em>Project</em></a><em> or </em><em>None</em>) – The project for which notifications
+should be sent. If None notifications are sent for all
+events in your organization.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A newly created Webhook.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="labelbox.schema.webhook.Webhook.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">topics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">url</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">status</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/webhook.html#Webhook.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.webhook.Webhook.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates this Webhook.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topics</strong> (<em>list of str</em>) – The new topics value, optional.</p></li>
+<li><p><strong>url</strong> (<em>String</em>) – The new URL value, optional.</p></li>
+<li><p><strong>status</strong> (<em>String</em>) – The new status value, optional.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.exceptions">
+<span id="exceptions"></span><h2>Exceptions<a class="headerlink" href="#module-labelbox.exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="py exception">
+<dt id="labelbox.exceptions.ApiLimitError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">ApiLimitError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#ApiLimitError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.ApiLimitError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when the user performs too many requests in a short period
+of time.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.AuthenticationError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">AuthenticationError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#AuthenticationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.AuthenticationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when an API key fails authentication.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.AuthorizationError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">AuthorizationError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#AuthorizationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.AuthorizationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when a user is unauthorized to perform the given request.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.InternalServerError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">InternalServerError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#InternalServerError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.InternalServerError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Nondescript prisma or 502 related errors.</p>
+<p>Meant to be retryable.</p>
+<p>TODO: these errors need better messages from platform</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.InvalidAttributeError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">InvalidAttributeError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_object_type</span></em>, <em class="sig-param"><span class="n">field</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#InvalidAttributeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.InvalidAttributeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when a field (name or Field instance) is not valid or found
+for a specific DB object type.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.InvalidQueryError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">InvalidQueryError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#InvalidQueryError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.InvalidQueryError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Indicates a malconstructed or unsupported query (either by GraphQL in
+general or by Labelbox specifically). This can be the result of either client
+or server side query validation.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.LabelboxError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">LabelboxError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#LabelboxError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.LabelboxError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Base class for exceptions.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.MalformedQueryException">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">MalformedQueryException</code><a class="reference internal" href="../_modules/labelbox/exceptions.html#MalformedQueryException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.MalformedQueryException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when the user submits a malformed query.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.NetworkError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">NetworkError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cause</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#NetworkError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.NetworkError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when an HTTPError occurs.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.ResourceNotFoundError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">ResourceNotFoundError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_object_type</span></em>, <em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#ResourceNotFoundError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.ResourceNotFoundError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Exception raised when a given resource is not found.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.TimeoutError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">TimeoutError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#TimeoutError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.TimeoutError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when a request times-out.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.UuidError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">UuidError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#UuidError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.UuidError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Raised when there are repeat Uuid’s in bulk import request.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="labelbox.exceptions.ValidationFailedError">
+<em class="property">exception </em><code class="sig-prename descclassname">labelbox.exceptions.</code><code class="sig-name descname">ValidationFailedError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">message</span></em>, <em class="sig-param"><span class="n">cause</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/exceptions.html#ValidationFailedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.exceptions.ValidationFailedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#labelbox.exceptions.LabelboxError" title="labelbox.exceptions.LabelboxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">labelbox.exceptions.LabelboxError</span></code></a></p>
+<p>Exception raised for when a GraphQL query fails validation (query cost,
+etc.) E.g. a query that is too expensive, or depth is too deep.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.pagination">
+<span id="pagination"></span><h2>Pagination<a class="headerlink" href="#module-labelbox.pagination" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.pagination.PaginatedCollection">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.pagination.</code><code class="sig-name descname">PaginatedCollection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">query</span></em>, <em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">dereferencing</span></em>, <em class="sig-param"><span class="n">obj_class</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/pagination.html#PaginatedCollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.pagination.PaginatedCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An iterable collection of database objects (Projects, Labels, etc…).
+Implements automatic (transparent to the user) paginated fetching during
+iteration. Intended for use by library internals and not by the end user.</p>
+<p>For a list of attributes see __init__(…) documentation. The params of
+__init__ map exactly to object attributes.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-labelbox.schema.enums">
+<span id="enums"></span><h2>Enums<a class="headerlink" href="#module-labelbox.schema.enums" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="labelbox.schema.enums.BulkImportRequestState">
+<em class="property">class </em><code class="sig-prename descclassname">labelbox.schema.enums.</code><code class="sig-name descname">BulkImportRequestState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/labelbox/schema/enums.html#BulkImportRequestState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labelbox.schema.enums.BulkImportRequestState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>State of the import job when importing annotations (RUNNING, FAILED, or FINISHED).</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to Labelbox Python API Reference’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

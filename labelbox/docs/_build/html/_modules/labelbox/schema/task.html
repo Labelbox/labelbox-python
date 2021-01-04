@@ -1,0 +1,261 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>labelbox.schema.task &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>labelbox.schema.task</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for labelbox.schema.task</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">labelbox.exceptions</span> <span class="kn">import</span> <span class="n">ResourceNotFoundError</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.db_object</span> <span class="kn">import</span> <span class="n">DbObject</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.model</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Relationship</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Task"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.task.Task">[docs]</a><span class="k">class</span> <span class="nc">Task</span><span class="p">(</span><span class="n">DbObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Represents a server-side process that might take a longer time to process.</span>
+<span class="sd">    Allows the Task state to be updated and checked on the client side.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        updated_at (DateTime)</span>
+<span class="sd">        created_at (DateTime)</span>
+<span class="sd">        name (String)</span>
+<span class="sd">        status (String)</span>
+<span class="sd">        completion_percentage (Float)</span>
+
+<span class="sd">        created_by (Relationship): `ToOne` relationship to User</span>
+<span class="sd">        organization (Relationship): `ToOne` relationship to Organization</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;updated_at&quot;</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>
+    <span class="n">completion_percentage</span> <span class="o">=</span> <span class="n">Field</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="s2">&quot;completion_percentage&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Relationships</span>
+    <span class="n">created_by</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;created_by&quot;</span><span class="p">)</span>
+    <span class="n">organization</span> <span class="o">=</span> <span class="n">Relationship</span><span class="o">.</span><span class="n">ToOne</span><span class="p">(</span><span class="s2">&quot;Organization&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Task.refresh"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.task.Task.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Refreshes Task data from the server. &quot;&quot;&quot;</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_user</span><span class="o">.</span><span class="n">created_tasks</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">Task</span><span class="o">.</span><span class="n">uid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ResourceNotFoundError</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tasks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Task.wait_till_done"><a class="viewcode-back" href="../../../source/labelbox.html#labelbox.schema.task.Task.wait_till_done">[docs]</a>    <span class="k">def</span> <span class="nf">wait_till_done</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Waits until the task is completed. Periodically queries the server</span>
+<span class="sd">        to update the task attributes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timeout_seconds (Float): Maximum time this method can block, in seconds. Defaults to one minute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_frequency</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># frequency of checking, in seconds</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;IN_PROGRESS&quot;</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">sleep_time_seconds</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">check_frequency</span><span class="p">,</span> <span class="n">timeout_seconds</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Task.wait_till_done sleeping for </span><span class="si">%.2f</span><span class="s2"> seconds&quot;</span> <span class="o">%</span>
+                         <span class="n">sleep_time_seconds</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sleep_time_seconds</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">timeout_seconds</span> <span class="o">-=</span> <span class="n">check_frequency</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep_time_seconds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

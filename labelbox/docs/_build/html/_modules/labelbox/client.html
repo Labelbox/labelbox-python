@@ -1,0 +1,667 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>labelbox.client &mdash; Labelbox Python API Reference 2.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Labelbox Python API Reference
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source/labelbox.html">Labelbox</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Labelbox Python API Reference</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>labelbox.client</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for labelbox.client</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">mimetypes</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">google.api_core</span> <span class="kn">import</span> <span class="n">retry</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">requests.exceptions</span>
+
+<span class="kn">from</span> <span class="nn">labelbox</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">import</span> <span class="nn">labelbox.exceptions</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm</span> <span class="kn">import</span> <span class="n">query</span>
+<span class="kn">from</span> <span class="nn">labelbox.orm.db_object</span> <span class="kn">import</span> <span class="n">DbObject</span>
+<span class="kn">from</span> <span class="nn">labelbox.pagination</span> <span class="kn">import</span> <span class="n">PaginatedCollection</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.project</span> <span class="kn">import</span> <span class="n">Project</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.user</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.organization</span> <span class="kn">import</span> <span class="n">Organization</span>
+<span class="kn">from</span> <span class="nn">labelbox.schema.labeling_frontend</span> <span class="kn">import</span> <span class="n">LabelingFrontend</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">_LABELBOX_API_KEY</span> <span class="o">=</span> <span class="s2">&quot;LABELBOX_API_KEY&quot;</span>
+
+
+<div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; A Labelbox client. Contains info necessary for connecting to</span>
+<span class="sd">    a Labelbox server (URL, authentication key). Provides functions for</span>
+<span class="sd">    querying and creating top-level data objects (Projects, Datasets).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Client.__init__"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">api_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">endpoint</span><span class="o">=</span><span class="s1">&#39;https://api.labelbox.com/graphql&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates and initializes a Labelbox Client.</span>
+
+<span class="sd">        Logging is defaulted to level WARNING. To receive more verbose</span>
+<span class="sd">        output to console, update logging.level to the appropriate level.</span>
+
+<span class="sd">        &gt;&gt;&gt; import logger</span>
+<span class="sd">        &gt;&gt;&gt; logging.basicConfig(level = logging.INFO)</span>
+<span class="sd">        &gt;&gt;&gt; client = Client(&quot;&lt;APIKEY&gt;&quot;)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            api_key (String): API key. If None, the key is obtained from the &quot;LABELBOX_API_KEY&quot; environment variable.</span>
+<span class="sd">            endpoint (String): URL of the Labelbox server to connect to.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.AuthenticationError: If no `api_key`</span>
+<span class="sd">                is provided as an argument or via the environment</span>
+<span class="sd">                variable.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">api_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_LABELBOX_API_KEY</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">AuthenticationError</span><span class="p">(</span>
+                    <span class="s2">&quot;Labelbox API key not provided&quot;</span><span class="p">)</span>
+            <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">_LABELBOX_API_KEY</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing Labelbox client at &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">endpoint</span> <span class="o">=</span> <span class="n">endpoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Accept&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">api_key</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="Client.execute"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.execute">[docs]</a>    <span class="nd">@retry</span><span class="o">.</span><span class="n">Retry</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">retry</span><span class="o">.</span><span class="n">if_exception_type</span><span class="p">(</span>
+        <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">InternalServerError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sends a request to the server for the execution of the</span>
+<span class="sd">        given query. Checks the response for errors and wraps errors</span>
+<span class="sd">        in appropriate labelbox.exceptions.LabelboxError subtypes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The query to execute.</span>
+<span class="sd">            params (dict): Query parameters referenced within the query.</span>
+<span class="sd">            timeout (float): Max allowed time for query execution,</span>
+<span class="sd">                in seconds.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict, parsed JSON response.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.AuthenticationError: If authentication</span>
+<span class="sd">                failed.</span>
+<span class="sd">            labelbox.exceptions.InvalidQueryError: If `query` is not</span>
+<span class="sd">                syntactically or semantically valid (checked server-side).</span>
+<span class="sd">            labelbox.exceptions.ApiLimitError: If the server API limit was</span>
+<span class="sd">                exceeded. See &quot;How to import data&quot; in the online documentation</span>
+<span class="sd">                to see API limits.</span>
+<span class="sd">            labelbox.exceptions.TimeoutError: If response was not received</span>
+<span class="sd">                in `timeout` seconds.</span>
+<span class="sd">            labelbox.exceptions.NetworkError: If an unknown error occurred</span>
+<span class="sd">                most likely due to connection issues.</span>
+<span class="sd">            labelbox.exceptions.LabelboxError: If an unknown error of any</span>
+<span class="sd">                kind occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Query: </span><span class="si">%s</span><span class="s2">, params: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># Convert datetimes to UTC strings.</span>
+        <span class="k">def</span> <span class="nf">convert_value</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%SZ&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">key</span><span class="p">:</span> <span class="n">convert_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span> <span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">})</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">endpoint</span><span class="p">,</span>
+                                     <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                     <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span>
+                                     <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">Timeout</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Unknown error: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NetworkError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+                <span class="s2">&quot;Unknown error during Client.query(): &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">error_502</span> <span class="o">=</span> <span class="s1">&#39;502 Bad Gateway&#39;</span>
+            <span class="k">if</span> <span class="n">error_502</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">InternalServerError</span><span class="p">(</span><span class="n">error_502</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to parse response as JSON: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">r_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="k">def</span> <span class="nf">check_errors</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="o">*</span><span class="n">path</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot; Helper that looks for any of the given `keywords` in any of</span>
+<span class="sd">            current errors on paths (like error[path][component][to][keyword]).</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">error</span>
+                <span class="k">for</span> <span class="n">path_elem</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path_elem</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="k">if</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">error</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">check_errors</span><span class="p">([</span><span class="s2">&quot;AUTHENTICATION_ERROR&quot;</span><span class="p">],</span> <span class="s2">&quot;extensions&quot;</span><span class="p">,</span> <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;code&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">AuthenticationError</span><span class="p">(</span><span class="s2">&quot;Invalid API key&quot;</span><span class="p">)</span>
+
+        <span class="n">authorization_error</span> <span class="o">=</span> <span class="n">check_errors</span><span class="p">([</span><span class="s2">&quot;AUTHORIZATION_ERROR&quot;</span><span class="p">],</span>
+                                           <span class="s2">&quot;extensions&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">authorization_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">AuthorizationError</span><span class="p">(</span>
+                <span class="n">authorization_error</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">])</span>
+
+        <span class="n">validation_error</span> <span class="o">=</span> <span class="n">check_errors</span><span class="p">([</span><span class="s2">&quot;GRAPHQL_VALIDATION_FAILED&quot;</span><span class="p">],</span>
+                                        <span class="s2">&quot;extensions&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">validation_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">validation_error</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">message</span> <span class="o">==</span> <span class="s2">&quot;Query complexity limit exceeded&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ValidationFailedError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">InvalidQueryError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">graphql_error</span> <span class="o">=</span> <span class="n">check_errors</span><span class="p">([</span><span class="s2">&quot;GRAPHQL_PARSE_FAILED&quot;</span><span class="p">],</span> <span class="s2">&quot;extensions&quot;</span><span class="p">,</span>
+                                     <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">graphql_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">InvalidQueryError</span><span class="p">(</span>
+                <span class="n">graphql_error</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Check if API limit was exceeded</span>
+        <span class="n">response_msg</span> <span class="o">=</span> <span class="n">r_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response_msg</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;You have exceeded&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ApiLimitError</span><span class="p">(</span><span class="n">response_msg</span><span class="p">)</span>
+
+        <span class="n">prisma_error</span> <span class="o">=</span> <span class="n">check_errors</span><span class="p">([</span><span class="s2">&quot;INTERNAL_SERVER_ERROR&quot;</span><span class="p">],</span> <span class="s2">&quot;extensions&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prisma_error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">InternalServerError</span><span class="p">(</span>
+                <span class="n">prisma_error</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unparsed errors on query execution: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span><span class="s2">&quot;Unknown error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                                    <span class="nb">str</span><span class="p">(</span><span class="n">errors</span><span class="p">))</span>
+
+        <span class="c1"># if we do return a proper error code, and didn&#39;t catch this above</span>
+        <span class="c1"># reraise</span>
+        <span class="c1"># this mainly catches a 401 for API access disabled for free tier</span>
+        <span class="c1"># TODO: need to unify API errors to handle things more uniformly</span>
+        <span class="c1"># in the SDK</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">cause</span> <span class="o">=</span> <span class="n">r_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">cause</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">r_json</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">upload_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Uploads given path to local file.</span>
+
+<span class="sd">        Also includes best guess at the content type of the file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): path to local file to be uploaded.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str, the URL of uploaded data.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.LabelboxError: If upload failed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">content_type</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mimetypes</span><span class="o">.</span><span class="n">guess_type</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
+                                    <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+                                    <span class="n">content_type</span><span class="o">=</span><span class="n">content_type</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">upload_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">content</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+                    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">content_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Uploads the given data (bytes) to Labelbox.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content: bytestring to upload</span>
+<span class="sd">            filename: name of the upload</span>
+<span class="sd">            content_type: content type of data uploaded</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str, the URL of uploaded data.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.LabelboxError: If upload failed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">request_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;operations&quot;</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                    <span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;file&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="s2">&quot;contentLength&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">),</span>
+                        <span class="s2">&quot;sign&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;query&quot;</span><span class="p">:</span>
+                        <span class="sd">&quot;&quot;&quot;mutation UploadFile($file: Upload!, $contentLength: Int!,</span>
+<span class="sd">                                            $sign: Boolean) {</span>
+<span class="sd">                            uploadFile(file: $file, contentLength: $contentLength,</span>
+<span class="sd">                                       sign: $sign) {url filename} } &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="p">}),</span>
+            <span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;variables.file&quot;</span><span class="p">]})),</span>
+        <span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">endpoint</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;authorization&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span><span class="p">},</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">request_data</span><span class="p">,</span>
+            <span class="n">files</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">content_type</span><span class="p">)</span> <span class="k">if</span>
+                     <span class="p">(</span><span class="n">filename</span> <span class="ow">and</span> <span class="n">content_type</span><span class="p">)</span> <span class="k">else</span> <span class="n">content</span>
+            <span class="p">})</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">file_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># response is not valid JSON</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to upload, unknown cause&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_data</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">file_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uploadFile&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">LabelboxError</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to upload, message: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">file_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;uploadFile&quot;</span><span class="p">][</span><span class="s2">&quot;url&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_object_type</span><span class="p">,</span> <span class="n">uid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetches a single object of the given type, for the given ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            db_object_type (type): DbObject subclass.</span>
+<span class="sd">            uid (str): Unique ID of the row.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Object of `db_object_type`.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.ResourceNotFoundError: If there is no object</span>
+<span class="sd">                of the given type for the given ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_str</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">get_single</span><span class="p">(</span><span class="n">db_object_type</span><span class="p">,</span> <span class="n">uid</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="n">db_object_type</span><span class="o">.</span><span class="n">type_name</span><span class="p">())]</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">labelbox</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ResourceNotFoundError</span><span class="p">(</span>
+                <span class="n">db_object_type</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">db_object_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Client.get_project"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_project">[docs]</a>    <span class="k">def</span> <span class="nf">get_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets a single Project with the given ID.</span>
+
+<span class="sd">            &gt;&gt;&gt; project = client.get_project(&quot;&lt;project_id&gt;&quot;)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project_id (str): Unique ID of the Project.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The sought Project.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.ResourceNotFoundError: If there is no</span>
+<span class="sd">                Project with the given ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_single</span><span class="p">(</span><span class="n">Project</span><span class="p">,</span> <span class="n">project_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.get_dataset"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets a single Dataset with the given ID.</span>
+
+<span class="sd">            &gt;&gt;&gt; dataset = client.get_dataset(&quot;&lt;dataset_id&gt;&quot;)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_id (str): Unique ID of the Dataset.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The sought Dataset.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            labelbox.exceptions.ResourceNotFoundError: If there is no</span>
+<span class="sd">                Dataset with the given ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_single</span><span class="p">(</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.get_user"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_user">[docs]</a>    <span class="k">def</span> <span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets the current User database object.</span>
+<span class="sd">            </span>
+<span class="sd">            &gt;&gt;&gt; user = client.get_user()</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_single</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.get_organization"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_organization">[docs]</a>    <span class="k">def</span> <span class="nf">get_organization</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets the Organization DB object of the current user.</span>
+
+<span class="sd">            &gt;&gt;&gt; organization = client.get_organization()</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_single</span><span class="p">(</span><span class="n">Organization</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_object_type</span><span class="p">,</span> <span class="n">where</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetches all the objects of the given type the user has access to.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            db_object_type (type): DbObject subclass.</span>
+<span class="sd">            where (Comparison, LogicalOperation or None): The `where` clause</span>
+<span class="sd">                for filtering.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An iterable of `db_object_type` instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">not_deleted</span> <span class="o">=</span> <span class="n">db_object_type</span><span class="o">.</span><span class="n">deleted</span> <span class="o">==</span> <span class="kc">False</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="n">not_deleted</span> <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">where</span> <span class="o">&amp;</span> <span class="n">not_deleted</span>
+        <span class="n">query_str</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="n">db_object_type</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PaginatedCollection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">query_str</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">utils</span><span class="o">.</span><span class="n">camel_case</span><span class="p">(</span><span class="n">db_object_type</span><span class="o">.</span><span class="n">type_name</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot;s&quot;</span><span class="p">],</span>
+            <span class="n">db_object_type</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Client.get_projects"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_projects">[docs]</a>    <span class="k">def</span> <span class="nf">get_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetches all the projects the user has access to.</span>
+
+<span class="sd">            &gt;&gt;&gt; projects = client.get_projects(where=(Project.name == &quot;&lt;project_name&gt;&quot;) &amp; (Project.description == &quot;&lt;project_description&gt;&quot;))</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            where (Comparison, LogicalOperation or None): The `where` clause</span>
+<span class="sd">                for filtering.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An iterable of Projects (typically a PaginatedCollection).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all</span><span class="p">(</span><span class="n">Project</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.get_datasets"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_datasets">[docs]</a>    <span class="k">def</span> <span class="nf">get_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetches one or more datasets.</span>
+
+<span class="sd">            &gt;&gt;&gt; datasets = client.get_datasets(where=(Dataset.name == &quot;&lt;dataset_name&gt;&quot;) &amp; (Dataset.description == &quot;&lt;dataset_description&gt;&quot;))</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            where (Comparison, LogicalOperation or None): The `where` clause</span>
+<span class="sd">                for filtering.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An iterable of Datasets (typically a PaginatedCollection).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all</span><span class="p">(</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.get_labeling_frontends"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.get_labeling_frontends">[docs]</a>    <span class="k">def</span> <span class="nf">get_labeling_frontends</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetches all the labeling frontends.</span>
+
+<span class="sd">        &gt;&gt;&gt; frontend = client.get_labeling_frontends(where=LabelingFrontend.name == &quot;Editor&quot;)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            where (Comparison, LogicalOperation or None): The `where` clause</span>
+<span class="sd">                for filtering.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An iterable of LabelingFrontends (typically a PaginatedCollection).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all</span><span class="p">(</span><span class="n">LabelingFrontend</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_object_type</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates an object on the server. </span>
+<span class="sd">        </span>
+<span class="sd">            Attribute values are passed as keyword arguments:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            db_object_type (type): A DbObjectType subtype.</span>
+<span class="sd">            data (dict): Keys are attributes or their names (in Python,</span>
+<span class="sd">                snake-case convention) and values are desired attribute values.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A new object of the given DB object type.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidAttributeError: If the DB object type does not contain</span>
+<span class="sd">                any of the attribute names given in `data`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert string attribute names to Field or Relationship objects.</span>
+        <span class="c1"># Also convert Labelbox object values to their UIDs.</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">db_object_type</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">attr</span><span class="p">:</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">uid</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">DbObject</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="n">query_string</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">db_object_type</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_string</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;create</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">db_object_type</span><span class="o">.</span><span class="n">type_name</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">db_object_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Client.create_dataset"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.create_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">create_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a Dataset object on the server.</span>
+<span class="sd">            </span>
+<span class="sd">        Attribute values are passed as keyword arguments.</span>
+
+<span class="sd">        &gt;&gt;&gt; project = client.get_project(&quot;&lt;project_uid&gt;&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; dataset = client.create_dataset(name=&quot;&lt;dataset_name&gt;&quot;, projects=project)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            kwargs: Keyword arguments with Dataset attribute values.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A new Dataset object.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidAttributeError: If the Dataset type does not contain</span>
+<span class="sd">                any of the attribute names given in kwargs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.create_project"><a class="viewcode-back" href="../../source/labelbox.html#labelbox.client.Client.create_project">[docs]</a>    <span class="k">def</span> <span class="nf">create_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a Project object on the server. </span>
+<span class="sd">        </span>
+<span class="sd">        Attribute values are passed as keyword arguments.</span>
+
+<span class="sd">        &gt;&gt;&gt; project = client.create_project(name=&quot;&lt;project_name&gt;&quot;, description=&quot;&lt;project_description&gt;&quot;)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            kwargs: Keyword arguments with new Project attribute values.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A new Project object.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidAttributeError: If the Project type does not contain</span>
+<span class="sd">                any of the attribute names given in kwargs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">Project</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Labelbox
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

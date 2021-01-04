@@ -1,0 +1,144 @@
+.. labelbox.schema
+.. =======================
+
+.. .. toctree::
+..    :maxdepth: 2
+
+.. Submodules
+.. ----------
+
+.. Asset metadata
+.. --------------------------------------
+
+.. .. automodule:: labelbox.schema.asset_metadata
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Benchmark
+.. --------------------------------
+
+.. .. automodule:: labelbox.schema.benchmark
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Bulk import request
+.. --------------------------------------------
+
+.. .. automodule:: labelbox.schema.bulk_import_request
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Data row
+.. --------------------------------
+
+.. .. automodule:: labelbox.schema.data_row
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Dataset
+.. ------------------------------
+
+.. .. automodule:: labelbox.schema.dataset
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Enums
+.. ----------------------------
+
+.. .. automodule:: labelbox.schema.enums
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Label
+.. ----------------------------
+
+.. .. automodule:: labelbox.schema.label
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Labeling frontend
+.. -----------------------------------------
+
+.. .. automodule:: labelbox.schema.labeling_frontend
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Ontology
+.. -------------------------------
+
+.. .. automodule:: labelbox.schema.ontology
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Organization
+.. -----------------------------------
+
+.. .. automodule:: labelbox.schema.organization
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Prediction
+.. ---------------------------------
+
+.. .. automodule:: labelbox.schema.prediction
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Project
+.. ------------------------------
+
+.. .. automodule:: labelbox.schema.project
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Review
+.. -----------------------------
+
+.. .. automodule:: labelbox.schema.review
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Task
+.. ---------------------------
+
+.. .. automodule:: labelbox.schema.task
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. User
+.. ---------------------------
+
+.. .. automodule:: labelbox.schema.user
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. Webhook
+.. ------------------------------
+
+.. .. automodule:: labelbox.schema.webhook
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
+
+.. .. Module contents
+.. .. ---------------
+
+.. .. .. automodule:: labelbox.schema
+.. ..    :members:
+.. ..    :undoc-members:
+.. ..    :show-inheritance:
