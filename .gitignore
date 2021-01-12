@@ -131,3 +131,6 @@ dmypy.json
 
 # macos files
 .DS_STORE
+
+# Docs build
+labelbox/build/

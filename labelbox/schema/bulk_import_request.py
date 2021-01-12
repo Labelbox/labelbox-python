@@ -92,6 +92,20 @@ def _send_create_file_command(
 
 
 class BulkImportRequest(DbObject):
+    """ Represents an import job.
+
+    Attributes:
+        name (String)
+        state (Enum): FAILED, RUNNING, or FINISHED (Refers to the whole import job)
+        input_file_url (String): URL to your web-hosted NDJSON file
+        error_file_url (String): NDJSON that contains error messages for failed annotations
+        status_file_url (String): NDJSON that contains status for each annotation
+        created_at (DateTime): UTC timestamp for date BulkImportRequest was created
+        
+        project (Relationship): `ToOne` relationship to Project
+        created_by (Relationship): `ToOne` relationship to User
+
+    """
     name = Field.String("name")
     state = Field.Enum(BulkImportRequestState, "state")
     input_file_url = Field.String("input_file_url")
@@ -196,8 +210,9 @@ class BulkImportRequest(DbObject):
     def create_from_objects(cls, client, project_id: str, name: str,
                             predictions: Iterable[dict]) -> 'BulkImportRequest':
         """
-        Creates a BulkImportRequest from an iterable of dictionaries conforming to
-        JSON predictions format, e.g.:
+        Creates a `BulkImportRequest` from an iterable of dictionaries. 
+        
+        Conforms to JSON predictions format, e.g.:
         ``{
             "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",
             "schemaId": "ckappz7d700gn0zbocmqkwd9i",

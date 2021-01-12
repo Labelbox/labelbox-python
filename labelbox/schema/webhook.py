@@ -7,6 +7,14 @@ class Webhook(DbObject, Updateable):
     """ Represents a server-side rule for sending notifications to a web-server
     whenever one of several predefined actions happens within a context of
     a Project or an Organization.
+
+    Attributes:
+        updated_at (DateTime)
+        created_at (DateTime)
+        url (String)
+        topics (String): LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED
+        status (String): ACTIVE, INACTIVE, REVOKED
+
     """
 
     # Status

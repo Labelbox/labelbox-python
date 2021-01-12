@@ -7,6 +7,19 @@ from labelbox.orm.model import Entity, Field, Relationship
 class Label(DbObject, Updateable, BulkDeletable):
     """ Label represents an assessment on a DataRow. For example one label could
     contain 100 bounding boxes (annotations).
+
+    Attributes:
+        label (String)
+        seconds_to_label (Float)
+        agreement (Float)
+        benchmark_agreement (Float)
+        is_benchmark_reference (Boolean)
+        
+        project (Relationship): `ToOne` relationship to Project
+        data_row (Relationship): `ToOne` relationship to DataRow
+        reviews (Relationship): `ToMany` relationship to Review
+        created_by (Relationship): `ToOne` relationship to User
+
     """
 
     def __init__(self, *args, **kwargs):

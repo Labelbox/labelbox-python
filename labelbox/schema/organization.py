@@ -3,9 +3,19 @@ from labelbox.orm.model import Field, Relationship
 
 
 class Organization(DbObject):
-    """ An Organization is a group of Users associated with data created by
-    Users within that Organization. Typically all Users within an Organization
-    have access to data created by any User in the same Organization.
+    """ An Organization is a group of Users.
+    It is associated with data created by Users within that Organization.
+    Typically all Users within an Organization have access to data created by any User in the same Organization.
+    
+    Attributes:
+        updated_at (DateTime)
+        created_at (DateTime)
+        name (String)
+
+        users (Relationship): `ToMany` relationship to User
+        projects (Relationship): `ToMany` relationship to Project
+        webhooks (Relationship): `ToMany` relationship to Webhook
+    
     """
 
     # RelationshipManagers in Organization use the type in Query (and

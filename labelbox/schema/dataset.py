@@ -8,8 +8,19 @@ from labelbox.orm.model import Entity, Field, Relationship
 
 
 class Dataset(DbObject, Updateable, Deletable):
-    """ A dataset is a collection of DataRows. For example, if you have a CSV with
-    100 rows, you will have 1 Dataset and 100 DataRows.
+    """ A Dataset is a collection of DataRows. 
+
+    Attributes:
+        name (String)
+        description (String)
+        updated_at (DateTime)
+        created_at (DateTime)
+
+        projects (Relationship): `ToMany` relationship to Project
+        data_rows (Relationship): `ToMany` relationship to DataRow
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization
+
     """
     name = Field.String("name")
     description = Field.String("description")
@@ -27,14 +38,11 @@ class Dataset(DbObject, Updateable, Deletable):
 
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
-        Kwargs:
-            Key-value arguments containing new `DataRow` data.
-            At a minimum `kwargs` must contain `row_data`. The value for
-            `row_data` is a string. If it is a path to an existing local
-            file then it is uploaded to Labelbox's server. Otherwise it is
-            treated as an external URL.
+        Args:
+            kwargs: Key-value arguments containing new `DataRow` data. At a minimum, must contain ``row_data``.
+
         Raises:
-            InvalidQueryError: If `DataRow.row_data` field value is not provided
+            InvalidQueryError: If ``DataRow.row_data`` field value is not provided
                 in `kwargs`.
             InvalidAttributeError: in case the DB object type does not contain
                 any of the field names given in `kwargs`.
@@ -62,7 +70,7 @@ class Dataset(DbObject, Updateable, Deletable):
         is uploaded to Labelbox and a DataRow referencing it is created.
         If an item is a `dict`, then it should map `DataRow` fields (or their
         names) to values. At the minimum an `item` passed as a `dict` must 
-        contain a `DataRow.row_data` key and value.
+        contain a ``DataRow.row_data`` key and value.
 
         >>> dataset.create_data_rows([
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},

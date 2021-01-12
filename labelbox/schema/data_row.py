@@ -5,8 +5,21 @@ from labelbox.pagination import PaginatedCollection
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
-    """ A DataRow represents a single piece of data. For example, if you have
-    a CSV with 100 rows, you will have 1 Dataset and 100 DataRows.
+    """ Internal Labelbox representation of a single piece of data (e.g. image, video, text). 
+
+    Attributes:
+        external_id (String): User-generated file name or identifier
+        row_data (String): Paths to local files are uploaded to Labelbox's server. Otherwise, it's treated as an external URL.
+        updated_at (DateTime)
+        created_at (DateTime)
+        
+        dataset (Relationship): `ToOne` relationship to Dataset
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization
+        labels (Relationship): `ToMany` relationship to Label
+        metadata (Relationship): `ToMany` relationship to AssetMetadata
+        predictions (Relationship): `ToMany` relationship to Prediction
+        
     """
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")

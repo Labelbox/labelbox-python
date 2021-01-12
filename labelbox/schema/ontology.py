@@ -1,4 +1,3 @@
-"""Client side object for interacting with the ontology."""
 import abc
 from dataclasses import dataclass
 
@@ -65,10 +64,20 @@ class Tool(OntologyEntity):
 
 
 class Ontology(DbObject):
-    """ A ontology specifies which tools and classifications are available
-    to a project.
+    """An ontology specifies which tools and classifications are available
+    to a project. This is read only for now.
 
-    NOTE: This is read only for now.
+    Attributes:
+        name (String)
+        description (String)
+        updated_at (DateTime)
+        created_at (DateTime)
+        normalized (Json)
+        object_schema_count (Int)
+        classification_schema_count (Int)
+
+        projects (Relationship): `ToMany` relationship to Project
+        created_by (Relationship): `ToOne` relationship to User
 
     >>> project = client.get_project(name="<project_name>")
     >>> ontology = project.ontology()

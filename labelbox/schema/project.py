@@ -27,6 +27,31 @@ logger = logging.getLogger(__name__)
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
+
+    Attributes: 
+        name (String)
+        description (String)
+        updated_at (DateTime)
+        created_at (DateTime)
+        setup_complete (DateTime)
+        last_activity_time (DateTime)
+        auto_audit_number_of_labels (Int)
+        auto_audit_percentage (Float)
+
+        datasets (Relationship): `ToMany` relationship to Dataset
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization
+        reviews (Relationship): `ToMany` relationship to Review
+        labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
+        labeling_frontend_options (Relationship): `ToMany` relationship to LabelingFrontendOptions
+        labeling_parameter_overrides (Relationship): `ToMany` relationship to LabelingParameterOverride
+        webhooks (Relationship): `ToMany` relationship to Webhook
+        benchmarks (Relationship): `ToMany` relationship to Benchmark
+        active_prediction_model (Relationship): `ToOne` relationship to PredictionModel
+        predictions (Relationship): `ToMany` relationship to Prediction
+        ontology (Relationship): `ToOne` relationship to Ontology
+
+    
     """
     name = Field.String("name")
     description = Field.String("description")
@@ -58,8 +83,9 @@ class Project(DbObject, Updateable, Deletable):
         """ Creates a label on a Legacy Editor project. Not
             supported in the new Editor.
 
-        Kwargs:
-            Label attributes. At the minimum the label `DataRow`.
+        Args:
+            kwargs: Label attributes. At the minimum the label `DataRow`.
+        
         """
         # Copy-paste of Client._create code so we can inject
         # a connection to Type. Type objects are on their way to being
@@ -129,9 +155,7 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
-            URL of the data file with this Project's labels. If the server
-                didn't generate during the `timeout_seconds` period, None
-                is returned.
+            URL of the data file with this Project's labels. If the server didn't generate during the `timeout_seconds` period, None is returned.
         """
         sleep_time = 2
         id_param = "projectId"

@@ -3,8 +3,12 @@ from labelbox.orm.model import Field
 
 
 class AssetMetadata(DbObject):
-    """ AssetMetadata is a datatype to provide extra context about an asset
-    while labeling.
+    """ Asset metadata (AKA Attachments) provides extra context about an asset while labeling.
+
+    Attributes:
+        meta_type (String): "IMAGE", "VIDEO", "TEXT", or "IMAGE_OVERLAY"
+        meta_value (String): URL to an external file or a string of text
+
     """
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
