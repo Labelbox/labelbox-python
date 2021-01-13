@@ -10,9 +10,9 @@ class LabelingFrontend(DbObject):
     organization. You can create new labeling frontends for an organization.
     
     Attributes:
-        name (String)
-        description (String)
-        iframe_url_path (String)
+        name (str)
+        description (str)
+        iframe_url_path (str)
 
         projects (Relationship): `ToMany` relationship to Project
     """
@@ -28,7 +28,7 @@ class LabelingFrontendOptions(DbObject):
     """ Label interface options.
 
     Attributes:
-        customization_options (Field)
+        customization_options (str)
 
         project (Relationship): `ToOne` relationship to Project
         labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend

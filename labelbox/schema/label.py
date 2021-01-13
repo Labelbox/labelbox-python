@@ -9,11 +9,11 @@ class Label(DbObject, Updateable, BulkDeletable):
     contain 100 bounding boxes (annotations).
 
     Attributes:
-        label (String)
-        seconds_to_label (Float)
-        agreement (Float)
-        benchmark_agreement (Float)
-        is_benchmark_reference (Boolean)
+        label (str)
+        seconds_to_label (float)
+        agreement (float)
+        benchmark_agreement (float)
+        is_benchmark_reference (bool)
         
         project (Relationship): `ToOne` relationship to Project
         data_row (Relationship): `ToOne` relationship to DataRow
@@ -49,9 +49,8 @@ class Label(DbObject, Updateable, BulkDeletable):
     def create_review(self, **kwargs):
         """ Creates a Review for this label.
 
-        Kwargs:
-            Review attributes. At a minimum a `Review.score` field
-            value must be provided.
+        Args:
+            **kwargs: Review attributes. At a minimum, a `Review.score` field value must be provided.
         """
         kwargs[Entity.Review.label.name] = self
         kwargs[Entity.Review.project.name] = self.project()

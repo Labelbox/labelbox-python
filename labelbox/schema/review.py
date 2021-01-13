@@ -11,20 +11,18 @@ class Review(DbObject, Deletable, Updateable):
     review numbers can be obtained on a Project object. 
 
     Attributes:
-        created_at (DateTime)
-        updated_at (DateTime)
-        score (Float)
+        created_at (datetime)
+        updated_at (datetime)
+        score (float)
 
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
         project (Relationship): `ToOne` relationship to Project
         label (Relationship): `ToOne` relationship to Label
-    
     """
 
     class NetScore(Enum):
-        """ Negative, Zero, or Positive.
-            
+        """ Negative, Zero, or Positive. 
         """
         Negative = auto()
         Zero = auto()

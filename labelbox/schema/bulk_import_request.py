@@ -92,19 +92,18 @@ def _send_create_file_command(
 
 
 class BulkImportRequest(DbObject):
-    """ Represents an import job.
+    """Represents the import job when importing annotations.
 
     Attributes:
-        name (String)
+        name (str)
         state (Enum): FAILED, RUNNING, or FINISHED (Refers to the whole import job)
-        input_file_url (String): URL to your web-hosted NDJSON file
-        error_file_url (String): NDJSON that contains error messages for failed annotations
-        status_file_url (String): NDJSON that contains status for each annotation
-        created_at (DateTime): UTC timestamp for date BulkImportRequest was created
+        input_file_url (str): URL to your web-hosted NDJSON file
+        error_file_url (str): NDJSON that contains error messages for failed annotations
+        status_file_url (str): NDJSON that contains status for each annotation
+        created_at (datetime): UTC timestamp for date BulkImportRequest was created
         
         project (Relationship): `ToOne` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
-
     """
     name = Field.String("name")
     state = Field.Enum(BulkImportRequestState, "state")
@@ -117,8 +116,7 @@ class BulkImportRequest(DbObject):
     created_by = Relationship.ToOne("User", False, "created_by")
 
     def refresh(self) -> None:
-        """
-        Synchronizes values of all fields with the database.
+        """Synchronizes values of all fields with the database.
         """
         query_str, params = query.get_single(BulkImportRequest, self.uid)
         res = self.client.execute(query_str, params)
@@ -126,7 +124,8 @@ class BulkImportRequest(DbObject):
         self._set_field_values(res)
 
     def wait_until_done(self, sleep_time_seconds: int = 30) -> None:
-        """
+        """Blocks import job until certain conditions are met.
+        
         Blocks until the BulkImportRequest.state changes either to
         `BulkImportRequestState.FINISHED` or `BulkImportRequestState.FAILED`,
         periodically refreshing object's state.

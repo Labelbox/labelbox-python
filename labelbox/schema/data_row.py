@@ -8,18 +8,18 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     """ Internal Labelbox representation of a single piece of data (e.g. image, video, text). 
 
     Attributes:
-        external_id (String): User-generated file name or identifier
-        row_data (String): Paths to local files are uploaded to Labelbox's server. Otherwise, it's treated as an external URL.
-        updated_at (DateTime)
-        created_at (DateTime)
+        external_id (str): User-generated file name or identifier
+        row_data (str): Paths to local files are uploaded to Labelbox's server. 
+            Otherwise, it's treated as an external URL.
+        updated_at (datetime)
+        created_at (datetime)
         
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
         labels (Relationship): `ToMany` relationship to Label
         metadata (Relationship): `ToMany` relationship to AssetMetadata
-        predictions (Relationship): `ToMany` relationship to Prediction
-        
+        predictions (Relationship): `ToMany` relationship to Prediction  
     """
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
@@ -49,7 +49,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.metadata.supports_sorting = False
 
     def create_metadata(self, meta_type, meta_value):
-        """ Creates an asset metadata for this DataRow.
+        """ Attaches asset metadata to a DataRow.
+            
             >>> datarow.create_metadata("TEXT", "This is a text message")
 
         Args:
@@ -57,7 +58,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 VIDEO, IMAGE, TEXT.
             meta_value (str): Asset metadata value.
         Returns:
-            AssetMetadata DB object.
+            `AssetMetadata` DB object.
         """
         meta_type_param = "metaType"
         meta_value_param = "metaValue"

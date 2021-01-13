@@ -26,10 +26,11 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
-    """ A Labelbox client. Contains info necessary for connecting to
-    a Labelbox server (URL, authentication key). Provides functions for
-    querying and creating top-level data objects (Projects, Datasets).
+    """ A Labelbox client. 
     
+    Contains info necessary for connecting to a Labelbox server (URL, 
+    authentication key). Provides functions for querying and creating 
+    top-level data objects (Projects, Datasets). 
     """
 
     def __init__(self,
@@ -38,20 +39,19 @@ class Client:
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
-        output to console, update logging.level to the appropriate level.
+        output to console, update `logging.level` to the appropriate level.
 
         >>> import logger
         >>> logging.basicConfig(level = logging.INFO)
         >>> client = Client("<APIKEY>")
 
         Args:
-            api_key (String): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
-            endpoint (String): URL of the Labelbox server to connect to.
+            api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
+            endpoint (str): URL of the Labelbox server to connect to.
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
-
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
@@ -73,8 +73,10 @@ class Client:
         labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
-        given query. Checks the response for errors and wraps errors
-        in appropriate labelbox.exceptions.LabelboxError subtypes.
+        given query. 
+        
+        Checks the response for errors and wraps errors
+        in appropriate `labelbox.exceptions.LabelboxError` subtypes.
 
         Args:
             query (str): The query to execute.
@@ -218,7 +220,6 @@ class Client:
             str, the URL of uploaded data.
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
-
         """
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
@@ -337,7 +338,6 @@ class Client:
         """ Gets the current User database object.
             
             >>> user = client.get_user()
-
         """
         return self._get_single(User, None)
 
@@ -377,7 +377,6 @@ class Client:
                 for filtering.
         Returns:
             An iterable of Projects (typically a PaginatedCollection).
-        
         """
         return self._get_all(Project, where)
 
@@ -391,7 +390,6 @@ class Client:
                 for filtering.
         Returns:
             An iterable of Datasets (typically a PaginatedCollection).
-        
         """
         return self._get_all(Dataset, where)
 
@@ -405,7 +403,6 @@ class Client:
                 for filtering.
         Returns:
             An iterable of LabelingFrontends (typically a PaginatedCollection).
-       
         """
         return self._get_all(LabelingFrontend, where)
 
@@ -445,7 +442,7 @@ class Client:
         >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
 
         Args:
-            kwargs: Keyword arguments with Dataset attribute values.
+            **kwargs: Keyword arguments with Dataset attribute values.
         Returns:
             A new Dataset object.
         Raises:
@@ -462,7 +459,7 @@ class Client:
         >>> project = client.create_project(name="<project_name>", description="<project_description>")
 
         Args:
-            kwargs: Keyword arguments with new Project attribute values.
+            **kwargs: Keyword arguments with Project attribute values.
         Returns:
             A new Project object.
         Raises:

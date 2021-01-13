@@ -9,11 +9,11 @@ class Webhook(DbObject, Updateable):
     a Project or an Organization.
 
     Attributes:
-        updated_at (DateTime)
-        created_at (DateTime)
-        url (String)
-        topics (String): LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED
-        status (String): ACTIVE, INACTIVE, REVOKED
+        updated_at (datetime)
+        created_at (datetime)
+        url (str)
+        topics (str): LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED
+        status (str): ACTIVE, INACTIVE, REVOKED
 
     """
 

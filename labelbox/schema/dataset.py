@@ -11,10 +11,10 @@ class Dataset(DbObject, Updateable, Deletable):
     """ A Dataset is a collection of DataRows. 
 
     Attributes:
-        name (String)
-        description (String)
-        updated_at (DateTime)
-        created_at (DateTime)
+        name (str)
+        description (str)
+        updated_at (datetime)
+        created_at (datetime)
 
         projects (Relationship): `ToMany` relationship to Project
         data_rows (Relationship): `ToMany` relationship to DataRow
@@ -39,10 +39,11 @@ class Dataset(DbObject, Updateable, Deletable):
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
-            kwargs: Key-value arguments containing new `DataRow` data. At a minimum, must contain ``row_data``.
+            **kwargs: Key-value arguments containing new `DataRow` data. At a minimum, 
+                must contain `row_data`.
 
         Raises:
-            InvalidQueryError: If ``DataRow.row_data`` field value is not provided
+            InvalidQueryError: If `DataRow.row_data` field value is not provided
                 in `kwargs`.
             InvalidAttributeError: in case the DB object type does not contain
                 any of the field names given in `kwargs`.
@@ -70,7 +71,7 @@ class Dataset(DbObject, Updateable, Deletable):
         is uploaded to Labelbox and a DataRow referencing it is created.
         If an item is a `dict`, then it should map `DataRow` fields (or their
         names) to values. At the minimum an `item` passed as a `dict` must 
-        contain a ``DataRow.row_data`` key and value.
+        contain a `DataRow.row_data` key and value.
 
         >>> dataset.create_data_rows([
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},

@@ -68,21 +68,16 @@ class Ontology(DbObject):
     to a project. This is read only for now.
 
     Attributes:
-        name (String)
-        description (String)
-        updated_at (DateTime)
-        created_at (DateTime)
-        normalized (Json)
-        object_schema_count (Int)
-        classification_schema_count (Int)
+        name (str)
+        description (str)
+        updated_at (datetime)
+        created_at (datetime)
+        normalized (json)
+        object_schema_count (int)
+        classification_schema_count (int)
 
         projects (Relationship): `ToMany` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
-
-    >>> project = client.get_project(name="<project_name>")
-    >>> ontology = project.ontology()
-    >>> ontology.normalized
-
     """
 
     name = Field.String("name")
@@ -102,6 +97,7 @@ class Ontology(DbObject):
         self._classifications: Optional[List[Classification]] = None
 
     def tools(self) -> List[Tool]:
+        """Get list of tools (AKA objects) in an Ontology."""
         if self._tools is None:
             self._tools = [
                 Tool.from_json(tool) for tool in self.normalized['tools']
@@ -109,6 +105,7 @@ class Ontology(DbObject):
         return self._tools  # type: ignore
 
     def classifications(self) -> List[Classification]:
+        """Get list of classifications in an Ontology."""
         if self._classifications is None:
             self._classifications = [
                 Classification.from_json(classification)

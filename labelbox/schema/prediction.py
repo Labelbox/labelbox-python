@@ -3,26 +3,19 @@ from labelbox.orm.model import Field, Relationship
 
 
 class PredictionModel(DbObject):
-    """ A prediction created by a PredictionModel.
+    """ A PredictionModel creates a Prediction. Legacy editor only.
 
-    NOTE: This is used for the legacy editor [1], if you wish to
-    import annotations, refer to [2].
-
-
-    [1] https://labelbox.com/docs/legacy/import-model-prediction
-    [2] https://labelbox.com/docs/automation/model-assisted-labeling
+    Refer to BulkImportRequest if using the new Editor.
 
     Attributes:
-        updated_at (DateTime)
-        created_at (DateTime)
-        label (String)
-        agreement (Float)
-        
-        organization (Relationship): `ToOne` relationship to Organization
-        prediction_model (Relationship): `ToOne` relationship to PredictionModel
-        data_row (Relationship): `ToOne` relationship to PredictionModel
-        project (Relationship): `ToOne` relationship to Project
+        updated_at (datetime)
+        created_at (datetime)
+        name (str)
+        slug (str)
+        version (int)
 
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization 
     """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
@@ -38,15 +31,20 @@ class PredictionModel(DbObject):
 
 
 class Prediction(DbObject):
-    """ A prediction created by a PredictionModel.
+    """ A prediction created by a PredictionModel. Legacy editor only.
 
-    NOTE: This is used for the legacy editor [1], if you wish to
-    import annotations, refer to [2]
+    Refer to BulkImportRequest if using the new Editor.
 
-
-    [1] https://labelbox.com/docs/legacy/import-model-prediction
-    [2] https://labelbox.com/docs/automation/model-assisted-labeling
-
+    Attributes:
+        updated_at (datetime)
+        created_at (datetime)
+        label (str)
+        agreement (float)
+        
+        organization (Relationship): `ToOne` relationship to Organization
+        prediction_model (Relationship): `ToOne` relationship to PredictionModel
+        data_row (Relationship): `ToOne` relationship to DataRow
+        project (Relationship): `ToOne` relationship to Project
     """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")

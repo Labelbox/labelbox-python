@@ -13,15 +13,14 @@ class Task(DbObject):
     Allows the Task state to be updated and checked on the client side.
 
     Attributes:
-        updated_at (DateTime)
-        created_at (DateTime)
-        name (String)
-        status (String)
-        completion_percentage (Float)
+        updated_at (datetime)
+        created_at (datetime)
+        name (str)
+        status (str)
+        completion_percentage (float)
 
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
-
     """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
@@ -46,8 +45,7 @@ class Task(DbObject):
         to update the task attributes.
 
         Args:
-            timeout_seconds (Float): Maximum time this method can block, in seconds. Defaults to one minute.
-        
+            timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to one minute.
         """
         check_frequency = 2  # frequency of checking, in seconds
         while True:

@@ -5,16 +5,16 @@ from labelbox.orm.model import Field, Relationship
 class Benchmark(DbObject):
     """ Represents a benchmark label.
     
-    The Benchmarks tool works by interspersing data
-    to be labeled, for which there is a benchmark label, to each person labeling.
-    These labeled data are compared against their respective benchmark and an
+    The Benchmarks tool works by interspersing data to be labeled, for 
+    which there is a benchmark label, to each person labeling. These 
+    labeled data are compared against their respective benchmark and an
     accuracy score between 0 and 100 percent is calculated.
 
     Attributes:
-        created_at (DateTime)
-        last_activity (DateTime)
-        average_agreement (Float)
-        completed_count (Int)
+        created_at (datetime)
+        last_activity (datetime)
+        average_agreement (float)
+        completed_count (int)
         
         created_by (Relationship): `ToOne` relationship to User
         reference_label (Relationship): `ToOne` relationship to Label

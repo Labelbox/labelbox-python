@@ -6,9 +6,8 @@ class AssetMetadata(DbObject):
     """ Asset metadata (AKA Attachments) provides extra context about an asset while labeling.
 
     Attributes:
-        meta_type (String): "IMAGE", "VIDEO", "TEXT", or "IMAGE_OVERLAY"
-        meta_value (String): URL to an external file or a string of text
-
+        meta_type (str): IMAGE, VIDEO, TEXT, or IMAGE_OVERLAY
+        meta_value (str): URL to an external file or a string of text
     """
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
