@@ -423,8 +423,8 @@ class Project(DbObject, Updateable, Deletable):
         """ Uploads annotations to a new Editor project.
 
         Args:
-            name (str): name of the BulkImportRequest job
-            annotations (str or dict):
+            name (str or Path or Iterable): name of the BulkImportRequest job
+            annotations (str or Path or Iterable):
                 url that is publicly accessible by Labelbox containing an
                 ndjson file
                 OR local path to an ndjson file
