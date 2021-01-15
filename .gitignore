@@ -134,3 +134,7 @@ dmypy.json
 
 # Docs build
 labelbox/build/
+
+# Docs source files
+labelbox/source/_static
+labelbox/source/_templates
