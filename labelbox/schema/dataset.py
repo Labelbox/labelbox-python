@@ -8,8 +8,19 @@ from labelbox.orm.model import Entity, Field, Relationship
 
 
 class Dataset(DbObject, Updateable, Deletable):
-    """ A dataset is a collection of DataRows. For example, if you have a CSV with
-    100 rows, you will have 1 Dataset and 100 DataRows.
+    """ A Dataset is a collection of DataRows. 
+
+    Attributes:
+        name (str)
+        description (str)
+        updated_at (datetime)
+        created_at (datetime)
+
+        projects (Relationship): `ToMany` relationship to Project
+        data_rows (Relationship): `ToMany` relationship to DataRow
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization
+
     """
     name = Field.String("name")
     description = Field.String("description")
@@ -27,12 +38,10 @@ class Dataset(DbObject, Updateable, Deletable):
 
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
-        Kwargs:
-            Key-value arguments containing new `DataRow` data.
-            At a minimum `kwargs` must contain `row_data`. The value for
-            `row_data` is a string. If it is a path to an existing local
-            file then it is uploaded to Labelbox's server. Otherwise it is
-            treated as an external URL.
+        Args:
+            **kwargs: Key-value arguments containing new `DataRow` data. At a minimum, 
+                must contain `row_data`.
+
         Raises:
             InvalidQueryError: If `DataRow.row_data` field value is not provided
                 in `kwargs`.
