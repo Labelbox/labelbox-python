@@ -75,6 +75,7 @@ class Classification:
         if new_option.value in (option.value for option in self.options):
             raise InconsistentOntologyException(f"Duplicate option '{new_option.value}' for classification '{self.name}'.")
         self.options.append(new_option)
+        return new_option
 
 @dataclass
 class Tool:
@@ -189,10 +190,10 @@ if __name__ == "__main__":
 
     o = Ontology().from_project(project)
     
-    # o.add_tool(tool=Tool.Type.POLYGON, name="i am a polygon tool")
-    checklist = o.add_classification(class_type=Classification.Type.CHECKLIST, instructions="I AM A CHECKLIST2")
+    o.add_tool(tool=Tool.Type.POLYGON, name="i am a polygon tool")
+    checklist = o.add_classification(class_type=Classification.Type.CHECKLIST, instructions="I AM A CHECKLIST")
     checklist.add_option(value="checklist answer 1")
-    checklist.add_option(value="checklist answer 1")
+    checklist.add_option(value="checklist answer 2")
 
 
     print(o.build())
