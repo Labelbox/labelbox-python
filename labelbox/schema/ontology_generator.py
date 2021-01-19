@@ -1,3 +1,24 @@
+'''
+TODO
+currently allows creation of a TEXT classification and options inside this file
+↑ should not be possible, and in fact causes some unintended behavior when creating the ontology (creates options as a totally new classification)
+↑ need to ensure that with TEXT we cannot embed options
+
+validate prior to submission, so likely in the o.build() - like have a way to make sure that classifications that need options have options
+
+work on enforcing certain classifications need options (and work on other things other than text)
+
+create an example of a classification with options
+
+work on nesting classes inside tools (and properly extrapolating the options when taking it from inside a project)
+
+work on nesting classes inside other classes
+
+maybe there should be a way to check if a project has an existing ontology, and that it would overwrite it?
+
+in the future: work on adding NER capability for tool types (?)
+'''
+
 from dataclasses import dataclass, field
 from enum import Enum, auto
 import os
@@ -5,22 +26,32 @@ from typing import List, Optional
 
 from labelbox import Client, Project, Dataset, LabelingFrontend
 
+
 class InconsistentOntologyException(Exception):
     pass
 
 @dataclass
-class Option():
+class Option:
     value: str    
-    label: str = None
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
 
-    def __post_init__(self):
-        self.label = self.value
+    @property
+    def label(self):
+        return self.value
+
+    @classmethod
+    def option_class_to_dict(cls, option):
+        return {
+            "schemaNodeId": option.schema_id,
+            "featureSchemaId": option.feature_schema_id,
+            "label": option.value,
+            "value": option.value
+        }
     
 
 @dataclass
-class Classification():
+class Classification:
 
     class Type(Enum):
         TEXT = "text"
@@ -28,20 +59,25 @@ class Classification():
         RADIO = "radio"
         DROPDOWN = "dropdown"
 
-    type: Type
+    class_type: Type
     instructions: str
-    name: str = None
     required: bool = False
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
 
-    def __post_init__(self):
-        self.name = self.instructions
-  
+    @property
+    def name(self):
+        return self.instructions
+
+    def add_option(self, *args, **kwargs):
+        new_option = Option(*args, **kwargs)
+        if new_option.value in (option.value for option in self.options):
+            raise InconsistentOntologyException(f"Duplicate option '{new_option.value}' for classification '{self.name}'.")
+        self.options.append(new_option)
 
 @dataclass
-class Tool():
+class Tool:
 
     class Type(Enum):
         POLYGON = "polygon"
@@ -58,14 +94,8 @@ class Tool():
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
 
-    # @classmethod
-    # def _from_existing_ontology(cls, dict):
-    #     for key,value in dict.items():
-    #         print(key,value)
-
-
 @dataclass
-class Ontology():
+class Ontology:
     
     tools: List[Tool] = field(default_factory=list)
     classifications: List[Classification] = field(default_factory=list)
@@ -75,17 +105,26 @@ class Ontology():
         ontology = project.ontology().normalized
         return_ontology = Ontology()
 
-        for tool in ontology['tools']:
-            tool['schema_id'] = tool.pop('schemaNodeId')
-            tool['feature_schema_id'] = tool.pop('featureSchemaId')
-            tool['tool'] = Tool.Type(tool['tool'])
-            return_ontology.add_tool(**tool)
+        for tool in ontology["tools"]:      
+            return_ontology.add_tool(
+                name=tool['name'],
+                schema_id=tool["schemaNodeId"],
+                feature_schema_id=tool["featureSchemaId"],
+                required=tool["required"],
+                tool=Tool.Type(tool["tool"]),                
+                classifications=tool["classifications"],
+                color=tool["color"],
+            )
 
-        for classification in ontology['classifications']:
-            classification['schema_id'] = classification.pop('schemaNodeId')
-            classification['feature_schema_id'] = classification.pop('featureSchemaId')
-            classification['type'] = Classification.Type(classification['type'])
-            return_ontology.add_classification(**classification)
+        for classification in ontology["classifications"]:
+            return_ontology.add_classification(
+                schema_id=classification["schemaNodeId"], 
+                feature_schema_id=classification["schemaNodeId"],
+                required=classification["required"],
+                instructions=classification["instructions"],
+                class_type=Classification.Type(classification["type"]),
+                options = [Option(value=option["value"], schema_id=option["schemaNodeId"], feature_schema_id=option["featureSchemaId"]) for option in classification["options"] if len(classification["options"]) > 0]
+            )
  
         return return_ontology
 
@@ -104,24 +143,35 @@ class Ontology():
         return new_classification
 
     def build(self):
-        self.all_tools = []
-        self.all_classifications = []
+        all_tools = []
+        all_classifications = []
 
         for tool in self.tools:
-            curr_tool = dict((key,value) for (key,value) in tool.__dict__.items())
-            curr_tool['tool'] = curr_tool['tool'].value
-            curr_tool['schemaNodeId'] = curr_tool.pop('schema_id')
-            curr_tool['featureSchemaId'] = curr_tool.pop('feature_schema_id')
-            self.all_tools.append(curr_tool)
+            
+            all_tools.append({
+                "tool": tool.tool.value,
+                "name": tool.name,
+                "required": tool.required,
+                "color": tool.color,
+                "classifications": tool.classifications,
+                "schemaNodeId": tool.schema_id,
+                "featureSchemaId": tool.feature_schema_id
+
+            })
 
         for classification in self.classifications:
-            curr_classification = dict((key,value) for (key,value) in classification.__dict__.items())
-            curr_classification['type'] = curr_classification['type'].value
-            curr_classification['schemaNodeId'] = curr_classification.pop('schema_id')
-            curr_classification['featureSchemaId'] = curr_classification.pop('feature_schema_id')
-            self.all_classifications.append(curr_classification)
+            all_classifications.append({
+                "type": classification.class_type.value,
+                "instructions": classification.instructions,
+                "name": classification.name,
+                "required": classification.required,
+                # "options": classification.options,
+                "options": [Option.option_class_to_dict(option) for option in classification.options],
+                "schemaNodeId": classification.schema_id,
+                "featureSchemaId": classification.feature_schema_id
+            })
 
-        return {"tools": self.all_tools, "classifications": self.all_classifications}
+        return {"tools": all_tools, "classifications": all_classifications}
 
 
 #made this just to test in my own project. not keeping this
@@ -138,38 +188,12 @@ if __name__ == "__main__":
     project = client.get_project("ckhchkye62xn30796uui5lu34")
 
     o = Ontology().from_project(project)
-    o.add_tool(tool=Tool.Type.SEGMENTATION, name="hello world")
-
-    run()
-
     
+    # o.add_tool(tool=Tool.Type.POLYGON, name="i am a polygon tool")
+    checklist = o.add_classification(class_type=Classification.Type.CHECKLIST, instructions="I AM A CHECKLIST2")
+    checklist.add_option(value="checklist answer 1")
+    checklist.add_option(value="checklist answer 1")
 
 
-
-'''
-TODO
-work on enforcing certain classifications need options (and work on other things other than text)
-
-create an example of a classification with options
-
-work on nesting classes inside tools
-
-work on nesting classes inside other classes
-
-in the future: work on adding NER capability for tool types (?)
-
-
-TODO: Questions for Florjian:
-1. when taking in an ontology from an existing project, I converted 'schemaNodeId' to schema_id and 'featureSchemaId' to feature_schema_id. 
-   then, when planning to move setup the project with the new ontology, I converted them back to the original id's. Is it better to do it
-   this way because it follows PEP8? or should I just change the naming conventino of the variables?
-
-2. I am a little confused on what is the best way to enforce certain classifications require a series of options. My last version basically had a list
-   of Classification.Type that if it fell into that list, it would require options before it could be created. What is the best way to do this?
-
-3. My ontology class is getting a little long because I am manually changing certain dict keys to another key (part of #1's problem). Is there a 
-   better way to do dict key renaming?
-
-4. I was thinking instead of lines 79-81 and 85-87 could be converted to @classmethods instead of what I am doing now. Would that be better?
-'''
-
+    print(o.build())
+    run()
