@@ -132,9 +132,8 @@ dmypy.json
 # macos files
 .DS_STORE
 
-# Docs build
-labelbox/build/
-
-# Docs source files
-labelbox/source/_static
-labelbox/source/_templates
+# Sphinx Docs build
+docs/build/
+# and source files
+docs/source/_static
+docs/source/_templates
