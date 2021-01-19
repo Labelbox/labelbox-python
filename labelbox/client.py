@@ -26,9 +26,11 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
-    """ A Labelbox client. Contains info necessary for connecting to
-    a Labelbox server (URL, authentication key). Provides functions for
-    querying and creating top-level data objects (Projects, Datasets).
+    """ A Labelbox client. 
+    
+    Contains info necessary for connecting to a Labelbox server (URL, 
+    authentication key). Provides functions for querying and creating 
+    top-level data objects (Projects, Datasets). 
     """
 
     def __init__(self,
@@ -36,23 +38,20 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql'):
         """ Creates and initializes a Labelbox Client.
 
-            Logging is defaulted to level WARNING. To receive more verbose
-                output to console, update logging.level to the
-                appropriate level.
+        Logging is defaulted to level WARNING. To receive more verbose
+        output to console, update `logging.level` to the appropriate level.
 
-            >>> import logger
-            >>> logging.basicConfig(level = logging.INFO)
-            >>> client = Client("<APIKEY>")
+        >>> import logger
+        >>> logging.basicConfig(level = logging.INFO)
+        >>> client = Client("<APIKEY>")
 
         Args:
-            api_key (str): API key. If None, the key is obtained from
-                the "LABELBOX_API_KEY" environment variable.
+            api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
-
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
@@ -74,8 +73,10 @@ class Client:
         labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
-        given query. Checks the response for errors and wraps errors
-        in appropriate labelbox.exceptions.LabelboxError subtypes.
+        given query. 
+        
+        Checks the response for errors and wraps errors
+        in appropriate `labelbox.exceptions.LabelboxError` subtypes.
 
         Args:
             query (str): The query to execute.
@@ -219,7 +220,6 @@ class Client:
             str, the URL of uploaded data.
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
-
         """
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
@@ -336,8 +336,8 @@ class Client:
 
     def get_user(self):
         """ Gets the current User database object.
+            
             >>> user = client.get_user()
-
         """
         return self._get_single(User, None)
 
@@ -434,16 +434,15 @@ class Client:
         return db_object_type(self, res)
 
     def create_dataset(self, **kwargs):
-        """ Creates a Dataset object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates a Dataset object on the server.
+            
+        Attribute values are passed as keyword arguments.
 
-            >>> project = client.get_project("<project_uid>")
-            >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
+        >>> project = client.get_project("<project_uid>")
+        >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
 
-        Kwargs:
-            Keyword arguments with new Dataset attribute values.
-            Keys are attribute names (in Python, snake-case convention) and
-            values are desired attribute values.
+        Args:
+            **kwargs: Keyword arguments with Dataset attribute values.
         Returns:
             A new Dataset object.
         Raises:
@@ -453,15 +452,14 @@ class Client:
         return self._create(Dataset, kwargs)
 
     def create_project(self, **kwargs):
-        """ Creates a Project object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates a Project object on the server. 
+        
+        Attribute values are passed as keyword arguments.
 
-            >>> project = client.create_project(name="<project_name>", description="<project_description>")
+        >>> project = client.create_project(name="<project_name>", description="<project_description>")
 
-        Kwargs:
-            Keyword arguments with new Project attribute values.
-            Keys are attribute names (in Python, snake-case convention) and
-            values are desired attribute values.
+        Args:
+            **kwargs: Keyword arguments with Project attribute values.
         Returns:
             A new Project object.
         Raises:
