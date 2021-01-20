@@ -14,7 +14,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         agreement (float)
         benchmark_agreement (float)
         is_benchmark_reference (bool)
-        
+
         project (Relationship): `ToOne` relationship to Project
         data_row (Relationship): `ToOne` relationship to DataRow
         reviews (Relationship): `ToMany` relationship to Review

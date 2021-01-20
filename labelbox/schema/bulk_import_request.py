@@ -101,7 +101,7 @@ class BulkImportRequest(DbObject):
         error_file_url (str): NDJSON that contains error messages for failed annotations
         status_file_url (str): NDJSON that contains status for each annotation
         created_at (datetime): UTC timestamp for date BulkImportRequest was created
-        
+
         project (Relationship): `ToOne` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
     """
@@ -125,7 +125,7 @@ class BulkImportRequest(DbObject):
 
     def wait_until_done(self, sleep_time_seconds: int = 30) -> None:
         """Blocks import job until certain conditions are met.
-        
+
         Blocks until the BulkImportRequest.state changes either to
         `BulkImportRequestState.FINISHED` or `BulkImportRequestState.FAILED`,
         periodically refreshing object's state.
@@ -209,8 +209,8 @@ class BulkImportRequest(DbObject):
     def create_from_objects(cls, client, project_id: str, name: str,
                             predictions: Iterable[dict]) -> 'BulkImportRequest':
         """
-        Creates a `BulkImportRequest` from an iterable of dictionaries. 
-        
+        Creates a `BulkImportRequest` from an iterable of dictionaries.
+
         Conforms to JSON predictions format, e.g.:
         ``{
             "uuid": "9fd9a92e-2560-4e77-81d4-b2e955800092",

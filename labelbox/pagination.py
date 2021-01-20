@@ -4,7 +4,7 @@ _PAGE_SIZE = 100
 
 class PaginatedCollection:
     """ An iterable collection of database objects (Projects, Labels, etc...).
-    
+
     Implements automatic (transparent to the user) paginated fetching during
     iteration. Intended for use by library internals and not by the end user.
     For a list of attributes see __init__(...) documentation. The params of
@@ -13,7 +13,7 @@ class PaginatedCollection:
 
     def __init__(self, client, query, params, dereferencing, obj_class):
         """ Creates a PaginatedCollection.
-        
+
         Args:
             client (labelbox.Client): the client used for fetching data from DB.
             query (str): Base query used for pagination. It must contain two

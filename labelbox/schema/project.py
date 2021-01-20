@@ -28,7 +28,7 @@ class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
 
-    Attributes: 
+    Attributes:
         name (str)
         description (str)
         updated_at (datetime)
@@ -150,7 +150,7 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
-            URL of the data file with this Project's labels. If the server didn't 
+            URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
         sleep_time = 2
@@ -250,8 +250,8 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def set_labeling_parameter_overrides(self, data):
-        """ Adds labeling parameter overrides to this project. 
-        
+        """ Adds labeling parameter overrides to this project.
+
             >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
 
@@ -328,7 +328,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_prediction_model(self, name, version):
         """ Creates a PredictionModel connected to a Legacy Editor Project.
-        
+
         Args:
             name (str): The new PredictionModel's name.
             version (int): The new PredictionModel's version.
@@ -346,7 +346,7 @@ class Project(DbObject, Updateable, Deletable):
     def create_prediction(self, label, data_row, prediction_model=None):
         """ Creates a Prediction within a Legacy Editor Project. Not supported
         in the new Editor.
-        
+
         Args:
             label (str): The `label` field of the new Prediction.
             data_row (DataRow): The DataRow for which the Prediction is created.
@@ -392,7 +392,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Turns model assisted labeling either on or off based on input
 
         Args:
-            toggle (bool): True or False boolean 
+            toggle (bool): True or False boolean
         Returns:
             True if toggled on or False if toggled off
         """
@@ -401,7 +401,7 @@ class Project(DbObject, Updateable, Deletable):
 
         query_str = """mutation toggle_model_assisted_labelingPyApi($%s: ID!, $%s: Boolean!) {
             project(where: {id: $%s }) {
-                showPredictionsToLabelers(show: $%s) { 
+                showPredictionsToLabelers(show: $%s) {
                     id, showingPredictionsToLabelers
                 }
             }

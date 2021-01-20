@@ -8,7 +8,7 @@ class Review(DbObject, Deletable, Updateable):
     """ Reviewing labeled data is a collaborative quality assurance technique.
 
     A Review object indicates the quality of the assigned Label. The aggregated
-    review numbers can be obtained on a Project object. 
+    review numbers can be obtained on a Project object.
 
     Attributes:
         created_at (datetime)
@@ -22,7 +22,7 @@ class Review(DbObject, Deletable, Updateable):
     """
 
     class NetScore(Enum):
-        """ Negative, Zero, or Positive. 
+        """ Negative, Zero, or Positive.
         """
         Negative = auto()
         Zero = auto()
