@@ -186,8 +186,9 @@ class Client:
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
-        resource_not_found_error = check_errors(
-            ["RESOURCE_NOT_FOUND"], "extensions", "exception", "code")
+        resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
+                                                "extensions", "exception",
+                                                "code")
         if resource_not_found_error is not None:
             # Return None and let the caller methods raise an exception
             # as they already know which resource type and ID was requested

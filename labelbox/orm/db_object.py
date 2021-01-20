@@ -83,8 +83,7 @@ class DbObject(Entity):
 
     def __eq__(self, other):
         return (isinstance(other, DbObject) and
-                self.type_name() == other.type_name() and
-                self.uid == other.uid)
+                self.type_name() == other.type_name() and self.uid == other.uid)
 
     def __hash__(self):
         return 7541 * hash(self.type_name()) + hash(self.uid)
