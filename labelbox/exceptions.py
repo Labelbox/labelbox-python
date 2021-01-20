@@ -31,7 +31,7 @@ class ResourceNotFoundError(LabelboxError):
 
     def __init__(self, db_object_type, params):
         """ Constructor.
-        
+
         Args:
             db_object_type (type): A labelbox.schema.DbObject subtype.
             params (dict): Dict of params identifying the sought resource.
