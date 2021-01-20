@@ -8,7 +8,7 @@ class LabelingFrontend(DbObject):
     Represents an HTML / JavaScript UI that is used to generate
     labels. “Editor” is the default Labeling Frontend that comes in every
     organization. You can create new labeling frontends for an organization.
-    
+
     Attributes:
         name (str)
         description (str)

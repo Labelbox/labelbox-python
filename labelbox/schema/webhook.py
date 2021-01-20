@@ -67,7 +67,7 @@ class Webhook(DbObject, Updateable):
 
     def update(self, topics=None, url=None, status=None):
         """ Updates this Webhook.
-        
+
         Args:
             topics (list of str): The new topics value, optional.
             url (str): The new URL value, optional.

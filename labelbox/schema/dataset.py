@@ -8,7 +8,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 
 
 class Dataset(DbObject, Updateable, Deletable):
-    """ A Dataset is a collection of DataRows. 
+    """ A Dataset is a collection of DataRows.
 
     Attributes:
         name (str)
@@ -39,7 +39,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
-            **kwargs: Key-value arguments containing new `DataRow` data. At a minimum, 
+            **kwargs: Key-value arguments containing new `DataRow` data. At a minimum,
                 must contain `row_data`.
 
         Raises:
@@ -70,7 +70,7 @@ class Dataset(DbObject, Updateable, Deletable):
         it is a `str`, then it is interpreted as a local file path. The file
         is uploaded to Labelbox and a DataRow referencing it is created.
         If an item is a `dict`, then it should map `DataRow` fields (or their
-        names) to values. At the minimum an `item` passed as a `dict` must 
+        names) to values. At the minimum an `item` passed as a `dict` must
         contain a `DataRow.row_data` key and value.
 
         >>> dataset.create_data_rows([

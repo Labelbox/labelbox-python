@@ -15,7 +15,7 @@ class PredictionModel(DbObject):
         version (int)
 
         created_by (Relationship): `ToOne` relationship to User
-        organization (Relationship): `ToOne` relationship to Organization 
+        organization (Relationship): `ToOne` relationship to Organization
     """
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
@@ -40,7 +40,7 @@ class Prediction(DbObject):
         created_at (datetime)
         label (str)
         agreement (float)
-        
+
         organization (Relationship): `ToOne` relationship to Organization
         prediction_model (Relationship): `ToOne` relationship to PredictionModel
         data_row (Relationship): `ToOne` relationship to DataRow

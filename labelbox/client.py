@@ -26,11 +26,11 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
-    """ A Labelbox client. 
-    
-    Contains info necessary for connecting to a Labelbox server (URL, 
-    authentication key). Provides functions for querying and creating 
-    top-level data objects (Projects, Datasets). 
+    """ A Labelbox client.
+
+    Contains info necessary for connecting to a Labelbox server (URL,
+    authentication key). Provides functions for querying and creating
+    top-level data objects (Projects, Datasets).
     """
 
     def __init__(self,
@@ -73,8 +73,8 @@ class Client:
         labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
-        given query. 
-        
+        given query.
+
         Checks the response for errors and wraps errors
         in appropriate `labelbox.exceptions.LabelboxError` subtypes.
 
@@ -336,7 +336,7 @@ class Client:
 
     def get_user(self):
         """ Gets the current User database object.
-            
+
             >>> user = client.get_user()
         """
         return self._get_single(User, None)
@@ -435,7 +435,7 @@ class Client:
 
     def create_dataset(self, **kwargs):
         """ Creates a Dataset object on the server.
-            
+
         Attribute values are passed as keyword arguments.
 
         >>> project = client.get_project("<project_uid>")
@@ -452,8 +452,8 @@ class Client:
         return self._create(Dataset, kwargs)
 
     def create_project(self, **kwargs):
-        """ Creates a Project object on the server. 
-        
+        """ Creates a Project object on the server.
+
         Attribute values are passed as keyword arguments.
 
         >>> project = client.create_project(name="<project_name>", description="<project_description>")
