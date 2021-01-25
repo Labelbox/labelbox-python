@@ -139,6 +139,10 @@ class Client:
             error_502 = '502 Bad Gateway'
             if error_502 in response.text:
                 raise labelbox.exceptions.InternalServerError(error_502)
+            if "upstream connect error or disconnect/reset before headers" \
+                    in response.text:
+                raise labelbox.exceptions.InternalServerError(
+                    "Connection reset")
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
@@ -186,11 +190,27 @@ class Client:
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
-        prisma_error = check_errors(["INTERNAL_SERVER_ERROR"], "extensions",
-                                    "code")
-        if prisma_error:
-            raise labelbox.exceptions.InternalServerError(
-                prisma_error["message"])
+        resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
+                                                "extensions", "exception",
+                                                "code")
+        if resource_not_found_error is not None:
+            # Return None and let the caller methods raise an exception
+            # as they already know which resource type and ID was requested
+            return None
+
+        # A lot of different error situations are now labeled serverside
+        # as INTERNAL_SERVER_ERROR, when they are actually client errors.
+        # TODO: fix this in the server API
+        internal_server_error = check_errors(["INTERNAL_SERVER_ERROR"],
+                                             "extensions", "code")
+        if internal_server_error is not None:
+            message = internal_server_error.get("message")
+
+            if message.startswith("Syntax Error"):
+                raise labelbox.exceptions.InvalidQueryError(message)
+
+            else:
+                raise labelbox.exceptions.InternalServerError(message)
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
@@ -297,7 +317,7 @@ class Client:
         """
         query_str, params = query.get_single(db_object_type, uid)
         res = self.execute(query_str, params)
-        res = res[utils.camel_case(db_object_type.type_name())]
+        res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 db_object_type, params)
