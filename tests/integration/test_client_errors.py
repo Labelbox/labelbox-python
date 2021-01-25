@@ -114,7 +114,7 @@ def test_api_limit_error(client, rand_gen):
             return e
 
     with Pool(300) as pool:
-        results = pool.map(get, list(range(1000)))
+        results = pool.map(get, list(range(2000)))
 
     assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
 
