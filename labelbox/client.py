@@ -139,6 +139,10 @@ class Client:
             error_502 = '502 Bad Gateway'
             if error_502 in response.text:
                 raise labelbox.exceptions.InternalServerError(error_502)
+            if "upstream connect error or disconnect/reset before headers" \
+                    in response.text:
+                raise labelbox.exceptions.InternalServerError(
+                    "Connection reset")
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
