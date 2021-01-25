@@ -134,7 +134,7 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """query GetProjectLabelsPyApi($%s: ID!)
             {project (where: {id: $%s})
-                {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
+                {labels (skip: %%d first: %%d %s %s) {%s}}}""" % (
             id_param, id_param, where, order_by_str,
             query.results_query_part(Label))
 

@@ -82,7 +82,8 @@ class DbObject(Entity):
         return "<%s %s>" % (self.type_name().split(".")[-1], attribute_values)
 
     def __eq__(self, other):
-        return self.type_name() == other.type_name() and self.uid == other.uid
+        return (isinstance(other, DbObject) and
+                self.type_name() == other.type_name() and self.uid == other.uid)
 
     def __hash__(self):
         return 7541 * hash(self.type_name()) + hash(self.uid)
@@ -152,8 +153,9 @@ class RelationshipManager:
 
         query_string, params = query.relationship(self.source, rel, None, None)
         result = self.source.client.execute(query_string, params)
-        result = result[utils.camel_case(type(self.source).type_name())]
-        result = result[rel.graphql_name]
+        result = result and result.get(
+            utils.camel_case(type(self.source).type_name()))
+        result = result and result.get(rel.graphql_name)
         if result is None:
             return None
         return rel.destination_type(self.source.client, result)
