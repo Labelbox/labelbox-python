@@ -1,11 +1,14 @@
 import setuptools
+from labelbox._version import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
+
 setuptools.setup(
     name="labelbox",
-    version="2.4.9",
+    version=__version__,
     author="Labelbox",
     author_email="engineering@labelbox.com",
     description="Labelbox Python API",
