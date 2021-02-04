@@ -19,7 +19,7 @@ from labelbox.schema.dataset import Dataset
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox._version import __version__ as SDK_VERSION
+from labelbox import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
 

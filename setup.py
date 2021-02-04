@@ -1,12 +1,17 @@
 import setuptools
-from labelbox._version import __version__
+
+with open('labelbox/__init__.py') as fid:
+    for line in fid:
+        if line.startswith('__version__'):
+            SDK_VERSION = line.strip().split()[-1][1:-1]
+            break
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="labelbox",
-    version=__version__,
+    version=SDK_VERSION,
     author="Labelbox",
     author_email="engineering@labelbox.com",
     description="Labelbox Python API",
