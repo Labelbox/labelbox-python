@@ -2,7 +2,7 @@
 TODO
 1. make classification pulls recursive (go beyond just the 1st layer) -> but how to make classification->option->classification->infinitely?
 2. validate that we can pull in all sorts of project ontology classes
-3. validate we can submit basic ones back in 
+3. validate we can submit basic ones back in (fix build() method)
 4. do the rest of the stuff below
 
 currently allows creation of a TEXT classification and options inside this file
