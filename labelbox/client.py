@@ -33,6 +33,7 @@ class Client:
     authentication key). Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
+
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql'):
@@ -112,14 +113,10 @@ class Client:
 
         if params is not None:
             params = {
-                key: convert_value(value)
-                for key, value in params.items()
+                key: convert_value(value) for key, value in params.items()
             }
 
-        data = json.dumps({
-            'query': query,
-            'variables': params
-        }).encode('utf-8')
+        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
             response = requests.post(self.endpoint,
@@ -273,18 +270,18 @@ class Client:
 
         request_data = {
             "operations":
-            json.dumps({
-                "variables": {
-                    "file": None,
-                    "contentLength": len(content),
-                    "sign": False
-                },
-                "query":
-                """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                json.dumps({
+                    "variables": {
+                        "file": None,
+                        "contentLength": len(content),
+                        "sign": False
+                    },
+                    "query":
+                        """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,
-            }),
+                }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
         response = requests.post(
@@ -293,7 +290,7 @@ class Client:
             data=request_data,
             files={
                 "1": (filename, content, content_type) if
-                (filename and content_type) else content
+                     (filename and content_type) else content
             })
 
         try:
