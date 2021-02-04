@@ -4,8 +4,6 @@ from labelbox._version import __version__
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
-
 setuptools.setup(
     name="labelbox",
     version=__version__,
