@@ -19,6 +19,7 @@ from labelbox.schema.dataset import Dataset
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,8 @@ class Client:
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer %s' % api_key
+            'Authorization': 'Bearer %s' % api_key,
+            'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
     @retry.Retry(predicate=retry.if_exception_type(
