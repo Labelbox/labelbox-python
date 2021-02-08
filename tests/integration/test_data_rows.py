@@ -49,6 +49,9 @@ def test_data_row_bulk_creation(dataset, rand_gen):
 
     data_rows[0].delete()
 
+
+@pytest.mark.slow
+def test_data_row_large_bulk_creation(dataset, rand_gen):
     # Do a longer task and expect it not to be complete immediately
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
@@ -62,7 +65,7 @@ def test_data_row_bulk_creation(dataset, rand_gen):
     data_rows = len(list(dataset.data_rows())) == 5003
 
 
-@pytest.mark.skip
+@pytest.mark.xfail(reason="DataRow.dataset() relationship not set")
 def test_data_row_single_creation(dataset, rand_gen):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0

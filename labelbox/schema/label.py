@@ -7,6 +7,19 @@ from labelbox.orm.model import Entity, Field, Relationship
 class Label(DbObject, Updateable, BulkDeletable):
     """ Label represents an assessment on a DataRow. For example one label could
     contain 100 bounding boxes (annotations).
+
+    Attributes:
+        label (str)
+        seconds_to_label (float)
+        agreement (float)
+        benchmark_agreement (float)
+        is_benchmark_reference (bool)
+
+        project (Relationship): `ToOne` relationship to Project
+        data_row (Relationship): `ToOne` relationship to DataRow
+        reviews (Relationship): `ToMany` relationship to Review
+        created_by (Relationship): `ToOne` relationship to User
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -36,9 +49,8 @@ class Label(DbObject, Updateable, BulkDeletable):
     def create_review(self, **kwargs):
         """ Creates a Review for this label.
 
-        Kwargs:
-            Review attributes. At a minimum a `Review.score` field
-            value must be provided.
+        Args:
+            **kwargs: Review attributes. At a minimum, a `Review.score` field value must be provided.
         """
         kwargs[Entity.Review.label.name] = self
         kwargs[Entity.Review.project.name] = self.project()

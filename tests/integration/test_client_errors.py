@@ -103,7 +103,9 @@ def test_invalid_attribute_error(client, rand_gen):
     project.delete()
 
 
-@pytest.mark.skip
+@pytest.mark.slow
+# TODO improve consistency
+@pytest.mark.skip(reason="Inconsistent test")
 def test_api_limit_error(client, rand_gen):
     project_id = client.create_project(name=rand_gen(str)).uid
 
@@ -114,7 +116,7 @@ def test_api_limit_error(client, rand_gen):
             return e
 
     with Pool(300) as pool:
-        results = pool.map(get, list(range(1000)))
+        results = pool.map(get, list(range(2000)))
 
     assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
 
