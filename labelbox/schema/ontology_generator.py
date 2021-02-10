@@ -1,6 +1,5 @@
 '''
 TODO
-1. make classification pulls recursive (go beyond just the 1st layer) -> but how to make classification->option->classification->infinitely?
 2. validate that we can pull in all sorts of project ontology classes
 3. validate we can submit basic ones back in (fix build() method)
 4. do the rest of the stuff below
@@ -32,11 +31,16 @@ from labelbox import Client, Project, Dataset, LabelingFrontend
 class InconsistentOntologyException(Exception):
     pass
 
+class Classification:
+    pass
+
 @dataclass
 class Option:
     value: str    
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
+    #TODO: need to look further into how to make this so that the user cannot input anything here
+    options: Optional[Classification] = None
 
     @property
     def label(self):
@@ -47,15 +51,22 @@ class Option:
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
             "label": self.label,
-            "value": self.value
+            "value": self.value,
+            "options": [classification.to_dict() for classification in self.options]
         }
 
     @classmethod
     def from_dict(cls, dictionary: dict):
+        def has_nested_classifications(dictionary: dict):
+            if "options" in dictionary.keys():
+                return [Classification.from_dict(nested_class) for nested_class in dictionary["options"]]
+            return list()
+
         return Option(
             value = dictionary["value"],
-            schema_id = dictionary['schemaNodeId'],
-            feature_schema_id = dictionary['featureSchemaId']
+            schema_id = dictionary["schemaNodeId"],
+            feature_schema_id = dictionary["featureSchemaId"],
+            options = has_nested_classifications(dictionary)
         )
     
 
@@ -81,13 +92,13 @@ class Classification:
 
     def to_dict(self) -> dict:
         return {
-                "type": self.class_type.value,
-                "instructions": self.instructions,
-                "name": self.name,
-                "required": self.required,
-                "options": [option.to_dict() for option in classification.options],
-                "schemaNodeId": self.schema_id,
-                "featureSchemaId": self.feature_schema_id
+            "type": self.class_type.value,
+            "instructions": self.instructions,
+            "name": self.name,
+            "required": self.required,
+            "options": [option.to_dict() for option in self.options],
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id
         }   
 
     @classmethod
@@ -162,22 +173,22 @@ class Ontology:
         return_ontology = Ontology()
 
         for tool in ontology["tools"]: 
-            return_ontology.add_tool(tool)
+            return_ontology.tools.append(Tool.from_dict(tool))
 
         for classification in ontology["classifications"]:
-            return_ontology.add_classification(classification)
+            return_ontology.classifications.append(Classification.from_dict(classification))
  
         return return_ontology
 
-    def add_tool(self, tool: dict) -> Tool:
-        new_tool = Tool.from_dict(tool)
+    def add_tool(self, *args, **kwargs) -> Tool:        
+        new_tool = Tool(*args, **kwargs)
         if new_tool.name in (tool.name for tool in self.tools):
             raise InconsistentOntologyException(f"Duplicate tool name '{new_tool.name}'. ")
         self.tools.append(new_tool)
         return new_tool
 
-    def add_classification(self, classification: dict) -> Classification:
-        new_classification = Classification.from_dict(classification)
+    def add_classification(self, *args, **kwargs) -> Classification:
+        new_classification = Classification(*args, **kwargs)    
         if new_classification.instructions in (classification.instructions for classification in self.classifications):
             raise InconsistentOntologyException(f"Duplicate classifications instructions '{new_classification.instructions}'. ")
         self.classifications.append(new_classification)
@@ -194,7 +205,7 @@ class Ontology:
                 "name": tool.name,
                 "required": tool.required,
                 "color": tool.color,
-                "classifications": tool.classifications,
+                "classifications": [classification.to_dict() for classification in tool.classifications],
                 "schemaNodeId": tool.schema_id,
                 "featureSchemaId": tool.feature_schema_id
 
@@ -213,23 +224,24 @@ class Ontology:
 
         return {"tools": all_tools, "classifications": all_classifications}
 
-
-#made this just to test in my own project. not keeping this
+'''
+EVERYTHING BELOW THIS LINE IS JUST FOR SELF TESTING
+'''
 def run():
     frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
     project.setup(frontend, o.build())
     return project
-#also filler right here for now for testing
+
 def print_stuff():
     tools = o.tools
     classifications = o.classifications
 
     print("tools\n")
     for tool in tools:
-        print(tool)
+        print("\n",tool)
     print("\nclassifications\n")
     for classification in classifications:
-        print(classification)
+        print("\n",classification)
 
 if __name__ == "__main__":
     import json
@@ -239,19 +251,20 @@ if __name__ == "__main__":
     project = client.get_project("ckhchkye62xn30796uui5lu34")
 
     o = Ontology().from_project(project)
-    print_stuff()
+    # print_stuff()
     
     
-    # o.add_tool(tool=Tool.Type.POLYGON, name="i am a polygon tool2")
+    o.add_tool(tool=Tool.Type.POLYGON, name="I AM HERE FOR TESTING")
     # checklist = o.add_classification(class_type=Classification.Type.CHECKLIST, instructions="I AM A CHECKLIST2")
     # checklist.add_option(value="checklist answer 1")
     # checklist.add_option(value="checklist answer 2")
 
 
+    # print_stuff()
     # print(o.build())
     # print(type(o.build()))
     # print(o.build())
-    # run()
+    run()
 
     
 
