@@ -3,10 +3,6 @@ TODO
 2. validate that we can pull in all sorts of project ontology classes
 3. do the rest of the stuff below
 
-currently allows creation of a TEXT classification and options inside this file
-↑ should not be possible, and in fact causes some unintended behavior when creating the ontology (creates options as a totally new classification)
-↑ need to ensure that with TEXT we cannot embed options
-
 validate prior to submission, so likely in the o.build() - like have a way to make sure that classifications that need options have options
 
 work on enforcing certain classifications need options (and work on other things other than text)
