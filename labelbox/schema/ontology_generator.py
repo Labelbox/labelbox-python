@@ -141,7 +141,7 @@ class Tool:
             "name": self.name,
             "required": self.required,
             "color": self.color,
-            "classifications": self.classifications,
+            "classifications": [classification.to_dict() for classification in self.classifications],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id
         }
@@ -198,28 +198,10 @@ class Ontology:
         all_classifications = []
 
         for tool in self.tools:
-            
-            all_tools.append({
-                "tool": tool.tool.value,
-                "name": tool.name,
-                "required": tool.required,
-                "color": tool.color,
-                "classifications": [classification.to_dict() for classification in tool.classifications],
-                "schemaNodeId": tool.schema_id,
-                "featureSchemaId": tool.feature_schema_id
-
-            })
+            all_tools.append(tool.to_dict())
 
         for classification in self.classifications:
-            all_classifications.append({
-                "type": classification.class_type.value,
-                "instructions": classification.instructions,
-                "name": classification.name,
-                "required": classification.required,
-                "options": [option.to_dict() for option in classification.options],
-                "schemaNodeId": classification.schema_id,
-                "featureSchemaId": classification.feature_schema_id
-            })
+            all_classifications.append(classification.to_dict())
 
         return {"tools": all_tools, "classifications": all_classifications}
 
@@ -253,13 +235,14 @@ if __name__ == "__main__":
     # print_stuff()
     
     
-    o.add_tool(tool=Tool.Type.POLYGON, name="I AM HERE FOR TESTING")
+    # o.add_tool(tool=Tool.Type.POLYGON, name="I AM HERE FOR TESTING YET AGAIN!!")
     # checklist = o.add_classification(class_type=Classification.Type.CHECKLIST, instructions="I AM A CHECKLIST2")
     # checklist.add_option(value="checklist answer 1")
     # checklist.add_option(value="checklist answer 2")
-
+    o.add_classification(class_type=Classification.Type.TEXT, instructions="I AM TEXT INFO MAN 2")
 
     # print_stuff()
+    # print("\n\n\n\n\n")
     # print(o.build())
     # print(type(o.build()))
     # print(o.build())
