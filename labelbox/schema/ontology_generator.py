@@ -1,8 +1,7 @@
 '''
 TODO
 2. validate that we can pull in all sorts of project ontology classes
-3. validate we can submit basic ones back in (fix build() method)
-4. do the rest of the stuff below
+3. do the rest of the stuff below
 
 currently allows creation of a TEXT classification and options inside this file
 ↑ should not be possible, and in fact causes some unintended behavior when creating the ontology (creates options as a totally new classification)
