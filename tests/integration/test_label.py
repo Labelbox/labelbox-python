@@ -59,10 +59,11 @@ def test_label_filter_order(client, rand_gen):
     data_row_2 = dataset_2.create_data_row(row_data=IMG_URL)
 
     l1 = project.create_label(data_row=data_row_1, label="l1")
+    time.sleep(1)  #Ensure there are no race condition
     l2 = project.create_label(data_row=data_row_2, label="l2")
 
     # Labels are not visible in the project immediately.
-    time.sleep(10)
+    time.sleep(20)
 
     # Filtering supported on dataset
     assert set(project.labels()) == {l1, l2}
@@ -71,8 +72,8 @@ def test_label_filter_order(client, rand_gen):
     assert set(project.labels(datasets=[dataset_2])) == {l2}
     assert set(project.labels(datasets=[dataset_1, dataset_2])) == {l1, l2}
 
-    assert list(project.labels(order_by=Label.label.asc)) == [l1, l2]
-    assert list(project.labels(order_by=Label.label.desc)) == [l2, l1]
+    assert list(project.labels(order_by=Label.created_at.asc)) == [l1, l2]
+    assert list(project.labels(order_by=Label.created_at.desc)) == [l2, l1]
 
     dataset_1.delete()
     dataset_2.delete()
