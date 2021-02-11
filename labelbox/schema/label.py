@@ -11,7 +11,7 @@ class Label(DbObject, Updateable, BulkDeletable):
     Attributes:
         label (str)
         seconds_to_label (float)
-        agreement (float):q
+        agreement (float)
         benchmark_agreement (float)
         is_benchmark_reference (bool)
 
