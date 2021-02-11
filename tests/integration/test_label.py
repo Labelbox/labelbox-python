@@ -59,7 +59,7 @@ def test_label_filter_order(client, rand_gen):
     data_row_2 = dataset_2.create_data_row(row_data=IMG_URL)
 
     l1 = project.create_label(data_row=data_row_1, label="l1")
-    time.sleep(1)  #Ensure there are no race condition
+    time.sleep(1)  #Ensure there is no race condition
     l2 = project.create_label(data_row=data_row_2, label="l2")
 
     # Labels are not visible in the project immediately.
