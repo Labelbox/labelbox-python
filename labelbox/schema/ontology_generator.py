@@ -1,8 +1,6 @@
 '''
 TODO
 maybe there should be a way to check if a project has an existing ontology, and that it would overwrite it?
-
-in the future: work on adding NER capability for tool types (?)
 '''
 
 from dataclasses import dataclass, field
@@ -244,13 +242,15 @@ if __name__ == "__main__":
     nested_class = tool.add_nested_class(class_type = Classification.Type.DROPDOWN, instructions = "nested class")
     dropdown_option = nested_class.add_option(value="answer")
 
+    tool = o.add_tool(tool = Tool.Type.NER, name="NER value")
+
     #to old existing project
     frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
     project.setup(frontend, o.build(for_different_project=False))
 
     #to a different project
-    other_project = client.get_project("ckkzzw5qk1yje0712uqjn0oqs")
-    other_project.setup(frontend, o.build(for_different_project=True))
+    # other_project = client.get_project("ckkzzw5qk1yje0712uqjn0oqs")
+    # other_project.setup(frontend, o.build(for_different_project=True))
 
 
 
