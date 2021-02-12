@@ -31,6 +31,8 @@ class Label(DbObject, Updateable, BulkDeletable):
     agreement = Field.Float("agreement")
     benchmark_agreement = Field.Float("benchmark_agreement")
     is_benchmark_reference = Field.Boolean("is_benchmark_reference")
+    updated_at = Field.DateTime("updated_at")
+    created_at = Field.DateTime("created_at")
 
     project = Relationship.ToOne("Project")
     data_row = Relationship.ToOne("DataRow")
