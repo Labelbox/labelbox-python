@@ -36,7 +36,7 @@ class Option:
             "featureSchemaId": None if for_different_project else self.feature_schema_id,
             "label": self.label,
             "value": self.value,
-            "options": [classification.to_dict() for classification in self.nested_classes]
+            "options": [classification.to_dict(for_different_project) for classification in self.nested_classes]
         }
 
     @classmethod
@@ -60,7 +60,6 @@ class Option:
         self.nested_classes.append(new_classification)
         return new_classification
     
-
 @dataclass
 class Classification:    
 
@@ -125,6 +124,7 @@ class Tool:
         POINT = "point"
         BBOX = "rectangle"
         LINE = "line"
+        NER = "named-entity"
 
     tool: Type 
     name: str 
@@ -163,8 +163,6 @@ class Tool:
             raise InconsistentOntologyException(f"Duplicate nested classification '{new_classification.instructions}' for option '{self.label}'")
         self.classifications.append(new_classification)
         return new_classification        
-
-
 
 @dataclass
 class Ontology:
@@ -216,9 +214,6 @@ class Ontology:
 '''
 EVERYTHING BELOW THIS LINE IS JUST FOR SELF TESTING
 '''
-def run():
-    frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
-    project.setup(frontend, o.build(for_different_project=False))
 
 def print_stuff():
     tools = o.tools
@@ -233,20 +228,29 @@ def print_stuff():
 
 if __name__ == "__main__":
     os.system('clear')
-    # apikey = os.environ['apikey']
-    # client = Client(apikey) 
-
-    # print("START\n")
-    # project = client.get_project("ckhchkye62xn30796uui5lu34")
-    # o = Ontology().from_project(project)
+    apikey = os.environ['apikey']
+    client = Client(apikey) 
+    project = client.get_project("ckhchkye62xn30796uui5lu34")
     
-    # tool = o.add_tool(tool = Tool.Type.POINT, name = "first tool")
-    # nested_class = tool.add_nested_class(class_type = Classification.Type.DROPDOWN, instructions = "nested class")
-    # dropdown_option = nested_class.add_option(value="answer")
+    # apikey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2szYTRhemRoN2x4MDcyNmU2MjFkamFlIiwib3JnYW5pemF0aW9uSWQiOiJja2szYTRheXlwdXlnMDczNjdzamZmanU5IiwiYXBpS2V5SWQiOiJja2wwNDJzMXFraGw0MDcwNnZmNTNodTNsIiwiaWF0IjoxNjEzMDAyNTU5LCJleHAiOjIyNDQxNTQ1NTl9.ViguRPw-Zv5KIs0Ho5VOjARUJtc5dTcQFFl4zGbBdbM'
+    # client = Client(apikey)
+    # project = client.get_project("ckkyi8ih56sc207570tb35of1")
+   
+    o = Ontology().from_project(project)
 
-    # print_stuff()
-    # o.build()
-    # run()
+    
+    #create a Point tool and add a nested dropdown in it
+    tool = o.add_tool(tool = Tool.Type.POINT, name = "Example Point Tool")
+    nested_class = tool.add_nested_class(class_type = Classification.Type.DROPDOWN, instructions = "nested class")
+    dropdown_option = nested_class.add_option(value="answer")
+
+    #to old existing project
+    frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
+    project.setup(frontend, o.build(for_different_project=False))
+
+    #to a different project
+    other_project = client.get_project("ckkzzw5qk1yje0712uqjn0oqs")
+    other_project.setup(frontend, o.build(for_different_project=True))
 
 
 
