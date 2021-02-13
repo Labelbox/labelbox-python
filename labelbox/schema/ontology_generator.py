@@ -227,8 +227,7 @@ if __name__ == "__main__":
     apikey = os.environ['apikey']
     client = Client(apikey) 
     project = client.get_project("ckhchkye62xn30796uui5lu34")
-    
-    # apikey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2szYTRhemRoN2x4MDcyNmU2MjFkamFlIiwib3JnYW5pemF0aW9uSWQiOiJja2szYTRheXlwdXlnMDczNjdzamZmanU5IiwiYXBpS2V5SWQiOiJja2wwNDJzMXFraGw0MDcwNnZmNTNodTNsIiwiaWF0IjoxNjEzMDAyNTU5LCJleHAiOjIyNDQxNTQ1NTl9.ViguRPw-Zv5KIs0Ho5VOjARUJtc5dTcQFFl4zGbBdbM'
+
     # client = Client(apikey)
     # project = client.get_project("ckkyi8ih56sc207570tb35of1")
    
