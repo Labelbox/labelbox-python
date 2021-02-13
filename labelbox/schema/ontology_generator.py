@@ -22,7 +22,7 @@ class Option:
     value: str    
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-    nested_classes: List[Classification] = field(default_factory=list)
+    options: List[Classification] = field(default_factory=list)
 
     @property
     def label(self):
@@ -34,7 +34,7 @@ class Option:
             "featureSchemaId": None if for_different_project else self.feature_schema_id,
             "label": self.label,
             "value": self.value,
-            "options": [classification.to_dict(for_different_project) for classification in self.nested_classes]
+            "options": [classification.to_dict(for_different_project) for classification in self.options]
         }
 
     @classmethod
@@ -46,14 +46,14 @@ class Option:
             value = dictionary["value"],
             schema_id = dictionary["schemaNodeId"],
             feature_schema_id = dictionary["featureSchemaId"],
-            nested_classes = has_nested_classifications(dictionary)
+            options = has_nested_classifications(dictionary)
         )
 
     def add_nested_class(self, *args, **kwargs):
         new_classification = Classification(*args, **kwargs)
-        if new_classification.instructions in (classification.instructions for classification in self.nested_classes):
+        if new_classification.instructions in (classification.instructions for classification in self.options):
             raise InconsistentOntologyException(f"Duplicate nested classification '{new_classification.instructions}' for option '{self.label}'")
-        self.nested_classes.append(new_classification)
+        self.options.append(new_classification)
         return new_classification
     
 @dataclass
@@ -207,47 +207,8 @@ class Ontology:
 
         return {"tools": all_tools, "classifications": all_classifications}
 
-'''
-EVERYTHING BELOW THIS LINE IS JUST FOR SELF TESTING
-'''
-
-def print_stuff():
-    tools = o.tools
-    classifications = o.classifications
-
-    print("tools\n")
-    for tool in tools:
-        print("\n",tool)
-    print("\nclassifications\n")
-    for classification in classifications:
-        print("\n",classification)
-
 if __name__ == "__main__":
-    os.system('clear')
-    apikey = os.environ['apikey']
-    client = Client(apikey) 
-    project = client.get_project("ckhchkye62xn30796uui5lu34")
-
-    # client = Client(apikey)
-    # project = client.get_project("ckkyi8ih56sc207570tb35of1")
-   
-    o = Ontology().from_project(project)
-
-    
-    #create a Point tool and add a nested dropdown in it
-    # tool = o.add_tool(tool = Tool.Type.POINT, name = "Example Point Tool")
-    # nested_class = tool.add_nested_class(class_type = Classification.Type.DROPDOWN, instructions = "nested class")
-    # dropdown_option = nested_class.add_option(value="answer")
-
-    # tool = o.add_tool(tool = Tool.Type.NER, name="NER value")
-
-    #to old existing project
-    frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
-    project.setup(frontend, o.build(for_different_project=False))
-
-    #to a different project
-    # other_project = client.get_project("ckkzzw5qk1yje0712uqjn0oqs")
-    # other_project.setup(frontend, o.build(for_different_project=True))
+    pass
 
 
 
