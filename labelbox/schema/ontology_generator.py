@@ -6,7 +6,7 @@ maybe there should be a way to check if a project has an existing ontology, and 
 from dataclasses import dataclass, field
 from enum import Enum, auto
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from labelbox import Client, Project, Dataset, LabelingFrontend
 
@@ -28,7 +28,7 @@ class Option:
     def label(self):
         return self.value
     
-    def to_dict(self,for_different_project=False) -> dict:
+    def to_dict(self,for_different_project=False) -> Dict[str, str]:
         return {
             "schemaNodeId": None if for_different_project else self.schema_id,
             "featureSchemaId": None if for_different_project else self.feature_schema_id,
@@ -38,11 +38,9 @@ class Option:
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict):
-        def has_nested_classifications(dictionary: dict):
-            if "options" in dictionary.keys():
-                return [Classification.from_dict(nested_class) for nested_class in dictionary["options"]]
-            return list()
+    def from_dict(cls, dictionary: Dict[str,str]):
+        def has_nested_classifications(dictionary: Dict[str,str]):
+            return [Classification.from_dict(nested_class) for nested_class in dictionary.get("options", [])]
 
         return Option(
             value = dictionary["value"],
@@ -74,16 +72,16 @@ class Classification:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
 
-    @property
-    def requires_options(self):
+    @staticmethod
+    def requires_options():
          return set((Classification.Type.CHECKLIST, Classification.Type.RADIO, Classification.Type.DROPDOWN))    
 
     @property
     def name(self):
         return self.instructions
 
-    def to_dict(self, for_different_project=False) -> dict:
-        if self.class_type in self.requires_options and len(self.options) < 1:
+    def to_dict(self, for_different_project=False) -> Dict[str,str]:
+        if self.class_type in Classification.requires_options() and len(self.options) < 1:
             raise InconsistentOntologyException(f"Classification '{self.instructions}' requires options.")
         return {
             "type": self.class_type.value,
@@ -96,7 +94,7 @@ class Classification:
         }   
 
     @classmethod
-    def from_dict(cls, dictionary: dict): 
+    def from_dict(cls, dictionary: Dict[str,str]): 
         return Classification(
             class_type = Classification.Type(dictionary["type"]),
             instructions = dictionary["instructions"],
@@ -132,7 +130,7 @@ class Tool:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
 
-    def to_dict(self,for_different_project=False) -> dict:
+    def to_dict(self,for_different_project=False) -> Dict[str,str]:
         return {
             "tool": self.tool.value,
             "name": self.name,
@@ -144,7 +142,7 @@ class Tool:
         }
 
     @classmethod 
-    def from_dict(cls, dictionary: dict):
+    def from_dict(cls, dictionary: Dict[str,str]):
         return Tool(
             name = dictionary['name'],
             schema_id = dictionary["schemaNodeId"],
@@ -238,11 +236,11 @@ if __name__ == "__main__":
 
     
     #create a Point tool and add a nested dropdown in it
-    tool = o.add_tool(tool = Tool.Type.POINT, name = "Example Point Tool")
-    nested_class = tool.add_nested_class(class_type = Classification.Type.DROPDOWN, instructions = "nested class")
-    dropdown_option = nested_class.add_option(value="answer")
+    # tool = o.add_tool(tool = Tool.Type.POINT, name = "Example Point Tool")
+    # nested_class = tool.add_nested_class(class_type = Classification.Type.DROPDOWN, instructions = "nested class")
+    # dropdown_option = nested_class.add_option(value="answer")
 
-    tool = o.add_tool(tool = Tool.Type.NER, name="NER value")
+    # tool = o.add_tool(tool = Tool.Type.NER, name="NER value")
 
     #to old existing project
     frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
