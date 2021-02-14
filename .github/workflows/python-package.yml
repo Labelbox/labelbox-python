@@ -8,21 +8,16 @@ on:
 
 jobs:
   build:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    #if: github.event.pull_request.head.repo.full_name == github.repository
 
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
       matrix:
         # TODO: unlock parallel testing by using more API keys
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6] #, 3.7, 3.8]
 
     steps:
-
-    - name: Cancel previous workflow
-      uses: styfle/cancel-workflow-action@0.4.0
-      with:
-        access_token: ${{ github.token }}
 
     - name: set environment for branch
       run: |
@@ -32,21 +27,16 @@ jobs:
             echo "LABELBOX_TEST_ENVIRON=staging" >> $GITHUB_ENV
           fi
 
-    - uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-        ref: ${{ github.head_ref }}
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: yapf
-      id: yapf
-      uses: AlexanderMelde/yapf-action@master
+    - uses: actions/checkout@v2
       with:
-        args: --verbose --recursive --parallel --style "google"
+        token: ${{ ACTIONS_ACCESS_TOKEN  }}
+        ref: ${{ github.head_ref }}
+
 
     - name: install labelbox package
       run: |
@@ -68,9 +58,9 @@ jobs:
         # make sure to tell tox to use these environs in tox.ini
         #
         # randall@labelbox.com
-        LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
+        LABELBOX_TEST_API_KEY_PROD: ${{ LABELBOX_API_KEY }}
 
         # randall+staging-python@labelbox.com
-        LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
+        LABELBOX_TEST_API_KEY_STAGING: ${{ STAGING_LABELBOX_API_KEY }}
       run: |
-        tox -e py -- -svv
+        tox -e py -- -svvx
