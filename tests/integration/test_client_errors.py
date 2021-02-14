@@ -44,8 +44,10 @@ def test_semantic_error(client):
 
 
 def test_timeout_error(client):
+    time.sleep(10)
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
         client.execute("{roles{name}}", check_naming=False, timeout=0.001)
+    time.sleep(10)
 
 
 def test_query_complexity_error(client):
