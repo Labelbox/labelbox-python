@@ -2,6 +2,7 @@ import unittest
 from typing import Any, Dict, List, Union
 from labelbox import LabelingFrontend
 
+
 def sample_ontology() -> Dict[str, Any]:
     return {
         "tools": [{
