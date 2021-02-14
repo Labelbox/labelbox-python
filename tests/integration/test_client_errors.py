@@ -1,5 +1,6 @@
 from multiprocessing.dummy import Pool
 import os
+from tests.integration.conftest import rand_gen
 import time
 
 import pytest
@@ -43,11 +44,16 @@ def test_semantic_error(client):
     assert excinfo.value.message.startswith("Cannot query field \"bbb\"")
 
 
-def test_timeout_error(client):
-    time.sleep(10)
+def test_timeout_error(client, project):
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-        client.execute("{roles{name}}", check_naming=False, timeout=0.001)
-    time.sleep(10)
+        query_str = """query getOntology { 
+        project (where: {id: $%s}) { 
+            ontology { 
+                normalized 
+                } 
+            }
+        } """ % (project.uid)
+        client.execute(query_str, check_naming=False, timeout=0.001)
 
 
 def test_query_complexity_error(client):
