@@ -1,6 +1,6 @@
 import unittest
 from typing import Any, Dict, List, Union
-
+import time
 
 def sample_ontology() -> Dict[str, Any]:
     return {
@@ -54,9 +54,8 @@ def test_create_ontology(client, project) -> None:
 
     removed = _remove_schema_ids(normalized_ontology)
     assert removed == sample_ontology()
-
+    time.sleep(30)
     ontology = project.ontology()
-
     tools = ontology.tools()
     assert tools
     for tool in tools:
