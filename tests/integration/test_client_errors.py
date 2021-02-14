@@ -45,7 +45,7 @@ def test_semantic_error(client):
 
 def test_timeout_error(client):
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-        client.execute("{datasets{id}}", check_naming=False, timeout=0.001)
+        client.execute("{roles{name}}", check_naming=False, timeout=0.001)
 
 
 def test_query_complexity_error(client):
