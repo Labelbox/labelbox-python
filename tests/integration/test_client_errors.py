@@ -1,6 +1,5 @@
 from multiprocessing.dummy import Pool
 import os
-from tests.integration.conftest import rand_gen
 import time
 
 import pytest
