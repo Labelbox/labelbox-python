@@ -1,5 +1,6 @@
 import unittest
 from typing import Any, Dict, List, Union
+from labelbox import LabelingFrontend
 import time
 
 
@@ -7,7 +8,7 @@ def sample_ontology() -> Dict[str, Any]:
     return {
         "tools": [{
             "required": False,
-            "name": "Dog",
+            "name": "Dog1",
             "color": "#FF0000",
             "tool": "rectangle",
             "classifications": []
@@ -16,9 +17,9 @@ def sample_ontology() -> Dict[str, Any]:
             "required":
                 True,
             "instructions":
-                "This is a question.",
+                "This is a question._",
             "name":
-                "this_is_a_question.",
+                "this_is_a_question._",
             "type":
                 "radio",
             "options": [{
@@ -35,6 +36,7 @@ def sample_ontology() -> Dict[str, Any]:
 def test_create_ontology(client, project) -> None:
     """ Tests that the ontology that a project was set up with can be grabbed."""
     frontend = list(client.get_labeling_frontends())[0]
+    frontend = list(client.get_labeling_frontends(where=LabelingFrontend.name == "Editor"))[0]
     project.setup(frontend, sample_ontology())
     normalized_ontology = project.ontology().normalized
 
@@ -55,7 +57,7 @@ def test_create_ontology(client, project) -> None:
 
     removed = _remove_schema_ids(normalized_ontology)
     assert removed == sample_ontology()
-    time.sleep(30)
+    time.sleep(60)
     ontology = project.ontology()
     tools = ontology.tools()
     assert tools
