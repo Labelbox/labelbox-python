@@ -43,9 +43,9 @@ def test_semantic_error(client):
     assert excinfo.value.message.startswith("Cannot query field \"bbb\"")
 
 
-#def test_timeout_error(client):
-#    with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-#        client.execute("{projects {id}}", check_naming=False, timeout=0.001)
+def test_timeout_error(client):
+    with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
+        client.execute("{projects {id}}", check_naming=False, timeout=0.001)
 
 
 def test_query_complexity_error(client):

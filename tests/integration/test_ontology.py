@@ -59,7 +59,7 @@ def test_create_ontology(client, project) -> None:
 
     removed = _remove_schema_ids(normalized_ontology)
     assert removed == sample_ontology()
-    time.sleep(60)
+    #time.sleep(60)
     ontology = project.ontology()
     tools = ontology.tools()
     assert tools
