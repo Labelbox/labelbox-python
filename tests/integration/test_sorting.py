@@ -3,7 +3,8 @@ import pytest
 from labelbox import Project
 
 
-@pytest.mark.skip
+@pytest.mark.xfail(reason="Relationship sorting not implemented correctly "
+                   "on the server-side")
 def test_relationship_sorting(client):
     a = client.create_project(name="a", description="b")
     b = client.create_project(name="b", description="c")
@@ -29,7 +30,6 @@ def test_relationship_sorting(client):
     c.delete()
 
 
+@pytest.mark.xfail(reason="Sorting not supported on top-level fetches")
 def test_top_level_sorting(client):
-    # TODO support sorting on top-level fetches
-    with pytest.raises(TypeError):
-        client.get_projects(order_by=Project.name.asc)
+    client.get_projects(order_by=Project.name.asc)

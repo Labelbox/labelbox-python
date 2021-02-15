@@ -1,4 +1,3 @@
-"""Client side object for interacting with the ontology."""
 import abc
 from dataclasses import dataclass
 
@@ -65,15 +64,20 @@ class Tool(OntologyEntity):
 
 
 class Ontology(DbObject):
-    """ A ontology specifies which tools and classifications are available
-    to a project.
+    """An ontology specifies which tools and classifications are available
+    to a project. This is read only for now.
 
-    NOTE: This is read only for now.
+    Attributes:
+        name (str)
+        description (str)
+        updated_at (datetime)
+        created_at (datetime)
+        normalized (json)
+        object_schema_count (int)
+        classification_schema_count (int)
 
-    >>> project = client.get_project(name="<project_name>")
-    >>> ontology = project.ontology()
-    >>> ontology.normalized
-
+        projects (Relationship): `ToMany` relationship to Project
+        created_by (Relationship): `ToOne` relationship to User
     """
 
     name = Field.String("name")
@@ -93,6 +97,7 @@ class Ontology(DbObject):
         self._classifications: Optional[List[Classification]] = None
 
     def tools(self) -> List[Tool]:
+        """Get list of tools (AKA objects) in an Ontology."""
         if self._tools is None:
             self._tools = [
                 Tool.from_json(tool) for tool in self.normalized['tools']
@@ -100,6 +105,7 @@ class Ontology(DbObject):
         return self._tools  # type: ignore
 
     def classifications(self) -> List[Classification]:
+        """Get list of classifications in an Ontology."""
         if self._classifications is None:
             self._classifications = [
                 Classification.from_json(classification)
