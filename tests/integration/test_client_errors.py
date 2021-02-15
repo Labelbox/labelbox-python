@@ -43,9 +43,17 @@ def test_semantic_error(client):
     assert excinfo.value.message.startswith("Cannot query field \"bbb\"")
 
 
-def test_timeout_error(client):
+def test_timeout_error(client, project):
+    time.sleep(60)  #Fails to connect if we don't wait
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-        client.execute("{projects {id}}", check_naming=False, timeout=0.001)
+        query_str = """query getOntology { 
+        project (where: {id: $%s}) { 
+            ontology { 
+                normalized 
+                } 
+            }
+        } """ % (project.uid)
+        client.execute(query_str, check_naming=False, timeout=0.01)
 
 
 def test_query_complexity_error(client):

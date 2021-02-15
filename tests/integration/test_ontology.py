@@ -1,5 +1,6 @@
 import unittest
 from typing import Any, Dict, List, Union
+from labelbox import LabelingFrontend
 
 
 def sample_ontology() -> Dict[str, Any]:
@@ -33,7 +34,9 @@ def sample_ontology() -> Dict[str, Any]:
 
 def test_create_ontology(client, project) -> None:
     """ Tests that the ontology that a project was set up with can be grabbed."""
-    frontend = list(client.get_labeling_frontends())[0]
+    frontend = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "Editor"))[0]
     project.setup(frontend, sample_ontology())
     normalized_ontology = project.ontology().normalized
 
