@@ -1,4 +1,15 @@
 # Changelog
+
+## In progress
+### Fix
+* Custom queries with bad syntax now raise adequate exceptions (InvalidQuery)
+* Comparing a Labelbox object (e.g. Project) to None doesn't raise an exception
+* Adding `order_by` to `Project.labels` doesn't raise an exception
+
+## Version 2.4.10 (2021-01-05)
+### Added 
+* SDK version added to request headers
+
 ## Version 2.4.9 (2020-11-09)
 ### Fix
 * 2.4.8 was broken for > Python 3.6
