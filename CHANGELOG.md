@@ -1,5 +1,5 @@
 # Changelog
-## Version 2.4.9 (2020-09-11)
+## Version 2.4.9 (2020-09-10)
 ### Fix
 * 2.4.8 was broken for > Python 3.6
 ### Added
