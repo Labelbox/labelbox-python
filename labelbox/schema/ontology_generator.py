@@ -10,6 +10,18 @@ Option.add_option() currently creates a new Classification object. however, this
             -> this is a lesser issue because the UI will not reflect the unavailable fields
     Is there an effective way to enforce limitations on Option.add_option()?
         -> Maybe a way to check if the Option itself has options when adding it to a Classification?
+
+Classification.add_.. 
+Tool.add_..
+Tool.add_..
+    Currently the above will let you input values to generate a new object, but they do not play well with already made objects
+    Example:
+        Classification.add_option(value=...) will work fine
+        
+        option = Option(value=...) 
+        Classification.add_option(option) will not work 
+
+    What is the best way to allow both the creation of both an object but also accept an already existing object?
 '''
 
 from dataclasses import dataclass, field
