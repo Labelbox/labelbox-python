@@ -1,29 +1,3 @@
-'''
-TODO
-Option.add_option() currently creates a new Classification object. however, this does not work for certain Classification options.
-    Example: 
-        Classification.Type.DROPDOWN -> the options for this class_type should only generate more nested dropdowns
-            -> Dropdowns are supposed to be removed moving forward, but this is a current problem
-            -> This is the most major issue because going to the doubly nested class will break the UI
-        Classification.Type.CHECKLIST & Classification.Type.TEXT-> the option cannot have a nested Classification. 
-            -> this reflects accurately in the UI without issues, but when you query via graphql, it shows what was input
-            -> this is a lesser issue because the UI will not reflect the unavailable fields
-    Is there an effective way to enforce limitations on Option.add_option()?
-        -> Maybe a way to check if the Option itself has options when adding it to a Classification?
-
-Classification.add_.. 
-Tool.add_..
-Tool.add_..
-    Currently the above will let you input values to generate a new object, but they do not play well with already made objects
-    Example:
-        Classification.add_option(value=...) will work fine
-        
-        option = Option(value=...) 
-        Classification.add_option(option) will not work 
-
-    What is the best way to allow both the creation of both an object but also accept an already existing object?
-'''
-
 from dataclasses import dataclass, field
 from enum import Enum, auto
 import os
@@ -61,15 +35,15 @@ class Option:
             value = dictionary["value"],
             schema_id = dictionary["schemaNodeId"],
             feature_schema_id = dictionary["featureSchemaId"],
-            options = [Classification.from_dict(nested_class) for nested_class in dictionary.get("options", [])]
+            options = [Classification.from_dict(o) for o in dictionary.get("options", [])]
         )
 
-    def add_option(self, *args, **kwargs):
-        new_option = Classification(*args, **kwargs)
-        if new_option.instructions in (c.instructions for c in self.options):
-            raise InconsistentOntologyException(f"Duplicate nested classification '{new_option.instructions}' for option '{self.label}'")
-        self.options.append(new_option)
-        return new_option
+    def add_option(self, new_o: 'Classification') -> 'Classification':
+        if new_o.instructions in (c.instructions for c in self.options):
+            #what is the best way to shorten exceptions?
+            raise InconsistentOntologyException(f"Duplicate nested classification '{new_o.instructions}' for option '{self.label}'")
+        self.options.append(new_o)
+        return new_o
     
 @dataclass
 class Classification:    
@@ -80,7 +54,7 @@ class Classification:
         RADIO = "radio"
         DROPDOWN = "dropdown"
 
-    _REQUIRES_OPTIONS = set((Type.CHECKLIST, Type.RADIO, Type.DROPDOWN))
+    _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
 
     class_type: Type
     instructions: str
@@ -94,7 +68,8 @@ class Classification:
         return self.instructions
 
     def asdict(self) -> Dict[str,str]:
-        if self.class_type in Classification._REQUIRES_OPTIONS and len(self.options) < 1:
+        #unsure how to shorten this specification
+        if self.class_type in Classification._REQUIRES_OPTIONS and len(self.options) < 1: 
             raise InconsistentOntologyException(f"Classification '{self.instructions}' requires options.")
         return {
             "type": self.class_type.value,
@@ -117,12 +92,11 @@ class Classification:
             feature_schema_id = dictionary["schemaNodeId"]
         )
 
-    def add_option(self, *args, **kwargs):
-        new_option = Option(*args, **kwargs)
-        if new_option.value in (o.value for o in self.options):
-            raise InconsistentOntologyException(f"Duplicate option '{new_option.value}' for classification '{self.name}'.")
-        self.options.append(new_option)
-        return new_option
+    def add_option(self, new_o: Option):
+        if new_o.value in (o.value for o in self.options):
+            raise InconsistentOntologyException(f"Duplicate option '{new_o.value}' for classification '{self.name}'.")
+        self.options.append(new_o)
+        return new_o
 
 @dataclass
 class Tool:
@@ -161,17 +135,17 @@ class Tool:
             schema_id = dictionary["schemaNodeId"],
             feature_schema_id = dictionary["featureSchemaId"],
             required = dictionary["required"],
-            tool = Tool.Type(dictionary["tool"]),   
+            tool = Tool.Type(dictionary["tool"]), 
+            #is there a way to shorten this classifications line at 140?  
             classifications = [Classification.from_dict(c) for c in dictionary["classifications"]],
             color = dictionary["color"]
         )
 
-    def add_nested_class(self, *args, **kwargs):
-        new_classification = Classification(*args, **kwargs)
-        if new_classification.instructions in (c.instructions for c in self.classifications):
-            raise InconsistentOntologyException(f"Duplicate nested classification '{new_classification.instructions}' for option '{self.label}'")
-        self.classifications.append(new_classification)
-        return new_classification        
+    def add_nested_class(self, new_c: Classification) -> Classification:
+        if new_c.instructions in (c.instructions for c in self.classifications):
+            raise InconsistentOntologyException(f"Duplicate nested classification '{new_c.instructions}' for option '{self.label}'")
+        self.classifications.append(new_c)
+        return new_c        
 
 @dataclass
 class Ontology:
@@ -192,31 +166,23 @@ class Ontology:
  
         return return_ontology
 
-    def add_tool(self, *args, **kwargs) -> Tool:        
-        new_tool = Tool(*args, **kwargs)
+    def add_tool(self, new_tool: Tool) -> Tool:
         if new_tool.name in (t.name for t in self.tools):
             raise InconsistentOntologyException(f"Duplicate tool name '{new_tool.name}'. ")
         self.tools.append(new_tool)
         return new_tool
-
-    def add_classification(self, *args, **kwargs) -> Classification:
-        new_classification = Classification(*args, **kwargs)    
-        if new_classification.instructions in (c.instructions for c in self.classifications):
-            raise InconsistentOntologyException(f"Duplicate classifications instructions '{new_classification.instructions}'. ")
-        self.classifications.append(new_classification)
-        return new_classification
+   
+    def add_classification(self, new_c: Classification) -> Classification:
+        if new_c.instructions in (c.instructions for c in self.classifications):
+            raise InconsistentOntologyException(f"Duplicate classifications instructions '{new_c.instructions}'. ")
+        self.classifications.append(new_c)
+        return new_c
 
     def asdict(self):
-        all_tools = []
-        all_classifications = []
-
-        for tool in self.tools:
-            all_tools.append(tool.asdict())
-
-        for classification in self.classifications:   
-            all_classifications.append(classification.asdict())
-
-        return {"tools": all_tools, "classifications": all_classifications}
+        return {
+            "tools": [t.asdict() for t in self.tools],
+            "classifications": [c.asdict() for c in self.classifications]
+        }
 
 if __name__ == "__main__":
     pass
