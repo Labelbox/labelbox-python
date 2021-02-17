@@ -26,8 +26,7 @@ class Option:
             "featureSchemaId": self.feature_schema_id,
             "label": self.label,
             "value": self.value,
-            "options": [c.asdict() for c in self.options]
-        }
+            "options": [c.asdict() for c in self.options]}
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str,Any]):
@@ -36,8 +35,7 @@ class Option:
             schema_id = dictionary["schemaNodeId"],
             feature_schema_id = dictionary["featureSchemaId"],
             options = [Classification.from_dict(o) 
-                       for o in dictionary.get("options", [])]
-        )
+                       for o in dictionary.get("options", [])])
 
     def add_option(self, option: 'Classification') -> 'Classification':
         if option.instructions in (c.instructions for c in self.options):
@@ -80,8 +78,7 @@ class Classification:
             "required": self.required,
             "options": [o.asdict() for o in self.options],
             "schemaNodeId": self.schema_id,
-            "featureSchemaId": self.feature_schema_id
-        }   
+            "featureSchemaId": self.feature_schema_id}   
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str,Any]): 
@@ -91,8 +88,7 @@ class Classification:
             required = dictionary["required"],
             options = [Option.from_dict(o) for o in dictionary["options"]],
             schema_id = dictionary["schemaNodeId"],
-            feature_schema_id = dictionary["schemaNodeId"]
-        )
+            feature_schema_id = dictionary["schemaNodeId"])
 
     def add_option(self, option: Option):
         if option.value in (o.value for o in self.options):
@@ -128,8 +124,7 @@ class Tool:
             "color": self.color,
             "classifications": [c.asdict() for c in self.classifications],
             "schemaNodeId": self.schema_id,
-            "featureSchemaId": self.feature_schema_id
-        }
+            "featureSchemaId": self.feature_schema_id}
 
     @classmethod 
     def from_dict(cls, dictionary: Dict[str,Any]):
@@ -141,8 +136,7 @@ class Tool:
             tool = Tool.Type(dictionary["tool"]), 
             classifications = [Classification.from_dict(c) 
                                for c in dictionary["classifications"]],
-            color = dictionary["color"]
-        )
+            color = dictionary["color"])
 
     def add_classification(self, classification: Classification):
         if classification.instructions in (c.instructions 
@@ -187,5 +181,4 @@ class Ontology:
     def asdict(self):
         return {
             "tools": [t.asdict() for t in self.tools],
-            "classifications": [c.asdict() for c in self.classifications]
-        }
+            "classifications": [c.asdict() for c in self.classifications]}
