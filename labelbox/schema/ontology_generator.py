@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 import os
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 from labelbox import Client, Project, Dataset, LabelingFrontend
 
@@ -20,7 +20,7 @@ class Option:
     def label(self):
         return self.value
     
-    def asdict(self) -> Dict[str, str]:
+    def asdict(self) -> Dict[str, Any]:
         return {
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
@@ -30,20 +30,21 @@ class Option:
         }
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str,str]):
+    def from_dict(cls, dictionary: Dict[str,Any]):
         return Option(
             value = dictionary["value"],
             schema_id = dictionary["schemaNodeId"],
             feature_schema_id = dictionary["featureSchemaId"],
-            options = [Classification.from_dict(o) for o in dictionary.get("options", [])]
+            options = [Classification.from_dict(o) 
+                       for o in dictionary.get("options", [])]
         )
 
-    def add_option(self, new_o: 'Classification') -> 'Classification':
-        if new_o.instructions in (c.instructions for c in self.options):
-            #what is the best way to shorten exceptions?
-            raise InconsistentOntologyException(f"Duplicate nested classification '{new_o.instructions}' for option '{self.label}'")
-        self.options.append(new_o)
-        return new_o
+    def add_option(self, option: 'Classification') -> 'Classification':
+        if option.instructions in (c.instructions for c in self.options):
+            raise InconsistentOntologyException(
+                f"Duplicate nested classification '{option.instructions}' "
+                f"for option '{self.label}'")
+        self.options.append(option)
     
 @dataclass
 class Classification:    
@@ -67,10 +68,11 @@ class Classification:
     def name(self):
         return self.instructions
 
-    def asdict(self) -> Dict[str,str]:
-        #unsure how to shorten this specification
-        if self.class_type in Classification._REQUIRES_OPTIONS and len(self.options) < 1: 
-            raise InconsistentOntologyException(f"Classification '{self.instructions}' requires options.")
+    def asdict(self) -> Dict[str,Any]:
+        if self.class_type in Classification._REQUIRES_OPTIONS \
+                and len(self.options) < 1: 
+            raise InconsistentOntologyException(
+                f"Classification '{self.instructions}' requires options.")
         return {
             "type": self.class_type.value,
             "instructions": self.instructions,
@@ -82,7 +84,7 @@ class Classification:
         }   
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str,str]): 
+    def from_dict(cls, dictionary: Dict[str,Any]): 
         return Classification(
             class_type = Classification.Type(dictionary["type"]),
             instructions = dictionary["instructions"],
@@ -92,11 +94,12 @@ class Classification:
             feature_schema_id = dictionary["schemaNodeId"]
         )
 
-    def add_option(self, new_o: Option):
-        if new_o.value in (o.value for o in self.options):
-            raise InconsistentOntologyException(f"Duplicate option '{new_o.value}' for classification '{self.name}'.")
-        self.options.append(new_o)
-        return new_o
+    def add_option(self, option: Option):
+        if option.value in (o.value for o in self.options):
+            raise InconsistentOntologyException(
+                f"Duplicate option '{option.value}' "
+                f"for classification '{self.name}'.")
+        self.options.append(option)
 
 @dataclass
 class Tool:
@@ -117,7 +120,7 @@ class Tool:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
 
-    def asdict(self) -> Dict[str,str]:
+    def asdict(self) -> Dict[str,Any]:
         return {
             "tool": self.tool.value,
             "name": self.name,
@@ -129,23 +132,25 @@ class Tool:
         }
 
     @classmethod 
-    def from_dict(cls, dictionary: Dict[str,str]):
+    def from_dict(cls, dictionary: Dict[str,Any]):
         return Tool(
             name = dictionary['name'],
             schema_id = dictionary["schemaNodeId"],
             feature_schema_id = dictionary["featureSchemaId"],
             required = dictionary["required"],
             tool = Tool.Type(dictionary["tool"]), 
-            #is there a way to shorten this classifications line at 140?  
-            classifications = [Classification.from_dict(c) for c in dictionary["classifications"]],
+            classifications = [Classification.from_dict(c) 
+                               for c in dictionary["classifications"]],
             color = dictionary["color"]
         )
 
-    def add_nested_class(self, new_c: Classification) -> Classification:
-        if new_c.instructions in (c.instructions for c in self.classifications):
-            raise InconsistentOntologyException(f"Duplicate nested classification '{new_c.instructions}' for option '{self.label}'")
-        self.classifications.append(new_c)
-        return new_c        
+    def add_classification(self, classification: Classification):
+        if classification.instructions in (c.instructions 
+                                           for c in self.classifications):
+            raise InconsistentOntologyException(
+                f"Duplicate nested classification '{classification.instructions}' "
+                f"for option '{self.label}'")
+        self.classifications.append(classification)      
 
 @dataclass
 class Ontology:
@@ -166,23 +171,21 @@ class Ontology:
  
         return return_ontology
 
-    def add_tool(self, new_tool: Tool) -> Tool:
-        if new_tool.name in (t.name for t in self.tools):
-            raise InconsistentOntologyException(f"Duplicate tool name '{new_tool.name}'. ")
-        self.tools.append(new_tool)
-        return new_tool
+    def add_tool(self, tool: Tool) -> Tool: 
+        if tool.name in (t.name for t in self.tools):
+            raise InconsistentOntologyException(
+                f"Duplicate tool name '{tool.name}'. ")
+        self.tools.append(tool)
    
-    def add_classification(self, new_c: Classification) -> Classification:
-        if new_c.instructions in (c.instructions for c in self.classifications):
-            raise InconsistentOntologyException(f"Duplicate classifications instructions '{new_c.instructions}'. ")
-        self.classifications.append(new_c)
-        return new_c
+    def add_classification(self, classification: Classification) -> Classification:
+        if classification.instructions in (c.instructions 
+                                           for c in self.classifications):
+            raise InconsistentOntologyException(
+                f"Duplicate classifications instructions '{classification.instructions}'. ")
+        self.classifications.append(classification)
 
     def asdict(self):
         return {
             "tools": [t.asdict() for t in self.tools],
             "classifications": [c.asdict() for c in self.classifications]
         }
-
-if __name__ == "__main__":
-    pass
