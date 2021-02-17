@@ -1,24 +1,26 @@
-from collections import namedtuple
-from datetime import datetime, timezone
 import json
 import logging
-from pathlib import Path
 import time
-from typing import Union, Iterable
+from collections import namedtuple
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Union, Iterable, Tuple, Optional
 from urllib.parse import urlparse
 
 from labelbox import utils
-from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.data_row import DataRow
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
 except AttributeError:
     from backports.datetime_fromisoformat import MonkeyPatch
+
     MonkeyPatch.patch_fromisoformat()
 
 logger = logging.getLogger(__name__)
@@ -96,7 +98,7 @@ class Project(DbObject, Updateable, Deletable):
                                                     0.0)
         data = {
             Label.attribute(attr) if isinstance(attr, str) else attr:
-            value.uid if isinstance(value, DbObject) else value
+                value.uid if isinstance(value, DbObject) else value
             for attr, value in kwargs.items()
         }
 
@@ -173,7 +175,7 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def labeler_performance(self):
+    def labeler_performance(self) -> PaginatedCollection:
         """ Returns the labeler performances for this Project.
 
         Returns:
@@ -200,25 +202,32 @@ class Project(DbObject, Updateable, Deletable):
                                    ["project", "labelerPerformance"],
                                    create_labeler_performance)
 
-    def review_metrics(self, net_score):
+    def review_metrics(self, net_score: Optional["Entity.Review.NetScore"]) -> int:
         """ Returns this Project's review metrics.
 
         Args:
             net_score (None or Review.NetScore): Indicates desired metric.
         Returns:
-            int, aggregation count of reviews for given `net_score`.
+            count (int): count of reviews for given `net_score`.
         """
-        if net_score not in (None,) + tuple(Entity.Review.NetScore):
+
+        if net_score is None:
+            net_score_literal = "None"
+        elif net_score in (Entity.Review.NetScore,):  # TODO: construct union type?
+            net_score_literal = net_score.name
+        else:
             raise InvalidQueryError(
                 "Review metrics net score must be either None "
-                "or one of Review.NetScore values")
+                "or one of Review.NetScore values"
+            )
+
         id_param = "projectId"
-        net_score_literal = "None" if net_score is None else net_score.name
         query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
             project(where: {id:$%s})
             {reviewMetrics {labelAggregate(netScore: %s) {count}}}
         }""" % (id_param, id_param, net_score_literal)
         res = self.client.execute(query_str, {id_param: self.uid})
+
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
     def setup(self, labeling_frontend, labeling_frontend_options):
@@ -249,7 +258,7 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def set_labeling_parameter_overrides(self, data):
+    def set_labeling_parameter_overrides(self, data: Iterable[Tuple[DataRow, int, Optional[int]]]) -> bool:
         """ Adds labeling parameter overrides to this project.
 
             >>> project.set_labeling_parameter_overrides([
@@ -257,57 +266,81 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority, numberOfLabels) for the new override.
+                (DataRow, priority <int>, numberOfLabels <int>) for the new override.
         Returns:
-            bool, indicates if the operation was a success.
+            success (bool): indicates if the operation was a success.
         """
+
+        # TODO: create validate func
+        for data_row, priority, num_labels in data:
+            # TODO: is None allowed?
+            if not isinstance(priority, int):
+                raise InvalidQueryError(f"priority must be an int, got {priority}")
+
+            # TODO: is None allowed?
+            if num_labels:
+                if num_labels < 0:
+                    raise InvalidQueryError(
+                        f"NumberOfLabels cannot be less than 0, ({data_row.uid}, {priority}, {num_labels})"
+                    )
+
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
             (data_row.uid, priority, num_labels)
-            for data_row, priority, num_labels in data)
+            for data_row, priority, num_labels in data
+        )
+
         id_param = "projectId"
-        query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
-            project(where: { id: $%s }) {setLabelingParameterOverrides
-            (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
+        query_str = f"""mutation SetLabelingParameterOverridesPyApi(${id_param}: ID!){{
+            project(where: {{ id: ${id_param} }}) {{setLabelingParameterOverrides
+            (data: [{data_str}]) {{success}}}}}}"""
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    def unset_labeling_parameter_overrides(self, data_rows):
+    def unset_labeling_parameter_overrides(self, data_rows: Iterable[DataRow]) -> bool:
         """ Removes labeling parameter overrides to this project.
 
         Args:
             data_rows (iterable): An iterable of DataRows.
         Returns:
-            bool, indicates if the operation was a success.
+            success (bool): indicates if the operation was a success.
         """
         id_param = "projectId"
         query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s}) {
             unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
             id_param, id_param, ",\n".join(
-                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
+                "{dataRowId: \"%s\"}" % row.uid for row in data_rows)
+        )
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
-    def upsert_review_queue(self, quota_factor):
+    def upsert_review_queue(self, quota_factor: float):
         """ Reinitiates the review queue for this project.
 
         Args:
             quota_factor (float): Which part (percentage) of the queue
                 to reinitiate. Between 0 and 1.
         """
+        if (quota_factor > 1.) or (quota_factor < 0.):
+            raise InvalidQueryError(f"quota_factor must be a float between 0 and 1, got {quota_factor}")
+
         id_param = "projectId"
         quota_param = "quotaFactor"
-        query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
-            upsertReviewQueue(where:{project: {id: $%s}}
-                            data:{quotaFactor: $%s}) {id}}""" % (
-            id_param, quota_param, id_param, quota_param)
-        res = self.client.execute(query_str, {
-            id_param: self.uid,
-            quota_param: quota_factor
-        })
 
-    def extend_reservations(self, queue_type):
+        query_str = f"""mutation UpsertReviewQueuePyApi(${id_param}: ID!, ${quota_param}: Float!){{
+            upsertReviewQueue(where:{{project: {{id: ${id_param}}}}} data:{{quotaFactor: ${quota_param}}})
+             {{id}}}}
+        """
+        self.client.execute(
+            query_str,
+            {
+                id_param: self.uid,
+                quota_param: quota_factor
+            }
+        )
+
+    def extend_reservations(self, queue_type: str):
         """ Extends all the current reservations for the current user on the given
         queue type.
 
@@ -316,6 +349,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             int, the number of reservations that were extended.
         """
+        # TODO: should we be defining these somewhere?
         if queue_type not in ("LabelingQueue", "ReviewQueue"):
             raise InvalidQueryError("Unsupported queue type: %s" % queue_type)
 
@@ -372,13 +406,11 @@ class Project(DbObject, Updateable, Deletable):
         data_row_param = "data_row_id"
 
         Prediction = Entity.Prediction
-        query_str = """mutation CreatePredictionPyApi(
-            $%s: String!, $%s: ID!, $%s: ID!, $%s: ID!) {createPrediction(
-            data: {label: $%s, predictionModelId: $%s, projectId: $%s,
-                   dataRowId: $%s})
-            {%s}}""" % (label_param, model_param, project_param, data_row_param,
-                        label_param, model_param, project_param, data_row_param,
-                        query.results_query_part(Prediction))
+        query_str = f"""mutation CreatePredictionPyApi(
+            ${label_param}: String!, ${model_param}: ID!, ${project_param}: ID!, ${data_row_param}: ID!) {{createPrediction(
+            data: {{label: ${label_param}, predictionModelId: ${model_param}, projectId: ${project_param},
+                   dataRowId: ${data_row_param}}})
+            {{{query.results_query_part(Prediction)}}}}}"""
         params = {
             label_param: label,
             model_param: prediction_model.uid,
@@ -388,17 +420,24 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, params)
         return Prediction(self.client, res["createPrediction"])
 
-    def enable_model_assisted_labeling(self, toggle: bool = True) -> bool:
-        """ Turns model assisted labeling either on or off based on input
+    def enable_model_assisted_labeling(self, toggle: Optional[bool] = None) -> bool:
+        """ Turns model assisted labeling (MAL) either on or off based on input
 
         Args:
             toggle (bool): True or False boolean
         Returns:
             True if toggled on or False if toggled off
         """
+
+        if toggle is not None:
+            # TODO: when is future?
+            raise DeprecationWarning("The function will not accept an argument in the future,"
+                                     " use `disable_model_assisted_labeling` to toggle off")
+        else:
+            toggle = True
+
         project_param = "project_id"
         show_param = "show"
-
         query_str = """mutation toggle_model_assisted_labelingPyApi($%s: ID!, $%s: Boolean!) {
             project(where: {id: $%s }) {
                 showPredictionsToLabelers(show: $%s) {
@@ -413,10 +452,28 @@ class Project(DbObject, Updateable, Deletable):
         return res["project"]["showPredictionsToLabelers"][
             "showingPredictionsToLabelers"]
 
+    def disable_model_assisted_labeling(self):
+        """Disable model assisted labeling (MAL)
+
+        TODO: ideally this should return nothing?
+
+        """
+        project_param = "project_id"
+        show_param = "show"
+        query_str = """mutation toggle_model_assisted_labelingPyApi($%s: ID!, $%s: Boolean!) {
+            project(where: {id: $%s }) {
+                showPredictionsToLabelers(show: $%s) {
+                    id, showingPredictionsToLabelers
+                }
+            }
+        }""" % (project_param, show_param, project_param, show_param)
+
+        res = self.client.execute(query_str, {project_param: self.uid, show_param: False})
+
     def upload_annotations(
-        self,
-        name: str,
-        annotations: Union[str, Union[str, Path], Iterable[dict]],
+            self,
+            name: str,
+            annotations: Union[str, Path, Iterable[dict]],
     ) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
@@ -490,7 +547,7 @@ class LabelingParameterOverride(DbObject):
 
 
 LabelerPerformance = namedtuple(
-    "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-    "consensus average_benchmark_agreement last_activity_time")
+    "LabelerPerformance", "user count seconds_per_label total_time_labeling "
+                          "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
