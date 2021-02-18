@@ -26,7 +26,7 @@ class Option:
             "featureSchemaId": self.feature_schema_id,
             "label": self.label,
             "value": self.value,
-            "options": [c.asdict() for c in self.options]}
+            "options": [o.asdict() for o in self.options]}
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str,Any]):
@@ -38,7 +38,7 @@ class Option:
                        for o in dictionary.get("options", [])])
 
     def add_option(self, option: 'Classification') -> 'Classification':
-        if option.instructions in (c.instructions for c in self.options):
+        if option.instructions in (o.instructions for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{option.instructions}' "
                 f"for option '{self.label}'")
