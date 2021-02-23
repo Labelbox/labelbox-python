@@ -7,6 +7,14 @@ class Webhook(DbObject, Updateable):
     """ Represents a server-side rule for sending notifications to a web-server
     whenever one of several predefined actions happens within a context of
     a Project or an Organization.
+
+    Attributes:
+        updated_at (datetime)
+        created_at (datetime)
+        url (str)
+        topics (str): LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED
+        status (str): ACTIVE, INACTIVE, REVOKED
+
     """
 
     # Status
@@ -59,7 +67,7 @@ class Webhook(DbObject, Updateable):
 
     def update(self, topics=None, url=None, status=None):
         """ Updates this Webhook.
-        
+
         Args:
             topics (list of str): The new topics value, optional.
             url (str): The new URL value, optional.

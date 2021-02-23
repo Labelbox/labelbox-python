@@ -43,9 +43,17 @@ def test_semantic_error(client):
     assert excinfo.value.message.startswith("Cannot query field \"bbb\"")
 
 
-def test_timeout_error(client):
+def test_timeout_error(client, project):
+    time.sleep(60)  #Fails to connect if we don't wait
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-        client.execute("{projects {id}}", check_naming=False, timeout=0.001)
+        query_str = """query getOntology { 
+        project (where: {id: $%s}) { 
+            ontology { 
+                normalized 
+                } 
+            }
+        } """ % (project.uid)
+        client.execute(query_str, check_naming=False, timeout=0.01)
 
 
 def test_query_complexity_error(client):
@@ -103,7 +111,9 @@ def test_invalid_attribute_error(client, rand_gen):
     project.delete()
 
 
-@pytest.mark.skip
+@pytest.mark.slow
+# TODO improve consistency
+@pytest.mark.skip(reason="Inconsistent test")
 def test_api_limit_error(client, rand_gen):
     project_id = client.create_project(name=rand_gen(str)).uid
 
@@ -114,7 +124,7 @@ def test_api_limit_error(client, rand_gen):
             return e
 
     with Pool(300) as pool:
-        results = pool.map(get, list(range(1000)))
+        results = pool.map(get, list(range(2000)))
 
     assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
 
