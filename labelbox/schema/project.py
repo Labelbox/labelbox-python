@@ -27,6 +27,29 @@ logger = logging.getLogger(__name__)
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
+
+    Attributes:
+        name (str)
+        description (str)
+        updated_at (datetime)
+        created_at (datetime)
+        setup_complete (datetime)
+        last_activity_time (datetime)
+        auto_audit_number_of_labels (int)
+        auto_audit_percentage (float)
+
+        datasets (Relationship): `ToMany` relationship to Dataset
+        created_by (Relationship): `ToOne` relationship to User
+        organization (Relationship): `ToOne` relationship to Organization
+        reviews (Relationship): `ToMany` relationship to Review
+        labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
+        labeling_frontend_options (Relationship): `ToMany` relationship to LabelingFrontendOptions
+        labeling_parameter_overrides (Relationship): `ToMany` relationship to LabelingParameterOverride
+        webhooks (Relationship): `ToMany` relationship to Webhook
+        benchmarks (Relationship): `ToMany` relationship to Benchmark
+        active_prediction_model (Relationship): `ToOne` relationship to PredictionModel
+        predictions (Relationship): `ToMany` relationship to Prediction
+        ontology (Relationship): `ToOne` relationship to Ontology
     """
     name = Field.String("name")
     description = Field.String("description")
@@ -55,11 +78,10 @@ class Project(DbObject, Updateable, Deletable):
     ontology = Relationship.ToOne("Ontology", True)
 
     def create_label(self, **kwargs):
-        """ Creates a label on a Legacy Editor project. Not
-            supported in the new Editor.
+        """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
 
-        Kwargs:
-            Label attributes. At the minimum the label `DataRow`.
+        Args:
+            **kwargs: Label attributes. At minimum, the label `DataRow`.
         """
         # Copy-paste of Client._create code so we can inject
         # a connection to Type. Type objects are on their way to being
@@ -86,8 +108,7 @@ class Project(DbObject, Updateable, Deletable):
         return Label(self.client, res["createLabel"])
 
     def labels(self, datasets=None, order_by=None):
-        """
-        Custom relationship expansion method to support limited filtering.
+        """ Custom relationship expansion method to support limited filtering.
 
         Args:
             datasets (iterable of Dataset): Optional collection of Datasets
@@ -113,7 +134,7 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """query GetProjectLabelsPyApi($%s: ID!)
             {project (where: {id: $%s})
-                {labels (skip: %%d first: %%d%s%s) {%s}}}""" % (
+                {labels (skip: %%d first: %%d %s %s) {%s}}}""" % (
             id_param, id_param, where, order_by_str,
             query.results_query_part(Label))
 
@@ -129,9 +150,8 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
-            URL of the data file with this Project's labels. If the server
-                didn't generate during the `timeout_seconds` period, None
-                is returned.
+            URL of the data file with this Project's labels. If the server didn't
+            generate during the `timeout_seconds` period, None is returned.
         """
         sleep_time = 2
         id_param = "projectId"
@@ -186,7 +206,7 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             net_score (None or Review.NetScore): Indicates desired metric.
         Returns:
-            int, aggregation count of reviews for given net_score.
+            int, aggregation count of reviews for given `net_score`.
         """
         if net_score not in (None,) + tuple(Entity.Review.NetScore):
             raise InvalidQueryError(
@@ -230,7 +250,7 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def set_labeling_parameter_overrides(self, data):
-        """ Adds labeling parameter overrides to this project. Example:
+        """ Adds labeling parameter overrides to this project.
 
             >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
@@ -307,12 +327,12 @@ class Project(DbObject, Updateable, Deletable):
         return res["extendReservations"]
 
     def create_prediction_model(self, name, version):
-        """ Creates a PredictionModel connected to a Legacy Editor
-            Project.
+        """ Creates a PredictionModel connected to a Legacy Editor Project.
+
         Args:
             name (str): The new PredictionModel's name.
             version (int): The new PredictionModel's version.
-        Return:
+        Returns:
             A newly created PredictionModel.
         """
         PM = Entity.PredictionModel
@@ -324,8 +344,9 @@ class Project(DbObject, Updateable, Deletable):
         return model
 
     def create_prediction(self, label, data_row, prediction_model=None):
-        """ Creates a Prediction within a Legacy Editor Project.
-        
+        """ Creates a Prediction within a Legacy Editor Project. Not supported
+        in the new Editor.
+
         Args:
             label (str): The `label` field of the new Prediction.
             data_row (DataRow): The DataRow for which the Prediction is created.
@@ -367,33 +388,30 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, params)
         return Prediction(self.client, res["createPrediction"])
 
-    def enable_model_assisted_labeling(self, toggle: bool=True) -> bool:
+    def enable_model_assisted_labeling(self, toggle: bool = True) -> bool:
         """ Turns model assisted labeling either on or off based on input
 
         Args:
-            toggle (Boolean): True or False boolean 
+            toggle (bool): True or False boolean
         Returns:
             True if toggled on or False if toggled off
         """
-
         project_param = "project_id"
         show_param = "show"
 
         query_str = """mutation toggle_model_assisted_labelingPyApi($%s: ID!, $%s: Boolean!) {
             project(where: {id: $%s }) {
-                showPredictionsToLabelers(show: $%s) { 
+                showPredictionsToLabelers(show: $%s) {
                     id, showingPredictionsToLabelers
                 }
             }
-        }""" % (project_param, show_param,project_param, show_param)
+        }""" % (project_param, show_param, project_param, show_param)
 
-        params = {
-            project_param: self.uid, 
-            show_param: toggle
-        }
+        params = {project_param: self.uid, show_param: toggle}
 
         res = self.client.execute(query_str, params)
-        return res["project"]["showPredictionsToLabelers"]["showingPredictionsToLabelers"]
+        return res["project"]["showPredictionsToLabelers"][
+            "showingPredictionsToLabelers"]
 
     def upload_annotations(
         self,
@@ -403,15 +421,14 @@ class Project(DbObject, Updateable, Deletable):
         """ Uploads annotations to a new Editor project.
 
         Args:
-            name: name of the BulkImportRequest job
-            annotations:
+            name (str): name of the BulkImportRequest job
+            annotations (str or Path or Iterable):
                 url that is publicly accessible by Labelbox containing an
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
         Returns:
             BulkImportRequest
-
         """
         if isinstance(annotations, str) or isinstance(annotations, Path):
 
@@ -460,7 +477,14 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
 
+
 class LabelingParameterOverride(DbObject):
+    """ Customizes the order of assets in the label queue.
+
+    Attributes:
+        priority (int): A prioritization score.
+        number_of_labels (int): Number of times an asset should be labeled.
+    """
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
 

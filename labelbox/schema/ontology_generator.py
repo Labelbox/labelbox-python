@@ -3,7 +3,7 @@ from enum import Enum, auto
 import os
 from typing import List, Optional, Dict, Any
 
-from labelbox import Client, Project, Dataset, LabelingFrontend, InconsistentOntologyException
+from labelbox import Client, Project, Dataset, LabelingFrontend
 
 
 class InconsistentOntologyException(Exception):

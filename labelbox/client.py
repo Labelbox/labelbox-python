@@ -19,6 +19,7 @@ from labelbox.schema.dataset import Dataset
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,11 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
-    """ A Labelbox client. Contains info necessary for connecting to
-    a Labelbox server (URL, authentication key). Provides functions for
-    querying and creating top-level data objects (Projects, Datasets).
+    """ A Labelbox client.
+
+    Contains info necessary for connecting to a Labelbox server (URL,
+    authentication key). Provides functions for querying and creating
+    top-level data objects (Projects, Datasets).
     """
 
     def __init__(self,
@@ -36,23 +39,20 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql'):
         """ Creates and initializes a Labelbox Client.
 
-            Logging is defaulted to level WARNING. To receive more verbose
-                output to console, update logging.level to the
-                appropriate level.
+        Logging is defaulted to level WARNING. To receive more verbose
+        output to console, update `logging.level` to the appropriate level.
 
-            >>> import logger
-            >>> logging.basicConfig(level = logging.INFO)
-            >>> client = Client("<APIKEY>")
+        >>> import logger
+        >>> logging.basicConfig(level = logging.INFO)
+        >>> client = Client("<APIKEY>")
 
         Args:
-            api_key (str): API key. If None, the key is obtained from
-                the "LABELBOX_API_KEY" environment variable.
+            api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
-
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
@@ -67,15 +67,18 @@ class Client:
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer %s' % api_key
+            'Authorization': 'Bearer %s' % api_key,
+            'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
         """ Sends a request to the server for the execution of the
-        given query. Checks the response for errors and wraps errors
-        in appropriate labelbox.exceptions.LabelboxError subtypes.
+        given query.
+
+        Checks the response for errors and wraps errors
+        in appropriate `labelbox.exceptions.LabelboxError` subtypes.
 
         Args:
             query (str): The query to execute.
@@ -138,6 +141,10 @@ class Client:
             error_502 = '502 Bad Gateway'
             if error_502 in response.text:
                 raise labelbox.exceptions.InternalServerError(error_502)
+            if "upstream connect error or disconnect/reset before headers" \
+                    in response.text:
+                raise labelbox.exceptions.InternalServerError(
+                    "Connection reset")
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
@@ -185,11 +192,27 @@ class Client:
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
-        prisma_error = check_errors(["INTERNAL_SERVER_ERROR"], "extensions",
-                                    "code")
-        if prisma_error:
-            raise labelbox.exceptions.InternalServerError(
-                prisma_error["message"])
+        resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
+                                                "extensions", "exception",
+                                                "code")
+        if resource_not_found_error is not None:
+            # Return None and let the caller methods raise an exception
+            # as they already know which resource type and ID was requested
+            return None
+
+        # A lot of different error situations are now labeled serverside
+        # as INTERNAL_SERVER_ERROR, when they are actually client errors.
+        # TODO: fix this in the server API
+        internal_server_error = check_errors(["INTERNAL_SERVER_ERROR"],
+                                             "extensions", "code")
+        if internal_server_error is not None:
+            message = internal_server_error.get("message")
+
+            if message.startswith("Syntax Error"):
+                raise labelbox.exceptions.InvalidQueryError(message)
+
+            else:
+                raise labelbox.exceptions.InternalServerError(message)
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
@@ -219,7 +242,6 @@ class Client:
             str, the URL of uploaded data.
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
-
         """
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
@@ -297,7 +319,7 @@ class Client:
         """
         query_str, params = query.get_single(db_object_type, uid)
         res = self.execute(query_str, params)
-        res = res[utils.camel_case(db_object_type.type_name())]
+        res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 db_object_type, params)
@@ -336,8 +358,8 @@ class Client:
 
     def get_user(self):
         """ Gets the current User database object.
-            >>> user = client.get_user()
 
+            >>> user = client.get_user()
         """
         return self._get_single(User, None)
 
@@ -434,16 +456,15 @@ class Client:
         return db_object_type(self, res)
 
     def create_dataset(self, **kwargs):
-        """ Creates a Dataset object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates a Dataset object on the server.
 
-            >>> project = client.get_project("<project_uid>")
-            >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
+        Attribute values are passed as keyword arguments.
 
-        Kwargs:
-            Keyword arguments with new Dataset attribute values.
-            Keys are attribute names (in Python, snake-case convention) and
-            values are desired attribute values.
+        >>> project = client.get_project("<project_uid>")
+        >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
+
+        Args:
+            **kwargs: Keyword arguments with Dataset attribute values.
         Returns:
             A new Dataset object.
         Raises:
@@ -453,15 +474,14 @@ class Client:
         return self._create(Dataset, kwargs)
 
     def create_project(self, **kwargs):
-        """ Creates a Project object on the server. Attribute values are
-            passed as keyword arguments:
+        """ Creates a Project object on the server.
 
-            >>> project = client.create_project(name="<project_name>", description="<project_description>")
+        Attribute values are passed as keyword arguments.
 
-        Kwargs:
-            Keyword arguments with new Project attribute values.
-            Keys are attribute names (in Python, snake-case convention) and
-            values are desired attribute values.
+        >>> project = client.create_project(name="<project_name>", description="<project_description>")
+
+        Args:
+            **kwargs: Keyword arguments with Project attribute values.
         Returns:
             A new Project object.
         Raises:

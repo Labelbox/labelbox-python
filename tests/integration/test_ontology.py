@@ -1,9 +1,10 @@
 # import unittest
 import pytest
 from typing import Any, Dict, List, Union
+from labelbox import LabelingFrontend
 
 #want to import ontology_generator.py properly, not the bad way we are currently doing
-from ontology_generator import Ontology, Tool, Classification, Option
+from labelbox.schema.ontology_generator import Ontology, Tool, Classification, Option, InconsistentOntologyException
 
 
 def sample_ontology() -> Dict[str, Any]:
@@ -121,45 +122,47 @@ def test_create_ontology() -> None:
     o = Ontology()
     assert(o.tools == [])
     assert(o.classifications == [])
-    
 
-# def test_create_ontology(client, project) -> None:
-#     """ Tests that the ontology that a project was set up with can be grabbed."""
-#     frontend = list(client.get_labeling_frontends())[0]
-#     project.setup(frontend, sample_ontology())
-#     normalized_ontology = project.ontology().normalized
+def test_create_ontology(client, project) -> None:
+    """ Tests that the ontology that a project was set up with can be grabbed."""
+    frontend = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "Editor"))[0]
+    project.setup(frontend, sample_ontology())
+    normalized_ontology = project.ontology().normalized
 
-#     def _remove_schema_ids(
-#             ontology_part: Union[List, Dict[str, Any]]) -> Dict[str, Any]:
-#         """ Recursively scrub the normalized ontology of any schema information."""
-#         removals = {'featureSchemaId', 'schemaNodeId'}
+    def _remove_schema_ids(
+            ontology_part: Union[List, Dict[str, Any]]) -> Dict[str, Any]:
+        """ Recursively scrub the normalized ontology of any schema information."""
+        removals = {'featureSchemaId', 'schemaNodeId'}
 
-#         if isinstance(ontology_part, list):
-#             return [_remove_schema_ids(part) for part in ontology_part]
-#         if isinstance(ontology_part, dict):
-#             return {
-#                 key: _remove_schema_ids(value)
-#                 for key, value in ontology_part.items()
-#                 if key not in removals
-#             }
-#         return ontology_part
+        if isinstance(ontology_part, list):
+            return [_remove_schema_ids(part) for part in ontology_part]
+        if isinstance(ontology_part, dict):
+            return {
+                key: _remove_schema_ids(value)
+                for key, value in ontology_part.items()
+                if key not in removals
+            }
+        return ontology_part
 
-#     removed = _remove_schema_ids(normalized_ontology)
-#     assert removed == sample_ontology()
+    removed = _remove_schema_ids(normalized_ontology)
+    assert removed == sample_ontology()
 
-#     ontology = project.ontology()
+    ontology = project.ontology()
 
-#     tools = ontology.tools()
-#     assert tools
-#     for tool in tools:
-#         assert tool.feature_schema_id
-#         assert tool.schema_node_id
+    tools = ontology.tools()
+    assert tools
+    for tool in tools:
+        assert tool.feature_schema_id
+        assert tool.schema_node_id
 
-#     classifications = ontology.classifications()
-#     assert classifications
-#     for classification in classifications:
-#         assert classification.feature_schema_id
-#         assert classification.schema_node_id
-#         for option in classification.options:
-#             assert option.feature_schema_id
-#             assert option.schema_node_id
+    classifications = ontology.classifications()
+    assert classifications
+    for classification in classifications:
+        assert classification.feature_schema_id
+        assert classification.schema_node_id
+        for option in classification.options:
+            assert option.feature_schema_id
+            assert option.schema_node_id
+
