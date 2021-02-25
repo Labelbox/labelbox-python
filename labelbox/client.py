@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+from labelbox.schema.ontology import Ontology
 import logging
 import mimetypes
 import os
@@ -71,6 +72,7 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
+    #TODO: Add exponential backoff so we don'tt overwhelm the api
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=10.0):
@@ -126,25 +128,23 @@ class Client:
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
-
         except requests.exceptions.RequestException as e:
             logger.error("Unknown error: %s", str(e))
             raise labelbox.exceptions.NetworkError(e)
-
         except Exception as e:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
-
         try:
             r_json = response.json()
         except:
-            error_502 = '502 Bad Gateway'
-            if error_502 in response.text:
-                raise labelbox.exceptions.InternalServerError(error_502)
             if "upstream connect error or disconnect/reset before headers" \
                     in response.text:
                 raise labelbox.exceptions.InternalServerError(
                     "Connection reset")
+            elif response.status_code == 502:
+                error_502 = '502 Bad Gateway'
+                raise labelbox.exceptions.InternalServerError(error_502)
+
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
@@ -189,6 +189,7 @@ class Client:
 
         # Check if API limit was exceeded
         response_msg = r_json.get("message", "")
+
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
@@ -292,7 +293,6 @@ class Client:
                 "1": (filename, content, content_type) if
                      (filename and content_type) else content
             })
-
         try:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON
@@ -415,6 +415,12 @@ class Client:
         """
         return self._get_all(Dataset, where)
 
+    def get_ontologies(self, where=None):
+        """
+        #TODO
+        """
+        return self._get_all(Ontology, where)
+
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
 
@@ -473,7 +479,9 @@ class Client:
         """
         return self._create(Dataset, kwargs)
 
-    def create_project(self, **kwargs):
+    def create_project(self,
+                       ontology=None,
+                       **kwargs):  #<<<<<   TODO: Do we want that signature
         """ Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.

@@ -221,6 +221,16 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
+    def setup_from_ontology(self, ontology):
+        """
+        * An ontology is a specific kind of a labeling frontend option that is compatible with the Editor.
+        * Most customers use this interface
+        """
+        frontend = list(
+            client.get_labeling_frontends(
+                where=LabelingFrontend.name == "Editor"))[0]
+        return self.setup(frontend, ontology.normalized)
+
     def setup(self, labeling_frontend, labeling_frontend_options):
         """ Finalizes the Project setup.
 

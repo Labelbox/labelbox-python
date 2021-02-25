@@ -35,7 +35,6 @@ class LabelingFrontendOptions(DbObject):
         organization (Relationship): `ToOne` relationship to Organization
     """
     customization_options = Field.String("customization_options")
-
     project = Relationship.ToOne("Project")
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     organization = Relationship.ToOne("Organization")
