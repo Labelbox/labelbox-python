@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 import json
-from labelbox.schema.ontology import Ontology
 import logging
 import mimetypes
 import os
@@ -415,12 +414,6 @@ class Client:
         """
         return self._get_all(Dataset, where)
 
-    def get_ontologies(self, where=None):
-        """
-        #TODO
-        """
-        return self._get_all(Ontology, where)
-
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
 
@@ -479,9 +472,7 @@ class Client:
         """
         return self._create(Dataset, kwargs)
 
-    def create_project(self,
-                       ontology=None,
-                       **kwargs):  #<<<<<   TODO: Do we want that signature
+    def create_project(self, **kwargs):
         """ Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
