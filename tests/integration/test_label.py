@@ -1,3 +1,4 @@
+from labelbox.schema.labeling_frontend import LabelingFrontend
 import time
 
 import pytest
@@ -30,18 +31,22 @@ def test_labels(label_pack):
     assert list(data_row.labels()) == []
 
 
-# TODO check if this is supported or not
-@pytest.mark.skip
-def test_label_export(label_pack):
+def test_label_export(client, label_pack):
     project, dataset, data_row, label = label_pack
-    project.create_label(data_row=data_row, label="l2")
-
-    exported_labels_url = project.export_labels(5)
+    #Old create_label works even with projects setup using the new editor.
+    #It will appear in the export, just not in the new editor
+    project.create_label(data_row=data_row, label="export_label")
+    #Project has to be setup for export to be possible
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    empty_ontology = {"tools": [], "classifications": []}
+    project.setup(editor, empty_ontology)
+    exported_labels_url = project.export_labels()
     assert exported_labels_url is not None
-    if exported_labels_url is not None:
-        exported_labels = requests.get(exported_labels_url)
-        # TODO check content
-        assert False
+    exported_labels = requests.get(exported_labels_url)
+    labels = [example['Label'] for example in exported_labels.json()]
+    assert 'export_label' in labels
 
 
 def test_label_update(label_pack):

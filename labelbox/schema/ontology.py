@@ -63,6 +63,51 @@ class Tool(OntologyEntity):
         return cls(**_dict)
 
 
+"""
+* The reason that an ontology is read only is because it is a second class citizen to labeling front end options.
+** This is because it is a more specific implementation of this.
+
+- However, we want to support ontologies as if they were labeling front ends.
+- With this special relationship we can override the default behavior to mock the appropriate changes to the labeling front end
+
+
+###Note: The only problem is that you can't just create a stand alone ontology. right? 
+# - Since you need to create a project and query the project ontology before one exists.
+
+^^^^^^^ This is the worst. Even with hackery, you can't force a DB entry without create a new proj :(
+     However, labeling front-ends cannot be created without projects either! So maybe we just copy the use cases of that.
+     Use this as the simpler interface and make it clear that this is just a limited version
+
+"""
+
+
+class OntologyRelationship(Relationship):
+
+    def __get__(self, parent):
+        if not self.parent:
+            self.parent = parent
+        return self
+
+    def __init__(self):
+        super(OntologyRelationship, self).__init__()
+        self.parent = None
+
+    def __call__(self):
+        if self.parent.setup_complete is None:
+            #As it currently stands, it creates a new ontology with no new tools and the ontology cannot be edited.
+            return None
+        return super().__call__
+
+    def connect(self, other_ontology):
+        if not isinstance(other_ontology, OntologyRelationship):
+            raise Exception("only support ")
+
+    def disconnect(self):
+        raise Exception(
+            "Disconnect is not supported for Onotlogy. Instead connect another ontology to replace the current one."
+        )
+
+
 class Ontology(DbObject):
     """An ontology specifies which tools and classifications are available
     to a project. This is read only for now.

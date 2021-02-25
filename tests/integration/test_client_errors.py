@@ -1,10 +1,9 @@
 from multiprocessing.dummy import Pool
 import os
 import time
-
 import pytest
 
-from labelbox import Project, Dataset, User
+from labelbox import Project, Dataset, User, LabelingFrontend
 import labelbox.client
 import labelbox.exceptions
 
@@ -111,22 +110,26 @@ def test_invalid_attribute_error(client, rand_gen):
     project.delete()
 
 
-@pytest.mark.slow
-# TODO improve consistency
-@pytest.mark.skip(reason="Inconsistent test")
-def test_api_limit_error(client, rand_gen):
-    project_id = client.create_project(name=rand_gen(str)).uid
+@pytest.mark.skip("timeouts cause failure before rate limit")
+def test_api_limit_error(client):
+    global limited
+    limited = False
 
     def get(arg):
         try:
-            return client.get_project(project_id)
+            return client.get_user()
         except labelbox.exceptions.ApiLimitError as e:
             return e
 
-    with Pool(300) as pool:
-        results = pool.map(get, list(range(2000)))
+    n = 1600
+    with Pool(30) as pool:
+        start = time.time()
+        results = list(pool.imap(get, range(n)), total=n)
+        elapsed = time.time() - start
 
+    assert elapsed < 60, "Didn't finish fast enough"
     assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
+    del limited
 
     # Sleep at the end of this test to allow other tests to execute.
-    time.sleep(60)
+    #time.sleep(60)
