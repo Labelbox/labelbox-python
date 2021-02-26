@@ -1,9 +1,7 @@
-# import unittest
 import pytest
 from typing import Any, Dict, List, Union
 from labelbox import LabelingFrontend
 
-#want to import ontology_generator.py properly, not the bad way we are currently doing
 from labelbox.schema.ontology_generator import Ontology, Tool, Classification, Option, InconsistentOntologyException
 
 def sample_ontology() -> Dict[str, Any]:
@@ -35,7 +33,6 @@ def sample_ontology() -> Dict[str, Any]:
     }
 
 #test asdict
-#test ontology.asdict
 #test nested classifications
 """
 Tool tests
@@ -187,9 +184,6 @@ def test_from_project_ontology(client, project) -> None:
     assert ontology.classifications[0].options[0].label.lower() == "yes"
     for option in ontology.classifications[0].options:
         assert type(option) == Option
-    
-# def test_ontology_asdict() -> None:
-#     o = Ontology()
 
 
 
