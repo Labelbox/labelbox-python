@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 from typing import BinaryIO
 from typing import Dict
 from typing import Iterable
@@ -24,6 +24,7 @@ from labelbox.schema.enums import BulkImportRequestState
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
+
 
 
 def _make_file_name(project_id: str, name: str) -> str:
@@ -296,7 +297,30 @@ class BulkImportRequest(DbObject):
         return cls(client, response_data["createBulkImportRequest"])
 
 
-def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
+"""     
+#Outstanding questions:
+* How to check data row media type?
+    * Video
+        - annotations without frames indices wouldn't be flagged right now
+    * Everything else
+        - We won't know if a text tool is being used for video. 
+        - Or a tool only support for images is being used for video
+        ... etc
+
+- video only supports radio and checklist tools. 
+    - This would be good to validate here.
+
+
+When uploading a mask you can upload a single mask for all of the channels.
+#Can you do which of the following?
+#     - 1:1 label to mask
+#     - 1:1 class per mask
+#     - 1:1 image per mask (Looks like this one based on the doc but it is unclear...)
+"""
+
+
+
+def _validate_uuids(lines: Iterable[Dict[str, Any]]) -> None:
     """Validate individual ndjson lines.
 
         - verifies that uuids are unique
@@ -310,3 +334,188 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]]) -> None:
                 f'{uuid} already used in this import job, '
                 'must be unique for the project.')
         uuids.add(uuid)
+
+
+def parse_classification(tool):
+    """
+    Only radio, checklist, and text are supported for mal
+    """
+    if tool['type'] in ['radio', 'checklist']:
+        return {'tool' : tool['type'], 'featureSchemaId' : tool['featureSchemaId'] , 'options' : [r['featureSchemaId'] for r in tool['options']]}
+    elif tool['type'] == 'text':
+        return {'tool' : tool['type'],  'featureSchemaId' : tool['featureSchemaId']}
+    #Other subtypes not supported
+    
+    
+def get_valid_feature_schemas(client = None, project_id = "ckk4q1viuc0w107041siuht7p"):
+    client = Client(api_key = os.environ.get("LABELBOX_TEST_API_KEY_PROD"))
+    proj = client.get_project(project_id)
+    ontology = proj.ontology()
+    #print(ontology)
+    valid_feature_schemas = {}
+    for tool in ontology.normalized['tools']:
+        classifications = [parse_classification(classification_tool) for classification_tool in tool['classifications']]
+        valid_feature_schemas[tool['featureSchemaId']] = {'tool' : tool['tool'], 'classifications' : classifications}
+        
+    for tool in ontology.normalized['classifications']:
+        valid_feature_schemas[tool['featureSchemaId']] = parse_classification(tool)
+    return valid_feature_schemas
+
+
+def validate_polygon(x):
+    #TODO: Do we support multipolygons?
+    assert len(x) >= 3, f"A polygon should be defined by at least 3 points. Found {len(x)}"
+    for pt in x:
+        assert len(pt.keys()) == 2
+        assert 'x' in pt, 'y' in pt
+
+
+def validate_line(x):
+    #TODO: Do we support more than one at a time. Ie. line : [{...}, {...}] Our docs are unclear on this
+    assert len(x) >= 2, f"A line should be defined by at least 2 points. Found {len(x)}"
+    for pt in x:
+        assert len(pt.keys()) == 2
+        assert 'x' in pt, 'y' in pt    
+
+
+def validate_point(x):
+    #TODO: Do we support multipolygons?
+    assert len(x.keys()) == 2
+    assert 'x' in x, 'y' in x    
+    #Do we want to check the type of the point. Looks like they should be ints.
+
+
+def validate_text_location(x):
+    assert len(x.keys()) == 2
+    assert 'start' in x
+    assert 'end' in x
+    assert x['start'] <= x['end']
+    
+
+#TODO: Do we accept an index?
+def is_uri(x):
+    #simple for now
+    if not isinstance(x, str):
+        raise ValueError(f"Expected a uri. Found {x}")
+
+
+def is_labelbox_id(x):
+    #simple for now
+    if not isinstance(x, str):
+        raise ValueError(f"Expected a labelbox_id. Found {x}")
+
+def is_uuid(x):
+    #simple for now
+    if not isinstance(x, str):
+        raise ValueError(f"Expected a uuid. Found {x}")
+    assert len(x) == 128, f"Expected a uuid. Found {x}"
+
+def validate_color(x):
+    #Does the dtype matter? Can it be a float?
+    if not isinstance(x, tuple, list):
+        raise ValueError(f"Received color that is not a list or tuple. Found : {x}")
+    elif len(x) != 3:
+        raise ValueError(f"Must provide RGB values for segmentation colors. Found : {x}")
+    elif not all([0 <= x_ <= 255 for x_ in x]):
+        raise ValueError("All rgb colors must be between 0 and 255. Found : {x}")
+    #We also want to make sure they are all different... todo
+
+def is_string(x):
+    assert type(x) == str
+
+#Check if they named everything properly.
+REQUIRED_KEYS =    {
+                 "schema_id" : is_labelbox_id, #tool id
+                   "uuid" : is_uuid,
+                   "dataRow" : {"id" : is_labelbox_id}
+}
+
+
+
+def validate_nd_schema_ids(lines: Iterable[Dict[str, Any]] , client, project_id):
+    proj = client.get_project(project_id)
+    ontology = proj.ontology()
+    valid_feature_schemas = get_valid_feature_schemas()
+    for idx, line in enumerate(lines):
+        if line['schema_id'] not in valid_feature_schemas:
+            #Feature schema id must exist in project.ontology().normalized
+            raise ValueError(f"Row {idx} has invalid feature schema_id. Found : {line['schema_id']}")
+
+        #This means that this is a subclass
+        if 'classifications' in line: 
+
+
+def check_value(key, value):
+    #Recursively check
+    if isinstance(REQUIRED_KEYS[key], dict):
+        for key_ in REQUIRED_KEYS[key]:
+            _value = value.get(key_, "missing")
+            if _value == "missing":
+                raise ValueError("Expected key {required_key} for line {idx}")
+            check_value(key_, _value)
+    elif isinstance(REQUIRED_KEYS[key], callable):
+        REQUIRED_KEYS[key](value)
+    else:
+        raise ValueError("Only support dicts and callables for value checking.")
+
+def check_primary_keys(line):
+    for key in REQUIRED_KEYS: check_value(key, line)
+
+
+
+#Must have one of. Can it have more than one?
+MUTUALLY_EXCLUSIVE_TOOLS = {
+    'mask' : {"isinstanceURI" : is_uri, "colorRGB" : validate_color},
+    'polygon' : validate_polygon,
+    'point' : validate_point,
+    'line' : validate_line,
+    'location' : validate_text_location 
+}
+
+TOOL_KEYS = {
+    'classifications' : {'radio' : {}, 'checklist' : [], 'text' : []}
+}
+
+
+MUTUALLY_EXCLUSIVE_CLASSIFICAITONS = {
+    "answers" : [{"schemaId" : is_labelbox_id}], #checklist.
+    "answer" : {is_string, {"schemaId" : is_labelbox_id}} #String for free-form test, dict for radio option.
+}
+
+
+def check_mutually_exclusive_group(group, tool):
+    for key in group: check_value(key, tool)
+
+def check_tools(line, feature_schemas):
+    #Check top level
+    unused_keys = set(line.keys()).difference(set(REQUIRED_KEYS.keys()))
+    tool = feature_schemas[line["schema_id"]]
+    
+    #Check specific tool
+    if tool in MUTUALLY_EXCLUSIVE_TOOLS:
+        #top level tools
+        if 'classifications' in unused_keys:
+            for classification_tool in tool['classifications']:
+                check_mutually_exclusive_group(MUTUALLY_EXCLUSIVE_CLASSIFICAITONS, classification_tool)      
+        check_mutually_exclusive_group(MUTUALLY_EXCLUSIVE_TOOLS, tool)      
+
+    else:
+        #This case means we are working with classifications
+        if 'classifications' in unused_keys:
+            raise ValueError(f"classifications key is invalid for tools other than {MUTUALLY_EXCLUSIVE_TOOLS.keys()}")
+        check_mutually_exclusive_group(MUTUALLY_EXCLUSIVE_CLASSIFICAITONS, tool)    
+
+def _validate_ndjson(lines: Iterable[Dict[str, Any]], client, project_id) -> None:
+    feature_schemas = get_valid_feature_schemas()
+    _validate_uuids(lines)
+    validate_nd_schema_ids(lines, client, project_id)
+    for idx, line in enumerate(lines):
+        #Check primary keys
+        check_primary_keys(line)
+        check_tools(line, feature_schemas)
+        
+
+
+
+
+    
