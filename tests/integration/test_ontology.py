@@ -6,7 +6,6 @@ from labelbox import LabelingFrontend
 #want to import ontology_generator.py properly, not the bad way we are currently doing
 from labelbox.schema.ontology_generator import Ontology, Tool, Classification, Option, InconsistentOntologyException
 
-
 def sample_ontology() -> Dict[str, Any]:
     return {
         "tools": [{
@@ -35,12 +34,9 @@ def sample_ontology() -> Dict[str, Any]:
         }]
     }
 
-#want to create base case tests, each indiv tool, classification, option
-#want to then do nested objects inside each
-#do we want to test colors, bool, etc?
-#test inside methods? like asdict/fromdict?
-#test ontology.from_project?
-#test ontology.build?
+#test asdict
+#test ontology.asdict
+#test nested classifications
 """
 Tool tests
 """
@@ -119,50 +115,130 @@ def test_create_string_option() -> None:
 Ontology tests
 """
 def test_create_ontology() -> None:
+    """
+    Tests the initial structure of an Ontology object
+    """
     o = Ontology()
+    assert type(o) == Ontology
     assert(o.tools == [])
     assert(o.classifications == [])
 
-def test_create_ontology(client, project) -> None:
-    """ Tests that the ontology that a project was set up with can be grabbed."""
+def test_add_ontology_tool() -> None:
+    """
+    Tests the possible ways to add a tool to an ontology
+    """
+    o = Ontology()
+    o.add_tool(Tool(tool = Tool.Type.BBOX, name = "bounding box"))
+
+    second_tool = Tool(tool = Tool.Type.SEGMENTATION, name = "segmentation")
+    o.add_tool(second_tool)
+
+    for tool in o.tools:
+        assert type(tool) == Tool
+
+def test_add_ontology_classification() -> None:
+    """
+    Tests the possible ways to add a classification to an ontology
+    """
+    o = Ontology()
+    o.add_classification(Classification(
+        class_type = Classification.Type.TEXT, instructions = "text"))
+
+    second_classification = Classification(
+        class_type = Classification.Type.CHECKLIST, instructions = "checklist")
+    o.add_classification(second_classification)
+
+    for classification in o.classifications:
+        assert type(classification) == Classification
+
+def test_ontology_asdict(project) -> None:
+    """
+    Tests the asdict() method to ensure that it matches the format 
+    of a project ontology
+    """
+    from_project_ontology = project.ontology().normalized
+
+    o = Ontology.from_project(project)
+    assert o.asdict() == from_project_ontology
+
+def test_from_project_ontology(client, project) -> None:
+    """
+    Tests the ability to correctly get an existing project's ontology
+        and if it can correctly convert it to the right object types
+    """
     frontend = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "Editor"))[0]
     project.setup(frontend, sample_ontology())
-    normalized_ontology = project.ontology().normalized
+    
+    ontology = Ontology.from_project(project)
+    assert len(ontology.tools) == 1
+    assert ontology.tools[0].tool == Tool.Type.BBOX
+    for tool in ontology.tools:
+        assert type(tool) == Tool
 
-    def _remove_schema_ids(
-            ontology_part: Union[List, Dict[str, Any]]) -> Dict[str, Any]:
-        """ Recursively scrub the normalized ontology of any schema information."""
-        removals = {'featureSchemaId', 'schemaNodeId'}
+    assert len(ontology.classifications) == 1
+    assert ontology.classifications[0].class_type == Classification.Type.RADIO
+    for classification in ontology.classifications:
+        assert type(classification) == Classification
 
-        if isinstance(ontology_part, list):
-            return [_remove_schema_ids(part) for part in ontology_part]
-        if isinstance(ontology_part, dict):
-            return {
-                key: _remove_schema_ids(value)
-                for key, value in ontology_part.items()
-                if key not in removals
-            }
-        return ontology_part
+    assert len(ontology.classifications[0].options) == 2
+    assert ontology.classifications[0].options[0].value.lower() == "yes"
+    assert ontology.classifications[0].options[0].label.lower() == "yes"
+    for option in ontology.classifications[0].options:
+        assert type(option) == Option
+    
+# def test_ontology_asdict() -> None:
+#     o = Ontology()
 
-    removed = _remove_schema_ids(normalized_ontology)
-    assert removed == sample_ontology()
 
-    ontology = project.ontology()
 
-    tools = ontology.tools()
-    assert tools
-    for tool in tools:
-        assert tool.feature_schema_id
-        assert tool.schema_node_id
 
-    classifications = ontology.classifications()
-    assert classifications
-    for classification in classifications:
-        assert classification.feature_schema_id
-        assert classification.schema_node_id
-        for option in classification.options:
-            assert option.feature_schema_id
-            assert option.schema_node_id
+    
+
+"""
+Old ontology file test
+"""
+# def test_create_ontology(client, project) -> None:
+#     """ Tests that the ontology that a project was set up with can be grabbed."""
+#     frontend = list(
+#         client.get_labeling_frontends(
+#             where=LabelingFrontend.name == "Editor"))[0]
+#     project.setup(frontend, sample_ontology())
+#     normalized_ontology = project.ontology().normalized
+
+#     def _remove_schema_ids(
+#             ontology_part: Union[List, Dict[str, Any]]) -> Dict[str, Any]:
+#         """ Recursively scrub the normalized ontology of any schema information."""
+#         removals = {'featureSchemaId', 'schemaNodeId'}
+
+#         if isinstance(ontology_part, list):
+#             return [_remove_schema_ids(part) for part in ontology_part]
+#         if isinstance(ontology_part, dict):
+#             return {
+#                 key: _remove_schema_ids(value)
+#                 for key, value in ontology_part.items()
+#                 if key not in removals
+#             }
+#         return ontology_part
+
+#     removed = _remove_schema_ids(normalized_ontology)
+#     assert removed == sample_ontology()
+
+#     ontology = project.ontology()
+
+#     tools = ontology.tools()
+#     assert tools
+#     for tool in tools:
+#         assert tool.feature_schema_id
+#         assert tool.schema_node_id
+
+#     classifications = ontology.classifications()
+#     assert classifications
+#     for classification in classifications:
+#         assert classification.feature_schema_id
+#         assert classification.schema_node_id
+#         for option in classification.options:
+#             assert option.feature_schema_id
+#             assert option.schema_node_id
 
