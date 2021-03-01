@@ -3,7 +3,7 @@ import os
 import time
 import pytest
 
-from labelbox import Project, Dataset, User, LabelingFrontend
+from labelbox import Project, Dataset, User
 import labelbox.client
 import labelbox.exceptions
 
@@ -129,7 +129,7 @@ def test_api_limit_error(client):
 
     assert elapsed < 60, "Didn't finish fast enough"
     assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
-    del limited
 
     # Sleep at the end of this test to allow other tests to execute.
-    #time.sleep(60)
+    time.sleep(60)
+
