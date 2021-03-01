@@ -177,7 +177,7 @@ class BulkImportRequest(DbObject):
 
     @classmethod
     def create_from_url(cls, client, project_id: str, name: str,
-                        url: str) -> 'BulkImportRequest':
+                        url: str, validate = True) -> 'BulkImportRequest':
         """
         Creates a BulkImportRequest from a publicly accessible URL
         to an ndjson file with predictions.
@@ -190,6 +190,13 @@ class BulkImportRequest(DbObject):
         Returns:
             BulkImportRequest object
         """
+        if validate:
+            logger.warn("Validation is turned on. The file will be downloaded locally and processed before uploading.")                
+            res = requests.get(url)
+            data = ndjson.loads(res.text)
+            _validate_ndjson(data, client.get_project(project_id))
+            
+
         query_str = """mutation createBulkImportRequestPyApi(
                 $projectId: ID!, $name: String!, $fileUrl: String!) {
             createBulkImportRequest(data: {
@@ -208,7 +215,7 @@ class BulkImportRequest(DbObject):
 
     @classmethod
     def create_from_objects(cls, client, project_id: str, name: str,
-                            predictions: Iterable[dict]) -> 'BulkImportRequest':
+                            predictions: Iterable[dict], validate = True) -> 'BulkImportRequest':
         """
         Creates a `BulkImportRequest` from an iterable of dictionaries.
 
@@ -235,7 +242,9 @@ class BulkImportRequest(DbObject):
         Returns:
             BulkImportRequest object
         """
-        _validate_ndjson(predictions)
+        if validate:
+            _validate_ndjson(predictions, client.get_project(project_id))
+
         data_str = ndjson.dumps(predictions)
         if not data_str:
             raise ValueError('annotations cannot be empty')
@@ -286,7 +295,7 @@ class BulkImportRequest(DbObject):
                 # by iterating through the file so we only store
                 # each line in memory rather than the entire file
                 try:
-                    _validate_ndjson(reader)
+                    _validate_ndjson(reader, client.get_project(project_id))
                 except ValueError:
                     raise ValueError(f"{file} is not a valid ndjson file")
                 else:
@@ -299,6 +308,7 @@ class BulkImportRequest(DbObject):
 
 """     
 #Outstanding questions:
+
 * How to check data row media type?
     * Video
         - annotations without frames indices wouldn't be flagged right now
@@ -310,21 +320,12 @@ class BulkImportRequest(DbObject):
 - video only supports radio and checklist tools. 
     - This would be good to validate here.
 
-
-When uploading a mask you can upload a single mask for all of the channels.
-#Can you do which of the following?
-#     - 1:1 label to mask
-#     - 1:1 class per mask
-#     - 1:1 image per mask (Looks like this one based on the doc but it is unclear...)
 """
-
 
 
 def _validate_uuids(lines: Iterable[Dict[str, Any]]) -> None:
     """Validate individual ndjson lines.
-
         - verifies that uuids are unique
-
     """
     uuids: Set[str] = set()
     for line in lines:
@@ -334,7 +335,6 @@ def _validate_uuids(lines: Iterable[Dict[str, Any]]) -> None:
                 f'{uuid} already used in this import job, '
                 'must be unique for the project.')
         uuids.add(uuid)
-
 
 def parse_classification(tool):
     """
@@ -346,11 +346,8 @@ def parse_classification(tool):
         return {'tool' : tool['type'],  'featureSchemaId' : tool['featureSchemaId']}
     #Other subtypes not supported
     
-    
-def get_valid_feature_schemas(client = None, project_id = "ckk4q1viuc0w107041siuht7p"):
-    client = Client(api_key = os.environ.get("LABELBOX_TEST_API_KEY_PROD"))
-    proj = client.get_project(project_id)
-    ontology = proj.ontology()
+def get_valid_feature_schemas(project):
+    ontology = project.ontology()
     #print(ontology)
     valid_feature_schemas = {}
     for tool in ontology.normalized['tools']:
@@ -361,14 +358,13 @@ def get_valid_feature_schemas(client = None, project_id = "ckk4q1viuc0w107041siu
         valid_feature_schemas[tool['featureSchemaId']] = parse_classification(tool)
     return valid_feature_schemas
 
-
 def validate_polygon(x):
     #TODO: Do we support multipolygons?
-    assert len(x) >= 3, f"A polygon should be defined by at least 3 points. Found {len(x)}"
+    
+    assert len(x) >= 3, f"A polygon should be defined by at least 3 points. Found {len(x)}, {x}"
     for pt in x:
         assert len(pt.keys()) == 2
         assert 'x' in pt, 'y' in pt
-
 
 def validate_line(x):
     #TODO: Do we support more than one at a time. Ie. line : [{...}, {...}] Our docs are unclear on this
@@ -377,6 +373,11 @@ def validate_line(x):
         assert len(pt.keys()) == 2
         assert 'x' in pt, 'y' in pt    
 
+def validate_rectangle(x):
+    required_keys = ["top", "left", "height", "width"]
+    for key in required_keys:
+        assert key in x, f"Rectangle missing required key {key}"
+        assert isinstance(x[key], int), f"rectangle must be provided ints. Found {x[key]} for {key}"
 
 def validate_point(x):
     #TODO: Do we support multipolygons?
@@ -384,15 +385,12 @@ def validate_point(x):
     assert 'x' in x, 'y' in x    
     #Do we want to check the type of the point. Looks like they should be ints.
 
-
 def validate_text_location(x):
     assert len(x.keys()) == 2
     assert 'start' in x
     assert 'end' in x
     assert x['start'] <= x['end']
     
-
-#TODO: Do we accept an index?
 def is_uri(x):
     #simple for now
     if not isinstance(x, str):
@@ -408,7 +406,7 @@ def is_uuid(x):
     #simple for now
     if not isinstance(x, str):
         raise ValueError(f"Expected a uuid. Found {x}")
-    assert len(x) == 128, f"Expected a uuid. Found {x}"
+    assert len(x) == 36, f"Expected a uuid. Found {x}"
 
 def validate_color(x):
     #Does the dtype matter? Can it be a float?
@@ -423,99 +421,106 @@ def validate_color(x):
 def is_string(x):
     assert type(x) == str
 
+
+def check_value(required_dict, payload_dict):
+    #Won't work for lists.
+    for key in required_dict:
+        if key not in payload_dict:
+            raise ValueError(f"Expected {key} to be in the payload : {payload_dict}.")
+        if callable(required_dict[key]):
+            required_dict[key](payload_dict[key])
+        elif isinstance(required_dict[key] , dict):
+            assert type(required_dict[key] == type(payload_dict[key])), "Both must be lists or dicts"
+            check_value(required_dict[key], payload_dict[key])
+        else:
+            ValueError(f"required dict has unexpected type : {required_dict[key]}")
+            
+def check_answer(x):
+    if isinstance(x, dict):
+        is_labelbox_id(x['schemaId'])
+    else:
+        #Free form text
+        is_string(x)
+
+def check_answers(x):
+    schemas = [x_['schemaId'] for x_ in x]
+    assert len(schemas) == len(set(schemas)), "must be unique schemas"
+    for schema in schemas:
+        is_labelbox_id(schema)
+
+
 #Check if they named everything properly.
 REQUIRED_KEYS =    {
-                 "schema_id" : is_labelbox_id, #tool id
+                 "schemaId" : is_labelbox_id, #tool id
                    "uuid" : is_uuid,
                    "dataRow" : {"id" : is_labelbox_id}
 }
 
+TOOL_MAPPINGS = {
+    'rectangle' : 'bbox'
+}
 
+CLASSIFICATION_MAPPINGS = {
+    'radio' : 'answer',
+    'text' : 'answer',
+    'checklist' : 'answers'
+}
 
-def validate_nd_schema_ids(lines: Iterable[Dict[str, Any]] , client, project_id):
-    proj = client.get_project(project_id)
-    ontology = proj.ontology()
-    valid_feature_schemas = get_valid_feature_schemas()
-    for idx, line in enumerate(lines):
-        if line['schema_id'] not in valid_feature_schemas:
-            #Feature schema id must exist in project.ontology().normalized
-            raise ValueError(f"Row {idx} has invalid feature schema_id. Found : {line['schema_id']}")
-
-        #This means that this is a subclass
-        if 'classifications' in line: 
-
-
-def check_value(key, value):
-    #Recursively check
-    if isinstance(REQUIRED_KEYS[key], dict):
-        for key_ in REQUIRED_KEYS[key]:
-            _value = value.get(key_, "missing")
-            if _value == "missing":
-                raise ValueError("Expected key {required_key} for line {idx}")
-            check_value(key_, _value)
-    elif isinstance(REQUIRED_KEYS[key], callable):
-        REQUIRED_KEYS[key](value)
-    else:
-        raise ValueError("Only support dicts and callables for value checking.")
-
-def check_primary_keys(line):
-    for key in REQUIRED_KEYS: check_value(key, line)
-
-
-
-#Must have one of. Can it have more than one?
 MUTUALLY_EXCLUSIVE_TOOLS = {
     'mask' : {"isinstanceURI" : is_uri, "colorRGB" : validate_color},
     'polygon' : validate_polygon,
     'point' : validate_point,
     'line' : validate_line,
-    'location' : validate_text_location 
+    'location' : validate_text_location ,
+    'bbox' : validate_rectangle
 }
-
-TOOL_KEYS = {
-    'classifications' : {'radio' : {}, 'checklist' : [], 'text' : []}
-}
-
 
 MUTUALLY_EXCLUSIVE_CLASSIFICAITONS = {
-    "answers" : [{"schemaId" : is_labelbox_id}], #checklist.
-    "answer" : {is_string, {"schemaId" : is_labelbox_id}} #String for free-form test, dict for radio option.
+    "answers" : check_answers,
+    "answer" : check_answer 
 }
-
-
-def check_mutually_exclusive_group(group, tool):
-    for key in group: check_value(key, tool)
 
 def check_tools(line, feature_schemas):
     #Check top level
     unused_keys = set(line.keys()).difference(set(REQUIRED_KEYS.keys()))
-    tool = feature_schemas[line["schema_id"]]
-    
-    #Check specific tool
-    if tool in MUTUALLY_EXCLUSIVE_TOOLS:
+
+    if line["schemaId"] not in feature_schemas:
+        raise ValueError(f"Invalid feature schemaId. Found : {line['schemaId']}")
+    tool = feature_schemas[line["schemaId"]]
+    ####TODO: check that the tool in the unused key: assert tool == unused_keys. We prob need a mapping for this..
+
+    #Are we checking for valid feature schemas for sub classes?
+
+    if tool['tool'] in MUTUALLY_EXCLUSIVE_TOOLS or TOOL_MAPPINGS.get(tool["tool"]) is not None:
         #top level tools
         if 'classifications' in unused_keys:
             for classification_tool in tool['classifications']:
-                check_mutually_exclusive_group(MUTUALLY_EXCLUSIVE_CLASSIFICAITONS, classification_tool)      
-        check_mutually_exclusive_group(MUTUALLY_EXCLUSIVE_TOOLS, tool)      
-
+                for classification_line in line['classifications']:
+                    check_value({CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool'])]}, classification_line)    
+        check_value({TOOL_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_TOOLS[TOOL_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)      
     else:
         #This case means we are working with classifications
         if 'classifications' in unused_keys:
             raise ValueError(f"classifications key is invalid for tools other than {MUTUALLY_EXCLUSIVE_TOOLS.keys()}")
-        check_mutually_exclusive_group(MUTUALLY_EXCLUSIVE_CLASSIFICAITONS, tool)    
+        check_value({CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)   
 
-def _validate_ndjson(lines: Iterable[Dict[str, Any]], client, project_id) -> None:
-    feature_schemas = get_valid_feature_schemas()
+    #TODO: Ensure all keys were used. We don't want extra crap in the ndjson 
+    #This will make sure something isn't named incorrectly.
+
+
+def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
+    data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
+    feature_schemas = get_valid_feature_schemas(project)
     _validate_uuids(lines)
-    validate_nd_schema_ids(lines, client, project_id)
     for idx, line in enumerate(lines):
         #Check primary keys
-        check_primary_keys(line)
+        check_value(REQUIRED_KEYS, line)
+        assert line['dataRow']['id'] in data_row_ids, f"Uploading data to data row that does not exist in the project. data_row id: {line['dataRow']['id']}"
         check_tools(line, feature_schemas)
+        
         
 
 
 
 
-    
+

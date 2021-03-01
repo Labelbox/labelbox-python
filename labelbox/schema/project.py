@@ -417,6 +417,7 @@ class Project(DbObject, Updateable, Deletable):
         self,
         name: str,
         annotations: Union[str, Union[str, Path], Iterable[dict]],
+        validate = True
     ) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
@@ -427,6 +428,8 @@ class Project(DbObject, Updateable, Deletable):
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
+            validate (str):
+                Whether or not to validate the payload before uploading.
         Returns:
             BulkImportRequest
         """
@@ -452,6 +455,7 @@ class Project(DbObject, Updateable, Deletable):
                     project_id=self.uid,
                     name=name,
                     url=str(annotations),
+                    validate = validate
                 )
             else:
                 path = Path(annotations)
@@ -464,7 +468,7 @@ class Project(DbObject, Updateable, Deletable):
                     project_id=self.uid,
                     name=name,
                     file=path,
-                    validate_file=True,
+                    validate_file=validate,
                 )
         elif isinstance(annotations, Iterable):
             return BulkImportRequest.create_from_objects(
@@ -472,11 +476,11 @@ class Project(DbObject, Updateable, Deletable):
                 project_id=self.uid,
                 name=name,
                 predictions=annotations,  # type: ignore
+                validate = validate
             )
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
-
 
 class LabelingParameterOverride(DbObject):
     """ Customizes the order of assets in the label queue.
