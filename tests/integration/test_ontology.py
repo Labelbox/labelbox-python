@@ -1,7 +1,6 @@
 """
 TODO:
 test option.add_option
-test all classes' asdicts (what is the best way...)
 test classification.add_option
 test tool.add_classification
 consider testing and ensuring failed scenarios
