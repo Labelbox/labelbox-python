@@ -177,6 +177,7 @@ def prediction_id_mapping(configured_project):
     inferences = []
     datarows = [d for d in list(configured_project.datasets())[0].data_rows()]
     result = {}
+    
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
         if 'tool' in tool:
             tool_type = tool['tool']
@@ -225,8 +226,10 @@ def rectangle_inference(prediction_id_mapping):
                     "height": 865,
                     "width": 1512
                 },
-                'classifications' : [{ #Sub classification
-                     "answer": {"schemaId": rectangle['tool']['classifications'][0]['featureSchemaId']}
+                'classifications' : [{
+                     #Do these sublcasses need a uid, datatrow id?
+                     "schemaId" : rectangle['tool']['classifications'][0]['featureSchemaId'],
+                     "answer": {"schemaId": rectangle['tool']['classifications'][0]['options'][0]['featureSchemaId'] }
                 }]
             })
     del rectangle['tool']

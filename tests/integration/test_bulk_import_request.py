@@ -62,7 +62,7 @@ def test_create_from_local_file(tmp_path, predictions, configured_project):
         ndjson.dump(predictions, f)
 
     bulk_import_request = configured_project.upload_annotations(name=name,
-                                                     annotations=str(file_path))
+                                                     annotations=str(file_path), validate = False)
 
     assert bulk_import_request.project() == configured_project
     assert bulk_import_request.name == name
