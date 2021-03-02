@@ -26,6 +26,7 @@ setuptools.setup(
         "ndjson==0.3.1",
         "requests>=2.22.0",
         "google-api-core>=1.22.1",
+        "pydantic"
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

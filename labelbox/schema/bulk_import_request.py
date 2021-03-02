@@ -2,16 +2,18 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, List, NamedTuple, Optional
 from typing import BinaryIO
 from typing import Dict
 from typing import Iterable
 from typing import Set
 from typing import Tuple
 from typing import Union
+from uuid import UUID
 
 import backoff
 import ndjson
+from pydantic.types import conlist, constr
 import requests
 
 from labelbox import utils
@@ -21,6 +23,13 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
+from pydantic import ValidationError
+
+try:
+    from typing import TypedDict, Literal  # >=3.8
+except ImportError:
+    from typing_extensions import TypedDict, Literal
+
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
@@ -361,294 +370,177 @@ def get_valid_feature_schemas(project):
         valid_feature_schemas[tool['featureSchemaId']] = parse_classification(tool)
     return valid_feature_schemas
 
-def validate_polygon(x):
-    #TODO: Do we support multipolygons?
-    if not isinstance(x, list):
-        raise TypeError(f"Polygon should be a list of dicts with 'x', 'y' keys. Found {type(x)}")
 
-    if len(x) < 4:
-        raise ValueError(f"A polygon should be defined by at least 3 points. Found {len(x)}, {x}")
-    for pt in x:
-        for key in pt:
-            if key not in ['x', 'y']:
-                raise ValueError(f"Point is missing : {key}")
-        if len(pt.keys()) != 2:
-            raise ValueError(f"Expects {'x', 'y'} pair. Found : {pt}")
-        
-def validate_line(x):
-    if not isinstance(x, list):
-        raise TypeError(f"Lines should be a list of dicts with 'x', 'y' keys. Found {type(x)}")
-
-    if len(x) < 2:
-        raise ValueError(f"A line should be defined by at least 2 points. Found {len(x)}, {x}")
-
-    for pt in x:
-        for coord_name in pt:
-            if coord_name not in ['x', 'y']:
-                raise ValueError(f"Point is missing : {coord_name}")
-        if len(pt.keys()) != 2:
-            raise ValueError(f"Expects {'x', 'y'} pair. Found : {pt}")
-          
-def validate_rectangle(x):
-    required_keys = ["top", "left", "height", "width"]
-    for key in required_keys:
-        if  key not in x:
-            raise ValueError(f"Rectangle missing required key : {key}")
-        
-        if not isinstance(x[key], int):
-            raise ValueError(f"rectangle must be provided ints. Found {x[key]} for {key}")
-
-def validate_point(x):
-    #TODO: Do we support multipolygons?
-    for coord_name in x:
-        if coord_name not in ['x', 'y']:
-            raise ValueError(f"Point is missing : {coord_name}")
-    #Do we want to check the type of the point. Should be ints?
-
-def validate_text_location(x):
-    if 'start' not in x:
-        raise ValueError(f"Must include a start key for entity. Found : {x}")
-    if 'end' not in x:
-        raise ValueError(f"Must include a start key for entity. Found : {x}")    
-    if len(x.keys()) != 2:
-        raise ValueError(f"Only start and end are valid. Found : {x}")
-    if not x['start'] <= x['end']:
-        raise ValueError(f"Start must be less than or equal to end. Found : {x}")
-    if not x['start'] >= 0:
-        #TODO: Is this zero indexed? 
-        raise ValueError(f"Start must be greater than or equal to 0. Found : {x}")
-    
-def is_uri(x):
-    #simple for now
-    if not isinstance(x, str):
-        raise ValueError(f"Expected a uri. Found {x}")
-
-
-def is_labelbox_id(x):
-    #simple for now
-    if not isinstance(x, str):
-        raise ValueError(f"Expected a labelbox_id. Found {x}")
-
-def is_uuid(x):
-    #simple for now
-    if not isinstance(x, str):
-        raise ValueError(f"Expected a uuid. Found {x}")
-    
-    if len(x) != 36:
-        #Wrong type..
-        raise ValueError(f"Expected a uuid. Found {x}")
-
-def validate_color(x):
-    #Does the dtype matter? Can it be a float?
-    if not isinstance(x, (tuple, list)):
-        raise ValueError(f"Received color that is not a list or tuple. Found : {x}")
-    elif len(x) != 3:
-        raise ValueError(f"Must provide RGB values for segmentation colors. Found : {x}")
-    elif not all([0 <= x_ <= 255 for x_ in x]):
-        raise ValueError("All rgb colors must be between 0 and 255. Found : {x}")
-    #We also want to make sure they are all different... todo
-
-def is_string(x):
-    if type(x) != str:
-        raise TypeError(f"Expected {x} to be a string.")
-
-
-def check_value(required_dict, payload_dict, **kwargs):
-    #Won't work for lists.
-    for key in required_dict:
-        if key not in payload_dict:
-            raise ValueError(f"Expected {key} to be in the payload : {payload_dict}.")
-        if callable(required_dict[key]):
-            required_dict[key](payload_dict[key], **kwargs)
-        elif isinstance(required_dict[key] , dict):
-            if type(required_dict[key]) != type(payload_dict[key]):
-                raise TypeError("Both must be lists or dicts")
-            check_value(required_dict[key], payload_dict[key], **kwargs)
-        else:
-            ValueError(f"required dict has unexpected type : {required_dict[key]}")
-
-
-def check_answer(x, valid_schemas):
-    #TODO: Is dict the best way to handle this?
-    if isinstance(x, dict):
-        #TODO: Fix this...
-        schema = x['schemaId']
-        is_labelbox_id(schema)
-        if schema not in valid_schemas:
-            #The schema for this tool does not match what is in the editor
-            raise ValueError(f"schema {schema} not in allowed schemas {valid_schemas}")
-    else:
-        #Free form text
-        is_string(x)
-
-def check_answers(x, valid_schemas):
-    if not len(x):
-        raise ValueError(f"Must provide at least one answer to upload. Found {x}. Valid options {valid_schemas}") #TODO: Is it ok to submit an empty list of answers? Or should you just not enter anything?
-    
-    schemas = [x_.get('schemaId') for x_ in x]
-    if None in schemas:
-        raise ValueError(f"Found answer without id. {x}. Must be one of {valid_schemas}")
-
-
-    if len(schemas) != len(set(schemas)):
-        raise ValueError(f"schemas for an example must be unique. Found {schemas}")
-    for schema in schemas:
-        is_labelbox_id(schema)
-        if schema not in valid_schemas:
-            raise ValueError(f"schema {schema} not in allowed schemas {valid_schemas}")
-
-
-#Check if they named everything properly.
-REQUIRED_KEYS =    {
-                 "schemaId" : is_labelbox_id, #tool id
-                   "uuid" : is_uuid,
-                   "dataRow" : {"id" : is_labelbox_id}
-}
-
-TOOL_MAPPINGS = {
-    'rectangle' : 'bbox',
-    'named-entity' : 'location',
-    'superpixel' : 'mask'
-}
-
-CLASSIFICATION_MAPPINGS = {
-    'radio' : 'answer',
-    'text' : 'answer',
-    'checklist' : 'answers'
-}
-
-MUTUALLY_EXCLUSIVE_TOOLS = {
-    'mask' : {"instanceURI" : is_uri, "colorRGB" : validate_color},
-    'polygon' : validate_polygon,
-    'point' : validate_point,
-    'line' : validate_line,
-    'location' : validate_text_location ,
-    'bbox' : validate_rectangle,
-}
-
-MUTUALLY_EXCLUSIVE_CLASSIFICAITONS = {
-    "answers" : check_answers,
-    "answer" : check_answer 
-}
-
-def check_tools(line, feature_schemas):
-    #Check top level
-    unused_keys = set(line.keys()).difference(set(REQUIRED_KEYS.keys()))
-
-    if line["schemaId"] not in feature_schemas:
-        raise ValueError(f"Invalid feature schemaId. Found : {line['schemaId']}")
-    tool = feature_schemas[line["schemaId"]]
-    ####TODO: check that the tool in the unused key: assert tool == unused_keys. We prob need a mapping for this..
-
-    #Are we checking for valid feature schemas for sub classes?
-
-    if tool['tool'] in MUTUALLY_EXCLUSIVE_TOOLS or TOOL_MAPPINGS.get(tool["tool"]) is not None:
-        #top level tools
-        if 'classifications' in unused_keys:
-            #TODO: We need to only loop over one of these and grab the other..
-            #This will throw an error if there is more than 1 of each!!!!
-            #TODO
-            """
-            #TODO
-            #TODO
-            #TODO
-            #TODO
-            """
-            for classification_tool in tool['classifications'].values():
-                for classification_line in line['classifications']:
-                    check_value(
-                        {
-                            CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], 
-                            classification_tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], 
-                            classification_tool['tool'])]
-                        }, 
-                        classification_line,
-                        valid_schemas = classification_tool.get('options')
-                    )    
-                    if classification_line["schemaId"] not in tool['classifications']:
-                        raise ValueError(f"Invalid feature schemaId. Found : {line['schemaId']}")
-                    
-                    #TODO: Check individual classifications
-                    ###Classifications are harder.. unused_keys = set(CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool'])).difference(unused_keys)
-                unused_keys.remove('classifications')
-        check_value({TOOL_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_TOOLS[TOOL_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)   
-        unused_keys = unused_keys.difference(set({TOOL_MAPPINGS.get(tool["tool"], tool['tool'])}))
-    else:
-        #This case means we are working with classifications
-        if 'classifications' in unused_keys:
-            raise ValueError(f"classifications key is invalid for tools other than {MUTUALLY_EXCLUSIVE_TOOLS.keys()}")
-
-        check_value(
-            {
-                CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])]
-            }, 
-                line,
-                valid_schemas = tool.get('options')
-            )   
-        unused_keys = unused_keys.difference(set({CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])}))
-
-    if len(unused_keys) > 0:
-        #This is likely due to the user trying to upload more than one tool type for a single line.
-        raise ValueError(f"Found unused keys {line.keys()}\nSet of unused keys : {unused_keys}")
-    
-def validate_datarow(line, data_row_ids):
-    if line['dataRow']['id'] not in data_row_ids:
-        raise ValueError(f"Uploading data to data row that does not exist in the project. data_row id: {line['dataRow']['id']}")
-
-
-def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
-    data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
-    feature_schemas = get_valid_feature_schemas(project)
-    _validate_uuids(lines)
-    for idx, line in enumerate(lines):
-        #Check primary keys
-        try:
-            check_value(REQUIRED_KEYS, line)
-            validate_datarow(line , data_row_ids)
-            check_tools(line, feature_schemas)
-        except Exception as e:
-            raise type(e)(f"Error on line {idx}") from e
-
-
-#def ValidatorFactory(line):
-
-
-"""
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
+#Note that pydantic is a bit strict. It could break workflows of people who throw crap into the payload
+#Maybe set validate to false by default?
 
 #How do I add subclasses?
 #What is valid?
 #Here is your answer :)
 
+LabelboxID = str #todo
 
-class MALRow(BaseModel):
-    tools: List
-    classifications: List
+#TODO: Is this defined elsewhere?
+class Bbox(TypedDict):
+    top: float
+    left: float
+    height: float
+    width: float
 
-
-class MALValidator(BaseModel):
-    schemaId: 
-    uuid: 
-    #Todo what is the pydantic type for this? dataRow:                "dataRow" : {"id" : is_labelbox_id}
-
-class Classification(MALValidator):
-    tool : #Enum (supported set of tools)
-    feature_schema_id:  #(labelbox id)
-
-class Text():
-
-class 
-
-class Tool(MALValidator):
+class Point(TypedDict):
+    x: float
+    y: float
 
 
-class Geometry(BaseModel):
-class Bbox(Geometry):
-class Mask(Geometry):
-class Point(Geometry):
+#Everything needs a schema
+class Feature(BaseModel):
+    ontology_type: str
+    schemaId: LabelboxID
 
-class Line(Geometry):
+    class Config:
+        #We don't want them to add extra stuff to the payload
+        extra = 'forbid'
 
 
-class 
-"""
+#Do this classes need to support uuids?
+class Text(Feature):
+    ontology_type: str = "text"
+    answer: str
+
+class CheckList(Feature):
+    ontology_type: str = "checklist"
+    answers: conlist(TypedDict('schemaId', {'schemaId': LabelboxID}), min_items = 1)
+    
+class Radio(Feature):
+    ontology_type: str = "radio"
+    answer: TypedDict('schemaId' , {'schemaId': LabelboxID})
+
+
+class Tool(Feature):
+    classifications : List[Union[CheckList, Text, Radio]] = []
+
+class PolygonAnnotation(Tool):
+    ontology_type: str = "polygon"
+    polygon: List[Point]
+
+    @validator('polygon')
+    def is_geom_valid(cls, v):
+        if len(v) < 3:
+            raise ValueError(f"A polygon must have at least 3 points to be valid. Found {v}")
+        return v
+    
+class PolylineTool(Tool):
+    ontology_type: str = "line"    
+    line: List[Point]
+
+    @validator('line')
+    def is_geom_valid(cls, v):
+        if len(v) < 2:
+            raise ValueError(f"A line must have at least 2 points to be valid. Found {v}")
+        return v
+    
+class RectangleTool(Tool):
+    ontology_type: str = "rectangle"        
+    bbox: Bbox
+    #Could check if points are positive
+
+class PointTool(Tool):
+    ontology_type: str = "point"            
+    point: Point
+    #Could check if points are positive
+
+class EntityTool(Tool):
+    ontology_type: str = "named-entity"        
+    location : TypedDict("TextLocation" , {'start' : int, 'end' : int})
+
+    @validator('location')
+    def is_valid_location(cls, v):
+        if len(v) < 2:
+            raise ValueError(f"A line must have at least 2 points to be valid. Found {v}")
+        if v['start'] < 0:
+            raise ValueError(f"Text location must be positive. Found {v}")
+        if v['start'] >= v['end']:
+            raise ValueError(f"Text start location must be less than end. Found {v}")
+        return v
+
+class MaskTool(Tool):
+    ontology_type: str = "superpixel"       
+    mask : TypedDict("mask" , {'instanceURI' : constr(min_length = 5, strict = True), 'colorRGB' : Tuple[int,int,int]})
+    @validator('mask')
+    def is_valid_mask(cls, v):
+        colors = v['colorRGB']
+            #Does the dtype matter? Can it be a float?
+        if not isinstance(colors, (tuple, list)):
+            raise ValueError(f"Received color that is not a list or tuple. Found : {colors}")
+        elif len(colors) != 3:
+            raise ValueError(f"Must provide RGB values for segmentation colors. Found : {colors}")
+        elif not all([0 <= color <= 255 for color in colors]):
+            raise ValueError(f"All rgb colors must be between 0 and 255. Found : {colors}")
+        return v
+
+class Annotation(BaseModel):
+    uuid: UUID
+    dataRow: TypedDict('dataRow' , {'id' : LabelboxID})
+    annotation: Union[MaskTool,PolygonAnnotation,PointTool,PolylineTool,EntityTool,RectangleTool,Text,CheckList,Radio]
+
+    def validate_datarow(self, valid_datarows):
+        if self.dataRow['id'] not in valid_datarows:
+            raise ValueError(f"datarow {self.dataRow['id']} is not attached to the specified project")
+    
+    def validate_feature_schema(self, valid_feature_schemas):
+        #We also want to check if the feature schema matches the tool...
+        if self.annotation.schemaId not in valid_feature_schemas:
+            raise ValueError(f"datarow {self.annotation.schemaId} is not attached to the specified project")
+
+        if self.annotation.ontology_type != valid_feature_schemas[self.annotation.schemaId]['tool']:
+            raise ValueError(f"Schema id {self.annotation.schemaId} does not map to the assigned tool {valid_feature_schemas[self.annotation.schemaId]['tool']}")
+
+        self.validate_classification(self.annotation, valid_feature_schemas[self.annotation.schemaId])
+
+        #TODO: When ontology management is complete we should change this schema checking with the proper objects
+        child_schemas = valid_feature_schemas[self.annotation.schemaId].get('classifications',[])
+        for subclass in getattr(self.annotation, 'classifications', []):
+            if subclass.schemaId not in child_schemas:
+                raise ValueError(f"Subclass does not have valid feature schema. Found {subclass.schemaId}. Expected on of {list(child_schemas.keys())}")
+            self.validate_classification(subclass, child_schemas[subclass.schemaId])
+
+    def validate_classification(self,  classification, feature_schema):
+        answers = []
+        if isinstance(classification, CheckList):
+            answers = classification.answers
+            if len(set([answer['schemaId'] for answer in answers])) != len(answers):
+                #TODO: Better message... :(
+                raise ValueError("Checklist was provided more than one of the same labels.")
+        elif isinstance(classification, Radio):    
+            answers = [classification.answer]
+        for answer in answers:
+            options = feature_schema['options']
+            if answer['schemaId'] not in options:
+                raise ValueError(f"Feature schema provided to {classification.ontology_type} invalid. Expected on of {options}. Found {answer['schemaId']}")
+    
+    def validate(self, valid_datarows, valid_feature_schemas):
+        self.validate_feature_schema(valid_feature_schemas)
+        self.validate_datarow(valid_datarows)
+
+
+def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
+    data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
+    feature_schemas = get_valid_feature_schemas(project)
+    uids = set()
+    for idx, line in enumerate(lines):
+        try:
+            line_copy = line.copy()
+            annotation = Annotation(**{'uuid' : line_copy.pop("uuid"), 'dataRow' : line_copy.pop("dataRow"), 'annotation' : line_copy})
+            annotation.validate(data_row_ids, feature_schemas)   
+            uuid = annotation.uuid
+            if uuid in uids:
+                raise labelbox.exceptions.UuidError(
+                    f'{uuid} already used in this import job, '
+                    'must be unique for the project.')
+            uids.add(uuid)
+        except (ValidationError, ValueError) as e:
+            raise labelbox.exceptions.NDJsonError(f"Invalid NDJson on line {idx}") from e
+        
+    
+
