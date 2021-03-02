@@ -326,7 +326,6 @@ class BulkImportRequest(DbObject):
 
 """
 
-
 def _validate_uuids(lines: Iterable[Dict[str, Any]]) -> None:
     """Validate individual ndjson lines.
         - verifies that uuids are unique
@@ -356,8 +355,8 @@ def get_valid_feature_schemas(project):
     valid_feature_schemas = {}
     for tool in ontology.normalized['tools']:
         classifications = [parse_classification(classification_tool) for classification_tool in tool['classifications']]
+        classifications = {v['featureSchemaId'] : v for v in classifications}
         valid_feature_schemas[tool['featureSchemaId']] = {'tool' : tool['tool'], 'classifications' : classifications}
-        
     for tool in ontology.normalized['classifications']:
         valid_feature_schemas[tool['featureSchemaId']] = parse_classification(tool)
     return valid_feature_schemas
@@ -370,8 +369,9 @@ def validate_polygon(x):
     if len(x) < 4:
         raise ValueError(f"A polygon should be defined by at least 3 points. Found {len(x)}, {x}")
     for pt in x:
-        if coord_name not in ['x', 'y']:
-            raise ValueError(f"Point is missing : {coord_name}")
+        for key in pt:
+            if key not in ['x', 'y']:
+                raise ValueError(f"Point is missing : {key}")
         if len(pt.keys()) != 2:
             raise ValueError(f"Expects {'x', 'y'} pair. Found : {pt}")
         
@@ -418,7 +418,6 @@ def validate_text_location(x):
         #TODO: Is this zero indexed? 
         raise ValueError(f"Start must be greater than or equal to 0. Found : {x}")
     
-    
 def is_uri(x):
     #simple for now
     if not isinstance(x, str):
@@ -454,35 +453,49 @@ def is_string(x):
         raise TypeError(f"Expected {x} to be a string.")
 
 
-def check_value(required_dict, payload_dict):
+def check_value(required_dict, payload_dict, **kwargs):
     #Won't work for lists.
     for key in required_dict:
         if key not in payload_dict:
             raise ValueError(f"Expected {key} to be in the payload : {payload_dict}.")
         if callable(required_dict[key]):
-            required_dict[key](payload_dict[key])
+            required_dict[key](payload_dict[key], **kwargs)
         elif isinstance(required_dict[key] , dict):
             if type(required_dict[key]) != type(payload_dict[key]):
                 raise TypeError("Both must be lists or dicts")
-            check_value(required_dict[key], payload_dict[key])
+            check_value(required_dict[key], payload_dict[key], **kwargs)
         else:
             ValueError(f"required dict has unexpected type : {required_dict[key]}")
-            
-def check_answer(x):
+
+
+def check_answer(x, valid_schemas):
+    #TODO: Is dict the best way to handle this?
     if isinstance(x, dict):
         #TODO: Fix this...
-        is_labelbox_id(x['schemaId'])
+        schema = x['schemaId']
+        is_labelbox_id(schema)
+        if schema not in valid_schemas:
+            #The schema for this tool does not match what is in the editor
+            raise ValueError(f"schema {schema} not in allowed schemas {valid_schemas}")
     else:
         #Free form text
         is_string(x)
 
-def check_answers(x):
-    #TODO: We want to check if those are valid..
-    schemas = [x_['schemaId'] for x_ in x]
+def check_answers(x, valid_schemas):
+    if not len(x):
+        raise ValueError(f"Must provide at least one answer to upload. Found {x}. Valid options {valid_schemas}") #TODO: Is it ok to submit an empty list of answers? Or should you just not enter anything?
+    
+    schemas = [x_.get('schemaId') for x_ in x]
+    if None in schemas:
+        raise ValueError(f"Found answer without id. {x}. Must be one of {valid_schemas}")
+
+
     if len(schemas) != len(set(schemas)):
         raise ValueError(f"schemas for an example must be unique. Found {schemas}")
     for schema in schemas:
         is_labelbox_id(schema)
+        if schema not in valid_schemas:
+            raise ValueError(f"schema {schema} not in allowed schemas {valid_schemas}")
 
 
 #Check if they named everything properly.
@@ -532,14 +545,29 @@ def check_tools(line, feature_schemas):
     if tool['tool'] in MUTUALLY_EXCLUSIVE_TOOLS or TOOL_MAPPINGS.get(tool["tool"]) is not None:
         #top level tools
         if 'classifications' in unused_keys:
-            for classification_tool in tool['classifications']:
+            #TODO: We need to only loop over one of these and grab the other..
+            #This will throw an error if there is more than 1 of each!!!!
+            #TODO
+            """
+            #TODO
+            #TODO
+            #TODO
+            #TODO
+            """
+            for classification_tool in tool['classifications'].values():
                 for classification_line in line['classifications']:
-                    check_value({CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool'])]}, classification_line)    
-
-                    """" 
-                    if line["schemaId"] not in feature_schemas:
+                    check_value(
+                        {
+                            CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], 
+                            classification_tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], 
+                            classification_tool['tool'])]
+                        }, 
+                        classification_line,
+                        valid_schemas = classification_tool.get('options')
+                    )    
+                    if classification_line["schemaId"] not in tool['classifications']:
                         raise ValueError(f"Invalid feature schemaId. Found : {line['schemaId']}")
-                    """
+                    
                     #TODO: Check individual classifications
                     ###Classifications are harder.. unused_keys = set(CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool'])).difference(unused_keys)
                 unused_keys.remove('classifications')
@@ -549,7 +577,14 @@ def check_tools(line, feature_schemas):
         #This case means we are working with classifications
         if 'classifications' in unused_keys:
             raise ValueError(f"classifications key is invalid for tools other than {MUTUALLY_EXCLUSIVE_TOOLS.keys()}")
-        check_value({CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)   
+
+        check_value(
+            {
+                CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])]
+            }, 
+                line,
+                valid_schemas = tool.get('options')
+            )   
         unused_keys = unused_keys.difference(set({CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])}))
 
     if len(unused_keys) > 0:
@@ -559,6 +594,7 @@ def check_tools(line, feature_schemas):
 def validate_datarow(line, data_row_ids):
     if line['dataRow']['id'] not in data_row_ids:
         raise ValueError(f"Uploading data to data row that does not exist in the project. data_row id: {line['dataRow']['id']}")
+
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
     data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
@@ -574,10 +610,45 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
             raise type(e)(f"Error on line {idx}") from e
 
 
-
-        
-
+#def ValidatorFactory(line):
 
 
+"""
+from pydantic import BaseModel
+
+#How do I add subclasses?
+#What is valid?
+#Here is your answer :)
 
 
+class MALRow(BaseModel):
+    tools: List
+    classifications: List
+
+
+class MALValidator(BaseModel):
+    schemaId: 
+    uuid: 
+    #Todo what is the pydantic type for this? dataRow:                "dataRow" : {"id" : is_labelbox_id}
+
+class Classification(MALValidator):
+    tool : #Enum (supported set of tools)
+    feature_schema_id:  #(labelbox id)
+
+class Text():
+
+class 
+
+class Tool(MALValidator):
+
+
+class Geometry(BaseModel):
+class Bbox(Geometry):
+class Mask(Geometry):
+class Point(Geometry):
+
+class Line(Geometry):
+
+
+class 
+"""

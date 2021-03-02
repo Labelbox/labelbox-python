@@ -111,11 +111,11 @@ def test_incorrect_line(line_inference, configured_project):
     line = line_inference.copy()
     line["line"] = [line["line"][0]] #Just one point
     with pytest.raises(ValueError):
-        _validate_ndjson([line_inference], configured_project)
+        _validate_ndjson([line], configured_project)
 
 
 def test_incorrect_rectangle(rectangle_inference, configured_project):
-    del rectangle_inference['top']
+    del rectangle_inference['bbox']['top']
     with pytest.raises(ValueError):
         _validate_ndjson([rectangle_inference], configured_project)
 
