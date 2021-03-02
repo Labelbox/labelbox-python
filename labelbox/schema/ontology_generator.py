@@ -143,7 +143,7 @@ class Tool:
                                            for c in self.classifications):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{classification.instructions}' "
-                f"for option '{self.label}'")
+                f"for tool '{self.name}'")
         self.classifications.append(classification)      
 
 @dataclass
@@ -175,7 +175,7 @@ class Ontology:
         if classification.instructions in (c.instructions 
                                            for c in self.classifications):
             raise InconsistentOntologyException(
-                f"Duplicate classifications instructions '{classification.instructions}'. ")
+                f"Duplicate classification instructions '{classification.instructions}'. ")
         self.classifications.append(classification)
 
     def asdict(self):

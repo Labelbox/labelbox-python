@@ -1,10 +1,3 @@
-"""
-TODO:
-test option.add_option
-test classification.add_option
-test tool.add_classification
-consider testing and ensuring failed scenarios
-"""
 from typing import Any, Dict, List, Union
 
 import pytest
@@ -21,7 +14,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "rectangle",
             "classifications": []
-}],
+        }],
         "classifications": [{
             "required": True,
             "instructions": "This is a question.",
@@ -71,8 +64,11 @@ def test_add_ontology_tool() -> None:
 
     second_tool = Tool(tool = Tool.Type.SEGMENTATION, name = "segmentation")
     o.add_tool(second_tool)
-
     assert len(o.tools) == 2
+
+    with pytest.raises(InconsistentOntologyException) as exc:
+        o.add_tool(Tool(tool=Tool.Type.BBOX, name = "bounding box"))
+    assert "Duplicate tool name" in str(exc.value)
 
 def test_add_ontology_classification() -> None:
     o = Ontology()
@@ -82,23 +78,56 @@ def test_add_ontology_classification() -> None:
     second_classification = Classification(
         class_type = Classification.Type.CHECKLIST, instructions = "checklist")
     o.add_classification(second_classification)
-
     assert len(o.classifications) == 2
+
+    with pytest.raises(InconsistentOntologyException) as exc:
+        o.add_classification(Classification(
+            class_type = Classification.Type.TEXT, instructions = "text"))
+    assert "Duplicate classification instructions" in str(exc.value)
+
+def test_tool_add_classification() -> None:
+    t = Tool(tool = Tool.Type.SEGMENTATION, name = "segmentation")
+    c = Classification(
+        class_type = Classification.Type.TEXT, instructions = "text")
+    t.add_classification(c)
+    assert t.classifications[0] == c
+
+    with pytest.raises(Exception) as exc:
+        t.add_classification(c)
+    assert "Duplicate nested classification" in str(exc)
+
+def test_classification_add_option() -> None:
+    c = Classification(
+        class_type = Classification.Type.RADIO, instructions = "radio")
+    o = Option(value = "option")
+    c.add_option(o)
+    assert c.options[0] == o
+
+    with pytest.raises(InconsistentOntologyException) as exc:
+        c.add_option(Option(value = "option"))
+    assert "Duplicate option" in str(exc.value)
+
+def test_option_add_option() -> None:
+    o = Option(value = "option")
+    c = Classification(
+        class_type = Classification.Type.TEXT, instructions = "text")
+    o.add_option(c)
+    assert o.options[0] == c
+
+    with pytest.raises(InconsistentOntologyException) as exc:
+        o.add_option(c)
+    assert "Duplicate nested classification" in str(exc.value)    
 
 def test_ontology_asdict(project) -> None:
     o = Ontology.from_project(project)
     assert o.asdict() == project.ontology().normalized
 
 def test_from_project_ontology(client, project) -> None:
-    frontend = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "Editor"))[0]
+    frontend = list(client.get_labeling_frontends(
+        where=LabelingFrontend.name == "Editor"))[0]
     project.setup(frontend, _SAMPLE_ONTOLOGY)    
     o = Ontology.from_project(project)
 
     assert o.tools[0].tool == Tool.Type.BBOX
     assert o.classifications[0].class_type == Classification.Type.RADIO
     assert o.classifications[0].options[0].value.lower() == "yes"
-
-    
-    
