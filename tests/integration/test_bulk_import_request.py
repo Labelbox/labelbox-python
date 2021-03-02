@@ -9,8 +9,11 @@ from labelbox.exceptions import UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
 
+"""
+- Here we only want to check that the uploads are calling the validation
+- Then with unit tests we can check the types of errors raised
 
-
+"""
 
 
 def test_create_from_url(configured_project):
@@ -36,14 +39,6 @@ def test_validate_file(client, configured_project):
         #Schema ids shouldn't match
 """
     
-def test_invalid_create_from_objects(configured_project, predictions):
-    preds = [pred.copy() for pred in predictions]
-    preds[1]['polygon'] = [{"x" : 100, "y" : 100}, {"x" : 200, "y" : 200}]
-    with pytest.raises(AssertionError):
-        configured_project.upload_annotations(name=f"test-upload-{str(uuid.uuid4())}",
-                                                     annotations=preds, validate = True)
-    
-
 
 def test_create_from_objects(configured_project, predictions):
     name = str(uuid.uuid4())

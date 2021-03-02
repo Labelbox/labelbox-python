@@ -187,13 +187,9 @@ def prediction_id_mapping(configured_project):
             "schemaId": tool['featureSchemaId'],
             "dataRow": {
                 "id": datarows[idx].uid,
-            }
+            },
+            'tool' : tool
         }
-        if 'classifications' in tool:
-            tool_ids = []
-            for classification_tool in tool['classifications']:
-                tool_ids.append(classification_tool['featureSchemaId'])
-            result[tool_type]['classifications'] = tool_ids
     return result
             
 
@@ -217,27 +213,29 @@ def polygon_inference(prediction_id_mapping):
                 }]
             }
     )
+    del polygon['tool']
     return polygon
 
 @pytest.fixture
 def rectangle_inference(prediction_id_mapping):
     rectangle = prediction_id_mapping['rectangle']
-    rectangle.update( "bbox": {
+    rectangle.update( {"bbox": {
                     "top": 48,
                     "left": 58,
                     "height": 865,
                     "width": 1512
                 },
                 'classifications' : [{ #Sub classification
-                     "answer": {"schemaId": tool['classifications'][0]['featureSchemaId']}
+                     "answer": {"schemaId": rectangle['tool']['classifications'][0]['featureSchemaId']}
                 }]
             })
+    del rectangle['tool']
     return rectangle
 
 @pytest.fixture
 def line_inference(prediction_id_mapping):
-    rectangle = prediction_id_mapping['rectangle']
-    rectangle.update({
+    line = prediction_id_mapping['line']
+    line.update({
                     "line": [{
                     "x": 147.692,
                     "y": 118.154
@@ -247,73 +245,79 @@ def line_inference(prediction_id_mapping):
                     "y": 160.154
                 }]
             })
-    return rectangle
-
+    del line['tool']            
+    return line
 
 @pytest.fixture
-def predictions(configured_project):
-    for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
-        if 'tool' in tool:
-            tool_type = tool['tool']
-        else:
-            tool_type = tool['type']
+def point_inference(prediction_id_mapping):
+    point = prediction_id_mapping['point']
+    point.update({
+        "point": {
+                    "x": 147.692,
+                    "y": 118.154
+                }}
+    )
+    del point['tool']    
+    return point
 
-        inference = {
-                "uuid":
-                    str(uuid.uuid4()),
-                "schemaId":
-                    tool['featureSchemaId'],
-                "dataRow": {
-                    "id": datarows[idx].uid,
-                }
-        }
-  
-        elif tool_type == 'line':
-            inference.update(
-                {
-                    "line": [{
-                    "x": 147.692,
-                    "y": 118.154
-                },
-                {
-                    "x": 150.692,
-                    "y": 160.154
-                }]
-            })
-        elif tool_type == 'point':
-            inference.update(
-                {
-                    "point":{
-                    "x": 147.692,
-                    "y": 118.154
-                }
-            })
-        elif tool_type == 'entity':
-            inference.update({"location" : {
+@pytest.fixture
+def entity_inference(prediction_id_mapping):
+    entity = prediction_id_mapping['named-entity']
+    entity.update({"location" : {
                 "start" : 67,
                 "end" : 128
             }})
+    del entity['tool']                
+    return entity
 
-        elif tool_type == 'segmentation': 
-            inference.update({'mask' : {
+@pytest.fixture
+def segmentation_inference(prediction_id_mapping):
+    segmentation = prediction_id_mapping['superpixel']
+    segmentation.update({'mask' : {
                 'instanceURI' : "sampleuri",
                 'colorRGB' : [0,0,0]
             }
             })
-        elif tool_type == 'checklist':
-            inference.update({
-                'answers' : [
+    del segmentation['tool']             
+    return segmentation        
+
+@pytest.fixture
+def checklist_inference(prediction_id_mapping):
+    checklist = prediction_id_mapping['checklist']
+    checklist.update({'answers' : [
                     {
-                        'schemaId' : tool['options'][0]['featureSchemaId']
+                        'schemaId' : checklist['tool']['options'][0]['featureSchemaId']
                     }
                 ]
             })
-        elif tool_type == 'text':
-            inference.update({
+    del checklist['tool']              
+    return checklist    
+
+@pytest.fixture
+def text_inference(prediction_id_mapping):
+    text = prediction_id_mapping['text']
+    text.update({
                 'answer' : "free form text..."
-                
+  
             })
-        else:
-            continue #Don't append..
-        inferences.append(inference)
-    return inferences
+    del text['tool']
+    return text   
+
+@pytest.fixture
+def predictions(polygon_inference,
+              rectangle_inference, 
+              line_inference, 
+              entity_inference,
+               segmentation_inference,
+                checklist_inference,
+                 text_inference):
+    return [
+        polygon_inference,
+        rectangle_inference,
+        line_inference,
+        entity_inference,
+        segmentation_inference,
+        checklist_inference,
+        text_inference
+    ]
+    

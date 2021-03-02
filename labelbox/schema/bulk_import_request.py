@@ -320,6 +320,10 @@ class BulkImportRequest(DbObject):
 - video only supports radio and checklist tools. 
     - This would be good to validate here.
 
+* While this is a pretty decent check it isn't going to be 100% since we aren't examining the actual data rows.
+* Eg entity recognition we can't check if the index is greater than the doc length.
+
+
 """
 
 
@@ -360,36 +364,60 @@ def get_valid_feature_schemas(project):
 
 def validate_polygon(x):
     #TODO: Do we support multipolygons?
-    
-    assert len(x) >= 3, f"A polygon should be defined by at least 3 points. Found {len(x)}, {x}"
-    for pt in x:
-        assert len(pt.keys()) == 2
-        assert 'x' in pt, 'y' in pt
+    if not isinstance(x, list):
+        raise TypeError(f"Polygon should be a list of dicts with 'x', 'y' keys. Found {type(x)}")
 
+    if len(x) < 4:
+        raise ValueError(f"A polygon should be defined by at least 3 points. Found {len(x)}, {x}")
+    for pt in x:
+        if coord_name not in ['x', 'y']:
+            raise ValueError(f"Point is missing : {coord_name}")
+        if len(pt.keys()) != 2:
+            raise ValueError(f"Expects {'x', 'y'} pair. Found : {pt}")
+        
 def validate_line(x):
-    #TODO: Do we support more than one at a time. Ie. line : [{...}, {...}] Our docs are unclear on this
-    assert len(x) >= 2, f"A line should be defined by at least 2 points. Found {len(x)}"
-    for pt in x:
-        assert len(pt.keys()) == 2
-        assert 'x' in pt, 'y' in pt    
+    if not isinstance(x, list):
+        raise TypeError(f"Lines should be a list of dicts with 'x', 'y' keys. Found {type(x)}")
 
+    if len(x) < 2:
+        raise ValueError(f"A line should be defined by at least 2 points. Found {len(x)}, {x}")
+
+    for pt in x:
+        for coord_name in pt:
+            if coord_name not in ['x', 'y']:
+                raise ValueError(f"Point is missing : {coord_name}")
+        if len(pt.keys()) != 2:
+            raise ValueError(f"Expects {'x', 'y'} pair. Found : {pt}")
+          
 def validate_rectangle(x):
     required_keys = ["top", "left", "height", "width"]
     for key in required_keys:
-        assert key in x, f"Rectangle missing required key {key}"
-        assert isinstance(x[key], int), f"rectangle must be provided ints. Found {x[key]} for {key}"
+        if  key not in x:
+            raise ValueError(f"Rectangle missing required key : {key}")
+        
+        if not isinstance(x[key], int):
+            raise ValueError(f"rectangle must be provided ints. Found {x[key]} for {key}")
 
 def validate_point(x):
     #TODO: Do we support multipolygons?
-    assert len(x.keys()) == 2
-    assert 'x' in x, 'y' in x    
-    #Do we want to check the type of the point. Looks like they should be ints.
+    for coord_name in x:
+        if coord_name not in ['x', 'y']:
+            raise ValueError(f"Point is missing : {coord_name}")
+    #Do we want to check the type of the point. Should be ints?
 
 def validate_text_location(x):
-    assert len(x.keys()) == 2
-    assert 'start' in x
-    assert 'end' in x
-    assert x['start'] <= x['end']
+    if 'start' not in x:
+        raise ValueError(f"Must include a start key for entity. Found : {x}")
+    if 'end' not in x:
+        raise ValueError(f"Must include a start key for entity. Found : {x}")    
+    if len(x.keys()) != 2:
+        raise ValueError(f"Only start and end are valid. Found : {x}")
+    if not x['start'] <= x['end']:
+        raise ValueError(f"Start must be less than or equal to end. Found : {x}")
+    if not x['start'] >= 0:
+        #TODO: Is this zero indexed? 
+        raise ValueError(f"Start must be greater than or equal to 0. Found : {x}")
+    
     
 def is_uri(x):
     #simple for now
@@ -406,11 +434,14 @@ def is_uuid(x):
     #simple for now
     if not isinstance(x, str):
         raise ValueError(f"Expected a uuid. Found {x}")
-    assert len(x) == 36, f"Expected a uuid. Found {x}"
+    
+    if len(x) != 36:
+        #Wrong type..
+        raise ValueError(f"Expected a uuid. Found {x}")
 
 def validate_color(x):
     #Does the dtype matter? Can it be a float?
-    if not isinstance(x, tuple, list):
+    if not isinstance(x, (tuple, list)):
         raise ValueError(f"Received color that is not a list or tuple. Found : {x}")
     elif len(x) != 3:
         raise ValueError(f"Must provide RGB values for segmentation colors. Found : {x}")
@@ -419,7 +450,8 @@ def validate_color(x):
     #We also want to make sure they are all different... todo
 
 def is_string(x):
-    assert type(x) == str
+    if type(x) != str:
+        raise TypeError(f"Expected {x} to be a string.")
 
 
 def check_value(required_dict, payload_dict):
@@ -430,21 +462,25 @@ def check_value(required_dict, payload_dict):
         if callable(required_dict[key]):
             required_dict[key](payload_dict[key])
         elif isinstance(required_dict[key] , dict):
-            assert type(required_dict[key] == type(payload_dict[key])), "Both must be lists or dicts"
+            if type(required_dict[key]) != type(payload_dict[key]):
+                raise TypeError("Both must be lists or dicts")
             check_value(required_dict[key], payload_dict[key])
         else:
             ValueError(f"required dict has unexpected type : {required_dict[key]}")
             
 def check_answer(x):
     if isinstance(x, dict):
+        #TODO: Fix this...
         is_labelbox_id(x['schemaId'])
     else:
         #Free form text
         is_string(x)
 
 def check_answers(x):
+    #TODO: We want to check if those are valid..
     schemas = [x_['schemaId'] for x_ in x]
-    assert len(schemas) == len(set(schemas)), "must be unique schemas"
+    if len(schemas) != len(set(schemas)):
+        raise ValueError(f"schemas for an example must be unique. Found {schemas}")
     for schema in schemas:
         is_labelbox_id(schema)
 
@@ -457,7 +493,9 @@ REQUIRED_KEYS =    {
 }
 
 TOOL_MAPPINGS = {
-    'rectangle' : 'bbox'
+    'rectangle' : 'bbox',
+    'named-entity' : 'location',
+    'superpixel' : 'mask'
 }
 
 CLASSIFICATION_MAPPINGS = {
@@ -467,12 +505,12 @@ CLASSIFICATION_MAPPINGS = {
 }
 
 MUTUALLY_EXCLUSIVE_TOOLS = {
-    'mask' : {"isinstanceURI" : is_uri, "colorRGB" : validate_color},
+    'mask' : {"instanceURI" : is_uri, "colorRGB" : validate_color},
     'polygon' : validate_polygon,
     'point' : validate_point,
     'line' : validate_line,
     'location' : validate_text_location ,
-    'bbox' : validate_rectangle
+    'bbox' : validate_rectangle,
 }
 
 MUTUALLY_EXCLUSIVE_CLASSIFICAITONS = {
@@ -497,16 +535,30 @@ def check_tools(line, feature_schemas):
             for classification_tool in tool['classifications']:
                 for classification_line in line['classifications']:
                     check_value({CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool'])]}, classification_line)    
-        check_value({TOOL_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_TOOLS[TOOL_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)      
+
+                    """" 
+                    if line["schemaId"] not in feature_schemas:
+                        raise ValueError(f"Invalid feature schemaId. Found : {line['schemaId']}")
+                    """
+                    #TODO: Check individual classifications
+                    ###Classifications are harder.. unused_keys = set(CLASSIFICATION_MAPPINGS.get(classification_tool["tool"], classification_tool['tool'])).difference(unused_keys)
+                unused_keys.remove('classifications')
+        check_value({TOOL_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_TOOLS[TOOL_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)   
+        unused_keys = unused_keys.difference(set({TOOL_MAPPINGS.get(tool["tool"], tool['tool'])}))
     else:
         #This case means we are working with classifications
         if 'classifications' in unused_keys:
             raise ValueError(f"classifications key is invalid for tools other than {MUTUALLY_EXCLUSIVE_TOOLS.keys()}")
         check_value({CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool']) : MUTUALLY_EXCLUSIVE_CLASSIFICAITONS[CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])]}, line)   
+        unused_keys = unused_keys.difference(set({CLASSIFICATION_MAPPINGS.get(tool["tool"], tool['tool'])}))
 
-    #TODO: Ensure all keys were used. We don't want extra crap in the ndjson 
-    #This will make sure something isn't named incorrectly.
-
+    if len(unused_keys) > 0:
+        #This is likely due to the user trying to upload more than one tool type for a single line.
+        raise ValueError(f"Found unused keys {line.keys()}\nSet of unused keys : {unused_keys}")
+    
+def validate_datarow(line, data_row_ids):
+    if line['dataRow']['id'] not in data_row_ids:
+        raise ValueError(f"Uploading data to data row that does not exist in the project. data_row id: {line['dataRow']['id']}")
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
     data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
@@ -514,10 +566,15 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
     _validate_uuids(lines)
     for idx, line in enumerate(lines):
         #Check primary keys
-        check_value(REQUIRED_KEYS, line)
-        assert line['dataRow']['id'] in data_row_ids, f"Uploading data to data row that does not exist in the project. data_row id: {line['dataRow']['id']}"
-        check_tools(line, feature_schemas)
-        
+        try:
+            check_value(REQUIRED_KEYS, line)
+            validate_datarow(line , data_row_ids)
+            check_tools(line, feature_schemas)
+        except Exception as e:
+            raise type(e)(f"Error on line {idx}") from e
+
+
+
         
 
 
