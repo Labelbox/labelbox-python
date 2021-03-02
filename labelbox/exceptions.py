@@ -104,3 +104,7 @@ class MalformedQueryException(Exception):
 class UuidError(LabelboxError):
     """ Raised when there are repeat Uuid's in bulk import request."""
     pass
+
+class NDJsonError(LabelboxError):
+    """Raised when an ndjson line is invalid."""
+    ...

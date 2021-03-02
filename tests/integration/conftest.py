@@ -227,7 +227,6 @@ def rectangle_inference(prediction_id_mapping):
                     "width": 1512
                 },
                 'classifications' : [{
-                     #Do these sublcasses need a uid, datatrow id?
                      "schemaId" : rectangle['tool']['classifications'][0]['featureSchemaId'],
                      "answer": {"schemaId": rectangle['tool']['classifications'][0]['options'][0]['featureSchemaId'] }
                 }]
