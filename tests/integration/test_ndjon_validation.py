@@ -167,3 +167,7 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
     with pytest.raises(NDJsonError):
         configured_project.upload_annotations(name="name", annotations=repeat_uuid)
 
+
+def test_video_upload(video_checklist_inference, configured_project):
+    pred = video_checklist_inference.copy()
+    _validate_ndjson([pred], configured_project)
