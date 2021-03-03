@@ -196,7 +196,7 @@ def prediction_id_mapping(configured_project):
 
 @pytest.fixture
 def polygon_inference(prediction_id_mapping):
-    polygon = prediction_id_mapping['polygon']
+    polygon = prediction_id_mapping['polygon'].copy()
     polygon.update(
 {
                 "polygon": [{
@@ -219,7 +219,7 @@ def polygon_inference(prediction_id_mapping):
 
 @pytest.fixture
 def rectangle_inference(prediction_id_mapping):
-    rectangle = prediction_id_mapping['rectangle']
+    rectangle = prediction_id_mapping['rectangle'].copy()
     rectangle.update( {"bbox": {
                     "top": 48,
                     "left": 58,
@@ -236,7 +236,7 @@ def rectangle_inference(prediction_id_mapping):
 
 @pytest.fixture
 def line_inference(prediction_id_mapping):
-    line = prediction_id_mapping['line']
+    line = prediction_id_mapping['line'].copy()
     line.update({
                     "line": [{
                     "x": 147.692,
@@ -252,7 +252,7 @@ def line_inference(prediction_id_mapping):
 
 @pytest.fixture
 def point_inference(prediction_id_mapping):
-    point = prediction_id_mapping['point']
+    point = prediction_id_mapping['point'].copy()
     point.update({
         "point": {
                     "x": 147.692,
@@ -264,7 +264,7 @@ def point_inference(prediction_id_mapping):
 
 @pytest.fixture
 def entity_inference(prediction_id_mapping):
-    entity = prediction_id_mapping['named-entity']
+    entity = prediction_id_mapping['named-entity'].copy()
     entity.update({"location" : {
                 "start" : 67,
                 "end" : 128
@@ -274,7 +274,7 @@ def entity_inference(prediction_id_mapping):
 
 @pytest.fixture
 def segmentation_inference(prediction_id_mapping):
-    segmentation = prediction_id_mapping['superpixel']
+    segmentation = prediction_id_mapping['superpixel'].copy()
     segmentation.update({'mask' : {
                 'instanceURI' : "sampleuri",
                 'colorRGB' : [0,0,0]
@@ -285,7 +285,7 @@ def segmentation_inference(prediction_id_mapping):
 
 @pytest.fixture
 def checklist_inference(prediction_id_mapping):
-    checklist = prediction_id_mapping['checklist']
+    checklist = prediction_id_mapping['checklist'].copy()
     checklist.update({'answers' : [
                     {
                         'schemaId' : checklist['tool']['options'][0]['featureSchemaId']
@@ -297,13 +297,43 @@ def checklist_inference(prediction_id_mapping):
 
 @pytest.fixture
 def text_inference(prediction_id_mapping):
-    text = prediction_id_mapping['text']
+    text = prediction_id_mapping['text'].copy()
     text.update({
                 'answer' : "free form text..."
   
             })
     del text['tool']
     return text   
+
+
+@pytest.fixture
+def video_checklist_inference(prediction_id_mapping):
+    checklist = prediction_id_mapping['checklist'].copy()
+    checklist.update({'answers' : [
+                    {
+                        'schemaId' : checklist['tool']['options'][0]['featureSchemaId']
+                    }
+                ]
+            })
+
+    checklist.update({
+        "frames": [
+        {
+            "start": 7,
+            "end": 13,
+        },
+        {
+            "start": 18,
+            "end": 19,
+        }
+    ]})
+    del checklist['tool']              
+    return checklist   
+
+
+
+
+
 
 @pytest.fixture
 def predictions(polygon_inference,

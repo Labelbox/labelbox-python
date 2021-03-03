@@ -10,6 +10,7 @@ from typing import Set
 from typing import Tuple
 from typing import Union
 from uuid import UUID
+from pydantic import BaseModel, validator
 
 import backoff
 import ndjson
@@ -243,7 +244,7 @@ class BulkImportRequest(DbObject):
             }
         }``
 
-        Args:
+        Args:x
             client (Client): a Labelbox client
             project_id (str): id of project for which predictions will be imported
             name (str): name of BulkImportRequest
@@ -315,25 +316,7 @@ class BulkImportRequest(DbObject):
         return cls(client, response_data["createBulkImportRequest"])
 
 
-"""     
-#Outstanding questions:
 
-* How to check data row media type?
-    * Video
-        - annotations without frames indices wouldn't be flagged right now
-    * Everything else
-        - We won't know if a text tool is being used for video. 
-        - Or a tool only support for images is being used for video
-        ... etc
-
-- video only supports radio and checklist tools. 
-    - This would be good to validate here.
-
-* While this is a pretty decent check it isn't going to be 100% since we aren't examining the actual data rows.
-* Eg entity recognition we can't check if the index is greater than the doc length.
-
-
-"""
 
 def _validate_uuids(lines: Iterable[Dict[str, Any]]) -> None:
     """Validate individual ndjson lines.
@@ -347,6 +330,9 @@ def _validate_uuids(lines: Iterable[Dict[str, Any]]) -> None:
                 f'{uuid} already used in this import job, '
                 'must be unique for the project.')
         uuids.add(uuid)
+
+
+
 
 def parse_classification(tool):
     """
@@ -371,15 +357,9 @@ def get_valid_feature_schemas(project):
     return valid_feature_schemas
 
 
-from pydantic import BaseModel, validator
-#Note that pydantic is a bit strict. It could break workflows of people who throw crap into the payload
-#Maybe set validate to false by default?
 
-#How do I add subclasses?
-#What is valid?
-#Here is your answer :)
 
-LabelboxID = str #todo
+LabelboxID = constr(min_length=25, max_length=25, strict=True)
 
 #TODO: Is this defined elsewhere?
 class Bbox(TypedDict):
@@ -399,23 +379,26 @@ class Feature(BaseModel):
     schemaId: LabelboxID
 
     class Config:
-        #We don't want them to add extra stuff to the payload
+        #Users shouldn't to add extra data to the payload
         extra = 'forbid'
-
 
 #Do this classes need to support uuids?
 class Text(Feature):
     ontology_type: str = "text"
     answer: str
 
-class CheckList(Feature):
+class VideoSupported(Feature):
+    #Note that frames are only allowed as top level inferences for video
+    frames : Optional[List[TypedDict("frames", {"end" : int, "start" : int})]]
+
+
+class CheckList(VideoSupported):
     ontology_type: str = "checklist"
     answers: conlist(TypedDict('schemaId', {'schemaId': LabelboxID}), min_items = 1)
     
-class Radio(Feature):
+class Radio(VideoSupported):
     ontology_type: str = "radio"
     answer: TypedDict('schemaId' , {'schemaId': LabelboxID})
-
 
 class Tool(Feature):
     classifications : List[Union[CheckList, Text, Radio]] = []
@@ -479,6 +462,8 @@ class MaskTool(Tool):
             raise ValueError(f"All rgb colors must be between 0 and 255. Found : {colors}")
         return v
 
+
+
 class Annotation(BaseModel):
     uuid: UUID
     dataRow: TypedDict('dataRow' , {'id' : LabelboxID})
@@ -525,6 +510,14 @@ class Annotation(BaseModel):
 
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
+    """     
+    Notes:
+        - Validation doesn't check data row data types. 
+        This means we don't check to make sure that the annotation is valid for a particular data type.
+        - video only supports radio and checklist tools and requires frame indices which we don't check for.
+        - We also forbid extra so that might be too strict...
+        - We also aren't checking bounds of the assets (eg frame index, image height, text length)
+    """
     data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
     feature_schemas = get_valid_feature_schemas(project)
     uids = set()
@@ -542,5 +535,5 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
         except (ValidationError, ValueError) as e:
             raise labelbox.exceptions.NDJsonError(f"Invalid NDJson on line {idx}") from e
         
-    
 
+    
