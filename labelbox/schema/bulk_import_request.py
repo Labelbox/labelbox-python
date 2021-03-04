@@ -342,12 +342,12 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
         try:
             annotation = NDAnnotation(data=line)
             annotation.validate(data_row_ids, feature_schemas)
-            uuid = annotation.data.uuid
+            uuid = str(annotation.data.uuid)
             if uuid in uids:
                 raise labelbox.exceptions.UuidError(
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
-            uids.add(str(uuid))
+            uids.add(uuid)
         except (ValidationError, ValueError, KeyError) as e:
             raise labelbox.exceptions.NDJsonError(
                 f"Invalid NDJson on line {idx}") from e
