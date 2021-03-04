@@ -9,9 +9,13 @@ class AssetMetadata(DbObject):
         meta_type (str): IMAGE, VIDEO, TEXT, or IMAGE_OVERLAY
         meta_value (str): URL to an external file or a string of text
     """
-    VIDEO = "VIDEO"
-    IMAGE = "IMAGE"
-    TEXT = "TEXT"
+    
+    VALID_TYPES = {
+        "VIDEO",
+        "IMAGE",
+        "TEXT",
+        "IMAGE_OVERLAY"
+    }
 
     meta_type = Field.String("meta_type")
     meta_value = Field.String("meta_value")
