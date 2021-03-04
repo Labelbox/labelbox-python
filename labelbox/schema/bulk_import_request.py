@@ -3,13 +3,6 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, List, NamedTuple, Optional
-from typing import BinaryIO
-from typing import Dict
-from typing import Iterable
-from typing import Set
-from typing import Tuple
-from typing import Union
 from uuid import UUID, uuid4
 from pydantic import BaseModel, validator
 import pydantic
@@ -17,8 +10,6 @@ import backoff
 import ndjson
 from pydantic.types import conlist, constr
 import requests
-from typing_extensions import Annotated
-
 from labelbox import utils
 import labelbox.exceptions
 from labelbox.orm import query
@@ -27,11 +18,8 @@ from labelbox.orm.model import Field
 from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 from pydantic import ValidationError
-
-try:
-    from typing import TypedDict, Literal
-except ImportError:
-    from typing_extensions import TypedDict, Literal
+from typing import Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union
+from typing_extensions import TypedDict, Literal
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
