@@ -414,11 +414,10 @@ class Project(DbObject, Updateable, Deletable):
             "showingPredictionsToLabelers"]
 
     def upload_annotations(
-        self,
-        name: str,
-        annotations: Union[str, Union[str, Path], Iterable[dict]],
-        validate = True
-    ) -> 'BulkImportRequest':  # type: ignore
+            self,
+            name: str,
+            annotations: Union[str, Union[str, Path], Iterable[dict]],
+            validate=True) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
@@ -450,13 +449,11 @@ class Project(DbObject, Updateable, Deletable):
                 return bool(parsed.scheme) and bool(parsed.netloc)
 
             if _is_url_valid(annotations):
-                return BulkImportRequest.create_from_url(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    url=str(annotations),
-                    validate = validate
-                )
+                return BulkImportRequest.create_from_url(client=self.client,
+                                                         project_id=self.uid,
+                                                         name=name,
+                                                         url=str(annotations),
+                                                         validate=validate)
             else:
                 path = Path(annotations)
                 if not path.exists():
@@ -476,11 +473,11 @@ class Project(DbObject, Updateable, Deletable):
                 project_id=self.uid,
                 name=name,
                 predictions=annotations,  # type: ignore
-                validate = validate
-            )
+                validate=validate)
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
 
 class LabelingParameterOverride(DbObject):
     """ Customizes the order of assets in the label queue.
