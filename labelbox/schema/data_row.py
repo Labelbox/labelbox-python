@@ -2,6 +2,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.asset_metadata import AssetMetadata
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
@@ -34,6 +35,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
     predictions = Relationship.ToMany("Prediction", False)
 
+    
+
     @staticmethod
     def bulk_delete(data_rows):
         """ Deletes all the given DataRows.
@@ -60,6 +63,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Returns:
             `AssetMetadata` DB object.
         """
+        if meta_type not in AssetMetadata.VALID_TYPES:
+            raise ValueError(f"metadata must be one of {AssetMetadata.VALID_TYPES}. Found {meta_type}")
+
         meta_type_param = "metaType"
         meta_value_param = "metaValue"
         data_row_id_param = "dataRowId"
