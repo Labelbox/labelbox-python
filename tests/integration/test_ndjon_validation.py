@@ -1,7 +1,52 @@
 from labelbox.exceptions import NDJsonError, UuidError
-from labelbox.schema.bulk_import_request import _validate_ndjson
+from labelbox.schema.bulk_import_request import (
+    NDCheckList, 
+    NDClassification, 
+    NDMask, 
+    NDPolygon, 
+    NDPolyline, 
+    NDRadio, 
+    NDRectangle, 
+    NDText, 
+    NDTextEntity, 
+    NDTool, 
+    _validate_ndjson
+)
 import pytest
 import ndjson
+
+def test_classification_construction(checklist_inference, text_inference):
+    checklist = NDClassification.build(checklist_inference)
+    assert isinstance(checklist, NDCheckList)
+    text= NDClassification.build(text_inference)
+    assert isinstance(text, NDText)
+
+def test_subclassification_construction(rectangle_inference):
+    tool = NDTool.build(rectangle_inference)
+    assert len(tool.classifications) == 1, "Subclass was not constructed"
+    assert isinstance(tool.classifications[0], NDRadio)
+
+def test_tool_construction(polygon_inference,
+        rectangle_inference,
+        line_inference,
+        entity_inference,
+        segmentation_inference):
+
+    polygon = NDTool.build(polygon_inference)
+    assert isinstance(polygon, NDPolygon)
+
+    rectangle = NDTool.build(rectangle_inference)
+    assert isinstance(rectangle, NDRectangle)
+
+    line = NDTool.build(line_inference)
+    assert isinstance(line, NDPolyline)
+
+    entity = NDTool.build(entity_inference)
+    assert isinstance(entity, NDTextEntity)
+
+    mask = NDTool.build(segmentation_inference)
+    assert isinstance(mask, NDMask)
+
 
 def test_incorrect_feature_schema(rectangle_inference, polygon_inference, configured_project):
     #Valid but incorrect feature schema
@@ -76,7 +121,6 @@ def test_invalid_polygon(polygon_inference, configured_project):
     with pytest.raises(NDJsonError):
         _validate_ndjson([pred], configured_project)
 
-    
 def test_incorrect_entity(entity_inference, configured_project):
     entity = entity_inference.copy()
     #Location cannot be a list
@@ -140,7 +184,6 @@ def test_missing_feature_schema(configured_project, rectangle_inference):
     with pytest.raises(NDJsonError):
         _validate_ndjson([pred], configured_project)
 
-
 def test_validate_ndjson(tmp_path, configured_project):
     file_name = f"broken.ndjson"
     file_path = tmp_path / file_name
@@ -168,9 +211,9 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
         configured_project.upload_annotations(name="name", annotations=repeat_uuid)
 
 
-#TODO: Add a test that constructs all the objects
-#Instead of calling _validate_ndjson,... Once the pattern for construction is solved..
-
 def test_video_upload(video_checklist_inference, configured_project):
     pred = video_checklist_inference.copy()
     _validate_ndjson([pred], configured_project)
+
+
+
