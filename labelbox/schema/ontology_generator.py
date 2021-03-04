@@ -155,15 +155,7 @@ class Ontology:
     @classmethod
     def from_project(cls, project: Project):
         ontology = project.ontology().normalized
-        return_ontology = Ontology()
-
-        for tool in ontology["tools"]: 
-            return_ontology.tools.append(Tool.from_dict(tool))
-
-        for classification in ontology["classifications"]:
-            return_ontology.classifications.append(Classification.from_dict(classification))
- 
-        return return_ontology
+        return Ontology.from_dict(ontology)
 
     def add_tool(self, tool: Tool) -> Tool: 
         if tool.name in (t.name for t in self.tools):
@@ -182,3 +174,9 @@ class Ontology:
         return {
             "tools": [t.asdict() for t in self.tools],
             "classifications": [c.asdict() for c in self.classifications]}
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str,Any]):
+        return Ontology(
+            tools = [Tool.from_dict(t) for t in dictionary["tools"]],
+            classifications = [Classification.from_dict(c) for c in dictionary["classifications"]])

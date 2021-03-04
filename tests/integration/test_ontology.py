@@ -9,41 +9,122 @@ from labelbox.schema.ontology_generator import Ontology, \
 
 _SAMPLE_ONTOLOGY = {
         "tools": [{
+            "schemaNodeId": None,
+            "featureSchemaId": None,
             "required": False,
-            "name": "Dog",
+            "name": "poly",
+            "color": "#FF0000",
+            "tool": "polygon",
+            "classifications": []
+        }, {
+            "schemaNodeId": None,
+            "featureSchemaId": None,
+            "required": False,
+            "name": "segment",
+            "color": "#FF0000",
+            "tool": "superpixel",
+            "classifications": []
+        }, {
+            "schemaNodeId": None,
+            "featureSchemaId": None,
+            "required": False,
+            "name": "bbox",
             "color": "#FF0000",
             "tool": "rectangle",
+            "classifications": [{
+                "schemaNodeId": None,
+                "featureSchemaId": None,
+                "required": True,
+                "instructions": "nested classification",
+                "name": "nested classification",
+                "type": "radio",
+                "options": [{
+                    "schemaNodeId": None,
+                    "featureSchemaId": None,
+                    "label": "first",
+                    "value": "first",
+                    "options": [{
+                        "schemaNodeId": None,
+                        "featureSchemaId": None,
+                        "required": False,
+                        "instructions": "nested nested text",
+                        "name": "nested nested text",
+                        "type": "text",
+                        "options": []
+                    }]
+                }, {
+                    "schemaNodeId": None,
+                    "featureSchemaId": None,
+                    "label": "second",
+                    "value": "second",
+                    "options": []
+                }]
+            }, {
+                "schemaNodeId": None,
+                "featureSchemaId": None,
+                "required": True,
+                "instructions": "nested text",
+                "name": "nested text",
+                "type": "text",
+                "options": []
+            }]
+        }, {
+            "schemaNodeId": None,
+            "featureSchemaId": None,
+            "required": False,
+            "name": "dot",
+            "color": "#FF0000",
+            "tool": "point",
+            "classifications": []
+        }, {
+            "schemaNodeId": None,
+            "featureSchemaId": None,
+            "required": False,
+            "name": "polyline",
+            "color": "#FF0000",
+            "tool": "line",
+            "classifications": []
+        }, {
+            "schemaNodeId": None,
+            "featureSchemaId": None,
+            "required": False,
+            "name": "ner",
+            "color": "#FF0000",
+            "tool": "named-entity",
             "classifications": []
         }],
         "classifications": [{
+            "schemaNodeId": None,
+            "featureSchemaId": None,
             "required": True,
             "instructions": "This is a question.",
             "name": "This is a question.",
             "type": "radio",
             "options": [{
+                "schemaNodeId": None,
+                "featureSchemaId": None,
                 "label": "yes",
-                "value": "yes"
+                "value": "yes",
+                "options": []
             }, {
+                "schemaNodeId": None,
+                "featureSchemaId": None,
                 "label": "no",
-                "value": "no"
+                "value": "no",
+                "options": []
             }]
         }]
     }
 
 @pytest.mark.parametrize("tool_type", list(Tool.Type))
-@pytest.mark.parametrize("tool_name", ["tool"])
-def test_create_tool(tool_type, tool_name) -> None:
-    t = Tool(tool = tool_type, name = tool_name)
+def test_create_tool(tool_type) -> None:
+    t = Tool(tool = tool_type, name = "tool")
     assert(t.tool == tool_type)
-    assert(t.name == tool_name)
 
 @pytest.mark.parametrize("class_type", list(Classification.Type))
-@pytest.mark.parametrize("class_instr", ["classification"])
-def test_create_classification(class_type, class_instr) -> None:
-    c = Classification(class_type = class_type, instructions = class_instr)
+def test_create_classification(class_type) -> None:
+    c = Classification(class_type = class_type, instructions = "classification")
     assert(c.class_type == class_type)
-    assert(c.instructions == class_instr)
-    assert(c.name == c.instructions)
 
 @pytest.mark.parametrize(
     "value, expected_value, typing",[(3,3, int),("string","string", str)])
@@ -51,7 +132,6 @@ def test_create_option(value, expected_value, typing) -> None:
     o = Option(value = value)
     assert(o.value == expected_value)
     assert(o.value == o.label)
-    assert(type(o.value) == typing)
 
 def test_create_empty_ontology() -> None:
     o = Ontology()
@@ -65,6 +145,9 @@ def test_add_ontology_tool() -> None:
     second_tool = Tool(tool = Tool.Type.SEGMENTATION, name = "segmentation")
     o.add_tool(second_tool)
     assert len(o.tools) == 2
+
+    for tool in o.tools:
+        assert(type(tool) == Tool)    
 
     with pytest.raises(InconsistentOntologyException) as exc:
         o.add_tool(Tool(tool=Tool.Type.BBOX, name = "bounding box"))
@@ -80,6 +163,9 @@ def test_add_ontology_classification() -> None:
     o.add_classification(second_classification)
     assert len(o.classifications) == 2
 
+    for classification in o.classifications:
+        assert(type(classification) == Classification)
+
     with pytest.raises(InconsistentOntologyException) as exc:
         o.add_classification(Classification(
             class_type = Classification.Type.TEXT, instructions = "text"))
@@ -90,7 +176,7 @@ def test_tool_add_classification() -> None:
     c = Classification(
         class_type = Classification.Type.TEXT, instructions = "text")
     t.add_classification(c)
-    assert t.classifications[0] == c
+    assert t.classifications == [c]
 
     with pytest.raises(Exception) as exc:
         t.add_classification(c)
@@ -101,7 +187,7 @@ def test_classification_add_option() -> None:
         class_type = Classification.Type.RADIO, instructions = "radio")
     o = Option(value = "option")
     c.add_option(o)
-    assert c.options[0] == o
+    assert c.options == [o]
 
     with pytest.raises(InconsistentOntologyException) as exc:
         c.add_option(Option(value = "option"))
@@ -112,22 +198,15 @@ def test_option_add_option() -> None:
     c = Classification(
         class_type = Classification.Type.TEXT, instructions = "text")
     o.add_option(c)
-    assert o.options[0] == c
+    assert o.options == [c]
 
     with pytest.raises(InconsistentOntologyException) as exc:
         o.add_option(c)
     assert "Duplicate nested classification" in str(exc.value)    
 
 def test_ontology_asdict(project) -> None:
-    o = Ontology.from_project(project)
-    assert o.asdict() == project.ontology().normalized
+    assert Ontology.from_dict(_SAMPLE_ONTOLOGY).asdict() == _SAMPLE_ONTOLOGY
 
 def test_from_project_ontology(client, project) -> None:
-    frontend = list(client.get_labeling_frontends(
-        where=LabelingFrontend.name == "Editor"))[0]
-    project.setup(frontend, _SAMPLE_ONTOLOGY)    
     o = Ontology.from_project(project)
-
-    assert o.tools[0].tool == Tool.Type.BBOX
-    assert o.classifications[0].class_type == Classification.Type.RADIO
-    assert o.classifications[0].options[0].value.lower() == "yes"
+    assert o.asdict() == project.ontology().normalized
