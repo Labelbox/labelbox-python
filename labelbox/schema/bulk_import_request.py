@@ -28,16 +28,13 @@ from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 from pydantic import ValidationError
 
-
 try:
     from typing import TypedDict, Literal
 except ImportError:
     from typing_extensions import TypedDict, Literal
 
-
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
-
 
 
 def _make_file_name(project_id: str, name: str) -> str:
@@ -189,8 +186,12 @@ class BulkImportRequest(DbObject):
         return cls(client, response['bulkImportRequest'])
 
     @classmethod
-    def create_from_url(cls, client, project_id: str, name: str,
-                        url: str, validate = True) -> 'BulkImportRequest':
+    def create_from_url(cls,
+                        client,
+                        project_id: str,
+                        name: str,
+                        url: str,
+                        validate=True) -> 'BulkImportRequest':
         """
         Creates a BulkImportRequest from a publicly accessible URL
         to an ndjson file with predictions.
@@ -204,11 +205,12 @@ class BulkImportRequest(DbObject):
             BulkImportRequest object
         """
         if validate:
-            logger.warn("Validation is turned on. The file will be downloaded locally and processed before uploading.")                
+            logger.warn(
+                "Validation is turned on. The file will be downloaded locally and processed before uploading."
+            )
             res = requests.get(url)
             data = ndjson.loads(res.text)
             _validate_ndjson(data, client.get_project(project_id))
-            
 
         query_str = """mutation createBulkImportRequestPyApi(
                 $projectId: ID!, $name: String!, $fileUrl: String!) {
@@ -227,8 +229,12 @@ class BulkImportRequest(DbObject):
                    bulk_import_request_response["createBulkImportRequest"])
 
     @classmethod
-    def create_from_objects(cls, client, project_id: str, name: str,
-                            predictions: Iterable[dict], validate = True) -> 'BulkImportRequest':
+    def create_from_objects(cls,
+                            client,
+                            project_id: str,
+                            name: str,
+                            predictions: Iterable[dict],
+                            validate=True) -> 'BulkImportRequest':
         """
         Creates a `BulkImportRequest` from an iterable of dictionaries.
 
@@ -337,13 +343,16 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
         NDJsonError: Raise for invalid NDJson
         UuidError: Duplicate UUID in upload
     """
-    data_row_ids = {data_row.uid : data_row for dataset in project.datasets() for data_row in dataset.data_rows()}
+    data_row_ids = {
+        data_row.uid: data_row for dataset in project.datasets()
+        for data_row in dataset.data_rows()
+    }
     feature_schemas = get_mal_schemas(project.ontology())
     uids = set()
     for idx, line in enumerate(lines):
         try:
-            annotation = NDAnnotation(data = line)
-            annotation.validate(data_row_ids, feature_schemas)   
+            annotation = NDAnnotation(data=line)
+            annotation.validate(data_row_ids, feature_schemas)
             uuid = annotation.data.uuid
             if uuid in uids:
                 raise labelbox.exceptions.UuidError(
@@ -351,8 +360,9 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
                     'must be unique for the project.')
             uids.add(uuid)
         except (ValidationError, ValueError, KeyError) as e:
-            raise labelbox.exceptions.NDJsonError(f"Invalid NDJson on line {idx}") from e
-        
+            raise labelbox.exceptions.NDJsonError(
+                f"Invalid NDJson on line {idx}") from e
+
 
 #The rest of this file contains objects for MAL validation
 def parse_classification(tool):
@@ -366,10 +376,18 @@ def parse_classification(tool):
         dict
     """
     if tool['type'] in ['radio', 'checklist']:
-        return {'tool' : tool['type'], 'featureSchemaId' : tool['featureSchemaId'] , 'options' : [r['featureSchemaId'] for r in tool['options']]}
+        return {
+            'tool': tool['type'],
+            'featureSchemaId': tool['featureSchemaId'],
+            'options': [r['featureSchemaId'] for r in tool['options']]
+        }
     elif tool['type'] == 'text':
-        return {'tool' : tool['type'],  'featureSchemaId' : tool['featureSchemaId']}
-    
+        return {
+            'tool': tool['type'],
+            'featureSchemaId': tool['featureSchemaId']
+        }
+
+
 def get_mal_schemas(ontology):
     """
     Converts a project ontology to a dict for easier lookup during ndjson validation
@@ -382,15 +400,23 @@ def get_mal_schemas(ontology):
 
     valid_feature_schemas = {}
     for tool in ontology.normalized['tools']:
-        classifications = [parse_classification(classification_tool) for classification_tool in tool['classifications']]
-        classifications = {v['featureSchemaId'] : v for v in classifications}
-        valid_feature_schemas[tool['featureSchemaId']] = {'tool' : tool['tool'], 'classifications' : classifications}
+        classifications = [
+            parse_classification(classification_tool)
+            for classification_tool in tool['classifications']
+        ]
+        classifications = {v['featureSchemaId']: v for v in classifications}
+        valid_feature_schemas[tool['featureSchemaId']] = {
+            'tool': tool['tool'],
+            'classifications': classifications
+        }
     for tool in ontology.normalized['classifications']:
-        valid_feature_schemas[tool['featureSchemaId']] = parse_classification(tool)
+        valid_feature_schemas[tool['featureSchemaId']] = parse_classification(
+            tool)
     return valid_feature_schemas
 
 
 LabelboxID = constr(min_length=25, max_length=25, strict=True)
+
 
 class Bbox(TypedDict):
     top: float
@@ -398,21 +424,24 @@ class Bbox(TypedDict):
     height: float
     width: float
 
+
 class Point(TypedDict):
     x: float
     y: float
 
+
 class VideoSupported(BaseModel):
     #Note that frames are only allowed as top level inferences for video
-    frames : Optional[List[TypedDict("frames", {"end" : int, "start" : int})]]
+    frames: Optional[List[TypedDict("frames", {"end": int, "start": int})]]
+
 
 class UnionConstructor:
-    types : List["NDBase"]
+    types: List["NDBase"]
 
     @classmethod
     def __get_validators__(cls):
         yield cls.build
-    
+
     @classmethod
     def build(cls, data):
         if isinstance(data, BaseModel):
@@ -421,7 +450,7 @@ class UnionConstructor:
         top_level_fields = []
         max_match = 0
         matched = None
-        
+
         for type_ in cls.types:
             determinate_fields = type_.Config.determinants(type_)
             top_level_fields.append(determinate_fields)
@@ -438,155 +467,216 @@ class UnionConstructor:
                 elif isinstance(data['answer'], str):
                     matched = NDText
                 else:
-                    raise ValidationError(f"Unexpected type for answer. Found {data['answer']}. Expected a string or a dict")
-            return matched(**data) 
+                    raise ValidationError(
+                        f"Unexpected type for answer. Found {data['answer']}. Expected a string or a dict"
+                    )
+            return matched(**data)
         else:
-            raise KeyError(f"Expected classes with values {data} to have keys matching one of the following : {top_level_fields}")
+            raise KeyError(
+                f"Expected classes with values {data} to have keys matching one of the following : {top_level_fields}"
+            )
+
 
 class NDBase(BaseModel):
     ontology_type: str
     schemaId: LabelboxID
     uuid: UUID
-    dataRow: TypedDict('dataRow' , {'id' : LabelboxID})
+    dataRow: TypedDict('dataRow', {'id': LabelboxID})
 
     def validate_datarow(self, valid_datarows):
         if self.dataRow['id'] not in valid_datarows:
-            raise ValueError(f"datarow {self.dataRow['id']} is not attached to the specified project")
+            raise ValueError(
+                f"datarow {self.dataRow['id']} is not attached to the specified project"
+            )
 
     def validate_feature_schemas(self, valid_feature_schemas):
         if self.schemaId not in valid_feature_schemas:
-            raise ValueError(f"schema id {self.schemaId} is not valid for the provided project's ontology.")
-        
+            raise ValueError(
+                f"schema id {self.schemaId} is not valid for the provided project's ontology."
+            )
+
         if self.ontology_type != valid_feature_schemas[self.schemaId]['tool']:
-            raise ValueError(f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas[self.schemaId]['tool']}")
+            raise ValueError(
+                f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas[self.schemaId]['tool']}"
+            )
 
     class Config:
         #Users shouldn't to add extra data to the payload
         extra = 'forbid'
+
         @staticmethod
         def determinants(parent_cls) -> None:
             #This is a hack for better error messages
-            return [k for k,v in parent_cls.__fields__.items() if 'determinant' in v.field_info.extra]
+            return [
+                k for k, v in parent_cls.__fields__.items()
+                if 'determinant' in v.field_info.extra
+            ]
+
 
 ###### Classifications ######
 
+
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
-    answer: str = pydantic.Field(determinant = True)
+    answer: str = pydantic.Field(determinant=True)
     #No feature schema to check
+
 
 class NDCheckList(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: conlist(TypedDict('schemaId', {'schemaId': LabelboxID}), min_items = 1) = pydantic.Field(determinant = True)
+    answers: conlist(TypedDict('schemaId', {'schemaId': LabelboxID}),
+                     min_items=1) = pydantic.Field(determinant=True)
 
-    def validate_feature_schemas(self,  valid_feature_schemas):
+    def validate_feature_schemas(self, valid_feature_schemas):
         #Test top level feature schema for this tool
         super(NDCheckList, self).validate_feature_schemas(valid_feature_schemas)
         #Test the feature schemas provided to the answer field
-        if len(set([answer['schemaId'] for answer in self.answers])) != len(self.answers):
-            raise ValueError(f"Duplicated featureSchema found for checklist {self.uuid}")
+        if len(set([answer['schemaId'] for answer in self.answers])) != len(
+                self.answers):
+            raise ValueError(
+                f"Duplicated featureSchema found for checklist {self.uuid}")
         for answer in self.answers:
             options = valid_feature_schemas[self.schemaId]['options']
             if answer['schemaId'] not in options:
-                raise ValueError(f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {answer}")
-    
+                raise ValueError(
+                    f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {answer}"
+                )
+
+
 class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
-    answer: TypedDict('schemaId' , {'schemaId': LabelboxID}) = pydantic.Field(determinant = True)
+    answer: TypedDict(
+        'schemaId', {'schemaId': LabelboxID}) = pydantic.Field(determinant=True)
 
     def validate_feature_schemas(self, valid_feature_schemas):
         super(NDRadio, self).validate_feature_schemas(valid_feature_schemas)
         options = valid_feature_schemas[self.schemaId]['options']
         if self.answer['schemaId'] not in options:
-            raise ValueError(f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer['schemaId']}")
+            raise ValueError(
+                f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer['schemaId']}"
+            )
 
 
 class NDClassification(UnionConstructor):
     #Represents both subclasses and top level classifications
-    types = [NDText , NDRadio, NDCheckList]
+    types = [NDText, NDRadio, NDCheckList]
 
 
 ###### Tools ######
 
+
 class BaseTool(NDBase):
-    classifications : List["NDClassification"] = []
+    classifications: List["NDClassification"] = []
+
     #This is indepdent of our problem
     def validate_feature_schemas(self, valid_feature_schemas):
         for classification in self.classifications:
-            classification.validate_feature_schemas(valid_feature_schemas[self.schemaId]['classifications'])
-    
+            classification.validate_feature_schemas(
+                valid_feature_schemas[self.schemaId]['classifications'])
+
     @validator('classifications', pre=True)
     def validate_subclasses(cls, value, field):
         #Create uuid and datarow id so we don't have to define classification objects twice
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
         results = []
         for row in value:
-            row.update({'dataRow' : {'id' : 'child'.center(25, '_')}, 'uuid' : str(uuid4())})
+            row.update({
+                'dataRow': {
+                    'id': 'child'.center(25, '_')
+                },
+                'uuid': str(uuid4())
+            })
             results.append(row)
         return results
 
+
 class NDPolygon(BaseTool):
     ontology_type: Literal["polygon"] = "polygon"
-    polygon: List[Point] = pydantic.Field(determinant = True)
+    polygon: List[Point] = pydantic.Field(determinant=True)
 
     @validator('polygon')
     def is_geom_valid(cls, v):
         if len(v) < 3:
-            raise ValueError(f"A polygon must have at least 3 points to be valid. Found {v}")
+            raise ValueError(
+                f"A polygon must have at least 3 points to be valid. Found {v}")
         return v
-    
+
+
 class NDPolyline(BaseTool):
     ontology_type: Literal["line"] = "line"
-    line: List[Point] = pydantic.Field(determinant = True)
+    line: List[Point] = pydantic.Field(determinant=True)
 
     @validator('line')
     def is_geom_valid(cls, v):
         if len(v) < 2:
-            raise ValueError(f"A line must have at least 2 points to be valid. Found {v}")
+            raise ValueError(
+                f"A line must have at least 2 points to be valid. Found {v}")
         return v
-    
+
+
 class NDRectangle(BaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
-    bbox: Bbox = pydantic.Field(determinant = True)
+    bbox: Bbox = pydantic.Field(determinant=True)
     #Could check if points are positive
+
 
 class NDPoint(BaseTool):
-    ontology_type: Literal["point"]    = "point" 
-    point: Point = pydantic.Field(determinant = True)
+    ontology_type: Literal["point"] = "point"
+    point: Point = pydantic.Field(determinant=True)
     #Could check if points are positive
 
+
 class NDTextEntity(BaseTool):
-    ontology_type: Literal["named-entity"] = "named-entity"    
-    location : TypedDict("TextLocation" , {'start' : int, 'end' : int}) = pydantic.Field(determinant = True)
+    ontology_type: Literal["named-entity"] = "named-entity"
+    location: TypedDict("TextLocation", {
+        'start': int,
+        'end': int
+    }) = pydantic.Field(determinant=True)
 
     @validator('location')
     def is_valid_location(cls, v):
         if len(v) < 2:
-            raise ValueError(f"A line must have at least 2 points to be valid. Found {v}")
+            raise ValueError(
+                f"A line must have at least 2 points to be valid. Found {v}")
         if v['start'] < 0:
             raise ValueError(f"Text location must be positive. Found {v}")
         if v['start'] >= v['end']:
-            raise ValueError(f"Text start location must be less than end. Found {v}")
+            raise ValueError(
+                f"Text start location must be less than end. Found {v}")
         return v
+
 
 class NDMask(BaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
-    mask : TypedDict("mask" , {'instanceURI' : constr(min_length = 5, strict = True), 'colorRGB' : Tuple[int,int,int]}) = pydantic.Field(determinant = True)
+    mask: TypedDict(
+        "mask", {
+            'instanceURI': constr(min_length=5, strict=True),
+            'colorRGB': Tuple[int, int, int]
+        }) = pydantic.Field(determinant=True)
+
     @validator('mask')
     def is_valid_mask(cls, v):
         colors = v['colorRGB']
-            #Does the dtype matter? Can it be a float?
+        #Does the dtype matter? Can it be a float?
         if not isinstance(colors, (tuple, list)):
-            raise ValueError(f"Received color that is not a list or tuple. Found : {colors}")
+            raise ValueError(
+                f"Received color that is not a list or tuple. Found : {colors}")
         elif len(colors) != 3:
-            raise ValueError(f"Must provide RGB values for segmentation colors. Found : {colors}")
+            raise ValueError(
+                f"Must provide RGB values for segmentation colors. Found : {colors}"
+            )
         elif not all([0 <= color <= 255 for color in colors]):
-            raise ValueError(f"All rgb colors must be between 0 and 255. Found : {colors}")
+            raise ValueError(
+                f"All rgb colors must be between 0 and 255. Found : {colors}")
         return v
+
 
 class NDTool(UnionConstructor):
     #Tools and top level classifications
-    types = [NDMask,  NDTextEntity ,NDPoint, NDRectangle, NDPolyline , NDPolygon, *NDClassification.types]
+    types = [
+        NDMask, NDTextEntity, NDPoint, NDRectangle, NDPolyline, NDPolygon,
+        *NDClassification.types
+    ]
 
 
 #### Top level annotation. Can be used to construct and validate any annotation
@@ -595,7 +685,7 @@ class NDAnnotation(BaseModel):
 
     @validator('data', pre=True)
     def validate_data(cls, value):
-        if not isinstance(value , dict):
+        if not isinstance(value, dict):
             raise ValueError('value must be dict')
         #Catch keyerror to clean up error messages
         #Only raise if they both fail
@@ -605,9 +695,10 @@ class NDAnnotation(BaseModel):
             try:
                 return NDClassification.build(value)
             except KeyError as e2:
-                raise ValueError(f'Unable to construct tool or classification.\nTool: {e1}\nClassification: {e2}')
+                raise ValueError(
+                    f'Unable to construct tool or classification.\nTool: {e1}\nClassification: {e2}'
+                )
 
     def validate(self, valid_datarows, valid_feature_schemas):
         self.data.validate_feature_schemas(valid_feature_schemas)
         self.data.validate_datarow(valid_datarows)
-
