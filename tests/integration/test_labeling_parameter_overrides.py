@@ -1,3 +1,4 @@
+import pytest
 from labelbox import DataRow
 
 IMG_URL = "https://picsum.photos/200/300"
@@ -33,4 +34,26 @@ def test_labeling_parameter_overrides(project, rand_gen):
     # currently this doesn't work so the count remains 3
     assert len(list(project.labeling_parameter_overrides())) == 1
 
+
+    with pytest.raises(TypeError):
+        data = [(data_rows[12], "yoo", 3)]
+        project.set_labeling_parameter_overrides(data)
+    
+    with pytest.raises(TypeError):
+        data = [(data_rows[12], 3, "yoo")]
+        project.set_labeling_parameter_overrides(data)
+
+    with pytest.raises(TypeError):
+        data = [(data_rows[12].uid, 1, 3)]
+        project.set_labeling_parameter_overrides(data)
+
+    with pytest.raises(TypeError):
+        data = [(data_rows[12].uid, 0, 3)]
+        project.set_labeling_parameter_overrides(data)
+
+    with pytest.raises(TypeError):
+        data = [(data_rows[12].uid, 1, 0)]
+        project.set_labeling_parameter_overrides(data)
+
     dataset.delete()
+

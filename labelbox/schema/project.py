@@ -1,6 +1,7 @@
 from collections import namedtuple
 from datetime import datetime, timezone
 import json
+from labelbox.schema.data_row import DataRow
 import logging
 from pathlib import Path
 import time
@@ -88,6 +89,7 @@ class Project(DbObject, Updateable, Deletable):
         # deprecated and we don't want the Py client lib user to know
         # about them. At the same time they're connected to a Label at
         # label creation in a non-standard way (connect via name).
+        logger.warning("This function is deprecated and is not compatible with the new editor.")
 
         Label = Entity.Label
 
@@ -249,18 +251,56 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
+    def validate_labeling_parameter_overrides(self, data):
+        for idx, row in enumerate(data):
+            if len(row) != 3:
+                raise TypeError(f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items")
+            data_row, priority, num_labels = row
+            if not isinstance(data_row, DataRow):
+                raise TypeError(f"Datarow should be be of type DataRow. Found {data_row}")
+
+            for name, value in [["priority", priority], ["Number of labels", num_labels]]:
+                if not isinstance(value, int):
+                    raise TypeError(f"{name} must be an int. Found {type(value)} for data_row {data_row}")
+                if value < 1:
+                    raise ValueError(f"{name} must be greater than 0 for data_row {data_row}")
+
     def set_labeling_parameter_overrides(self, data):
         """ Adds labeling parameter overrides to this project.
 
+        Priority:
+            * data will be labeled in priority order with the lower priority numbers being labeled first
+                - Minimum priority is 1.
+            * Priority is not the queue position. The position is determined by the relative priority.
+                - Eg. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
+                    will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
+            * datarows with parameter overrides will appear before datarows without overrides
+            * The priority only effects items in the queue and assigning a priority will not automatically add the item back the queue 
+                - If a datarow has already been labeled this will not have an effect until it is added back into the queue
+        
+        Number of labels:
+            * The number times a data row should be labeled
+            * This will create duplicates in a project
+            * The queue will never assign the same datarow to a labeler more than once
+                - if the number of labels is greater than the number of labelers working on a project then
+                    the extra items will get stuck in the queue (thsi can be fixed by removing the override at any time).
+            * This can add items to the queue even if they have already been labeled but they will only be assigned to members who have not labeled that image before. 
+            * Set this to 1 if you only want to effect the priority.
+            
+    
+        See information on priority here:
+            https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
+    
             >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority, numberOfLabels) for the new override.
+                (Union[DataRow, datarow_id], priority, numberOfLabels) for the new override.
         Returns:
             bool, indicates if the operation was a success.
         """
+        self.validate_labeling_parameter_overrides(data)
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
             (data_row.uid, priority, num_labels)
@@ -274,6 +314,8 @@ class Project(DbObject, Updateable, Deletable):
 
     def unset_labeling_parameter_overrides(self, data_rows):
         """ Removes labeling parameter overrides to this project.
+
+        * This will remove unlabeled duplicates in the queue.
 
         Args:
             data_rows (iterable): An iterable of DataRows.
@@ -290,12 +332,19 @@ class Project(DbObject, Updateable, Deletable):
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
     def upsert_review_queue(self, quota_factor):
-        """ Reinitiates the review queue for this project.
+        """ Sets the the proportion of total assets in a project to review.
+
+        More information can be found here: 
+            https://docs.labelbox.com/en/quality-assurance/review-labels#configure-review-percentage
 
         Args:
             quota_factor (float): Which part (percentage) of the queue
                 to reinitiate. Between 0 and 1.
         """
+
+        if (quota_factor > 1.) or (quota_factor < 0.):
+            raise ValueError("Quota factor must be in the range of [0,1]")
+
         id_param = "projectId"
         quota_param = "quotaFactor"
         query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
@@ -307,25 +356,6 @@ class Project(DbObject, Updateable, Deletable):
             quota_param: quota_factor
         })
 
-    def extend_reservations(self, queue_type):
-        """ Extends all the current reservations for the current user on the given
-        queue type.
-
-        Args:
-            queue_type (str): Either "LabelingQueue" or "ReviewQueue"
-        Returns:
-            int, the number of reservations that were extended.
-        """
-        if queue_type not in ("LabelingQueue", "ReviewQueue"):
-            raise InvalidQueryError("Unsupported queue type: %s" % queue_type)
-
-        id_param = "projectId"
-        query_str = """mutation ExtendReservationsPyApi($%s: ID!){
-            extendReservations(projectId:$%s queueType:%s)}""" % (
-            id_param, id_param, queue_type)
-        res = self.client.execute(query_str, {id_param: self.uid})
-        return res["extendReservations"]
-
     def create_prediction_model(self, name, version):
         """ Creates a PredictionModel connected to a Legacy Editor Project.
 
@@ -335,6 +365,9 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             A newly created PredictionModel.
         """
+
+        logger.warning("This function is deprecated and is not compatible with the new editor.")
+
         PM = Entity.PredictionModel
         model = self.client._create(PM, {
             PM.name.name: name,
@@ -360,6 +393,8 @@ class Project(DbObject, Updateable, Deletable):
                 is None and this Project's active_prediction_model is also
                 None.
         """
+        logger.warning("This function is deprecated and is not compatible with the new editor.")
+
         if prediction_model is None:
             prediction_model = self.active_prediction_model()
             if prediction_model is None:
@@ -433,6 +468,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             BulkImportRequest
         """
+    
         if isinstance(annotations, str) or isinstance(annotations, Path):
 
             def _is_url_valid(url: Union[str, Path]) -> bool:
@@ -491,6 +527,8 @@ class LabelingParameterOverride(DbObject):
     """
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
+
+
 
 
 LabelerPerformance = namedtuple(

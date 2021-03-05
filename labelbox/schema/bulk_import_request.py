@@ -493,7 +493,7 @@ class NDBase(BaseModel):
         extra = 'forbid'
 
         @staticmethod
-        def determinants(parent_cls) -> None:
+        def determinants(parent_cls) -> List[str]:
             #This is a hack for better error messages
             return [
                 k for k, v in parent_cls.__fields__.items()

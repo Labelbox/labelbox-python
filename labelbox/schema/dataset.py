@@ -1,4 +1,5 @@
 import json
+import logging
 from multiprocessing.dummy import Pool as ThreadPool
 import os
 
@@ -163,7 +164,7 @@ class Dataset(DbObject, Updateable, Deletable):
         task._user = user
         return task
 
-    def data_row_for_external_id(self, external_id):
+    def data_rows_for_external_id(self, external_id, limit = 10):
         """ Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
@@ -182,10 +183,29 @@ class Dataset(DbObject, Updateable, Deletable):
         where = DataRow.external_id == external_id
 
         data_rows = self.data_rows(where=where)
-        # Get at most two data_rows.
-        data_rows = [row for row, _ in zip(data_rows, range(2))]
+        # Get at most `limit` data_rows.
+        data_rows = [row for row, _ in zip(data_rows, range(limit))]
 
-        if len(data_rows) != 1:
+        if not len(data_rows):
             raise ResourceNotFoundError(DataRow, where)
+        return data_rows
 
+    def data_row_for_external_id(self, external_id):
+        """ Convenience method for getting a single `DataRow` belonging to this
+        `Dataset` that has the given `external_id`.
+
+        Args:
+            external_id (str): External ID of the sought `DataRow`.
+
+        Returns:
+            A single `DataRow` with the given ID.
+
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+                in this `DataSet` with the given external ID, or if there are
+                multiple `DataRows` for it.
+        """
+        data_rows = self.data_rows_for_external_id(external_id=external_id, limit = 2)
+        if len(data_rows) > 1:
+                logging.warn("More than one data_row has the provided external_id. Use function data_rows_for_external_id to fetch all")
         return data_rows[0]
