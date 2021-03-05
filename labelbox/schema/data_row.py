@@ -1,7 +1,6 @@
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.pagination import PaginatedCollection
 from labelbox.schema.asset_metadata import AssetMetadata
 
 
@@ -34,7 +33,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     labels = Relationship.ToMany("Label", True)
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
     predictions = Relationship.ToMany("Prediction", False)
-
     
 
     @staticmethod
@@ -64,7 +62,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             `AssetMetadata` DB object.
         """
         if meta_type not in AssetMetadata.VALID_TYPES:
-            raise ValueError(f"metadata must be one of {AssetMetadata.VALID_TYPES}. Found {meta_type}")
+            raise ValueError(f"metadata type must be one of {AssetMetadata.VALID_TYPES}. Found {meta_type}")
 
         meta_type_param = "metaType"
         meta_value_param = "metaValue"

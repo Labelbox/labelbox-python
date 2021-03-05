@@ -1,7 +1,9 @@
+import logging
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 
+logger = logging.getLogger(__name__)
 
 class Webhook(DbObject, Updateable):
     """ Represents a server-side rule for sending notifications to a web-server
@@ -27,6 +29,19 @@ class Webhook(DbObject, Updateable):
     LABEL_UPDATED = "LABEL_UPDATED"
     LABEL_DELETED = "LABEL_DELETED"
 
+    REVIEW_CREATED ="REVIEW_CREATED" 
+    REVIEW_UPDATED ="REVIEW_UPDATED" 
+    REVIEW_DELETED = "REVIEW_DELETED"
+
+    SUPPORTED_TOPICS = {
+        LABEL_CREATED, 
+        LABEL_UPDATED, 
+        LABEL_DELETED,
+        REVIEW_CREATED,
+        REVIEW_UPDATED,
+        REVIEW_DELETED
+    }
+
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     url = Field.String("url")
@@ -41,7 +56,7 @@ class Webhook(DbObject, Updateable):
             client (Client): The Labelbox client used to connect
                 to the server.
             topics (list of str): A list of topics this Webhook should
-                get notifications for.
+                get notifications for. Must be one of Webhook.SUPPORTED_TOPICS
             url (str): The URL to which notifications should be sent
                 by the Labelbox server.
             secret (str): A secret key used for signing notifications.
@@ -50,7 +65,12 @@ class Webhook(DbObject, Updateable):
                 events in your organization.
         Returns:
             A newly created Webhook.
+
+        Information on configuring your server can be found here (this is where the url points to and the secret is set).
+                        https://docs.labelbox.com/en/configure-editor/webhooks-setup#setup-steps
+        
         """
+
         project_str = "" if project is None \
             else ("project:{id:\"%s\"}," % project.uid)
 
@@ -65,6 +85,9 @@ class Webhook(DbObject, Updateable):
     organization = Relationship.ToOne("Organization")
     project = Relationship.ToOne("Project")
 
+    def delete(self):
+        self.update(status = "INACTIVE")
+
     def update(self, topics=None, url=None, status=None):
         """ Updates this Webhook.
 
@@ -72,7 +95,14 @@ class Webhook(DbObject, Updateable):
             topics (list of str): The new topics value, optional.
             url (str): The new URL value, optional.
             status (str): The new status value, optional.
+
+        If values are set to None then there are no updates made to that field.
+
+        The following code will delete the webhook.
+        >>> self.update(status = Webhook.INACTIVE) 
+
         """
+
         # Webhook has a custom `update` function due to custom types
         # in `status` and `topics` fields.
         topics_str = "" if topics is None \

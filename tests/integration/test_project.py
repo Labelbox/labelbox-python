@@ -58,6 +58,12 @@ def test_project_filtering(client, rand_gen):
 def test_upsert_review_queue(project):
     project.upsert_review_queue(0.6)
 
+    with pytest.raises(ValueError):
+        project.upsert_review_queue(1.001)
+    
+    with pytest.raises(ValueError):
+        project.upsert_review_queue(-0.001)
+
 
 def test_extend_reservations(project):
     assert project.extend_reservations("LabelingQueue") == 0
