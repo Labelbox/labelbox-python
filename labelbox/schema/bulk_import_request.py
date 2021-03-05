@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from pathlib import Path
+import typing
 from uuid import UUID, uuid4
 from pydantic import BaseModel, validator
 import pydantic
@@ -10,16 +11,18 @@ import backoff
 import ndjson
 from pydantic.types import conlist, constr
 from pydantic import Required
+from pydantic.dataclasses import dataclass
+import labelbox
 import requests
 from labelbox import utils
-import labelbox.exceptions
+
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 from pydantic import ValidationError
-from typing import Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union, Type, Set
+from typing import Any, Generic, List, Optional, BinaryIO, Dict, Iterable, Tuple, TypeVar, Union, Type, Set
 from typing_extensions import TypedDict, Literal
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
@@ -430,14 +433,31 @@ class VideoSupported(BaseModel):
 
 
 class UnionConstructor:
-    types: Iterable[Type["NDBase"]]
+
+    def __new__(cls, **kwargs):
+        return cls.build(kwargs)
 
     @classmethod
     def __get_validators__(cls):
         yield cls.build
 
     @classmethod
-    def build(cls, data) -> "NDBase":
+    def get_union_types(cls):
+        if not issubclass(cls, UnionConstructor):
+            raise TypeError("{} must be a subclass of UnionConstructor")
+
+        union_types = [x for x in cls.__orig_bases__ if hasattr(x, "__args__")]
+        if len(union_types) < 1:
+            raise TypeError(
+                "Class {cls} should inherit from a union of objects to build")
+        if len(union_types) > 1:
+            raise TypeError(
+                f"Class {cls} should inherit from exactly one union of objects to build. Found {union_types}"
+            )
+        return union_types[0].__args__[0].__args__
+
+    @classmethod
+    def build(cls: Any, data) -> "NDBase":
         if isinstance(data, BaseModel):
             data = data.dict()
 
@@ -445,7 +465,7 @@ class UnionConstructor:
         max_match = 0
         matched = None
 
-        for type_ in cls.types:
+        for type_ in cls.get_union_types():
             determinate_fields = type_.Config.determinants(type_)
             top_level_fields.append(determinate_fields)
             matches = sum([val in determinate_fields for val in data])
@@ -469,6 +489,11 @@ class UnionConstructor:
             raise KeyError(
                 f"Expected classes with values {data} to have keys matching one of the following : {top_level_fields}"
             )
+
+    @classmethod
+    def schema(cls):
+        for cl in cls.get_union_types():
+            print(cl.schema())
 
 
 class DataRow(BaseModel):
@@ -564,16 +589,17 @@ class NDRadio(VideoSupported, NDBase):
             )
 
 
-class NDClassification(UnionConstructor):
-    #Represents both subclasses and top level classifications
-    types: Iterable[Type[NDBase]] = {NDText, NDRadio, NDCheckList}
+class NDClassification(UnionConstructor,
+                       Type[Union[NDText, NDRadio,
+                                  NDCheckList]]):  # type: ignore
+    ...
 
 
 ###### Tools ######
 
 
 class BaseTool(NDBase):
-    classifications: List["NDClassification"] = []
+    classifications: List[NDClassification] = []
 
     #This is indepdent of our problem
     def validate_feature_schemas(self, valid_feature_schemas):
@@ -681,16 +707,12 @@ class NDMask(BaseTool):
         return v
 
 
-class NDTool(UnionConstructor):
-    #Tools and top level classifications
-    types: Iterable[Type[NDBase]] = {
-        NDMask,
-        NDTextEntity,
-        NDPoint,
-        NDRectangle,
-        NDPolyline,
-        NDPolygon,
-    }
+class NDTool(
+        UnionConstructor,
+        Type[Union[NDMask,  # type: ignore
+                   NDTextEntity, NDPoint, NDRectangle, NDPolyline,
+                   NDPolygon,]]):
+    ...
 
 
 #### Top level annotation. Can be used to construct and validate any annotation
@@ -704,10 +726,10 @@ class NDAnnotation(BaseModel):
         #Catch keyerror to clean up error messages
         #Only raise if they both fail
         try:
-            return NDTool.build(value)
+            return NDTool(**value)
         except KeyError as e1:
             try:
-                return NDClassification.build(value)
+                return NDClassification(**value)
             except KeyError as e2:
                 raise ValueError(
                     f'Unable to construct tool or classification.\nTool: {e1}\nClassification: {e2}'
