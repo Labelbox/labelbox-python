@@ -589,9 +589,10 @@ class NDRadio(VideoSupported, NDBase):
             )
 
 
-class NDClassification(UnionConstructor,
-                       Type[Union[NDText, NDRadio,
-                                  NDCheckList]]):  # type: ignore
+class NDClassification(
+        UnionConstructor,
+        Type[Union[NDText, NDRadio,  # type: ignore
+                   NDCheckList]]):
     ...
 
 
