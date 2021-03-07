@@ -492,8 +492,11 @@ class UnionConstructor:
 
     @classmethod
     def schema(cls):
+        #TODO: Double check this to return subclasses
+        #results.append()
         for cl in cls.get_union_types():
             print(cl.schema())
+        #return cl.schema()
 
 
 class DataRow(BaseModel):
@@ -597,7 +600,6 @@ class NDClassification(
 
 
 ###### Tools ######
-
 
 class BaseTool(NDBase):
     classifications: List[NDClassification] = []
