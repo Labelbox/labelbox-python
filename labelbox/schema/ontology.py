@@ -66,7 +66,6 @@ class Tool(OntologyEntity):
 class Ontology(DbObject):
     """An ontology specifies which tools and classifications are available
     to a project. This is read only for now.
-
     Attributes:
         name (str)
         description (str)
@@ -75,7 +74,6 @@ class Ontology(DbObject):
         normalized (json)
         object_schema_count (int)
         classification_schema_count (int)
-
         projects (Relationship): `ToMany` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
     """

@@ -67,7 +67,7 @@ jobs:
       env:
         # make sure to tell tox to use these environs in tox.ini
         #
-        # randall@labelbox.com
+        # msokoloff+prod-python@labelbox.com
         LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
 
         # randall+staging-python@labelbox.com
