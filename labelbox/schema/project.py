@@ -89,7 +89,9 @@ class Project(DbObject, Updateable, Deletable):
         # deprecated and we don't want the Py client lib user to know
         # about them. At the same time they're connected to a Label at
         # label creation in a non-standard way (connect via name).
-        logger.warning("This function is deprecated and is not compatible with the new editor.")
+        logger.warning(
+            "This function is deprecated and is not compatible with the new editor."
+        )
 
         Label = Entity.Label
 
@@ -254,29 +256,39 @@ class Project(DbObject, Updateable, Deletable):
     def validate_labeling_parameter_overrides(self, data):
         for idx, row in enumerate(data):
             if len(row) != 3:
-                raise TypeError(f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items")
+                raise TypeError(
+                    f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items"
+                )
             data_row, priority, num_labels = row
             if not isinstance(data_row, DataRow):
-                raise TypeError(f"Datarow should be be of type DataRow. Found {data_row}")
+                raise TypeError(
+                    f"Datarow should be be of type DataRow. Found {data_row}")
 
-            for name, value in [["priority", priority], ["Number of labels", num_labels]]:
+            for name, value in [["priority", priority],
+                                ["Number of labels", num_labels]]:
                 if not isinstance(value, int):
-                    raise TypeError(f"{name} must be an int. Found {type(value)} for data_row {data_row}")
+                    raise TypeError(
+                        f"{name} must be an int. Found {type(value)} for data_row {data_row}"
+                    )
                 if value < 1:
-                    raise ValueError(f"{name} must be greater than 0 for data_row {data_row}")
+                    raise ValueError(
+                        f"{name} must be greater than 0 for data_row {data_row}"
+                    )
 
     def set_labeling_parameter_overrides(self, data):
         """ Adds labeling parameter overrides to this project.
 
         Priority:
-            * data will be labeled in priority order with the lower priority numbers being labeled first
+            * data will be labeled in priority order 
+                - lower numbers labeled first
                 - Minimum priority is 1.
-            * Priority is not the queue position. The position is determined by the relative priority.
+            * Priority is not the queue position.
+                - The position is determined by the relative priority.
                 - Eg. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
                     will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
             * datarows with parameter overrides will appear before datarows without overrides
-            * The priority only effects items in the queue and assigning a priority will not automatically add the item back the queue 
-                - If a datarow has already been labeled this will not have an effect until it is added back into the queue
+            * The priority only effects items in the queue 
+                - Assigning a priority will not automatically add the item back into the queue
         
         Number of labels:
             * The number times a data row should be labeled
@@ -284,8 +296,9 @@ class Project(DbObject, Updateable, Deletable):
             * The queue will never assign the same datarow to a labeler more than once
                 - if the number of labels is greater than the number of labelers working on a project then
                     the extra items will get stuck in the queue (thsi can be fixed by removing the override at any time).
-            * This can add items to the queue even if they have already been labeled but they will only be assigned to members who have not labeled that image before. 
-            * Set this to 1 if you only want to effect the priority.
+            * This can add items to the queue (even if they have already been labeled)
+                -  New copies will only be assigned to members who have not labeled that same datarow before. 
+            * Setting this to 1 will result in the default behavior (no duplicates)
             
     
         See information on priority here:
@@ -366,7 +379,9 @@ class Project(DbObject, Updateable, Deletable):
             A newly created PredictionModel.
         """
 
-        logger.warning("This function is deprecated and is not compatible with the new editor.")
+        logger.warning(
+            "This function is deprecated and is not compatible with the new editor."
+        )
 
         PM = Entity.PredictionModel
         model = self.client._create(PM, {
@@ -393,7 +408,9 @@ class Project(DbObject, Updateable, Deletable):
                 is None and this Project's active_prediction_model is also
                 None.
         """
-        logger.warning("This function is deprecated and is not compatible with the new editor.")
+        logger.warning(
+            "This function is deprecated and is not compatible with the new editor."
+        )
 
         if prediction_model is None:
             prediction_model = self.active_prediction_model()
@@ -449,11 +466,10 @@ class Project(DbObject, Updateable, Deletable):
             "showingPredictionsToLabelers"]
 
     def upload_annotations(
-        self,
-        name: str,
-        annotations: Union[str, Union[str, Path], Iterable[dict]],
-        validate = True
-    ) -> 'BulkImportRequest':  # type: ignore
+            self,
+            name: str,
+            annotations: Union[str, Union[str, Path], Iterable[dict]],
+            validate=True) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
@@ -468,7 +484,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             BulkImportRequest
         """
-    
+
         if isinstance(annotations, str) or isinstance(annotations, Path):
 
             def _is_url_valid(url: Union[str, Path]) -> bool:
@@ -486,13 +502,11 @@ class Project(DbObject, Updateable, Deletable):
                 return bool(parsed.scheme) and bool(parsed.netloc)
 
             if _is_url_valid(annotations):
-                return BulkImportRequest.create_from_url(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    url=str(annotations),
-                    validate = validate
-                )
+                return BulkImportRequest.create_from_url(client=self.client,
+                                                         project_id=self.uid,
+                                                         name=name,
+                                                         url=str(annotations),
+                                                         validate=validate)
             else:
                 path = Path(annotations)
                 if not path.exists():
@@ -512,11 +526,11 @@ class Project(DbObject, Updateable, Deletable):
                 project_id=self.uid,
                 name=name,
                 predictions=annotations,  # type: ignore
-                validate = validate
-            )
+                validate=validate)
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
 
 class LabelingParameterOverride(DbObject):
     """ Customizes the order of assets in the label queue.
@@ -527,8 +541,6 @@ class LabelingParameterOverride(DbObject):
     """
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
-
-
 
 
 LabelerPerformance = namedtuple(
