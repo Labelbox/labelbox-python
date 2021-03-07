@@ -74,7 +74,7 @@ class Client:
     #TODO: Add exponential backoff so we don'tt overwhelm the api
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=10.0):
+    def execute(self, query, params=None, timeout=30.0):
         """ Sends a request to the server for the execution of the
         given query.
 
