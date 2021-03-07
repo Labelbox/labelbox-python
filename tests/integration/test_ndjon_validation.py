@@ -142,8 +142,7 @@ def test_incorrect_mask(segmentation_inference, configured_project):
     with pytest.raises(NDJsonError):
         _validate_ndjson([seg], configured_project)
 
-    seg['mask']['colorRGB'] = [0, 0, 0]
-    seg['mask']['instanceURI'] = 1
+    seg['mask']['colorRGB'] = [0, 0]
     with pytest.raises(NDJsonError):
         _validate_ndjson([seg], configured_project)
 
