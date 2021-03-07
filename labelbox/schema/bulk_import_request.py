@@ -1,28 +1,22 @@
-import enum
 import json
 import logging
 import time
 from pathlib import Path
-import typing
 from uuid import UUID, uuid4
 from pydantic import BaseModel, validator
 import pydantic
 import backoff
 import ndjson
-from pydantic.types import conlist, constr
-from pydantic import Required
-from pydantic.dataclasses import dataclass
 import labelbox
 import requests
 from labelbox import utils
-
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 from pydantic import ValidationError
-from typing import Any, Generic, List, Optional, BinaryIO, Dict, Iterable, Tuple, TypeVar, Union, Type, Set
+from typing import Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union, Type, Set
 from typing_extensions import TypedDict, Literal
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
@@ -343,15 +337,15 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
         try:
-            annotation = NDAnnotation(data=line)
-            annotation.validate(data_row_ids, feature_schemas)
-            uuid = str(annotation.data.uuid)
+            annotation = NDAnnotation(**line)
+            annotation.validate_instance(data_row_ids, feature_schemas)
+            uuid = str(annotation.uuid)
             if uuid in uids:
                 raise labelbox.exceptions.UuidError(
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
             uids.add(uuid)
-        except (ValidationError, ValueError, KeyError) as e:
+        except (ValidationError, ValueError, TypeError, KeyError) as e:
             raise labelbox.exceptions.NDJsonError(
                 f"Invalid NDJson on line {idx}") from e
 
@@ -482,21 +476,22 @@ class UnionConstructor:
                     matched = NDText
                 else:
                     raise TypeError(
-                        f"Unexpected type for answer. Found {data['answer']}. Expected a string or a dict"
+                        f"Unexpected type for answer field. Found {data['answer']}. Expected a string or a dict"
                     )
             return matched(**data)
         else:
             raise KeyError(
-                f"Expected classes with values {data} to have keys matching one of the following : {top_level_fields}"
+                f"Invalid annotation. Must have one of the following keys : {top_level_fields}. Found {data}."
             )
 
     @classmethod
     def schema(cls):
-        #TODO: Double check this to return subclasses
-        #results.append()
+        results = {'definitions': {}}
         for cl in cls.get_union_types():
-            print(cl.schema())
-        #return cl.schema()
+            schema = cl.schema()
+            results['definitions'].update(schema.pop('definitions'))
+            results[cl.__name__] = schema
+        return results
 
 
 class DataRow(BaseModel):
@@ -529,6 +524,10 @@ class NDBase(NDFeatureSchema):
             raise ValueError(
                 f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas[self.schemaId]['tool']}"
             )
+
+    def validate_instance(self, valid_datarows, valid_feature_schemas):
+        self.validate_feature_schemas(valid_feature_schemas)
+        self.validate_datarow(valid_datarows)
 
     class Config:
         #Users shouldn't to add extra data to the payload
@@ -592,6 +591,7 @@ class NDRadio(VideoSupported, NDBase):
             )
 
 
+#A union with custom construction logic to improve error messages
 class NDClassification(
         UnionConstructor,
         Type[Union[NDText, NDRadio,  # type: ignore
@@ -601,7 +601,8 @@ class NDClassification(
 
 ###### Tools ######
 
-class BaseTool(NDBase):
+
+class NDBaseTool(NDBase):
     classifications: List[NDClassification] = []
 
     #This is indepdent of our problem
@@ -626,7 +627,7 @@ class BaseTool(NDBase):
         return results
 
 
-class NDPolygon(BaseTool):
+class NDPolygon(NDBaseTool):
     ontology_type: Literal["polygon"] = "polygon"
     polygon: List[Point] = pydantic.Field(determinant=True)
 
@@ -638,7 +639,7 @@ class NDPolygon(BaseTool):
         return v
 
 
-class NDPolyline(BaseTool):
+class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
     line: List[Point] = pydantic.Field(determinant=True)
 
@@ -650,13 +651,13 @@ class NDPolyline(BaseTool):
         return v
 
 
-class NDRectangle(BaseTool):
+class NDRectangle(NDBaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
     bbox: Bbox = pydantic.Field(determinant=True)
     #Could check if points are positive
 
 
-class NDPoint(BaseTool):
+class NDPoint(NDBaseTool):
     ontology_type: Literal["point"] = "point"
     point: Point = pydantic.Field(determinant=True)
     #Could check if points are positive
@@ -667,7 +668,7 @@ class EntityLocation(TypedDict):
     end: int
 
 
-class NDTextEntity(BaseTool):
+class NDTextEntity(NDBaseTool):
     ontology_type: Literal["named-entity"] = "named-entity"
     location: EntityLocation = pydantic.Field(determinant=True)
 
@@ -689,7 +690,7 @@ class MaskFeatures(TypedDict):
     colorRGB: Union[List[int], Tuple[int, int, int]]
 
 
-class NDMask(BaseTool):
+class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
     mask: MaskFeatures = pydantic.Field(determinant=True)
 
@@ -710,6 +711,7 @@ class NDMask(BaseTool):
         return v
 
 
+#A union with custom construction logic to improve error messages
 class NDTool(
         UnionConstructor,
         Type[Union[NDMask,  # type: ignore
@@ -718,26 +720,28 @@ class NDTool(
     ...
 
 
-#### Top level annotation. Can be used to construct and validate any annotation
-class NDAnnotation(BaseModel):
-    data: NDBase
+class NDAnnotation(UnionConstructor,
+                   Type[Union[NDTool, NDClassification]]):  # type: ignore
 
-    @validator('data', pre=True)
-    def validate_data(cls, value):
-        if not isinstance(value, dict):
+    @classmethod
+    def build(cls: Any, data) -> "NDBase":
+        if not isinstance(data, dict):
             raise ValueError('value must be dict')
-        #Catch keyerror to clean up error messages
-        #Only raise if they both fail
-        try:
-            return NDTool(**value)
-        except KeyError as e1:
+        errors = []
+        for cl in cls.get_union_types():
             try:
-                return NDClassification(**value)
-            except KeyError as e2:
-                raise ValueError(
-                    f'Unable to construct tool or classification.\nTool: {e1}\nClassification: {e2}'
-                )
+                return cl(**data)
+            except KeyError as e:
+                errors.append(f"{cl.__name__}: {e}")
 
-    def validate(self, valid_datarows, valid_feature_schemas):
-        self.data.validate_feature_schemas(valid_feature_schemas)
-        self.data.validate_datarow(valid_datarows)
+        raise ValueError('Unable to construct any annotation.\n{}'.format(
+            "\n".join(errors)))
+
+    @classmethod
+    def schema(cls):
+        data = {'definitions': {}}
+        for type_ in cls.get_union_types():
+            schema_ = type_.schema()
+            data['definitions'].update(schema_.pop('definitions'))
+            data[type_.__name__] = schema_
+        return data
