@@ -3,7 +3,7 @@ import os
 import time
 import pytest
 
-from labelbox import Project, Dataset, User, LabelingFrontend
+from labelbox import Project, Dataset, User
 import labelbox.client
 import labelbox.exceptions
 
