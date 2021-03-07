@@ -112,8 +112,6 @@ def test_invalid_attribute_error(client, rand_gen):
 
 @pytest.mark.skip("timeouts cause failure before rate limit")
 def test_api_limit_error(client):
-    global limited
-    limited = False
 
     def get(arg):
         try:
@@ -121,7 +119,9 @@ def test_api_limit_error(client):
         except labelbox.exceptions.ApiLimitError as e:
             return e
 
+    #Rate limited at 1500 + buffer
     n = 1600
+    #max of 30 concurrency before the service becomes unavailable
     with Pool(30) as pool:
         start = time.time()
         results = list(pool.imap(get, range(n)), total=n)
@@ -129,7 +129,6 @@ def test_api_limit_error(client):
 
     assert elapsed < 60, "Didn't finish fast enough"
     assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
-    del limited
 
     # Sleep at the end of this test to allow other tests to execute.
-    #time.sleep(60)
+    time.sleep(60)
