@@ -416,8 +416,8 @@ class Project(DbObject, Updateable, Deletable):
     def upload_annotations(
             self,
             name: str,
-            annotations: Union[str, Union[str, Path], Iterable[dict]],
-            validate=True) -> 'BulkImportRequest':  # type: ignore
+            annotations: Union[str, Path, Iterable[dict]],
+            validate: bool = True) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
@@ -427,7 +427,7 @@ class Project(DbObject, Updateable, Deletable):
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
-            validate (str):
+            validate (bool):
                 Whether or not to validate the payload before uploading.
         Returns:
             BulkImportRequest
