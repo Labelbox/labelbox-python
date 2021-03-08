@@ -1,6 +1,4 @@
 import uuid
-from attr import validate
-
 import ndjson
 import pytest
 import requests

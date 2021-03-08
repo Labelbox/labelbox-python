@@ -1,23 +1,25 @@
 import json
-import logging
 import time
-from pathlib import Path
 from uuid import UUID, uuid4
-from pydantic import BaseModel, validator
+
+import logging
+from pathlib import Path
 import pydantic
 import backoff
 import ndjson
-import labelbox
 import requests
+from pydantic import BaseModel, validator
+from pydantic import ValidationError
+from typing_extensions import TypedDict, Literal
+from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
+                    Type, Set)
+
+import labelbox
 from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field
-from labelbox.orm.model import Relationship
+from labelbox.orm.model import Field, Relationship
 from labelbox.schema.enums import BulkImportRequestState
-from pydantic import ValidationError
-from typing import Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union, Type, Set
-from typing_extensions import TypedDict, Literal
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
@@ -326,7 +328,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
         project (Project): id of project for which predictions will be imported
     
     Raises:
-        NDJsonError: Raise for invalid NDJson
+        ValidationError: Raise for invalid NDJson
         UuidError: Duplicate UUID in upload
     """
     data_row_ids = {
@@ -346,7 +348,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
                     'must be unique for the project.')
             uids.add(uuid)
         except (ValidationError, ValueError, TypeError, KeyError) as e:
-            raise labelbox.exceptions.NDJsonError(
+            raise labelbox.exceptions.ValidationError(
                 f"Invalid NDJson on line {idx}") from e
 
 

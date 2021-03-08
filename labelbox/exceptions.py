@@ -106,6 +106,6 @@ class UuidError(LabelboxError):
     pass
 
 
-class NDJsonError(LabelboxError):
+class ValidationError(LabelboxError):
     """Raised when an ndjson line is invalid."""
     ...
