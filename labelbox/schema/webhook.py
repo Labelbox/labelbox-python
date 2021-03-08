@@ -5,6 +5,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 
 logger = logging.getLogger(__name__)
 
+
 class Webhook(DbObject, Updateable):
     """ Represents a server-side rule for sending notifications to a web-server
     whenever one of several predefined actions happens within a context of
@@ -29,17 +30,13 @@ class Webhook(DbObject, Updateable):
     LABEL_UPDATED = "LABEL_UPDATED"
     LABEL_DELETED = "LABEL_DELETED"
 
-    REVIEW_CREATED ="REVIEW_CREATED" 
-    REVIEW_UPDATED ="REVIEW_UPDATED" 
+    REVIEW_CREATED = "REVIEW_CREATED"
+    REVIEW_UPDATED = "REVIEW_UPDATED"
     REVIEW_DELETED = "REVIEW_DELETED"
 
     SUPPORTED_TOPICS = {
-        LABEL_CREATED, 
-        LABEL_UPDATED, 
-        LABEL_DELETED,
-        REVIEW_CREATED,
-        REVIEW_UPDATED,
-        REVIEW_DELETED
+        LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED, REVIEW_CREATED,
+        REVIEW_UPDATED, REVIEW_DELETED
     }
 
     updated_at = Field.DateTime("updated_at")
@@ -86,7 +83,7 @@ class Webhook(DbObject, Updateable):
     project = Relationship.ToOne("Project")
 
     def delete(self):
-        self.update(status = "INACTIVE")
+        self.update(status="INACTIVE")
 
     def update(self, topics=None, url=None, status=None):
         """ Updates this Webhook.

@@ -164,7 +164,7 @@ class Dataset(DbObject, Updateable, Deletable):
         task._user = user
         return task
 
-    def data_rows_for_external_id(self, external_id, limit = 10):
+    def data_rows_for_external_id(self, external_id, limit=10):
         """ Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
@@ -205,7 +205,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
-        data_rows = self.data_rows_for_external_id(external_id=external_id, limit = 2)
+        data_rows = self.data_rows_for_external_id(external_id=external_id,
+                                                   limit=2)
         if len(data_rows) > 1:
-                logging.warn("More than one data_row has the provided external_id. Use function data_rows_for_external_id to fetch all")
+            logging.warn(
+                "More than one data_row has the provided external_id. Use function data_rows_for_external_id to fetch all"
+            )
         return data_rows[0]
