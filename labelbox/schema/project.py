@@ -369,6 +369,24 @@ class Project(DbObject, Updateable, Deletable):
             quota_param: quota_factor
         })
 
+    def extend_reservations(self, queue_type):
+        """ Extends all the current reservations for the current user on the given
+        queue type.
+        Args:
+            queue_type (str): Either "LabelingQueue" or "ReviewQueue"
+        Returns:
+            int, the number of reservations that were extended.
+        """
+        if queue_type not in ("LabelingQueue", "ReviewQueue"):
+            raise InvalidQueryError("Unsupported queue type: %s" % queue_type)
+
+        id_param = "projectId"
+        query_str = """mutation ExtendReservationsPyApi($%s: ID!){
+            extendReservations(projectId:$%s queueType:%s)}""" % (
+            id_param, id_param, queue_type)
+        res = self.client.execute(query_str, {id_param: self.uid})
+        return res["extendReservations"]
+
     def create_prediction_model(self, name, version):
         """ Creates a PredictionModel connected to a Legacy Editor Project.
 
