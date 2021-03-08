@@ -55,14 +55,14 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         Args:
             meta_type (str): Asset metadata type, must be one of:
-                VIDEO, IMAGE, TEXT.
+                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetMetadata.SUPPORTED_TYPES)
             meta_value (str): Asset metadata value.
         Returns:
             `AssetMetadata` DB object.
         """
-        if meta_type not in AssetMetadata.VALID_TYPES:
+        if meta_type not in AssetMetadata.SUPPORTED_TYPES:
             raise ValueError(
-                f"metadata type must be one of {AssetMetadata.VALID_TYPES}. Found {meta_type}"
+                f"metadata type must be one of {AssetMetadata.SUPPORTED_TYPES}. Found {meta_type}"
             )
 
         meta_type_param = "metaType"
