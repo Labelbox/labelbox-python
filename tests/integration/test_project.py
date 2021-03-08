@@ -60,7 +60,7 @@ def test_upsert_review_queue(project):
 
     with pytest.raises(ValueError):
         project.upsert_review_queue(1.001)
-    
+
     with pytest.raises(ValueError):
         project.upsert_review_queue(-0.001)
 

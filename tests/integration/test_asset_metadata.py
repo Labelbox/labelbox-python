@@ -21,7 +21,7 @@ def test_asset_metadata_crud(project, dataset, rand_gen):
 
     with pytest.raises(ValueError):
         data_row.create_metadata("NOT_SUPPORTED_TYPE", "Value")
-    
+
     # Check that filtering and sorting is prettily disabled
     with pytest.raises(InvalidQueryError) as exc_info:
         data_row.metadata(where=AssetMetadata.meta_value == "x")
@@ -31,6 +31,3 @@ def test_asset_metadata_crud(project, dataset, rand_gen):
         data_row.metadata(order_by=AssetMetadata.meta_value.asc)
     assert exc_info.value.message == \
         "Relationship DataRow.metadata doesn't support sorting"
-
-
-
