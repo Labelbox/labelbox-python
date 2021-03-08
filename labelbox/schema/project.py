@@ -173,6 +173,40 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    def attach_instructions(self, instructions_file: str):
+        """
+        - Upload a set of instructions for labeling
+
+        """
+        if self.setup_complete is None:
+            raise Exception("Cannot attach instructions to a project that has not been setup.")
+
+        assert self.setup_complete is not None #Change this to an actual exception...
+        #Assert that the editor type is the editor..
+        instructions_url = self.client.upload_file(instructions_file)
+        lfo = list(self.labeling_frontend_options())[-1]
+        customization_options = json.loads(lfo.customization_options)
+        customization_options['projectInstructions'] = instructions_url
+        option_id = lfo.uid
+        frontendId = self.labeling_frontend().uid
+        args = {"frontendId": frontendId,
+                "name": "Editor", #Probably only compatible with the regular editor..
+                "description": "Video, image, and text annotation",
+                "optionsId": option_id,
+                "customizationOptions": json.dumps(customization_options)
+        }
+        return self.client.execute("""
+            mutation UpdateFrontendWithExistingOptions($frontendId: ID!, $optionsId: ID!, $name: String!, $description: String!, $customizationOptions: String!) {
+                updateLabelingFrontend(where: {id: $frontendId}, data: {name: $name, description: $description}) {
+                    id
+                }
+                updateLabelingFrontendOptions(where: {id: $optionsId}, data: {customizationOptions: $customizationOptions}) {
+                    id
+                }
+            }
+            """, args)
+
+
     def labeler_performance(self):
         """ Returns the labeler performances for this Project.
 
