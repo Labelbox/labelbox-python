@@ -1,8 +1,8 @@
 import pytest
-
-from labelbox import Project
-from labelbox.exceptions import InvalidQueryError
 import json
+
+from labelbox import Project, LabelingFrontend
+from labelbox.exceptions import InvalidQueryError
 
 
 def test_project(client, rand_gen):
@@ -67,7 +67,23 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
+def test_attach_instructions(client, project):
+    with pytest.raises(ValueError):
+        project.attach_instructions('/tmp/instructions.txt')
 
-def test_attach_instructions(setup_project):
-    setup_project.attach_labeling_instructions("http://www.africau.edu/images/default/sample.pdf")
-    assert json.loads(list(setup_project.labeling_frontend_options())[-1].customization_options).get('projectInstructions') is not None
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    empty_ontology = {"tools": [], "classifications": []}
+    project.setup(editor, empty_ontology)
+
+    with open('/tmp/instructions.txt', 'w') as file:
+        file.write("some instructions...")
+
+    project.attach_instructions('/tmp/instructions.txt')
+    assert json.loads(
+        list(project.labeling_frontend_options())
+        [-1].customization_options).get('projectInstructions') is not None
+
+    with pytest.raises(ValueError):
+        project.attach_instructions('/tmp/file.invalid_file_extension')
