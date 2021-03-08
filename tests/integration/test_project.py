@@ -2,6 +2,7 @@ import pytest
 
 from labelbox import Project
 from labelbox.exceptions import InvalidQueryError
+import json
 
 
 def test_project(client, rand_gen):
@@ -64,3 +65,9 @@ def test_extend_reservations(project):
     assert project.extend_reservations("ReviewQueue") == 0
     with pytest.raises(InvalidQueryError):
         project.extend_reservations("InvalidQueueType")
+
+
+
+def test_attach_instructions(setup_project):
+    setup_project.attach_labeling_instructions("http://www.africau.edu/images/default/sample.pdf")
+    assert json.loads(list(setup_project.labeling_frontend_options())[-1].customization_options).get('projectInstructions') is not None
