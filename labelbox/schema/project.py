@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 import time
-from typing import Union, Iterable
+from typing import Any, Dict, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
@@ -416,7 +416,7 @@ class Project(DbObject, Updateable, Deletable):
     def upload_annotations(
             self,
             name: str,
-            annotations: Union[str, Path, Iterable[dict]],
+            annotations: Union[str, Path, Iterable[Dict[Any, Any]]],
             validate: bool = True) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
@@ -472,7 +472,7 @@ class Project(DbObject, Updateable, Deletable):
                 client=self.client,
                 project_id=self.uid,
                 name=name,
-                predictions=annotations,  # type: ignore
+                predictions=annotations,
                 validate=validate)
         else:
             raise ValueError(

@@ -221,7 +221,7 @@ class BulkImportRequest(DbObject):
                             client,
                             project_id: str,
                             name: str,
-                            predictions: Iterable[dict],
+                            predictions: Iterable[Dict[Any, Any]],
                             validate=True) -> 'BulkImportRequest':
         """
         Creates a `BulkImportRequest` from an iterable of dictionaries.
