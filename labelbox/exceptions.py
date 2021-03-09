@@ -107,5 +107,5 @@ class UuidError(LabelboxError):
 
 
 class ValidationError(LabelboxError):
-    """Raised when an ndjson line is invalid."""
+    """Raised when user input is invalid for MAL imports."""
     ...
