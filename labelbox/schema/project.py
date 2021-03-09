@@ -467,7 +467,7 @@ class Project(DbObject, Updateable, Deletable):
                     file=path,
                     validate_file=validate,
                 )
-        elif isinstance(annotations, List):
+        elif isinstance(annotations, Iterable):
             return BulkImportRequest.create_from_objects(
                 client=self.client,
                 project_id=self.uid,
