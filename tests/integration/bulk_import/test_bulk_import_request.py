@@ -50,7 +50,7 @@ def test_create_from_objects(configured_project, predictions):
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    __assert_file_content(bulk_import_request.input_file_url, predictions)
+    assert_file_content(bulk_import_request.input_file_url, predictions)
 
 
 def test_create_from_local_file(tmp_path, predictions, configured_project):
@@ -68,7 +68,7 @@ def test_create_from_local_file(tmp_path, predictions, configured_project):
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    __assert_file_content(bulk_import_request.input_file_url, predictions)
+    assert_file_content(bulk_import_request.input_file_url, predictions)
 
 
 def test_get(client, configured_project):
@@ -134,6 +134,6 @@ def test_wait_till_done(configured_project):
             bulk_import_request.state == BulkImportRequestState.FAILED)
 
 
-def __assert_file_content(url: str, predictions):
+def assert_file_content(url: str, predictions):
     response = requests.get(url)
     assert response.text == ndjson.dumps(predictions)
