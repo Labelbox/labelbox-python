@@ -181,9 +181,10 @@ class Project(DbObject, Updateable, Deletable):
             instructions_file (str): Path to a local file.
                 * Must be either a pdf, text, or html file.
 
-        Raises ValueError:
-            * project must be setup 
-            * instructions file must be one of ".text", ".txt", ".pdf", ".html"
+        Raises:
+            ValueError:
+                * project must be setup 
+                * instructions file must end with one of ".text", ".txt", ".pdf", ".html"
         """
 
         if self.setup_complete is None:
@@ -229,9 +230,9 @@ class Project(DbObject, Updateable, Deletable):
                     ) {id}
                 }""", {
                 "frontendId": frontendId,
+                "optionsId": option_id,
                 "name": frontend.name,
                 "description": "Video, image, and text annotation",
-                "optionsId": option_id,
                 "customizationOptions": json.dumps(customization_options)
             })
 
