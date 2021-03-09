@@ -1,7 +1,8 @@
-FROM python:3.6
+FROM python:3.7
+
+RUN pip install pytest
 
 COPY . /usr/src/labelbox
 WORKDIR /usr/src/labelbox
 
-RUN pip install pytest
 RUN python setup.py install
