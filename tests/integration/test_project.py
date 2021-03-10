@@ -1,5 +1,6 @@
 import pytest
 import json
+import requests
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
@@ -68,8 +69,11 @@ def test_extend_reservations(project):
 
 
 def test_attach_instructions(client, project):
-    with pytest.raises(ValueError):
-        project.attach_instructions('/tmp/instructions.txt')
+    with pytest.raises(ValueError) as execinfo:
+        project.upsert_instructions('/tmp/instructions.txt')
+    assert str(
+        execinfo.value
+    ) == "Cannot attach instructions to a project that has not been set up."
 
     editor = list(
         client.get_labeling_frontends(
@@ -80,10 +84,11 @@ def test_attach_instructions(client, project):
     with open('/tmp/instructions.txt', 'w') as file:
         file.write("some instructions...")
 
-    project.attach_instructions('/tmp/instructions.txt')
+    project.upsert_instructions('/tmp/instructions.txt')
     assert json.loads(
         list(project.labeling_frontend_options())
         [-1].customization_options).get('projectInstructions') is not None
 
-    with pytest.raises(ValueError):
-        project.attach_instructions('/tmp/file.invalid_file_extension')
+    with pytest.raises(ValueError) as execinfo:
+        project.upsert_instructions('/tmp/file.invalid_file_extension')
+    assert "instructions_file must end with one of" in str(execinfo.value)
