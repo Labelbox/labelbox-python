@@ -173,6 +173,69 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    def upsert_instructions(self, instructions_file: str):
+        """
+        * Uploads instructions to the UI. Running more than once will replace the instructions
+            
+        Args:
+            instructions_file (str): Path to a local file.
+                * Must be either a pdf, text, or html file.
+
+        Raises:
+            ValueError:
+                * project must be setup 
+                * instructions file must end with one of ".text", ".txt", ".pdf", ".html"
+        """
+
+        if self.setup_complete is None:
+            raise ValueError(
+                "Cannot attach instructions to a project that has not been set up."
+            )
+
+        frontend = self.labeling_frontend()
+        frontendId = frontend.uid
+
+        if frontend.name != "Editor":
+            logger.warn(
+                f"This function has only been tested to work with the Editor front end. Found %s",
+                frontend.name)
+
+        supported_instruction_formats = (".text", ".txt", ".pdf", ".html")
+        if not instructions_file.endswith(supported_instruction_formats):
+            raise ValueError(
+                f"instructions_file must end with one of {supported_instruction_formats}. Found {instructions_file}"
+            )
+
+        lfo = list(self.labeling_frontend_options())[-1]
+        instructions_url = self.client.upload_file(instructions_file)
+        customization_options = json.loads(lfo.customization_options)
+        customization_options['projectInstructions'] = instructions_url
+        option_id = lfo.uid
+
+        self.client.execute(
+            """mutation UpdateFrontendWithExistingOptionsPyApi (
+                    $frontendId: ID!, 
+                    $optionsId: ID!, 
+                    $name: String!, 
+                    $description: String!, 
+                    $customizationOptions: String!
+                ) {
+                    updateLabelingFrontend(
+                        where: {id: $frontendId}, 
+                        data: {name: $name, description: $description}
+                    ) {id}
+                    updateLabelingFrontendOptions(
+                        where: {id: $optionsId}, 
+                        data: {customizationOptions: $customizationOptions}
+                    ) {id}
+                }""", {
+                "frontendId": frontendId,
+                "optionsId": option_id,
+                "name": frontend.name,
+                "description": "Video, image, and text annotation",
+                "customizationOptions": json.dumps(customization_options)
+            })
+
     def labeler_performance(self):
         """ Returns the labeler performances for this Project.
 
