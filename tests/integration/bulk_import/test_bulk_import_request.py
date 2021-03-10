@@ -3,7 +3,7 @@ import ndjson
 import pytest
 import requests
 
-from labelbox.exceptions import ValidationError, UuidError
+from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
 """
@@ -32,7 +32,7 @@ def test_create_from_url(configured_project):
 def test_validate_file(client, configured_project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    with pytest.raises(ValidationError):
+    with pytest.raises(MALValidationError):
         configured_project.upload_annotations(name=name,
                                               annotations=url,
                                               validate=True)
