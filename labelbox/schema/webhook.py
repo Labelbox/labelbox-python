@@ -1,10 +1,11 @@
 import logging
 from enum import Enum
-from typing import Iterable, List
+from typing import List, Optional, Union
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox import Client, Project
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,8 @@ class Webhook(DbObject, Updateable):
     project = Relationship.ToOne("Project")
 
     @staticmethod
-    def create(client, topics, url, secret, project):
+    def create(client: Client, topics: List[WebhookTopic], url: str,
+               secret: str, project: Project):
         """ Creates a Webhook.
 
         Args:
@@ -92,7 +94,7 @@ class Webhook(DbObject, Updateable):
         return Webhook(client, client.execute(query_str)["createWebhook"])
 
     @staticmethod
-    def validate_topics(topics: List["Webhook.WebhookTopic"]):
+    def validate_topics(topics: List[WebhookTopic]):
         if not isinstance(topics, list):
             raise TypeError(
                 f"Topics must be List[Webhook.WebhookTopic]. Found `{topics}`")
@@ -101,7 +103,7 @@ class Webhook(DbObject, Updateable):
             Webhook.validate_value(topic, Webhook.WebhookTopic)
 
     @staticmethod
-    def validate_value(value, enum):
+    def validate_value(value: str, enum: Union[WebhookStatus, WebhookTopic]):
         supported_values = [x.value for x in enum]
         if value not in supported_values:
             raise ValueError(
@@ -109,15 +111,21 @@ class Webhook(DbObject, Updateable):
             )
 
     def delete(self):
+        """
+        Deletes the webhook
+        """
         self.update(status=self.WebhookStatus.INACTIVE)
 
-    def update(self, topics=None, url=None, status=None):
+    def update(self,
+               topics: Optional[List[WebhookTopic]] = None,
+               url: Optional[str] = None,
+               status: Optional[WebhookStatus] = None):
         """ Updates the Webhook.
 
         Args:
-            topics (List[str]): The new topics.
-            url (str): The new URL value.
-            status (str): The new status.
+            topics (Optional[List[WebhookTopic]]): The new topics.
+            url  Optional[str): The new URL value.
+            status (Optional[WebhookStatus]): The new status.
 
         If values are set to None then there are no updates made to that field.
 
