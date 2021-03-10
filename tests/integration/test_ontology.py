@@ -3,8 +3,9 @@ from typing import Any, Dict, List, Union
 import pytest
 
 from labelbox import LabelingFrontend
-from labelbox.schema.ontology_generator import Ontology, \
-    Tool, Classification, Option, InconsistentOntologyException
+from labelbox.exceptions import InconsistentOntologyException
+from labelbox.schema.ontology import Tool, Classification, Option, \
+    Ontology, OntologyBuilder
 
 _SAMPLE_ONTOLOGY = {
     "tools": [{
@@ -159,13 +160,13 @@ def test_create_option(value, expected_value, typing) -> None:
 
 
 def test_create_empty_ontology() -> None:
-    o = Ontology()
+    o = OntologyBuilder()
     assert (o.tools == [])
     assert (o.classifications == [])
 
 
 def test_add_ontology_tool() -> None:
-    o = Ontology()
+    o = OntologyBuilder()
     o.add_tool(Tool(tool=Tool.Type.BBOX, name="bounding box"))
 
     second_tool = Tool(tool=Tool.Type.SEGMENTATION, name="segmentation")
@@ -181,7 +182,7 @@ def test_add_ontology_tool() -> None:
 
 
 def test_add_ontology_classification() -> None:
-    o = Ontology()
+    o = OntologyBuilder()
     o.add_classification(
         Classification(class_type=Classification.Type.TEXT,
                        instructions="text"))
@@ -238,9 +239,10 @@ def test_option_add_option() -> None:
 
 
 def test_ontology_asdict(project) -> None:
-    assert Ontology.from_dict(_SAMPLE_ONTOLOGY).asdict() == _SAMPLE_ONTOLOGY
+    assert OntologyBuilder.from_dict(
+        _SAMPLE_ONTOLOGY).asdict() == _SAMPLE_ONTOLOGY
 
 
 def test_from_project_ontology(client, project) -> None:
-    o = Ontology.from_project(project)
+    o = OntologyBuilder.from_project(project)
     assert o.asdict() == project.ontology().normalized
