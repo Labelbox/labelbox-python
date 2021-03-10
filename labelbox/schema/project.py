@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 import time
-from typing import Union, Iterable
+from typing import Dict, List, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
@@ -477,10 +477,10 @@ class Project(DbObject, Updateable, Deletable):
             "showingPredictionsToLabelers"]
 
     def upload_annotations(
-        self,
-        name: str,
-        annotations: Union[str, Union[str, Path], Iterable[dict]],
-    ) -> 'BulkImportRequest':  # type: ignore
+            self,
+            name: str,
+            annotations: Union[str, Path, Iterable[Dict]],
+            validate: bool = True) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
@@ -490,6 +490,8 @@ class Project(DbObject, Updateable, Deletable):
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
+            validate (bool):
+                Whether or not to validate the payload before uploading.
         Returns:
             BulkImportRequest
         """
@@ -510,12 +512,11 @@ class Project(DbObject, Updateable, Deletable):
                 return bool(parsed.scheme) and bool(parsed.netloc)
 
             if _is_url_valid(annotations):
-                return BulkImportRequest.create_from_url(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    url=str(annotations),
-                )
+                return BulkImportRequest.create_from_url(client=self.client,
+                                                         project_id=self.uid,
+                                                         name=name,
+                                                         url=str(annotations),
+                                                         validate=validate)
             else:
                 path = Path(annotations)
                 if not path.exists():
@@ -527,7 +528,7 @@ class Project(DbObject, Updateable, Deletable):
                     project_id=self.uid,
                     name=name,
                     file=path,
-                    validate_file=True,
+                    validate_file=validate,
                 )
         elif isinstance(annotations, Iterable):
             return BulkImportRequest.create_from_objects(
@@ -535,7 +536,7 @@ class Project(DbObject, Updateable, Deletable):
                 project_id=self.uid,
                 name=name,
                 predictions=annotations,  # type: ignore
-            )
+                validate=validate)
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
