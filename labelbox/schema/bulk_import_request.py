@@ -9,8 +9,7 @@ import backoff
 import ndjson
 import requests
 from pydantic import BaseModel, validator
-from pydantic import ValidationError
-from typing_extensions import TypedDict, Literal
+from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set)
 
@@ -189,6 +188,8 @@ class BulkImportRequest(DbObject):
             project_id (str): id of project for which predictions will be imported
             name (str): name of BulkImportRequest
             url (str): publicly accessible URL pointing to ndjson file containing predictions
+            validate (bool): a flag indicating if there should be a validation
+                if `url` is valid ndjson
         Returns:
             BulkImportRequest object
         """
@@ -241,11 +242,13 @@ class BulkImportRequest(DbObject):
             }
         }``
 
-        Args:x
+        Args:
             client (Client): a Labelbox client
             project_id (str): id of project for which predictions will be imported
             name (str): name of BulkImportRequest
             predictions (Iterable[dict]): iterable of dictionaries representing predictions
+            validate (bool): a flag indicating if there should be a validation
+                if `predictions` is valid ndjson
         Returns:
             BulkImportRequest object
         """
@@ -313,7 +316,8 @@ class BulkImportRequest(DbObject):
         return cls(client, response_data["createBulkImportRequest"])
 
 
-def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
+def _validate_ndjson(lines: Iterable[Dict[str, Any]],
+                     project: "labelbox.Project") -> None:
     """   
     Client side validation of an ndjson object.
 
@@ -328,7 +332,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
         project (Project): id of project for which predictions will be imported
     
     Raises:
-        ValidationError: Raise for invalid NDJson
+        MALValidationError: Raise for invalid NDJson
         UuidError: Duplicate UUID in upload
     """
     data_row_ids = {
@@ -347,8 +351,8 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]], project) -> None:
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
             uids.add(uuid)
-        except (ValidationError, ValueError, TypeError, KeyError) as e:
-            raise labelbox.exceptions.ValidationError(
+        except (pydantic.ValidationError, ValueError, TypeError, KeyError) as e:
+            raise labelbox.exceptions.MALValidationError(
                 f"Invalid NDJson on line {idx}") from e
 
 
@@ -406,19 +410,19 @@ def get_mal_schemas(ontology):
 LabelboxID: str = pydantic.Field(..., min_length=25, max_length=25)
 
 
-class Bbox(TypedDict):
+class Bbox(BaseModel):
     top: float
     left: float
     height: float
     width: float
 
 
-class Point(TypedDict):
+class Point(BaseModel):
     x: float
     y: float
 
 
-class FrameLocation(TypedDict):
+class FrameLocation(BaseModel):
     end: int
     start: int
 
@@ -428,7 +432,9 @@ class VideoSupported(BaseModel):
     frames: Optional[List[FrameLocation]]
 
 
-class UnionConstructor:
+#Base class for a special kind of union.
+# Compatible with pydantic. Improves error messages over a traditional union
+class SpecialUnion:
 
     def __new__(cls, **kwargs):
         return cls.build(kwargs)
@@ -439,8 +445,8 @@ class UnionConstructor:
 
     @classmethod
     def get_union_types(cls):
-        if not issubclass(cls, UnionConstructor):
-            raise TypeError("{} must be a subclass of UnionConstructor")
+        if not issubclass(cls, SpecialUnion):
+            raise TypeError("{} must be a subclass of SpecialUnion")
 
         union_types = [x for x in cls.__orig_bases__ if hasattr(x, "__args__")]
         if len(union_types) < 1:
@@ -453,7 +459,16 @@ class UnionConstructor:
         return union_types[0].__args__[0].__args__
 
     @classmethod
-    def build(cls: Any, data) -> "NDBase":
+    def build(cls: Any, data: Union[dict, BaseModel]) -> "NDBase":
+        """
+            Checks through all objects in the union to see which matches the input data.
+            Args:
+                data  (Union[dict, BaseModel]) : The data for constructing one of the objects in the union
+            raises:
+                KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
+                ValidationError: Error while trying to construct a specific object in the union
+            
+        """
         if isinstance(data, BaseModel):
             data = data.dict()
 
@@ -506,7 +521,6 @@ class NDFeatureSchema(BaseModel):
 
 class NDBase(NDFeatureSchema):
     ontology_type: str
-    schemaId: str = LabelboxID
     uuid: UUID
     dataRow: DataRow
 
@@ -553,7 +567,7 @@ class NDText(NDBase):
     #No feature schema to check
 
 
-class NDCheckList(VideoSupported, NDBase):
+class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
     answers: List[NDFeatureSchema] = pydantic.Field(determinant=True)
 
@@ -566,7 +580,7 @@ class NDCheckList(VideoSupported, NDBase):
 
     def validate_feature_schemas(self, valid_feature_schemas):
         #Test top level feature schema for this tool
-        super(NDCheckList, self).validate_feature_schemas(valid_feature_schemas)
+        super(NDChecklist, self).validate_feature_schemas(valid_feature_schemas)
         #Test the feature schemas provided to the answer field
         if len(set([answer.schemaId for answer in self.answers])) != len(
                 self.answers):
@@ -595,9 +609,9 @@ class NDRadio(VideoSupported, NDBase):
 
 #A union with custom construction logic to improve error messages
 class NDClassification(
-        UnionConstructor,
+        SpecialUnion,
         Type[Union[NDText, NDRadio,  # type: ignore
-                   NDCheckList]]):
+                   NDChecklist]]):
     ...
 
 
@@ -665,7 +679,7 @@ class NDPoint(NDBaseTool):
     #Could check if points are positive
 
 
-class EntityLocation(TypedDict):
+class EntityLocation(BaseModel):
     start: int
     end: int
 
@@ -676,6 +690,9 @@ class NDTextEntity(NDBaseTool):
 
     @validator('location')
     def is_valid_location(cls, v):
+        if isinstance(v, BaseModel):
+            v = v.dict()
+
         if len(v) < 2:
             raise ValueError(
                 f"A line must have at least 2 points to be valid. Found {v}")
@@ -687,7 +704,7 @@ class NDTextEntity(NDBaseTool):
         return v
 
 
-class MaskFeatures(TypedDict):
+class MaskFeatures(BaseModel):
     instanceURI: str
     colorRGB: Union[List[int], Tuple[int, int, int]]
 
@@ -698,6 +715,9 @@ class NDMask(NDBaseTool):
 
     @validator('mask')
     def is_valid_mask(cls, v):
+        if isinstance(v, BaseModel):
+            v = v.dict()
+
         colors = v['colorRGB']
         #Does the dtype matter? Can it be a float?
         if not isinstance(colors, (tuple, list)):
@@ -715,15 +735,17 @@ class NDMask(NDBaseTool):
 
 #A union with custom construction logic to improve error messages
 class NDTool(
-        UnionConstructor,
+        SpecialUnion,
         Type[Union[NDMask,  # type: ignore
                    NDTextEntity, NDPoint, NDRectangle, NDPolyline,
                    NDPolygon,]]):
     ...
 
 
-class NDAnnotation(UnionConstructor,
-                   Type[Union[NDTool, NDClassification]]):  # type: ignore
+class NDAnnotation(
+        SpecialUnion,
+        Type[Union[NDTool,  # type: ignore
+                   NDClassification]]):
 
     @classmethod
     def build(cls: Any, data) -> "NDBase":
