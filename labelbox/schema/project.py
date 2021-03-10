@@ -5,7 +5,7 @@ from labelbox.schema.data_row import DataRow
 import logging
 from pathlib import Path
 import time
-from typing import Union, Iterable
+from typing import Dict, List, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
@@ -176,6 +176,69 @@ class Project(DbObject, Updateable, Deletable):
             logger.debug("Project '%s' label export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    def upsert_instructions(self, instructions_file: str):
+        """
+        * Uploads instructions to the UI. Running more than once will replace the instructions
+            
+        Args:
+            instructions_file (str): Path to a local file.
+                * Must be either a pdf, text, or html file.
+
+        Raises:
+            ValueError:
+                * project must be setup 
+                * instructions file must end with one of ".text", ".txt", ".pdf", ".html"
+        """
+
+        if self.setup_complete is None:
+            raise ValueError(
+                "Cannot attach instructions to a project that has not been set up."
+            )
+
+        frontend = self.labeling_frontend()
+        frontendId = frontend.uid
+
+        if frontend.name != "Editor":
+            logger.warn(
+                f"This function has only been tested to work with the Editor front end. Found %s",
+                frontend.name)
+
+        supported_instruction_formats = (".text", ".txt", ".pdf", ".html")
+        if not instructions_file.endswith(supported_instruction_formats):
+            raise ValueError(
+                f"instructions_file must end with one of {supported_instruction_formats}. Found {instructions_file}"
+            )
+
+        lfo = list(self.labeling_frontend_options())[-1]
+        instructions_url = self.client.upload_file(instructions_file)
+        customization_options = json.loads(lfo.customization_options)
+        customization_options['projectInstructions'] = instructions_url
+        option_id = lfo.uid
+
+        self.client.execute(
+            """mutation UpdateFrontendWithExistingOptionsPyApi (
+                    $frontendId: ID!, 
+                    $optionsId: ID!, 
+                    $name: String!, 
+                    $description: String!, 
+                    $customizationOptions: String!
+                ) {
+                    updateLabelingFrontend(
+                        where: {id: $frontendId}, 
+                        data: {name: $name, description: $description}
+                    ) {id}
+                    updateLabelingFrontendOptions(
+                        where: {id: $optionsId}, 
+                        data: {customizationOptions: $customizationOptions}
+                    ) {id}
+                }""", {
+                "frontendId": frontendId,
+                "optionsId": option_id,
+                "name": frontend.name,
+                "description": "Video, image, and text annotation",
+                "customizationOptions": json.dumps(customization_options)
+            })
 
     def labeler_performance(self):
         """ Returns the labeler performances for this Project.
@@ -486,8 +549,8 @@ class Project(DbObject, Updateable, Deletable):
     def upload_annotations(
             self,
             name: str,
-            annotations: Union[str, Union[str, Path], Iterable[dict]],
-            validate=True) -> 'BulkImportRequest':  # type: ignore
+            annotations: Union[str, Path, Iterable[Dict]],
+            validate: bool = True) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
@@ -497,7 +560,7 @@ class Project(DbObject, Updateable, Deletable):
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
-            validate (str):
+            validate (bool):
                 Whether or not to validate the payload before uploading.
         Returns:
             BulkImportRequest

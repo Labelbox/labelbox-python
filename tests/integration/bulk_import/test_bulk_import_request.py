@@ -1,11 +1,9 @@
 import uuid
-from attr import validate
-
 import ndjson
 import pytest
 import requests
 
-from labelbox.exceptions import NDJsonError, UuidError
+from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
 """
@@ -34,7 +32,7 @@ def test_create_from_url(configured_project):
 def test_validate_file(client, configured_project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    with pytest.raises(NDJsonError):
+    with pytest.raises(MALValidationError):
         configured_project.upload_annotations(name=name,
                                               annotations=url,
                                               validate=True)
@@ -52,7 +50,7 @@ def test_create_from_objects(configured_project, predictions):
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    __assert_file_content(bulk_import_request.input_file_url, predictions)
+    assert_file_content(bulk_import_request.input_file_url, predictions)
 
 
 def test_create_from_local_file(tmp_path, predictions, configured_project):
@@ -70,7 +68,7 @@ def test_create_from_local_file(tmp_path, predictions, configured_project):
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    __assert_file_content(bulk_import_request.input_file_url, predictions)
+    assert_file_content(bulk_import_request.input_file_url, predictions)
 
 
 def test_get(client, configured_project):
@@ -136,6 +134,6 @@ def test_wait_till_done(configured_project):
             bulk_import_request.state == BulkImportRequestState.FAILED)
 
 
-def __assert_file_content(url: str, predictions):
+def assert_file_content(url: str, predictions):
     response = requests.get(url)
     assert response.text == ndjson.dumps(predictions)
