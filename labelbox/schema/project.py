@@ -173,7 +173,7 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def attach_instructions(self, instructions_file: str):
+    def upsert_instructions(self, instructions_file: str):
         """
         * Uploads instructions to the UI. Running more than once will replace the instructions
             
@@ -189,7 +189,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if self.setup_complete is None:
             raise ValueError(
-                "Cannot attach instructions to a project that has not been setup."
+                "Cannot attach instructions to a project that has not been set up."
             )
 
         frontend = self.labeling_frontend()
@@ -197,8 +197,8 @@ class Project(DbObject, Updateable, Deletable):
 
         if frontend.name != "Editor":
             logger.warn(
-                f"This function has only been tested to work with the Editor front end. Found {frontend.name}"
-            )
+                f"This function has only been tested to work with the Editor front end. Found %s",
+                frontend.name)
 
         supported_instruction_formats = (".text", ".txt", ".pdf", ".html")
         if not instructions_file.endswith(supported_instruction_formats):
