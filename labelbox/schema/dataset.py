@@ -170,6 +170,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             external_id (str): External ID of the sought `DataRow`.
+            limit (int): The maximum number of data rows to return for the given external_id
 
         Returns:
             A single `DataRow` with the given ID.

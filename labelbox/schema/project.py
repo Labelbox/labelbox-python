@@ -1,15 +1,15 @@
+import json
+import time
+import logging
 from collections import namedtuple
 from datetime import datetime, timezone
-import json
-from labelbox.schema.data_row import DataRow
-import logging
 from pathlib import Path
-import time
 from typing import Dict, List, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
 from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.data_row import DataRow
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -320,50 +320,28 @@ class Project(DbObject, Updateable, Deletable):
         for idx, row in enumerate(data):
             if len(row) != 3:
                 raise TypeError(
-                    f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items"
+                    f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items. Index: {idx}"
                 )
             data_row, priority, num_labels = row
             if not isinstance(data_row, DataRow):
                 raise TypeError(
-                    f"Datarow should be be of type DataRow. Found {data_row}")
+                    f"Datarow should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
+                )
 
-            for name, value in [["priority", priority],
+            for name, value in [["Priority", priority],
                                 ["Number of labels", num_labels]]:
                 if not isinstance(value, int):
                     raise TypeError(
-                        f"{name} must be an int. Found {type(value)} for data_row {data_row}"
+                        f"{name} must be an int. Found {type(value)} for data_row {data_row}. Index: {idx}"
                     )
                 if value < 1:
                     raise ValueError(
-                        f"{name} must be greater than 0 for data_row {data_row}"
+                        f"{name} must be greater than 0 for data_row {data_row}. Index: {idx}"
                     )
 
     def set_labeling_parameter_overrides(self, data):
         """ Adds labeling parameter overrides to this project.
-
-        Priority:
-            * data will be labeled in priority order 
-                - lower numbers labeled first
-                - Minimum priority is 1.
-            * Priority is not the queue position.
-                - The position is determined by the relative priority.
-                - Eg. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
-                    will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
-            * datarows with parameter overrides will appear before datarows without overrides
-            * The priority only effects items in the queue 
-                - Assigning a priority will not automatically add the item back into the queue
-        
-        Number of labels:
-            * The number times a data row should be labeled
-            * This will create duplicates in a project
-            * The queue will never assign the same datarow to a labeler more than once
-                - if the number of labels is greater than the number of labelers working on a project then
-                    the extra items will get stuck in the queue (thsi can be fixed by removing the override at any time).
-            * This can add items to the queue (even if they have already been labeled)
-                -  New copies will only be assigned to members who have not labeled that same datarow before. 
-            * Setting this to 1 will result in the default behavior (no duplicates)
-            
-    
+                
         See information on priority here:
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
     
@@ -372,7 +350,29 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (Union[DataRow, datarow_id], priority, numberOfLabels) for the new override.
+                (DataRow, priority<int>, number_of_labels<int>) for the new override.
+                Priority:
+                    * Data will be labeled in priority order.
+                        - Lower number priority is labeled first.
+                        - Minimum priority is 1.
+                    * Priority is not the queue position.
+                        - The position is determined by the relative priority.
+                        - Eg. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
+                            will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
+                    * Datarows with parameter overrides will appear before datarows without overrides.
+                    * The priority only effects items in the queue.
+                        - Assigning a priority will not automatically add the item back into the queue.  
+                Number of labels:
+                    * The number times a data row should be labeled.
+                    * This will create duplicate data rows in a project (one for each number of labels).
+                    * Data rows will be sent to the queue (even if they have already been labeled).
+                        - New copies will only be assigned to members who have not labeled that same datarow before. 
+                        - Already labeled duplicates will not be sent back to the queue.
+                    * The queue will never assign the same datarow to a single labeler more than once.
+                        - If the number of labels is greater than the number of labelers working on a project then
+                            the extra items will remain in the queue (this can be fixed by removing the override at any time).
+
+                    * Setting this to 1 will result in the default behavior (no duplicates).
         Returns:
             bool, indicates if the operation was a success.
         """
