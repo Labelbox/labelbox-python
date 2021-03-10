@@ -351,9 +351,10 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
                 (DataRow, priority<int>, number_of_labels<int>) for the new override.
+
                 Priority:
                     * Data will be labeled in priority order.
-                        - Lower number priority is labeled first.
+                        - A lower number priority is labeled first.
                         - Minimum priority is 1.
                     * Priority is not the queue position.
                         - The position is determined by the relative priority.
@@ -363,15 +364,13 @@ class Project(DbObject, Updateable, Deletable):
                     * The priority only effects items in the queue.
                         - Assigning a priority will not automatically add the item back into the queue.  
                 Number of labels:
-                    * The number times a data row should be labeled.
-                    * This will create duplicate data rows in a project (one for each number of labels).
-                    * Data rows will be sent to the queue (even if they have already been labeled).
-                        - New copies will only be assigned to members who have not labeled that same datarow before. 
+                    * The number of times a data row should be labeled.
+                        - Creates duplicate data rows in a project (one for each number of labels).
+                    * New duplicated data rows will be added to the queue.
                         - Already labeled duplicates will not be sent back to the queue.
                     * The queue will never assign the same datarow to a single labeler more than once.
                         - If the number of labels is greater than the number of labelers working on a project then
                             the extra items will remain in the queue (this can be fixed by removing the override at any time).
-
                     * Setting this to 1 will result in the default behavior (no duplicates).
         Returns:
             bool, indicates if the operation was a success.
