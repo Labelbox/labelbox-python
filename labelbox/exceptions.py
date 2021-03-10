@@ -106,6 +106,6 @@ class UuidError(LabelboxError):
     pass
 
 
-class ValidationError(LabelboxError):
+class MALValidationError(LabelboxError):
     """Raised when user input is invalid for MAL imports."""
     ...
