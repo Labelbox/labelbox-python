@@ -210,6 +210,6 @@ class Dataset(DbObject, Updateable, Deletable):
                                                    limit=2)
         if len(data_rows) > 1:
             logging.warn(
-                "More than one data_row has the provided external_id. Use function data_rows_for_external_id to fetch all"
+                f"More than one data_row has the provided external_id : `{external_id}`. Use function data_rows_for_external_id to fetch all"
             )
         return data_rows[0]

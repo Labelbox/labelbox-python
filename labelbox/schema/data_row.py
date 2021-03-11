@@ -34,6 +34,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
     predictions = Relationship.ToMany("Prediction", False)
 
+    supported_meta_types = {
+        meta_type.value for meta_type in AssetMetadata.MetaType
+    }
+
     @staticmethod
     def bulk_delete(data_rows):
         """ Deletes all the given DataRows.
@@ -62,10 +66,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Raises:
             ValueError: meta_type must be one of the supported types.
         """
-        supported_meta_types = [x.value for x in AssetMetadata.MetaType]
-        if meta_type not in supported_meta_types:
+
+        if meta_type not in self.supported_meta_types:
             raise ValueError(
-                f"metadata type must be one of {supported_meta_types}. Found {meta_type}"
+                f"meta_type must be one of {self.supported_meta_types}. Found {meta_type}"
             )
 
         meta_type_param = "metaType"

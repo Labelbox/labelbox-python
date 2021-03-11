@@ -90,7 +90,7 @@ class Project(DbObject, Updateable, Deletable):
         # about them. At the same time they're connected to a Label at
         # label creation in a non-standard way (connect via name).
         logger.warning(
-            "This function is deprecated and is not compatible with the new editor."
+            "`create_label` is deprecated and is not compatible with the new editor."
         )
 
         Label = Entity.Label
@@ -417,7 +417,7 @@ class Project(DbObject, Updateable, Deletable):
                 to reinitiate. Between 0 and 1.
         """
 
-        if (quota_factor > 1.) or (quota_factor < 0.):
+        if not 0. < quota_factor < 1.:
             raise ValueError("Quota factor must be in the range of [0,1]")
 
         id_param = "projectId"
@@ -460,7 +460,7 @@ class Project(DbObject, Updateable, Deletable):
         """
 
         logger.warning(
-            "This function is deprecated and is not compatible with the new editor."
+            "`create_prediction_model` is deprecated and is not compatible with the new editor."
         )
 
         PM = Entity.PredictionModel
@@ -489,7 +489,7 @@ class Project(DbObject, Updateable, Deletable):
                 None.
         """
         logger.warning(
-            "This function is deprecated and is not compatible with the new editor."
+            "`create_prediction` is deprecated and is not compatible with the new editor."
         )
 
         if prediction_model is None:

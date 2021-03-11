@@ -21,8 +21,9 @@ def test_asset_metadata_crud(project, dataset, rand_gen):
 
     with pytest.raises(ValueError) as exc_info:
         data_row.create_metadata("NOT_SUPPORTED_TYPE", "Value")
+    expected_types = {item.value for item in AssetMetadata.MetaType}
     assert str(exc_info.value) == \
-        f"metadata type must be one of {[x.value for x in AssetMetadata.MetaType]}. Found NOT_SUPPORTED_TYPE"
+        f"meta_type must be one of {expected_types}. Found NOT_SUPPORTED_TYPE"
 
     # Check that filtering and sorting is prettily disabled
     with pytest.raises(InvalidQueryError) as exc_info:
