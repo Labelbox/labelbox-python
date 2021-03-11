@@ -1,5 +1,6 @@
 class LabelboxError(Exception):
     """Base class for exceptions."""
+
     def __init__(self, message, cause=None):
         """
         Args:
@@ -27,6 +28,7 @@ class AuthorizationError(LabelboxError):
 
 class ResourceNotFoundError(LabelboxError):
     """Exception raised when a given resource is not found. """
+
     def __init__(self, db_object_type, params):
         """ Constructor.
 
@@ -66,6 +68,7 @@ class InvalidQueryError(LabelboxError):
 
 class NetworkError(LabelboxError):
     """Raised when an HTTPError occurs."""
+
     def __init__(self, cause):
         super().__init__(str(cause), cause)
         self.cause = cause
@@ -79,6 +82,7 @@ class TimeoutError(LabelboxError):
 class InvalidAttributeError(LabelboxError):
     """ Raised when a field (name or Field instance) is not valid or found
     for a specific DB object type. """
+
     def __init__(self, db_object_type, field):
         super().__init__("Field(s) '%r' not valid on DB type '%s'" %
                          (field, db_object_type.type_name()))
