@@ -1,6 +1,7 @@
 import abc
 from dataclasses import dataclass, field
 from enum import Enum, auto
+import colorsys
 
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -14,7 +15,22 @@ from labelbox.exceptions import InconsistentOntologyException
 
 @dataclass
 class Option:
-    value: str
+    """
+    An option is a possible answer within a Classification object in
+    a Project's ontology. 
+
+    To instantiate, only the "value" parameter needs to be passed in.
+
+    Example(s):
+        option = Option(value = "Option Example")
+
+    Attributes:
+        value: (str)
+        schema_id: (str)
+        feature_schema_id: (str)
+        options: (list)
+    """
+    value: Union[str, int]
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     options: List["Classification"] = field(default_factory=list)
@@ -26,8 +42,8 @@ class Option:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
         return Option(value=dictionary["value"],
-                      schema_id=dictionary["schemaNodeId"],
-                      feature_schema_id=dictionary["featureSchemaId"],
+                      schema_id=dictionary.get("schemaNodeId", []),
+                      feature_schema_id=dictionary.get("featureSchemaId", []),
                       options=[
                           Classification.from_dict(o)
                           for o in dictionary.get("options", [])
@@ -52,6 +68,36 @@ class Option:
 
 @dataclass
 class Classification:
+    """
+    A classfication to be added to a Project's ontology. The  
+    classification is dependent on the Classification Type.
+
+    To instantiate, the "class_type" and "instructions" parameters must
+    be passed in.
+
+    The "options" parameter holds a list of Option objects. This is not 
+    necessary for some Classification types, such as TEXT. To see which
+    types require options, look at the "_REQUIRES_OPTIONS" class variable.
+
+    Example(s):
+        classification = Classification(
+            class_type = Classification.Type.TEXT,
+            instructions = "Classification Example")
+
+        classification_two = Classification(
+            class_type = Classification.Type.RADIO,
+            instructions = "Second Example")
+        classification_two.add_option(Option(
+            value = "Option Example"))
+
+    Attributes:
+        class_type: (Classification.Type)
+        instructions: (str)
+        required: (bool)
+        options: (list)
+        schema_id: (str)
+        feature_schema_id: (str)
+    """
     class Type(Enum):
         TEXT = "text"
         CHECKLIST = "checklist"
@@ -78,8 +124,8 @@ class Classification:
             instructions=dictionary["instructions"],
             required=dictionary["required"],
             options=[Option.from_dict(o) for o in dictionary["options"]],
-            schema_id=dictionary["schemaNodeId"],
-            feature_schema_id=dictionary["schemaNodeId"])
+            schema_id=dictionary.get("schemaNodeId", []),
+            feature_schema_id=dictionary.get("featureSchemaId", []))
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in Classification._REQUIRES_OPTIONS \
@@ -106,6 +152,34 @@ class Classification:
 
 @dataclass
 class Tool:
+    """
+    A tool to be added to a Project's ontology. The tool is
+    dependent on the Tool Type.
+
+    To instantiate, the "tool" and "name" parameters must
+    be passed in.
+
+    The "classifications" parameter holds a list of Classification objects. 
+    This can be used to add nested classifications to a tool.
+
+    Example(s):
+        tool = Tool(
+            tool = Tool.Type.LINE,
+            name = "Tool example")    
+        classification = Classification(
+            class_type = Classification.Type.TEXT,
+            instructions = "Classification Example")
+        tool.add_classification(classification)
+
+    Attributes:
+        tool: (Tool.Type)
+        name: (str)
+        required: (bool)
+        color: (str)
+        classifications: (list)
+        schema_id: (str)
+        feature_schema_id: (str)
+    """
     class Type(Enum):
         POLYGON = "polygon"
         SEGMENTATION = "superpixel"
@@ -125,8 +199,8 @@ class Tool:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
         return Tool(name=dictionary['name'],
-                    schema_id=dictionary["schemaNodeId"],
-                    feature_schema_id=dictionary["featureSchemaId"],
+                    schema_id=dictionary.get("schemaNodeId", []),
+                    feature_schema_id=dictionary.get("featureSchemaId", []),
                     required=dictionary["required"],
                     tool=Tool.Type(dictionary["tool"]),
                     classifications=[
@@ -194,7 +268,7 @@ class Ontology(DbObject):
             self._tools = [
                 Tool.from_dict(tool) for tool in self.normalized['tools']
             ]
-        return self._tools  # type: ignore
+        return self._tools
 
     def classifications(self) -> List[Classification]:
         """Get list of classifications in an Ontology."""
@@ -203,24 +277,34 @@ class Ontology(DbObject):
                 Classification.from_dict(classification)
                 for classification in self.normalized['classifications']
             ]
-        return self._classifications  # type: ignore
-
-
-def convert_keys(json_dict: Dict[str, Any],
-                 converter: Callable) -> Dict[str, Any]:
-    if isinstance(json_dict, dict):
-        return {
-            converter(key): convert_keys(value, converter)
-            for key, value in json_dict.items()
-        }
-    if isinstance(json_dict, list):
-        return [convert_keys(ele, converter) for ele in json_dict]
-    return json_dict
+        return self._classifications
 
 
 @dataclass
 class OntologyBuilder:
+    """
+    A class to help create an ontology for a Project. This should be used
+    for making Project ontologies from scratch. OntologyBuilder can also
+    pull from an already existing Project's ontology.
 
+    There are no required instantiation arguments. 
+
+    To create an ontology, use the asdict() method after fully building your 
+    ontology within this class, and inserting it into project.setup() as the
+    "labeling_frontend_options" parameter.
+
+    Example:
+        builder = OntologyBuilder()
+        ...
+        frontend = list(client.get_labeling_frontends())[0]
+        project.setup(frontend, builder.asdict())
+
+    attributes:
+        tools: (list)
+        classifications: (list)
+
+    
+    """
     tools: List[Tool] = field(default_factory=list)
     classifications: List[Classification] = field(default_factory=list)
 
@@ -234,10 +318,21 @@ class OntologyBuilder:
             ])
 
     def asdict(self):
+        self._update_colors()
         return {
             "tools": [t.asdict() for t in self.tools],
             "classifications": [c.asdict() for c in self.classifications]
         }
+
+    def _update_colors(self):
+        num_tools = len(self.tools)
+
+        for index in range(num_tools):
+            hsv_color = (index * 1 / num_tools, 1, 1)
+            rgb_color = tuple(
+                int(255 * x) for x in colorsys.hsv_to_rgb(*hsv_color))
+            if self.tools[index].color is None:
+                self.tools[index].color = '#%02x%02x%02x' % rgb_color
 
     @classmethod
     def from_project(cls, project: Project):
