@@ -104,3 +104,8 @@ class UuidError(LabelboxError):
 
 class InconsistentOntologyException(Exception):
     pass
+
+
+class MALValidationError(LabelboxError):
+    """Raised when user input is invalid for MAL imports."""
+    ...
