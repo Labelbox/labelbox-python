@@ -71,9 +71,10 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
+    #TODO: Add exponential backoff so we don'tt overwhelm the api
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=10.0):
+    def execute(self, query, params=None, timeout=30.0):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -126,25 +127,23 @@ class Client:
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
-
         except requests.exceptions.RequestException as e:
             logger.error("Unknown error: %s", str(e))
             raise labelbox.exceptions.NetworkError(e)
-
         except Exception as e:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
-
         try:
             r_json = response.json()
         except:
-            error_502 = '502 Bad Gateway'
-            if error_502 in response.text:
-                raise labelbox.exceptions.InternalServerError(error_502)
             if "upstream connect error or disconnect/reset before headers" \
                     in response.text:
                 raise labelbox.exceptions.InternalServerError(
                     "Connection reset")
+            elif response.status_code == 502:
+                error_502 = '502 Bad Gateway'
+                raise labelbox.exceptions.InternalServerError(error_502)
+
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
@@ -189,6 +188,7 @@ class Client:
 
         # Check if API limit was exceeded
         response_msg = r_json.get("message", "")
+
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
@@ -292,7 +292,6 @@ class Client:
                 "1": (filename, content, content_type) if
                      (filename and content_type) else content
             })
-
         try:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON

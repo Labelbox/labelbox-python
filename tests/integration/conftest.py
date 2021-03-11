@@ -9,6 +9,7 @@ from string import ascii_letters
 import pytest
 
 from labelbox import Client
+from labelbox.schema.labeling_frontend import LabelingFrontend
 
 IMG_URL = "https://picsum.photos/200/300"
 

@@ -6,7 +6,12 @@
 * Comparing a Labelbox object (e.g. Project) to None doesn't raise an exception
 * Adding `order_by` to `Project.labels` doesn't raise an exception
 
-## Version 2.4.10 (2021-01-05)
+## Version 2.4.11 (2021-03-07)
+### Fix
+* Increase query timeout
+* Retry 502s
+
+## Version 2.4.10 (2021-02-05)
 ### Added 
 * SDK version added to request headers
 
