@@ -50,7 +50,7 @@ def test_labeling_parameter_overrides(project, rand_gen):
         data = [(data_rows[12].uid, 1, 3)]
         project.set_labeling_parameter_overrides(data)
     assert str(exc_info.value) == \
-        "Datarow should be be of type DataRow. Found <class 'str'>. Index: 0"
+        "data_row should be be of type DataRow. Found <class 'str'>. Index: 0"
 
     with pytest.raises(ValueError) as exc_info:
         data = [(data_rows[12], 0, 3)]
