@@ -60,6 +60,14 @@ def test_project_filtering(client, rand_gen):
 def test_upsert_review_queue(project):
     project.upsert_review_queue(0.6)
 
+    with pytest.raises(ValueError) as exc_info:
+        project.upsert_review_queue(1.001)
+    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
+
+    with pytest.raises(ValueError) as exc_info:
+        project.upsert_review_queue(-0.001)
+    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
+
 
 def test_extend_reservations(project):
     assert project.extend_reservations("LabelingQueue") == 0
@@ -89,6 +97,6 @@ def test_attach_instructions(client, project):
         list(project.labeling_frontend_options())
         [-1].customization_options).get('projectInstructions') is not None
 
-    with pytest.raises(ValueError) as execinfo:
+    with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
-    assert "instructions_file must end with one of" in str(execinfo.value)
+    assert "instructions_file must end with one of" in str(exc_info.value)
