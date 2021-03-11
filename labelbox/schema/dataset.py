@@ -10,6 +10,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 
 logger = logging.getLogger(__name__)
 
+
 class Dataset(DbObject, Updateable, Deletable):
     """ A Dataset is a collection of DataRows.
 
@@ -212,6 +213,6 @@ class Dataset(DbObject, Updateable, Deletable):
                                                    limit=2)
         if len(data_rows) > 1:
             logger.warning(
-                f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all", external_id
-            )
+                f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
+                external_id)
         return data_rows[0]
