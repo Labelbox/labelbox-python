@@ -26,39 +26,39 @@ _SAMPLE_ONTOLOGY = {
         "classifications": []
     }, {
         "schemaNodeId":
-        None,
+            None,
         "featureSchemaId":
-        None,
+            None,
         "required":
-        False,
+            False,
         "name":
-        "bbox",
+            "bbox",
         "color":
-        "#FF0000",
+            "#FF0000",
         "tool":
-        "rectangle",
+            "rectangle",
         "classifications": [{
             "schemaNodeId":
-            None,
+                None,
             "featureSchemaId":
-            None,
+                None,
             "required":
-            True,
+                True,
             "instructions":
-            "nested classification",
+                "nested classification",
             "name":
-            "nested classification",
+                "nested classification",
             "type":
-            "radio",
+                "radio",
             "options": [{
                 "schemaNodeId":
-                None,
+                    None,
                 "featureSchemaId":
-                None,
+                    None,
                 "label":
-                "first",
+                    "first",
                 "value":
-                "first",
+                    "first",
                 "options": [{
                     "schemaNodeId": None,
                     "featureSchemaId": None,
@@ -111,17 +111,17 @@ _SAMPLE_ONTOLOGY = {
     }],
     "classifications": [{
         "schemaNodeId":
-        None,
+            None,
         "featureSchemaId":
-        None,
+            None,
         "required":
-        True,
+            True,
         "instructions":
-        "This is a question.",
+            "This is a question.",
         "name":
-        "This is a question.",
+            "This is a question.",
         "type":
-        "radio",
+            "radio",
         "options": [{
             "schemaNodeId": None,
             "featureSchemaId": None,
@@ -204,8 +204,7 @@ def test_add_ontology_classification() -> None:
 
 def test_tool_add_classification() -> None:
     t = Tool(tool=Tool.Type.SEGMENTATION, name="segmentation")
-    c = Classification(class_type=Classification.Type.TEXT,
-                       instructions="text")
+    c = Classification(class_type=Classification.Type.TEXT, instructions="text")
     t.add_classification(c)
     assert t.classifications == [c]
 
@@ -228,8 +227,7 @@ def test_classification_add_option() -> None:
 
 def test_option_add_option() -> None:
     o = Option(value="option")
-    c = Classification(class_type=Classification.Type.TEXT,
-                       instructions="text")
+    c = Classification(class_type=Classification.Type.TEXT, instructions="text")
     o.add_option(c)
     assert o.options == [c]
 
