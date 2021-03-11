@@ -58,7 +58,7 @@ class Option:
             "options": [o.asdict() for o in self.options]
         }
 
-    def add_option(self, option: 'Classification') -> 'Classification':
+    def add_option(self, option: 'Classification'):
         if option.instructions in (o.instructions for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{option.instructions}' "
@@ -193,7 +193,7 @@ class Tool:
     tool: Type
     name: str
     required: bool = False
-    color: str = None
+    color: Optional[str] = None
     classifications: List[Classification] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
@@ -339,14 +339,13 @@ class OntologyBuilder:
         ontology = project.ontology().normalized
         return OntologyBuilder.from_dict(ontology)
 
-    def add_tool(self, tool: Tool) -> Tool:
+    def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):
             raise InconsistentOntologyException(
                 f"Duplicate tool name '{tool.name}'. ")
         self.tools.append(tool)
 
-    def add_classification(self,
-                           classification: Classification) -> Classification:
+    def add_classification(self, classification: Classification):
         if classification.instructions in (
                 c.instructions for c in self.classifications):
             raise InconsistentOntologyException(
