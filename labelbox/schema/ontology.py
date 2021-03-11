@@ -98,6 +98,7 @@ class Classification:
         schema_id: (str)
         feature_schema_id: (str)
     """
+
     class Type(Enum):
         TEXT = "text"
         CHECKLIST = "checklist"
@@ -180,6 +181,7 @@ class Tool:
         schema_id: (str)
         feature_schema_id: (str)
     """
+
     class Type(Enum):
         POLYGON = "polygon"
         SEGMENTATION = "superpixel"
@@ -221,8 +223,8 @@ class Tool:
         }
 
     def add_classification(self, classification: Classification):
-        if classification.instructions in (c.instructions
-                                           for c in self.classifications):
+        if classification.instructions in (
+                c.instructions for c in self.classifications):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{classification.instructions}' "
                 f"for tool '{self.name}'")
@@ -345,8 +347,8 @@ class OntologyBuilder:
 
     def add_classification(self,
                            classification: Classification) -> Classification:
-        if classification.instructions in (c.instructions
-                                           for c in self.classifications):
+        if classification.instructions in (
+                c.instructions for c in self.classifications):
             raise InconsistentOntologyException(
                 f"Duplicate classification instructions '{classification.instructions}'. "
             )
