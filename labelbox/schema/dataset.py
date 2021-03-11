@@ -1,12 +1,14 @@
+import os
 import json
 import logging
+from itertools import islice
 from multiprocessing.dummy import Pool as ThreadPool
-import os
 
 from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
+logger = logging.getLogger(__name__)
 
 class Dataset(DbObject, Updateable, Deletable):
     """ A Dataset is a collection of DataRows.
@@ -185,7 +187,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         data_rows = self.data_rows(where=where)
         # Get at most `limit` data_rows.
-        data_rows = [row for row, _ in zip(data_rows, range(limit))]
+        data_rows = list(islice(data_rows, limit))
 
         if not len(data_rows):
             raise ResourceNotFoundError(DataRow, where)
@@ -209,7 +211,7 @@ class Dataset(DbObject, Updateable, Deletable):
         data_rows = self.data_rows_for_external_id(external_id=external_id,
                                                    limit=2)
         if len(data_rows) > 1:
-            logging.warn(
-                f"More than one data_row has the provided external_id : `{external_id}`. Use function data_rows_for_external_id to fetch all"
+            logger.warning(
+                f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all", external_id
             )
         return data_rows[0]

@@ -200,7 +200,7 @@ class Project(DbObject, Updateable, Deletable):
         frontendId = frontend.uid
 
         if frontend.name != "Editor":
-            logger.warn(
+            logger.warning(
                 f"This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name)
 
@@ -325,7 +325,7 @@ class Project(DbObject, Updateable, Deletable):
             data_row, priority, num_labels = row
             if not isinstance(data_row, DataRow):
                 raise TypeError(
-                    f"Datarow should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
+                    f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
                 )
 
             for name, value in [["Priority", priority],
@@ -358,7 +358,7 @@ class Project(DbObject, Updateable, Deletable):
                         - Minimum priority is 1.
                     * Priority is not the queue position.
                         - The position is determined by the relative priority.
-                        - Eg. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
+                        - E.g. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
                             will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
                     * Datarows with parameter overrides will appear before datarows without overrides.
                     * The priority only effects items in the queue.
