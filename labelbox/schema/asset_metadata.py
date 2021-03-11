@@ -18,7 +18,7 @@ class AssetMetadata(DbObject):
         TEXT = "TEXT"
         IMAGE_OVERLAY = "IMAGE_OVERLAY"
 
-    #For backwards compatibility
+    # For backwards compatibility
     for topic in MetaType:
         vars()[topic.name] = topic.value
 

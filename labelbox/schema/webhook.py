@@ -1,11 +1,10 @@
 import logging
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Iterable, List
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox import Client, Project
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +24,12 @@ class Webhook(DbObject, Updateable):
 
     """
 
-    class WebhookStatus(Enum):
+    class Status(Enum):
         ACTIVE = "ACTIVE"
         INACTIVE = "INACTIVE"
         REVOKED = "REVOKED"
 
-    class WebhookTopic(Enum):
+    class Topic(Enum):
         LABEL_CREATED = "LABEL_CREATED"
         LABEL_UPDATED = "LABEL_UPDATED"
         LABEL_DELETED = "LABEL_DELETED"
@@ -38,11 +37,11 @@ class Webhook(DbObject, Updateable):
         REVIEW_UPDATED = "REVIEW_UPDATED"
         REVIEW_DELETED = "REVIEW_DELETED"
 
-    #For backwards compatibility
-    for topic in WebhookStatus:
+    # For backwards compatibility
+    for topic in Status:
         vars()[topic.name] = topic.value
 
-    for status in WebhookTopic:
+    for status in Topic:
         vars()[status.name] = status.value
 
     updated_at = Field.DateTime("updated_at")
@@ -56,15 +55,14 @@ class Webhook(DbObject, Updateable):
     project = Relationship.ToOne("Project")
 
     @staticmethod
-    def create(client: Client, topics: List[WebhookTopic], url: str,
-               secret: str, project: Project):
+    def create(client, topics, url, secret, project):
         """ Creates a Webhook.
 
         Args:
             client (Client): The Labelbox client used to connect
                 to the server.
             topics (list of str): A list of topics this Webhook should
-                get notifications for. Must be one of Webhook.WebhookTopic
+                get notifications for. Must be one of Webhook.Topic
             url (str): The URL to which notifications should be sent
                 by the Labelbox server.
             secret (str): A secret key used for signing notifications.
@@ -75,7 +73,7 @@ class Webhook(DbObject, Updateable):
             A newly created Webhook.
 
         Raises:
-            ValueError: If the topic is not one of WebhookTopic or status is not one of WebhookStatus
+            ValueError: If the topic is not one of Topic or status is not one of Status
 
         Information on configuring your server can be found here (this is where the url points to and the secret is set).
                         https://docs.labelbox.com/en/configure-editor/webhooks-setup#setup-steps
@@ -94,17 +92,17 @@ class Webhook(DbObject, Updateable):
         return Webhook(client, client.execute(query_str)["createWebhook"])
 
     @staticmethod
-    def validate_topics(topics: List[WebhookTopic]):
-        if not isinstance(topics, list):
+    def validate_topics(topics):
+        if isinstance(topics, str) or not isinstance(topics, Iterable):
             raise TypeError(
-                f"Topics must be List[Webhook.WebhookTopic]. Found `{topics}`")
+                f"Topics must be List[Webhook.Topic]. Found `{topics}`")
 
         for topic in topics:
-            Webhook.validate_value(topic, Webhook.WebhookTopic)
+            Webhook.validate_value(topic, Webhook.Topic)
 
     @staticmethod
-    def validate_value(value: str, enum: Union[WebhookStatus, WebhookTopic]):
-        supported_values = [x.value for x in enum]
+    def validate_value(value, enum):
+        supported_values = {item.value for item in enum}
         if value not in supported_values:
             raise ValueError(
                 f"Value `{value}` does not exist in supported values. Expected one of {supported_values}"
@@ -114,18 +112,15 @@ class Webhook(DbObject, Updateable):
         """
         Deletes the webhook
         """
-        self.update(status=self.WebhookStatus.INACTIVE)
+        self.update(status=self.Status.INACTIVE)
 
-    def update(self,
-               topics: Optional[List[WebhookTopic]] = None,
-               url: Optional[str] = None,
-               status: Optional[WebhookStatus] = None):
+    def update(self, topics=None, url=None, status=None):
         """ Updates the Webhook.
 
         Args:
-            topics (Optional[List[WebhookTopic]]): The new topics.
+            topics (Optional[List[Topic]]): The new topics.
             url  Optional[str): The new URL value.
-            status (Optional[WebhookStatus]): The new status.
+            status (Optional[Status]): The new status.
 
         If values are set to None then there are no updates made to that field.
 
@@ -138,7 +133,7 @@ class Webhook(DbObject, Updateable):
             self.validate_topics(topics)
 
         if status is not None:
-            self.validate_value(status, self.WebhookStatus)
+            self.validate_value(status, self.Status)
 
         topics_str = "" if topics is None \
             else "topics: {set: [%s]}" % " ".join(topics)

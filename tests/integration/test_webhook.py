@@ -24,15 +24,17 @@ def test_webhook_create_update(project, rand_gen):
 
     with pytest.raises(ValueError) as exc_info:
         webhook.update(status="invalid..")
+    valid_webhook_statuses = {item.value for item in Webhook.Status}
     assert str(exc_info.value) == \
-        f"Value `invalid..` does not exist in supported values. Expected one of {[x.value for x in Webhook.WebhookStatus]}"
+        f"Value `invalid..` does not exist in supported values. Expected one of {valid_webhook_statuses}"
 
     with pytest.raises(ValueError) as exc_info:
         webhook.update(topics=["invalid.."])
+    valid_webhook_topics = {item.value for item in Webhook.Topic}
     assert str(exc_info.value) == \
-        f"Value `invalid..` does not exist in supported values. Expected one of {[x.value for x in Webhook.WebhookTopic]}"
+        f"Value `invalid..` does not exist in supported values. Expected one of {valid_webhook_topics}"
 
     with pytest.raises(TypeError) as exc_info:
         webhook.update(topics="invalid..")
     assert str(exc_info.value) == \
-        "Topics must be List[Webhook.WebhookTopic]. Found `invalid..`"
+        "Topics must be List[Webhook.Topic]. Found `invalid..`"
