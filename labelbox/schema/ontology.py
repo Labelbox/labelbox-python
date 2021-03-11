@@ -191,7 +191,7 @@ class Tool:
     tool: Type
     name: str
     required: bool = False
-    color: str = "#000000"
+    color: str = None
     classifications: List[Classification] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
@@ -331,7 +331,7 @@ class OntologyBuilder:
             hsv_color = (index * 1 / num_tools, 1, 1)
             rgb_color = tuple(
                 int(255 * x) for x in colorsys.hsv_to_rgb(*hsv_color))
-            if self.tools[index].color == "#000000":
+            if self.tools[index].color is None:
                 self.tools[index].color = '#%02x%02x%02x' % rgb_color
 
     @classmethod
