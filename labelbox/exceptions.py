@@ -104,3 +104,12 @@ class MalformedQueryException(Exception):
 class UuidError(LabelboxError):
     """ Raised when there are repeat Uuid's in bulk import request."""
     pass
+
+
+class InconsistentOntologyException(Exception):
+    pass
+
+
+class MALValidationError(LabelboxError):
+    """Raised when user input is invalid for MAL imports."""
+    ...
