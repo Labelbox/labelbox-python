@@ -121,8 +121,7 @@ class Webhook(DbObject, Updateable):
             topics (Optional[List[Topic]]): The new topics.
             url  Optional[str): The new URL value.
             status (Optional[Status]): The new status.
-
-        If values are set to None then there are no updates made to that field.
+                If an argument is set to None then no updates will be made to that field.
 
         """
 
