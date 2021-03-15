@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 2.5.0 (2021-03-15)
+## Version 2.5.1 (2021-03-15)
 ### Fix
 * `Dataset.data_row_for_external_id` No longer throws `ResourceNotFoundError` when there are duplicates
 *  Improved doc strings
