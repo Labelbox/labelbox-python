@@ -1,10 +1,14 @@
-import json
-from multiprocessing.dummy import Pool as ThreadPool
 import os
+import json
+import logging
+from itertools import islice
+from multiprocessing.dummy import Pool as ThreadPool
 
 from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
+
+logger = logging.getLogger(__name__)
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -163,6 +167,33 @@ class Dataset(DbObject, Updateable, Deletable):
         task._user = user
         return task
 
+    def data_rows_for_external_id(self, external_id, limit=10):
+        """ Convenience method for getting a single `DataRow` belonging to this
+        `Dataset` that has the given `external_id`.
+
+        Args:
+            external_id (str): External ID of the sought `DataRow`.
+            limit (int): The maximum number of data rows to return for the given external_id
+
+        Returns:
+            A single `DataRow` with the given ID.
+
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+                in this `DataSet` with the given external ID, or if there are
+                multiple `DataRows` for it.
+        """
+        DataRow = Entity.DataRow
+        where = DataRow.external_id == external_id
+
+        data_rows = self.data_rows(where=where)
+        # Get at most `limit` data_rows.
+        data_rows = list(islice(data_rows, limit))
+
+        if not len(data_rows):
+            raise ResourceNotFoundError(DataRow, where)
+        return data_rows
+
     def data_row_for_external_id(self, external_id):
         """ Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
@@ -178,14 +209,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
-        DataRow = Entity.DataRow
-        where = DataRow.external_id == external_id
-
-        data_rows = self.data_rows(where=where)
-        # Get at most two data_rows.
-        data_rows = [row for row, _ in zip(data_rows, range(2))]
-
-        if len(data_rows) != 1:
-            raise ResourceNotFoundError(DataRow, where)
-
+        data_rows = self.data_rows_for_external_id(external_id=external_id,
+                                                   limit=2)
+        if len(data_rows) > 1:
+            logger.warning(
+                f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
+                external_id)
         return data_rows[0]

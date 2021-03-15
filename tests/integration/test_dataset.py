@@ -75,10 +75,8 @@ def test_get_data_row_for_external_id(dataset, rand_gen):
     assert found.uid == data_row.uid
     assert found.external_id == external_id
 
-    second = dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
-
-    with pytest.raises(ResourceNotFoundError):
-        data_row = dataset.data_row_for_external_id(external_id)
+    dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
+    assert len(dataset.data_rows_for_external_id(external_id)) == 2
 
 
 def test_upload_video_file(dataset, sample_video: str) -> None:

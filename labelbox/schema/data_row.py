@@ -1,7 +1,7 @@
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.pagination import PaginatedCollection
+from labelbox.schema.asset_metadata import AssetMetadata
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
@@ -34,6 +34,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
     predictions = Relationship.ToMany("Prediction", False)
 
+    supported_meta_types = {
+        meta_type.value for meta_type in AssetMetadata.MetaType
+    }
+
     @staticmethod
     def bulk_delete(data_rows):
         """ Deletes all the given DataRows.
@@ -55,11 +59,19 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         Args:
             meta_type (str): Asset metadata type, must be one of:
-                VIDEO, IMAGE, TEXT.
+                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetMetadata.MetaType)
             meta_value (str): Asset metadata value.
         Returns:
             `AssetMetadata` DB object.
+        Raises:
+            ValueError: meta_type must be one of the supported types.
         """
+
+        if meta_type not in self.supported_meta_types:
+            raise ValueError(
+                f"meta_type must be one of {self.supported_meta_types}. Found {meta_type}"
+            )
+
         meta_type_param = "metaType"
         meta_value_param = "metaValue"
         data_row_id_param = "dataRowId"

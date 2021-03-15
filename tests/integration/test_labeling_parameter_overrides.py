@@ -1,3 +1,4 @@
+import pytest
 from labelbox import DataRow
 
 IMG_URL = "https://picsum.photos/200/300"
@@ -32,5 +33,35 @@ def test_labeling_parameter_overrides(project, rand_gen):
     # TODO ensure that the labeling parameter overrides are removed
     # currently this doesn't work so the count remains 3
     assert len(list(project.labeling_parameter_overrides())) == 1
+
+    with pytest.raises(TypeError) as exc_info:
+        data = [(data_rows[12], "a_string", 3)]
+        project.set_labeling_parameter_overrides(data)
+    assert str(exc_info.value) == \
+        f"Priority must be an int. Found <class 'str'> for data_row {data_rows[12]}. Index: 0"
+
+    with pytest.raises(TypeError) as exc_info:
+        data = [(data_rows[12], 3, "a_string")]
+        project.set_labeling_parameter_overrides(data)
+    assert str(exc_info.value) == \
+        f"Number of labels must be an int. Found <class 'str'> for data_row {data_rows[12]}. Index: 0"
+
+    with pytest.raises(TypeError) as exc_info:
+        data = [(data_rows[12].uid, 1, 3)]
+        project.set_labeling_parameter_overrides(data)
+    assert str(exc_info.value) == \
+        "data_row should be be of type DataRow. Found <class 'str'>. Index: 0"
+
+    with pytest.raises(ValueError) as exc_info:
+        data = [(data_rows[12], 0, 3)]
+        project.set_labeling_parameter_overrides(data)
+    assert str(exc_info.value) == \
+        f"Priority must be greater than 0 for data_row {data_rows[12]}. Index: 0"
+
+    with pytest.raises(ValueError) as exc_info:
+        data = [(data_rows[12], 1, 0)]
+        project.set_labeling_parameter_overrides(data)
+    assert str(exc_info.value) == \
+        f"Number of labels must be greater than 0 for data_row {data_rows[12]}. Index: 0"
 
     dataset.delete()
