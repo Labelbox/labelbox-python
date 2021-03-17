@@ -1,6 +1,8 @@
 import pytest
+import json
+import requests
 
-from labelbox import Project
+from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
 
 
@@ -58,9 +60,43 @@ def test_project_filtering(client, rand_gen):
 def test_upsert_review_queue(project):
     project.upsert_review_queue(0.6)
 
+    with pytest.raises(ValueError) as exc_info:
+        project.upsert_review_queue(1.001)
+    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
+
+    with pytest.raises(ValueError) as exc_info:
+        project.upsert_review_queue(-0.001)
+    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
+
 
 def test_extend_reservations(project):
     assert project.extend_reservations("LabelingQueue") == 0
     assert project.extend_reservations("ReviewQueue") == 0
     with pytest.raises(InvalidQueryError):
         project.extend_reservations("InvalidQueueType")
+
+
+def test_attach_instructions(client, project):
+    with pytest.raises(ValueError) as execinfo:
+        project.upsert_instructions('/tmp/instructions.txt')
+    assert str(
+        execinfo.value
+    ) == "Cannot attach instructions to a project that has not been set up."
+
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    empty_ontology = {"tools": [], "classifications": []}
+    project.setup(editor, empty_ontology)
+
+    with open('/tmp/instructions.txt', 'w') as file:
+        file.write("some instructions...")
+
+    project.upsert_instructions('/tmp/instructions.txt')
+    assert json.loads(
+        list(project.labeling_frontend_options())
+        [-1].customization_options).get('projectInstructions') is not None
+
+    with pytest.raises(ValueError) as exc_info:
+        project.upsert_instructions('/tmp/file.invalid_file_extension')
+    assert "instructions_file must end with one of" in str(exc_info.value)

@@ -1,10 +1,18 @@
 # Changelog
 
-## In progress
+## Version 2.5.1 (2021-03-15)
 ### Fix
-* Custom queries with bad syntax now raise adequate exceptions (InvalidQuery)
-* Comparing a Labelbox object (e.g. Project) to None doesn't raise an exception
-* Adding `order_by` to `Project.labels` doesn't raise an exception
+* `Dataset.data_row_for_external_id` No longer throws `ResourceNotFoundError` when there are duplicates
+*  Improved doc strings
+
+### Added
+* OntologyBuilder for making project setup easier
+* Now supports `IMAGE_OVERLAY` metadata
+* Webhooks for review topics added
+* Upload project instructions with `Project.upsert_instructions`
+* User input validation 
+    * MAL validity is now checked client side for faster feedback
+    * type and value checks added in a few places
 
 ## Version 2.4.11 (2021-03-07)
 ### Fix
