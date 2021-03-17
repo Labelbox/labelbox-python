@@ -1,66 +1,234 @@
 import abc
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum, auto
+import colorsys
 
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from labelbox.schema.project import Project
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.utils import snake_case, camel_case
-
-
-@dataclass
-class OntologyEntity:
-    required: bool
-    name: str
+from labelbox.exceptions import InconsistentOntologyException
 
 
 @dataclass
 class Option:
-    label: str
-    value: str
+    """
+    An option is a possible answer within a Classification object in
+    a Project's ontology. 
+
+    To instantiate, only the "value" parameter needs to be passed in.
+
+    Example(s):
+        option = Option(value = "Option Example")
+
+    Attributes:
+        value: (str)
+        schema_id: (str)
+        feature_schema_id: (str)
+        options: (list)
+    """
+    value: Union[str, int]
+    schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-    schema_node_id: Optional[str] = None
+    options: List["Classification"] = field(default_factory=list)
+
+    @property
+    def label(self):
+        return self.value
 
     @classmethod
-    def from_json(cls, json_dict):
-        _dict = convert_keys(json_dict, snake_case)
-        return cls(**_dict)
+    def from_dict(cls, dictionary: Dict[str, Any]):
+        return Option(value=dictionary["value"],
+                      schema_id=dictionary.get("schemaNodeId", []),
+                      feature_schema_id=dictionary.get("featureSchemaId", []),
+                      options=[
+                          Classification.from_dict(o)
+                          for o in dictionary.get("options", [])
+                      ])
+
+    def asdict(self) -> Dict[str, Any]:
+        return {
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id,
+            "label": self.label,
+            "value": self.value,
+            "options": [o.asdict() for o in self.options]
+        }
+
+    def add_option(self, option: 'Classification'):
+        if option.instructions in (o.instructions for o in self.options):
+            raise InconsistentOntologyException(
+                f"Duplicate nested classification '{option.instructions}' "
+                f"for option '{self.label}'")
+        self.options.append(option)
 
 
 @dataclass
-class Classification(OntologyEntity):
-    type: str
+class Classification:
+    """
+    A classfication to be added to a Project's ontology. The  
+    classification is dependent on the Classification Type.
+
+    To instantiate, the "class_type" and "instructions" parameters must
+    be passed in.
+
+    The "options" parameter holds a list of Option objects. This is not 
+    necessary for some Classification types, such as TEXT. To see which
+    types require options, look at the "_REQUIRES_OPTIONS" class variable.
+
+    Example(s):
+        classification = Classification(
+            class_type = Classification.Type.TEXT,
+            instructions = "Classification Example")
+
+        classification_two = Classification(
+            class_type = Classification.Type.RADIO,
+            instructions = "Second Example")
+        classification_two.add_option(Option(
+            value = "Option Example"))
+
+    Attributes:
+        class_type: (Classification.Type)
+        instructions: (str)
+        required: (bool)
+        options: (list)
+        schema_id: (str)
+        feature_schema_id: (str)
+    """
+
+    class Type(Enum):
+        TEXT = "text"
+        CHECKLIST = "checklist"
+        RADIO = "radio"
+        DROPDOWN = "dropdown"
+
+    _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
+
+    class_type: Type
     instructions: str
-    options: List[Option]
+    required: bool = False
+    options: List[Option] = field(default_factory=list)
+    schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-    schema_node_id: Optional[str] = None
+
+    @property
+    def name(self):
+        return self.instructions
 
     @classmethod
-    def from_json(cls, json_dict):
-        _dict = convert_keys(json_dict, snake_case)
-        _dict['options'] = [
-            Option.from_json(option) for option in _dict['options']
-        ]
-        return cls(**_dict)
+    def from_dict(cls, dictionary: Dict[str, Any]):
+        return Classification(
+            class_type=Classification.Type(dictionary["type"]),
+            instructions=dictionary["instructions"],
+            required=dictionary["required"],
+            options=[Option.from_dict(o) for o in dictionary["options"]],
+            schema_id=dictionary.get("schemaNodeId", []),
+            feature_schema_id=dictionary.get("featureSchemaId", []))
+
+    def asdict(self) -> Dict[str, Any]:
+        if self.class_type in Classification._REQUIRES_OPTIONS \
+                and len(self.options) < 1:
+            raise InconsistentOntologyException(
+                f"Classification '{self.instructions}' requires options.")
+        return {
+            "type": self.class_type.value,
+            "instructions": self.instructions,
+            "name": self.name,
+            "required": self.required,
+            "options": [o.asdict() for o in self.options],
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id
+        }
+
+    def add_option(self, option: Option):
+        if option.value in (o.value for o in self.options):
+            raise InconsistentOntologyException(
+                f"Duplicate option '{option.value}' "
+                f"for classification '{self.name}'.")
+        self.options.append(option)
 
 
 @dataclass
-class Tool(OntologyEntity):
-    tool: str
-    color: str
-    classifications: List[Classification]
+class Tool:
+    """
+    A tool to be added to a Project's ontology. The tool is
+    dependent on the Tool Type.
+
+    To instantiate, the "tool" and "name" parameters must
+    be passed in.
+
+    The "classifications" parameter holds a list of Classification objects. 
+    This can be used to add nested classifications to a tool.
+
+    Example(s):
+        tool = Tool(
+            tool = Tool.Type.LINE,
+            name = "Tool example")    
+        classification = Classification(
+            class_type = Classification.Type.TEXT,
+            instructions = "Classification Example")
+        tool.add_classification(classification)
+
+    Attributes:
+        tool: (Tool.Type)
+        name: (str)
+        required: (bool)
+        color: (str)
+        classifications: (list)
+        schema_id: (str)
+        feature_schema_id: (str)
+    """
+
+    class Type(Enum):
+        POLYGON = "polygon"
+        SEGMENTATION = "superpixel"
+        POINT = "point"
+        BBOX = "rectangle"
+        LINE = "line"
+        NER = "named-entity"
+
+    tool: Type
+    name: str
+    required: bool = False
+    color: Optional[str] = None
+    classifications: List[Classification] = field(default_factory=list)
+    schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-    schema_node_id: Optional[str] = None
 
     @classmethod
-    def from_json(cls, json_dict):
-        _dict = convert_keys(json_dict, snake_case)
-        _dict['classifications'] = [
-            Classification.from_json(classification)
-            for classification in _dict['classifications']
-        ]
-        return cls(**_dict)
+    def from_dict(cls, dictionary: Dict[str, Any]):
+        return Tool(name=dictionary['name'],
+                    schema_id=dictionary.get("schemaNodeId", []),
+                    feature_schema_id=dictionary.get("featureSchemaId", []),
+                    required=dictionary["required"],
+                    tool=Tool.Type(dictionary["tool"]),
+                    classifications=[
+                        Classification.from_dict(c)
+                        for c in dictionary["classifications"]
+                    ],
+                    color=dictionary["color"])
+
+    def asdict(self) -> Dict[str, Any]:
+        return {
+            "tool": self.tool.value,
+            "name": self.name,
+            "required": self.required,
+            "color": self.color,
+            "classifications": [c.asdict() for c in self.classifications],
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id
+        }
+
+    def add_classification(self, classification: Classification):
+        if classification.instructions in (
+                c.instructions for c in self.classifications):
+            raise InconsistentOntologyException(
+                f"Duplicate nested classification '{classification.instructions}' "
+                f"for tool '{self.name}'")
+        self.classifications.append(classification)
 
 
 class Ontology(DbObject):
@@ -98,27 +266,89 @@ class Ontology(DbObject):
         """Get list of tools (AKA objects) in an Ontology."""
         if self._tools is None:
             self._tools = [
-                Tool.from_json(tool) for tool in self.normalized['tools']
+                Tool.from_dict(tool) for tool in self.normalized['tools']
             ]
-        return self._tools  # type: ignore
+        return self._tools
 
     def classifications(self) -> List[Classification]:
         """Get list of classifications in an Ontology."""
         if self._classifications is None:
             self._classifications = [
-                Classification.from_json(classification)
+                Classification.from_dict(classification)
                 for classification in self.normalized['classifications']
             ]
-        return self._classifications  # type: ignore
+        return self._classifications
 
 
-def convert_keys(json_dict: Dict[str, Any],
-                 converter: Callable) -> Dict[str, Any]:
-    if isinstance(json_dict, dict):
+@dataclass
+class OntologyBuilder:
+    """
+    A class to help create an ontology for a Project. This should be used
+    for making Project ontologies from scratch. OntologyBuilder can also
+    pull from an already existing Project's ontology.
+
+    There are no required instantiation arguments. 
+
+    To create an ontology, use the asdict() method after fully building your 
+    ontology within this class, and inserting it into project.setup() as the
+    "labeling_frontend_options" parameter.
+
+    Example:
+        builder = OntologyBuilder()
+        ...
+        frontend = list(client.get_labeling_frontends())[0]
+        project.setup(frontend, builder.asdict())
+
+    attributes:
+        tools: (list)
+        classifications: (list)
+
+    
+    """
+    tools: List[Tool] = field(default_factory=list)
+    classifications: List[Classification] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]):
+        return OntologyBuilder(
+            tools=[Tool.from_dict(t) for t in dictionary["tools"]],
+            classifications=[
+                Classification.from_dict(c)
+                for c in dictionary["classifications"]
+            ])
+
+    def asdict(self):
+        self._update_colors()
         return {
-            converter(key): convert_keys(value, converter)
-            for key, value in json_dict.items()
+            "tools": [t.asdict() for t in self.tools],
+            "classifications": [c.asdict() for c in self.classifications]
         }
-    if isinstance(json_dict, list):
-        return [convert_keys(ele, converter) for ele in json_dict]
-    return json_dict
+
+    def _update_colors(self):
+        num_tools = len(self.tools)
+
+        for index in range(num_tools):
+            hsv_color = (index * 1 / num_tools, 1, 1)
+            rgb_color = tuple(
+                int(255 * x) for x in colorsys.hsv_to_rgb(*hsv_color))
+            if self.tools[index].color is None:
+                self.tools[index].color = '#%02x%02x%02x' % rgb_color
+
+    @classmethod
+    def from_project(cls, project: Project):
+        ontology = project.ontology().normalized
+        return OntologyBuilder.from_dict(ontology)
+
+    def add_tool(self, tool: Tool):
+        if tool.name in (t.name for t in self.tools):
+            raise InconsistentOntologyException(
+                f"Duplicate tool name '{tool.name}'. ")
+        self.tools.append(tool)
+
+    def add_classification(self, classification: Classification):
+        if classification.instructions in (
+                c.instructions for c in self.classifications):
+            raise InconsistentOntologyException(
+                f"Duplicate classification instructions '{classification.instructions}'. "
+            )
+        self.classifications.append(classification)
