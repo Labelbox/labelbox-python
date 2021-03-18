@@ -11,5 +11,4 @@
 3. Datasets
     - Other concepts: Tasks
 4. Ontology
-5. Labeling Front End
 6. Projects
