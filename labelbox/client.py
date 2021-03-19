@@ -161,7 +161,7 @@ class Client:
                     return error
             return None
 
-        if check_errors(["AUTHENTICATION_ERROR"], "extensions", "exception",
+        if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
 
@@ -173,6 +173,7 @@ class Client:
 
         validation_error = check_errors(["GRAPHQL_VALIDATION_FAILED"],
                                         "extensions", "code")
+
         if validation_error is not None:
             message = validation_error["message"]
             if message == "Query complexity limit exceeded":
@@ -193,8 +194,7 @@ class Client:
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
         resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
-                                                "extensions", "exception",
-                                                "code")
+                                                "extensions", "code")
         if resource_not_found_error is not None:
             # Return None and let the caller methods raise an exception
             # as they already know which resource type and ID was requested
