@@ -4,30 +4,45 @@ import cv2
 
 #https://colab.research.google.com/github/tensorflow/tpu/blob/master/models/official/mask_rcnn/mask_rcnn_demo.ipynb#scrollTo=2oZWLz4xXsyQ
 
-class_mappings = {1: 'person', 3 : 'car', 28: 'umbrella', 31: 'handbag'}
+class_mappings = {1: 'person', 3: 'car', 28: 'umbrella', 31: 'handbag'}
 session = tf.compat.v1.Session()
+
 
 def load_model():
     saved_model_dir = 'gs://cloud-tpu-checkpoints/mask-rcnn/1555659850'
-    _ = tf.compat.v1.saved_model.loader.load(session, ['serve'], saved_model_dir)
+    _ = tf.compat.v1.saved_model.loader.load(session, ['serve'],
+                                             saved_model_dir)
 
 
 def predict(np_image_string, min_score, height, width):
     num_detections, detection_boxes, detection_classes, detection_scores, detection_masks, image_info = session.run(
-    ['NumDetections:0', 'DetectionBoxes:0', 'DetectionClasses:0', 'DetectionScores:0', 'DetectionMasks:0', 'ImageInfo:0'],
-    feed_dict={'Placeholder:0': np_image_string})
+        [
+            'NumDetections:0', 'DetectionBoxes:0', 'DetectionClasses:0',
+            'DetectionScores:0', 'DetectionMasks:0', 'ImageInfo:0'
+        ],
+        feed_dict={'Placeholder:0': np_image_string})
     num_detections = np.squeeze(num_detections.astype(np.int32), axis=(0,))
     detection_scores = np.squeeze(detection_scores, axis=(0,))[0:num_detections]
-    response =  {
-        'boxes' : np.squeeze(detection_boxes * image_info[0, 2], axis=(0,))[0:num_detections],
-        'class_indices' : np.squeeze(detection_classes.astype(np.int32), axis=(0,))[0:num_detections],
+    response = {
+        'boxes':
+            np.squeeze(detection_boxes * image_info[0, 2], axis=(0,))
+            [0:num_detections],
+        'class_indices':
+            np.squeeze(detection_classes.astype(np.int32), axis=(0,))
+            [0:num_detections],
     }
     ymin, xmin, ymax, xmax = np.split(response['boxes'], 4, axis=-1)
     instance_masks = np.squeeze(detection_masks, axis=(0,))[0:num_detections]
-    processed_boxes = np.concatenate([xmin, ymin, xmax - xmin, ymax - ymin], axis=-1)
-    response.update({'seg_masks' : generate_segmentation_from_masks(instance_masks, processed_boxes, height, width)})
+    processed_boxes = np.concatenate([xmin, ymin, xmax - xmin, ymax - ymin],
+                                     axis=-1)
+    response.update({
+        'seg_masks':
+            generate_segmentation_from_masks(instance_masks, processed_boxes,
+                                             height, width)
+    })
     keep_indices = detection_scores > min_score
-    keep_indices = keep_indices & np.isin(response['class_indices'], list(class_mappings.keys()))
+    keep_indices = keep_indices & np.isin(response['class_indices'],
+                                          list(class_mappings.keys()))
     for key in response:
         response[key] = response[key][keep_indices]
     return response
@@ -54,6 +69,7 @@ def expand_boxes(boxes, scale):
 
     return boxes_exp
 
+
 def generate_segmentation_from_masks(masks,
                                      detected_boxes,
                                      image_height,
@@ -74,7 +90,6 @@ def generate_segmentation_from_masks(masks,
         the instance masks *pasted* on the image canvas.
     """
 
-
     _, mask_height, mask_width = masks.shape
     scale = max((mask_width + 2.0) / mask_width,
                 (mask_height + 2.0) / mask_height)
@@ -84,37 +99,33 @@ def generate_segmentation_from_masks(masks,
     padded_mask = np.zeros((mask_height + 2, mask_width + 2), dtype=np.float32)
     segms = []
     for mask_ind, mask in enumerate(masks):
-      im_mask = np.zeros((image_height, image_width), dtype=np.uint8)
-      if is_image_mask:
-        # Process whole-image masks.
-        im_mask[:, :] = mask[:, :]
-      else:
-        # Process mask inside bounding boxes.
-        padded_mask[1:-1, 1:-1] = mask[:, :]
+        im_mask = np.zeros((image_height, image_width), dtype=np.uint8)
+        if is_image_mask:
+            # Process whole-image masks.
+            im_mask[:, :] = mask[:, :]
+        else:
+            # Process mask inside bounding boxes.
+            padded_mask[1:-1, 1:-1] = mask[:, :]
 
-        ref_box = ref_boxes[mask_ind, :]
-        w = ref_box[2] - ref_box[0] + 1
-        h = ref_box[3] - ref_box[1] + 1
-        w = np.maximum(w, 1)
-        h = np.maximum(h, 1)
+            ref_box = ref_boxes[mask_ind, :]
+            w = ref_box[2] - ref_box[0] + 1
+            h = ref_box[3] - ref_box[1] + 1
+            w = np.maximum(w, 1)
+            h = np.maximum(h, 1)
 
-        mask = cv2.resize(padded_mask, (w, h))
-        mask = np.array(mask > 0.5, dtype=np.uint8)
+            mask = cv2.resize(padded_mask, (w, h))
+            mask = np.array(mask > 0.5, dtype=np.uint8)
 
-        x_0 = max(ref_box[0], 0)
-        x_1 = min(ref_box[2] + 1, image_width)
-        y_0 = max(ref_box[1], 0)
-        y_1 = min(ref_box[3] + 1, image_height)
+            x_0 = max(ref_box[0], 0)
+            x_1 = min(ref_box[2] + 1, image_width)
+            y_0 = max(ref_box[1], 0)
+            y_1 = min(ref_box[3] + 1, image_height)
 
-        im_mask[y_0:y_1, x_0:x_1] = mask[(y_0 - ref_box[1]):(y_1 - ref_box[1]), (
-            x_0 - ref_box[0]):(x_1 - ref_box[0])]
-      segms.append(im_mask)
+            im_mask[y_0:y_1,
+                    x_0:x_1] = mask[(y_0 - ref_box[1]):(y_1 - ref_box[1]),
+                                    (x_0 - ref_box[0]):(x_1 - ref_box[0])]
+        segms.append(im_mask)
 
     segms = np.array(segms)
     assert masks.shape[0] == segms.shape[0]
     return segms
-
-
-
-
-
