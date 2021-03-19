@@ -1,8 +1,7 @@
 ## Labelbox SDK Examples
 
 ##### This section contains examples for using the sdk.
-Ideally we will have examples for all use cases.
-If you need an example to help you with a particular use case please reach out (msokoloff@labelbox.com)
+We want this section to be as complete as possible so please reach out if you are not finding an example for your use case.
 
 
 Structure:
