@@ -1,16 +1,26 @@
 ## Labelbox SDK Examples
 
-##### This section contains examples for using the sdk.
-We want this section to be as complete as possible so please reach out if you are not finding an example for your use case.
-
+* Learn how to use the SDK by following along
 
 Structure:
 
 1. basics
-    * These are all of the required concepts to use the sdk. Other sections build off of this one so make sure you are familiar.
+    * [Fundamentals](basics/basics.ipynb)
+    * CRUD
+        * [Data rows](basics/data_rows.ipynb)
+        * [Datasets](basics/datasets.ipynb)
+        * [Labels](basics/labels.ipynb)
+        * [Ontologies](basics/ontology.ipynb)
+        * [Projects](basics/projects.ipynb)
 2. label_export
-    * Contains information on how to export and use labels from labelbox
+    * [Image annotation export](label_export/images.ipynb)
+    * [Text annotation export](label_export/text.ipynb)    
+    * [Video annotation export](label_export/video.ipynb)        
 3. model_assisted_labeling
-    * Provides examples on using and debugging mal.
+    * [Image mal example](model_assisted_labeling/image_mal.ipynb)
+    * [Named entity recognition mal example](model_assisted_labeling/ner_mal.ipynb)
+    * [Debugging mal](model_assisted_labeling/debugging_mal.ipynb)    
 4. project_configuration
-    * Scripts on setting up project. This explains more sophisticatd configurations including customizing the queue.
+    * [Project setup](project_configuration/project_setup.ipynb)
+    * [Queue management](project_configuration/queue_management.ipynb)
+    * [Webhooks](project_configuration/webhooks.ipynb)
