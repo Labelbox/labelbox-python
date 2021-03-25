@@ -343,7 +343,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
         try:
-            annotation = NDAnnotation(**line)
+            annotation = NDAnnotation(**line.copy())
             annotation.validate_instance(data_row_ids, feature_schemas)
             uuid = str(annotation.uuid)
             if uuid in uids:
