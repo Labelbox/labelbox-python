@@ -632,14 +632,14 @@ class NDBaseTool(NDBase):
         #Create uuid and datarow id so we don't have to define classification objects twice
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
         results = []
+        dummy_id = 'child'.center(25, '_')
         for row in value:
-            row.update({
-                'dataRow': {
-                    'id': 'child'.center(25, '_')
+            results.append({
+                **row, 'dataRow': {
+                    'id': dummy_id
                 },
                 'uuid': str(uuid4())
             })
-            results.append(row)
         return results
 
 

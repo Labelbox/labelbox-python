@@ -6,7 +6,7 @@ The Labelbox Python API offers a simple, user-friendly way to interact with the 
 
 ## Requirements
 
-* Use Python 3.7 or 3.8.
+* Use Python 3.6, 3.7 or 3.8.
 * Create an account by visiting http://app.labelbox.com/.
 * [Generate an API key](https://labelbox.com/docs/api/getting-started#create_api_key).
 

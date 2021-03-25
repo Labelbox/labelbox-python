@@ -10,7 +10,7 @@ Structure:
         * [Data rows](basics/data_rows.ipynb)
         * [Datasets](basics/datasets.ipynb)
         * [Labels](basics/labels.ipynb)
-        * [Ontologies](basics/ontology.ipynb)
+        * [Ontologies](basics/ontologies.ipynb)
         * [Projects](basics/projects.ipynb)
 2. label_export
     * [Image annotation export](label_export/images.ipynb)
