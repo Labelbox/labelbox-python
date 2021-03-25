@@ -633,14 +633,12 @@ class NDBaseTool(NDBase):
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
         results = []
         for row in value:
-            copied_row = row.copy()
-            copied_row.update({
-                'dataRow': {
+            results.append({
+                **row, 'dataRow': {
                     'id': 'child'.center(25, '_')
                 },
                 'uuid': str(uuid4())
             })
-            results.append(copied_row)
         return results
 
 
