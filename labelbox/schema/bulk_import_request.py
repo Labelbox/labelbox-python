@@ -343,7 +343,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
         try:
-            annotation = NDAnnotation(**line.copy())
+            annotation = NDAnnotation(**line)
             annotation.validate_instance(data_row_ids, feature_schemas)
             uuid = str(annotation.uuid)
             if uuid in uids:
@@ -633,13 +633,14 @@ class NDBaseTool(NDBase):
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
         results = []
         for row in value:
-            row.update({
+            copied_row = row.copy()
+            copied_row.update({
                 'dataRow': {
                     'id': 'child'.center(25, '_')
                 },
                 'uuid': str(uuid4())
             })
-            results.append(row)
+            results.append(copied_row)
         return results
 
 
