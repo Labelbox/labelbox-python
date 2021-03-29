@@ -42,8 +42,8 @@ class Option:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
         return Option(value=dictionary["value"],
-                      schema_id=dictionary.get("schemaNodeId", []),
-                      feature_schema_id=dictionary.get("featureSchemaId", []),
+                      schema_id=dictionary.get("schemaNodeId", None),
+                      feature_schema_id=dictionary.get("featureSchemaId", None),
                       options=[
                           Classification.from_dict(o)
                           for o in dictionary.get("options", [])
@@ -123,10 +123,10 @@ class Classification:
         return Classification(
             class_type=Classification.Type(dictionary["type"]),
             instructions=dictionary["instructions"],
-            required=dictionary["required"],
+            required=dictionary.get("required", False),
             options=[Option.from_dict(o) for o in dictionary["options"]],
-            schema_id=dictionary.get("schemaNodeId", []),
-            feature_schema_id=dictionary.get("featureSchemaId", []))
+            schema_id=dictionary.get("schemaNodeId", None),
+            feature_schema_id=dictionary.get("featureSchemaId", None))
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in Classification._REQUIRES_OPTIONS \
@@ -201,9 +201,9 @@ class Tool:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
         return Tool(name=dictionary['name'],
-                    schema_id=dictionary.get("schemaNodeId", []),
-                    feature_schema_id=dictionary.get("featureSchemaId", []),
-                    required=dictionary["required"],
+                    schema_id=dictionary.get("schemaNodeId", None),
+                    feature_schema_id=dictionary.get("featureSchemaId", None),
+                    required=dictionary.get("required", False),
                     tool=Tool.Type(dictionary["tool"]),
                     classifications=[
                         Classification.from_dict(c)

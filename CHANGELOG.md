@@ -1,5 +1,13 @@
 # Changelog
 
+# Version 2.5.2 (2021-03-25)
+## Fix
+* Ontology builder defaults to None for missing fields instead of empty lists
+* MAL validation added extra fields to subclasses 
+
+### Added
+* Example notebooks
+
 ## Version 2.5.1 (2021-03-15)
 ### Fix
 * `Dataset.data_row_for_external_id` No longer throws `ResourceNotFoundError` when there are duplicates
