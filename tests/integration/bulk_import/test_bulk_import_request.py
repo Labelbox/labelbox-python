@@ -130,14 +130,11 @@ def test_wait_till_done(rectangle_inference, configured_project):
                                                                 annotations=url,
                                                                 validate=False)
 
-    assert bulk_import_request.errors is None
-    assert bulk_import_request.statuses is None
     assert len(bulk_import_request.inputs) == 1
-
     bulk_import_request.wait_until_done()
     assert bulk_import_request.state == BulkImportRequestState.FINISHED
 
-    #Check that the status files are being returned as expected
+    # Check that the status files are being returned as expected
     assert len(bulk_import_request.errors) == 0
     assert len(bulk_import_request.inputs) == 1
     assert bulk_import_request.inputs[0]['uuid'] == rectangle_inference['uuid']
