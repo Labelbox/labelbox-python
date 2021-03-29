@@ -261,7 +261,7 @@ class Client:
             content: bytestring to upload
             filename: name of the upload
             content_type: content type of data uploaded
-            sign: Whether or not to sign the url
+            sign: whether or not to sign the url
 
         Returns:
             str, the URL of uploaded data.
