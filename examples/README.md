@@ -17,9 +17,11 @@ Structure:
     * [Text annotation export](label_export/text.ipynb)    
     * [Video annotation export](label_export/video.ipynb)        
 3. model_assisted_labeling
+    * [MAL introduction](model_assisted_labeling/mal_introduction.ipynb)
     * [Image mal example](model_assisted_labeling/image_mal.ipynb)
     * [Named entity recognition mal example](model_assisted_labeling/ner_mal.ipynb)
-    * [Debugging mal](model_assisted_labeling/debugging_mal.ipynb)    
+    * [Debugging mal](model_assisted_labeling/debugging_mal.ipynb)   
+    * [MAL with subclasses](model_assisted_labeling/mal_with_subclasses.ipynb)
 4. project_configuration
     * [Project setup](project_configuration/project_setup.ipynb)
     * [Queue management](project_configuration/queue_management.ipynb)
