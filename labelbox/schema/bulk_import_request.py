@@ -135,6 +135,22 @@ class BulkImportRequest(DbObject):
         Returns:
             Empty list if there are no errors and None if the update is still running.
             If there are errors, and the job has completed then a list of dicts containing the error messages will be returned.
+            See below table for detailed response fields.
+
+        .. list-table::
+           :widths: 15 150
+           :header-rows: 1 
+
+           * - Field
+             - Description
+           * - uuid 
+             - Specifies the annotation for the status row.
+           * - dataRow
+             - JSON object containing the Labelbox data row ID for the annotation.
+           * - status
+             - Indicates SUCCESS or FAILURE.
+           * - errors
+             - An array of error messages included when status is FAILURE. Each error has a name, message and optional (can be null) additional_info.
 
         * This information will expire after 24 hours.        
         """
