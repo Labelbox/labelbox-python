@@ -1,6 +1,7 @@
 import json
 import time
 from uuid import UUID, uuid4
+import functools
 
 import logging
 from pathlib import Path
@@ -112,6 +113,60 @@ class BulkImportRequest(DbObject):
 
     project = Relationship.ToOne("Project")
     created_by = Relationship.ToOne("User", False, "created_by")
+
+    @property
+    def inputs(self) -> Optional[List[Dict[str, str]]]:
+        """
+        Inputs for each individual annotation uploaded.
+        This should match the ndjson annotations that you have uploaded. 
+        
+        Returns:
+            Uploaded ndjsons.
+
+        * This information will expire after 24 hours.    
+        """
+        return self._fetch_remote_ndjson(self.input_file_url)
+
+    @property
+    def errors(self) -> Optional[List[Dict[str, str]]]:
+        """
+        Errors for each individual annotation uploaded.
+
+        Returns:
+            Empty list if there are no errors and None if the update is still running.
+            If there are errors, and the job has completed then a list of dicts containing the error messages will be returned.
+
+        * This information will expire after 24 hours.        
+        """
+        return self._fetch_remote_ndjson(self.error_file_url)
+
+    @property
+    def statuses(self) -> Optional[List[Dict[str, str]]]:
+        """
+        Status for each individual annotation uploaded.
+
+        Returns:
+            A status for each annotation if the upload is done running and was successful. Otherwise it returns None.
+
+        * This information will expire after 24 hours.        
+        """
+        return self._fetch_remote_ndjson(self.status_file_url)
+
+    @functools.lru_cache()
+    def _fetch_remote_ndjson(
+            self, url: Optional[str]) -> Optional[List[Dict[str, str]]]:
+        """
+        Fetches the remote ndjson file and caches the results.
+
+        Args:
+            url (str): either the input_file_url, error_file_url, status_file_url, or None
+                urls are None when the file is unavailable.
+        Returns:
+            None if the url is None or the ndjson as a list of dicts.
+        """
+        if url is not None:
+            return ndjson.loads(requests.get(url).text)
+        return None
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
@@ -632,15 +687,14 @@ class NDBaseTool(NDBase):
         #Create uuid and datarow id so we don't have to define classification objects twice
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
         results = []
+        dummy_id = 'child'.center(25, '_')
         for row in value:
-            copied_row = row.copy()
-            copied_row.update({
-                'dataRow': {
-                    'id': 'child'.center(25, '_')
+            results.append({
+                **row, 'dataRow': {
+                    'id': dummy_id
                 },
                 'uuid': str(uuid4())
             })
-            results.append(copied_row)
         return results
 
 
