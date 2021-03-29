@@ -113,6 +113,37 @@ class BulkImportRequest(DbObject):
     project = Relationship.ToOne("Project")
     created_by = Relationship.ToOne("User", False, "created_by")
 
+    @property
+    def inputs(self):
+        """
+        Inputs for each individual annotation uploaded.
+        * This should match the ndjson annotations that you have uploaded. 
+        * This information will expire after 24 hours.
+        """        
+        return  self._fetch_remote_ndjson(self.input_file_url)
+        
+    @property
+    def errors(self):
+        """
+        Errors for each individual annotation uploaded.
+        * Returns an empty list if there are no errors and None if the update is still running.
+        * This information will expire after 24 hours.        
+        """
+        return  self._fetch_remote_ndjson(self.error_file_url)
+
+    @property
+    def statuses(self):
+        """
+        Status for each individual annotation uploaded.
+        * Returns a status for each row if the upload is done running and was successful. Otherwise it returns None.
+        * This information will expire after 24 hours.        
+        """
+        return  self._fetch_remote_ndjson(self.status_file_url)
+
+    def _fetch_remote_ndjson(self, url):
+        if url is not None:
+            return ndjson.loads(requests.get(url).text)
+
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
         """

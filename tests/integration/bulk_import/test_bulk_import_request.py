@@ -133,6 +133,9 @@ def test_wait_till_done(configured_project):
     assert (bulk_import_request.state == BulkImportRequestState.FINISHED or
             bulk_import_request.state == BulkImportRequestState.FAILED)
 
+    assert bulk_import_request.errors is not None
+    assert bulk_import_request.inputs is not None
+
 
 def assert_file_content(url: str, predictions):
     response = requests.get(url)
