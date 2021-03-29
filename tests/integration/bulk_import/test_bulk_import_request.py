@@ -121,20 +121,26 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
 
 
 @pytest.mark.slow
-def test_wait_till_done(configured_project):
+def test_wait_till_done(rectangle_inference, configured_project):
     name = str(uuid.uuid4())
-    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
+    url = configured_project.client.upload_data(content=ndjson.dumps(
+        [rectangle_inference]),
+                                                sign=True)
     bulk_import_request = configured_project.upload_annotations(name=name,
                                                                 annotations=url,
                                                                 validate=False)
 
     bulk_import_request.wait_until_done()
+    assert bulk_import_request.state == BulkImportRequestState.FINISHED
 
-    assert (bulk_import_request.state == BulkImportRequestState.FINISHED or
-            bulk_import_request.state == BulkImportRequestState.FAILED)
-
-    assert bulk_import_request.errors is not None
-    assert bulk_import_request.inputs is not None
+    #Check that the status files are being returned as expected
+    assert len(bulk_import_request.errors) == 0
+    assert len(bulk_import_request.inputs) == 1
+    assert bulk_import_request.inputs[0]['uuid'] == rectangle_inference['uuid']
+    assert len(bulk_import_request.statuses) == 1
+    assert bulk_import_request.statuses[0]['status'] == 'SUCCESS'
+    assert bulk_import_request.statuses[0]['uuid'] == rectangle_inference[
+        'uuid']
 
 
 def assert_file_content(url: str, predictions):
