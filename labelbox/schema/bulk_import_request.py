@@ -1,6 +1,7 @@
 import json
 import time
 from uuid import UUID, uuid4
+import functools
 
 import logging
 from pathlib import Path
@@ -114,35 +115,58 @@ class BulkImportRequest(DbObject):
     created_by = Relationship.ToOne("User", False, "created_by")
 
     @property
-    def inputs(self):
+    def inputs(self) -> Optional[List[Dict[str, str]]]:
         """
         Inputs for each individual annotation uploaded.
-        * This should match the ndjson annotations that you have uploaded. 
-        * This information will expire after 24 hours.
-        """        
-        return  self._fetch_remote_ndjson(self.input_file_url)
+        This should match the ndjson annotations that you have uploaded. 
         
+        Returns:
+            Uploaded ndjsons.
+
+        * This information will expire after 24 hours.    
+        """
+        return self._fetch_remote_ndjson(self.input_file_url)
+
     @property
-    def errors(self):
+    def errors(self) -> Optional[List[Dict[str, str]]]:
         """
         Errors for each individual annotation uploaded.
-        * Returns an empty list if there are no errors and None if the update is still running.
+
+        Returns:
+            Empty list if there are no errors and None if the update is still running.
+            If there are errors, and the job has completed then a list of dicts containing the error messages will be returned.
+
         * This information will expire after 24 hours.        
         """
-        return  self._fetch_remote_ndjson(self.error_file_url)
+        return self._fetch_remote_ndjson(self.error_file_url)
 
     @property
-    def statuses(self):
+    def statuses(self) -> Optional[List[Dict[str, str]]]:
         """
         Status for each individual annotation uploaded.
-        * Returns a status for each row if the upload is done running and was successful. Otherwise it returns None.
+
+        Returns:
+            A status for each annotation if the upload is done running and was successful. Otherwise it returns None.
+
         * This information will expire after 24 hours.        
         """
-        return  self._fetch_remote_ndjson(self.status_file_url)
+        return self._fetch_remote_ndjson(self.status_file_url)
 
-    def _fetch_remote_ndjson(self, url):
+    @functools.lru_cache()
+    def _fetch_remote_ndjson(
+            self, url: Optional[str]) -> Optional[List[Dict[str, str]]]:
+        """
+        Fetches the remote ndjson file and caches the results.
+
+        Args:
+            url (str): either the input_file_url, error_file_url, status_file_url, or None
+                urls are None when the file is unavailable.
+        Returns:
+            None if the url is None or the ndjson as a list of dicts.
+        """
         if url is not None:
             return ndjson.loads(requests.get(url).text)
+        return None
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
