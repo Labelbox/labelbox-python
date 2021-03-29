@@ -10,6 +10,7 @@ import backoff
 import ndjson
 import requests
 from pydantic import BaseModel, validator
+from requests.api import request
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set)
@@ -115,58 +116,77 @@ class BulkImportRequest(DbObject):
     created_by = Relationship.ToOne("User", False, "created_by")
 
     @property
-    def inputs(self) -> Optional[List[Dict[str, str]]]:
+    def inputs(self) -> List[Dict[str, Any]]:
         """
         Inputs for each individual annotation uploaded.
         This should match the ndjson annotations that you have uploaded. 
         
         Returns:
-            Uploaded ndjsons.
+            Uploaded ndjson.
 
         * This information will expire after 24 hours.    
         """
         return self._fetch_remote_ndjson(self.input_file_url)
 
     @property
-    def errors(self) -> Optional[List[Dict[str, str]]]:
+    def errors(self) -> List[Dict[str, Any]]:
         """
-        Errors for each individual annotation uploaded.
+        Errors for each individual annotation uploaded. This is a subset of statuses
 
         Returns:
-            Empty list if there are no errors and None if the update is still running.
-            If there are errors, and the job has completed then a list of dicts containing the error messages will be returned.
+            List of dicts containing error messages. Empty list means there were no errors
+            See `BulkImportRequest.statuses` for more details.
 
         * This information will expire after 24 hours.        
         """
+        self.wait_until_done()
         return self._fetch_remote_ndjson(self.error_file_url)
 
     @property
-    def statuses(self) -> Optional[List[Dict[str, str]]]:
+    def statuses(self) -> List[Dict[str, Any]]:
         """
         Status for each individual annotation uploaded.
 
         Returns:
-            A status for each annotation if the upload is done running and was successful. Otherwise it returns None.
+            A status for each annotation if the upload is done running.
+            See below table for more details
+            
+        .. list-table::
+           :widths: 15 150
+           :header-rows: 1 
+
+           * - Field
+             - Description
+           * - uuid 
+             - Specifies the annotation for the status row.
+           * - dataRow
+             - JSON object containing the Labelbox data row ID for the annotation.
+           * - status
+             - Indicates SUCCESS or FAILURE.
+           * - errors
+             - An array of error messages included when status is FAILURE. Each error has a name, message and optional (key might not exist) additional_info.
 
         * This information will expire after 24 hours.        
         """
+        self.wait_until_done()
         return self._fetch_remote_ndjson(self.status_file_url)
 
     @functools.lru_cache()
-    def _fetch_remote_ndjson(
-            self, url: Optional[str]) -> Optional[List[Dict[str, str]]]:
+    def _fetch_remote_ndjson(self, url: str) -> List[Dict[str, Any]]:
         """
         Fetches the remote ndjson file and caches the results.
 
         Args:
-            url (str): either the input_file_url, error_file_url, status_file_url, or None
-                urls are None when the file is unavailable.
+            url (str): Can be any url pointing to an ndjson file.
         Returns:
-            None if the url is None or the ndjson as a list of dicts.
+            ndjson as a list of dicts.
         """
-        if url is not None:
-            return ndjson.loads(requests.get(url).text)
-        return None
+        if url is None:
+            raise ValueError("Must provide valid ndjson url. Found `None`")
+
+        response = requests.get(url)
+        response.raise_for_status()
+        return ndjson.loads(response.text)
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
