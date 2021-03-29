@@ -181,9 +181,6 @@ class BulkImportRequest(DbObject):
         Returns:
             ndjson as a list of dicts.
         """
-        if url is None:
-            raise ValueError("Must provide valid ndjson url. Found `None`")
-
         response = requests.get(url)
         response.raise_for_status()
         return ndjson.loads(response.text)
