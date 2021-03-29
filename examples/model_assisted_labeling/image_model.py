@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import cv2
+from typing import Dict
 
 #https://colab.research.google.com/github/tensorflow/tpu/blob/master/models/official/mask_rcnn/mask_rcnn_demo.ipynb#scrollTo=2oZWLz4xXsyQ
 
@@ -8,13 +9,26 @@ class_mappings = {1: 'person', 3: 'car', 28: 'umbrella', 31: 'handbag'}
 session = tf.compat.v1.Session()
 
 
-def load_model():
+def load_model() -> None:
+    """
+    Loads model into session
+    """
     saved_model_dir = 'gs://cloud-tpu-checkpoints/mask-rcnn/1555659850'
     _ = tf.compat.v1.saved_model.loader.load(session, ['serve'],
                                              saved_model_dir)
 
 
-def predict(np_image_string, min_score, height, width):
+def predict(np_image_string: np.ndarray, min_score: float, height: int,
+            width: int) -> Dict[str, np.ndarray]:
+    """
+    Args:
+        np_image_string (np.ndarray): numpy array containing image bytes
+        min_score (float): min detection threshold
+        height: image height
+        width: image width
+    Returns:
+        instance segmentation inference as a dict containing the class indices, boxes, and seg masks
+    """
     num_detections, detection_boxes, detection_classes, detection_scores, detection_masks, image_info = session.run(
         [
             'NumDetections:0', 'DetectionBoxes:0', 'DetectionClasses:0',
@@ -48,7 +62,7 @@ def predict(np_image_string, min_score, height, width):
     return response
 
 
-def expand_boxes(boxes, scale):
+def expand_boxes(boxes: np.ndarray, scale: float) -> np.ndarray:
     """Expands an array of boxes by a given scale."""
     # Reference: https://github.com/facebookresearch/Detectron/blob/master/detectron/utils/boxes.py#L227  # pylint: disable=line-too-long
     # The `boxes` in the reference implementation is in [x1, y1, x2, y2] form,
@@ -70,11 +84,11 @@ def expand_boxes(boxes, scale):
     return boxes_exp
 
 
-def generate_segmentation_from_masks(masks,
-                                     detected_boxes,
-                                     image_height,
-                                     image_width,
-                                     is_image_mask=False):
+def generate_segmentation_from_masks(masks: np.ndarray,
+                                     detected_boxes: np.ndarray,
+                                     image_height: int,
+                                     image_width: int,
+                                     is_image_mask: bool = False) -> np.ndarray:
     """Generates segmentation result from instance masks.
     Args:
       masks: a numpy array of shape [N, mask_height, mask_width] representing the
