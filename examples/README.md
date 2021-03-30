@@ -3,7 +3,6 @@
 * Learn how to use the SDK by following along
 * Run in google colab, view the notebooks on github, or clone the repo and run locally
 
-### Tutorials:
 
 ------ 
 
