@@ -1,18 +1,27 @@
 # Labelbox Python SDK
 
-Labelbox is the enterprise-grade training data solution with fast AI enabled labeling tools, labeling automation, human workforce, data management, a powerful API for integration & SDK for extensibility. Visit http://labelbox.com/ for more information.
+Labelbox is the enterprise-grade training data solution with fast AI enabled labeling tools, labeling automation, human workforce, data management, a powerful API for integration & SDK for extensibility. Visit [Labelbox](http://labelbox.com/) for more information.
 
 The Labelbox Python API offers a simple, user-friendly way to interact with the Labelbox back-end.
 
+## Table of Contents
+
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Authentication](#authentication)
+* [Documentation](#documentation)
+* [Contribution](#contribution)
+* [Testing](#testing)
+
 ## Requirements
 
-* Use Python 3.6, 3.7 or 3.8.
-* Create an account by visiting http://app.labelbox.com/.
-* [Generate an API key](https://labelbox.com/docs/api/getting-started#create_api_key).
+* Use Python 3.6, 3.7 or 3.8
+* [Create an account](http://app.labelbox.com/)
+* [Generate an API key](https://labelbox.com/docs/api/getting-started#create_api_key)
 
-## Installation & authentication
+## Installation
 
-0. Prerequisite: Install pip
+Prerequisite: Install pip
 
 `pip` is a package manager for Python. **On macOS**, you can set it up to use the default python3 install via -
 ```
@@ -26,12 +35,15 @@ If the installation completes with a warning re: pip not being in your path, you
 export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
 ```
 
-1. Install using Python's Pip manager.
+Install using Python's Pip manager.
 ```
 pip install labelbox
 ```
 
-2. Pass your API key as an environment variable. Then, import and initialize the API Client.
+## Authentication
+
+Labelbox uses API keys to validate requests. You can create and manage API keys on [Labelbox](https://app.labelbox.com/account/api-keys). Pass your API key as an environment variable. Then, import and initialize the API Client.
+
 ```
 user@machine:~$ export LABELBOX_API_KEY="<your api key here>"
 user@machine:~$ python3
@@ -44,7 +56,7 @@ client = Client()
 
 [Visit our docs](https://labelbox.com/docs/python-api) to learn how to [create a project](https://labelbox.com/docs/python-api/create-first-project), read through some helpful user guides, and view our [API reference](https://labelbox.com/docs/python-api/api-reference).
 
-## Repo Organization and Contribution
+## Contribution
 Please consult `CONTRIB.md`
 
 ## Testing
