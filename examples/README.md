@@ -5,25 +5,44 @@
 
 ### Tutorials:
 
-1. [Basics](basics)
-    * Fundamentals - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/basics.ipynb) | [Github](basics/basics.ipynb)
-    * CRUD
-        * Data Rows - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/data_rows.ipynb) | [Github](basics/data_rows.ipynb)
-        * Datasets - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/datasets.ipynb) | [Github](basics/datasets.ipynb)
-        * Labels - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/labels.ipynb) | [Github](basics/labels.ipynb)
-        * Ontologies - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/ontologies.ipynb) | [Github](basics/ontologies.ipynb)
-        * Projects - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/projects.ipynb) | [Github](basics/projects.ipynb)
-2. [Label Export](label_export)
-    * Image Annotation Export - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/label_export/images.ipynb) | [Github](label_export/images.ipynb)
-    * Text Annotation Export - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/label_export/text.ipynb) | [Github](label_export/text.ipynb)
-    * Video Annotation Export - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/label_export/video.ipynb) | [Github](label_export/video.ipynb)
-3. [Model Assisted Labeling](model_assisted_labeling)
-    * MAL Basics - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/mal_basics.ipynb) | [Github](model_assisted_labeling/mal_basics.ipynb)
-    * Image MAL - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/image_mal.ipynb) | [Github](model_assisted_labeling/image_mal.ipynb)
-    * Named Entity Recognition MAL - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/ner_mal.ipynb) | [Github](model_assisted_labeling/ner_mal.ipynb)
-    * Debugging MAL - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/debugging_mal.ipynb) | [Github](model_assisted_labeling/debugging_mal.ipynb)
-    * MAL with Subclasses - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/mal_with_subclasses.ipynb) | [Github](model_assisted_labeling/mal_with_subclasses.ipynb)
-4. [Project Configuration](project_configuration)
-    * Project Setup - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/project_configuration/project_setup.ipynb) | [Github](project_configuration/project_setup.ipynb)
-    * Queue Management - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/project_configuration/queue_management.ipynb) | [Github](project_configuration/queue_management.ipynb)
-    * Webhooks - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/project_configuration/webhooks.ipynb) | [Github](project_configuration/webhooks.ipynb)
+------ 
+
+## [Basics](basics)
+
+| Notebook                    | Github                            | Google Colab |
+| --------------------------- | --------------------------------- | ------------ |
+| Fundamentals                | [Github](basics/basics.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/basics.ipynb) |
+| Data Rows                   | [Github](basics/data_rows.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/data_rows.ipynb) | 
+| Datasets                    | [Github](basics/datasets.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/datasets.ipynb) | 
+| Labels                      | [Github](basics/labels.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/labels.ipynb) | 
+| Ontologies                  | [Github](basics/ontologies.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/ontologies.ipynb) | 
+| Projects                    | [Github](basics/projects.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/projects.ipynb) | 
+------ 
+
+## [Label Export](label_export)
+
+| Notebook                    | Github                            | Google Colab |
+| --------------------------- | --------------------------------- | ------------ |
+| Image Annotation Export     | [Github](label_export/images.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/label_export/images.ipynb) |
+| Text Annotation Export      | [Github](label_export/text.ipynb)    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/label_export/text.ipynb) | 
+| Video Annotation Export     | [Github](label_export/video.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/label_export/video.ipynb) | 
+------ 
+
+## [Model Assisted Labeling](model_assisted_labeling)
+
+| Notebook                    | Github                            | Google Colab |
+| --------------------------- | --------------------------------- | ------------ |
+| MAL Basics                    | [Github](model_assisted_labeling/mal_basics.ipynb)            | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/mal_basics.ipynb) |
+| Image MAL                     | [Github](model_assisted_labeling/image_mal.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/image_mal.ipynb) | 
+| Named Entity Recognition MAL  | [Github](model_assisted_labeling/ner_mal.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/ner_mal.ipynb) | 
+| Debugging MAL                 | [Github](model_assisted_labeling/debugging_mal.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/debugging_mal.ipynb) | 
+| MAL with Subclasses           | [Github](model_assisted_labeling/mal_with_subclasses.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/model_assisted_labeling/mal_with_subclasses.ipynb) | 
+------ 
+
+## [Project Configuration](project_configuration)
+
+| Notebook                    | Github                            | Google Colab |
+| --------------------------- | --------------------------------- | ------------ |
+| Project Setup  | [Github](project_configuration/project_setup.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/project_configuration/project_setup.ipynb) | 
+| Debugging MAL                 | [Github](project_configuration/queue_management.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/project_configuration/queue_management.ipynb) | 
+| MAL with Subclasses           | [Github](project_configuration/webhooks.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/project_configuration/webhooks.ipynb) | 
