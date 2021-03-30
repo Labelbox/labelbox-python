@@ -3,7 +3,7 @@
 * Learn how to use the SDK by following along
 * Run in google colab, view the notebooks on github, or clone the repo and run locally
 
-Tutorials:
+### Tutorials:
 
 1. [Basics](basics)
     * Fundamentals - [Colab](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/examples/examples/basics/basics.ipynb) | [Github](basics/basics.ipynb)
