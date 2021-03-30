@@ -26,7 +26,7 @@ def format_file(file_name):
                 cell['source'] = cell['source'][:-1]
 
     with open(file_name, 'w') as file:
-        file.write(json.dumps(data))
+        file.write(json.dumps(data, indent = 4))
     print("Formatted", file_name)
 
 
