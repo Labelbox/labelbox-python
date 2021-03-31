@@ -5,7 +5,7 @@
 * Cleanup and add additional example notebooks
 * Improved README for SDK and examples
 * Easier to retrieve per annotation `BulkImportRequest` status, errors, and inputs
-    * See `BulkImportRequest.errors`, `BulkImportRequest.statuses`, `BulkImportRequest.inputs` for more information.
+    * See `BulkImportRequest.errors`, `BulkImportRequest.statuses`, `BulkImportRequest.inputs` for more information
 
 # Version 2.5.2 (2021-03-25)
 ## Fix
