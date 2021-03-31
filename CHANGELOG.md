@@ -1,5 +1,12 @@
 # Changelog
 
+# Version 2.5.3 (2021-04-01)
+## Added
+* Cleanup and add additional example notebooks
+* Improved README for SDK and examples
+* Easier to retrieve per annotation `BulkImportRequest` status and errors
+
+
 # Version 2.5.2 (2021-03-25)
 ## Fix
 * Ontology builder defaults to None for missing fields instead of empty lists
