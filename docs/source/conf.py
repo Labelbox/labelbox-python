@@ -52,9 +52,7 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 # Prevent the sidebar from collapsing
-html_js_files = [
-    'js/prevent_collapse.js'
-]
+html_js_files = ['js/prevent_collapse.js']
 html_theme_options = {
     "collapse_navigation": False,
 }
