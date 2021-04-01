@@ -253,13 +253,15 @@ class Client:
     def upload_data(self,
                     content: bytes,
                     filename: str = None,
-                    content_type: str = None) -> str:
+                    content_type: str = None,
+                    sign: bool = False) -> str:
         """ Uploads the given data (bytes) to Labelbox.
 
         Args:
             content: bytestring to upload
             filename: name of the upload
             content_type: content type of data uploaded
+            sign: whether or not to sign the url
 
         Returns:
             str, the URL of uploaded data.
@@ -274,7 +276,7 @@ class Client:
                     "variables": {
                         "file": None,
                         "contentLength": len(content),
-                        "sign": False
+                        "sign": sign
                     },
                     "query":
                         """mutation UploadFile($file: Upload!, $contentLength: Int!,
