@@ -96,8 +96,8 @@ class Project(DbObject, Updateable, Deletable):
         Label = Entity.Label
 
         kwargs[Label.project] = self
-        kwargs[Label.seconds_to_label] = kwargs.get(
-            Label.seconds_to_label.name, 0.0)
+        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
+                                                    0.0)
         data = {
             Label.attribute(attr) if isinstance(attr, str) else attr:
             value.uid if isinstance(value, DbObject) else value
@@ -142,9 +142,8 @@ class Project(DbObject, Updateable, Deletable):
             id_param, id_param, where, order_by_str,
             query.results_query_part(Label))
 
-        return PaginatedCollection(self.client, query_str,
-                                   {id_param: self.uid}, ["project", "labels"],
-                                   Label)
+        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
+                                   ["project", "labels"], Label)
 
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
@@ -305,13 +304,11 @@ class Project(DbObject, Updateable, Deletable):
             # python isoformat doesn't accept Z as utc timezone
             result["lastActivityTime"] = datetime.fromisoformat(
                 result["lastActivityTime"].replace('Z', '+00:00'))
-            return LabelerPerformance(**{
-                utils.snake_case(key): value
-                for key, value in result.items()
-            })
+            return LabelerPerformance(
+                **
+                {utils.snake_case(key): value for key, value in result.items()})
 
-        return PaginatedCollection(self.client, query_str,
-                                   {id_param: self.uid},
+        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labelerPerformance"],
                                    create_labeler_performance)
 
@@ -323,7 +320,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             int, aggregation count of reviews for given `net_score`.
         """
-        if net_score not in (None, ) + tuple(Entity.Review.NetScore):
+        if net_score not in (None,) + tuple(Entity.Review.NetScore):
             raise InvalidQueryError(
                 "Review metrics net score must be either None "
                 "or one of Review.NetScore values")
@@ -449,8 +446,8 @@ class Project(DbObject, Updateable, Deletable):
         query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s}) {
             unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            id_param, id_param, ",\n".join("{dataRowId: \"%s\"}" % row.uid
-                                           for row in data_rows))
+            id_param, id_param, ",\n".join(
+                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
@@ -556,9 +553,8 @@ class Project(DbObject, Updateable, Deletable):
             $%s: String!, $%s: ID!, $%s: ID!, $%s: ID!) {createPrediction(
             data: {label: $%s, predictionModelId: $%s, projectId: $%s,
                    dataRowId: $%s})
-            {%s}}""" % (label_param, model_param, project_param,
-                        data_row_param, label_param, model_param,
-                        project_param, data_row_param,
+            {%s}}""" % (label_param, model_param, project_param, data_row_param,
+                        label_param, model_param, project_param, data_row_param,
                         query.results_query_part(Prediction))
         params = {
             label_param: label,
