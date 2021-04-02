@@ -208,7 +208,6 @@ class Project(DbObject, Updateable, Deletable):
                 id_param: self.uid,
                 status_param: status
             })
-            print(res)
             res = res.get('project').get('issueExportUrl')
 
             if res:
