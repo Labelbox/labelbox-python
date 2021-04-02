@@ -208,9 +208,9 @@ class Project(DbObject, Updateable, Deletable):
                 id_param: self.uid,
                 status_param: status
             })
-            res = res.get('project').get('issueExportUrl')
+            res = res['project']
 
-            if res:
+            if res.get('issueExportUrl'):
                 return res
 
             timeout_seconds -= sleep_time
