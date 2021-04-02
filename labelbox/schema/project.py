@@ -177,6 +177,48 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    
+    def export_issues(self, status=None, timeout_seconds=60):
+        """ Calls the server-side Issues exporting that generates a JSON
+        payload, and returns the URL to that payload.
+
+        Args:
+            timeout_seconds (float): Max waiting time, in seconds.
+            status (string): valid values: Open, Resolved
+        Returns:
+            URL of the data file with this Project's issues. If the server didn't
+            generate during the `timeout_seconds` period, None is returned.
+        """
+        sleep_time = 2
+        id_param = "projectId"
+        status_param = "status"
+        query_str = """query getProjectIssues($%s: ID!, $%s: IssueStatus) {
+            project(where: { id: $%s }) {
+                issueExportUrl(where: { status: $%s })
+            }
+        }""" % (id_param, status_param, id_param, status_param)
+
+        valid_statuses = [None, "Open", "Resolved"]
+
+        if status not in valid_statuses:
+            raise ValueError("status must be in {}. Found {}".format(valid_statuses, status))
+
+        while True:
+            res = self.client.execute(query_str, {id_param: self.uid, status_param: status})
+            print(res)
+            res = res.get('project').get('issueExportUrl')
+
+            if res:
+                return res
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                return None
+
+            logger.debug("Project '%s' issues export, waiting for server...",
+                         self.uid)
+            time.sleep(sleep_time)
+
     def upsert_instructions(self, instructions_file: str):
         """
         * Uploads instructions to the UI. Running more than once will replace the instructions
