@@ -150,15 +150,15 @@ class Project(DbObject, Updateable, Deletable):
         This function returns all DataRows that have not yet been labeled in this Project. 
         It is helpful for MAL if a user only wants to upload inferences to DataRows that are still in the queue.
         This is updated after attaching a Dataset. This will be accurate even if the Project isn't set up yet.
+        Duplicates will not be returned if consensus is turned on.
 
         Returns:
             All DataRows that are currently in the queue as a PaginatedCollection
-
         """
         id_param = "projectId"
         query_str = """query GetProjectQueuedDatarowsPyApi($%s: ID!){
         project(where:{id: $%s}){
-            labelReservations(where:{status:IN_COMPLETE, reservedBy:{id_starts_with:""}} skip: %%d first: %%d)
+            labelReservations(skip: %%d first: %%d)
             {dataRow  {%s}}}}""" % (id_param, id_param,
                                     query.results_query_part(DataRow))
 
