@@ -152,7 +152,7 @@ class Project(DbObject, Updateable, Deletable):
         This is updated after attaching a dataset. This will be accurate even if the project isn't set up yet.
 
         Returns:
-            datarows (List[dataRows]): All datarows that are currently in the queue.
+            All DataRows that are currently in the queue as a PaginatedCollection
 
         """
         id_param = "projectId"
@@ -162,12 +162,10 @@ class Project(DbObject, Updateable, Deletable):
             {dataRow  {%s}}}}""" % (id_param, id_param,
                                     query.results_query_part(DataRow))
 
-        def create_data_row(client, result):
-            return Entity.DataRow(client, result["dataRow"])
-
-        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
-                                   ["project", "labelReservations"],
-                                   create_data_row)
+        return PaginatedCollection(
+            self.client, query_str, {id_param: self.uid},
+            ["project", "labelReservations"],
+            lambda client, result: DataRow(client, result["dataRow"]))
 
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
