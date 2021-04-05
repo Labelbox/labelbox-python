@@ -147,9 +147,9 @@ class Project(DbObject, Updateable, Deletable):
 
     def queued_data_rows(self):
         """
-        This function returns all data rows that have not yet been labeled in this project. 
-        It is helpful for MAL if a user only wants to upload inferences to labels that are still in the queue.
-        This is updated after attaching a dataset. This will be accurate even if the project isn't set up yet.
+        This function returns all DataRows that have not yet been labeled in this Project. 
+        It is helpful for MAL if a user only wants to upload inferences to DataRows that are still in the queue.
+        This is updated after attaching a Dataset. This will be accurate even if the Project isn't set up yet.
 
         Returns:
             All DataRows that are currently in the queue as a PaginatedCollection
