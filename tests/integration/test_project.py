@@ -100,3 +100,15 @@ def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
     assert "instructions_file must end with one of" in str(exc_info.value)
+
+
+def test_queued_data_rows(client, project):
+    project = client.create_project(name="test_queued_data_rows_project")
+    dataset = client.create_dataset(name="test_queued_data_rows_dataset")
+    data_row1 = dataset.create_data_row(row_data="text-1",
+                                        external_id="first_example")
+    data_row2 = dataset.create_data_row(row_data="text-2",
+                                        external_id="second_example")
+    project.datasets.connect(dataset)
+    queued_data_rows = project.queued_data_rows()
+    assert {x.uid for x in queued_data_rows} == {data_row1.uid, data_row2.uid}

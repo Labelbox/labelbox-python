@@ -145,6 +145,30 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
+    def queued_data_rows(self):
+        """
+        This function returns all data_rows that have not been labeled yet. 
+        It is helpful for MAL if a user only wants to upload inferences to labels that are still in the queue.
+        This is updated after attaching a dataset. This will be accurate even if the project isn't set up yet.
+
+        Returns:
+            datarows (List[dataRows]): All datarows that are currently in the queue.
+
+        """
+        id_param = "projectId"
+        query_str = """query GetProjectQueuedDatarowsPyApi($%s: ID!){
+        project(where:{id: $%s}){
+            labelReservations(where:{status:IN_COMPLETE, reservedBy:{id_starts_with:""}} skip: %%d first: %%d)
+            {dataRow  {%s}}}}""" % (id_param, id_param,
+                                    query.results_query_part(DataRow))
+
+        def create_data_row(client, result):
+            return Entity.DataRow(client, result["dataRow"])
+
+        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
+                                   ["project", "labelReservations"],
+                                   create_data_row)
+
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
