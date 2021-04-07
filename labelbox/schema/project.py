@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import json
 import time
 import logging
@@ -10,6 +11,7 @@ from urllib.parse import urlparse
 from labelbox import utils
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.user import User
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -24,6 +26,13 @@ except AttributeError:
 
 logger = logging.getLogger(__name__)
 
+
+
+@dataclass
+class ProjectMember:
+    project_role: str
+    user: User
+  
 
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
@@ -77,10 +86,77 @@ class Project(DbObject, Updateable, Deletable):
                                                  "active_prediction_model")
     predictions = Relationship.ToMany("Prediction", False)
     ontology = Relationship.ToOne("Ontology", True)
+    
+
+    #def get_invites(self):
+        # Org and projects have invites
+        # How to cancel an invite?
+
+
+
+    """
+                #List all invitations for an org
+        query GetOrgInvitations($from: ID, $first: PageSize) {
+        organization {
+            id
+            invites(from: $from, first: $first) {
+            nodes {
+                id
+                createdAt
+                organizationRoleName
+                inviteeEmail
+                __typename
+            }
+            nextCursor
+            __typename
+            }
+            __typename
+        }
+        }
+        
+
+        
+        # Cancel an invitation for a user. Get their email by querying for all invitations
+        mutation CancelInvite($where: WhereUniqueIdInput!) {
+        cancelInvite(where: $where) {
+            id
+            __typename
+        }
+        }
+
+    
+    #self.client.execute(#
+              query Project(where )
+            query GetProjectLabelsPyApi($%s: ID!)
+            {project (where: {id: $%s})
+                {labels (skip: %%d first: %%d %s %s) {%s}}}""
+
+                #People invited tot his project: invites(from: ID, first: PageSize = 100): InviteConnection @internal
+
+
+    """
+
+
+    def members(self):
+       id_param = "projectId"
+       query_str = """query ProjectMemberOverviewPyApi($%s: ID!) {
+              project(where: {id : $%s}) {
+                  id
+                  members(skip: %%d first: %%d){
+                      id
+                      user { %s }
+                      role { id name }
+                  }
+              }
+       }""" % (id_param, id_param, query.results_query_part(Entity.User) )
+
+       print(query_str)
+       print("UID", str(self.uid))
+       return PaginatedCollection(self.client, query_str, {id_param: str(self.uid) },
+                                  ["project", "members"], lambda client, res: ProjectMember(user = Entity.User(client, res['user']), project_role = res['role']['name']))
 
     def create_label(self, **kwargs):
         """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
-
         Args:
             **kwargs: Label attributes. At minimum, the label `DataRow`.
         """

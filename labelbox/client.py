@@ -74,7 +74,7 @@ class Client:
     #TODO: Add exponential backoff so we don'tt overwhelm the api
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0):
+    def execute(self, query, params=None, timeout=30.0, experimental = False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -120,7 +120,8 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            response = requests.post(self.endpoint,
+            endpoint = self.endpoint.replace('graphql', '_gql') if experimental else self.endpoint 
+            response = requests.post(endpoint,
                                      data=data,
                                      headers=self.headers,
                                      timeout=timeout)
