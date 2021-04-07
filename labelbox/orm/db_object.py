@@ -43,6 +43,7 @@ class DbObject(Entity):
         self.client = client
         self._set_field_values(field_values)
 
+    
         for relationship in self.relationships():
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship))

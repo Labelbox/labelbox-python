@@ -1,5 +1,11 @@
+from typing import List
+from labelbox.orm.query import update_fields
+from labelbox.pagination import PaginatedCollection
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.user import Invitee, ProjectRole, User
+
+
 
 
 class Organization(DbObject):
@@ -34,3 +40,94 @@ class Organization(DbObject):
     users = Relationship.ToMany("User", False)
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
+
+
+    def get_user_invites(self):
+        query_str = """query GetOrgInvitations($from: ID, $first: PageSize) {
+                organization {
+                    id
+                    invites(from: $from, first: $first) {
+                        nodes {
+                            id
+                            createdAt
+                            organizationRoleName
+                            inviteeEmail
+                        }
+                        nextCursor
+                    }
+                }
+            }"""
+        
+        return PaginatedCollection(self.client, query_str, {}, ['organization','invites','nodes'], Invitee, cursor_path = ['organization','invites','nextCursor'], experimental= True)
+
+    def invite_user(self, email, role ,  projects : List[ProjectRole] = []):   
+        # TODO: Understand edge cases. Catch limit exception.. 
+        # Also the expected upsert behavior doesn't seem to be happening. 
+        query_str = """mutation createInvites($data: [CreateInviteInput!]){
+                    createInvites(data: $data){
+                        invite {
+                            id
+                        }
+                    }
+                }"""
+
+        return self.client.execute(query_str,{'data' : [{
+                            "inviterId"  : self.client.get_user().uid,
+                            "inviteeEmail" : email,
+                            "organizationId" : self.uid,
+                            "organizationRoleId" :  role,
+                            "projects" : projects
+                }]}, experimental= True)
+
+
+    def cancel_invite(self, invite_id): 
+        # TODO: Give a way for user to get invite_id from email..
+        query_str = """mutation CancelInvite($where: WhereUniqueIdInput!) {
+            cancelInvite(where: $where) {
+                id
+            }
+        }"""
+        return self.client.execute(query_str, {'where' : {'id' : invite_id}}, experimental= True)
+
+
+    def user_limit(self):
+        # Org is based off of the user credentials, so no args
+        query_str = """
+            query UsersLimit {
+            organization {
+                id
+                account {
+                id
+                usersLimit {
+                    dateLimitWasReached
+                    remaining
+                    used
+                    limit   
+                }
+                
+                }
+            }
+        }
+        """
+        res = self.client.execute(query_str, experimental= True)
+        return res['organization']['account']['usersLimit'] # {'dateLimitWasReached': None, 'remaining': 1, 'used': 2, 'limit': 3}
+
+        
+    def restore_users(self, user):
+        query_string, params = update_fields(user, {User.deleted : False})
+        res = self.client.execute(query_string, params)
+        return res
+
+    def get_deleted_user(self, email):
+        return  next(self.users(where = ( (User.email == email) & ( User.deleted == True)) ), None)
+        
+    def remove_from_org(user):
+        # might just be able to do user.delete()
+        # or user.update({'deleted' : True})
+        """mutation DeleteMember($id: ID!) {
+            updateUser(where: {id: $id}, data: {deleted: true}) {
+            id
+            deleted
+    
+            }
+        }"""
