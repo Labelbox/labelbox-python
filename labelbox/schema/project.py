@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from labelbox import utils
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.user import User
+from labelbox.schema.user import Invitee, User
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -88,53 +88,48 @@ class Project(DbObject, Updateable, Deletable):
     ontology = Relationship.ToOne("Ontology", True)
     
 
-    #def get_invites(self):
-        # Org and projects have invites
-        # How to cancel an invite?
-
-
-
     """
-                #List all invitations for an org
-        query GetOrgInvitations($from: ID, $first: PageSize) {
-        organization {
-            id
-            invites(from: $from, first: $first) {
-            nodes {
-                id
-                createdAt
-                organizationRoleName
-                inviteeEmail
-                __typename
-            }
-            nextCursor
-            __typename
-            }
-            __typename
-        }
-        }
-        
-
-        
-        # Cancel an invitation for a user. Get their email by querying for all invitations
-        mutation CancelInvite($where: WhereUniqueIdInput!) {
-        cancelInvite(where: $where) {
-            id
-            __typename
-        }
-        }
-
-    
-    #self.client.execute(#
-              query Project(where )
-            query GetProjectLabelsPyApi($%s: ID!)
-            {project (where: {id: $%s})
-                {labels (skip: %%d first: %%d %s %s) {%s}}}""
-
-                #People invited tot his project: invites(from: ID, first: PageSize = 100): InviteConnection @internal
-
-
+           query GetProjectInvitations($from: ID, $first: PageSize, $projectId: ID!) {
+                    project(where: {id: $projectId}) {
+                        id
+                        invites(from: $from, first: $first) {
+                        nodes {
+                                id
+                                createdAt
+                                organizationRoleName
+                                inviteeEmail
+                            projectInvites {
+                                id
+                                projectRoleName
+                                projectId
+                            
+                            }   
+                        }
+                        nextCursor
+                        }
+                    }
+                    }
     """
+
+    def invitees(self):
+        query_str = """    
+            query GetProjectInvitations($from: ID, $first: PageSize, $projectId: ID!) {
+                    project(where: {id: $projectId}) {
+                        id
+                        invites(from: $from, first: $first) {
+                        nodes {
+                            id
+                            createdAt
+                            organizationRoleName
+                            inviteeEmail
+                        }
+                        nextCursor
+                    }
+                }
+            }
+        """
+        # Not sure if cursor should be project/invite/nextCursor.        
+        return PaginatedCollection(self.client, query_str, {"projectId" : self.uid}, ['project','invites','nodes'], Invitee, cursor_path = ['project','nextCursor'], experimental= True) 
 
 
     def members(self):

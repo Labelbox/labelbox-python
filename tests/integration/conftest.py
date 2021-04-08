@@ -124,3 +124,8 @@ def sample_video() -> str:
     path_to_video = 'tests/integration/media/cat.mp4'
     assert os.path.exists(path_to_video)
     return path_to_video
+
+
+@pytest.fixture
+def organization(client):
+    return client.get_organization()

@@ -6,7 +6,9 @@ from enum import Enum
 
 
 class Role(Enum):
-    NONE = "ckk4kkc8b002m09198iyzvtmq"  # Looks like this creates a "Project Based" Role at the Org level... 
+    # Looks like this creates a "Project Based" Role at the Org level... So they have No Role at org level.
+    # If this is None at the project level then they are removed from the project
+    NONE = "ckk4kkc8b002m09198iyzvtmq"  
     LABELER = "ckk4kkc9a002u0919omkuoby8"
     REVIEWER = "ckk4kkcae00320919lpxtf306"
     TEAM_MANAGER = "ckk4kkcbc003a09192dkfe80h"
@@ -18,12 +20,10 @@ class ProjectRole(BaseModel):
     projectRoleId: Role
 
 
-class Invitee(DbObject):
-    created_at = Field.DateTime("created_at")
-    organization_role_name = Field.String("organization_role_name")
-    email = Field.String("email", "inviteeEmail")
-    
-    
+
+#class ProjectInvitee(DbObject):
+#    role: ProjectRole
+
 
 
 
@@ -79,16 +79,14 @@ class User(DbObject):
         # Note that this will not clear invites. Idk what happens if you make the user non project based
         # Also if the user is going from labeler to admin do they get removed from project assignments ?
         # What if they get flipped back do they need to get added to projects?
-    
         return self.organization().invite_user(self, self.email, role, projects = projects)
     
 
-    def add_to_project(self, project : ProjectRole, role):
+    def add_to_project(self, project : "Project", role : Role):
         # Strictly add to projects (only for non admin level roles)
         org_role = self.org_role()
         if org_role.name not in {Role.LABELER.name, Role.REVIEWER.name}:
             raise ValueError("User is not project based and has access to all projects")
-
         self.update_role(org_role, projects = [project])
 
     
@@ -97,26 +95,19 @@ class User(DbObject):
         # If the user is project based and this is the only project they are a member of then they need to reaccept an email invite..
         # Also needs to be tested..
         # Can a user delete themselves? We prob don't want that.. Could check with `assert self.client.get_user() != self.uid`
-        query_str = """mutation RemoveUserFromProject($input: SetProjectMembershipInput!) {
-            changeMembershipForProject(data: $input) {
-                id
-                role {
-                    id
-                }
-                user {
-                    id
-                }
-            }
-        }"""
+        org_role = self.org_role()
+        if org_role.name not in {Role.LABELER.name, Role.REVIEWER.name}:
+            raise ValueError("User is not project based and has access to all projects")
 
+        query_str = """mutation RemoveUserFromProject($input: SetProjectMembershipInput!) {
+            changeMembershipForProject(data: $input) {id role {id} user {id}}}"""
         args = {
             "input": {
                 "userId": self.uid,
                 "projectId": project.uid,
-                "roleId":  self.org_role().uid# Not sure if this is right "ckk4kkc8b002m09198iyzvtmq"
+                "roleId":  Role.NONE.value
                 }
         }
-
         return self.client.execute(query_str, args, experimental = True)
             
  
