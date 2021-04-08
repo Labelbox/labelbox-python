@@ -1,11 +1,45 @@
-from typing import List
+from datetime import datetime
+from labelbox.exceptions import LabelboxError, ResourceNotFoundError
+from labelbox import utils
+from typing import List, Optional
 from labelbox.orm.query import update_fields
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.schema.user import Invitee, ProjectRole, User
+from labelbox.schema.user import ProjectRole, User
+from dataclasses import dataclass
 
 
+@dataclass
+class InviteLimit:
+    remaining: int
+    used: int
+    limit: int
+
+
+@dataclass
+class UsersLimit(InviteLimit):
+    date_limit_was_reached: Optional[datetime]
+
+
+class Invitee(DbObject):
+    created_at = Field.DateTime("created_at")
+    organization_role_name = Field.String("organization_role_name")
+    email = Field.String("email", "inviteeEmail")
+
+    #projectInvites = ProjectInvitee
+
+    def cancel(self):
+        # TODO: Give a way for user to get invite_id from email..
+        query_str = """mutation CancelInvite($where: WhereUniqueIdInput!) {
+            cancelInvite(where: $where) {
+                id
+            }
+        }"""
+        self.client.execute(query_str, {'where': {
+            'id': self.uid
+        }},
+                            experimental=True)
 
 
 class Organization(DbObject):
@@ -41,7 +75,6 @@ class Organization(DbObject):
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
 
-
     def get_user_invites(self):
         query_str = """query GetOrgInvitations($from: ID, $first: PageSize) {
                 organization {
@@ -57,38 +90,60 @@ class Organization(DbObject):
                     }
                 }
             }"""
-        
-        return PaginatedCollection(self.client, query_str, {}, ['organization','invites','nodes'], Invitee, cursor_path = ['organization','invites','nextCursor'], experimental= True)
+        return PaginatedCollection(
+            self.client,
+            query_str, {}, ['organization', 'invites', 'nodes'],
+            Invitee,
+            cursor_path=['organization', 'invites', 'nextCursor'],
+            experimental=True)
 
-    def invite_user(self, email, role ,  projects : List[ProjectRole] = []):   
-        # TODO: Understand edge cases. Catch limit exception.. 
-        # Also the expected upsert behavior doesn't seem to be happening. 
+    def invite_user(self, email, role, projects: List[ProjectRole] = []):
+        remaining_invites = self.invite_limit().remaining
+        if remaining_invites == 0:
+            # Note that if the user already exists then we shouldn't throw this error...
+            # Check if user exists
+            # TODO: If they are deleted then what do we want to do?
+            # Do we still check for number of seats? I guess so..
+            if next(self.users((User.email == email) &
+                               (User.deleted == True)), None) is None:
+                raise LabelboxError(
+                    "Invite(s) cannot be sent because you do not have enough available seats in your organization. "
+                    "Please upgrade your account, revoke pending invitations or remove other users."
+                )
+
+        # TODO: Understand edge cases. Catch limit exception..
+        # Also the expected upsert behavior doesn't seem to be happening.
+        # If an invitation already exists for the user we have to revoke the current one
+        # If the user already exists, then this will update permissions (maybe we can move the query to a new function)
+        invites = self.get_user_invites()
+        for invite in invites:
+            if invite.email == email:
+                raise ValueError(
+                    f"Invite already exists for {email}. Please revoke the invite if you want to update the role or resend."
+                )
+
         query_str = """mutation createInvites($data: [CreateInviteInput!]){
                     createInvites(data: $data){
                         invite {
                             id
+                            createdAt
+                            organizationRoleName
+                            inviteeEmail
                         }
                     }
                 }"""
 
-        return self.client.execute(query_str,{'data' : [{
-                            "inviterId"  : self.client.get_user().uid,
-                            "inviteeEmail" : email,
-                            "organizationId" : self.uid,
-                            "organizationRoleId" :  role,
-                            "projects" : projects
-                }]}, experimental= True)
-
-
-    def cancel_invite(self, invite_id): 
-        # TODO: Give a way for user to get invite_id from email..
-        query_str = """mutation CancelInvite($where: WhereUniqueIdInput!) {
-            cancelInvite(where: $where) {
-                id
-            }
-        }"""
-        return self.client.execute(query_str, {'where' : {'id' : invite_id}}, experimental= True)
-
+        res = self.client.execute(query_str, {
+            'data': [{
+                "inviterId": self.client.get_user().uid,
+                "inviteeEmail": email,
+                "organizationId": self.uid,
+                "organizationRoleId": role,
+                "projects": projects
+            }]
+        },
+                                   experimental=True) # We prob want to return an invitee
+        return Invitee(self.client, res['invite'])
 
     def user_limit(self):
         # Org is based off of the user credentials, so no args
@@ -104,23 +159,47 @@ class Organization(DbObject):
                     used
                     limit   
                 }
-                
                 }
             }
         }
         """
-        res = self.client.execute(query_str, experimental= True)
-        return res['organization']['account']['usersLimit'] # {'dateLimitWasReached': None, 'remaining': 1, 'used': 2, 'limit': 3}
+        res = self.client.execute(query_str, experimental=True)
+        return UsersLimit(
+            **{
+                utils.snake_case(k): v for k, v in res['organization']
+                ['account']['usersLimit'].items()
+            })
 
-        
+    def invite_limit(self):
+        # This accounts for users already in the org.
+        # So used = users + invites, remaining = limit - (users + invites)
+        #Try with different org to make sure this authenticates....
+        res = self.client.execute("""query InvitesLimit($organizationId: ID!) {
+            invitesLimit(where: {id: $organizationId}) {
+                used
+                limit
+                remaining
+            }
+        }""", {"organizationId": self.uid},
+                                  experimental=True)
+        return InviteLimit(
+            **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
+
+    # =====================
+    # Not supporting for now..
+    # =====================
+
+    # Not sure how this works.. Especially when it makes you resend an email..
     def restore_users(self, user):
-        query_string, params = update_fields(user, {User.deleted : False})
+        query_string, params = update_fields(user, {User.deleted: False})
         res = self.client.execute(query_string, params)
         return res
 
     def get_deleted_user(self, email):
-        return  next(self.users(where = ( (User.email == email) & ( User.deleted == True)) ), None)
-        
+        return next(
+            self.users(where=((User.email == email) & (User.deleted == True))),
+            None)
+
     def remove_from_org(user):
         # might just be able to do user.delete()
         # or user.update({'deleted' : True})
@@ -131,3 +210,7 @@ class Organization(DbObject):
     
             }
         }"""
+
+
+#create DbData class that all of the pydantic models inherit from. It will have its own constructor.
+# Or just add in utils (apply_snake_to_dict)
