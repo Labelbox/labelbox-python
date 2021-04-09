@@ -191,7 +191,7 @@ class Project(DbObject, Updateable, Deletable):
         sleep_time = 2
         id_param = "projectId"
         status_param = "status"
-        query_str = """query getProjectIssues($%s: ID!, $%s: IssueStatus) {
+        query_str = """query GetProjectIssuesExportPyApi($%s: ID!, $%s: IssueStatus) {
             project(where: { id: $%s }) {
                 issueExportUrl(where: { status: $%s })
             }
@@ -210,7 +210,7 @@ class Project(DbObject, Updateable, Deletable):
             })
             res = res['project']
 
-            if res.get('issueExportUrl'):
+            if res.get('issueExportUrl') and res.get('issueExportUrl') != '':
                 return res
 
             timeout_seconds -= sleep_time
