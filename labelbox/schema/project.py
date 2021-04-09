@@ -211,7 +211,7 @@ class Project(DbObject, Updateable, Deletable):
             res = res['project']
 
             if res.get('issueExportUrl') and res.get('issueExportUrl') != '':
-                return res
+                return res['issueExportUrl']
 
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
