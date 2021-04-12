@@ -194,7 +194,7 @@ class Project(DbObject, Updateable, Deletable):
             }
         }""" % (id_param, status_param, id_param, status_param)
 
-        valid_statuses = [None, "Open", "Resolved"]
+        valid_statuses = {None, "Open", "Resolved"}
 
         if status not in valid_statuses:
             raise ValueError("status must be in {}. Found {}".format(
