@@ -11,7 +11,7 @@ from labelbox import utils
 from labelbox.orm import query
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.invite import ProjectInvite
+from labelbox.schema.invite import Invite
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
@@ -95,7 +95,7 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(
             self.client,
             query_str, {"projectId": self.uid}, ['project', 'invites', 'nodes'],
-            ProjectInvite,
+            Invite,
             cursor_path=['project', 'invites', 'nextCursor'],
             experimental=True)
 
