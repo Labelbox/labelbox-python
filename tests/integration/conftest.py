@@ -165,6 +165,6 @@ def project_pack(client):
     projects = [
         client.create_project(name=f"user-proj-{idx}") for idx in range(2)
     ]
-    yield project
+    yield projects
     for proj in projects:
         proj.delete()
