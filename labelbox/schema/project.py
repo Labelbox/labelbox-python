@@ -8,10 +8,10 @@ from typing import Dict, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
-from labelbox.orm import query
-from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.invite import Invite
+from labelbox.orm import query
+from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship

@@ -1,14 +1,13 @@
 from typing import Any, Dict, List
 
-from labelbox.schema.invite import Invite, InviteLimit, UserLimit
-from labelbox.schema.role import Role
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.invite import Invite, InviteLimit, UserLimit, ProjectRole
 from labelbox.schema.user import User
-from labelbox.schema.role import Role, ProjectRole
+from labelbox.schema.role import Role
 
 
 class Organization(DbObject):
@@ -76,10 +75,11 @@ class Organization(DbObject):
         query_str = """mutation createInvitesPyApi($data: [CreateInviteInput!]){
                     createInvites(data: $data){  invite { id createdAt organizationRoleName inviteeEmail}}}"""
 
-        project_roles = [{
+        projects = [{
             "projectId": x.project.uid,
             "projectRoleId": x.role.uid
         } for x in project_roles]
+
         res = self.client.execute(
             query_str, {
                 'data': [{
@@ -87,7 +87,7 @@ class Organization(DbObject):
                     "inviteeEmail": email,
                     "organizationId": self.uid,
                     "organizationRoleId": role.uid,
-                    "projects": project_roles
+                    "projects": projects
                 }]
             },
             experimental=True)  # We prob want to return an invite

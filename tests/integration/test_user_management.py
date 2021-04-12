@@ -1,6 +1,6 @@
 import pytest
 
-from labelbox.schema.organization import ProjectRole
+from labelbox import ProjectRole
 
 
 def test_org_invite(client, organization, environ):
