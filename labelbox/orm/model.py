@@ -191,22 +191,26 @@ class Relationship:
         ToMany = auto()
 
     @staticmethod
-    def ToOne(*args):
-        return Relationship(Relationship.Type.ToOne, *args)
+    def ToOne(*args, precompute=False):
+        return Relationship(Relationship.Type.ToOne,
+                            *args,
+                            precompute=precompute)
 
     @staticmethod
-    def ToMany(*args):
-        return Relationship(Relationship.Type.ToMany, *args)
+    def ToMany(*args, **kwargs):
+        return Relationship(Relationship.Type.ToMany, *args, **kwargs)
 
     def __init__(self,
                  relationship_type,
                  destination_type_name,
                  filter_deleted=True,
                  name=None,
-                 graphql_name=None):
+                 graphql_name=None,
+                 precompute=False):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
+        self.precompute = precompute
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (

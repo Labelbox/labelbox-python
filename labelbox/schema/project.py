@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from labelbox import utils
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.user import Invitee, User
+from labelbox.schema.invite import ProjectInvite
 from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -26,13 +26,6 @@ except AttributeError:
 
 logger = logging.getLogger(__name__)
 
-
-
-@dataclass
-class ProjectMember:
-    project_role: str
-    user: User
-  
 
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
@@ -86,69 +79,43 @@ class Project(DbObject, Updateable, Deletable):
                                                  "active_prediction_model")
     predictions = Relationship.ToMany("Prediction", False)
     ontology = Relationship.ToOne("Ontology", True)
-    
 
-    """
-           query GetProjectInvitations($from: ID, $first: PageSize, $projectId: ID!) {
-                    project(where: {id: $projectId}) {
-                        id
-                        invites(from: $from, first: $first) {
-                        nodes {
-                                id
-                                createdAt
-                                organizationRoleName
-                                inviteeEmail
-                            projectInvites {
-                                id
-                                projectRoleName
-                                projectId
-                            
-                            }   
-                        }
-                        nextCursor
-                        }
-                    }
-                    }
-    """
+    def invites(self):
+        """ Fetch all current invites for this project
+        
+        Returns:
+            A `PaginatedCollection` of `ProjectInvite`s.
 
-    def invitees(self):
-        query_str = """    
-            query GetProjectInvitations($from: ID, $first: PageSize, $projectId: ID!) {
-                    project(where: {id: $projectId}) {
-                        id
-                        invites(from: $from, first: $first) {
-                        nodes {
-                            id
-                            createdAt
-                            organizationRoleName
-                            inviteeEmail
-                        }
-                        nextCursor
-                    }
-                }
-            }
         """
-        # Not sure if cursor should be project/invite/nextCursor.        
-        return PaginatedCollection(self.client, query_str, {"projectId" : self.uid}, ['project','invites','nodes'], Invitee, cursor_path = ['project','nextCursor'], experimental= True) 
 
+        query_str = """query GetProjectInvitationsPyApi($from: ID, $first: PageSize, $projectId: ID!) {
+                project(where: {id: $projectId}) {id
+                invites(from: $from, first: $first) { nodes { id createdAt organizationRoleName inviteeEmail
+                projectInvites { projectId projectRoleName } } nextCursor}}}
+        """
+        return PaginatedCollection(
+            self.client,
+            query_str, {"projectId": self.uid}, ['project', 'invites', 'nodes'],
+            ProjectInvite,
+            cursor_path=['project', 'invites', 'nextCursor'],
+            experimental=True)
 
     def members(self):
-       id_param = "projectId"
-       query_str = """query ProjectMemberOverviewPyApi($%s: ID!) {
-              project(where: {id : $%s}) {
-                  id
-                  members(skip: %%d first: %%d){
-                      id
-                      user { %s }
-                      role { id name }
-                  }
-              }
-       }""" % (id_param, id_param, query.results_query_part(Entity.User) )
+        """ Fetch all current members for this project
 
-       print(query_str)
-       print("UID", str(self.uid))
-       return PaginatedCollection(self.client, query_str, {id_param: str(self.uid) },
-                                  ["project", "members"], lambda client, res: ProjectMember(user = Entity.User(client, res['user']), project_role = res['role']['name']))
+        Returns:
+            A `PaginatedCollection of `ProjectMember`s
+
+        """
+        id_param = "projectId"
+        query_str = """query ProjectMemberOverviewPyApi($%s: ID!) {
+             project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } }
+           }
+        }""" % (id_param, id_param, query.results_query_part(Entity.User))
+        return PaginatedCollection(
+            self.client, query_str, {id_param: str(self.uid)},
+            ["project", "members"],
+            lambda client, res: ProjectMember(client, res))
 
     def create_label(self, **kwargs):
         """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
@@ -683,6 +650,11 @@ class Project(DbObject, Updateable, Deletable):
                 f'Invalid annotations given of type: {type(annotations)}')
 
 
+class ProjectMember(DbObject):
+    user = Relationship.ToOne("User", precompute=True)
+    role = Relationship.ToOne("Role", precompute=True)
+
+
 class LabelingParameterOverride(DbObject):
     """ Customizes the order of assets in the label queue.
 
@@ -692,6 +664,7 @@ class LabelingParameterOverride(DbObject):
     """
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
+    data_row = Relationship.ToOne("data_row", precompute=True)
 
 
 LabelerPerformance = namedtuple(

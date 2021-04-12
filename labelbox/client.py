@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+from labelbox.schema.role import Role, Roles
 import logging
 import mimetypes
 import os
@@ -86,6 +87,8 @@ class Client:
             params (dict): Query parameters referenced within the query.
             timeout (float): Max allowed time for query execution,
                 in seconds.
+            experimental (bool): Enables users to query experimental features.
+                Users should be aware that these features could change slightly over time.
         Returns:
             dict, parsed JSON response.
         Raises:
@@ -120,7 +123,12 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            endpoint = self.endpoint.replace('graphql', '_gql') if experimental else self.endpoint 
+            endpoint = self.endpoint
+
+            if experimental:
+                endpoint = self.endpoint.replace('graphql', '_gql')
+                logger.warn("Experimental queries/mutations aren't guarenteed to maintain their interface.")
+            
             response = requests.post(endpoint,
                                      data=data,
                                      headers=self.headers,
@@ -386,6 +394,8 @@ class Client:
         not_deleted = db_object_type.deleted == False
         where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
+
+        print(query_str, params)
         return PaginatedCollection(
             self, query_str, params,
             [utils.camel_case(db_object_type.type_name()) + "s"],
@@ -491,3 +501,12 @@ class Client:
                 any of the attribute names given in kwargs.
         """
         return self._create(Project, kwargs)
+
+    def get_roles(self):
+        """
+        
+        Returns:
+            Roles: Object containing all valid user and org level permissions
+        """
+        return Roles(self)
+
