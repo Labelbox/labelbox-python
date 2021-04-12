@@ -15,11 +15,12 @@ class Roles:
 
     """
     _instance = None
+
     def __new__(cls, client):
         if cls._instance is None:
             cls._instance = super(Roles, cls).__new__(cls)
             query_str = """query GetAvailableUserRolesPyApi { roles { id name } }"""
-            res = client.execute(query_str)    
+            res = client.execute(query_str)
             valid_roles = set()
             for result in res['roles']:
                 _name = result['name'].upper().replace(' ', '_')
@@ -31,13 +32,15 @@ class Roles:
         return cls._instance
 
     def __repr__(self):
-        return str({k : getattr(self, k) for k in self.valid_roles})
+        return str({k: getattr(self, k) for k in self.valid_roles})
 
     def __getitem__(self, name):
         if name in self.valid_roles:
             return getattr(self, name)
         else:
-            raise ValueError(f"No role named {name} exists. Valid names are one of {self.valid_roles}")
+            raise ValueError(
+                f"No role named {name} exists. Valid names are one of {self.valid_roles}"
+            )
 
     def __iter__(self):
         return self
@@ -51,13 +54,13 @@ class Roles:
         return getattr(self, key)
 
 
-
 class Role(DbObject):
     name = Field.String("name")
-  
+
 
 class OrgRole(Role):
     ...
+
 
 class UserRole(Role):
     ...
@@ -68,7 +71,4 @@ class ProjectRole(BaseModel):
     project_role_id: str
 
     def dict(self):
-        return {utils.camel_case(k) : v for k, v in super().dict().items()}
-
-
-
+        return {utils.camel_case(k): v for k, v in super().dict().items()}
