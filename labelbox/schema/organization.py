@@ -72,8 +72,10 @@ class Organization(DbObject):
         if self.client.get_user().email == email:
             raise ValueError("Cannot update your own role")
 
-        query_str = """mutation createInvitesPyApi($data: [CreateInviteInput!]){
-                    createInvites(data: $data){  invite { id createdAt organizationRoleName inviteeEmail}}}"""
+        data_param = "data"
+        query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
+                    createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail}}}""" % (
+            data_param, data_param)
 
         projects = [{
             "projectId": x.project.uid,
@@ -82,7 +84,7 @@ class Organization(DbObject):
 
         res = self.client.execute(
             query_str, {
-                'data': [{
+                data_param: [{
                     "inviterId": self.client.get_user().uid,
                     "inviteeEmail": email,
                     "organizationId": self.uid,
@@ -168,12 +170,11 @@ class Organization(DbObject):
             InviteLimit
     
         """
-
-        res = self.client.execute(
-            """query InvitesLimitPyApi($organizationId: ID!) {
-            invitesLimit(where: {id: $organizationId}) { used limit remaining }
-        }""", {"organizationId": self.uid},
-            experimental=True)
+        org_id_param = "organizationId"
+        res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
+            invitesLimit(where: {id: $%s}) { used limit remaining }
+        }""" % (org_id_param, org_id_param), {org_id_param: self.uid},
+                                  experimental=True)
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
@@ -188,7 +189,8 @@ class Organization(DbObject):
         if not isinstance(user, User):
             raise TypeError(f"Expected user to be of type User, found {user}")
 
+        user_id_param = "userId"
         self.client.execute(
-            """mutation DeleteMemberPyApi($id: ID!) {
-            updateUser(where: {id: $id}, data: {deleted: true}) { id deleted }
-        }""", {'id': user.uid})
+            """mutation DeleteMemberPyApi($%s: ID!) {
+            updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
+        }""" % (user_id_param, user_id_param), {user_id_param: user.uid})

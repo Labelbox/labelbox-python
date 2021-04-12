@@ -126,7 +126,7 @@ class Client:
 
             if experimental:
                 endpoint = self.endpoint.replace('graphql', '_gql')
-                logger.warn(
+                logger.info(
                     "Experimental queries/mutations aren't guarenteed to maintain their interface."
                 )
 

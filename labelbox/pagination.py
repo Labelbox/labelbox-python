@@ -64,26 +64,23 @@ class PaginatedCollection:
             results = results[path]
         return results
 
+    def get_query(self):
+        if self.cursor_path:
+            # Cursor Pagination
+            self.params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
+            return self.query
+
+        # Offset Pagination
+        return self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
+
     def __next__(self):
         if len(self._data) <= self._data_ind:
             if self._fetched_all:
                 raise StopIteration()
 
-            if self.cursor_path:
-                # Cursor Pagination
-                self.params.update({
-                    'from': self.next_cursor,
-                    'first': _PAGE_SIZE
-                })
-                query = self.query
-            else:
-                # Offset Pagination
-                query = self.query % (self._fetched_pages * _PAGE_SIZE,
-                                      _PAGE_SIZE)
-
             self._fetched_pages += 1
 
-            results = self.client.execute(query,
+            results = self.client.execute(self.get_query(),
                                           self.params,
                                           experimental=self.experimental)
             page_data = self.get_page_data(results)
