@@ -68,5 +68,5 @@ class UserRole(Role):
 
 @dataclass
 class ProjectRole:
-    project: Project
+    project: "Project"
     role: Role
