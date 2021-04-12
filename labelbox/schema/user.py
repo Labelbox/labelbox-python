@@ -58,7 +58,7 @@ class User(DbObject):
                 "roleId": role.uid
             })
 
-    def remove_from_project(self, project):
+    def remove_from_project(self, project: Project):
         """ Removes a User from a project. Only used for project based users.
         Project based user means their org role is "NONE"
 
@@ -68,7 +68,7 @@ class User(DbObject):
         """
         self.upsert_project_role(project, self.client.get_roles()['NONE'])
 
-    def upsert_project_role(self, project, role):
+    def upsert_project_role(self, project: Project, role: Role):
         """ Updates or replaces a User's role in a project.
 
         Args:

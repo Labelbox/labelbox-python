@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from labelbox.schema.invite import Invite, InviteLimit, UserLimit, UsersLimit
+from labelbox.schema.invite import Invite, InviteLimit, UserLimit
 from labelbox.schema.role import Role
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
