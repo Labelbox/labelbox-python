@@ -1,7 +1,6 @@
 import pytest
 
 from labelbox.schema.organization import ProjectRole
-from conftest import Environ
 
 
 def test_org_invite(client, organization, environ):
@@ -9,13 +8,17 @@ def test_org_invite(client, organization, environ):
     dummy_email = "none@labelbox.com"
     invite_limit = organization.invite_limit()
 
-    if environ == Environ.PROD:
+    if environ.value == "prod":
         user_limit = organization.user_limit()
         assert invite_limit.remaining > 0, "No invites available for the account associated with this key."
+    elif environ.value != "staging":
+        raise ValueError(
+            f"Expected tests to run against either prod or staging. Found {environ}"
+        )
 
     invite = organization.invite_user(dummy_email, role)
 
-    if environ == Environ.PROD:
+    if environ.value == "prod":
         invite_limit_after = organization.invite_limit()
         user_limit_after = organization.user_limit()
         # One user added

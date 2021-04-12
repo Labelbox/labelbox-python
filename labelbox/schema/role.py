@@ -43,14 +43,11 @@ class Roles:
             )
 
     def __iter__(self):
+        self.key_iter = iter(self.valid_roles)
         return self
 
     def __next__(self):
-        try:
-            key = self.valid_roles[self.index]
-        except:
-            raise StopIteration
-        self.index += 1
+        key = next(self.key_iter)
         return getattr(self, key)
 
 
