@@ -1,6 +1,7 @@
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
+from labelbox.schema.user import Role, User
 import os
 from random import randint
 import re
@@ -128,4 +129,33 @@ def sample_video() -> str:
 
 @pytest.fixture
 def organization(client):
-    return client.get_organization()
+    # Must have at least one seat open in your org to run these tests
+    org = client.get_organization()
+    yield org
+    for invite in org.invites():
+        if "@labelbox.com" in invite.email:
+            invite.revoke()
+
+
+@pytest.fixture
+def project_based_user(client, rand_gen):
+    email = rand_gen(str)
+    # Use old mutation because it doesn't require users to accept email invites
+    query_str = """mutation MakeNewUserPyApi { 
+        addMembersToOrganization( 
+            data: { 
+                emails: ["%s@labelbox.com"], 
+                orgRoleId: "%s",
+                projectRoles: []
+            } 
+        ) {
+        newUserId
+        }
+    }
+    """ % (email, str(client.get_roles()['NONE'].uid))
+    user_id = client.execute(
+        query_str)['addMembersToOrganization'][0]['newUserId']
+    assert user_id is not None, "Unable to add user with old mutation"
+    user = client._get_single(User, user_id)
+    yield user
+    client.get_organization().remove_user(user)

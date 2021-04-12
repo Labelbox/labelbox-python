@@ -11,7 +11,14 @@ class PaginatedCollection:
     __init__ map exactly to object attributes.
     """
 
-    def __init__(self, client, query, params, dereferencing, obj_class, cursor_path = None, experimental = False):
+    def __init__(self,
+                 client,
+                 query,
+                 params,
+                 dereferencing,
+                 obj_class,
+                 cursor_path=None,
+                 experimental=False):
         """ Creates a PaginatedCollection.
 
         Args:
@@ -25,7 +32,8 @@ class PaginatedCollection:
                 reach the paginated objects of interest.
             obj_class (type): The class of object to be instantiated with each
                 dict containing db values.
-            from_path: If not None, this is used to find the next cursor
+            cursor_path: If not None, this is used to find the cursor
+            experimental: Used to call experimental endpoints
         """
         self.client = client
         self.query = query
@@ -40,20 +48,16 @@ class PaginatedCollection:
         self._data_ind = 0
         self.next_cursor = None
         self.cursor_path = cursor_path
-        
 
     def __iter__(self):
         self._data_ind = 0
         return self
 
-
     def get_page_data(self, results):
         for deref in self.dereferencing:
             results = results[deref]
 
-        return [
-            self.obj_class(self.client, result) for result in results
-        ]
+        return [self.obj_class(self.client, result) for result in results]
 
     def get_next_cursor(self, results):
         for path in self.cursor_path:
@@ -67,15 +71,21 @@ class PaginatedCollection:
 
             if self.cursor_path:
                 # Cursor Pagination
-                self.params.update({'from' : self.next_cursor, 'first': _PAGE_SIZE})
+                self.params.update({
+                    'from': self.next_cursor,
+                    'first': _PAGE_SIZE
+                })
                 query = self.query
             else:
                 # Offset Pagination
-                query = self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
-            
+                query = self.query % (self._fetched_pages * _PAGE_SIZE,
+                                      _PAGE_SIZE)
+
             self._fetched_pages += 1
 
-            results = self.client.execute(query, self.params, experimental = self.experimental)
+            results = self.client.execute(query,
+                                          self.params,
+                                          experimental=self.experimental)
             page_data = self.get_page_data(results)
             self._data.extend(page_data)
 
@@ -89,7 +99,7 @@ class PaginatedCollection:
                 self.next_cursor = self.get_next_cursor(results)
                 if self.next_cursor is None:
                     self._fetched_all = True
-                
+
         rval = self._data[self._data_ind]
         self._data_ind += 1
         return rval
