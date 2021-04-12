@@ -184,6 +184,10 @@ class Relationship:
         name (str): Name of the relationship in the snake_case format.
         graphql_name (str): Name of the relationships server-side. Most often
             (not always) just a camelCase version of `name`.
+        precompute (bool) : Whether or not to precompute the relationship.
+            Useful for objects that aren't directly queryable from the api (relationship query builder won't work)
+            Also useful for expensive ToOne relationships 
+
     """
 
     class Type(Enum):
@@ -197,8 +201,8 @@ class Relationship:
                             precompute=precompute)
 
     @staticmethod
-    def ToMany(*args, **kwargs):
-        return Relationship(Relationship.Type.ToMany, *args, **kwargs)
+    def ToMany(*args):
+        return Relationship(Relationship.Type.ToMany, *args)
 
     def __init__(self,
                  relationship_type,

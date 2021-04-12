@@ -72,10 +72,9 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
-    #TODO: Add exponential backoff so we don'tt overwhelm the api
-    #@retry.Retry(predicate=retry.if_exception_type(
-    #    labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, experimental = False):
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.InternalServerError))
+    def execute(self, query, params=None, timeout=30.0, experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -127,8 +126,10 @@ class Client:
 
             if experimental:
                 endpoint = self.endpoint.replace('graphql', '_gql')
-                logger.warn("Experimental queries/mutations aren't guarenteed to maintain their interface.")
-            
+                logger.warn(
+                    "Experimental queries/mutations aren't guarenteed to maintain their interface."
+                )
+
             response = requests.post(endpoint,
                                      data=data,
                                      headers=self.headers,
@@ -509,4 +510,3 @@ class Client:
             Roles: Object containing all valid user and org level permissions
         """
         return Roles(self)
-

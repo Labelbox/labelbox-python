@@ -13,7 +13,7 @@ def test_org_invite(client, organization, environ):
         user_limit = organization.user_limit()
         assert invite_limit.remaining > 0, "No invites available for the account associated with this key."
 
-    invite = organization.invite_user(dummy_email, role.uid)
+    invite = organization.invite_user(dummy_email, role)
 
     if environ == Environ.PROD:
         invite_limit_after = organization.invite_limit()
@@ -34,7 +34,7 @@ def test_org_invite(client, organization, environ):
     assert in_list, "Invite not found"
 
     with pytest.raises(ValueError) as exc_info:
-        organization.invite_user(dummy_email, role.uid)
+        organization.invite_user(dummy_email, role)
     assert "Invite already exists for none@labelbox.com. Please revoke the invite if you want to update the role or resend." in str(
         exc_info.value)
 
@@ -59,7 +59,7 @@ def test_project_invite(client, organization, project_pack):
                                  project_role_id=roles['REVIEWER'].uid)
     invite = organization.invite_user(
         dummy_email,
-        roles['NONE'].uid,
+        roles['NONE'],
         project_roles=[project_role_1, project_role_2])
 
     project_invite = next(project_1.invites(), None)
