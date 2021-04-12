@@ -396,7 +396,6 @@ class Client:
         where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
-        print(query_str, params)
         return PaginatedCollection(
             self, query_str, params,
             [utils.camel_case(db_object_type.type_name()) + "s"],

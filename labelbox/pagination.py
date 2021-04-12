@@ -78,11 +78,11 @@ class PaginatedCollection:
             if self._fetched_all:
                 raise StopIteration()
 
-            self._fetched_pages += 1
-
             results = self.client.execute(self.get_query(),
                                           self.params,
                                           experimental=self.experimental)
+            self._fetched_pages += 1
+
             page_data = self.get_page_data(results)
             self._data.extend(page_data)
 
