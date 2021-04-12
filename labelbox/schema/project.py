@@ -177,6 +177,40 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    def export_issues(self, status=None):
+        """ Calls the server-side Issues exporting that 
+        returns the URL to that payload.
+
+        Args:
+            status (string): valid values: Open, Resolved
+        Returns:
+            URL of the data file with this Project's issues. 
+        """
+        id_param = "projectId"
+        status_param = "status"
+        query_str = """query GetProjectIssuesExportPyApi($%s: ID!, $%s: IssueStatus) {
+            project(where: { id: $%s }) {
+                issueExportUrl(where: { status: $%s })
+            }
+        }""" % (id_param, status_param, id_param, status_param)
+
+        valid_statuses = {None, "Open", "Resolved"}
+
+        if status not in valid_statuses:
+            raise ValueError("status must be in {}. Found {}".format(
+                valid_statuses, status))
+
+        res = self.client.execute(query_str, {
+            id_param: self.uid,
+            status_param: status
+        })
+
+        res = res['project']
+
+        logger.debug("Project '%s' issues export, link generated", self.uid)
+
+        return res.get('issueExportUrl')
+
     def upsert_instructions(self, instructions_file: str):
         """
         * Uploads instructions to the UI. Running more than once will replace the instructions
