@@ -177,18 +177,15 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def export_issues(self, status=None, timeout_seconds=60):
-        """ Calls the server-side Issues exporting that generates a JSON
-        payload, and returns the URL to that payload.
+    def export_issues(self, status=None):
+        """ Calls the server-side Issues exporting that 
+        returns the URL to that payload.
 
         Args:
-            timeout_seconds (float): Max waiting time, in seconds.
             status (string): valid values: Open, Resolved
         Returns:
-            URL of the data file with this Project's issues. If the server didn't
-            generate during the `timeout_seconds` period, None is returned.
+            URL of the data file with this Project's issues. 
         """
-        sleep_time = 2
         id_param = "projectId"
         status_param = "status"
         query_str = """query GetProjectIssuesExportPyApi($%s: ID!, $%s: IssueStatus) {
@@ -203,23 +200,16 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("status must be in {}. Found {}".format(
                 valid_statuses, status))
 
-        while True:
-            res = self.client.execute(query_str, {
-                id_param: self.uid,
-                status_param: status
-            })
-            res = res['project']
+        res = self.client.execute(query_str, {
+            id_param: self.uid,
+            status_param: status
+        })
 
-            if res.get('issueExportUrl') and res.get('issueExportUrl') != '':
-                return res['issueExportUrl']
+        res = res['project']
 
-            timeout_seconds -= sleep_time
-            if timeout_seconds <= 0:
-                return None
+        logger.debug("Project '%s' issues export, link generated", self.uid)
 
-            logger.debug("Project '%s' issues export, waiting for server...",
-                         self.uid)
-            time.sleep(sleep_time)
+        return res.get('issueExportUrl')
 
     def upsert_instructions(self, instructions_file: str):
         """
