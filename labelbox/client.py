@@ -505,8 +505,8 @@ class Client:
 
     def get_roles(self):
         """
-        
         Returns:
-            Roles: Object containing all valid user and org level permissions
+            Roles: Provides information on available roles within an organization. 
+            Roles are used for user management.
         """
         return Roles(self)
