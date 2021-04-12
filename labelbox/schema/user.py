@@ -50,7 +50,7 @@ class User(DbObject):
             role (Role): The role that you want to set for this user.
 
         """
-        
+
         self.client.execute(
             """mutation SetOrganizationRolePyApi($userId: ID!, $roleId: ID!) { setOrganizationRole(data: {userId: $userId, roleId: $roleId}) { id name }}""",
             {
