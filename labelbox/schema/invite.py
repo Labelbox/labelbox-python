@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Optional
 from datetime import datetime
 
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Entity
+from labelbox.orm.model import Field
 from labelbox.schema.role import ProjectRole
 
 
@@ -40,6 +40,17 @@ class Invite(DbObject):
     organization_role_name = Field.String("organization_role_name")
     email = Field.String("email", "inviteeEmail")
 
+    def __init__(self, client, invite_response):
+        project_roles = invite_response.pop("projectInvites", [])
+        super().__init__(client, invite_response)
+
+        self.project_roles = [
+            ProjectRole(
+                project=client.get_project(r['projectId']),
+                role=client.get_roles()[r['projectRoleName'].upper().replace(
+                    " ", "_")]) for r in project_roles
+        ]
+
     def revoke(self):
         """ Makes the invitation invalid.
         """
@@ -49,20 +60,3 @@ class Invite(DbObject):
             'id': self.uid
         }},
                             experimental=True)
-
-
-class ProjectInvite(Invite):
-    """
-    A project level invite. This is an org invite but for users with project level permissions.
-
-    """
-
-    def __init__(self, client, invite_response):
-        project_roles = invite_response.pop("projectInvites")
-        super().__init__(client, invite_response)
-        self.project_roles = [
-            ProjectRole(project_id=r['projectId'],
-                        project_role_id=client.get_roles()[
-                            r['projectRoleName'].upper().replace(" ", "_")].uid)
-            for r in project_roles
-        ]

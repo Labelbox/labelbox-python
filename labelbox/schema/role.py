@@ -1,13 +1,12 @@
 from pydantic import BaseModel
-
-from labelbox import utils
+from dataclasses import dataclass
 from labelbox.orm.model import Field
 from labelbox.orm.db_object import DbObject
 
 
 class Roles:
     """
-    Object that manges org and user roles
+    Object that manages org and user roles
 
         >>> roles = client.get_roles()
         >>> roles.valid_roles # lists all valid roles
@@ -63,9 +62,7 @@ class UserRole(Role):
     ...
 
 
-class ProjectRole(BaseModel):
-    project_id: str
-    project_role_id: str
-
-    def dict(self):
-        return {utils.camel_case(k): v for k, v in super().dict().items()}
+@dataclass
+class ProjectRole:
+    project: "Project"
+    role: Role

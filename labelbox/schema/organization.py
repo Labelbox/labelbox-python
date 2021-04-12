@@ -76,7 +76,10 @@ class Organization(DbObject):
         query_str = """mutation createInvitesPyApi($data: [CreateInviteInput!]){
                     createInvites(data: $data){  invite { id createdAt organizationRoleName inviteeEmail}}}"""
 
-        project_roles = [x.dict() for x in project_roles]
+        project_roles = [{
+            "projectId": x.project.uid,
+            "projectRoleId": x.role.uid
+        } for x in project_roles]
         res = self.client.execute(
             query_str, {
                 'data': [{
@@ -98,7 +101,6 @@ class Organization(DbObject):
                     project_roles: List[ProjectRole] = []) -> Invite:
         """
         Invite a new member to the org. This will send the user an email invite
-        If the email is the same as a currently outstanding invite, it will replace that invite with the new permissions
 
         Args:
             email (str): email address of the user to invite
@@ -182,6 +184,9 @@ class Organization(DbObject):
         Args:
             user (User): The user to delete from the org
         """
+
+        if not isinstance(user, User):
+            raise TypeError(f"Expected user to be of type User, found {user}")
 
         self.client.execute(
             """mutation DeleteMemberPyApi($id: ID!) {

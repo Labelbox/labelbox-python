@@ -56,10 +56,8 @@ def test_project_invite(client, organization, project_pack):
     project_1, project_2 = project_pack
     roles = client.get_roles()
     dummy_email = "none1@labelbox.com"
-    project_role_1 = ProjectRole(project_id=project_1.uid,
-                                 project_role_id=roles['LABELER'].uid)
-    project_role_2 = ProjectRole(project_id=project_2.uid,
-                                 project_role_id=roles['REVIEWER'].uid)
+    project_role_1 = ProjectRole(project=project_1, role=roles['LABELER'])
+    project_role_2 = ProjectRole(project=project_2, role=roles['REVIEWER'])
     invite = organization.invite_user(
         dummy_email,
         roles['NONE'],
@@ -67,14 +65,14 @@ def test_project_invite(client, organization, project_pack):
 
     project_invite = next(project_1.invites(), None)
 
-    assert set([(proj_invite.project_id, proj_invite.project_role_id)
+    assert set([(proj_invite.project.uid, proj_invite.role.uid)
                 for proj_invite in project_invite.project_roles
-               ]) == set([(proj_role.project_id, proj_role.project_role_id)
+               ]) == set([(proj_role.project.uid, proj_role.role.uid)
                           for proj_role in [project_role_1, project_role_2]])
 
-    assert set([(proj_invite.project_id, proj_invite.project_role_id)
+    assert set([(proj_invite.project.uid, proj_invite.role.uid)
                 for proj_invite in project_invite.project_roles
-               ]) == set([(proj_role.project_id, proj_role.project_role_id)
+               ]) == set([(proj_role.project.uid, proj_role.role.uid)
                           for proj_role in [project_role_1, project_role_2]])
 
     project_members = project_1.members()
