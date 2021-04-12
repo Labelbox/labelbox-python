@@ -44,13 +44,13 @@ class User(DbObject):
         """ Updated the `User`s organization role. 
 
         See client.get_roles() to get all valid roles
+        If you a user is converted from project level permissions to org level permissions and then convert back, their permissions will remain for each individual project
 
         Args:
             role (Role): The role that you want to set for this user.
 
         """
-
-        # IF you convert a user from project level permissions to org permissions and then convert back, their permissions will remain for each individual project
+        
         self.client.execute(
             """mutation SetOrganizationRolePyApi($userId: ID!, $roleId: ID!) { setOrganizationRole(data: {userId: $userId, roleId: $roleId}) { id name }}""",
             {
