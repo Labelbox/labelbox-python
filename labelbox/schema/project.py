@@ -86,15 +86,16 @@ class Project(DbObject, Updateable, Deletable):
             A `PaginatedCollection` of `ProjectInvite`s.
 
         """
-
-        query_str = """query GetProjectInvitationsPyApi($from: ID, $first: PageSize, $projectId: ID!) {
-                project(where: {id: $projectId}) {id
-                invites(from: $from, first: $first) { nodes { id createdAt organizationRoleName inviteeEmail
+        id_param = "projectId"
+        query_str = """query GetProjectInvitationsPyApi($from: ID, $first: PageSize, $%s: ID!) {
+                project(where: {id: $%s}) {id
+                invites(from: $from, first: $first) { nodes { %s
                 projectInvites { projectId projectRoleName } } nextCursor}}}
-        """
+        """ % (id_param, id_param, query.results_query_part(Entity.Invite))
+
         return PaginatedCollection(
             self.client,
-            query_str, {"projectId": self.uid}, ['project', 'invites', 'nodes'],
+            query_str, {id_param: self.uid}, ['project', 'invites', 'nodes'],
             Invite,
             cursor_path=['project', 'invites', 'nextCursor'],
             experimental=True)

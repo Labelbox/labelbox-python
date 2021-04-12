@@ -50,13 +50,16 @@ class User(DbObject):
             role (Role): The role that you want to set for this user.
 
         """
+        user_id_param = "userId"
+        role_id_param = "roleId"
+        query_str = """mutation SetOrganizationRolePyApi($%s: ID!, $%s: ID!) { 
+            setOrganizationRole(data: {userId: $userId, roleId: $roleId}) { id name }}
+        """ % (user_id_param, role_id_param)
 
-        self.client.execute(
-            """mutation SetOrganizationRolePyApi($userId: ID!, $roleId: ID!) { setOrganizationRole(data: {userId: $userId, roleId: $roleId}) { id name }}""",
-            {
-                "userId": self.uid,
-                "roleId": role.uid
-            })
+        self.client.execute(query_str, {
+            user_id_param: self.uid,
+            role_id_param: role.uid
+        })
 
     def remove_from_project(self, project: Project):
         """ Removes a User from a project. Only used for project based users.
@@ -87,11 +90,17 @@ class User(DbObject):
         if not isinstance(project, Project):
             raise TypeError(f"Must provide a `Project` object. Found {project}")
 
+        project_id_param = "projectId"
+        user_id_param = "userId"
+        role_id_param = "roleId"
+        query_str = """mutation SetProjectMembershipPyApi($%s: ID!, $%s: ID!, $%s: ID!) {
+                setProjectMembership(data: {%s: $userId, roleId: $%s, projectId: $%s}) {id}}
+        """ % (user_id_param, role_id_param, project_id_param, user_id_param,
+               role_id_param, project_id_param)
+
         self.client.execute(
-            """mutation SetProjectMembershipPyApi($projectId: ID!, $userId: ID!, $roleId: ID!) {
-                setProjectMembership(data: {userId: $userId, roleId: $roleId, projectId: $projectId}) {id}}
-        """, {
-                "projectId": project.uid,
-                "roleId": role.uid,
-                "userId": self.uid
+            query_str, {
+                project_id_param: project.uid,
+                user_id_param: self.uid,
+                role_id_param: role.uid
             })
