@@ -1,7 +1,6 @@
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
-from labelbox.schema.user import Role, User
 import os
 from random import randint
 import re
@@ -9,8 +8,8 @@ from string import ascii_letters
 
 import pytest
 
+from labelbox.schema.user import User
 from labelbox import Client
-from labelbox.schema.labeling_frontend import LabelingFrontend
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -159,3 +158,13 @@ def project_based_user(client, rand_gen):
     user = client._get_single(User, user_id)
     yield user
     client.get_organization().remove_user(user)
+
+
+@pytest.fixture
+def project_pack(client):
+    projects = [
+        client.create_project(name=f"user-proj-{idx}") for idx in range(2)
+    ]
+    yield project
+    for proj in projects:
+        proj.delete()

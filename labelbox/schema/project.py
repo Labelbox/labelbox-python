@@ -1,19 +1,18 @@
-from dataclasses import dataclass
 import json
 import time
 import logging
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Union, Iterable
+from typing import Dict, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
+from labelbox.orm import query
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.invite import ProjectInvite
 from labelbox.exceptions import InvalidQueryError
-from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
