@@ -16,3 +16,5 @@ from labelbox.schema.asset_metadata import AssetMetadata
 from labelbox.schema.webhook import Webhook
 from labelbox.schema.prediction import Prediction, PredictionModel
 from labelbox.schema.ontology import Ontology
+from labelbox.schema.role import Role, ProjectRole
+from labelbox.schema.invite import Invite, InviteLimit, UserLimit

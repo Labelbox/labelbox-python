@@ -1,7 +1,11 @@
-from pydantic import BaseModel
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 from labelbox.orm.model import Field
 from labelbox.orm.db_object import DbObject
+
+if TYPE_CHECKING:
+    from labelbox.schema.project import Project
 
 
 class Roles:
@@ -64,5 +68,5 @@ class UserRole(Role):
 
 @dataclass
 class ProjectRole:
-    project: "Project"
+    project: Project
     role: Role
