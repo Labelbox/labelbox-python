@@ -37,7 +37,8 @@ class Client:
 
     def __init__(self,
                  api_key=None,
-                 endpoint='https://api.labelbox.com/graphql'):
+                 endpoint='https://api.labelbox.com/graphql',
+                 enable_beta = False):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -50,6 +51,7 @@ class Client:
         Args:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
+            enable_beta (bool): Indicated whether or not to use beta features
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
@@ -61,6 +63,10 @@ class Client:
                     "Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
+        self.enable_beta = enable_beta
+
+        if enable_beta:
+            logger.info("Beta features have been enabled")
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
 
@@ -74,7 +80,7 @@ class Client:
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, experimental=False):
+    def execute(self, query, params=None, timeout=30.0):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -86,8 +92,6 @@ class Client:
             params (dict): Query parameters referenced within the query.
             timeout (float): Max allowed time for query execution,
                 in seconds.
-            experimental (bool): Enables users to query experimental features.
-                Users should be aware that these features could change slightly over time.
         Returns:
             dict, parsed JSON response.
         Raises:
@@ -122,15 +126,7 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            endpoint = self.endpoint
-
-            if experimental:
-                endpoint = self.endpoint.replace('graphql', '_gql')
-                logger.info(
-                    "Experimental queries/mutations aren't guarenteed to maintain their interface."
-                )
-
-            response = requests.post(endpoint,
+            response = requests.post(self.endpoint,
                                      data=data,
                                      headers=self.headers,
                                      timeout=timeout)

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
 
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, beta
 from labelbox.orm.model import Field
 from labelbox.schema.role import ProjectRole
 
@@ -50,6 +50,7 @@ class Invite(DbObject):
             for r in project_roles
         ]
 
+    @beta
     def revoke(self):
         """ Makes the invitation invalid.
         """
