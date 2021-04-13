@@ -13,7 +13,7 @@ from labelbox.schema.invite import Invite
 from labelbox.orm import query
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
-from labelbox.orm.db_object import DbObject, Updateable, Deletable
+from labelbox.orm.db_object import DbObject, Updateable, Deletable, beta
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
@@ -79,6 +79,7 @@ class Project(DbObject, Updateable, Deletable):
     predictions = Relationship.ToMany("Prediction", False)
     ontology = Relationship.ToOne("Ontology", True)
 
+    @beta
     def invites(self):
         """ Fetch all current invites for this project
         
@@ -97,8 +98,7 @@ class Project(DbObject, Updateable, Deletable):
             self.client,
             query_str, {id_param: self.uid}, ['project', 'invites', 'nodes'],
             Invite,
-            cursor_path=['project', 'invites', 'nextCursor'],
-            experimental=True)
+            cursor_path=['project', 'invites', 'nextCursor'])
 
     def members(self):
         """ Fetch all current members for this project

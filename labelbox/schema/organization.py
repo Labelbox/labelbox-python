@@ -3,12 +3,14 @@ from typing import Any, Dict, List, Optional
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
 from labelbox.pagination import PaginatedCollection
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, beta
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import Invite, InviteLimit, UserLimit, ProjectRole
 from labelbox.schema.user import User
 from labelbox.schema.role import Role
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Organization(DbObject):
     """ An Organization is a group of Users.
@@ -43,6 +45,7 @@ class Organization(DbObject):
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
 
+    @beta
     def invites(self) -> PaginatedCollection:
         """ List all current invitees
         
@@ -97,6 +100,7 @@ class Organization(DbObject):
         invite_info = res['createInvites'][0]['invite']
         return invite_info
 
+    @beta
     def invite_user(
             self,
             email: str,
@@ -144,6 +148,7 @@ class Organization(DbObject):
         invite_response = self._assign_user_role(email, role, _project_roles)
         return Invite(self.client, invite_response)
 
+    @beta
     def user_limit(self) -> UserLimit:
         """ Retrieve user limits for the org
 
@@ -161,6 +166,7 @@ class Organization(DbObject):
                 ['account']['usersLimit'].items()
             })
 
+    @beta
     def invite_limit(self) -> InviteLimit:
         """ Retrieve invite limits for the org
         This already accounts for users currently in the org
@@ -177,6 +183,7 @@ class Organization(DbObject):
                                   experimental=True)
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
+
 
     def remove_user(self, user: User):
         """

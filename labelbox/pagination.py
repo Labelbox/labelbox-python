@@ -18,7 +18,7 @@ class PaginatedCollection:
                  dereferencing,
                  obj_class,
                  cursor_path=None,
-                 experimental=False):
+                 beta=False):
         """ Creates a PaginatedCollection.
 
         Args:
@@ -40,7 +40,7 @@ class PaginatedCollection:
         self.params = params
         self.dereferencing = dereferencing
         self.obj_class = obj_class
-        self.experimental = experimental
+        self.beta = beta
 
         self._fetched_all = False
         self._data = []
@@ -66,7 +66,7 @@ class PaginatedCollection:
                 raise StopIteration()
 
             results = self.paginator.fetch_results(self.query, self.params,
-                                                   self.experimental)
+                                                   self.beta)
             page_data = self.get_page_data(results)
             self._data.extend(page_data)
             n_items = len(page_data)

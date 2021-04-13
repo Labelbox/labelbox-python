@@ -252,3 +252,20 @@ class BulkDeletable:
         a call to this you should not use this DB object anymore.
         """
         type(self).bulk_delete([self])
+
+
+
+def beta(fn):
+    def wrapper(self, *args, **kwargs):
+        if not isinstance(self, DbObject):
+            raise TypeError("Cannot decorate functions that are not functions of `DbOjects` with `beta` decorator")
+        if not self.client.enable_beta:
+            logger.warning(
+                f"This function {fn.__name__} relies on a beta feature in the api. This means that the interface could change."
+                " Set `enable_beta=True` in the client to silence this warning.")
+            self.client.endpoint = self.client.endpoint.replace("/graphql", "/_gql")
+            result = fn(self, *args, **kwargs)
+            self.client.endpoint = self.client.endpoint.replace("/_gql", "/graphql")
+            return result
+    return wrapper
+    
