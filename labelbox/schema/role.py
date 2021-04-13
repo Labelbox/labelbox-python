@@ -38,12 +38,12 @@ class Roles:
         return str({k: getattr(self, k) for k in self.valid_roles})
 
     def __getitem__(self, name):
-        if name in self.valid_roles:
-            return getattr(self, name)
-        else:
+        name = name.replace(' ', '_').upper()
+        if name not in self.valid_roles:
             raise ValueError(
                 f"No role named {name} exists. Valid names are one of {self.valid_roles}"
             )
+        return getattr(self, name)
 
     def __iter__(self):
         self.key_iter = iter(self.valid_roles)
