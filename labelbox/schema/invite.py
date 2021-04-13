@@ -45,10 +45,9 @@ class Invite(DbObject):
         super().__init__(client, invite_response)
 
         self.project_roles = [
-            ProjectRole(
-                project=client.get_project(r['projectId']),
-                role=client.get_roles()[r['projectRoleName'].upper().replace(
-                    " ", "_")]) for r in project_roles
+            ProjectRole(project=client.get_project(r['projectId']),
+                        role=client.get_roles()[r['projectRoleName']])
+            for r in project_roles
         ]
 
     def revoke(self):

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
@@ -78,9 +78,9 @@ class Organization(DbObject):
             data_param, data_param)
 
         projects = [{
-            "projectId": x.project.uid,
-            "projectRoleId": x.role.uid
-        } for x in project_roles]
+            "projectId": project_role.project.uid,
+            "projectRoleId": project_role.role.uid
+        } for project_role in project_roles]
 
         res = self.client.execute(
             query_str, {
@@ -97,17 +97,18 @@ class Organization(DbObject):
         invite_info = res['createInvites'][0]['invite']
         return invite_info
 
-    def invite_user(self,
-                    email: str,
-                    role: Role,
-                    project_roles: List[ProjectRole] = []) -> Invite:
+    def invite_user(
+            self,
+            email: str,
+            role: Role,
+            project_roles: Optional[List[ProjectRole]] = None) -> Invite:
         """
         Invite a new member to the org. This will send the user an email invite
 
         Args:
             email (str): email address of the user to invite
             role (Role): Role to assign to the user
-            project_roles (List[ProjectRoles]): List of project roles to assign to the User (if they have a project based org role).
+            project_roles (Optional[List[ProjectRoles]]): List of project roles to assign to the User (if they have a project based org role).
 
         Returns:
             Invite for the user
@@ -115,12 +116,10 @@ class Organization(DbObject):
         """
         remaining_invites = self.invite_limit().remaining
         if remaining_invites == 0:
-            if next(self.users((User.email == email) &
-                               (User.deleted == True)), None) is None:
-                raise LabelboxError(
-                    "Invite(s) cannot be sent because you do not have enough available seats in your organization. "
-                    "Please upgrade your account, revoke pending invitations or remove other users."
-                )
+            raise LabelboxError(
+                "Invite(s) cannot be sent because you do not have enough available seats in your organization. "
+                "Please upgrade your account, revoke pending invitations or remove other users."
+            )
         for invite in self.invites():
             if invite.email == email:
                 raise ValueError(
@@ -130,18 +129,19 @@ class Organization(DbObject):
         if not isinstance(role, Role):
             raise TypeError(f"role must be Role type. Found {role}")
 
-        if len(project_roles) and role.name != "NONE":
+        if project_roles and role.name != "NONE":
             raise ValueError(
                 "Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
             )
 
-        for project_role in project_roles:
+        _project_roles = [] if project_roles is None else project_roles
+        for project_role in _project_roles:
             if not isinstance(project_role, ProjectRole):
                 raise TypeError(
                     f"project_roles must be a list of `ProjectRole`s. Found {project_role}"
                 )
 
-        invite_response = self._assign_user_role(email, role, project_roles)
+        invite_response = self._assign_user_role(email, role, _project_roles)
         return Invite(self.client, invite_response)
 
     def user_limit(self) -> UserLimit:

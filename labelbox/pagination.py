@@ -42,12 +42,14 @@ class PaginatedCollection:
         self.obj_class = obj_class
         self.experimental = experimental
 
-        self._fetched_pages = 0
         self._fetched_all = False
         self._data = []
         self._data_ind = 0
-        self.next_cursor = None
-        self.cursor_path = cursor_path
+
+        if cursor_path:
+            self.paginator = _CursorPagination(client, cursor_path)
+        else:
+            self.paginator = _OffsetPagination(client)
 
     def __iter__(self):
         self._data_ind = 0
@@ -56,47 +58,64 @@ class PaginatedCollection:
     def get_page_data(self, results):
         for deref in self.dereferencing:
             results = results[deref]
-
         return [self.obj_class(self.client, result) for result in results]
-
-    def get_next_cursor(self, results):
-        for path in self.cursor_path:
-            results = results[path]
-        return results
-
-    def get_query(self):
-        if self.cursor_path:
-            # Cursor Pagination
-            self.params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
-            return self.query
-
-        # Offset Pagination
-        return self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
 
     def __next__(self):
         if len(self._data) <= self._data_ind:
             if self._fetched_all:
                 raise StopIteration()
 
-            results = self.client.execute(self.get_query(),
-                                          self.params,
-                                          experimental=self.experimental)
-            self._fetched_pages += 1
-
+            results = self.paginator.fetch_results(self.query, self.params,
+                                                   self.experimental)
             page_data = self.get_page_data(results)
             self._data.extend(page_data)
+            n_items = len(page_data)
 
-            if len(page_data) < _PAGE_SIZE:
-                self._fetched_all = True
-
-            if len(page_data) == 0:
+            if n_items == 0:
                 raise StopIteration()
 
-            if self.cursor_path:
-                self.next_cursor = self.get_next_cursor(results)
-                if self.next_cursor is None:
-                    self._fetched_all = True
+            self._fetched_all = self.paginator.fetched_all(n_items, results)
 
         rval = self._data[self._data_ind]
         self._data_ind += 1
         return rval
+
+
+class _CursorPagination:
+
+    def __init__(self, client, cursor_path):
+        self.client = client
+        self.cursor_path = cursor_path
+        self.next_cursor = None
+
+    def get_next_cursor(self, results):
+        for path in self.cursor_path:
+            results = results[path]
+        return results
+
+    def fetched_all(self, n_items, results):
+        self.next_cursor = self.get_next_cursor(results)
+        if self.next_cursor is None:
+            return True
+        return False
+
+    def fetch_results(self, query, params, experimental):
+        params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
+        return self.client.execute(query, params, experimental=experimental)
+
+
+class _OffsetPagination:
+
+    def __init__(self, client):
+        self.client = client
+        self._fetched_pages = 0
+
+    def fetched_all(self, n_items, results):
+        self._fetched_pages += 1
+        if n_items < _PAGE_SIZE:
+            return True
+        return False
+
+    def fetch_results(self, query, params, experimental):
+        query = query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
+        return self.client.execute(query, params, experimental=experimental)
