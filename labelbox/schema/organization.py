@@ -5,12 +5,13 @@ from labelbox import utils
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.db_object import DbObject, beta
 from labelbox.orm.model import Field, Relationship
-from labelbox.schema.invite import Invite, InviteLimit, UserLimit, ProjectRole
+from labelbox.schema.invite import Invite, InviteLimit, ProjectRole
 from labelbox.schema.user import User
 from labelbox.schema.role import Role
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class Organization(DbObject):
     """ An Organization is a group of Users.
@@ -46,61 +47,6 @@ class Organization(DbObject):
     webhooks = Relationship.ToMany("Webhook", False)
 
     @beta
-    def invites(self) -> PaginatedCollection:
-        """ List all current invitees
-        
-        Returns:
-            A PaginatedCollection of Invite objects
-
-        """
-        query_str = """query GetOrgInvitationsPyApi($from: ID, $first: PageSize) {
-                organization { id invites(from: $from, first: $first) { 
-                    nodes { id createdAt organizationRoleName inviteeEmail } nextCursor }}}"""
-        return PaginatedCollection(
-            self.client,
-            query_str, {}, ['organization', 'invites', 'nodes'],
-            Invite,
-            cursor_path=['organization', 'invites', 'nextCursor'])
-
-    def _assign_user_role(self, email: str, role: Role,
-                          project_roles: List[ProjectRole]) -> Dict[str, Any]:
-        """
-        Creates or updates users. This function shouldn't directly be called. 
-        Use `Organization.invite_user`
-
-        Note: that there is a really unclear foreign key error if you use an unsupported role.
-        - This means that the `Roles` object is not getting the right ids
-        """
-        if self.client.get_user().email == email:
-            raise ValueError("Cannot update your own role")
-
-        data_param = "data"
-        query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
-                    createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail}}}""" % (
-            data_param, data_param)
-
-        projects = [{
-            "projectId": project_role.project.uid,
-            "projectRoleId": project_role.role.uid
-        } for project_role in project_roles]
-
-        res = self.client.execute(
-            query_str, {
-                data_param: [{
-                    "inviterId": self.client.get_user().uid,
-                    "inviteeEmail": email,
-                    "organizationId": self.uid,
-                    "organizationRoleId": role.uid,
-                    "projects": projects
-                }]
-            },
-            ) 
-        # We prob want to return an invite
-        # Could support bulk ops in the future
-        invite_info = res['createInvites'][0]['invite']
-        return invite_info
-
-    @beta
     def invite_user(
             self,
             email: str,
@@ -117,6 +63,11 @@ class Organization(DbObject):
         Returns:
             Invite for the user
 
+        Creates or updates users. This function shouldn't directly be called. 
+        Use `Organization.invite_user`
+
+        Note: that there is a really unclear foreign key error if you use an unsupported role.
+        - This means that the `Roles` object is not getting the right ids
         """
         remaining_invites = self.invite_limit().remaining
         if remaining_invites == 0:
@@ -124,11 +75,6 @@ class Organization(DbObject):
                 "Invite(s) cannot be sent because you do not have enough available seats in your organization. "
                 "Please upgrade your account, revoke pending invitations or remove other users."
             )
-        for invite in self.invites():
-            if invite.email == email:
-                raise ValueError(
-                    f"Invite already exists for {email}. Please revoke the invite if you want to update the role or resend."
-                )
 
         if not isinstance(role, Role):
             raise TypeError(f"role must be Role type. Found {role}")
@@ -145,26 +91,35 @@ class Organization(DbObject):
                     f"project_roles must be a list of `ProjectRole`s. Found {project_role}"
                 )
 
-        invite_response = self._assign_user_role(email, role, _project_roles)
+        if self.client.get_user().email == email:
+            raise ValueError("Cannot update your own role")
+
+        data_param = "data"
+        query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
+                    createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail}}}""" % (
+            data_param, data_param)
+
+        projects = [{
+            "projectId": project_role.project.uid,
+            "projectRoleId": project_role.role.uid
+        } for project_role in _project_roles]
+
+        res = self.client.execute(
+            query_str,
+            {
+                data_param: [{
+                    "inviterId": self.client.get_user().uid,
+                    "inviteeEmail": email,
+                    "organizationId": self.uid,
+                    "organizationRoleId": role.uid,
+                    "projects": projects
+                }]
+            },
+        )
+        # We prob want to return an invite
+        # Could support bulk ops in the future
+        invite_response = res['createInvites'][0]['invite']
         return Invite(self.client, invite_response)
-
-    @beta
-    def user_limit(self) -> UserLimit:
-        """ Retrieve user limits for the org
-
-        Returns:
-            UserLimit
-    
-        """
-        query_str = """query UsersLimitPyApi { 
-            organization {id account { id usersLimit { dateLimitWasReached remaining used limit }}}}
-        """
-        res = self.client.execute(query_str)
-        return UserLimit(
-            **{
-                utils.snake_case(k): v for k, v in res['organization']
-                ['account']['usersLimit'].items()
-            })
 
     @beta
     def invite_limit(self) -> InviteLimit:
@@ -177,13 +132,13 @@ class Organization(DbObject):
     
         """
         org_id_param = "organizationId"
-        res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
+        res = self.client.execute(
+            """query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
         }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
-    @beta
     def remove_user(self, user: User):
         """
         Deletes a user from the organization. This cannot be undone without sending another invite.

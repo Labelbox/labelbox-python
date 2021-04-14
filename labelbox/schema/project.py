@@ -79,27 +79,6 @@ class Project(DbObject, Updateable, Deletable):
     predictions = Relationship.ToMany("Prediction", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    @beta
-    def invites(self):
-        """ Fetch all current invites for this project
-        
-        Returns:
-            A `PaginatedCollection` of `ProjectInvite`s.
-
-        """
-        id_param = "projectId"
-        query_str = """query GetProjectInvitationsPyApi($from: ID, $first: PageSize, $%s: ID!) {
-                project(where: {id: $%s}) {id
-                invites(from: $from, first: $first) { nodes { %s
-                projectInvites { projectId projectRoleName } } nextCursor}}}
-        """ % (id_param, id_param, query.results_query_part(Entity.Invite))
-
-        return PaginatedCollection(
-            self.client,
-            query_str, {id_param: self.uid}, ['project', 'invites', 'nodes'],
-            Invite,
-            cursor_path=['project', 'invites', 'nextCursor'])
-
     def members(self):
         """ Fetch all current members for this project
 
