@@ -1,8 +1,7 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
-from labelbox.pagination import PaginatedCollection
 from labelbox.orm.db_object import DbObject, beta
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import Invite, InviteLimit, ProjectRole

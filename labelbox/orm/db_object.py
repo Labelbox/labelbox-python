@@ -1,8 +1,6 @@
-from dataclasses import field
 from datetime import datetime, timezone
 from functools import partial
 import logging
-from os import EX_CANTCREAT
 
 from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
@@ -48,7 +46,7 @@ class DbObject(Entity):
 
         for relationship in self.relationships():
             value = field_values.get(relationship.name)
-            if relationship.precompute and value is None:
+            if relationship.cache and value is None:
                 raise KeyError(
                     f"Expected field  values for {relationship.name}")
 
