@@ -1,17 +1,16 @@
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
-from labelbox.orm.model import Entity
-from labelbox.orm.query import Query, results_query_part
-from labelbox.schema.invite import Invite
-from labelbox.pagination import PaginatedCollection
-import os
 from random import randint
-import re
 from string import ascii_letters
+import os
+import re
 
 import pytest
 
+from labelbox.orm.query import results_query_part
+from labelbox.schema.invite import Invite
+from labelbox.pagination import PaginatedCollection
 from labelbox.schema.user import User
 from labelbox import Client
 
@@ -49,14 +48,18 @@ def testing_api_key(environ: str) -> str:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
     return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
 
+
 def beta_endpoint(fn):
-    def beta(client,*args, **kwargs):
+
+    def beta(client, *args, **kwargs):
         try:
             client.endpoint = client.endpoint.replace("/graphql", "/_gql")
-            return fn(client, *args, **kwargs) 
+            return fn(client, *args, **kwargs)
         finally:
             client.endpoint = client.endpoint.replace("/_gql", "/graphql")
+
     return beta
+
 
 @beta_endpoint
 def cancel_invite(client, invite_id):
@@ -66,6 +69,7 @@ def cancel_invite(client, invite_id):
     query_str = """mutation CancelInvitePyApi($where: WhereUniqueIdInput!) {
             cancelInvite(where: $where) {id}}"""
     client.execute(query_str, {'where': {'id': invite_id}})
+
 
 @beta_endpoint
 def get_project_invites(client, project_id):
@@ -78,11 +82,13 @@ def get_project_invites(client, project_id):
         invites(from: $from, first: $first) { nodes { %s
         projectInvites { projectId projectRoleName } } nextCursor}}}
     """ % (id_param, id_param, results_query_part(Invite))
-    return list(PaginatedCollection(
-        client,
-            query_str, {id_param: project_id}, ['project', 'invites', 'nodes'],
-            Invite,
-            cursor_path=['project', 'invites', 'nextCursor']))
+    return list(
+        PaginatedCollection(client,
+                            query_str, {id_param: project_id},
+                            ['project', 'invites', 'nodes'],
+                            Invite,
+                            cursor_path=['project', 'invites', 'nextCursor']))
+
 
 @beta_endpoint
 def get_invites(client):
@@ -93,11 +99,13 @@ def get_invites(client):
             organization { id invites(from: $from, first: $first) { 
                 nodes { id createdAt organizationRoleName inviteeEmail } nextCursor }}}"""
     invites = PaginatedCollection(
-            client,
-            query_str, {}, ['organization', 'invites', 'nodes'],
-            Invite,
-            cursor_path=['organization', 'invites', 'nextCursor'])
-    return list(invites) # list() so that it makes the request to the right endpoint.
+        client,
+        query_str, {}, ['organization', 'invites', 'nodes'],
+        Invite,
+        cursor_path=['organization', 'invites', 'nextCursor'])
+    return list(
+        invites)  # list() so that it makes the request to the right endpoint.
+
 
 class IntegrationClient(Client):
 
@@ -188,6 +196,7 @@ def organization(client):
         if "@labelbox.com" in invite.email:
             cancel_invite(client, invite.uid)
 
+
 @pytest.fixture
 def project_based_user(client, rand_gen):
     email = rand_gen(str)
@@ -210,6 +219,7 @@ def project_based_user(client, rand_gen):
     user = client._get_single(User, user_id)
     yield user
     client.get_organization().remove_user(user)
+
 
 @pytest.fixture
 def project_pack(client):

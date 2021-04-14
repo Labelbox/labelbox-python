@@ -9,11 +9,10 @@ from urllib.parse import urlparse
 
 from labelbox import utils
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.invite import Invite
 from labelbox.orm import query
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError
-from labelbox.orm.db_object import DbObject, Updateable, Deletable, beta
+from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
@@ -630,8 +629,8 @@ class Project(DbObject, Updateable, Deletable):
 
 
 class ProjectMember(DbObject):
-    user = Relationship.ToOne("User", precompute=True)
-    role = Relationship.ToOne("Role", precompute=True)
+    user = Relationship.ToOne("User", cache=True)
+    role = Relationship.ToOne("Role", cache=True)
 
 
 class LabelingParameterOverride(DbObject):

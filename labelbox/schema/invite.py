@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
-from datetime import datetime
 
 from labelbox.orm.db_object import DbObject, beta
 from labelbox.orm.model import Field

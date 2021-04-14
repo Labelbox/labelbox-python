@@ -4,7 +4,6 @@ import pytest
 from labelbox import ProjectRole
 
 
-
 def test_org_invite(client, organization, environ):
     role = client.get_roles()['LABELER']
     dummy_email = "none@labelbox.com"
@@ -23,7 +22,7 @@ def test_org_invite(client, organization, environ):
         # One user added
         assert invite_limit.remaining - invite_limit_after.remaining == 1
         # An invite shouldn't effect the user count until after it is accepted
-    
+
     outstanding_invites = get_invites(client)
     in_list = False
     for invite in outstanding_invites:
