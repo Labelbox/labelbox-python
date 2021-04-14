@@ -17,8 +17,7 @@ class PaginatedCollection:
                  params,
                  dereferencing,
                  obj_class,
-                 cursor_path=None
-                 ):
+                 cursor_path=None):
         """ Creates a PaginatedCollection.
 
         Args:

@@ -20,21 +20,9 @@ class InviteLimit:
     limit: int
 
 
-@dataclass
-class UserLimit(InviteLimit):
-    """
-    remaining(int): Remaining number of users that an org is allowed to have
-    used (int): Total number of users in the org
-    limit (int): Maximum number of users available to the org
-    date_limit_was_reached (date): Date that `limit` was equal to `used`
-    """
-    date_limit_was_reached: Optional[datetime]
-
-
 class Invite(DbObject):
     """
     An object representing a user invite
-
     """
     created_at = Field.DateTime("created_at")
     organization_role_name = Field.String("organization_role_name")
@@ -49,13 +37,3 @@ class Invite(DbObject):
                         role=client.get_roles()[r['projectRoleName']])
             for r in project_roles
         ]
-
-    @beta
-    def revoke(self):
-        """ Makes the invitation invalid.
-        """
-        query_str = """mutation CancelInvitePyApi($where: WhereUniqueIdInput!) {
-               cancelInvite(where: $where) {id}}"""
-        self.client.execute(query_str, {'where': {
-            'id': self.uid
-        }})

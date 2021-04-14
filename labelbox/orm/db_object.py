@@ -47,10 +47,11 @@ class DbObject(Entity):
         self._set_field_values(field_values)
 
         for relationship in self.relationships():
-            value =   field_values.get(relationship.name)
+            value = field_values.get(relationship.name)
             if relationship.precompute and value is None:
-                raise KeyError(f"Expected field  values for {relationship.name}")
-            
+                raise KeyError(
+                    f"Expected field  values for {relationship.name}")
+
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship, value))
 
@@ -258,22 +259,25 @@ class BulkDeletable:
 
 
 def beta(fn):
+
     def wrapper(self, *args, **kwargs):
         if not isinstance(self, DbObject):
-            raise TypeError("Cannot decorate functions that are not functions of `DbOjects` with `beta` decorator")
+            raise TypeError(
+                "Cannot decorate functions that are not functions of `DbOjects` with `beta` decorator"
+            )
         if not self.client.enable_beta:
             raise Exception(
                 f"This function {fn.__name__} relies on a beta feature in the api. This means that the interface could change."
-                " Set `enable_beta=True` in the client to enable use of these functions.")
-        execute_fn = self.client.execute            
+                " Set `enable_beta=True` in the client to enable use of these functions."
+            )
+        execute_fn = self.client.execute
         try:
-            self.client.execute = partial(execute_fn, beta = True)
+            self.client.execute = partial(execute_fn, beta=True)
             result = fn(self, *args, **kwargs)
             if isinstance(result, PaginatedCollection):
                 result.beta = True
             return result
         finally:
             self.client.execute = execute_fn
-    return wrapper
-    
 
+    return wrapper

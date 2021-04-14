@@ -37,7 +37,7 @@ class Client:
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
-                 enable_beta = False):
+                 enable_beta=False):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -62,11 +62,10 @@ class Client:
                     "Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
-    
+
         self.enable_beta = True
         if enable_beta:
             logger.info("Beta features have been enabled")
-        
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.endpoint = endpoint
@@ -76,11 +75,10 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
-    
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, beta = False):
+    def execute(self, query, params=None, timeout=30.0, beta=False):
         """ Sends a request to the server for the execution of the
         given query.
 
