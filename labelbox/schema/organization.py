@@ -60,8 +60,7 @@ class Organization(DbObject):
             self.client,
             query_str, {}, ['organization', 'invites', 'nodes'],
             Invite,
-            cursor_path=['organization', 'invites', 'nextCursor'],
-            experimental=True)
+            cursor_path=['organization', 'invites', 'nextCursor'])
 
     def _assign_user_role(self, email: str, role: Role,
                           project_roles: List[ProjectRole]) -> Dict[str, Any]:
@@ -95,7 +94,8 @@ class Organization(DbObject):
                     "projects": projects
                 }]
             },
-            experimental=True)  # We prob want to return an invite
+            ) 
+        # We prob want to return an invite
         # Could support bulk ops in the future
         invite_info = res['createInvites'][0]['invite']
         return invite_info
@@ -159,7 +159,7 @@ class Organization(DbObject):
         query_str = """query UsersLimitPyApi { 
             organization {id account { id usersLimit { dateLimitWasReached remaining used limit }}}}
         """
-        res = self.client.execute(query_str, experimental=True)
+        res = self.client.execute(query_str)
         return UserLimit(
             **{
                 utils.snake_case(k): v for k, v in res['organization']
@@ -179,12 +179,11 @@ class Organization(DbObject):
         org_id_param = "organizationId"
         res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
-        }""" % (org_id_param, org_id_param), {org_id_param: self.uid},
-                                  experimental=True)
+        }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
-
+    @beta
     def remove_user(self, user: User):
         """
         Deletes a user from the organization. This cannot be undone without sending another invite.

@@ -3,7 +3,6 @@ import json
 import logging
 import mimetypes
 import os
-from typing import Tuple
 
 from google.api_core import retry
 import requests
@@ -63,13 +62,13 @@ class Client:
                     "Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
-        self.enable_beta = enable_beta
-
+    
+        self.enable_beta = True
         if enable_beta:
             logger.info("Beta features have been enabled")
+        
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
-
         self.endpoint = endpoint
         self.headers = {
             'Accept': 'application/json',
@@ -77,10 +76,11 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
+    
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0):
+    def execute(self, query, params=None, timeout=30.0, beta = False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -126,7 +126,11 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            response = requests.post(self.endpoint,
+            endpoint = self.endpoint
+            if beta:
+                endpoint = endpoint.replace('/graphql', '/_gql')
+
+            response = requests.post(endpoint,
                                      data=data,
                                      headers=self.headers,
                                      timeout=timeout)

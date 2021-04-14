@@ -58,5 +58,4 @@ class Invite(DbObject):
                cancelInvite(where: $where) {id}}"""
         self.client.execute(query_str, {'where': {
             'id': self.uid
-        }},
-                            experimental=True)
+        }})
