@@ -110,11 +110,12 @@ def get_invites(client):
 
 @pytest.fixture
 def queries():
-    return SimpleNamespace({
-        'cancel_invite': cancel_invite,
-        'get_project_invites': get_project_invites,
-        'get_invites': get_invites
-    })
+    return SimpleNamespace(
+        **{
+            'cancel_invite': cancel_invite,
+            'get_project_invites': get_project_invites,
+            'get_invites': get_invites
+        })
 
 
 class IntegrationClient(Client):
