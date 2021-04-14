@@ -1,10 +1,7 @@
-from conftest import cancel_invite, get_invites, get_project_invites
-import pytest
-
 from labelbox import ProjectRole
 
 
-def test_org_invite(client, organization, environ):
+def test_org_invite(client, organization, environ, queries):
     role = client.get_roles()['LABELER']
     dummy_email = "none@labelbox.com"
     invite_limit = organization.invite_limit()
@@ -23,7 +20,7 @@ def test_org_invite(client, organization, environ):
         assert invite_limit.remaining - invite_limit_after.remaining == 1
         # An invite shouldn't effect the user count until after it is accepted
 
-    outstanding_invites = get_invites(client)
+    outstanding_invites = queries.get_invites(client)
     in_list = False
     for invite in outstanding_invites:
         if invite.uid == invite.uid:
@@ -32,11 +29,11 @@ def test_org_invite(client, organization, environ):
             assert org_role == role.name.lower(
             ), "Role should be labeler. Found {org_role} "
     assert in_list, "Invite not found"
-    cancel_invite(client, invite.uid)
+    queries.cancel_invite(client, invite.uid)
     assert invite_limit.remaining - organization.invite_limit().remaining == 0
 
 
-def test_project_invite(client, organization, project_pack):
+def test_project_invite(client, organization, project_pack, queries):
     project_1, project_2 = project_pack
     roles = client.get_roles()
     dummy_email = "none1@labelbox.com"
@@ -47,7 +44,7 @@ def test_project_invite(client, organization, project_pack):
         roles['NONE'],
         project_roles=[project_role_1, project_role_2])
 
-    project_invite = get_project_invites(client, project_1.uid)[0]
+    project_invite = queries.get_project_invites(client, project_1.uid)[0]
 
     assert set([(proj_invite.project.uid, proj_invite.role.uid)
                 for proj_invite in project_invite.project_roles
@@ -69,7 +66,7 @@ def test_project_invite(client, organization, project_pack):
     project_member = project_member[0]
 
     assert project_member.role().name.upper() == roles['ADMIN'].name.upper()
-    cancel_invite(client, invite.uid)
+    queries.cancel_invite(client, invite.uid)
 
 
 def test_member_management(client, organization, project, project_based_user):
