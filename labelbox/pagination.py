@@ -17,8 +17,8 @@ class PaginatedCollection:
                  params,
                  dereferencing,
                  obj_class,
-                 cursor_path=None,
-                 beta=False):
+                 cursor_path=None
+                 ):
         """ Creates a PaginatedCollection.
 
         Args:
@@ -40,7 +40,7 @@ class PaginatedCollection:
         self.params = params
         self.dereferencing = dereferencing
         self.obj_class = obj_class
-        self.beta = beta
+        self.beta = False
 
         self._fetched_all = False
         self._data = []
@@ -95,13 +95,11 @@ class _CursorPagination:
 
     def fetched_all(self, n_items, results):
         self.next_cursor = self.get_next_cursor(results)
-        if self.next_cursor is None:
-            return True
-        return False
+        return self.next_cursor is None
 
-    def fetch_results(self, query, params, experimental):
+    def fetch_results(self, query, params, beta):
         params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
-        return self.client.execute(query, params, experimental=experimental)
+        return self.client.execute(query, params, beta=beta)
 
 
 class _OffsetPagination:
@@ -116,6 +114,6 @@ class _OffsetPagination:
             return True
         return False
 
-    def fetch_results(self, query, params, experimental):
+    def fetch_results(self, query, params, beta):
         query = query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
-        return self.client.execute(query, params, experimental=experimental)
+        return self.client.execute(query, params, beta=beta)
