@@ -3,6 +3,7 @@ from enum import Enum
 from datetime import datetime
 from random import randint
 from string import ascii_letters
+from types import SimpleNamespace
 import os
 import re
 
@@ -105,6 +106,15 @@ def get_invites(client):
         cursor_path=['organization', 'invites', 'nextCursor'])
     return list(
         invites)  # list() so that it makes the request to the right endpoint.
+
+
+@pytest.fixture
+def queries():
+    return SimpleNamespace({
+        'cancel_invite': cancel_invite,
+        'get_project_invites': get_project_invites,
+        'get_invites': get_invites
+    })
 
 
 class IntegrationClient(Client):
