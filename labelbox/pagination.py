@@ -1,8 +1,11 @@
 # Size of a single page in a paginated query.
 from abc import ABC, abstractmethod
-from labelbox.orm.db_object import DbObject
-from typing import Any, Dict, List, Optional
-from labelbox import Client
+from typing import Any, Callable, Dict, List, Optional
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from labelbox import Client
+    from labelbox.orm.db_object import DbObject
 
 _PAGE_SIZE = 100
 
@@ -17,11 +20,11 @@ class PaginatedCollection:
     """
 
     def __init__(self,
-                 client: Client,
+                 client: "Client",
                  query: str,
                  params: Dict[str, str],
                  dereferencing: Dict[str, Any],
-                 obj_class: DbObject,
+                 obj_class: "DbObject",
                  cursor_path: Optional[Dict[str, Any]] = None,
                  beta: bool = False):
         """ Creates a PaginatedCollection.
@@ -45,12 +48,14 @@ class PaginatedCollection:
         self.params = params
         self.dereferencing = dereferencing
         self.obj_class = obj_class
+        self.cursor_path = cursor_path
         self.beta = beta
 
         self._fetched_all = False
         self._data: List[Dict[str, Any]] = []
         self._data_ind = 0
-        self.cursor_path = _CursorPagination(
+
+        self.paginator = _CursorPagination(
             client, cursor_path) if cursor_path else _OffsetPagination(client)
 
     def __iter__(self):
@@ -97,7 +102,7 @@ class _Pagination(ABC):
 
 class _CursorPagination(_Pagination):
 
-    def __init__(self, client: Client, cursor_path: Dict[str, Any]):
+    def __init__(self, client: "Client", cursor_path: Dict[str, Any]):
         self.client = client
         self.cursor_path = cursor_path
         self.next_cursor: Optional[str] = None
@@ -119,7 +124,7 @@ class _CursorPagination(_Pagination):
 
 class _OffsetPagination(_Pagination):
 
-    def __init__(self, client):
+    def __init__(self, client: "Client"):
         self.client = client
         self._fetched_pages = 0
 

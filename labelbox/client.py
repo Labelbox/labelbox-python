@@ -124,11 +124,8 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            endpoint = self.endpoint
-            if beta:
-                endpoint = endpoint.replace('/graphql', '/_gql')
-
-            response = requests.post(endpoint,
+            response = requests.post(self.endpoint.replace('/graphql', '/_gql')
+                                     if beta else self.endpoint,
                                      data=data,
                                      headers=self.headers,
                                      timeout=timeout)
