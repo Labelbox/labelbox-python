@@ -17,7 +17,8 @@ class PaginatedCollection:
                  params,
                  dereferencing,
                  obj_class,
-                 cursor_path=None):
+                 cursor_path=None,
+                 beta=False):
         """ Creates a PaginatedCollection.
 
         Args:
@@ -39,7 +40,7 @@ class PaginatedCollection:
         self.params = params
         self.dereferencing = dereferencing
         self.obj_class = obj_class
-        self.beta = False
+        self.beta = beta
 
         self._fetched_all = False
         self._data = []
