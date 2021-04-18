@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from functools import partial
+from functools import wraps
 import logging
 
 from labelbox import utils
@@ -258,11 +258,12 @@ class BulkDeletable:
 
 def beta(fn):
 
+    @wraps(fn)
     def wrapper(self, *args, **kwargs):
         if not self.client.enable_beta:
             raise Exception(
                 f"This function {fn.__name__} relies on a beta feature in the api. This means that the interface could change."
-                " Set `enable_beta=True` in the client to enable use of these functions."
+                " Set `enable_beta=True` in the client to enable use of beta functions."
             )
         return fn(self, *args, **kwargs)
 
