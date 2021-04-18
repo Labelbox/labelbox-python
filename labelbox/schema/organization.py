@@ -103,20 +103,16 @@ class Organization(DbObject):
             "projectRoleId": project_role.role.uid
         } for project_role in _project_roles]
 
-        res = self.client.execute(
-            query_str,
-            {
-                data_param: [{
-                    "inviterId": self.client.get_user().uid,
-                    "inviteeEmail": email,
-                    "organizationId": self.uid,
-                    "organizationRoleId": role.uid,
-                    "projects": projects
-                }]
-            },
-        )
-        # We prob want to return an invite
-        # Could support bulk ops in the future
+        res = self.client.execute(query_str, {
+            data_param: [{
+                "inviterId": self.client.get_user().uid,
+                "inviteeEmail": email,
+                "organizationId": self.uid,
+                "organizationRoleId": role.uid,
+                "projects": projects
+            }]
+        },
+                                  beta=True)
         invite_response = res['createInvites'][0]['invite']
         return Invite(self.client, invite_response)
 
@@ -131,10 +127,10 @@ class Organization(DbObject):
     
         """
         org_id_param = "organizationId"
-        res = self.client.execute(
-            """query InvitesLimitPyApi($%s: ID!) {
+        res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
-        }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
+        }""" % (org_id_param, org_id_param), {org_id_param: self.uid},
+                                  beta=True)
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
