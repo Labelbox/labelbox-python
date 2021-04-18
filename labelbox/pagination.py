@@ -1,4 +1,9 @@
 # Size of a single page in a paginated query.
+from abc import ABC, abstractmethod
+from labelbox.orm.db_object import DbObject
+from typing import Any, Dict, List, Optional
+from labelbox import Client
+
 _PAGE_SIZE = 100
 
 
@@ -12,13 +17,13 @@ class PaginatedCollection:
     """
 
     def __init__(self,
-                 client,
-                 query,
-                 params,
-                 dereferencing,
-                 obj_class,
-                 cursor_path=None,
-                 beta=False):
+                 client: Client,
+                 query: str,
+                 params: Dict[str, str],
+                 dereferencing: Dict[str, Any],
+                 obj_class: DbObject,
+                 cursor_path: Optional[Dict[str, Any]] = None,
+                 beta: bool = False):
         """ Creates a PaginatedCollection.
 
         Args:
@@ -43,13 +48,10 @@ class PaginatedCollection:
         self.beta = beta
 
         self._fetched_all = False
-        self._data = []
+        self._data: List[Dict[str, Any]] = []
         self._data_ind = 0
-
-        if cursor_path:
-            self.paginator = _CursorPagination(client, cursor_path)
-        else:
-            self.paginator = _OffsetPagination(client)
+        self.cursor_path = _CursorPagination(
+            client, cursor_path) if cursor_path else _OffsetPagination(client)
 
     def __iter__(self):
         self._data_ind = 0
@@ -81,39 +83,53 @@ class PaginatedCollection:
         return rval
 
 
-class _CursorPagination:
+class _Pagination(ABC):
 
-    def __init__(self, client, cursor_path):
+    @abstractmethod
+    def fetched_all(self, n_items: int, results: List[Dict[str, Any]]) -> bool:
+        ...
+
+    @abstractmethod
+    def fetch_results(self, query: str, params: Dict[str, Any],
+                      beta: bool) -> Dict[str, Any]:
+        ...
+
+
+class _CursorPagination(_Pagination):
+
+    def __init__(self, client: Client, cursor_path: Dict[str, Any]):
         self.client = client
         self.cursor_path = cursor_path
-        self.next_cursor = None
+        self.next_cursor: Optional[str] = None
 
-    def get_next_cursor(self, results):
+    def get_next_cursor(self, results) -> Optional[str]:
         for path in self.cursor_path:
             results = results[path]
         return results
 
-    def fetched_all(self, n_items, results):
+    def fetched_all(self, n_items: int, results: List[Dict[str, Any]]) -> bool:
         self.next_cursor = self.get_next_cursor(results)
-        return self.next_cursor is None
+        return bool(self.next_cursor is None)
 
-    def fetch_results(self, query, params, beta):
+    def fetch_results(self, query: str, params: Dict[str, Any],
+                      beta: bool) -> Dict[str, Any]:
         params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
         return self.client.execute(query, params, beta=beta)
 
 
-class _OffsetPagination:
+class _OffsetPagination(_Pagination):
 
     def __init__(self, client):
         self.client = client
         self._fetched_pages = 0
 
-    def fetched_all(self, n_items, results):
+    def fetched_all(self, n_items: int, results: List[Dict[str, Any]]) -> bool:
         self._fetched_pages += 1
         if n_items < _PAGE_SIZE:
             return True
         return False
 
-    def fetch_results(self, query, params, beta):
+    def fetch_results(self, query: str, params: Dict[str, Any],
+                      beta: bool) -> Dict[str, Any]:
         query = query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
         return self.client.execute(query, params, beta=beta)
