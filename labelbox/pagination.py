@@ -115,7 +115,7 @@ class _CursorPagination(_Pagination):
         self.next_cursor = results
 
     def fetched_all(self) -> bool:
-        return bool(self.next_cursor)
+        return not self.next_cursor
 
     def fetch_results(self) -> Dict[str, Any]:
         self.params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
@@ -141,9 +141,7 @@ class _OffsetPagination(_Pagination):
         self._fetched_pages += 1
 
     def fetched_all(self, n_items: int) -> bool:
-        if n_items < _PAGE_SIZE:
-            return True
-        return False
+        return n_items < _PAGE_SIZE
 
     def fetch_results(self) -> Dict[str, Any]:
         query = self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
