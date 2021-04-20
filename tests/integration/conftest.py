@@ -1,6 +1,7 @@
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
+from labelbox.orm.db_object import experimental
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
@@ -50,29 +51,15 @@ def testing_api_key(environ: str) -> str:
     return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
 
 
-def experimental_endpoint(fn):
-
-    def experimental(client, *args, **kwargs):
-        try:
-            client.endpoint = client.endpoint.replace("/graphql", "/_gql")
-            return fn(client, *args, **kwargs)
-        finally:
-            client.endpoint = client.endpoint.replace("/_gql", "/graphql")
-
-    return experimental
-
-
-@experimental_endpoint
 def cancel_invite(client, invite_id):
     """
     Do not use. Only for testing.
     """
     query_str = """mutation CancelInvitePyApi($where: WhereUniqueIdInput!) {
             cancelInvite(where: $where) {id}}"""
-    client.execute(query_str, {'where': {'id': invite_id}})
+    client.execute(query_str, {'where': {'id': invite_id}}, experimental=True)
 
 
-@experimental_endpoint
 def get_project_invites(client, project_id):
     """
     Do not use. Only for testing.
@@ -83,15 +70,14 @@ def get_project_invites(client, project_id):
         invites(from: $from, first: $first) { nodes { %s
         projectInvites { projectId projectRoleName } } nextCursor}}}
     """ % (id_param, id_param, results_query_part(Invite))
-    return list(
-        PaginatedCollection(client,
-                            query_str, {id_param: project_id},
-                            ['project', 'invites', 'nodes'],
-                            Invite,
-                            cursor_path=['project', 'invites', 'nextCursor']))
+    return PaginatedCollection(client,
+                               query_str, {id_param: project_id},
+                               ['project', 'invites', 'nodes'],
+                               Invite,
+                               cursor_path=['project', 'invites', 'nextCursor'],
+                               experimental=True)
 
 
-@experimental_endpoint
 def get_invites(client):
     """
     Do not use. Only for testing.
@@ -103,9 +89,9 @@ def get_invites(client):
         client,
         query_str, {}, ['organization', 'invites', 'nodes'],
         Invite,
-        cursor_path=['organization', 'invites', 'nextCursor'])
-    return list(
-        invites)  # list() so that it makes the request to the right endpoint.
+        cursor_path=['organization', 'invites', 'nextCursor'],
+        experimental=True)
+    return invites
 
 
 @pytest.fixture
@@ -199,6 +185,10 @@ def sample_video() -> str:
 def organization(client):
     # Must have at least one seat open in your org to run these tests
     org = client.get_organization()
+    # Clean up before and after incase this wasn't run for some reason.
+    for invite in get_invites(client):
+        if "@labelbox.com" in invite.email:
+            cancel_invite(client, invite.uid)
     yield org
     for invite in get_invites(client):
         if "@labelbox.com" in invite.email:

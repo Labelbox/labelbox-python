@@ -12,9 +12,11 @@ def test_org_invite(client, organization, environ, queries):
         raise ValueError(
             f"Expected tests to run against either prod or staging. Found {environ}"
         )
+
     invite = organization.invite_user(dummy_email, role)
 
     if environ.value == "prod":
+
         invite_limit_after = organization.invite_limit()
         # One user added
         assert invite_limit.remaining - invite_limit_after.remaining == 1
@@ -22,6 +24,7 @@ def test_org_invite(client, organization, environ, queries):
 
     outstanding_invites = queries.get_invites(client)
     in_list = False
+
     for invite in outstanding_invites:
         if invite.uid == invite.uid:
             in_list = True
@@ -44,7 +47,7 @@ def test_project_invite(client, organization, project_pack, queries):
         roles['NONE'],
         project_roles=[project_role_1, project_role_2])
 
-    project_invite = queries.get_project_invites(client, project_1.uid)[0]
+    project_invite = next(queries.get_project_invites(client, project_1.uid))
 
     assert set([(proj_invite.project.uid, proj_invite.role.uid)
                 for proj_invite in project_invite.project_roles
