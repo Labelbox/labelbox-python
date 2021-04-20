@@ -73,7 +73,7 @@ class Organization(DbObject):
 
         if project_roles and role.name != "NONE":
             raise ValueError(
-                "Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
+                f"Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
             )
 
         data_param = "data"
