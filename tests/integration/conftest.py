@@ -50,19 +50,19 @@ def testing_api_key(environ: str) -> str:
     return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
 
 
-def beta_endpoint(fn):
+def experimental_endpoint(fn):
 
-    def beta(client, *args, **kwargs):
+    def experimental(client, *args, **kwargs):
         try:
             client.endpoint = client.endpoint.replace("/graphql", "/_gql")
             return fn(client, *args, **kwargs)
         finally:
             client.endpoint = client.endpoint.replace("/_gql", "/graphql")
 
-    return beta
+    return experimental
 
 
-@beta_endpoint
+@experimental_endpoint
 def cancel_invite(client, invite_id):
     """
     Do not use. Only for testing.
@@ -72,7 +72,7 @@ def cancel_invite(client, invite_id):
     client.execute(query_str, {'where': {'id': invite_id}})
 
 
-@beta_endpoint
+@experimental_endpoint
 def get_project_invites(client, project_id):
     """
     Do not use. Only for testing.
@@ -91,7 +91,7 @@ def get_project_invites(client, project_id):
                             cursor_path=['project', 'invites', 'nextCursor']))
 
 
-@beta_endpoint
+@experimental_endpoint
 def get_invites(client):
     """
     Do not use. Only for testing.
@@ -110,12 +110,9 @@ def get_invites(client):
 
 @pytest.fixture
 def queries():
-    return SimpleNamespace(
-        **{
-            'cancel_invite': cancel_invite,
-            'get_project_invites': get_project_invites,
-            'get_invites': get_invites
-        })
+    return SimpleNamespace(cancel_invite=cancel_invite,
+                           get_project_invites=get_project_invites,
+                           get_invites=get_invites)
 
 
 class IntegrationClient(Client):
@@ -123,7 +120,7 @@ class IntegrationClient(Client):
     def __init__(self, environ: str) -> None:
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
-        super().__init__(api_key, api_url)
+        super().__init__(api_key, api_url, enable_experimental=True)
 
         self.queries = []
 

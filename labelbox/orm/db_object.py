@@ -256,14 +256,14 @@ class BulkDeletable:
         type(self).bulk_delete([self])
 
 
-def beta(fn):
+def experimental(fn):
 
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
-        if not self.client.enable_beta:
+        if not self.client.enable_experimental:
             raise Exception(
-                f"This function {fn.__name__} relies on a beta feature in the api. This means that the interface could change."
-                " Set `enable_beta=True` in the client to enable use of beta functions."
+                f"This function {fn.__name__} relies on a experimental feature in the api. This means that the interface could change."
+                " Set `enable_experimental=True` in the client to enable use of experimental functions."
             )
         return fn(self, *args, **kwargs)
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from labelbox.orm.db_object import DbObject, beta
+from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.schema.role import ProjectRole
 
@@ -27,6 +27,7 @@ class Invite(DbObject):
     email = Field.String("email", "inviteeEmail")
 
     def __init__(self, client, invite_response):
+        #invite_response.get('inviter')
         project_roles = invite_response.pop("projectInvites", [])
         super().__init__(client, invite_response)
 

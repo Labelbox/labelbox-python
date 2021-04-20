@@ -5,6 +5,13 @@ from labelbox.orm.db_object import DbObject
 from labelbox.schema.project import Project
 
 
+def _get_roles(client):
+    query_str = """query GetAvailableUserRolesPyApi { roles { id name } }"""
+    if not hasattr(_get_roles, 'roles'):
+        _get_roles.roles = res = client.execute(query_str)
+    return _get_roles.roles
+
+
 class Roles:
     """
     Object that manages org and user roles
@@ -14,22 +21,16 @@ class Roles:
         >>> roles['ADMIN'] # returns the admin Role
 
     """
-    _instance = None
 
-    def __new__(cls, client):
-        if cls._instance is None:
-            cls._instance = super(Roles, cls).__new__(cls)
-            query_str = """query GetAvailableUserRolesPyApi { roles { id name } }"""
-            res = client.execute(query_str)
-            valid_roles = set()
-            for result in res['roles']:
-                _name = result['name'].upper().replace(' ', '_')
-                result['name'] = _name
-                setattr(cls._instance, _name, Role(client, result))
-                valid_roles.add(_name)
-            cls._instance.valid_roles = valid_roles
-        cls._instance.index = 0
-        return cls._instance
+    def __init__(self, client):
+        res = _get_roles(client)
+        valid_roles = set()
+        for result in res['roles']:
+            _name = result['name'].upper().replace(' ', '_')
+            result['name'] = _name
+            setattr(self, _name, Role(client, result))
+            valid_roles.add(_name)
+        self.valid_roles = valid_roles
 
     def __repr__(self):
         return str({k: getattr(self, k) for k in self.valid_roles})
