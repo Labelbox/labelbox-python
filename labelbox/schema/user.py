@@ -84,12 +84,6 @@ class User(DbObject):
             raise ValueError(
                 "User is not project based and has access to all projects")
 
-        if not isinstance(role, Role):
-            raise TypeError(f"Must provide a `Role` object. Found {role}")
-
-        if not isinstance(project, Project):
-            raise TypeError(f"Must provide a `Project` object. Found {project}")
-
         project_id_param = "projectId"
         user_id_param = "userId"
         role_id_param = "roleId"

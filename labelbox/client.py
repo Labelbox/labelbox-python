@@ -37,7 +37,7 @@ class Client:
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
-                 enable_beta=False):
+                 enable_experimental=False):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -50,7 +50,7 @@ class Client:
         Args:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
-            enable_beta (bool): Indicated whether or not to use beta features
+            enable_experimental (bool): Indicated whether or not to use experimental features
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
@@ -63,9 +63,9 @@ class Client:
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
-        self.enable_beta = True
-        if enable_beta:
-            logger.info("Beta features have been enabled")
+        self.enable_experimental = enable_experimental
+        if enable_experimental:
+            logger.info("Experimental features have been enabled")
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.endpoint = endpoint
@@ -78,7 +78,7 @@ class Client:
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, beta=False):
+    def execute(self, query, params=None, timeout=30.0, experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -125,7 +125,7 @@ class Client:
 
         try:
             response = requests.post(self.endpoint.replace('/graphql', '/_gql')
-                                     if beta else self.endpoint,
+                                     if experimental else self.endpoint,
                                      data=data,
                                      headers=self.headers,
                                      timeout=timeout)
@@ -213,9 +213,9 @@ class Client:
         if internal_server_error is not None:
             message = internal_server_error.get("message")
 
-            if message.startswith("Syntax Error"):
+            if message.startswith("Syntax Error") or message.startswith(
+                    "Invite(s) cannot be sent"):
                 raise labelbox.exceptions.InvalidQueryError(message)
-
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 

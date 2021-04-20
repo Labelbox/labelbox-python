@@ -90,10 +90,9 @@ class Project(DbObject, Updateable, Deletable):
              project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } }
            }
         }""" % (id_param, id_param, query.results_query_part(Entity.User))
-        return PaginatedCollection(
-            self.client, query_str, {id_param: str(self.uid)},
-            ["project", "members"],
-            lambda client, res: ProjectMember(client, res))
+        return PaginatedCollection(self.client, query_str,
+                                   {id_param: str(self.uid)},
+                                   ["project", "members"], ProjectMember)
 
     def create_label(self, **kwargs):
         """ Creates a label on a Legacy Editor project. Not supported in the new Editor.

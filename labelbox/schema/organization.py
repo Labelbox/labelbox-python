@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
-from labelbox.orm.db_object import DbObject, beta
+from labelbox.orm.db_object import DbObject, experimental, query
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import Invite, InviteLimit, ProjectRole
 from labelbox.schema.user import User
@@ -45,7 +45,7 @@ class Organization(DbObject):
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
 
-    @beta
+    @experimental
     def invite_user(
             self,
             email: str,
@@ -62,46 +62,29 @@ class Organization(DbObject):
         Returns:
             Invite for the user
 
-        Creates or updates users. This function shouldn't directly be called. 
-        Use `Organization.invite_user`
-
-        Note: that there is a really unclear foreign key error if you use an unsupported role.
-        - This means that the `Roles` object is not getting the right ids
+        Notes:
+            This function is currently experimental and has a few limitations that will be resolved in future releases
+            1. There is a really unclear foreign key error if you use an unsupported role.
+                - This means that the `Roles` object is not getting the right ids
+            2. Multiple invites can be sent for the same email. This can only be resolved in the UI for now.
+                - Future releases of the SDK will support the ability to query and revoke invites to solve this problem (and/or checking on the backend)
+            3. Some server side response are unclear (e.g. if the user invites themself `None` is returned which the SDK raises as a `LabelboxError` )
         """
-        remaining_invites = self.invite_limit().remaining
-        if remaining_invites == 0:
-            raise LabelboxError(
-                "Invite(s) cannot be sent because you do not have enough available seats in your organization. "
-                "Please upgrade your account, revoke pending invitations or remove other users."
-            )
-
-        if not isinstance(role, Role):
-            raise TypeError(f"role must be Role type. Found {role}")
 
         if project_roles and role.name != "NONE":
             raise ValueError(
                 "Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
             )
 
-        _project_roles = [] if project_roles is None else project_roles
-        for project_role in _project_roles:
-            if not isinstance(project_role, ProjectRole):
-                raise TypeError(
-                    f"project_roles must be a list of `ProjectRole`s. Found {project_role}"
-                )
-
-        if self.client.get_user().email == email:
-            raise ValueError("Cannot update your own role")
-
         data_param = "data"
         query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
-                    createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail}}}""" % (
-            data_param, data_param)
+                    createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail inviter { %s } }}}""" % (
+            data_param, data_param, query.results_query_part(User))
 
         projects = [{
             "projectId": project_role.project.uid,
             "projectRoleId": project_role.role.uid
-        } for project_role in _project_roles]
+        } for project_role in project_roles or []]
 
         res = self.client.execute(query_str, {
             data_param: [{
@@ -112,11 +95,13 @@ class Organization(DbObject):
                 "projects": projects
             }]
         },
-                                  beta=True)
+                                  experimental=True)
         invite_response = res['createInvites'][0]['invite']
+        if not invite_response:
+            raise LabelboxError(f"Unable to send invite for email {email}")
         return Invite(self.client, invite_response)
 
-    @beta
+    @experimental
     def invite_limit(self) -> InviteLimit:
         """ Retrieve invite limits for the org
         This already accounts for users currently in the org
@@ -130,7 +115,7 @@ class Organization(DbObject):
         res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
         }""" % (org_id_param, org_id_param), {org_id_param: self.uid},
-                                  beta=True)
+                                  experimental=True)
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
@@ -141,9 +126,6 @@ class Organization(DbObject):
         Args:
             user (User): The user to delete from the org
         """
-
-        if not isinstance(user, User):
-            raise TypeError(f"Expected user to be of type User, found {user}")
 
         user_id_param = "userId"
         self.client.execute(
