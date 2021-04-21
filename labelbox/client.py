@@ -213,8 +213,7 @@ class Client:
         if internal_server_error is not None:
             message = internal_server_error.get("message")
 
-            if message.startswith("Syntax Error") or message.startswith(
-                    "Invite(s) cannot be sent"):
+            if message.startswith(("Syntax Error", "Invite(s) cannot be sent")):
                 raise labelbox.exceptions.InvalidQueryError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
