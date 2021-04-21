@@ -50,7 +50,7 @@ class Client:
         Args:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
-            enable_experimental (bool): Indicated whether or not to use experimental features
+            enable_experimental (bool): Indicates whether or not to use experimental features
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment

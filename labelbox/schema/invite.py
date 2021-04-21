@@ -27,7 +27,6 @@ class Invite(DbObject):
     email = Field.String("email", "inviteeEmail")
 
     def __init__(self, client, invite_response):
-        #invite_response.get('inviter')
         project_roles = invite_response.pop("projectInvites", [])
         super().__init__(client, invite_response)
 
