@@ -1,13 +1,17 @@
 from dataclasses import dataclass
+from typing import Dict, Optional, TYPE_CHECKING
 
 from labelbox.orm.model import Field
 from labelbox.orm.db_object import DbObject
 from labelbox.schema.project import Project
 
-_ROLES = None
+if TYPE_CHECKING:
+    from labelbox import Client
+
+_ROLES: Optional[Dict[str, "Role"]] = None
 
 
-def get_roles(client):
+def get_roles(client: "Client") -> Dict[str, "Role"]:
     global _ROLES
     if _ROLES is None:
         query_str = """query GetAvailableUserRolesPyApi { roles { id name } }"""
