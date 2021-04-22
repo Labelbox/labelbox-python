@@ -67,7 +67,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         return self.client._create(DataRow, kwargs)
 
-    def create_data_rows(self, items):
+    def create_data_rows(self, items, tms=False):
         """ Creates multiple DataRow objects based on the given `items`.
 
         Each element in `items` can be either a `str` or a `dict`. If
@@ -135,7 +135,10 @@ class Dataset(DbObject, Updateable, Deletable):
             }
 
         # Prepare and upload the desciptor file
-        data = json.dumps([convert_item(item) for item in items])
+        if not tms:
+            items = [convert_item(item) for item in items]
+
+        data = json.dumps(items)
         descriptor_url = self.client.upload_data(data)
 
         # Create data source
