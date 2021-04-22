@@ -1,5 +1,19 @@
 # Changelog
 
+# Version 2.5.4 (2021-04-22)
+## Added
+* User management
+    * Query for remaining invites and users available to an organization
+    * Set and update organization roles
+    * Set / update / revoke project role
+    * Delete users from organization
+    * Example notebook added under examples/basics
+* Issues and comments export
+    * Bulk export issues and comments. See `Project.export_labels`
+* MAL on Tiled Imagery
+    * Example notebook added under examples/model_assisted_labeling
+    * `Dataset.create_data_rows` now allows users to upload tms imagery
+
 # Version 2.5.3 (2021-04-01)
 ## Added
 * Cleanup and add additional example notebooks
