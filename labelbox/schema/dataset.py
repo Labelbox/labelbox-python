@@ -83,7 +83,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>> dataset.create_data_rows([
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
         >>>     "path/to/file2.jpg",
-        >>>     {tileLayerUrl : "http://", ...}    
+        >>>     {"tileLayerUrl" : "http://", ...}    
         >>>     ])
 
         For an example showing how to upload tiled data_rows see the following notebook:
