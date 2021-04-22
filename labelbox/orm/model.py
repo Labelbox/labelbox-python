@@ -184,6 +184,10 @@ class Relationship:
         name (str): Name of the relationship in the snake_case format.
         graphql_name (str): Name of the relationships server-side. Most often
             (not always) just a camelCase version of `name`.
+        cache (bool) : Whether or not to cache the relationship values.
+            Useful for objects that aren't directly queryable from the api (relationship query builder won't work)
+            Also useful for expensive ToOne relationships 
+
     """
 
     class Type(Enum):
@@ -191,8 +195,8 @@ class Relationship:
         ToMany = auto()
 
     @staticmethod
-    def ToOne(*args):
-        return Relationship(Relationship.Type.ToOne, *args)
+    def ToOne(*args, cache=False):
+        return Relationship(Relationship.Type.ToOne, *args, cache=cache)
 
     @staticmethod
     def ToMany(*args):
@@ -203,10 +207,12 @@ class Relationship:
                  destination_type_name,
                  filter_deleted=True,
                  name=None,
-                 graphql_name=None):
+                 graphql_name=None,
+                 cache=False):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
+        self.cache = cache
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (

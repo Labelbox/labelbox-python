@@ -8,8 +8,8 @@ The Labelbox Python API offers a simple, user-friendly way to interact with the 
 
 * [Requirements](#requirements)
 * [Installation](#installation)
-* [Authentication](#authentication)
 * [Documentation](#documentation)
+* [Authentication](#authentication)
 * [Contribution](#contribution)
 * [Testing](#testing)
 
@@ -40,6 +40,12 @@ Install using Python's Pip manager.
 pip install labelbox
 ```
 
+## Documentation
+
+* [Visit our docs](https://labelbox.com/docs/python-api) to learn how the SDK works
+* Checkout our [notebook examples](examples/) to follow along with interactive tutorials
+* view our [API reference](https://labelbox.com/docs/python-api/api-reference).
+
 ## Authentication
 
 Labelbox uses API keys to validate requests. You can create and manage API keys on [Labelbox](https://app.labelbox.com/account/api-keys). Pass your API key as an environment variable. Then, import and initialize the API Client.
@@ -51,10 +57,6 @@ user@machine:~$ python3
 from labelbox import Client
 client = Client()
 ```
-
-## Documentation
-
-[Visit our docs](https://labelbox.com/docs/python-api) to learn how to [create a project](https://labelbox.com/docs/python-api/create-first-project), read through some helpful user guides, and view our [API reference](https://labelbox.com/docs/python-api/api-reference).
 
 ## Contribution
 Please consult `CONTRIB.md`
