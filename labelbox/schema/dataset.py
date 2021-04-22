@@ -91,7 +91,6 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             items (iterable of (dict or str)): See above for details.
-            tiled_imagery (bool): Indicates whether or not the data rows contain tiled imagery
 
         Returns:
             Task representing the data import on the server side. The Task
