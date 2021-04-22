@@ -73,14 +73,21 @@ class Dataset(DbObject, Updateable, Deletable):
         Each element in `items` can be either a `str` or a `dict`. If
         it is a `str`, then it is interpreted as a local file path. The file
         is uploaded to Labelbox and a DataRow referencing it is created.
-        If an item is a `dict`, then it should map `DataRow` fields (or their
-        names) to values. At the minimum an `item` passed as a `dict` must
-        contain a `DataRow.row_data` key and value.
 
+        If an item is a `dict`, then it could support one of the two following structures
+            1. For static imagery, video, and text it should map `DataRow` fields (or their names) to values. 
+               At the minimum an `item` passed as a `dict` must contain a `DataRow.row_data` key and value.
+            2. For tiled imagery the dict must match the import structure specified in the link below
+               https://docs.labelbox.com/data-model/en/index-en#tiled-imagery-import
+        
         >>> dataset.create_data_rows([
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
-        >>>     "path/to/file2.jpg"
+        >>>     "path/to/file2.jpg",
+        >>>     {"tileLayerUrl" : "http://", ...}    
         >>>     ])
+
+        For an example showing how to upload tiled data_rows see the following notebook:
+            https://github.com/Labelbox/labelbox-python/blob/ms/develop/model_assisted_labeling/tiled_imagery_mal.ipynb
 
         Args:
             items (iterable of (dict or str)): See above for details.
@@ -113,6 +120,9 @@ class Dataset(DbObject, Updateable, Deletable):
             items = thread_pool.map(upload_if_necessary, items)
 
         def convert_item(item):
+            # Don't make any changes to tms data
+            if "tileLayerUrl" in item:
+                return item
             # Convert string names to fields.
             item = {
                 key if isinstance(key, Field) else DataRow.field(key): value
@@ -135,7 +145,8 @@ class Dataset(DbObject, Updateable, Deletable):
             }
 
         # Prepare and upload the desciptor file
-        data = json.dumps([convert_item(item) for item in items])
+        items = [convert_item(item) for item in items]
+        data = json.dumps(items)
         descriptor_url = self.client.upload_data(data)
 
         # Create data source

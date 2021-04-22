@@ -37,6 +37,8 @@
 | Named Entity Recognition MAL  | [Github](model_assisted_labeling/ner_mal.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/ner_mal.ipynb) | 
 | Debugging MAL                 | [Github](model_assisted_labeling/debugging_mal.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/debugging_mal.ipynb) | 
 | MAL with Subclasses           | [Github](model_assisted_labeling/mal_with_subclasses.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/mal_with_subclasses.ipynb) | 
+| Tiled Imagery MAL    | [Github](model_assisted_labeling/tiled_imagery_mal.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/tiled_imagery_mal.ipynb) | 
+
 ------ 
 
 ## [Project Configuration](project_configuration)
