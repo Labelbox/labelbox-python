@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from functools import wraps
 import logging
 
 from labelbox import utils
@@ -44,8 +45,13 @@ class DbObject(Entity):
         self._set_field_values(field_values)
 
         for relationship in self.relationships():
+            value = field_values.get(relationship.name)
+            if relationship.cache and value is None:
+                raise KeyError(
+                    f"Expected field  values for {relationship.name}")
+
             setattr(self, relationship.name,
-                    RelationshipManager(self, relationship))
+                    RelationshipManager(self, relationship, value))
 
     def _set_field_values(self, field_values):
         """ Sets field values on this object. Ensures proper value conversions.
@@ -95,7 +101,7 @@ class RelationshipManager:
     each `DbObject` instance.
     """
 
-    def __init__(self, source, relationship):
+    def __init__(self, source, relationship, value=None):
         """Args:
             source (DbObject subclass instance): The object that's the source
                 of the relationship.
@@ -107,6 +113,7 @@ class RelationshipManager:
         self.supports_filtering = True
         self.supports_sorting = True
         self.filter_on_id = True
+        self.value = value
 
     def __call__(self, *args, **kwargs):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
@@ -150,6 +157,9 @@ class RelationshipManager:
     def _to_one(self):
         """ Returns the relationship destination object. """
         rel = self.relationship
+
+        if self.value:
+            return rel.destination_type(self.source.client, self.value)
 
         query_string, params = query.relationship(self.source, rel, None, None)
         result = self.source.client.execute(query_string, params)
@@ -244,3 +254,17 @@ class BulkDeletable:
         a call to this you should not use this DB object anymore.
         """
         type(self).bulk_delete([self])
+
+
+def experimental(fn):
+
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        if not self.client.enable_experimental:
+            raise Exception(
+                f"This function {fn.__name__} relies on a experimental feature in the api. This means that the interface could change."
+                " Set `enable_experimental=True` in the client to enable use of experimental functions."
+            )
+        return fn(self, *args, **kwargs)
+
+    return wrapper
