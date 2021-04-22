@@ -76,8 +76,8 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
-    #@retry.Retry(predicate=retry.if_exception_type(
-    #    labelbox.exceptions.InternalServerError))
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.InternalServerError))
     def execute(self, query, params=None, timeout=30.0, experimental=False):
         """ Sends a request to the server for the execution of the
         given query.

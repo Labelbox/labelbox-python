@@ -257,7 +257,6 @@ class EntityMeta(type):
         """
 
         cached_rels = [r for r in cls.relationships() if r.cache]
-        print(cached_rels)
         # Check if any cached classes have their own cached fields
         for rel in cached_rels:
             child_name = utils.title_case(rel.name)
