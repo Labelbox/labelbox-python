@@ -26,6 +26,9 @@ def test_labeling_parameter_overrides(project, rand_gen):
     assert {o.number_of_labels for o in overrides} == {3, 2, 5}
     assert {o.priority for o in overrides} == {4, 3, 8}
 
+    for override in overrides:
+        assert isinstance(override.data_row(), DataRow)
+
     success = project.unset_labeling_parameter_overrides(
         [data[0][0], data[1][0]])
     assert success

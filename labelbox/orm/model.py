@@ -242,8 +242,43 @@ class EntityMeta(type):
 
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)
+        cls.validate_cached_relationships()
         if clsname != "Entity":
             setattr(Entity, clsname, cls)
+            if not hasattr(Entity, 'entities'):
+                setattr(Entity, 'entities', [])
+            Entity.entities.append(cls)
+
+    def validate_cached_relationships(cls):
+        """
+        Graphql doesn't allow for infinite nesting in queries. 
+        This function checks that cached relationships result in valid queries.
+            - A cached object and not have its own cached relationships.
+        """
+
+        cached_rels = [r for r in cls.relationships() if r.cache]
+        print(cached_rels)
+        # Check if any cached classes have their own cached fields
+        for rel in cached_rels:
+            child_name = utils.title_case(rel.name)
+            if hasattr(Entity, child_name):
+                for sub_rel in getattr(Entity, child_name).relationships():
+                    if sub_rel.cache:
+                        raise TypeError(
+                            "Cannot cache a relationship to an Entity with its own cached relationship(s). "
+                            f"`{utils.snake_case(cls.__name__)}` caches `{rel.name}` which caches `{sub_rel}`"
+                        )
+
+        # If this cls has cached fields check if any existing object caches this cls.
+        if cached_rels:
+            for entity in Entity.entities:
+                attr = {rel.name: rel for rel in entity.relationships()
+                       }.get(utils.snake_case(cls.__name__))
+                if attr and attr.cache:
+                    raise TypeError(
+                        "Cannot cache a relationship to an Entity with its own cached relationship(s). "
+                        f"`{utils.snake_case(entity.__name__)}` caches `{utils.snake_case(cls.__name__)}` which caches `{cached_rels}`"
+                    )
 
 
 class Entity(metaclass=EntityMeta):

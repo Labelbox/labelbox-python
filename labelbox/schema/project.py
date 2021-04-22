@@ -641,6 +641,7 @@ class LabelingParameterOverride(DbObject):
     """
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
+    data_row = Relationship.ToOne("DataRow", cache=True)
 
 
 LabelerPerformance = namedtuple(
