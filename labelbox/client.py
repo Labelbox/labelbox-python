@@ -3,7 +3,6 @@ import json
 import logging
 import mimetypes
 import os
-from typing import Tuple
 
 from google.api_core import retry
 import requests
@@ -19,6 +18,7 @@ from labelbox.schema.dataset import Dataset
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema import role
 from labelbox import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,8 @@ class Client:
 
     def __init__(self,
                  api_key=None,
-                 endpoint='https://api.labelbox.com/graphql'):
+                 endpoint='https://api.labelbox.com/graphql',
+                 enable_experimental=False):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -49,6 +50,7 @@ class Client:
         Args:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
+            enable_experimental (bool): Indicates whether or not to use experimental features
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
@@ -61,8 +63,11 @@ class Client:
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
-        logger.info("Initializing Labelbox client at '%s'", endpoint)
+        self.enable_experimental = enable_experimental
+        if enable_experimental:
+            logger.info("Experimental features have been enabled")
 
+        logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.endpoint = endpoint
         self.headers = {
             'Accept': 'application/json',
@@ -71,10 +76,9 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
-    #TODO: Add exponential backoff so we don'tt overwhelm the api
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0):
+    def execute(self, query, params=None, timeout=30.0, experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -120,7 +124,8 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            response = requests.post(self.endpoint,
+            response = requests.post(self.endpoint.replace('/graphql', '/_gql')
+                                     if experimental else self.endpoint,
                                      data=data,
                                      headers=self.headers,
                                      timeout=timeout)
@@ -208,9 +213,8 @@ class Client:
         if internal_server_error is not None:
             message = internal_server_error.get("message")
 
-            if message.startswith("Syntax Error"):
+            if message.startswith(("Syntax Error", "Invite(s) cannot be sent")):
                 raise labelbox.exceptions.InvalidQueryError(message)
-
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
@@ -385,6 +389,7 @@ class Client:
         not_deleted = db_object_type.deleted == False
         where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
+
         return PaginatedCollection(
             self, query_str, params,
             [utils.camel_case(db_object_type.type_name()) + "s"],
@@ -490,3 +495,11 @@ class Client:
                 any of the attribute names given in kwargs.
         """
         return self._create(Project, kwargs)
+
+    def get_roles(self):
+        """
+        Returns:
+            Roles: Provides information on available roles within an organization. 
+            Roles are used for user management.
+        """
+        return role.get_roles(self)

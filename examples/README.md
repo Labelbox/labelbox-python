@@ -16,6 +16,7 @@
 | Labels                      | [Github](basics/labels.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/labels.ipynb) | 
 | Ontologies                  | [Github](basics/ontologies.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb) | 
 | Projects                    | [Github](basics/projects.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/projects.ipynb) | 
+| User Management             | [Github](basics/user_management.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/user_management.ipynb) | 
 ------ 
 
 ## [Label Export](label_export)
