@@ -67,7 +67,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         return self.client._create(DataRow, kwargs)
 
-    def create_data_rows(self, items, tms=False):
+    def create_data_rows(self, items, tiled_imagery=False):
         """ Creates multiple DataRow objects based on the given `items`.
 
         Each element in `items` can be either a `str` or a `dict`. If
@@ -82,7 +82,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     "path/to/file2.jpg"
         >>>     ])
 
-        If tms = True, See the link below for supported fields:
+        If tiled_imagery = True, See the link below for supported fields:
             https://docs.labelbox.com/data-model/en/index-en#tiled-imagery-import
 
         For an example showing how to upload tiled data_rows see the following notebook:
@@ -90,7 +90,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             items (iterable of (dict or str)): See above for details.
-            tms (bool): Indicates whether or not the data rows contain tiled imagery
+            tiled_imagery (bool): Indicates whether or not the data rows contain tiled imagery
 
         Returns:
             Task representing the data import on the server side. The Task
