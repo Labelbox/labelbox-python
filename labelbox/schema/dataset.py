@@ -82,8 +82,15 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     "path/to/file2.jpg"
         >>>     ])
 
+        If tms = True, See the link below for supported fields:
+            https://docs.labelbox.com/data-model/en/index-en#tiled-imagery-import
+
+        For an example showing how to upload tiled data_rows see the following notebook:
+            https://github.com/Labelbox/labelbox-python/blob/ms/develop/model_assisted_labeling/tiled_imagery_mal.ipynb
+
         Args:
             items (iterable of (dict or str)): See above for details.
+            tms (bool): Indicates whether or not the data rows contain tiled imagery
 
         Returns:
             Task representing the data import on the server side. The Task
