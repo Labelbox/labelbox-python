@@ -4,14 +4,14 @@ import logging
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Union, Iterable
+from typing import Dict, Union, Iterable
 from urllib.parse import urlparse
 
 from labelbox import utils
-from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.data_row import DataRow
-from labelbox.exceptions import InvalidQueryError
 from labelbox.orm import query
+from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.exceptions import InvalidQueryError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
@@ -78,9 +78,24 @@ class Project(DbObject, Updateable, Deletable):
     predictions = Relationship.ToMany("Prediction", False)
     ontology = Relationship.ToOne("Ontology", True)
 
+    def members(self):
+        """ Fetch all current members for this project
+
+        Returns:
+            A `PaginatedCollection of `ProjectMember`s
+
+        """
+        id_param = "projectId"
+        query_str = """query ProjectMemberOverviewPyApi($%s: ID!) {
+             project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } }
+           }
+        }""" % (id_param, id_param, query.results_query_part(Entity.User))
+        return PaginatedCollection(self.client, query_str,
+                                   {id_param: str(self.uid)},
+                                   ["project", "members"], ProjectMember)
+
     def create_label(self, **kwargs):
         """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
-
         Args:
             **kwargs: Label attributes. At minimum, the label `DataRow`.
         """
@@ -176,6 +191,40 @@ class Project(DbObject, Updateable, Deletable):
             logger.debug("Project '%s' label export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    def export_issues(self, status=None):
+        """ Calls the server-side Issues exporting that 
+        returns the URL to that payload.
+
+        Args:
+            status (string): valid values: Open, Resolved
+        Returns:
+            URL of the data file with this Project's issues. 
+        """
+        id_param = "projectId"
+        status_param = "status"
+        query_str = """query GetProjectIssuesExportPyApi($%s: ID!, $%s: IssueStatus) {
+            project(where: { id: $%s }) {
+                issueExportUrl(where: { status: $%s })
+            }
+        }""" % (id_param, status_param, id_param, status_param)
+
+        valid_statuses = {None, "Open", "Resolved"}
+
+        if status not in valid_statuses:
+            raise ValueError("status must be in {}. Found {}".format(
+                valid_statuses, status))
+
+        res = self.client.execute(query_str, {
+            id_param: self.uid,
+            status_param: status
+        })
+
+        res = res['project']
+
+        logger.debug("Project '%s' issues export, link generated", self.uid)
+
+        return res.get('issueExportUrl')
 
     def upsert_instructions(self, instructions_file: str):
         """
@@ -610,6 +659,11 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
+
+class ProjectMember(DbObject):
+    user = Relationship.ToOne("User", cache=True)
+    role = Relationship.ToOne("Role", cache=True)
 
 
 class LabelingParameterOverride(DbObject):

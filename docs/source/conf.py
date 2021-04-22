@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 project = 'Labelbox Python API reference'
 copyright = '2021, Labelbox'
 
-release = '2.4'
+release = '2.5.3'
 
 # -- General configuration ---------------------------------------------------
 
@@ -50,3 +50,9 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Prevent the sidebar from collapsing
+html_js_files = ['js/prevent_collapse.js']
+html_theme_options = {
+    "collapse_navigation": False,
+}

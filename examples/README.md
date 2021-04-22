@@ -16,6 +16,7 @@
 | Labels                      | [Github](basics/labels.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/labels.ipynb) | 
 | Ontologies                  | [Github](basics/ontologies.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb) | 
 | Projects                    | [Github](basics/projects.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/projects.ipynb) | 
+| User Management             | [Github](basics/user_management.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/user_management.ipynb) | 
 ------ 
 
 ## [Label Export](label_export)
@@ -36,6 +37,8 @@
 | Named Entity Recognition MAL  | [Github](model_assisted_labeling/ner_mal.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/ner_mal.ipynb) | 
 | Debugging MAL                 | [Github](model_assisted_labeling/debugging_mal.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/debugging_mal.ipynb) | 
 | MAL with Subclasses           | [Github](model_assisted_labeling/mal_with_subclasses.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/mal_with_subclasses.ipynb) | 
+| Tiled Imagery MAL    | [Github](model_assisted_labeling/tiled_imagery_mal.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/tiled_imagery_mal.ipynb) | 
+
 ------ 
 
 ## [Project Configuration](project_configuration)
@@ -43,5 +46,5 @@
 | Notebook                    | Github                            | Google Colab |
 | --------------------------- | --------------------------------- | ------------ |
 | Project Setup  | [Github](project_configuration/project_setup.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/project_setup.ipynb) | 
-| Debugging MAL                 | [Github](project_configuration/queue_management.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/queue_management.ipynb) | 
-| MAL with Subclasses           | [Github](project_configuration/webhooks.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/webhooks.ipynb) | 
+| Queue Management                 | [Github](project_configuration/queue_management.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/queue_management.ipynb) | 
+| Webhooks           | [Github](project_configuration/webhooks.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/webhooks.ipynb) | 
