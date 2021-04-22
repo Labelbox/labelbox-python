@@ -142,7 +142,7 @@ class Dataset(DbObject, Updateable, Deletable):
             }
 
         # Prepare and upload the desciptor file
-        if not tms:
+        if not tiled_imagery:
             items = [convert_item(item) for item in items]
 
         data = json.dumps(items)
