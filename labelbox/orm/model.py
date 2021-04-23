@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Union
+from typing import Dict, Union
 
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError
@@ -239,7 +239,7 @@ class EntityMeta(type):
     of the Entity class object so they can be referenced for example like:
         Entity.Project.
     """
-    mappings = {}
+    mappings : Dict[str, "Entity"] = {}
 
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)
