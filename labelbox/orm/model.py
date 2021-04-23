@@ -239,45 +239,58 @@ class EntityMeta(type):
     of the Entity class object so they can be referenced for example like:
         Entity.Project.
     """
+    mappings = {}
 
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)
         cls.validate_cached_relationships()
         if clsname != "Entity":
             setattr(Entity, clsname, cls)
-            if not hasattr(Entity, 'entities'):
-                setattr(Entity, 'entities', [])
-            Entity.entities.append(cls)
+            EntityMeta.mappings[utils.snake_case(
+                cls.__name__)] = cls.relationships()
+
+    @staticmethod
+    def raise_for_nested_cache(first: str, middle: str, last: str):
+        raise TypeError(
+            "Cannot cache a relationship to an Entity with its own cached relationship(s). "
+            f"`{first}` caches `{middle}` which caches `{last}`")
 
     def validate_cached_relationships(cls):
         """
         Graphql doesn't allow for infinite nesting in queries. 
         This function checks that cached relationships result in valid queries.
-            - A cached object and not have its own cached relationships.
+            * It does this by making sure that a cached relationship do not
+              reference any entity with its own cached relationships.
+
+        This check is performed by looking to see if this entity caches 
+        any entities that have their own cached fields. If this entity 
+        that we are checking has any cached fields then we also check 
+        all currently defined entities to see if they cache this entity.
+
+        A two way check is necessary because checks are performed as classes are being defined.
+        As opposed to after all objects have been created.
         """
-
         cached_rels = [r for r in cls.relationships() if r.cache]
-        # Check if any cached classes have their own cached fields
+        # Check if any cached entities have their own cached fields
         for rel in cached_rels:
-            child_name = utils.title_case(rel.name)
-            if hasattr(Entity, child_name):
-                for sub_rel in getattr(Entity, child_name).relationships():
-                    if sub_rel.cache:
-                        raise TypeError(
-                            "Cannot cache a relationship to an Entity with its own cached relationship(s). "
-                            f"`{utils.snake_case(cls.__name__)}` caches `{rel.name}` which caches `{sub_rel}`"
-                        )
+            cached_entities = EntityMeta.mappings.get(rel.name, [])
+            nested = [entity.name for entity in cached_entities if entity.cache]
+            if nested:
+                cls.raise_for_nested_cache(utils.snake_case(cls.__name__),
+                                           rel.name, nested)
 
-        # If this cls has cached fields check if any existing object caches this cls.
+        # If this entity caches any other entity
+        # then check if any entity caches this entity
         if cached_rels:
-            for entity in Entity.entities:
-                attr = {rel.name: rel for rel in entity.relationships()
+            for entity_name, entity_relationships in EntityMeta.mappings.items(
+            ):
+                attr = {rel.name: rel for rel in entity_relationships
                        }.get(utils.snake_case(cls.__name__))
                 if attr and attr.cache:
-                    raise TypeError(
-                        "Cannot cache a relationship to an Entity with its own cached relationship(s). "
-                        f"`{utils.snake_case(entity.__name__)}` caches `{utils.snake_case(cls.__name__)}` which caches `{cached_rels}`"
-                    )
+                    cls.raise_for_nested_cache(
+                        utils.snake_case(entity_name),
+                        utils.snake_case(cls.__name__),
+                        [entity.name for entity in cached_rels])
 
 
 class Entity(metaclass=EntityMeta):

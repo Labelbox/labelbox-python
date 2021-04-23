@@ -16,7 +16,7 @@ def test_illegal_cache_cond1():
 
     assert str(exc_info.value) == \
         "Cannot cache a relationship to an Entity with its own cached relationship(s)." \
-        " `test_entity_a` caches `test_entity_b` which caches `[<Relationship: 'another_entity'>]`"
+        " `test_entity_a` caches `test_entity_b` which caches `['another_entity']`"
 
 
 def test_illegal_cache_cond2():
@@ -31,4 +31,4 @@ def test_illegal_cache_cond2():
 
     assert str(exc_info.value) == \
         "Cannot cache a relationship to an Entity with its own cached relationship(s)." \
-        " `test_entity_c` caches `test_entity_d` which caches `another_entity`"
+        " `test_entity_c` caches `test_entity_d` which caches `['another_entity']`"
