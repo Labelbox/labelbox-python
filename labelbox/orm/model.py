@@ -239,7 +239,7 @@ class EntityMeta(type):
     of the Entity class object so they can be referenced for example like:
         Entity.Project.
     """
-    mappings : Dict[str, "Entity"] = {}
+    mappings: Dict[str, "Entity"] = {}
 
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)

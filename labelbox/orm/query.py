@@ -298,13 +298,9 @@ def relationship(source, relationship, where, order_by):
     to_many = relationship.relationship_type == Relationship.Type.ToMany
     subquery = Query(relationship.graphql_name, relationship.destination_type,
                      where, to_many, order_by)
-
-
-
     query_where = type(source).uid == source.uid if isinstance(source, Entity) \
         else None
     query = Query(utils.camel_case(source.type_name()), subquery, query_where)
-
     return query.format_top("Get" + source.type_name() +
                             utils.title_case(relationship.graphql_name))
 
