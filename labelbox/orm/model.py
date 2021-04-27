@@ -257,12 +257,14 @@ class EntityMeta(type):
             f"`{first}` caches `{middle}` which caches `{last}`")
 
     @staticmethod
-    def cached_entities(entity_name : str):
+    def cached_entities(entity_name: str):
         """
         Return all cached entites for a given Entity name
         """
         cached_entities = EntityMeta.relationship_mappings.get(entity_name, [])
-        return {entity.name : entity for entity in cached_entities if entity.cache}
+        return {
+            entity.name: entity for entity in cached_entities if entity.cache
+        }
 
     def validate_cached_relationships(cls):
         """
@@ -289,7 +291,7 @@ class EntityMeta(type):
                 cls.raise_for_nested_cache(utils.snake_case(cls.__name__),
                                            rel.name, list(nested.keys()))
 
-        # If the current Entity (cls) has any cached relationships (cached_rels) 
+        # If the current Entity (cls) has any cached relationships (cached_rels)
         #  then no other defined Entity (entities in EntityMeta.relationship_mappings) can cache this Entity.
         if cached_rels:
             # For all currently defined Entities
