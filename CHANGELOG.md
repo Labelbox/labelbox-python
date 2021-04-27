@@ -9,7 +9,7 @@
     * Delete users from organization
     * Example notebook added under examples/basics
 * Issues and comments export
-    * Bulk export issues and comments. See `Project.export_labels`
+    * Bulk export issues and comments. See `Project.export_issues`
 * MAL on Tiled Imagery
     * Example notebook added under examples/model_assisted_labeling
     * `Dataset.create_data_rows` now allows users to upload tms imagery
