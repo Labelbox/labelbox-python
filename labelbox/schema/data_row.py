@@ -93,4 +93,3 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 data_row_id_param: self.uid
             })
         return Entity.AssetMetadata(self.client, res["createAssetMetadata"])
-
