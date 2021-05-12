@@ -77,6 +77,7 @@ def test_data_row_single_creation(dataset, rand_gen):
     assert data_row.organization() == client.get_organization()
     assert requests.get(IMG_URL).content == \
         requests.get(data_row.row_data).content
+    assert data_row.media_attributes is not None
 
     with NamedTemporaryFile() as fp:
         data = rand_gen(str).encode()
