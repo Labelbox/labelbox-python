@@ -13,6 +13,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             Otherwise, it's treated as an external URL.
         updated_at (datetime)
         created_at (datetime)
+        media_attributes (dict): generated media attributes for the datarow
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
@@ -25,6 +26,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     row_data = Field.String("row_data")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
+    media_attributes = Field.Json("media_attributes")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
@@ -32,6 +34,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
+
     predictions = Relationship.ToMany("Prediction", False)
 
     supported_meta_types = {
