@@ -1,6 +1,8 @@
-import pytest
 import json
+
 import requests
+import ndjson
+import pytest
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
@@ -100,3 +102,10 @@ def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
     assert "instructions_file must end with one of" in str(exc_info.value)
+
+
+def test_queued_data_row_export(configured_project):
+    url = configured_project.export_queued_data_rows()
+    assert url
+    result = ndjson.loads(requests.get(url).text)
+    assert len(result) == 1
