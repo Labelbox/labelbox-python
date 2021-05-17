@@ -40,7 +40,16 @@ def results_query_part(entity):
     Args:
         entity (type): The entity which needs fetching.
     """
-    return " ".join(field.graphql_name for field in entity.fields())
+    # Query for fields
+    fields = [field.graphql_name for field in entity.fields()]
+
+    # Query for cached relationships
+    fields.extend([
+        Query(rel.graphql_name, rel.destination_type).format()[0]
+        for rel in entity.relationships()
+        if rel.cache
+    ])
+    return " ".join(fields)
 
 
 class Query:

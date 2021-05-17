@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Union
+from typing import Dict, List, Union
 
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError
@@ -239,11 +239,74 @@ class EntityMeta(type):
     of the Entity class object so they can be referenced for example like:
         Entity.Project.
     """
+    # Maps Entity name to Relationships for all currently defined Entities
+    relationship_mappings: Dict[str, List[Relationship]] = {}
 
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)
+        cls.validate_cached_relationships()
         if clsname != "Entity":
             setattr(Entity, clsname, cls)
+            EntityMeta.relationship_mappings[utils.snake_case(
+                cls.__name__)] = cls.relationships()
+
+    @staticmethod
+    def raise_for_nested_cache(first: str, middle: str, last: List[str]):
+        raise TypeError(
+            "Cannot cache a relationship to an Entity with its own cached relationship(s). "
+            f"`{first}` caches `{middle}` which caches `{last}`")
+
+    @staticmethod
+    def cached_entities(entity_name: str):
+        """
+        Return all cached entites for a given Entity name
+        """
+        cached_entities = EntityMeta.relationship_mappings.get(entity_name, [])
+        return {
+            entity.name: entity for entity in cached_entities if entity.cache
+        }
+
+    def validate_cached_relationships(cls):
+        """
+        Graphql doesn't allow for infinite nesting in queries. 
+        This function checks that cached relationships result in valid queries.
+            * It does this by making sure that a cached relationship do not
+              reference any entity with its own cached relationships.
+
+        This check is performed by looking to see if this entity caches 
+        any entities that have their own cached fields. If this entity 
+        that we are checking has any cached fields then we also check 
+        all currently defined entities to see if they cache this entity.
+
+        A two way check is necessary because checks are performed as classes are being defined.
+        As opposed to after all objects have been created.
+        """
+        # All cached relationships
+        cached_rels = [r for r in cls.relationships() if r.cache]
+
+        # Check if any cached entities have their own cached fields
+        for rel in cached_rels:
+            nested = cls.cached_entities(rel.name)
+            if nested:
+                cls.raise_for_nested_cache(utils.snake_case(cls.__name__),
+                                           rel.name, list(nested.keys()))
+
+        # If the current Entity (cls) has any cached relationships (cached_rels)
+        #  then no other defined Entity (entities in EntityMeta.relationship_mappings) can cache this Entity.
+        if cached_rels:
+            # For all currently defined Entities
+            for entity_name in EntityMeta.relationship_mappings:
+                # Get all cached ToOne relationships
+                rels = cls.cached_entities(entity_name)
+                # Check if the current Entity (cls) is referenced by the Entity with `entity_name`
+                rel = rels.get(utils.snake_case(cls.__name__))
+                # If rel exists and is cached then raise an exception
+                # This means `entity_name` caches `cls` which cached items in `cached_rels`
+                if rel and rel.cache:
+                    cls.raise_for_nested_cache(
+                        utils.snake_case(entity_name),
+                        utils.snake_case(cls.__name__),
+                        [entity.name for entity in cached_rels])
 
 
 class Entity(metaclass=EntityMeta):
