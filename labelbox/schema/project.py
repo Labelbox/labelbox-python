@@ -11,7 +11,7 @@ from labelbox import utils
 from labelbox.schema.data_row import DataRow
 from labelbox.orm import query
 from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, LabelboxError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
@@ -179,10 +179,14 @@ class Project(DbObject, Updateable, Deletable):
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
                 return res["downloadUrl"]
+            elif res["status"] == "FAILED":
+                raise LabelboxError("Data row export failed.")
 
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
-                return None
+                raise LabelboxError(
+                    f"Unable to export data rows within {timeout_seconds} seconds."
+                )
 
             logger.debug(
                 "Project '%s' queued data row export, waiting for server...",
