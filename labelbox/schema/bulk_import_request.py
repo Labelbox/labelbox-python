@@ -424,7 +424,6 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
                 f"Invalid NDJson on line {idx}") from e
 
 
-
 #The rest of this file contains objects for MAL validation
 def parse_classification(tool):
     """
