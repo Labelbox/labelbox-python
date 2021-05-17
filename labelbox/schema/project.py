@@ -168,7 +168,7 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
-            Returns data row fields for all data rows in the queue as json
+            Data row fields for all data rows in the queue as json
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
