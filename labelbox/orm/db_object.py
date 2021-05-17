@@ -43,9 +43,8 @@ class DbObject(Entity):
         """
         self.client = client
         self._set_field_values(field_values)
-
         for relationship in self.relationships():
-            value = field_values.get(relationship.name)
+            value = field_values.get(utils.camel_case(relationship.name))
             if relationship.cache and value is None:
                 raise KeyError(
                     f"Expected field  values for {relationship.name}")
@@ -168,6 +167,7 @@ class RelationshipManager:
         result = result and result.get(rel.graphql_name)
         if result is None:
             return None
+
         return rel.destination_type(self.source.client, result)
 
     def connect(self, other):

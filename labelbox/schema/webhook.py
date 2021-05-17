@@ -112,7 +112,7 @@ class Webhook(DbObject, Updateable):
         """
         Deletes the webhook
         """
-        self.update(status=self.Status.INACTIVE)
+        self.update(status=self.Status.INACTIVE.value)
 
     def update(self, topics=None, url=None, status=None):
         """ Updates the Webhook.

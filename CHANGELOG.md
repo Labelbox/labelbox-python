@@ -1,4 +1,9 @@
 # Changelog
+# Version 2.5.5 (2021-05-17)
+## Added
+* `DataRow` now has a `media_attributes` field
+* `DataRow`s can now be looked up from `LabelingParameterOverride`s
+* `Project.export_queued_data_rows` to export all data rows in a queue for a project at once
 
 # Version 2.5.4 (2021-04-22)
 ## Added
@@ -9,7 +14,7 @@
     * Delete users from organization
     * Example notebook added under examples/basics
 * Issues and comments export
-    * Bulk export issues and comments. See `Project.export_labels`
+    * Bulk export issues and comments. See `Project.export_issues`
 * MAL on Tiled Imagery
     * Example notebook added under examples/model_assisted_labeling
     * `Dataset.create_data_rows` now allows users to upload tms imagery
@@ -24,7 +29,7 @@
 # Version 2.5.2 (2021-03-25)
 ## Fix
 * Ontology builder defaults to None for missing fields instead of empty lists
-* MAL validation added extra fields to subclasses 
+* MAL validation added extra fields to subclasses
 
 ### Added
 * Example notebooks
@@ -39,7 +44,7 @@
 * Now supports `IMAGE_OVERLAY` metadata
 * Webhooks for review topics added
 * Upload project instructions with `Project.upsert_instructions`
-* User input validation 
+* User input validation
     * MAL validity is now checked client side for faster feedback
     * type and value checks added in a few places
 
@@ -49,7 +54,7 @@
 * Retry 502s
 
 ## Version 2.4.10 (2021-02-05)
-### Added 
+### Added
 * SDK version added to request headers
 
 ## Version 2.4.9 (2020-11-09)

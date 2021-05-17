@@ -38,3 +38,5 @@ def test_webhook_create_update(project, rand_gen):
         webhook.update(topics="invalid..")
     assert str(exc_info.value) == \
         "Topics must be List[Webhook.Topic]. Found `invalid..`"
+
+    webhook.delete()
