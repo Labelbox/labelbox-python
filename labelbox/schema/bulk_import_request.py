@@ -119,12 +119,12 @@ class BulkImportRequest(DbObject):
     def inputs(self) -> List[Dict[str, Any]]:
         """
         Inputs for each individual annotation uploaded.
-        This should match the ndjson annotations that you have uploaded. 
-        
+        This should match the ndjson annotations that you have uploaded.
+
         Returns:
             Uploaded ndjson.
 
-        * This information will expire after 24 hours.    
+        * This information will expire after 24 hours.
         """
         return self._fetch_remote_ndjson(self.input_file_url)
 
@@ -137,7 +137,7 @@ class BulkImportRequest(DbObject):
             List of dicts containing error messages. Empty list means there were no errors
             See `BulkImportRequest.statuses` for more details.
 
-        * This information will expire after 24 hours.        
+        * This information will expire after 24 hours.
         """
         self.wait_until_done()
         return self._fetch_remote_ndjson(self.error_file_url)
@@ -150,14 +150,14 @@ class BulkImportRequest(DbObject):
         Returns:
             A status for each annotation if the upload is done running.
             See below table for more details
-            
+
         .. list-table::
            :widths: 15 150
-           :header-rows: 1 
+           :header-rows: 1
 
            * - Field
              - Description
-           * - uuid 
+           * - uuid
              - Specifies the annotation for the status row.
            * - dataRow
              - JSON object containing the Labelbox data row ID for the annotation.
@@ -166,7 +166,7 @@ class BulkImportRequest(DbObject):
            * - errors
              - An array of error messages included when status is FAILURE. Each error has a name, message and optional (key might not exist) additional_info.
 
-        * This information will expire after 24 hours.        
+        * This information will expire after 24 hours.
         """
         self.wait_until_done()
         return self._fetch_remote_ndjson(self.status_file_url)
@@ -390,27 +390,26 @@ class BulkImportRequest(DbObject):
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]],
                      project: "labelbox.Project") -> None:
-    """   
+    """
     Client side validation of an ndjson object.
 
     Does not guarentee that an upload will succeed for the following reasons:
         * We are not checking the data row types which will cause the following errors to slip through
             * Missing frame indices will not causes an error for videos
-        * Uploaded annotations for the wrong data type will pass (Eg. entity on images) 
+        * Uploaded annotations for the wrong data type will pass (Eg. entity on images)
         * We are not checking bounds of an asset (Eg. frame index, image height, text location)
- 
+
     Args:
         lines (Iterable[Dict[str,Any]]): An iterable of ndjson lines
         project (Project): id of project for which predictions will be imported
-    
+
     Raises:
         MALValidationError: Raise for invalid NDJson
         UuidError: Duplicate UUID in upload
     """
-    data_row_ids = {
-        data_row.uid: data_row for dataset in project.datasets()
-        for data_row in dataset.data_rows()
-    }
+    export_url = project.export_queued_data_rows()
+    data_row_json = ndjson.loads(requests.get(export_url).text)
+    data_row_ids = {row['id'] for row in data_row_json}
     feature_schemas = get_mal_schemas(project.ontology())
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
@@ -539,7 +538,7 @@ class SpecialUnion:
             raises:
                 KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
                 ValidationError: Error while trying to construct a specific object in the union
-            
+
         """
         if isinstance(data, BaseModel):
             data = data.dict()
