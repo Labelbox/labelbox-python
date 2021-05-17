@@ -1,11 +1,9 @@
 # Changelog
-# Version 2.5.5 (2021-05-14)
+# Version 2.5.5 (2021-05-17)
 ## Added
 * `DataRow` now has a `media_attributes` field
 * `DataRow`s can now be looked up from `LabelingParameterOverride`s
 * `Project.export_queued_data_rows` to export all data rows in a queue for a project at once
-* ToOne relationship caching to speed up specific queries
-
 
 # Version 2.5.4 (2021-04-22)
 ## Added
