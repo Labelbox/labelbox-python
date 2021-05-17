@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Union, Iterable
 from urllib.parse import urlparse
+import requests
+import ndjson
 
 from labelbox import utils
 from labelbox.schema.data_row import DataRow
@@ -166,8 +168,9 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
-            URL of the data file with this DataRow information. If the server didn't
-            generate during the `timeout_seconds` period, None is returned.
+            Data row fields for all data rows in the queue as json
+        Raises:
+            LabelboxError: if the export fails or is unable to download within the specified time.
         """
         id_param = "projectId"
         query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!)
@@ -178,7 +181,10 @@ class Project(DbObject, Updateable, Deletable):
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
-                return res["downloadUrl"]
+                download_url = res["downloadUrl"]
+                response = requests.get(download_url)
+                response.raise_for_status()
+                return ndjson.loads(response.text)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 

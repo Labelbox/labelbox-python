@@ -105,7 +105,5 @@ def test_attach_instructions(client, project):
 
 
 def test_queued_data_row_export(configured_project):
-    url = configured_project.export_queued_data_rows()
-    assert url
-    result = ndjson.loads(requests.get(url).text)
+    result = configured_project.export_queued_data_rows()
     assert len(result) == 1
