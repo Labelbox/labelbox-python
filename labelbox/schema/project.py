@@ -182,8 +182,9 @@ class Project(DbObject, Updateable, Deletable):
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
-                data = requests.get(download_url)
-                return ndjson.loads(data.text)
+                response = requests.get(download_url)
+                response.raise_for_status()
+                return ndjson.loads(response.text)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 
