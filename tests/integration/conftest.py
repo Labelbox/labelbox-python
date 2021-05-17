@@ -1,7 +1,6 @@
 from collections import namedtuple
 from enum import Enum
 from datetime import datetime
-from labelbox.orm.db_object import experimental
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
@@ -14,6 +13,7 @@ from labelbox.orm.query import results_query_part
 from labelbox.schema.invite import Invite
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.user import User
+from labelbox import LabelingFrontend
 from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300"
@@ -83,7 +83,7 @@ def get_invites(client):
     Do not use. Only for testing.
     """
     query_str = """query GetOrgInvitationsPyApi($from: ID, $first: PageSize) {
-            organization { id invites(from: $from, first: $first) { 
+            organization { id invites(from: $from, first: $first) {
                 nodes { id createdAt organizationRoleName inviteeEmail } nextCursor }}}"""
     invites = PaginatedCollection(
         client,
@@ -199,13 +199,13 @@ def organization(client):
 def project_based_user(client, rand_gen):
     email = rand_gen(str)
     # Use old mutation because it doesn't require users to accept email invites
-    query_str = """mutation MakeNewUserPyApi { 
-        addMembersToOrganization( 
-            data: { 
-                emails: ["%s@labelbox.com"], 
+    query_str = """mutation MakeNewUserPyApi {
+        addMembersToOrganization(
+            data: {
+                emails: ["%s@labelbox.com"],
                 orgRoleId: "%s",
                 projectRoles: []
-            } 
+            }
         ) {
         newUserId
         }
@@ -227,3 +227,17 @@ def project_pack(client):
     yield projects
     for proj in projects:
         proj.delete()
+
+
+@pytest.fixture
+def configured_project(project, client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    dataset.create_data_row(row_data=IMG_URL)
+    editor = list(
+        project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    empty_ontology = {"tools": [], "classifications": []}
+    project.setup(editor, empty_ontology)
+    yield project
+    dataset.delete()
+    project.delete()
