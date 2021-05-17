@@ -407,15 +407,12 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
         MALValidationError: Raise for invalid NDJson
         UuidError: Duplicate UUID in upload
     """
-    export_url = project.export_queued_data_rows()
-    data_row_json = ndjson.loads(requests.get(export_url).text)
-    data_row_ids = {row['id'] for row in data_row_json}
     feature_schemas = get_mal_schemas(project.ontology())
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
         try:
             annotation = NDAnnotation(**line)
-            annotation.validate_instance(data_row_ids, feature_schemas)
+            annotation.validate_instance(feature_schemas)
             uuid = str(annotation.uuid)
             if uuid in uids:
                 raise labelbox.exceptions.UuidError(
@@ -595,12 +592,6 @@ class NDBase(NDFeatureSchema):
     uuid: UUID
     dataRow: DataRow
 
-    def validate_datarow(self, valid_datarows):
-        if self.dataRow.id not in valid_datarows:
-            raise ValueError(
-                f"datarow {self.dataRow.id} is not attached to the specified project"
-            )
-
     def validate_feature_schemas(self, valid_feature_schemas):
         if self.schemaId not in valid_feature_schemas:
             raise ValueError(
@@ -612,9 +603,8 @@ class NDBase(NDFeatureSchema):
                 f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas[self.schemaId]['tool']}"
             )
 
-    def validate_instance(self, valid_datarows, valid_feature_schemas):
+    def validate_instance(self, valid_feature_schemas):
         self.validate_feature_schemas(valid_feature_schemas)
-        self.validate_datarow(valid_datarows)
 
     class Config:
         #Users shouldn't to add extra data to the payload
@@ -694,6 +684,7 @@ class NDBaseTool(NDBase):
 
     #This is indepdent of our problem
     def validate_feature_schemas(self, valid_feature_schemas):
+        super(NDBaseTool, self).validate_feature_schemas(valid_feature_schemas)
         for classification in self.classifications:
             classification.validate_feature_schemas(
                 valid_feature_schemas[self.schemaId]['classifications'])
