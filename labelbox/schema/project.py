@@ -6,12 +6,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Union, Iterable
 from urllib.parse import urlparse
+import requests
+import ndjson
 
 from labelbox import utils
 from labelbox.schema.data_row import DataRow
 from labelbox.orm import query
 from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, LabelboxError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
@@ -160,6 +162,43 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
+    def export_queued_data_rows(self, timeout_seconds=120):
+        """ Returns all data rows that are currently enqueued for this project.
+
+        Args:
+            timeout_seconds (float): Max waiting time, in seconds.
+        Returns:
+            Data row fields for all data rows in the queue as json
+        Raises:
+            LabelboxError: if the export fails or is unable to download within the specified time.
+        """
+        id_param = "projectId"
+        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!)
+            {exportQueuedDataRows(data:{projectId: $%s }) {downloadUrl createdAt status} }
+        """ % (id_param, id_param)
+        sleep_time = 2
+        while True:
+            res = self.client.execute(query_str, {id_param: self.uid})
+            res = res["exportQueuedDataRows"]
+            if res["status"] == "COMPLETE":
+                download_url = res["downloadUrl"]
+                response = requests.get(download_url)
+                response.raise_for_status()
+                return ndjson.loads(response.text)
+            elif res["status"] == "FAILED":
+                raise LabelboxError("Data row export failed.")
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                raise LabelboxError(
+                    f"Unable to export data rows within {timeout_seconds} seconds."
+                )
+
+            logger.debug(
+                "Project '%s' queued data row export, waiting for server...",
+                self.uid)
+            time.sleep(sleep_time)
+
     def export_labels(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
@@ -193,13 +232,13 @@ class Project(DbObject, Updateable, Deletable):
             time.sleep(sleep_time)
 
     def export_issues(self, status=None):
-        """ Calls the server-side Issues exporting that 
+        """ Calls the server-side Issues exporting that
         returns the URL to that payload.
 
         Args:
             status (string): valid values: Open, Resolved
         Returns:
-            URL of the data file with this Project's issues. 
+            URL of the data file with this Project's issues.
         """
         id_param = "projectId"
         status_param = "status"
@@ -229,14 +268,14 @@ class Project(DbObject, Updateable, Deletable):
     def upsert_instructions(self, instructions_file: str):
         """
         * Uploads instructions to the UI. Running more than once will replace the instructions
-            
+
         Args:
             instructions_file (str): Path to a local file.
                 * Must be either a pdf, text, or html file.
 
         Raises:
             ValueError:
-                * project must be setup 
+                * project must be setup
                 * instructions file must end with one of ".text", ".txt", ".pdf", ".html"
         """
 
@@ -267,18 +306,18 @@ class Project(DbObject, Updateable, Deletable):
 
         self.client.execute(
             """mutation UpdateFrontendWithExistingOptionsPyApi (
-                    $frontendId: ID!, 
-                    $optionsId: ID!, 
-                    $name: String!, 
-                    $description: String!, 
+                    $frontendId: ID!,
+                    $optionsId: ID!,
+                    $name: String!,
+                    $description: String!,
                     $customizationOptions: String!
                 ) {
                     updateLabelingFrontend(
-                        where: {id: $frontendId}, 
+                        where: {id: $frontendId},
                         data: {name: $name, description: $description}
                     ) {id}
                     updateLabelingFrontendOptions(
-                        where: {id: $optionsId}, 
+                        where: {id: $optionsId},
                         data: {customizationOptions: $customizationOptions}
                     ) {id}
                 }""", {
@@ -390,10 +429,10 @@ class Project(DbObject, Updateable, Deletable):
 
     def set_labeling_parameter_overrides(self, data):
         """ Adds labeling parameter overrides to this project.
-                
+
         See information on priority here:
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
-    
+
             >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
 
@@ -407,11 +446,11 @@ class Project(DbObject, Updateable, Deletable):
                         - Minimum priority is 1.
                     * Priority is not the queue position.
                         - The position is determined by the relative priority.
-                        - E.g. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)] 
+                        - E.g. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)]
                             will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
                     * Datarows with parameter overrides will appear before datarows without overrides.
                     * The priority only effects items in the queue.
-                        - Assigning a priority will not automatically add the item back into the queue.  
+                        - Assigning a priority will not automatically add the item back into the queue.
                 Number of labels:
                     * The number of times a data row should be labeled.
                         - Creates duplicate data rows in a project (one for each number of labels).
@@ -458,7 +497,7 @@ class Project(DbObject, Updateable, Deletable):
     def upsert_review_queue(self, quota_factor):
         """ Sets the the proportion of total assets in a project to review.
 
-        More information can be found here: 
+        More information can be found here:
             https://docs.labelbox.com/en/quality-assurance/review-labels#configure-review-percentage
 
         Args:
