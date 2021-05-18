@@ -51,13 +51,6 @@ def no_tool(text_inference, configured_project):
         _validate_ndjson([pred], configured_project)
 
 
-def test_invalid_datarow_id(text_inference, configured_project):
-    pred = text_inference.copy()
-    pred['dataRow']['id'] = "1232132131232"
-    with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project)
-
-
 def test_invalid_text(text_inference, configured_project):
     #and if it is not a string
     pred = text_inference.copy()
