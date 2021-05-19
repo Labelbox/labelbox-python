@@ -1,4 +1,8 @@
 # Changelog
+# Version 2.5.6 (2021-05-19)
+## Fix
+* MAL validation no longer raises exception when NER tool has same start and end location
+
 # Version 2.5.5 (2021-05-17)
 ## Added
 * `DataRow` now has a `media_attributes` field
