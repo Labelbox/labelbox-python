@@ -762,7 +762,8 @@ class NDTextEntity(NDBaseTool):
             raise ValueError(f"Text location must be positive. Found {v}")
         if v['start'] > v['end']:
             raise ValueError(
-                f"Text start location must be less or equal than end. Found {v}")
+                f"Text start location must be less or equal than end. Found {v}"
+            )
         return v
 
 
