@@ -21,7 +21,7 @@ project = 'Labelbox Python API reference'
 copyright = '2021, Labelbox'
 author = 'Labelbox'
 
-release = '2.5.5'
+release = '2.5.6'
 
 # -- General configuration ---------------------------------------------------
 
