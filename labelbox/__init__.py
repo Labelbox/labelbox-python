@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "2.5.5"
+__version__ = "2.5.6"
 
 from labelbox.client import Client
 from labelbox.schema.bulk_import_request import BulkImportRequest

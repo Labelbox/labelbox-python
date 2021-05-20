@@ -760,9 +760,10 @@ class NDTextEntity(NDBaseTool):
                 f"A line must have at least 2 points to be valid. Found {v}")
         if v['start'] < 0:
             raise ValueError(f"Text location must be positive. Found {v}")
-        if v['start'] >= v['end']:
+        if v['start'] > v['end']:
             raise ValueError(
-                f"Text start location must be less than end. Found {v}")
+                f"Text start location must be less or equal than end. Found {v}"
+            )
         return v
 
 
