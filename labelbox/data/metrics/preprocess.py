@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from collections import defaultdict
-from shapely.geometry import Polygon, box
+from shapely.geometry import Polygon, Point, LineString, box
 import numpy as np
 from PIL import Image
 import requests
@@ -25,10 +25,26 @@ def _bbox_to_shapely_poly(bbox: Dict[str, float]) -> Polygon:
 def _poly_to_shapely_poly(poly: List[Dict[str, float]]) -> Polygon:
     return Polygon([[pt['x'], pt['y']] for pt in poly])
 
+def _poly_to_shapely_poly(poly: List[Dict[str, float]]) -> Polygon:
+    return Polygon([[pt['x'], pt['y']] for pt in poly])
+
+def _line_to_shapely_poly(line: List[Dict[str, float]], buffer: int = 70) -> Polygon:
+    return LineString([[pt['x'], pt['y']] for pt in line]).buffer(buffer)
+
+def _point_to_shapely_poly(point: List[Dict[str, float]], buffer: int = 70) -> Polygon:
+    return Point([point['x'], point['y']]).buffer(buffer)
 
 def to_shapely_polys(tool: List[Dict[str, Any]],
-                     keys: List[str]) -> List[Polygon]:
-    if 'polygon' in keys:
-        return [_poly_to_shapely_poly(poly['polygon']) for poly in tool]
+                     tool_name: str) -> List[Polygon]:
+    if tool_name == 'polygon':
+        return [_poly_to_shapely_poly(poly[tool_name]) for poly in tool]
+    elif tool_name == 'bbox':
+        return [_bbox_to_shapely_poly(poly[tool_name]) for poly in tool]
+    elif tool_name == 'point':
+        return [_point_to_shapely_poly(point[tool_name]) for point in tool]
+    elif tool_name == 'line':
+        return [_line_to_shapely_poly(point[tool_name]) for point in tool]
     else:
-        return [_bbox_to_shapely_poly(bbox['bbox']) for bbox in tool]
+        raise ValueError(f"Unexpected tool type found {tool_name}")
+
+
