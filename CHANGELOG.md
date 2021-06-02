@@ -1,4 +1,9 @@
 # Changelog
+
+# Next Release
+## Added
+* Added new `Model` schema
+
 # Version 2.5.6 (2021-05-19)
 ## Fix
 * MAL validation no longer raises exception when NER tool has same start and end location
