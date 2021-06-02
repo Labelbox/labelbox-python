@@ -15,6 +15,7 @@ from labelbox.orm.db_object import DbObject
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.model import Model
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -503,3 +504,31 @@ class Client:
             Roles are used for user management.
         """
         return role.get_roles(self)
+
+    def get_model(self, model_id):
+        """ Gets a single Model with the given ID.
+
+            >>> model = client.get_model("<model_id>")
+
+        Args:
+            model_id (str): Unique ID of the Model.
+        Returns:
+            The sought Model.
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no
+                Model with the given ID.
+        """
+        return self._get_single(Model, model_id)
+
+    def get_models(self, where=None):
+        """ Fetches all the models the user has access to.
+
+            >>> models = client.get_models(where=(Model.name == "<model_name>"))
+
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Returns:
+            An iterable of Models (typically a PaginatedCollection).
+        """
+        return self._get_all(Model, where)
