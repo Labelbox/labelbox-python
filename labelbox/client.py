@@ -125,6 +125,7 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
+            print(data)
             response = requests.post(self.endpoint.replace('/graphql', '/_gql')
                                      if experimental else self.endpoint,
                                      data=data,
@@ -377,7 +378,7 @@ class Client:
         """
         return self._get_single(Organization, None)
 
-    def _get_all(self, db_object_type, where):
+    def _get_all(self, db_object_type, where, filter_deleted = True):
         """ Fetches all the objects of the given type the user has access to.
 
         Args:
@@ -387,8 +388,9 @@ class Client:
         Returns:
             An iterable of `db_object_type` instances.
         """
-        not_deleted = db_object_type.deleted == False
-        where = not_deleted if where is None else where & not_deleted
+        if filter_deleted:
+            not_deleted = db_object_type.deleted == False
+            where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
         return PaginatedCollection(
@@ -500,7 +502,7 @@ class Client:
     def get_roles(self):
         """
         Returns:
-            Roles: Provides information on available roles within an organization. 
+            Roles: Provides information on available roles within an organization.
             Roles are used for user management.
         """
         return role.get_roles(self)
@@ -531,4 +533,4 @@ class Client:
         Returns:
             An iterable of Models (typically a PaginatedCollection).
         """
-        return self._get_all(Model, where)
+        return self._get_all(Model, where, filter_deleted=False)
