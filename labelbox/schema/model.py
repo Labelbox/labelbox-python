@@ -13,4 +13,6 @@ class Model(DbObject):
         """
 
         name = Field.String("name")
-        ontology = Relationship.ToOne("Ontology", True)
+        ontology_id = Field.String("Ontology", "ontology_id")
+
+        model_runs = Relationship.ToMany("ModelRun", False)
