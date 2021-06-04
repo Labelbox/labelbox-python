@@ -15,7 +15,6 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.orm import query
 
-
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
@@ -300,7 +299,7 @@ class AnnotationImport(DbObject):
 class MEAPredictionImport(AnnotationImport):
     id_name = "modelRunId"
     prediction_type = PredictionType.MODEL_ERROR_ANALYSIS
-    model_run_id = Field.String("modelRunId")
+    model_run_id = Field.String("model_run_id")
 
     def get_parent_id(self):
         return self.model_run_id
@@ -313,8 +312,8 @@ class MEAPredictionImport(AnnotationImport):
                                      path=path)
 
     @classmethod
-    def create_from_objects(cls, client, project_id, name, predictions):
-        return cls._create_from_objects(client, project_id, name, predictions)
+    def create_from_objects(cls, client, model_run_id, name, predictions):
+        return cls._create_from_objects(client, model_run_id, name, predictions)
 
 
 class MALPredictionImport(AnnotationImport):
