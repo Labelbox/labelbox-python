@@ -151,8 +151,6 @@ class Client:
                 request['headers'] = {
                     'Authorization': self.headers['Authorization']
                 }
-
-            print("REQ", request)
             response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
@@ -177,8 +175,6 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
-        print(r_json)
-        print(response.status_code)
         errors = r_json.get("errors", [])
 
         def check_errors(keywords, *path):
