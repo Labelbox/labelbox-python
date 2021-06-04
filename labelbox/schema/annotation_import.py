@@ -1,34 +1,20 @@
 from enum import Enum
+from typing import Any, Dict, List
 import functools
-from labelbox import exceptions
-from typing import Any, Dict, List, Type
-from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
-import requests
-import ndjson
-import json
-from labelbox.orm import query
-from time import sleep
 import os
-from labelbox import utils
-import logging
-
 import json
 import time
-from uuid import UUID, uuid4
-import functools
-
 import logging
-from pathlib import Path
-import pydantic
+
 import backoff
 import ndjson
 import requests
-from pydantic import BaseModel, validator
-from requests.api import request
-from typing_extensions import Literal
-from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
-                    Type, Set)
+
+import labelbox
+from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Field, Relationship
+from labelbox.orm import query
+
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
@@ -135,8 +121,8 @@ class AnnotationImport(DbObject):
     def wait_until_done(self, sleep_time_seconds: int = 5) -> None:
         """Blocks import job until certain conditions are met.
 
-        Blocks until the BulkImportRequest.state changes either to
-        `BulkImportRequestState.FINISHED` or `BulkImportRequestState.FAILED`,
+        Blocks until the AnnotationImport.state changes either to
+        `PredictionImportState.FINISHED` or `PredictionImportState.FAILED`,
         periodically refreshing object's state.
 
         Args:
@@ -147,12 +133,12 @@ class AnnotationImport(DbObject):
             time.sleep(sleep_time_seconds)
             self.__exponential_backoff_refresh()
 
-    #@backoff.on_exception(
-    #    backoff.expo,
-    #    (exceptions.ApiLimitError, exceptions.TimeoutError,
-    #     exceptions.NetworkError),
-    #    max_tries=10,
-    #    jitter=None)
+    @backoff.on_exception(
+        backoff.expo,
+        (labelbox.exceptions.ApiLimitError, labelbox.exceptions.TimeoutError,
+         labelbox.exceptions.NetworkError),
+        max_tries=10,
+        jitter=None)
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
 
