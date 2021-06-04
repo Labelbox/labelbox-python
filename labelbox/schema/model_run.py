@@ -32,12 +32,10 @@ class ModelRun(DbObject):
         Returns:
             AnnotationImport
         """
-        kwargs = dict(
-            client = self.client,
-            model_run_id =  self.uid,
-            name = name,
-            predictions = annotations
-        )
+        kwargs = dict(client=self.client,
+                      model_run_id=self.uid,
+                      name=name,
+                      predictions=annotations)
         if isinstance(annotations, str) or isinstance(annotations, Path):
             return MEAPredictionImport.create_from_file(**kwargs)
         elif isinstance(annotations, Iterable):
@@ -45,4 +43,3 @@ class ModelRun(DbObject):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
-
