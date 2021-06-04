@@ -79,7 +79,7 @@ class Client:
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, experimental=False):
+    def execute(self, query=None, params=None, data = None, files = None, timeout=30.0, experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -108,7 +108,7 @@ class Client:
             labelbox.exceptions.LabelboxError: If an unknown error of any
                 kind occurred.
         """
-        logger.debug("Query: %s, params: %r", query, params)
+        logger.debug("Query: %s, params: %r, data %r", query, params, data)
 
         # Convert datetimes to UTC strings.
         def convert_value(value):
@@ -117,19 +117,27 @@ class Client:
                 value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
             return value
 
-        if params is not None:
-            params = {
-                key: convert_value(value) for key, value in params.items()
-            }
-
-        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
+        if query is not None:
+            if params is not None:
+                params = {
+                    key: convert_value(value) for key, value in params.items()
+                }
+            data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
+        elif data is None:
+            raise ValueError("Params and data cannot both be none")
 
         try:
-            response = requests.post(self.endpoint.replace('/graphql', '/_gql')
+            request = {
+                'url' : self.endpoint.replace('/graphql', '/_gql')
                                      if experimental else self.endpoint,
-                                     data=data,
-                                     headers=self.headers,
-                                     timeout=timeout)
+                'data' : data,
+                'headers' : self.headers,
+                'timeout' : timeout
+            }
+            if files:
+                request.update({'files' : files})
+
+            response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
