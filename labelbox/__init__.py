@@ -3,6 +3,7 @@ __version__ = "2.5.6"
 
 from labelbox.client import Client
 from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
