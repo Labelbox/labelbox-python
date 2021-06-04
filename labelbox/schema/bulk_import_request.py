@@ -68,7 +68,6 @@ def _send_create_file_command(
     print(request_data)
     print({file_name: file_data})
 
-
     response = requests.post(
         client.endpoint,
         headers={"authorization": "Bearer %s" % client.api_key},

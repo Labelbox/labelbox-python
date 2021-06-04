@@ -48,7 +48,6 @@ class DbObject(Entity):
             if relationship.cache and value is None:
                 raise KeyError(
                     f"Expected field  values for {relationship.name}")
-
             setattr(self, relationship.name,
                     RelationshipManager(self, relationship, value))
 

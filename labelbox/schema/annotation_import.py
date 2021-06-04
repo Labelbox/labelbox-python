@@ -1,5 +1,6 @@
 from enum import Enum
 import functools
+from labelbox import exceptions
 from typing import Any, Dict, List, Type
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
@@ -7,8 +8,9 @@ import requests
 import ndjson
 import json
 from labelbox.orm import query
-import sleep
+from time import sleep
 import os
+from labelbox import utils
 import logging
 
 import json
@@ -27,19 +29,13 @@ from requests.api import request
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set)
-import labelbox
-from labelbox import utils
-from labelbox.orm import query
-from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
-from labelbox.schema.enums import BulkImportRequestState
-
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
 #Replacement for bulk_import_request.
 # Will not use validation since we will move annotation objects here soon.
+
 
 class PredictionType(Enum):
     MODEL_ERROR_ANALYSIS = "MODEL_ERROR_ANALYSIS"
@@ -67,8 +63,7 @@ class PredictionImportState(Enum):
     FINISHED = "FINISHED"
 
 
-
-class PredictionImport(DbObject):
+class AnnotationImport(DbObject):
     id_name: str
     prediction_type: PredictionType
 
@@ -80,7 +75,6 @@ class PredictionImport(DbObject):
 
     # TODO: Not sure if this works for MEA
     created_by = Relationship.ToOne("User", False, "created_by")
-
 
     @property
     def inputs(self) -> List[Dict[str, Any]]:
@@ -138,7 +132,7 @@ class PredictionImport(DbObject):
         self.wait_until_done()
         return self._fetch_remote_ndjson(self.status_file_url)
 
-    def wait_until_done(self, sleep_time_seconds: int = 30) -> None:
+    def wait_until_done(self, sleep_time_seconds: int = 5) -> None:
         """Blocks import job until certain conditions are met.
 
         Blocks until the BulkImportRequest.state changes either to
@@ -148,17 +142,17 @@ class PredictionImport(DbObject):
         Args:
             sleep_time_seconds (str): a time to block between subsequent API calls
         """
-        while self.state == PredictionImportState.RUNNING:
+        while self.state.value == PredictionImportState.RUNNING.value:
             logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
             time.sleep(sleep_time_seconds)
             self.__exponential_backoff_refresh()
 
-    @backoff.on_exception(
-        backoff.expo,
-        (labelbox.exceptions.ApiLimitError, labelbox.exceptions.TimeoutError,
-         labelbox.exceptions.NetworkError),
-        max_tries=10,
-        jitter=None)
+    #@backoff.on_exception(
+    #    backoff.expo,
+    #    (exceptions.ApiLimitError, exceptions.TimeoutError,
+    #     exceptions.NetworkError),
+    #    max_tries=10,
+    #    jitter=None)
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
 
@@ -179,13 +173,14 @@ class PredictionImport(DbObject):
     @staticmethod
     def _validate_obj(cls):
         # TODO: isinstance won't work.. check the type..
-        if isinstance(cls, PredictionImport):
-            raise TypeError("Cannot diretly instantiate PredictionImport. Must use base class instead")
+        if isinstance(cls, AnnotationImport):
+            raise TypeError(
+                "Cannot diretly instantiate PredictionImport. Must use base class instead"
+            )
 
     @classmethod
-    def _build_import_predictions_query(cls, file_args : str, vars: str):
+    def _build_import_predictions_query(cls, file_args: str, vars: str):
         cls._validate_obj(cls)
-
 
         query_str = """mutation testPredictionImportsPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
         createAnnotationImport(data: {
@@ -197,31 +192,48 @@ class PredictionImport(DbObject):
         __typename
         ... on ModelAssistedLabelingPredictionImport {%s}
         ... on ModelErrorAnalysisPredictionImport {%s}
-        }}""" % (
-            vars,
-            cls.id_name,
-            file_args,
-            query.results_query_part(cls),
-            query.results_query_part(cls)
-        )
+        }}""" % (vars, cls.id_name, file_args,
+                 query.results_query_part(MALPredictionImport),
+                 query.results_query_part(MEAPredictionImport))
         return query_str
 
     @classmethod
-    def _from_name(cls, client, parent_id, name: str):
+    def _from_name(cls, client, parent_id, name: str, raw=False):
         cls._validate_obj(cls)
-        response = """query
-        getImportPyApi {
-            annotationImport(where: {%s: %s, name: %s}){%s}""" % (cls.id_name, parent_id, name, query.results_query_part(cls))
-        print(response)
+        query_str = """query
+        getImportPyApi($parent_id : ID!, $name: String!) {
+            annotationImport(
+                where: {%s: $parent_id, name: $name}){
+                    __typename
+                ... on ModelAssistedLabelingPredictionImport {%s}
+                ... on ModelErrorAnalysisPredictionImport {%s}
+                }}""" % \
+                (cls.id_name, query.results_query_part(MALPredictionImport), query.results_query_part(MEAPredictionImport)) #, query.results_query_part(cls))
+
+        response = client.execute(query_str, {
+            'name': name,
+            'parent_id': parent_id
+        })
+        if raw:
+            return response['annotationImport']
+
         return cls(client, response['annotationImport'])
 
     @classmethod
     def _create_from_url(cls, client, parent_id, name, url):
         file_args = "fileUrl : $fileUrl"
 
-        query_str = cls._build_import_predictions_query(file_args, "$fileUrl: String!")
+        query_str = cls._build_import_predictions_query(file_args,
+                                                        "$fileUrl: String!")
         print(query_str)
-        response = client.execute(query_str, params = {"fileUrl": url , "parent_id" : parent_id, 'name' : name, 'predictionType' : cls.prediction_type.value })
+        response = client.execute(
+            query_str,
+            params={
+                "fileUrl": url,
+                "parent_id": parent_id,
+                'name': name,
+                'predictionType': cls.prediction_type.value
+            })
         print(response)
         print(response.keys())
         return cls(client, response['createAnnotationImport'])
@@ -230,8 +242,19 @@ class PredictionImport(DbObject):
     def _make_file_name(parent_id: str, name: str) -> str:
         return f"{parent_id}__{name}.ndjson"
 
+    def refresh(self) -> None:
+        """Synchronizes values of all fields with the database.
+        """
+        cls = type(self)
+        res = cls._from_name(self.client,
+                             self.get_parent_id(),
+                             self.name,
+                             raw=True)
+        self._set_field_values(res)
+
     @classmethod
-    def _create_from_bytes(cls, client, parent_id,name, bytes_data, content_len):
+    def _create_from_bytes(cls, client, parent_id, name, bytes_data,
+                           content_len):
         # Copying bulk import request for now
         # TODO: Figure out why it has to be sent like this...
         file_name = cls._make_file_name(parent_id, name)
@@ -240,21 +263,27 @@ class PredictionImport(DbObject):
                 contentLength: $contentLength
             }"""
 
-        query_str = cls._build_import_predictions_query(file_args, "$file: Upload!, $contentLength: Int!")
-        operations = json.dumps({"variables": {'file' : None, "contentLength":  content_len, "parent_id" : parent_id, 'name' : name}, "query": query_str, 'predictionType' : cls.prediction_type.value })
+        query_str = cls._build_import_predictions_query(
+            file_args, "$file: Upload!, $contentLength: Int!")
+        variables = {
+            "file": None,
+            "contentLength": content_len,
+            "parent_id": parent_id,
+            "name": name,
+            "predictionType": cls.prediction_type.value
+        }
+        operations = json.dumps({"variables": variables, "query": query_str})
         data = {
             "operations": operations,
             # This varibles.file isn't going to work. is there an alternative???? Like just setting it to None??
             "map": (None, json.dumps({file_name: ["variables.file"]}))
         }
-        file_name = cls._make_file_name(parent_id, name)
         file_data = (file_name, bytes_data, NDJSON_MIME_TYPE)
         files = {file_name: file_data}
-        print(data)
-        print(files)
-        response = client.execute(data = data, files = files)
+
+        response = client.execute(data=data, files=files)
         print(response)
-        return cls(client, response['createPredictionImport'])
+        return cls(client, response['createAnnotationImport'])
 
     @classmethod
     def _create_from_objects(cls, client, parent_id, name, predictions):
@@ -268,10 +297,12 @@ class PredictionImport(DbObject):
     def _create_from_file(cls, client, parent_id, name, path):
         if os.path.exists(path):
             with open(path, 'rb') as f:
-                return cls._create_from_bytes(client, parent_id,name, f, os.stat(path).st_size)
+                return cls._create_from_bytes(client, parent_id, name, f,
+                                              os.stat(path).st_size)
         elif requests.head(path):
             return cls._create_from_url(client, parent_id, name, path)
-        raise ValueError(f"Path {path} is not accessible locally or on a remote server")
+        raise ValueError(
+            f"Path {path} is not accessible locally or on a remote server")
 
     def create_from_objects(*args, **kwargs):
         raise NotImplementedError("")
@@ -280,34 +311,45 @@ class PredictionImport(DbObject):
         # Handles both url and local files. Does that make sense?
         raise NotImplementedError("")
 
+    def get_parent_id(*args, **kwargs):
+        raise NotImplementedError("")
 
-class MEAPredictionImport(PredictionImport):
-    project = Relationship.ToOne("Project")
 
+class MEAPredictionImport(AnnotationImport):
     id_name = "modelRunId"
     prediction_type = PredictionType.MODEL_ERROR_ANALYSIS
+    model_run_id = Field.String("modelRunId")
+
+    def get_parent_id(self):
+        return self.model_run_id
 
     @classmethod
     def create_from_file(cls, client, model_run_id, name, path):
-        return cls._create_from_file(client = client, parent_id = model_run_id, name= name, path = path)
+        return cls._create_from_file(client=client,
+                                     parent_id=model_run_id,
+                                     name=name,
+                                     path=path)
 
     @classmethod
     def create_from_objects(cls, client, project_id, name, predictions):
         return cls._create_from_objects(client, project_id, name, predictions)
 
 
-class MALPredictionImport(PredictionImport):
+class MALPredictionImport(AnnotationImport):
     id_name = "projectId"
     prediction_type = PredictionType.MODEL_ASSISTED_LABELING
+    project = Relationship.ToOne("Project", cache=True)
 
-    # TODO: Not sure if this works for MEA
-    model_run = Relationship.ToOne("ModelRun")
+    def get_parent_id(self):
+        return self.project().uid
 
     @classmethod
     def create_from_file(cls, client, project_id, name, path):
-        return cls._create_from_file(client = client, parent_id = project_id, name= name,  path = path)
+        return cls._create_from_file(client=client,
+                                     parent_id=project_id,
+                                     name=name,
+                                     path=path)
 
     @classmethod
     def create_from_objects(cls, client, project_id, name, predictions):
         return cls._create_from_objects(client, project_id, name, predictions)
-
