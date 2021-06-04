@@ -77,8 +77,8 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
-    @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
+    #@retry.Retry(predicate=retry.if_exception_type(
+    #    labelbox.exceptions.InternalServerError))
     def execute(self, query=None, params=None, data = None, files = None, timeout=30.0, experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
@@ -161,6 +161,8 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
+        print(r_json)
+        print(response.status_code)
         errors = r_json.get("errors", [])
 
         def check_errors(keywords, *path):
