@@ -125,7 +125,6 @@ class Client:
         data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
 
         try:
-            print(data)
             response = requests.post(self.endpoint.replace('/graphql', '/_gql')
                                      if experimental else self.endpoint,
                                      data=data,
@@ -378,7 +377,7 @@ class Client:
         """
         return self._get_single(Organization, None)
 
-    def _get_all(self, db_object_type, where, filter_deleted = True):
+    def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
 
         Args:
