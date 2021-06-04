@@ -225,7 +225,6 @@ class AnnotationImport(DbObject):
 
         query_str = cls._build_import_predictions_query(file_args,
                                                         "$fileUrl: String!")
-        print(query_str)
         response = client.execute(
             query_str,
             params={
@@ -234,8 +233,6 @@ class AnnotationImport(DbObject):
                 'name': name,
                 'predictionType': cls.prediction_type.value
             })
-        print(response)
-        print(response.keys())
         return cls(client, response['createAnnotationImport'])
 
     @staticmethod
@@ -282,7 +279,6 @@ class AnnotationImport(DbObject):
         files = {file_name: file_data}
 
         response = client.execute(data=data, files=files)
-        print(response)
         return cls(client, response['createAnnotationImport'])
 
     @classmethod
