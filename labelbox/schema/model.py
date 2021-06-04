@@ -3,7 +3,7 @@ from labelbox.orm.model import Field, Relationship
 
 
 class Model(DbObject):
-        """A model represents a program that has been trained and
+    """A model represents a program that has been trained and
         can make predictions on new data.
         Attributes:
             name (str)
@@ -12,5 +12,7 @@ class Model(DbObject):
             slices (Relationship): `ToMany` relationship to Slice (TODO)
         """
 
-        name = Field.String("name")
-        ontology = Relationship.ToOne("Ontology", True)
+    name = Field.String("name")
+
+    model_runs = Relationship.ToMany("ModelRun", False)
+    ontology = Relationship.ToOne("Ontology", False)

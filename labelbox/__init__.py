@@ -18,3 +18,4 @@ from labelbox.schema.prediction import Prediction, PredictionModel
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
+from labelbox.schema.model_run import ModelRun
