@@ -533,3 +533,19 @@ class Client:
             An iterable of Models (typically a PaginatedCollection).
         """
         return self._get_all(Model, where, filter_deleted=False)
+
+    def create_model(self, name, ontology_id):
+        """ Creates a Model object on the server.
+
+        >>> model = client.create_model(<model_name>, <ontology_id>)
+
+        Args:
+            name (string): Name of the model
+            ontology_id (string): ID of the related ontology
+        Returns:
+            A new Model object.
+        Raises:
+            InvalidAttributeError: If the Model type does not contain
+                any of the attribute names given in kwargs.
+        """
+        return self._create(Model, {"name": name, "ontology_id": ontology_id})
