@@ -1,8 +1,10 @@
 from enum import Enum
+import logging
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 
+logger = logging.getLogger(__name__)
 
 class AssetMetadata(DbObject):
     """ Asset metadata (AKA Attachments) provides extra context about an asset while labeling.
@@ -11,6 +13,12 @@ class AssetMetadata(DbObject):
         meta_type (str): IMAGE, VIDEO, TEXT, or IMAGE_OVERLAY
         meta_value (str): URL to an external file or a string of text
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logger.warning(
+            "`create_metadata` is deprecated. Use `create_attachment` instead."
+        )
 
     class MetaType(Enum):
         VIDEO = "VIDEO"

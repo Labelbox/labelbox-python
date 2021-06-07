@@ -1,8 +1,11 @@
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.asset_metadata import AssetMetadata
+from labelbox.schema.asset_attchment import AssetAttachment
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DataRow(DbObject, Updateable, BulkDeletable):
     """ Internal Labelbox representation of a single piece of data (e.g. image, video, text).
@@ -33,12 +36,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
+
     metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
+    # attachments
+    attachment = Relationship.ToMany("AssetAttachment", False, "attachment")
 
     predictions = Relationship.ToMany("Prediction", False)
 
-    supported_meta_types = {
-        meta_type.value for meta_type in AssetMetadata.MetaType
+    supported_meta_types = supported_attachment_types = {
+        attachment_type.value for attachment_type in AssetAttachment.MetaType
     }
 
     @staticmethod
@@ -54,42 +60,66 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         super().__init__(*args, **kwargs)
         self.metadata.supports_filtering = False
         self.metadata.supports_sorting = False
+        self.attachment.supports_filtering = False
+        self.attachment.supports_sorting = False
 
-    def create_metadata(self, meta_type, meta_value):
+    def create_attachment(self, attachment_type, attachment_value):
         """ Attaches asset metadata to a DataRow.
 
-            >>> datarow.create_metadata("TEXT", "This is a text message")
+            >>> datarow.create_attachment("TEXT", "This is a text message")
 
         Args:
-            meta_type (str): Asset metadata type, must be one of:
-                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetMetadata.MetaType)
-            meta_value (str): Asset metadata value.
+            meta_type (str): Asset attachment type, must be one of:
+                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetAttachment.AttachmentType)
+            meta_value (str): Asset attachment value.
         Returns:
-            `AssetMetadata` DB object.
+            `AssetAttachment` DB object.
         Raises:
-            ValueError: meta_type must be one of the supported types.
+            ValueError: asset_type must be one of the supported types.
         """
 
-        if meta_type not in self.supported_meta_types:
+        if attachment_type not in self.supported_attachment_types:
             raise ValueError(
-                f"meta_type must be one of {self.supported_meta_types}. Found {meta_type}"
+                f"meta_type must be one of {self.supported_attachment_types}. Found {attachment_type}"
             )
 
-        meta_type_param = "metaType"
-        meta_value_param = "metaValue"
+        attachment_type_param = "type"
+        attachment_value_param = "value"
         data_row_id_param = "dataRowId"
-        query_str = """mutation CreateAssetMetadataPyApi(
+        query_str = """mutation CreateDataRowAttachmentPyApi(
             $%s: AttachmentType!, $%s: String!, $%s: ID!) {
-            createAssetMetadata(data: {
-                metaType: $%s metaValue: $%s dataRowId: $%s}) {%s}} """ % (
-            meta_type_param, meta_value_param, data_row_id_param,
-            meta_type_param, meta_value_param, data_row_id_param,
+            createDataRowAttachment(data: {
+                type: $%s value: $%s dataRowId: $%s}) {%s}} """ % (
+            attachment_type_param, attachment_value_param, data_row_id_param,
+            attachment_type_param, attachment_value_param, data_row_id_param,
             query.results_query_part(Entity.AssetMetadata))
 
         res = self.client.execute(
             query_str, {
-                meta_type_param: meta_type,
-                meta_value_param: meta_value,
+                attachment_type_param: meta_type,
+                attachment_value_param: meta_value,
                 data_row_id_param: self.uid
             })
+        return Entity.AssetAttachment(self.client, res["createAssetMetadata"])
+
+
+createDataRowAttachment(data: DataRowAttachmentCreateInput!): DataRowAttachment!
+  deleteDataRowAttachment(where: WhereUniqueIdInput!): DataRowAttachment!
+  updateDataRowAttachment
+
+
+
+    def create_metadata(self, meta_type, meta_value):
+        """
+
+        This function is deprecated. Use create_attachment instead
+
+        Returns:
+            AssetMetadata
+        """
+        logger.warning(
+            "`create_metadata` is deprecated. Use `create_attachment` instead."
+        )
+
+        attachment = self.create_attachment(meta_type, meta_value)
         return Entity.AssetMetadata(self.client, res["createAssetMetadata"])
