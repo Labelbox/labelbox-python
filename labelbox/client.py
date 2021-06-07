@@ -537,7 +537,7 @@ class Client:
     def create_model(self, name, ontology_id):
         """ Creates a Model object on the server.
 
-        >>> model = client.create_model(<model_name>, <ontology_id>")
+        >>> model = client.create_model(<model_name>, <ontology_id>)
 
         Args:
             name (string): Name of the model
