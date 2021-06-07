@@ -548,4 +548,4 @@ class Client:
             InvalidAttributeError: If the Model type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Model, {name: name, ontology_id: ontology_id})
+        return self._create(Model, {"name": name, "ontology_id": ontology_id})
