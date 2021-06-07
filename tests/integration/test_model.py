@@ -8,7 +8,7 @@ def test_model(client, configured_project, rand_gen):
     ontology = configured_project.ontology
 
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
-    model = client.create_model(**data)
+    model = client.create_model(data["name"], data["ontology_id"])
     assert model.name == data["name"]
     assert model.ontology.id == data["ontology_id"]
 
