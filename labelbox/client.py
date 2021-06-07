@@ -534,19 +534,18 @@ class Client:
         """
         return self._get_all(Model, where, filter_deleted=False)
 
-    def create_model(self, **kwargs):
+    def create_model(self, name, ontology_id):
         """ Creates a Model object on the server.
 
-        Attribute values are passed as keyword arguments.
-
-        >>> model = client.create_model(name="<model_name>", ontology_id="<ontology_id>")
+        >>> model = client.create_model(<model_name>, <ontology_id>")
 
         Args:
-            **kwargs: Keyword arguments with Model attribute values.
+            name (string): Name of the model
+            ontology_id (string): ID of the related ontology
         Returns:
             A new Model object.
         Raises:
             InvalidAttributeError: If the Model type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Model, kwargs)
+        return self._create(Model, {name: name, ontology_id: ontology_id})
