@@ -65,9 +65,6 @@ def _send_create_file_command(
         client, request_data: dict, file_name: str,
         file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
 
-    print(request_data)
-    print({file_name: file_data})
-
     response = requests.post(
         client.endpoint,
         headers={"authorization": "Bearer %s" % client.api_key},

@@ -77,8 +77,8 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
-    #@retry.Retry(predicate=retry.if_exception_type(
-    #    labelbox.exceptions.InternalServerError))
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.InternalServerError))
     def execute(self,
                 query=None,
                 params=None,
@@ -95,6 +95,8 @@ class Client:
         Args:
             query (str): The query to execute.
             params (dict): Query parameters referenced within the query.
+            data (str): json string containing the query to execute
+            files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
         Returns:
@@ -113,6 +115,7 @@ class Client:
                 most likely due to connection issues.
             labelbox.exceptions.LabelboxError: If an unknown error of any
                 kind occurred.
+            ValueError: If query and data are both None.
         """
         logger.debug("Query: %s, params: %r, data %r", query, params, data)
 
