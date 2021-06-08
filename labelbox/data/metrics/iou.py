@@ -1,11 +1,9 @@
-from labelbox.data.metrics.preprocess import create_schema_lookup, to_shapely_polys, url_to_numpy
 from typing import Dict, Any, List, Optional
 from shapely.geometry import Polygon
 from itertools import product
 import numpy as np
 
-# TODO: Are these the same names for import as they are for export?
-# What about the structure of classification?
+from labelbox.data.metrics.preprocess import create_schema_lookup, to_shapely_polys, url_to_numpy
 
 ALL_TOOL_TYPES = {'bbox', 'polygon', 'line', 'point', 'segmentation', 'answer', 'answers'}
 
@@ -17,7 +15,6 @@ def mask_iou(predictions: List[Dict[str, Any]],
     # This is inefficient. The mask exists locally for them to upload it.
     # RLE data would be convenient here.
     # There will only ever be one mask label per class
-    breakpoint()
     label_mask = _instance_urls_to_binary_mask(
         [pred['mask']['instanceURI'] for pred in predictions])
     pred_mask = _instance_urls_to_binary_mask(
