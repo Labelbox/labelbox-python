@@ -570,4 +570,14 @@ class Client:
             InvalidAttributeError: If the Model type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Model, {"name": name, "ontology_id": ontology_id})
+        query_str = """mutation createModelPyApi($name: String!, $ontologyId: ID!){
+            createModel(data: {name : $name, ontologyId : $ontologyId}){
+                    %s
+                }
+            }""" % query.results_query_part(Model)
+
+        result = self.execute(query_str, {
+            "name": name,
+            "ontologyId": ontology_id
+        })
+        return Model(self, result['createModel'])
