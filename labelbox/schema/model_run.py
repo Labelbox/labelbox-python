@@ -12,6 +12,7 @@ class ModelRun(DbObject):
     created_by_id = Field.String("created_by_id", "createdBy")
 
     def upsert_labels(self, label_ids):
+
         if len(label_ids) < 1:
             raise ValueError("Must provide at least one label id")
 

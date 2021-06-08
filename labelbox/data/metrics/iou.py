@@ -4,6 +4,9 @@ from shapely.geometry import Polygon
 from itertools import product
 import numpy as np
 
+# TODO: Are these the same names for import as they are for export?
+# What about the structure of classification?
+
 ALL_TOOL_TYPES = {'bbox', 'polygon', 'line', 'point', 'segmentation', 'answer', 'answers'}
 
 def mask_iou(predictions: List[Dict[str, Any]],
@@ -14,8 +17,9 @@ def mask_iou(predictions: List[Dict[str, Any]],
     # This is inefficient. The mask exists locally for them to upload it.
     # RLE data would be convenient here.
     # There will only ever be one mask label per class
+    breakpoint()
     label_mask = _instance_urls_to_binary_mask(
-        [pred['instanceURI'] for pred in predictions])
+        [pred['mask']['instanceURI'] for pred in predictions])
     pred_mask = _instance_urls_to_binary_mask(
         [label['instanceURI'] for label in labels])
     assert label_mask.shape == pred_mask.shape
@@ -149,3 +153,4 @@ def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> float:
 def _instance_urls_to_binary_mask(urls: List[str]) -> np.ndarray:
     masks = [url_to_numpy(url) for url in urls]
     return np.sum(masks, axis=(0, 3)) > 0
+
