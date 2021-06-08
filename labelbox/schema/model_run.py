@@ -11,8 +11,19 @@ class ModelRun(DbObject):
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
 
-    def upsert_labels(self):
-        ...
+    def upsert_labels(self, label_ids):
+        if len(label_ids) < 1:
+            raise ValueError("Must provide at least one label id")
+
+        query_str = """mutation upsertModelRunLabelsPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
+          upsertModelRunLabels(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
+          """
+        res = self.client.execute(query_str, {
+            'modelRunId': self.uid,
+            'labelIds': label_ids
+        })
+        # TODO: Return a task
+        return True
 
     def add_predictions(
             self,
