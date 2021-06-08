@@ -1,4 +1,5 @@
 from enum import Enum
+from labelbox.schema.enums import AnnotationImportState, ImportType
 from typing import Any, Dict, List
 import functools
 import os
@@ -18,47 +19,18 @@ from labelbox.orm import query
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
-#Replacement for bulk_import_request.
-# Will not use validation since we will move annotation objects here soon.
-
-
-class PredictionType(Enum):
-    MODEL_ERROR_ANALYSIS = "MODEL_ERROR_ANALYSIS"
-    MODEL_ASSISTED_LABELING = "MODEL_ASSISTED_LABELING"
-
-
-class PredictionImportState(Enum):
-    """ State of the import job when importing annotations (RUNNING, FAILED, or FINISHED).
-
-    .. list-table::
-       :widths: 15 150
-       :header-rows: 1
-
-       * - State
-         - Description
-       * - RUNNING
-         - Indicates that the import job is not done yet.
-       * - FAILED
-         - Indicates the import job failed. Check `BulkImportRequest.errors` for more information
-       * - FINISHED
-         - Indicates the import job is no longer running. Check `BulkImportRequest.statuses` for more information
-    """
-    RUNNING = "RUNNING"
-    FAILED = "FAILED"
-    FINISHED = "FINISHED"
-
 
 class AnnotationImport(DbObject):
+    # This class replaces BulkImportRequest
     id_name: str
-    prediction_type: PredictionType
+    import_type: ImportType
 
     name = Field.String("name")
-    state = Field.Enum(PredictionImportState, "state")
+    state = Field.Enum(AnnotationImportState, "state")
     input_file_url = Field.String("input_file_url")
     error_file_url = Field.String("error_file_url")
     status_file_url = Field.String("status_file_url")
 
-    # TODO: Not sure if this works for MEA
     created_by = Relationship.ToOne("User", False, "created_by")
 
     @property
@@ -81,7 +53,7 @@ class AnnotationImport(DbObject):
 
         Returns:
             List of dicts containing error messages. Empty list means there were no errors
-            See `BulkImportRequest.statuses` for more details.
+            See `AnnotationImport.statuses` for more details.
 
         * This information will expire after 24 hours.
         """
@@ -121,13 +93,13 @@ class AnnotationImport(DbObject):
         """Blocks import job until certain conditions are met.
 
         Blocks until the AnnotationImport.state changes either to
-        `PredictionImportState.FINISHED` or `PredictionImportState.FAILED`,
+        `AnnotationImportState.FINISHED` or `AnnotationImportState.FAILED`,
         periodically refreshing object's state.
 
         Args:
             sleep_time_seconds (str): a time to block between subsequent API calls
         """
-        while self.state.value == PredictionImportState.RUNNING.value:
+        while self.state.value == AnnotationImportState.RUNNING.value:
             logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
             time.sleep(sleep_time_seconds)
             self.__exponential_backoff_refresh()
@@ -155,18 +127,8 @@ class AnnotationImport(DbObject):
         response.raise_for_status()
         return ndjson.loads(response.text)
 
-    @staticmethod
-    def _validate_obj(cls):
-        # TODO: isinstance won't work.. check the type..
-        if isinstance(cls, AnnotationImport):
-            raise TypeError(
-                "Cannot diretly instantiate PredictionImport. Must use base class instead"
-            )
-
     @classmethod
     def _build_import_predictions_query(cls, file_args: str, vars: str):
-        cls._validate_obj(cls)
-
         query_str = """mutation testPredictionImportsPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
         createAnnotationImport(data: {
         %s : $parent_id
@@ -184,7 +146,6 @@ class AnnotationImport(DbObject):
 
     @classmethod
     def _from_name(cls, client, parent_id, name: str, raw=False):
-        cls._validate_obj(cls)
         query_str = """query
         getImportPyApi($parent_id : ID!, $name: String!) {
             annotationImport(
@@ -193,7 +154,11 @@ class AnnotationImport(DbObject):
                 ... on ModelAssistedLabelingPredictionImport {%s}
                 ... on ModelErrorAnalysisPredictionImport {%s}
                 }}""" % \
-                (cls.id_name, query.results_query_part(MALPredictionImport), query.results_query_part(MEAPredictionImport)) #, query.results_query_part(cls))
+                (
+                    cls.id_name,
+                    query.results_query_part(MALPredictionImport),
+                    query.results_query_part(MEAPredictionImport)
+        )
 
         response = client.execute(query_str, {
             'name': name,
@@ -207,7 +172,6 @@ class AnnotationImport(DbObject):
     @classmethod
     def _create_from_url(cls, client, parent_id, name, url):
         file_args = "fileUrl : $fileUrl"
-
         query_str = cls._build_import_predictions_query(file_args,
                                                         "$fileUrl: String!")
         response = client.execute(
@@ -216,7 +180,7 @@ class AnnotationImport(DbObject):
                 "fileUrl": url,
                 "parent_id": parent_id,
                 'name': name,
-                'predictionType': cls.prediction_type.value
+                'predictionType': cls.import_type.value
             })
         return cls(client, response['createAnnotationImport'])
 
@@ -237,14 +201,11 @@ class AnnotationImport(DbObject):
     @classmethod
     def _create_from_bytes(cls, client, parent_id, name, bytes_data,
                            content_len):
-        # Copying bulk import request for now
-        # TODO: Figure out why it has to be sent like this...
         file_name = cls._make_file_name(parent_id, name)
         file_args = """filePayload: {
                 file: $file,
                 contentLength: $contentLength
             }"""
-
         query_str = cls._build_import_predictions_query(
             file_args, "$file: Upload!, $contentLength: Int!")
         variables = {
@@ -252,12 +213,11 @@ class AnnotationImport(DbObject):
             "contentLength": content_len,
             "parent_id": parent_id,
             "name": name,
-            "predictionType": cls.prediction_type.value
+            "predictionType": cls.import_type.value
         }
         operations = json.dumps({"variables": variables, "query": query_str})
         data = {
             "operations": operations,
-            # This varibles.file isn't going to work. is there an alternative???? Like just setting it to None??
             "map": (None, json.dumps({file_name: ["variables.file"]}))
         }
         file_data = (file_name, bytes_data, NDJSON_MIME_TYPE)
@@ -289,7 +249,6 @@ class AnnotationImport(DbObject):
         raise NotImplementedError("")
 
     def create_from_file(*args, **kwargs):
-        # Handles both url and local files. Does that make sense?
         raise NotImplementedError("")
 
     def get_parent_id(*args, **kwargs):
@@ -298,7 +257,7 @@ class AnnotationImport(DbObject):
 
 class MEAPredictionImport(AnnotationImport):
     id_name = "modelRunId"
-    prediction_type = PredictionType.MODEL_ERROR_ANALYSIS
+    import_type = ImportType.MODEL_ERROR_ANALYSIS
     model_run_id = Field.String("model_run_id")
 
     def get_parent_id(self):
@@ -318,7 +277,7 @@ class MEAPredictionImport(AnnotationImport):
 
 class MALPredictionImport(AnnotationImport):
     id_name = "projectId"
-    prediction_type = PredictionType.MODEL_ASSISTED_LABELING
+    import_type = ImportType.MODEL_ASSISTED_LABELING
     project = Relationship.ToOne("Project", cache=True)
 
     def get_parent_id(self):
