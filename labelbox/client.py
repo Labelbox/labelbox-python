@@ -15,6 +15,7 @@ from labelbox.orm.db_object import DbObject
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.model import Model
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -76,9 +77,15 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
 
-    @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, experimental=False):
+    #@retry.Retry(predicate=retry.if_exception_type(
+    #    labelbox.exceptions.InternalServerError))
+    def execute(self,
+                query=None,
+                params=None,
+                data=None,
+                files=None,
+                timeout=30.0,
+                experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -107,7 +114,7 @@ class Client:
             labelbox.exceptions.LabelboxError: If an unknown error of any
                 kind occurred.
         """
-        logger.debug("Query: %s, params: %r", query, params)
+        logger.debug("Query: %s, params: %r, data %r", query, params, data)
 
         # Convert datetimes to UTC strings.
         def convert_value(value):
@@ -116,19 +123,35 @@ class Client:
                 value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
             return value
 
-        if params is not None:
-            params = {
-                key: convert_value(value) for key, value in params.items()
-            }
-
-        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
-
+        if query is not None:
+            if params is not None:
+                params = {
+                    key: convert_value(value) for key, value in params.items()
+                }
+            data = json.dumps({
+                'query': query,
+                'variables': params
+            }).encode('utf-8')
+        elif data is None:
+            raise ValueError("Params and data cannot both be none")
         try:
-            response = requests.post(self.endpoint.replace('/graphql', '/_gql')
-                                     if experimental else self.endpoint,
-                                     data=data,
-                                     headers=self.headers,
-                                     timeout=timeout)
+            request = {
+                'url':
+                    self.endpoint.replace('/graphql', '/_gql')
+                    if experimental else self.endpoint,
+                'data':
+                    data,
+                'headers':
+                    self.headers,
+                'timeout':
+                    timeout
+            }
+            if files:
+                request.update({'files': files})
+                request['headers'] = {
+                    'Authorization': self.headers['Authorization']
+                }
+            response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -376,7 +399,7 @@ class Client:
         """
         return self._get_single(Organization, None)
 
-    def _get_all(self, db_object_type, where):
+    def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
 
         Args:
@@ -386,8 +409,9 @@ class Client:
         Returns:
             An iterable of `db_object_type` instances.
         """
-        not_deleted = db_object_type.deleted == False
-        where = not_deleted if where is None else where & not_deleted
+        if filter_deleted:
+            not_deleted = db_object_type.deleted == False
+            where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
         return PaginatedCollection(
@@ -499,7 +523,61 @@ class Client:
     def get_roles(self):
         """
         Returns:
-            Roles: Provides information on available roles within an organization. 
+            Roles: Provides information on available roles within an organization.
             Roles are used for user management.
         """
         return role.get_roles(self)
+
+    def get_model(self, model_id):
+        """ Gets a single Model with the given ID.
+
+            >>> model = client.get_model("<model_id>")
+
+        Args:
+            model_id (str): Unique ID of the Model.
+        Returns:
+            The sought Model.
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no
+                Model with the given ID.
+        """
+        return self._get_single(Model, model_id)
+
+    def get_models(self, where=None):
+        """ Fetches all the models the user has access to.
+
+            >>> models = client.get_models(where=(Model.name == "<model_name>"))
+
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Returns:
+            An iterable of Models (typically a PaginatedCollection).
+        """
+        return self._get_all(Model, where, filter_deleted=False)
+
+    def create_model(self, name, ontology_id):
+        """ Creates a Model object on the server.
+
+        >>> model = client.create_model(<model_name>, <ontology_id>)
+
+        Args:
+            name (string): Name of the model
+            ontology_id (string): ID of the related ontology
+        Returns:
+            A new Model object.
+        Raises:
+            InvalidAttributeError: If the Model type does not contain
+                any of the attribute names given in kwargs.
+        """
+        query_str = """mutation createModelPyApi($name: String!, $ontologyId: ID!){
+            createModel(data: {name : $name, ontologyId : $ontologyId}){
+                    %s
+                }
+            }""" % query.results_query_part(Model)
+
+        result = self.execute(query_str, {
+            "name": name,
+            "ontologyId": ontology_id
+        })
+        return Model(self, result['createModel'])

@@ -14,7 +14,6 @@ from requests.api import request
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set)
-
 import labelbox
 from labelbox import utils
 from labelbox.orm import query
@@ -65,6 +64,10 @@ def _make_request_data(project_id: str, name: str, content_length: int,
 def _send_create_file_command(
         client, request_data: dict, file_name: str,
         file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
+
+    print(request_data)
+    print({file_name: file_data})
+
     response = requests.post(
         client.endpoint,
         headers={"authorization": "Bearer %s" % client.api_key},
