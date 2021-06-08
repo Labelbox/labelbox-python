@@ -151,6 +151,7 @@ class Client:
                 request['headers'] = {
                     'Authorization': self.headers['Authorization']
                 }
+
             response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
