@@ -50,8 +50,20 @@ def subclassification_iou(subclass_predictions, subclass_labels):
     classification_iou = [x for x in classification_iou if x is not None]
     return None if not len(classification_iou) else np.mean(classification_iou)
 
+def get_vector_pairs(predictions, labels, tool):
+    return [
+        (feature_a['uuid'], feature_a.get('classifications',[]),
+        feature_b['featureId'], feature_b.get('classifications',[]),
+         _polygon_iou(polygon_a, polygon_b))
+        for (feature_a, polygon_a), (feature_b, polygon_b) in product(
+            zip(predictions, to_shapely_polys(predictions, tool)),
+            zip(labels, to_shapely_polys(labels, tool)))
+        if polygon_a is not None and polygon_b is not None]
+
+
 def vector_iou(predictions: List[Dict[str, Any]], labels: List[Dict[str, Any]],
                tool: str, include_subclasses = True) -> float:
+    pairs = get_vector_pairs(predictions, labels, tool)
     agreements = [
         (feature_a['uuid'], feature_a.get('classifications',[]),
         feature_b['featureId'], feature_b.get('classifications',[]),
