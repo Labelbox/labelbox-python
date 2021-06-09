@@ -5,8 +5,6 @@ from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AssetAttachment
 
-
-
 logger = logging.getLogger(__name__)
 
 
