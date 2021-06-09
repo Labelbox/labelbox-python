@@ -42,7 +42,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         "AssetMetadata",
         False,
         "metadata",
-        deprecation_message=
+        deprecation_warning=
         "`DataRow.metadata()` is deprecated. Use `DataRow.attachments()` instead."
     )
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
