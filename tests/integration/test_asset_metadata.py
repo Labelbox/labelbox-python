@@ -1,6 +1,6 @@
-from labelbox.schema.asset_attachment import AssetAttachment
 import pytest
 
+from labelbox.schema.asset_attachment import AssetAttachment
 from labelbox import AssetMetadata
 from labelbox.exceptions import InvalidQueryError
 

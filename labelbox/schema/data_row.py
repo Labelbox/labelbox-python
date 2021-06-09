@@ -1,9 +1,11 @@
+import logging
+
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AssetAttachment
 
-import logging
+
 
 logger = logging.getLogger(__name__)
 

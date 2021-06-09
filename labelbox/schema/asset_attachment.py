@@ -1,4 +1,5 @@
 from enum import Enum
+
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 
