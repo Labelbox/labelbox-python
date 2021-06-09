@@ -6,6 +6,7 @@ from labelbox.orm.model import Field
 
 logger = logging.getLogger(__name__)
 
+
 class AssetMetadata(DbObject):
     """ Asset metadata (AKA Attachments) provides extra context about an asset while labeling.
 
@@ -17,8 +18,7 @@ class AssetMetadata(DbObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         logger.warning(
-            "`create_metadata` is deprecated. Use `create_attachment` instead."
-        )
+            "`AssetMetadata` is deprecated. Use `AssetAttachment` instead.")
 
     class MetaType(Enum):
         VIDEO = "VIDEO"

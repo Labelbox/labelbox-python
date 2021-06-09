@@ -1,11 +1,12 @@
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.asset_attchment import AssetAttachment
+from labelbox.schema.asset_attachment import AssetAttachment
 
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class DataRow(DbObject, Updateable, BulkDeletable):
     """ Internal Labelbox representation of a single piece of data (e.g. image, video, text).
@@ -37,14 +38,19 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
 
-    metadata = Relationship.ToMany("AssetMetadata", False, "metadata")
-    # attachments
-    attachment = Relationship.ToMany("AssetAttachment", False, "attachment")
-
+    metadata = Relationship.ToMany(
+        "AssetMetadata",
+        False,
+        "metadata",
+        deprecation_message=
+        "`DataRow.metadata()` is deprecated. Use `DataRow.attachments()` instead."
+    )
+    attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
     predictions = Relationship.ToMany("Prediction", False)
 
     supported_meta_types = supported_attachment_types = {
-        attachment_type.value for attachment_type in AssetAttachment.MetaType
+        attachment_type.value
+        for attachment_type in AssetAttachment.AttachmentType
     }
 
     @staticmethod
@@ -60,8 +66,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         super().__init__(*args, **kwargs)
         self.metadata.supports_filtering = False
         self.metadata.supports_sorting = False
-        self.attachment.supports_filtering = False
-        self.attachment.supports_sorting = False
+        self.attachments.supports_filtering = False
+        self.attachments.supports_sorting = False
 
     def create_attachment(self, attachment_type, attachment_value):
         """ Attaches asset metadata to a DataRow.
@@ -92,22 +98,16 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 type: $%s value: $%s dataRowId: $%s}) {%s}} """ % (
             attachment_type_param, attachment_value_param, data_row_id_param,
             attachment_type_param, attachment_value_param, data_row_id_param,
-            query.results_query_part(Entity.AssetMetadata))
+            query.results_query_part(Entity.AssetAttachment))
 
         res = self.client.execute(
             query_str, {
-                attachment_type_param: meta_type,
-                attachment_value_param: meta_value,
+                attachment_type_param: attachment_type,
+                attachment_value_param: attachment_value,
                 data_row_id_param: self.uid
             })
-        return Entity.AssetAttachment(self.client, res["createAssetMetadata"])
-
-
-createDataRowAttachment(data: DataRowAttachmentCreateInput!): DataRowAttachment!
-  deleteDataRowAttachment(where: WhereUniqueIdInput!): DataRowAttachment!
-  updateDataRowAttachment
-
-
+        return Entity.AssetAttachment(self.client,
+                                      res["createDataRowAttachment"])
 
     def create_metadata(self, meta_type, meta_value):
         """
@@ -118,8 +118,11 @@ createDataRowAttachment(data: DataRowAttachmentCreateInput!): DataRowAttachment!
             AssetMetadata
         """
         logger.warning(
-            "`create_metadata` is deprecated. Use `create_attachment` instead."
-        )
-
+            "`create_metadata` is deprecated. Use `create_attachment` instead.")
         attachment = self.create_attachment(meta_type, meta_value)
-        return Entity.AssetMetadata(self.client, res["createAssetMetadata"])
+        return Entity.AssetMetadata(
+            self.client, {
+                'id': attachment.uid,
+                'metaType': attachment.attachment_type,
+                'metaValue': attachment.attachment_value
+            })
