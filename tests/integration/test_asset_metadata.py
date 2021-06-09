@@ -37,7 +37,6 @@ def test_asset_metadata_crud(project, dataset):
         "Relationship DataRow.metadata doesn't support sorting"
 
 
-
 def test_asset_attachment_crud(project, dataset):
     # must attach a dataset to a project before it can be queryable
     # due to permissions
