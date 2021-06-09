@@ -118,8 +118,8 @@ class RelationshipManager:
         """ Forwards the call to either `_to_many` or `_to_one` methods,
         depending on relationship type. """
 
-        if self.relationship.deprecation_message:
-            logger.warning(self.relationship.deprecation_message)
+        if self.relationship.deprecation_warning:
+            logger.warning(self.relationship.deprecation_warning)
 
         if self.relationship.relationship_type == Relationship.Type.ToMany:
             return self._to_many(*args, **kwargs)

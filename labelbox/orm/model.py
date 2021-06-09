@@ -187,6 +187,7 @@ class Relationship:
         cache (bool) : Whether or not to cache the relationship values.
             Useful for objects that aren't directly queryable from the api (relationship query builder won't work)
             Also useful for expensive ToOne relationships
+        deprecation_warning (string) optional message to display when RelationshipManager is called
 
     """
 
@@ -209,12 +210,12 @@ class Relationship:
                  name=None,
                  graphql_name=None,
                  cache=False,
-                 deprecation_message=None):
+                 deprecation_warning=None):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
         self.cache = cache
-        self.deprecation_message = deprecation_message
+        self.deprecation_warning = deprecation_warning
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (
