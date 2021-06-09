@@ -186,7 +186,7 @@ class Relationship:
             (not always) just a camelCase version of `name`.
         cache (bool) : Whether or not to cache the relationship values.
             Useful for objects that aren't directly queryable from the api (relationship query builder won't work)
-            Also useful for expensive ToOne relationships 
+            Also useful for expensive ToOne relationships
 
     """
 
@@ -195,12 +195,12 @@ class Relationship:
         ToMany = auto()
 
     @staticmethod
-    def ToOne(*args, cache=False):
-        return Relationship(Relationship.Type.ToOne, *args, cache=cache)
+    def ToOne(*args, **kwargs):
+        return Relationship(Relationship.Type.ToOne, *args, **kwargs)
 
     @staticmethod
-    def ToMany(*args):
-        return Relationship(Relationship.Type.ToMany, *args)
+    def ToMany(*args, **kwargs):
+        return Relationship(Relationship.Type.ToMany, *args, **kwargs)
 
     def __init__(self,
                  relationship_type,
@@ -208,11 +208,13 @@ class Relationship:
                  filter_deleted=True,
                  name=None,
                  graphql_name=None,
-                 cache=False):
+                 cache=False,
+                 deprecation_message=None):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
         self.cache = cache
+        self.deprecation_message = deprecation_message
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (
@@ -268,14 +270,14 @@ class EntityMeta(type):
 
     def validate_cached_relationships(cls):
         """
-        Graphql doesn't allow for infinite nesting in queries. 
+        Graphql doesn't allow for infinite nesting in queries.
         This function checks that cached relationships result in valid queries.
             * It does this by making sure that a cached relationship do not
               reference any entity with its own cached relationships.
 
-        This check is performed by looking to see if this entity caches 
-        any entities that have their own cached fields. If this entity 
-        that we are checking has any cached fields then we also check 
+        This check is performed by looking to see if this entity caches
+        any entities that have their own cached fields. If this entity
+        that we are checking has any cached fields then we also check
         all currently defined entities to see if they cache this entity.
 
         A two way check is necessary because checks are performed as classes are being defined.
