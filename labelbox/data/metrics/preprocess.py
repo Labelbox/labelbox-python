@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 import requests
 from io import BytesIO
+from google.api_core import retry
 
 
 def create_schema_lookup(rows: Dict[str, Any]) -> Dict[str, List[Any]]:
@@ -13,17 +14,13 @@ def create_schema_lookup(rows: Dict[str, Any]) -> Dict[str, List[Any]]:
         data[row['schemaId']].append(row)
     return data
 
-
+@retry.Retry(deadline = 10.)
 def url_to_numpy(mask_url: str) -> np.ndarray:
     return np.array(Image.open(BytesIO(requests.get(mask_url).content)))
 
 def _bbox_to_shapely_poly(bbox: Dict[str, float]) -> Polygon:
     return box(bbox['left'], bbox['top'], bbox['left'] + bbox['width'],
                bbox['top'] + bbox['height'])
-
-
-def _poly_to_shapely_poly(poly: List[Dict[str, float]]) -> Polygon:
-    return Polygon([[pt['x'], pt['y']] for pt in poly])
 
 def _poly_to_shapely_poly(poly: List[Dict[str, float]]) -> Polygon:
     return Polygon([[pt['x'], pt['y']] for pt in poly])

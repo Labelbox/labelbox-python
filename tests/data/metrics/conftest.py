@@ -216,7 +216,7 @@ def mask_pair():
         predictions=[{
             'uuid': '12345',
             'schemaId': '1234',
-            'instanceURI': create_mask_url([(0, 0, 0)], 32, 32)
+            'mask' : { 'instanceURI': create_mask_url([(0, 0, 0)], 32, 32)}
         }], expected = 0.5)
 
 
