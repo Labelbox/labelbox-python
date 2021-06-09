@@ -102,7 +102,7 @@ class AnnotationImport(DbObject):
         while self.state.value == AnnotationImportState.RUNNING.value:
             logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
             time.sleep(sleep_time_seconds)
-            self.__exponential_backoff_refresh()
+            self.__backoff_refresh()
 
     @backoff.on_exception(
         backoff.expo,
@@ -110,7 +110,7 @@ class AnnotationImport(DbObject):
          labelbox.exceptions.NetworkError),
         max_tries=10,
         jitter=None)
-    def __exponential_backoff_refresh(self) -> None:
+    def __backoff_refresh(self) -> None:
         self.refresh()
 
     @functools.lru_cache()
@@ -174,14 +174,13 @@ class AnnotationImport(DbObject):
         file_args = "fileUrl : $fileUrl"
         query_str = cls._build_import_predictions_query(file_args,
                                                         "$fileUrl: String!")
-        response = client.execute(
-            query_str,
-            params={
-                "fileUrl": url,
-                "parent_id": parent_id,
-                'name': name,
-                'predictionType': cls.import_type.value
-            })
+        response = client.execute(query_str,
+                                  params={
+                                      "fileUrl": url,
+                                      "parent_id": parent_id,
+                                      'name': name,
+                                      'predictionType': cls.import_type.value
+                                  })
         return cls(client, response['createAnnotationImport'])
 
     @staticmethod
