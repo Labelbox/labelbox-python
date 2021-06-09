@@ -12,12 +12,9 @@ def mask_iou(predictions: List[Dict[str, Any]],
     """
     Mask iou is performed at the class level and not the instance level.
     """
-    # This is inefficient. The mask exists locally for them to upload it.
-    # RLE data would be convenient here.
-    # There will only ever be one mask label per class
-    label_mask = _instance_urls_to_binary_mask(
-        [pred['mask']['instanceURI'] for pred in predictions])
     pred_mask = _instance_urls_to_binary_mask(
+        [pred['mask']['instanceURI'] for pred in predictions])
+    label_mask = _instance_urls_to_binary_mask(
         [label['instanceURI'] for label in labels])
     assert label_mask.shape == pred_mask.shape
     return _mask_iou(label_mask, pred_mask)
@@ -45,15 +42,24 @@ def classification_iou(prediction, label) -> float:
     else:
         raise ValueError(f"Unexpected subclass. {prediction}")
 
+def subclassification_iou(subclass_predictions, subclass_labels):
+    subclass_predictions = create_schema_lookup(subclass_predictions)
+    subclass_labels = create_schema_lookup(subclass_labels)
+    feature_schemas = set(subclass_predictions.keys()).union(set(subclass_labels.keys()))
+    classification_iou = [feature_miou(subclass_predictions[feature_schema],subclass_labels[feature_schema]) for feature_schema in feature_schemas]
+    classification_iou = [x for x in classification_iou if x is not None]
+    return None if not len(classification_iou) else np.mean(classification_iou)
 
 def vector_iou(predictions: List[Dict[str, Any]], labels: List[Dict[str, Any]],
                tool: str, include_subclasses = True) -> float:
-    agreements = [(feature_a['uuid'], feature_a.get('classifications',[]), feature_b['featureId'], feature_b.get('classifications',[]),
-                   _polygon_iou(polygon_a, polygon_b))
-                  for (feature_a, polygon_a), (feature_b, polygon_b) in product(
-                      zip(predictions, to_shapely_polys(predictions, tool)),
-                      zip(labels, to_shapely_polys(labels, tool)))
-                  if polygon_a is not None and polygon_b is not None]
+    agreements = [
+        (feature_a['uuid'], feature_a.get('classifications',[]),
+        feature_b['featureId'], feature_b.get('classifications',[]),
+         _polygon_iou(polygon_a, polygon_b))
+        for (feature_a, polygon_a), (feature_b, polygon_b) in product(
+            zip(predictions, to_shapely_polys(predictions, tool)),
+            zip(labels, to_shapely_polys(labels, tool)))
+        if polygon_a is not None and polygon_b is not None]
 
     agreements = [(feature_a, subclasses_a, feature_b, subclasses_b, agreement)
                   for feature_a, subclasses_a, feature_b, subclasses_b, agreement in agreements]
@@ -66,13 +72,9 @@ def vector_iou(predictions: List[Dict[str, Any]], labels: List[Dict[str, Any]],
         if a not in solution_features and b not in solution_features:
             solution_features.update({a, b})
             if include_subclasses:
-                a_classification = create_schema_lookup(a_classification)
-                b_classification = create_schema_lookup(b_classification)
-                feature_schemas = set(a_classification.keys()).union(set(b_classification.keys()))
-                classification_iou = [feature_miou(a_classification[feature_schema],b_classification[feature_schema]) for feature_schema in feature_schemas]
-                classification_iou = [x for x in classification_iou if x is not None]
-                classification_iou = agreement if not len(classification_iou) else np.mean(classification_iou)
-                # Weighted average of prediction and agreement. Or do we want it to be wrong?
+                classification_iou = subclassification_iou(a_classification, b_classification)
+                classification_iou = classification_iou if classification_iou is not None else agreement
+                # Weighted average of prediction and agreement.
                 solution_agreements.append( (agreement + classification_iou) / 2.)
             else:
                 solution_agreements.append(agreement)
@@ -123,16 +125,16 @@ def datarow_miou(label_content: List[Dict[str, Any]],
     labels = create_schema_lookup(label_content)
     predictions = create_schema_lookup(ndjsons)
     feature_schemas = set(predictions.keys()).union(set(labels.keys()))
-    # TODO: Do we need to weight this by the number of examples in a class?
-    # What does B&C do?
-    ious = []
-    # This weights each class equally so rare classes will have a larger impact on the iou
-    for feature_schema in feature_schemas:
-        ious.append(
-            feature_miou(predictions[feature_schema], labels[feature_schema], include_subclasses=  include_subclasses))
+    ious = [
+        feature_miou(
+            predictions[feature_schema],
+            labels[feature_schema],
+            include_subclasses = include_subclasses
+        ) for feature_schema in feature_schemas
+    ]
     ious = [iou for iou in ious if iou is not None]
     if not ious:
-        # TODO: Figure out the behavior we want for this.
+        # TODO: How to handle empty examples?
         raise ValueError("No predictions or labels found for this example....")
     return np.mean(ious)
 
