@@ -8,15 +8,15 @@ import numpy as np
 import uuid
 
 
-def create_boxes_ndjson(datarow_id: str, schema_id: str, t: float, l: float,
-                        b: float, r: float) -> Dict[str, Any]:
+def create_boxes_ndjson(datarow_id: str, schema_id: str, top: float, left: float,
+                        bottom: float, right: float) -> Dict[str, Any]:
     """
     * https://docs.labelbox.com/data-model/en/index-en#bounding-box
 
     Args:
         datarow_id (str): id of the data_row (in this case image) to add this annotation to
         schema_id (str): id of the bbox tool in the current ontology
-        t, l, b, r (int): top, left, bottom, right pixel coordinates of the bbox
+        top, left, bottom, right (int): pixel coordinates of the bbox
     Returns:
         ndjson representation of a bounding box
     """
@@ -27,28 +27,28 @@ def create_boxes_ndjson(datarow_id: str, schema_id: str, t: float, l: float,
             "id": datarow_id
         },
         "bbox": {
-            "top": int(t),
-            "left": int(l),
-            "height": int(b - t),
-            "width": int(r - l)
+            "top": int(top),
+            "left": int(left),
+            "height": int(bottom - top),
+            "width": int(right - left)
         }
     }
 
 
 def create_polygon_ndjson(datarow_id: str, schema_id: str,
-                          seg: np.ndarray) -> Dict[str, Any]:
+                          segmentation_mask: np.ndarray) -> Dict[str, Any]:
     """
     * https://docs.labelbox.com/data-model/en/index-en#polygon
 
     Args:
         datarow_id (str): id of the data_row (in this case image) to add this annotation to
         schema_id (str): id of the bbox tool in the current ontology
-        seg (np.ndarray): Segmentation mask of size (image_h, image_w)
+        segmentation_mask (np.ndarray): Segmentation mask of size (image_h, image_w)
             - Seg mask is turned into a polygon since polygons aren't directly inferred.
     Returns:
         ndjson representation of a polygon
     """
-    contours = measure.find_contours(seg, 0.5)
+    contours = measure.find_contours(segmentation_mask, 0.5)
     #Note that complex polygons could break.
     pts = contours[0].astype(np.int32)
     pts = np.roll(pts, 1, axis=-1)
@@ -64,7 +64,7 @@ def create_polygon_ndjson(datarow_id: str, schema_id: str,
 
 
 def create_mask_ndjson(client: Client, datarow_id: str, schema_id: str,
-                       seg: np.ndarray, color: Tuple[int, int,
+                       segmentation_mask: np.ndarray, color: Tuple[int, int,
                                                      int]) -> Dict[str, Any]:
     """
     Creates a mask for each object in the image
@@ -74,13 +74,13 @@ def create_mask_ndjson(client: Client, datarow_id: str, schema_id: str,
         client (labelbox.Client): labelbox client used for uploading seg mask to google cloud storage
         datarow_id (str): id of the data_row (in this case image) to add this annotation to
         schema_id (str): id of the segmentation tool in the current ontology
-        seg is a seg mask of size (image_h, image_w)
+        segmentation_mask is a segmentation mask of size (image_h, image_w)
         color ( Tuple[int,int,int]): rgb color to convert binary mask into 3D colorized mask
     Return:
         ndjson representation of a segmentation mask
     """
 
-    colorize = np.concatenate(([seg[..., np.newaxis] * c for c in color]),
+    colorize = np.concatenate(([segmentation_mask[..., np.newaxis] * c for c in color]),
                               axis=2)
     img_bytes = BytesIO()
     Image.fromarray(colorize).save(img_bytes, format="PNG")
@@ -98,11 +98,10 @@ def create_mask_ndjson(client: Client, datarow_id: str, schema_id: str,
             "colorRGB": color
         }
     }
-    return result
 
 
-def create_point_ndjson(datarow_id: str, schema_id: str, t: float, l: float,
-                        b: float, r: float) -> Dict[str, Any]:
+def create_point_ndjson(datarow_id: str, schema_id: str, top: float, left: float,
+                        bottom: float, right: float) -> Dict[str, Any]:
     """
     * https://docs.labelbox.com/data-model/en/index-en#point
 
@@ -121,7 +120,7 @@ def create_point_ndjson(datarow_id: str, schema_id: str, t: float, l: float,
             "id": datarow_id
         },
         "point": {
-            "x": int((l + r) / 2.),
-            "y": int((t + b) / 2.),
+            "x": int((left + right) / 2.),
+            "y": int((top + bottom) / 2.),
         }
     }
