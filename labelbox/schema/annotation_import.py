@@ -89,7 +89,7 @@ class AnnotationImport(DbObject):
         self.wait_until_done()
         return self._fetch_remote_ndjson(self.status_file_url)
 
-    def wait_until_done(self, sleep_time_seconds: int = 5) -> None:
+    def wait_until_done(self, sleep_time_seconds: int = 10) -> None:
         """Blocks import job until certain conditions are met.
 
         Blocks until the AnnotationImport.state changes either to
@@ -174,14 +174,13 @@ class AnnotationImport(DbObject):
         file_args = "fileUrl : $fileUrl"
         query_str = cls._build_import_predictions_query(file_args,
                                                         "$fileUrl: String!")
-        response = client.execute(
-            query_str,
-            params={
-                "fileUrl": url,
-                "parent_id": parent_id,
-                'name': name,
-                'predictionType': cls.import_type.value
-            })
+        response = client.execute(query_str,
+                                  params={
+                                      "fileUrl": url,
+                                      "parent_id": parent_id,
+                                      'name': name,
+                                      'predictionType': cls.import_type.value
+                                  })
         return cls(client, response['createAnnotationImport'])
 
     @staticmethod
