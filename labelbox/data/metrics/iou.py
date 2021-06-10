@@ -270,7 +270,7 @@ def datarow_miou(label_content: List[Dict[str, Any]],
     if not ious:
         # TODO: Should we return None?
         raise ValueError("No predictions or labels found for this example....")
-    return np.mean(ious)
+    return 100 * np.mean(ious)
 
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
