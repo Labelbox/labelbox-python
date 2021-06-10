@@ -269,7 +269,7 @@ def datarow_miou(label_content: List[Dict[str, Any]],
     ious = [iou for iou in ious if iou is not None]
     if not ious:
         return None
-    return 100 * np.mean(ious)
+    return np.mean(ious)
 
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
