@@ -6,6 +6,7 @@
 * Update client to support creating and querying for `Model`s
 * Implement new prediction import pipeline to support both MAL and MEA
 * Added notebook to demonstrate how to use MEA
+* Added `datarow_miou` for calculating datarow level iou scores
 
 # Version 2.5.6 (2021-05-19)
 ## Fix
