@@ -1,5 +1,6 @@
 import labelbox.schema.asset_metadata
 import labelbox.schema.bulk_import_request
+import labelbox.schema.annotation_import
 import labelbox.schema.benchmark
 import labelbox.schema.data_row
 import labelbox.schema.dataset
