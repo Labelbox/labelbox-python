@@ -268,8 +268,7 @@ def datarow_miou(label_content: List[Dict[str, Any]],
     ]
     ious = [iou for iou in ious if iou is not None]
     if not ious:
-        # TODO: Should we return None?
-        raise ValueError("No predictions or labels found for this example....")
+        return None
     return 100 * np.mean(ious)
 
 
