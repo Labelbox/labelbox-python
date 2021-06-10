@@ -4,7 +4,7 @@ from enum import Enum
 class BulkImportRequestState(Enum):
     """ State of the import job when importing annotations (RUNNING, FAILED, or FINISHED).
 
-    This object is deprecated. Please use PredictionImportState instead.
+    This object is deprecated. Please use AnnotationImportState instead.
     """
     RUNNING = "RUNNING"
     FAILED = "FAILED"

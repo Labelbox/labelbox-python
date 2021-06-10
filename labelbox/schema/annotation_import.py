@@ -102,7 +102,7 @@ class AnnotationImport(DbObject):
         while self.state.value == AnnotationImportState.RUNNING.value:
             logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
             time.sleep(sleep_time_seconds)
-            self.__exponential_backoff_refresh()
+            self.__backoff_refresh()
 
     @backoff.on_exception(
         backoff.expo,
@@ -110,7 +110,7 @@ class AnnotationImport(DbObject):
          labelbox.exceptions.NetworkError),
         max_tries=10,
         jitter=None)
-    def __exponential_backoff_refresh(self) -> None:
+    def __backoff_refresh(self) -> None:
         self.refresh()
 
     @functools.lru_cache()
@@ -129,12 +129,12 @@ class AnnotationImport(DbObject):
 
     @classmethod
     def _build_import_predictions_query(cls, file_args: str, vars: str):
-        query_str = """mutation testPredictionImportsPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
+        query_str = """mutation createAnnotationImportPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
         createAnnotationImport(data: {
-        %s : $parent_id
-        name: $name
-        %s
-        predictionType: $predictionType
+            %s : $parent_id
+            name: $name
+            %s
+            predictionType: $predictionType
         }) {
         __typename
         ... on ModelAssistedLabelingPredictionImport {%s}
