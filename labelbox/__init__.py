@@ -2,7 +2,9 @@ name = "labelbox"
 __version__ = "2.5.6"
 
 from labelbox.client import Client
+from labelbox.schema.model import Model
 from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
@@ -19,4 +21,3 @@ from labelbox.schema.ontology import Ontology
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.model import Model

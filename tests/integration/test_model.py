@@ -1,5 +1,6 @@
 from labelbox import Model
 
+
 def test_model(client, configured_project, rand_gen):
     before = list(client.get_models())
     for m in before:
@@ -19,5 +20,3 @@ def test_model(client, configured_project, rand_gen):
     model = client.get_model(model.uid)
     assert model.name == data["name"]
     assert model.ontology.id == data["ontology_id"]
-
-

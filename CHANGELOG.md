@@ -2,7 +2,10 @@
 
 # Next Release
 ## Added
-* Added new `Model` schema
+* Added new `Model` and 'ModelRun` entities
+* Update client to support creating and querying for `Model`s
+* Implement new prediction import pipeline to support both MAL and MEA
+* Added notebook to demonstrate how to use MEA
 
 # Version 2.5.6 (2021-05-19)
 ## Fix
