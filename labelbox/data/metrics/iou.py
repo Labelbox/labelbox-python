@@ -17,7 +17,7 @@ VectorTool = Union[NDPoint, NDRectangle, NDPolyline, NDPolygon]
 ClassificationTool = Union[NDText, NDRadio, NDChecklist]
 
 
-def mask_iou(predictions: List[NDMask], labels: List[NDMask]) -> float:
+def mask_miou(predictions: List[NDMask], labels: List[NDMask]) -> float:
     """
     Creates prediction and label binary mask for all features with the same feature scheama id.
 
@@ -36,8 +36,8 @@ def mask_iou(predictions: List[NDMask], labels: List[NDMask]) -> float:
     return _mask_iou(label_mask, pred_mask)
 
 
-def classification_iou(predictions: List[ClassificationTool],
-                       labels: List[ClassificationTool]) -> float:
+def classification_miou(predictions: List[ClassificationTool],
+                        labels: List[ClassificationTool]) -> float:
     """
     Computes iou for classification features.
 
@@ -52,13 +52,10 @@ def classification_iou(predictions: List[ClassificationTool],
     if len(predictions) != len(labels) != 1:
         return 0.
 
-    if len(predictions) == 1:
-        prediction = predictions[0]
-    if len(labels) == 1:
-        label = labels[0]
+    prediction, label = predictions[0], labels[0]
 
     if type(prediction) != type(label):
-        return 0.
+        raise Type
 
     if isinstance(prediction, NDText):
         return float(prediction.answer == label.answer)
@@ -74,7 +71,7 @@ def classification_iou(predictions: List[ClassificationTool],
         raise ValueError(f"Unexpected subclass. {prediction}")
 
 
-def subclassification_iou(
+def subclassification_miou(
         subclass_predictions: List[ClassificationTool],
         subclass_labels: List[ClassificationTool]) -> Optional[float]:
     """
@@ -104,18 +101,8 @@ def subclassification_iou(
     return None if not len(classification_iou) else np.mean(classification_iou)
 
 
-def get_vector_pairs(predictions: List[Dict[str, Any]], labels):
-    """
-    # Get iou score for all pairs of labels and predictions
-    """
-    return [(prediction, label,
-             _polygon_iou(prediction.to_shapely_poly(),
-                          label.to_shapely_poly()))
-            for prediction, label in product(predictions, labels)]
-
-
-def vector_iou(predictions: List[VectorTool], labels: List[VectorTool],
-               include_subclasses) -> float:
+def vector_miou(predictions: List[VectorTool], labels: List[VectorTool],
+                include_subclasses) -> float:
     """
     Computes an iou score for vector tools.
 
@@ -127,7 +114,7 @@ def vector_iou(predictions: List[VectorTool], labels: List[VectorTool],
         miou score for the feature schema
 
     """
-    pairs = get_vector_pairs(predictions, labels)
+    pairs = _get_vector_pairs(predictions, labels)
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     solution_agreements = []
     solution_features = set()
@@ -137,10 +124,9 @@ def vector_iou(predictions: List[VectorTool], labels: List[VectorTool],
         if pred.uuid not in solution_features and label.uuid not in solution_features:
             solution_features.update({pred.uuid, label.uuid})
             if include_subclasses:
-                classification_iou = subclassification_iou(
+                classification_iou = subclassification_miou(
                     pred.classifications, label.classifications)
                 classification_iou = classification_iou if classification_iou is not None else agreement
-                # Weighted average of prediction and agreement.
                 solution_agreements.append(
                     (agreement + classification_iou) / 2.)
             else:
@@ -184,18 +170,49 @@ def feature_miou(predictions: List[NDAnnotation],
 
     tool_type = tool_types.pop()
     if tool_type == NDMask:
-        return mask_iou(predictions, labels)
+        return mask_miou(predictions, labels)
     elif tool_type in NDTool.get_union_types():
-        return vector_iou(predictions,
-                          labels,
-                          include_subclasses=include_subclasses)
+        return vector_miou(predictions,
+                           labels,
+                           include_subclasses=include_subclasses)
     elif tool_type in NDClassification.get_union_types():
-        return classification_iou(predictions, labels)
+        return classification_miou(predictions, labels)
     else:
         raise ValueError(f"Unexpected annotation found. Found {tool_type}")
 
 
-def preprocess_args(
+def datarow_miou(label_content: List[Dict[str, Any]],
+                 ndjsons: List[Dict[str, Any]],
+                 include_classifications=True,
+                 include_subclasses=True) -> float:
+    """
+
+    Args:
+        label_content : one row from the bulk label export - `project.export_labels()`
+        ndjsons: Model predictions in the ndjson format specified here (https://docs.labelbox.com/data-model/en/index-en#annotations)
+        include_classifications: Whether or not to factor top level classifications into the iou score.
+        include_subclassifications: Whether or not to factor in subclassifications into the iou score
+    Returns:
+        float indicating the iou score for this data row.
+
+    """
+
+    predictions, labels, feature_schemas = _preprocess_args(
+        label_content, ndjsons, include_classifications)
+
+    ious = [
+        feature_miou(predictions[feature_schema],
+                     labels[feature_schema],
+                     include_subclasses=include_subclasses)
+        for feature_schema in feature_schemas
+    ]
+    ious = [iou for iou in ious if iou is not None]
+    if not ious:
+        return None
+    return np.mean(ious)
+
+
+def _preprocess_args(
     label_content: List[Dict[str, Any]],
     ndjsons: List[Dict[str, Any]],
     include_classifications=True
@@ -241,35 +258,14 @@ def preprocess_args(
     return predictions, labels, feature_schemas
 
 
-def datarow_miou(label_content: List[Dict[str, Any]],
-                 ndjsons: List[Dict[str, Any]],
-                 include_classifications=True,
-                 include_subclasses=True) -> float:
+def _get_vector_pairs(predictions: List[Dict[str, Any]], labels):
     """
-
-    Args:
-        label_content : one row from the bulk label export - `project.export_labels()`
-        ndjsons: Model predictions in the ndjson format specified here (https://docs.labelbox.com/data-model/en/index-en#annotations)
-        include_classifications: Whether or not to factor top level classifications into the iou score.
-        include_subclassifications: Whether or not to factor in subclassifications into the iou score
-    Returns:
-        float indicating the iou score for this data row.
-
+    # Get iou score for all pairs of labels and predictions
     """
-
-    predictions, labels, feature_schemas = preprocess_args(
-        label_content, ndjsons, include_classifications)
-
-    ious = [
-        feature_miou(predictions[feature_schema],
-                     labels[feature_schema],
-                     include_subclasses=include_subclasses)
-        for feature_schema in feature_schemas
-    ]
-    ious = [iou for iou in ious if iou is not None]
-    if not ious:
-        return None
-    return np.mean(ious)
+    return [(prediction, label,
+             _polygon_iou(prediction.to_shapely_poly(),
+                          label.to_shapely_poly()))
+            for prediction, label in product(predictions, labels)]
 
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
