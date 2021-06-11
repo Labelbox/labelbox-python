@@ -69,7 +69,9 @@ class Client:
             logger.info("Experimental features have been enabled")
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
-        self.endpoint = endpoint
+
+        # TODO: Make endpoints non-internal or support them as experimental
+        self.endpoint = endpoint.replace('/graphql', '/_gql')
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -139,15 +141,10 @@ class Client:
             raise ValueError("query and data cannot both be none")
         try:
             request = {
-                'url':
-                    self.endpoint.replace('/graphql', '/_gql')
-                    if experimental else self.endpoint,
-                'data':
-                    data,
-                'headers':
-                    self.headers,
-                'timeout':
-                    timeout
+                'url': self.endpoint,
+                'data': data,
+                'headers': self.headers,
+                'timeout': timeout
             }
             if files:
                 request.update({'files': files})
