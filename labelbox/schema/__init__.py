@@ -1,4 +1,5 @@
 import labelbox.schema.asset_metadata
+import labelbox.schema.asset_attachment
 import labelbox.schema.bulk_import_request
 import labelbox.schema.benchmark
 import labelbox.schema.data_row
