@@ -103,10 +103,10 @@ class Organization(DbObject):
         """ Retrieve invite limits for the org
         This already accounts for users currently in the org
         Meaining that  `used = users + invites, remaining = limit - (users + invites)`
-       
+
         Returns:
             InviteLimit
-    
+
         """
         org_id_param = "organizationId"
         res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
