@@ -14,6 +14,8 @@ from requests.api import request
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set)
+from shapely.geometry import Polygon as SPolygon, Point as SPoint, LineString, box  # type: ignore
+
 import labelbox
 from labelbox import utils
 from labelbox.orm import query
@@ -716,6 +718,9 @@ class NDPolygon(NDBaseTool):
                 f"A polygon must have at least 3 points to be valid. Found {v}")
         return v
 
+    def to_shapely_poly(self) -> SPolygon:
+        return SPolygon([[point.x, point.y] for point in self.polygon])
+
 
 class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
@@ -728,17 +733,31 @@ class NDPolyline(NDBaseTool):
                 f"A line must have at least 2 points to be valid. Found {v}")
         return v
 
+    def to_shapely_poly(self, buffer=70.) -> SPolygon:
+        return LineString([[point.x, point.y] for point in self.line
+                          ]).buffer(buffer)
+
 
 class NDRectangle(NDBaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
     bbox: Bbox = pydantic.Field(determinant=True)
+
     #Could check if points are positive
+
+    def to_shapely_poly(self) -> SPolygon:
+        return box(self.bbox.left, self.bbox.top,
+                   self.bbox.left + self.bbox.width,
+                   self.bbox.top + self.bbox.height)
 
 
 class NDPoint(NDBaseTool):
     ontology_type: Literal["point"] = "point"
     point: Point = pydantic.Field(determinant=True)
+
     #Could check if points are positive
+
+    def to_shapely_poly(self, buffer=70.) -> SPolygon:
+        return SPoint([self.point.x, self.point.y]).buffer(buffer)
 
 
 class EntityLocation(BaseModel):
