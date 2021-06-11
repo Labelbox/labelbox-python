@@ -55,7 +55,9 @@ def classification_miou(predictions: List[ClassificationTool],
     prediction, label = predictions[0], labels[0]
 
     if type(prediction) != type(label):
-        raise Type
+        raise TypeError(
+            "Classification features must be the same type to compute agreement. "
+            f"Found `{type(prediction)}` and `{type(label)}`")
 
     if isinstance(prediction, NDText):
         return float(prediction.answer == label.answer)
