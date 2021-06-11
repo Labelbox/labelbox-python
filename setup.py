@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="labelbox",
+    name="labelbox-mea",
     version=SDK_VERSION,
     author="Labelbox",
     author_email="engineering@labelbox.com",
