@@ -1,4 +1,17 @@
 # Changelog
+
+# Version 2.6.0 (2021-06-11)
+## Fix
+* Upated `create_mask_ndjson` helper function in `image_mal.ipynb` to use the color arg
+    instead of a hardcoded color.
+
+## Added
+* asset_metadata is now deprecated and has been replaced with asset_attachments
+    * `AssetAttachment` replaces `AssetMetadata` ( see definition for updated attribute names )
+    * Use `DataRow.attachments()` instead of `DataRow.metadata()`
+    * Use `DataRow.create_attachment()` instead of `DataRow.create_metadata()`
+* Update pydantic version
+
 # Version 2.5.6 (2021-05-19)
 ## Fix
 * MAL validation no longer raises exception when NER tool has same start and end location
