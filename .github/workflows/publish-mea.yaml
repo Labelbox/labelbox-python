@@ -2,7 +2,7 @@ name: Labelbox Python SDK - MEA
 
 on:
   push:
-    branches: [ mea-dev ]
+    branches: [ mea-main ]
 jobs:
   deploy:
 
