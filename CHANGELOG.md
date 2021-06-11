@@ -1,6 +1,6 @@
 # Changelog
 
-# Next Release
+# Version 2.5b0+mea (2021-06-11)
 ## Added
 * Added new `Model` and 'ModelRun` entities
 * Update client to support creating and querying for `Model`s
