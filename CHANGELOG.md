@@ -1,5 +1,8 @@
 # Changelog
 
+# Next mea release
+* Added `ModelRun.data_rows()` to fetch data rows for a given model run
+
 # Version 2.5b0+mea (2021-06-11)
 ## Added
 * Added new `Model` and 'ModelRun` entities
