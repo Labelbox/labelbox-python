@@ -1,6 +1,10 @@
-from labelbox.schema.annotation_import import AnnotationImport, MALPredictionImport, MEAPredictionImport
-from pathlib import Path
 from typing import Dict, Iterable, Union
+from pathlib import Path
+
+from labelbox.utils import uuid_to_cuid
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.annotation_import import MEAPredictionImport
+from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship
 from labelbox.orm.db_object import DbObject
 
@@ -10,6 +14,7 @@ class ModelRun(DbObject):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
+    model_id = Field.String("model_id")
 
     def upsert_labels(self, label_ids):
 
@@ -55,3 +60,33 @@ class ModelRun(DbObject):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
+    def annotation_groups(self):
+        query_str = """
+            query modelRunPyApi($modelRunId: ID!, $from : String, $first: Int){
+                annotationGroups(where: {modelRunId: {id: $modelRunId}}, after: $from, first: $first)
+                {nodes{%s},pageInfo{endCursor}}
+            }
+        """ % (results_query_part(AnnotationGroup))
+        return PaginatedCollection(
+            self.client, query_str, {'modelRunId': self.uid},
+            ['annotationGroups', 'nodes'],
+            lambda client, res: AnnotationGroup(client, self.model_id, res),
+            ['annotationGroups', 'pageInfo', 'endCursor'])
+
+
+class AnnotationGroup(DbObject):
+    label_id = Field.String("label_id")
+    model_run_id = Field.String("model_run_id")
+    data_row = Relationship.ToOne("DataRow", False, cache=True)
+
+    def __init__(self, client, model_id, field_values):
+        field_values['labelId'] = uuid_to_cuid(field_values['labelId'])
+        super().__init__(client, field_values)
+        self.model_id = model_id
+
+    @property
+    def url(self):
+        app_url = self.client.app_url
+        endpoint = f"{app_url}/models/{self.model_id}/{self.model_run_id}/AllDatarowsSlice/{self.uid}?view=carousel"
+        return endpoint
