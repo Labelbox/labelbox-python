@@ -116,6 +116,10 @@ class RelationshipManager:
     def __call__(self, *args, **kwargs):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
         depending on relationship type. """
+
+        if self.relationship.deprecation_warning:
+            logger.warning(self.relationship.deprecation_warning)
+
         if self.relationship.relationship_type == Relationship.Type.ToMany:
             return self._to_many(*args, **kwargs)
         else:
@@ -130,7 +134,6 @@ class RelationshipManager:
             iterable over destination DbObject instances.
         """
         rel = self.relationship
-
         if where is not None and not self.supports_filtering:
             raise InvalidQueryError(
                 "Relationship %s.%s doesn't support filtering" %
