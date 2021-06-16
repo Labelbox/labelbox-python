@@ -124,7 +124,7 @@ class AnnotationImport(DbObject):
             ndjson as a list of dicts.
         """
         if self.state == AnnotationImportState.FAILED:
-            raise Exception("")
+            raise ValueError("Import failed.")
 
         response = requests.get(url)
         response.raise_for_status()
