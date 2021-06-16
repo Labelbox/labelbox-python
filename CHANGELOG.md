@@ -1,7 +1,22 @@
 # Changelog
 
-# Next mea release
-* Added `ModelRun.annotation_groups()` to fetch data rows and label information for a model run
+
+# Version 2.6b0+mea (2021-06-16)
+## Added
+* `ModelRun.annotation_groups()` to fetch data rows and label information for a model run
+
+
+# Version 2.6.0 (2021-06-11)
+## Fix
+* Upated `create_mask_ndjson` helper function in `image_mal.ipynb` to use the color arg
+    instead of a hardcoded color.
+
+## Added
+* asset_metadata is now deprecated and has been replaced with asset_attachments
+    * `AssetAttachment` replaces `AssetMetadata` ( see definition for updated attribute names )
+    * Use `DataRow.attachments()` instead of `DataRow.metadata()`
+    * Use `DataRow.create_attachment()` instead of `DataRow.create_metadata()`
+* Update pydantic version
 
 # Version 2.5b0+mea (2021-06-11)
 ## Added
@@ -10,6 +25,7 @@
 * Implement new prediction import pipeline to support both MAL and MEA
 * Added notebook to demonstrate how to use MEA
 * Added `datarow_miou` for calculating datarow level iou scores
+
 
 # Version 2.5.6 (2021-05-19)
 ## Fix
