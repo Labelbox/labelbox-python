@@ -1,7 +1,10 @@
-from labelbox.schema.annotation_import import AnnotationImport, MALPredictionImport, MEAPredictionImport
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.annotation_import import MEAPredictionImport
 from pathlib import Path
+from labelbox.orm.model import Entity
 from typing import Dict, Iterable, Union
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.query import results_query_part
+from labelbox.orm.model import Field
 from labelbox.orm.db_object import DbObject
 
 
@@ -55,3 +58,23 @@ class ModelRun(DbObject):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
+    def data_rows(self):
+        query_str = """
+            query modelRunPyApi($modelRunId: ID!, $from : String, $first: Int){
+                annotationGroups(where: {modelRunId: {id: $modelRunId}}, after: $from, first: $first)
+                {
+                    nodes
+                        {
+                            dataRow {%s}
+                        },
+                    pageInfo{endCursor}
+                }
+            }
+        """ % (results_query_part(Entity.DataRow))
+
+        return PaginatedCollection(
+            self.client, query_str, {'modelRunId': self.uid},
+            ['annotationGroups', 'nodes'],
+            lambda c, x: Entity.DataRow(c, x['dataRow']),
+            ['annotationGroups', 'pageInfo', 'endCursor'])
