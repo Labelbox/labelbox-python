@@ -38,7 +38,8 @@ class Client:
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
-                 enable_experimental=False):
+                 enable_experimental=False,
+                 app_url="https://app.labelbox.com"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -52,6 +53,7 @@ class Client:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
             enable_experimental (bool): Indicates whether or not to use experimental features
+            app_url (str) : host url for all links to the web app
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
@@ -69,6 +71,7 @@ class Client:
             logger.info("Experimental features have been enabled")
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
+        self.app_url = app_url
 
         # TODO: Make endpoints non-internal or support them as experimental
         self.endpoint = endpoint.replace('/graphql', '/_gql')

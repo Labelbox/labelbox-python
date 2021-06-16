@@ -1,7 +1,10 @@
 from enum import Enum
+import logging
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
+
+logger = logging.getLogger(__name__)
 
 
 class AssetMetadata(DbObject):
@@ -11,6 +14,11 @@ class AssetMetadata(DbObject):
         meta_type (str): IMAGE, VIDEO, TEXT, or IMAGE_OVERLAY
         meta_value (str): URL to an external file or a string of text
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logger.warning(
+            "`AssetMetadata` is deprecated. Use `AssetAttachment` instead.")
 
     class MetaType(Enum):
         VIDEO = "VIDEO"

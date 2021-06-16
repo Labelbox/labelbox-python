@@ -95,6 +95,7 @@ class _Pagination(ABC):
     def get_page_data(self, results: Dict[str, Any]) -> List["DbObject"]:
         for deref in self.dereferencing:
             results = results[deref]
+
         return [self.obj_class(self.client, result) for result in results]
 
     @abstractmethod
