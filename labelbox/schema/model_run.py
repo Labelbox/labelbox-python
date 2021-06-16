@@ -1,10 +1,10 @@
+from typing import Dict, Iterable, Union
+from pathlib import Path
+
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
-from pathlib import Path
-from labelbox.orm.model import Entity
-from typing import Dict, Iterable, Union
 from labelbox.orm.query import results_query_part
-from labelbox.orm.model import Field
+from labelbox.orm.model import Field, Entity
 from labelbox.orm.db_object import DbObject
 
 
@@ -76,5 +76,5 @@ class ModelRun(DbObject):
         return PaginatedCollection(
             self.client, query_str, {'modelRunId': self.uid},
             ['annotationGroups', 'nodes'],
-            lambda c, x: Entity.DataRow(c, x['dataRow']),
-            ['annotationGroups', 'pageInfo', 'endCursor'])
+            lambda client, response: Entity.DataRow(client, response[
+                'dataRow']), ['annotationGroups', 'pageInfo', 'endCursor'])
