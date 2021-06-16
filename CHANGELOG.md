@@ -1,7 +1,7 @@
 # Changelog
 
 # Next mea release
-* Added `ModelRun.data_rows()` to fetch data rows for a given model run
+* Added `ModelRun.annotation_groups()` to fetch data rows and label information for a model run
 
 # Version 2.5b0+mea (2021-06-11)
 ## Added
