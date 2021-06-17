@@ -24,7 +24,7 @@ setuptools.setup(
         "backports-datetime-fromisoformat==1.0.0; python_version < '3.7.0'",
         "dataclasses==0.7; python_version < '3.7.0'", "ndjson==0.3.1",
         "requests>=2.22.0", "google-api-core>=1.22.1", "pydantic>=1.8,<2.0",
-        "shapely", "numpy", "PILLOW"
+        "shapely", "numpy", "PILLOW", "base36"
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
