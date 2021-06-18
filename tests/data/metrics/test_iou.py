@@ -2,6 +2,7 @@ from pytest_cases import parametrize, fixture_ref
 from unittest.mock import patch
 import math
 import numpy as np
+import base64
 
 from labelbox.data.metrics.iou import datarow_miou
 
@@ -18,9 +19,9 @@ def test_overlapping(polygon_pair, box_pair, mask_pair):
     check_iou(polygon_pair)
     check_iou(box_pair)
     with patch('labelbox.data.metrics.iou.url_to_numpy',
-               side_effect=lambda x: np.frombuffer(x.encode('utf-8'),
-                                                   dtype=np.uint8).reshape(
-                                                       (32, 32, 3))):
+               side_effect=lambda x: np.frombuffer(
+                   base64.b64decode(x.encode('utf-8')), dtype=np.uint8).reshape(
+                       (32, 32, 3))):
         check_iou(mask_pair)
 
 
