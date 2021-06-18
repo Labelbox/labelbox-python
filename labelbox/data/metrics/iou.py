@@ -1,4 +1,5 @@
 # type: ignore
+from multiprocessing.dummy import Value
 from typing import Dict, Any, List, Optional, Tuple, Union
 from shapely.geometry import Polygon
 from itertools import product
@@ -19,7 +20,7 @@ ClassificationTool = Union[NDText, NDRadio, NDChecklist]
 
 def mask_miou(predictions: List[NDMask], labels: List[NDMask]) -> float:
     """
-    Creates prediction and label binary mask for all features with the same feature scheama id.
+    Creates prediction and label binary mask for all features with the same feature schema id.
 
     Args:
         predictions: List of masks objects
@@ -27,11 +28,18 @@ def mask_miou(predictions: List[NDMask], labels: List[NDMask]) -> float:
     Returns:
         float indicating iou score
     """
+    colors_pred = {tuple(pred.mask['colorRGB']) for pred in predictions}
+    colors_label = {tuple(label.mask['colorRGB']) for label in labels}
+    error_msg = "segmentation {} being passed to mask_miou should all have the same color. Found {}"
+    if len(colors_pred) > 1:
+        raise ValueError(error_msg.format("predictions", colors_pred))
+    elif len(colors_label) > 1:
+        raise ValueError(error_msg.format("labels", colors_label))
 
     pred_mask = _instance_urls_to_binary_mask(
-        [pred.mask['instanceURI'] for pred in predictions])
+        [pred.mask['instanceURI'] for pred in predictions], colors_pred.pop())
     label_mask = _instance_urls_to_binary_mask(
-        [label.mask['instanceURI'] for label in labels])
+        [label.mask['instanceURI'] for label in labels], colors_label.pop())
     assert label_mask.shape == pred_mask.shape
     return _mask_iou(label_mask, pred_mask)
 
@@ -282,7 +290,13 @@ def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> float:
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
 
 
-def _instance_urls_to_binary_mask(urls: List[str]) -> np.ndarray:
+def _remove_opacity_channel(masks: List[np.ndarray]) -> List[np.ndarray]:
+    return [mask[:, :, :3] if mask.shape[-1] == 4 else mask for mask in masks]
+
+
+def _instance_urls_to_binary_mask(urls: List[str],
+                                  color: Tuple[int, int, int]) -> np.ndarray:
     """Downloads segmentation masks and turns the image into a binary mask."""
-    masks = [url_to_numpy(url) for url in urls]
-    return np.sum(masks, axis=(0, 3)) > 0
+    masks = _remove_opacity_channel([url_to_numpy(url) for url in urls])
+    return np.sum([np.all(mask == color, axis=-1) for mask in masks],
+                  axis=0) > 0
