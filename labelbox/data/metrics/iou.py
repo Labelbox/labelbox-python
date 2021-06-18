@@ -1,5 +1,4 @@
 # type: ignore
-from multiprocessing.dummy import Value
 from typing import Dict, Any, List, Optional, Tuple, Union
 from shapely.geometry import Polygon
 from itertools import product
@@ -28,9 +27,10 @@ def mask_miou(predictions: List[NDMask], labels: List[NDMask]) -> float:
     Returns:
         float indicating iou score
     """
+
     colors_pred = {tuple(pred.mask['colorRGB']) for pred in predictions}
     colors_label = {tuple(label.mask['colorRGB']) for label in labels}
-    error_msg = "segmentation {} being passed to mask_miou should all have the same color. Found {}"
+    error_msg = "segmentation {} should all have the same color. Found {}"
     if len(colors_pred) > 1:
         raise ValueError(error_msg.format("predictions", colors_pred))
     elif len(colors_label) > 1:
