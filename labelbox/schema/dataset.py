@@ -3,8 +3,12 @@ import json
 import logging
 from itertools import islice
 from multiprocessing.dummy import Pool as ThreadPool
+import time
+import ndjson
+from io import StringIO
+import requests
 
-from labelbox.exceptions import InvalidQueryError, ResourceNotFoundError, InvalidAttributeError
+from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
@@ -75,15 +79,15 @@ class Dataset(DbObject, Updateable, Deletable):
         is uploaded to Labelbox and a DataRow referencing it is created.
 
         If an item is a `dict`, then it could support one of the two following structures
-            1. For static imagery, video, and text it should map `DataRow` fields (or their names) to values. 
+            1. For static imagery, video, and text it should map `DataRow` fields (or their names) to values.
                At the minimum an `item` passed as a `dict` must contain a `DataRow.row_data` key and value.
             2. For tiled imagery the dict must match the import structure specified in the link below
                https://docs.labelbox.com/data-model/en/index-en#tiled-imagery-import
-        
+
         >>> dataset.create_data_rows([
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
         >>>     "path/to/file2.jpg",
-        >>>     {"tileLayerUrl" : "http://", ...}    
+        >>>     {"tileLayerUrl" : "http://", ...}
         >>>     ])
 
         For an example showing how to upload tiled data_rows see the following notebook:
@@ -227,3 +231,43 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
                 external_id)
         return data_rows[0]
+
+    def export_data_rows(self, timeout_seconds=120):
+        """ Returns a generator that produces all data rows that are currently attached to this datarow.
+
+        Args:
+            timeout_seconds (float): Max waiting time, in seconds.
+            as_dict (bool): Whether or not to return the data as a dictionary as opposed to a list of DataRow objects.
+                    This is recommended for exports larger than 100k data rows to reduce memory usage and load time.
+        Returns:
+            Generator  of DataRow objects that belong to this dataset.
+        Raises:
+            LabelboxError: if the export fails or is unable to download within the specified time.
+        """
+        id_param = "datasetId"
+        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!)
+            {exportDatasetDataRows(data:{datasetId: $%s }) {downloadUrl createdAt status}}
+        """ % (id_param, id_param)
+        sleep_time = 2
+        while True:
+            res = self.client.execute(query_str, {id_param: self.uid})
+            res = res["exportDatasetDataRows"]
+            if res["status"] == "COMPLETE":
+                download_url = res["downloadUrl"]
+                response = requests.get(download_url)
+                response.raise_for_status()
+                reader = ndjson.reader(StringIO(response.text))
+                return (
+                    Entity.DataRow(self.client, result) for result in reader)
+            elif res["status"] == "FAILED":
+                raise LabelboxError("Data row export failed.")
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                raise LabelboxError(
+                    f"Unable to export data rows within {timeout_seconds} seconds."
+                )
+
+            logger.debug("Dataset '%s' data row export, waiting for server...",
+                         self.uid)
+            time.sleep(sleep_time)
