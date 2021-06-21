@@ -1,0 +1,11 @@
+kitti_config {
+  root_directory_path: "/workspace/tlt-experiments/data/training"
+  image_dir_name: "image_2"
+  label_dir_name: "label_2"
+  image_extension: ".jpg"
+  num_partitions: 2
+  num_shards: 2
+  partition_mode: "random"
+  val_split: 14.0
+}
+image_directory_path: "/workspace/tlt-experiments/data/training"
