@@ -499,7 +499,7 @@ class Client:
     def get_roles(self):
         """
         Returns:
-            Roles: Provides information on available roles within an organization. 
+            Roles: Provides information on available roles within an organization.
             Roles are used for user management.
         """
         return role.get_roles(self)
