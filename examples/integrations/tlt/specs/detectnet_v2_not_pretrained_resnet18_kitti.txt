@@ -112,7 +112,7 @@ evaluation_config {
 }
 cost_function_config {
   target_classes {
-    name: "animal"
+    name: "human"
     class_weight: 1.0
     coverage_foreground_weight: 0.05000000074505806
     objectives {
@@ -127,7 +127,7 @@ cost_function_config {
     }
   }
   target_classes {
-    name: "human"
+    name: "animal"
     class_weight: 1.0
     coverage_foreground_weight: 0.05000000074505806
     objectives {

@@ -6,8 +6,8 @@ inferencer_config {
   image_height: 384
   image_width: 512
   image_channels: 3
-  target_classes: "animal"
   target_classes: "human"
+  target_classes: "animal"
 }
 bbox_handler_config {
   kitti_dump: true
@@ -25,7 +25,7 @@ bbox_handler_config {
       confidence_model: "aggregate_cov"
       output_map: "animal"
       bbox_color {
-        R: 255
+        G: 255
       }
     }
   }
@@ -42,7 +42,7 @@ bbox_handler_config {
       confidence_model: "aggregate_cov"
       output_map: "human"
       bbox_color {
-        G: 255
+        R: 255
       }
     }
   }
