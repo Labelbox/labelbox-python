@@ -101,7 +101,7 @@ def test_upload_video_file(dataset, sample_video: str) -> None:
 
 def test_data_row_export(dataset):
     n_data_rows = 5
-    ids = {}
+    ids = set()
     for _ in range(n_data_rows):
         ids.add(dataset.create_data_row(row_data=IMG_URL))
     result = list(dataset.export_queued_data_rows())
