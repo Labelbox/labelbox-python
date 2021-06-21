@@ -240,7 +240,7 @@ class Dataset(DbObject, Updateable, Deletable):
             as_dict (bool): Whether or not to return the data as a dictionary as opposed to a list of DataRow objects.
                     This is recommended for exports larger than 100k data rows to reduce memory usage and load time.
         Returns:
-            Generator  of DataRow objects that belong to this dataset.
+            Generator that yields DataRow objects belonging to this dataset.
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
