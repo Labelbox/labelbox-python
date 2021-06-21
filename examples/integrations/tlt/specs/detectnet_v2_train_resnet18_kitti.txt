@@ -64,7 +64,7 @@ postprocessing_config {
   }
 }
 model_config {
-  pretrained_model_file: "/workspace/tlt-experiments/detectnet_v2/pretrained_resnet18/tlt_pretrained_detectnet_v2_vresnet18/resnet18.hdf5"
+  pretrained_model_file: "/workspace/tlt-experiments/detectnet_v2/pretrained_resnet18/tlt_pretrained_detectnet_v2_vresnet18-1/resnet18.hdf5"
   num_layers: 18
   use_batch_norm: true
   objective_set {
@@ -113,7 +113,7 @@ evaluation_config {
 }
 cost_function_config {
   target_classes {
-    name: "animal"
+    name: "human"
     class_weight: 1.0
     coverage_foreground_weight: 0.05000000074505806
     objectives {
@@ -128,7 +128,7 @@ cost_function_config {
     }
   }
   target_classes {
-    name: "human"
+    name: "animal"
     class_weight: 1.0
     coverage_foreground_weight: 0.05000000074505806
     objectives {
