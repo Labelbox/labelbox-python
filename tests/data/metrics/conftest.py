@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 import numpy as np
 from PIL import Image
+import base64
 
 
 class NameSpace(SimpleNamespace):
@@ -225,21 +226,22 @@ def unmatched_label():
                      expected=0.25)
 
 
-def create_mask_url(indices, h, w):
+def create_mask_url(indices, h, w, value):
     mask = np.zeros((h, w, 3), dtype=np.uint8)
     for idx in indices:
-        mask[idx] = 1
-    return mask.tobytes()
+        mask[idx] = value
+    return base64.b64encode(mask.tobytes()).decode('utf-8')
 
 
 @pytest.fixture
 def mask_pair():
-    #* Use your own signed urls so that you can resign the data
-    #* This is just to make the demo work
     return NameSpace(labels=[{
-        'featureId': '1234567890111213141516171',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'instanceURI': create_mask_url([(0, 0, 0), (0, 1, 0)], 32, 32)
+        'featureId':
+            '1234567890111213141516171',
+        'schemaId':
+            'ckppid25v0000aeyjmxfwlc7t',
+        'instanceURI':
+            create_mask_url([(0, 0), (0, 1)], 32, 32, (255, 255, 255))
     }],
                      predictions=[{
                          'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
@@ -249,7 +251,7 @@ def mask_pair():
                          },
                          'mask': {
                              'instanceURI':
-                                 create_mask_url([(0, 0, 0)], 32, 32),
+                                 create_mask_url([(0, 0)], 32, 32, (1, 1, 1)),
                              'colorRGB': (1, 1, 1)
                          }
                      }],
