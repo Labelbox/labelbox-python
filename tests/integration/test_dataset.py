@@ -97,3 +97,13 @@ def test_upload_video_file(dataset, sample_video: str) -> None:
         response = requests.head(url, allow_redirects=True)
         assert int(response.headers['Content-Length']) == content_length
         assert response.headers['Content-Type'] == 'video/mp4'
+
+
+def test_data_row_export(dataset):
+    n_data_rows = 5
+    ids = set()
+    for _ in range(n_data_rows):
+        ids.add(dataset.create_data_row(row_data=IMG_URL))
+    result = list(dataset.export_data_rows())
+    assert len(result) == n_data_rows
+    assert set(result) == ids
