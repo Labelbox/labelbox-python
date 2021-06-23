@@ -104,6 +104,6 @@ def test_data_row_export(dataset):
     ids = set()
     for _ in range(n_data_rows):
         ids.add(dataset.create_data_row(row_data=IMG_URL))
-    result = list(dataset.export_queued_data_rows())
+    result = list(dataset.export_data_rows())
     assert len(result) == n_data_rows
     assert set(result) == ids
