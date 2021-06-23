@@ -16,6 +16,10 @@ class ModelRun(DbObject):
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
 
+    def __init__(self, client, field_values):
+        field_values['createdBy'] = uuid_to_cuid(field_values['createdBy'])
+        super().__init__(client, field_values)
+
     def upsert_labels(self, label_ids):
 
         if len(label_ids) < 1:
@@ -32,38 +36,34 @@ class ModelRun(DbObject):
         return True
 
     def add_predictions(
-            self,
-            name: str,
-            annotations: Union[str, Path, Iterable[Dict]],
-            validate: bool = True) -> 'MEAPredictionImport':  # type: ignore
-        """ Uploads annotations to a new Editor project.
+        self,
+        name: str,
+        predictions: Union[str, Path, Iterable[Dict]],
+    ) -> 'MEAPredictionImport':  # type: ignore
+        """ Uploads predictions to a new Editor project.
         Args:
             name (str): name of the AnnotationImport job
-            annotations (str or Path or Iterable):
+            predictions (str or Path or Iterable):
                 url that is publicly accessible by Labelbox containing an
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
-            validate (bool):
-                Whether or not to validate the payload before uploading.
         Returns:
             AnnotationImport
         """
-        kwargs = dict(client=self.client,
-                      model_run_id=self.uid,
-                      name=name,
-                      predictions=annotations)
-        if isinstance(annotations, str) or isinstance(annotations, Path):
-            return MEAPredictionImport.create_from_file(**kwargs)
-        elif isinstance(annotations, Iterable):
-            return MEAPredictionImport.create_from_objects(**kwargs)
+        kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
+        if isinstance(predictions, str) or isinstance(predictions, Path):
+            return MEAPredictionImport.create_from_file(path=predictions,
+                                                        **kwargs)
+        elif isinstance(predictions, Iterable):
+            return MEAPredictionImport.create_from_objects(
+                predictions=predictions, **kwargs)
         else:
             raise ValueError(
-                f'Invalid annotations given of type: {type(annotations)}')
+                f'Invalid predictions given of type: {type(predictions)}')
 
     def annotation_groups(self):
-        query_str = """
-            query modelRunPyApi($modelRunId: ID!, $from : String, $first: Int){
+        query_str = """query modelRunPyApi($modelRunId: ID!, $from : String, $first: Int){
                 annotationGroups(where: {modelRunId: {id: $modelRunId}}, after: $from, first: $first)
                 {nodes{%s},pageInfo{endCursor}}
             }
@@ -80,9 +80,8 @@ class AnnotationGroup(DbObject):
     model_run_id = Field.String("model_run_id")
     data_row = Relationship.ToOne("DataRow", False, cache=True)
 
-    def __init__(self, client, model_id, field_values):
-        field_values['labelId'] = uuid_to_cuid(field_values['labelId'])
-        super().__init__(client, field_values)
+    def __init__(self, client, model_id, *args, **kwargs):
+        super().__init__(client, *args, **kwargs)
         self.model_id = model_id
 
     @property
