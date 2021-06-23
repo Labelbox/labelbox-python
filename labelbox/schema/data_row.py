@@ -23,7 +23,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
         labels (Relationship): `ToMany` relationship to Label
-        metadata (Relationship): `ToMany` relationship to AssetMetadata
+        attachments (Relationship) `ToMany` relationship with AssetAttachment
+        metadata (Relationship): This Relationship is Deprecated. Please use `DataRow.attachments()` instead
         predictions (Relationship): `ToMany` relationship to Prediction
     """
     external_id = Field.String("external_id")
