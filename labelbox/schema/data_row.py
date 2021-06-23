@@ -71,14 +71,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.attachments.supports_sorting = False
 
     def create_attachment(self, attachment_type, attachment_value):
-        """ Attaches asset metadata to a DataRow.
+        """ Adds an AssetAttachment to a DataRow.
+            Labelers can view these attachments while labeling.
 
             >>> datarow.create_attachment("TEXT", "This is a text message")
 
         Args:
-            meta_type (str): Asset attachment type, must be one of:
+            attachment_type (str): Asset attachment type, must be one of:
                 VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetAttachment.AttachmentType)
-            meta_value (str): Asset attachment value.
+            attachment_value (str): Asset attachment value.
         Returns:
             `AssetAttachment` DB object.
         Raises:
