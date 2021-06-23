@@ -1,5 +1,8 @@
 # Changelog
 
+# Next Release:
+* Added `dataset.export_data_rows()` which returns all `DataRows` for a `Dataset`.
+
 # Version 2.6.0 (2021-06-11)
 ## Fix
 * Upated `create_mask_ndjson` helper function in `image_mal.ipynb` to use the color arg
