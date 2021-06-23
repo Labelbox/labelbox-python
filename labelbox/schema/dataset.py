@@ -233,7 +233,7 @@ class Dataset(DbObject, Updateable, Deletable):
         return data_rows[0]
 
     def export_data_rows(self, timeout_seconds=120):
-        """ Returns a generator that produces all data rows that are currently attached to this datarow.
+        """ Returns a generator that produces all data rows that are currently attached to this dataset.
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
@@ -243,7 +243,7 @@ class Dataset(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         id_param = "datasetId"
-        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!)
+        query_str = """mutation GetDatasetDataRowsExportUrlPyApi($%s: ID!)
             {exportDatasetDataRows(data:{datasetId: $%s }) {downloadUrl createdAt status}}
         """ % (id_param, id_param)
         sleep_time = 2
