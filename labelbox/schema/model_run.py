@@ -1,7 +1,6 @@
 from typing import Dict, Iterable, Union
 from pathlib import Path
 
-from labelbox.utils import uuid_to_cuid
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
 from labelbox.orm.query import results_query_part
@@ -15,10 +14,6 @@ class ModelRun(DbObject):
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
-
-    def __init__(self, client, field_values):
-        field_values['createdBy'] = uuid_to_cuid(field_values['createdBy'])
-        super().__init__(client, field_values)
 
     def upsert_labels(self, label_ids):
 
