@@ -14,6 +14,13 @@ Client
    :exclude-members: upload_data, upload_file
    :show-inheritance:
 
+AssetAttachment
+--------------------------------------
+
+.. automodule:: labelbox.schema.asset_attachment
+   :members:
+   :show-inheritance:
+
 AssetMetadata
 --------------------------------------
 
