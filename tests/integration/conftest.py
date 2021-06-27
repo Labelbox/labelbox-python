@@ -4,6 +4,7 @@ from datetime import datetime
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
+import uuid
 import os
 import re
 
@@ -15,6 +16,9 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.user import User
 from labelbox import LabelingFrontend
 from labelbox import Client
+
+from labelbox.schema.ontology import OntologyBuilder, Tool
+from labelbox import LabelingFrontend, MALPredictionImport
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -110,8 +114,8 @@ class IntegrationClient(Client):
 
         self.queries = []
 
-    def execute(self, query, params=None, check_naming=True, **kwargs):
-        if check_naming:
+    def execute(self, query=None, params=None, check_naming=True, **kwargs):
+        if check_naming and query is not None:
             assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
         self.queries.append((query, params))
         return super().execute(query, params, **kwargs)
@@ -238,6 +242,71 @@ def configured_project(project, client, rand_gen):
             where=LabelingFrontend.name == "editor"))[0]
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
+    yield project
+    dataset.delete()
+    project.delete()
+
+
+@pytest.fixture
+def annotation_submit_fn(client):
+
+    def submit(project_id, data_row_id):
+        feature_result = client.execute(
+            """query featuresPyApi ($project_id : ID!, $datarow_id: ID!
+            ) {project(where: { id: $project_id }) {
+                    featuresForDataRow(where: {dataRow: { id: $datarow_id }}) {id}}}
+            """, {
+                "project_id": project_id,
+                "datarow_id": data_row_id
+            })
+        features = feature_result['project']['featuresForDataRow']
+        feature_ids = [feature['id'] for feature in features]
+        client.execute(
+            """mutation createLabelPyApi ($project_id : ID!,$datarow_id: ID!,$feature_ids: [ID!]!,$time_seconds : Float!) {
+                createLabelFromFeatures(data: {dataRow: { id: $datarow_id },project: { id: $project_id },
+                    featureIds: $feature_ids,secondsSpent: $time_seconds}) {id}}""",
+            {
+                "project_id": project_id,
+                "datarow_id": data_row_id,
+                "feature_ids": feature_ids,
+                "time_seconds": 10
+            })
+
+    return submit
+
+
+@pytest.fixture
+def configured_project_with_label(client, rand_gen, annotation_submit_fn):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    data_row = dataset.create_data_row(row_data=IMG_URL)
+    editor = list(
+        project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+
+    ontology_builder = OntologyBuilder(tools=[
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+    ])
+    project.setup(editor, ontology_builder.asdict())
+    project.enable_model_assisted_labeling()
+    ontology = ontology_builder.from_project(project)
+    predictions = [{
+        "uuid": str(uuid.uuid4()),
+        "schemaId": ontology.tools[0].feature_schema_id,
+        "dataRow": {
+            "id": data_row.uid
+        },
+        "bbox": {
+            "top": 20,
+            "left": 20,
+            "height": 50,
+            "width": 50
+        }
+    }]
+    upload_task = MALPredictionImport.create_from_objects(
+        client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
+    upload_task.wait_until_done()
+    annotation_submit_fn(project.uid, data_row.uid)
     yield project
     dataset.delete()
     project.delete()
