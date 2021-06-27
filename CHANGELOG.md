@@ -3,6 +3,7 @@
 # Version 2.7b0+mea (2021-06-27)
 ## Fix
 * Update `AnnotationGroup` to expect labelId to be a cuid instead of uuid.
+* Update `datarow_miou` to support masks with multiple classes in them.
 
 
 # Version 2.7.0 (2021-06-27)
