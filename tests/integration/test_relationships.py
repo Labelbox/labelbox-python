@@ -10,6 +10,8 @@ def test_project_dataset(client, rand_gen):
     assert len(list(project.datasets())) == 0
     assert len(list(dataset.projects())) == 0
 
+    dataset.create_data_row(row_data="test")
+
     project.datasets.connect(dataset)
 
     assert {ds.uid for ds in project.datasets()} == {dataset.uid}

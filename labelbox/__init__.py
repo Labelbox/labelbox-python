@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "2.6b2"
+__version__ = "2.7b0"
 
 from labelbox.client import Client
 from labelbox.schema.model import Model
@@ -15,6 +15,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.task import Task
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.asset_metadata import AssetMetadata
+from labelbox.schema.asset_attachment import AssetAttachment
 from labelbox.schema.webhook import Webhook
 from labelbox.schema.prediction import Prediction, PredictionModel
 from labelbox.schema.ontology import Ontology
