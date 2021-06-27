@@ -31,31 +31,14 @@ def test_labels(label_pack):
     assert list(data_row.labels()) == []
 
 
-<<<<<<< HEAD
+
 def test_label_export(configured_project_with_label):
     project = configured_project_with_label
-=======
-def test_label_export(client, label_pack):
-    project, dataset, data_row, label = label_pack
-    #Project has to be setup for export to be possible
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
-    project.create_label(data_row=data_row, label="export_label")
->>>>>>> 3a804592e59222b0aeaf3e9d8d58755be81a32f7
     exported_labels_url = project.export_labels()
     assert exported_labels_url is not None
     exported_labels = requests.get(exported_labels_url)
     labels = [example['Label'] for example in exported_labels.json()]
-<<<<<<< HEAD
     assert labels[0]['objects'][0]['value'] == 'test-bbox-class'
-=======
-    #assert 'export_label' in labels
-    # TODO: Add test for bulk export back.
-    # The new exporter doesn't work with the create_label mutation
->>>>>>> 3a804592e59222b0aeaf3e9d8d58755be81a32f7
 
 
 def test_label_update(label_pack):
