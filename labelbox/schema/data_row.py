@@ -23,7 +23,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
         labels (Relationship): `ToMany` relationship to Label
-        metadata (Relationship): `ToMany` relationship to AssetMetadata
+        attachments (Relationship) `ToMany` relationship with AssetAttachment
+        metadata (Relationship): This Relationship is Deprecated. Please use `DataRow.attachments()` instead
         predictions (Relationship): `ToMany` relationship to Prediction
     """
     external_id = Field.String("external_id")
@@ -70,14 +71,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.attachments.supports_sorting = False
 
     def create_attachment(self, attachment_type, attachment_value):
-        """ Attaches asset metadata to a DataRow.
+        """ Adds an AssetAttachment to a DataRow.
+            Labelers can view these attachments while labeling.
 
             >>> datarow.create_attachment("TEXT", "This is a text message")
 
         Args:
-            meta_type (str): Asset attachment type, must be one of:
+            attachment_type (str): Asset attachment type, must be one of:
                 VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetAttachment.AttachmentType)
-            meta_value (str): Asset attachment value.
+            attachment_value (str): Asset attachment value.
         Returns:
             `AssetAttachment` DB object.
         Raises:
