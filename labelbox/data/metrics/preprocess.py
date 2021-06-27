@@ -1,3 +1,4 @@
+import functools
 from typing import List, Dict, Any, Union
 from collections import defaultdict
 import numpy as np  # type: ignore
@@ -35,7 +36,8 @@ def label_to_ndannotation(label: Dict[str, Any],
     if tool in SEGMENTATION_TOOLS:
         label['mask'] = {
             'instanceURI': label['instanceURI'],
-            'colorRGB': (0, 0, 0)
+            # Matches the color in the seg masks in the exports
+            'colorRGB': (255, 255, 255)
         }
     for unused_key in unused_keys:
         label.pop(unused_key, None)
@@ -66,7 +68,8 @@ def create_schema_lookup(rows: List[NDBase]) -> Dict[str, List[Any]]:
     return data
 
 
-@retry.Retry(deadline=10.)
+@retry.Retry(deadline=15.)
+@functools.lru_cache(maxsize=256)
 def url_to_numpy(mask_url: str) -> np.ndarray:
     """ Downloads an image and converts to a numpy array """
     return np.array(Image.open(BytesIO(requests.get(mask_url).content)))

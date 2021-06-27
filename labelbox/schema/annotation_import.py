@@ -38,10 +38,8 @@ class AnnotationImport(DbObject):
         """
         Inputs for each individual annotation uploaded.
         This should match the ndjson annotations that you have uploaded.
-
         Returns:
             Uploaded ndjson.
-
         * This information will expire after 24 hours.
         """
         return self._fetch_remote_ndjson(self.input_file_url)
@@ -50,11 +48,9 @@ class AnnotationImport(DbObject):
     def errors(self) -> List[Dict[str, Any]]:
         """
         Errors for each individual annotation uploaded. This is a subset of statuses
-
         Returns:
             List of dicts containing error messages. Empty list means there were no errors
             See `AnnotationImport.statuses` for more details.
-
         * This information will expire after 24 hours.
         """
         self.wait_until_done()
@@ -64,15 +60,12 @@ class AnnotationImport(DbObject):
     def statuses(self) -> List[Dict[str, Any]]:
         """
         Status for each individual annotation uploaded.
-
         Returns:
             A status for each annotation if the upload is done running.
             See below table for more details
-
         .. list-table::
            :widths: 15 150
            :header-rows: 1
-
            * - Field
              - Description
            * - uuid
@@ -80,10 +73,9 @@ class AnnotationImport(DbObject):
            * - dataRow
              - JSON object containing the Labelbox data row ID for the annotation.
            * - status
-             - Indicates SUCCESS or FAILURE.
+             - Indicates SUCCESS or FAILURE.
            * - errors
-             - An array of error messages included when status is FAILURE. Each error has a name, message and optional (key might not exist) additional_info.
-
+             - An array of error messages included when status is FAILURE. Each error has a name, message and optional (key might not exist) additional_info.
         * This information will expire after 24 hours.
         """
         self.wait_until_done()
@@ -91,11 +83,9 @@ class AnnotationImport(DbObject):
 
     def wait_until_done(self, sleep_time_seconds: int = 10) -> None:
         """Blocks import job until certain conditions are met.
-
         Blocks until the AnnotationImport.state changes either to
         `AnnotationImportState.FINISHED` or `AnnotationImportState.FAILED`,
         periodically refreshing object's state.
-
         Args:
             sleep_time_seconds (str): a time to block between subsequent API calls
         """
@@ -117,7 +107,6 @@ class AnnotationImport(DbObject):
     def _fetch_remote_ndjson(self, url: str) -> List[Dict[str, Any]]:
         """
         Fetches the remote ndjson file and caches the results.
-
         Args:
             url (str): Can be any url pointing to an ndjson file.
         Returns:
@@ -132,6 +121,7 @@ class AnnotationImport(DbObject):
 
     @classmethod
     def _build_import_predictions_query(cls, file_args: str, vars: str):
+        cls.validate_cls()
         query_str = """mutation createAnnotationImportPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
         createAnnotationImport(data: {
             %s : $parent_id
@@ -148,9 +138,17 @@ class AnnotationImport(DbObject):
         return query_str
 
     @classmethod
-    def _from_name(cls, client, parent_id, name: str, raw=False):
-        query_str = """query
-        getImportPyApi($parent_id : ID!, $name: String!) {
+    def validate_cls(cls):
+        supported_base_classes = {MALPredictionImport, MEAPredictionImport}
+        if cls not in {MALPredictionImport, MEAPredictionImport}:
+            raise TypeError(
+                f"Can't directly use the base AnnotationImport class. Must use one of {supported_base_classes}"
+            )
+
+    @classmethod
+    def from_name(cls, client, parent_id, name: str, raw=False):
+        cls.validate_cls()
+        query_str = """query getImportPyApi($parent_id : ID!, $name: String!) {
             annotationImport(
                 where: {%s: $parent_id, name: $name}){
                     __typename
@@ -194,10 +192,10 @@ class AnnotationImport(DbObject):
         """Synchronizes values of all fields with the database.
         """
         cls = type(self)
-        res = cls._from_name(self.client,
-                             self.get_parent_id(),
-                             self.name,
-                             raw=True)
+        res = cls.from_name(self.client,
+                            self.get_parent_id(),
+                            self.name,
+                            raw=True)
         self._set_field_values(res)
 
     @classmethod

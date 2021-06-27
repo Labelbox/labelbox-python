@@ -31,27 +31,18 @@ def test_labels(label_pack):
     assert list(data_row.labels()) == []
 
 
-def test_label_export(client, label_pack):
-    project, dataset, data_row, label = label_pack
-    #Old create_label works even with projects setup using the new editor.
-    #It will appear in the export, just not in the new editor
-    project.create_label(data_row=data_row, label="export_label")
-    #Project has to be setup for export to be possible
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+
+def test_label_export(configured_project_with_label):
+    project = configured_project_with_label
     exported_labels_url = project.export_labels()
     assert exported_labels_url is not None
     exported_labels = requests.get(exported_labels_url)
     labels = [example['Label'] for example in exported_labels.json()]
-    assert 'export_label' in labels
+    assert labels[0]['objects'][0]['value'] == 'test-bbox-class'
 
 
 def test_label_update(label_pack):
     project, dataset, data_row, label = label_pack
-
     label.update(label="something else")
     assert label.label == "something else"
 

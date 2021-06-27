@@ -1,10 +1,18 @@
 # Changelog
 
+# Version 2.7b0+mea (2021-06-27)
+## Fix
+* Update `AnnotationGroup` to expect labelId to be a cuid instead of uuid.
+* Update `datarow_miou` to support masks with multiple classes in them.
+
+
+# Version 2.7.0 (2021-06-27)
+## Added
+* Added `dataset.export_data_rows()` which returns all `DataRows` for a `Dataset`.
 
 # Version 2.6b2+mea (2021-06-16)
 ## Added
 * `ModelRun.annotation_groups()` to fetch data rows and label information for a model run
-
 
 # Version 2.6.0 (2021-06-11)
 ## Fix
