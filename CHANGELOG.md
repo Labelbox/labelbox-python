@@ -1,5 +1,10 @@
 # Changelog
 
+# Version 2.7b1+mea (2021-06-27)
+## Fix
+* No longer convert `ModelRun.created_by_id` to cuid on construction of a `ModelRun`.
+    * This was causing queries for ModelRuns to fail.
+
 # Version 2.7b0+mea (2021-06-27)
 ## Fix
 * Update `AnnotationGroup` to expect labelId to be a cuid instead of uuid.
