@@ -2,13 +2,11 @@ from typing import Any, List, Optional, Union
 
 import marshmallow_dataclass
 from labelbox.data.annotation_types.classification.classification import Classification
-from labelbox.data.annotation_types.marshmallow import required
+from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, required
 
 from typing import Any, List, Optional, Union
 from labelbox.data.annotation_types.marshmallow import required, default_none
-
 import marshmallow_dataclass
-
 
 class ClassificationAnswer:
     # TODO: Only one of these is required for now ....
@@ -16,7 +14,7 @@ class ClassificationAnswer:
     schema_id: str = default_none()
 
 @marshmallow_dataclass.dataclass
-class Classification:
+class Classification(RequiredFieldMixin):
     name: str = (
         required()
     )
@@ -24,10 +22,7 @@ class Classification:
         required()
     )
     answer: Union[str, ClassificationAnswer, List[ClassificationAnswer]]
-    # TODO: Figure out how to support recursion..
-    #classifications: List[Union["RadioSubclass", "CheckListSubclass", "TextSubclass"]] = required()
-    # Does 'Any' with post_load logic work?
-    classifications: List[Any] =  []
+    classifications: List[Union["Radio", "CheckList", "Text", "Dropdown"]] = required()
 
 @marshmallow_dataclass.dataclass
 class Radio(Classification):
@@ -87,6 +82,5 @@ class Dropdown(Classification):
     def to_mal_ndjson(self):
         raise NotImplementedError("MAL Does not support the dropdown tool at this time")
 
-
-
-
+    def to_mal_subclass_ndjson(self):
+        self.to_mal_ndjson()

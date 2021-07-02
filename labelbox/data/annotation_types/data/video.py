@@ -1,3 +1,4 @@
+from labelbox.data.annotation_types.reference import DataRowRef
 import logging
 
 from typing import Optional
@@ -23,7 +24,7 @@ class VideoData:
     file_path: Optional[str] = default_none()
     url: Optional[str] = default_none()
     frames: Optional[Dict[int, np.ndarray]] = default_none()
-    data_row: Entity.DataRow = default_none()
+    data_row_ref: DataRowRef = default_none()
     _numpy = None
     _cache = False
 

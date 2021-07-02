@@ -1,4 +1,4 @@
-from labelbox.data.annotation_types.reference import DataRowReference
+from labelbox.data.annotation_types.reference import DataRowRef
 import logging
 
 import requests
@@ -18,12 +18,12 @@ from labelbox import Entity
 class RasterData:
     """
 
-
     """
+
     im_bytes: bytes = default_none()
     file_path: str = default_none()
     url: str = default_none()
-    data_row_ref: DataRowReference = default_none()
+    data_row_ref: DataRowRef = default_none()
     _numpy = None
     _cache = True
 

@@ -1,7 +1,7 @@
 
 
 
-from typing import List, Optional
+from typing import Optional
 
 from labelbox.data.annotation_types.geometry.geometry import Geometry
 from labelbox.data.annotation_types.marshmallow import required

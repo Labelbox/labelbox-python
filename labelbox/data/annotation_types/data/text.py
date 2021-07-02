@@ -1,3 +1,4 @@
+from labelbox.data.annotation_types.reference import DataRowRef
 import logging
 
 import requests
@@ -15,7 +16,7 @@ class TextData:
     file_path: str = default_none()
     text: str = default_none()
     url: str = default_none()
-    data_row: Entity.DataRow = default_none()
+    data_row_ref: DataRowRef = default_none()
     _cache = True
 
     @property

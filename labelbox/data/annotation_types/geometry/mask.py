@@ -48,10 +48,9 @@ class Mask(Geometry):
 
         return {
             'mask' : {
-                {
-                'instanceURI' : self.mask.url,
-                'colorRGB' : self.color_rgb
+                    {
+                    'instanceURI' : self.mask.url,
+                    'colorRGB' : self.color_rgb
+                }
             }
         }
-
-

@@ -4,14 +4,12 @@ from labelbox.data.annotation_types.annotation import (
     Annotation,
 )
 import uuid
-from labelbox.data.annotation_types.marshmallow import default_none, required
+from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, default_none, required
 
 
 @marshmallow_dataclass.dataclass
-class Metric:
+class Metric(RequiredFieldMixin):
     metric_value: float = required()
-    schema_id: Optional[float] = default_none()
-    name: Optional[float] = default_none()
 
     def to_mal_ndjson(self):
         return {
