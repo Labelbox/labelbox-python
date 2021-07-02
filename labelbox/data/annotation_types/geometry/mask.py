@@ -8,19 +8,20 @@ import marshmallow_dataclass
 from shapely.geometry import MultiPolygon, shape
 from labelbox.data.annotation_types.marshmallow import required
 from functools import cached_property
+from typing import Any, Callable, Dict, Tuple
+import numpy as np
+
 
 @marshmallow_dataclass.dataclass
 class Mask(Geometry):
+    # Raster data can be shared across multiple masks... or not
     mask: RasterData = required()
+    color_rgb: Tuple[int,int,int] = required()
 
     @cached_property
     def geometry(self):
         mask = self.mask.numpy
-        if len(mask.shape) != 2:
-            raise ValueError(
-                "Mask must be 2d mask. Save each channel as a separate Annotation"
-        )
-        mask = mask > 0
+        mask = np.alltrue(mask == self.color_rgb, axis=2)
         polygons = (
             shape(shp)
         for shp, val in shapes(mask, mask=None)
@@ -28,3 +29,29 @@ class Mask(Geometry):
         if val >= 1
         )
         return MultiPolygon(polygons).__geo_interface__
+
+    def raster(self,height: int = None, width: int = None):
+        # TODO: maybe resize with height and width or pad...
+        return self.mask.numpy
+
+
+    def upload_mask(self, signer : Callable[[np.ndarray], str]):
+        # Only needs to be uploaded once across all references to this mask
+        if self.mask.url is not None:
+            return self.mask.url
+        self.mask.url = signer(self.mask)
+
+
+    def to_mal_ndjson(self) -> Dict[str, Any]:
+        if self.mask.url is None:
+            raise ValueError("Please upload masks as signed urls before creating ndjson")
+
+        return {
+            'mask' : {
+                {
+                'instanceURI' : self.mask.url,
+                'colorRGB' : self.color_rgb
+            }
+        }
+
+

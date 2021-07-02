@@ -4,6 +4,7 @@ from labelbox.data.annotation_types.geometry.geometry import Geometry
 import marshmallow_dataclass
 from labelbox.data.annotation_types.marshmallow import required
 import geojson
+from typing import Dict, Any
 
 @marshmallow_dataclass.dataclass
 class Rectangle(Geometry):
@@ -28,3 +29,13 @@ class Rectangle(Geometry):
                 ]
             ]
         )
+
+    def to_mal_ndjson(self) -> Dict[str, Any]:
+        return {
+            "bbox" : {
+                "top" : self.top,
+                "left" : self.left,
+                "height" : self.height,
+                "width" : self.width,
+            }
+        }
