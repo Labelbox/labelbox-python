@@ -1,10 +1,10 @@
-
-
-from labelbox.data.annotation_types.geometry.geometry import Geometry
 import marshmallow_dataclass
-from labelbox.data.annotation_types.marshmallow import required
 import geojson
 from typing import Dict, Any
+import numpy as np
+
+from labelbox.data.annotation_types.geometry.geometry import Geometry
+from labelbox.data.annotation_types.marshmallow import required
 
 @marshmallow_dataclass.dataclass
 class Rectangle(Geometry):
@@ -39,3 +39,8 @@ class Rectangle(Geometry):
                 "width" : self.width,
             }
         }
+
+    def raster(self, height: int, width: int) -> np.ndarray:
+        canvas = np.zeros((height, width), dtype = np.uint8)
+        raise NotImplementedError("")
+        return

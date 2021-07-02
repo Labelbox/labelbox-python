@@ -1,15 +1,16 @@
 
 
+from typing import Any, Callable, Dict, Tuple
+from functools import cached_property
+
+import numpy as np
 from rasterio.features import shapes
-from labelbox.data.annotation_types.geometry.geometry import Geometry
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.marshmallow import default_none
 import marshmallow_dataclass
 from shapely.geometry import MultiPolygon, shape
+
 from labelbox.data.annotation_types.marshmallow import required
-from functools import cached_property
-from typing import Any, Callable, Dict, Tuple
-import numpy as np
+from labelbox.data.annotation_types.geometry.geometry import Geometry
+from labelbox.data.annotation_types.data.raster import RasterData
 
 
 @marshmallow_dataclass.dataclass
@@ -30,12 +31,13 @@ class Mask(Geometry):
         )
         return MultiPolygon(polygons).__geo_interface__
 
-    def raster(self,height: int = None, width: int = None):
+    def raster(self,height: int = None, width: int = None) -> np.ndarray:
         # TODO: maybe resize with height and width or pad...
+        raise NotImplementedError("")
         return self.mask.numpy
 
 
-    def upload_mask(self, signer : Callable[[np.ndarray], str]):
+    def upload_mask(self, signer : Callable[[np.ndarray], str]) -> None:
         # Only needs to be uploaded once across all references to this mask
         if self.mask.url is not None:
             return self.mask.url

@@ -1,17 +1,15 @@
-from labelbox.data.annotation_types.reference import DataRowRef
-import logging
+from typing import Dict, Any
 
 import requests
-from marshmallow.decorators import validates_schema
-import marshmallow_dataclass
 import numpy as np
+from marshmallow_dataclass import dataclass
 from marshmallow import ValidationError
-from typing import Dict, Any
+from marshmallow.decorators import validates_schema
+
 from labelbox.data.annotation_types.marshmallow import default_none
-from labelbox import Entity
+from labelbox.data.annotation_types.reference import DataRowRef
 
-
-@marshmallow_dataclass.dataclass
+@dataclass
 class TextData:
     file_path: str = default_none()
     text: str = default_none()
@@ -20,7 +18,7 @@ class TextData:
     _cache = True
 
     @property
-    def numpy(self):
+    def numpy(self) -> np.ndarray:
         # This is where we raise the exception..
         if self.text:
             return np.array(self.text)

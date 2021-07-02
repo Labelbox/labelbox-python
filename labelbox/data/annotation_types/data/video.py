@@ -1,25 +1,21 @@
-from labelbox.data.annotation_types.reference import DataRowRef
 import logging
+from uuid import uuid4
+from typing import Generator, Optional, Tuple, Dict, Any
 
-from typing import Optional
-import requests
-from marshmallow.decorators import validates_schema
 import cv2
-import marshmallow_dataclass
+import requests
 import numpy as np
 from marshmallow import ValidationError
-from typing import Dict, Any, Union
-from io import BytesIO
-from PIL import Image
+from marshmallow_dataclass import dataclass
+from marshmallow.decorators import validates_schema
+
 from labelbox.data.annotation_types.marshmallow import default_none
-from labelbox import Entity
-from uuid import uuid4
-import logging
+from labelbox.data.annotation_types.reference import DataRowRef
 
 logger = logging.getLogger(__name__)
 
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class VideoData:
     file_path: Optional[str] = default_none()
     url: Optional[str] = default_none()
@@ -28,7 +24,7 @@ class VideoData:
     _numpy = None
     _cache = False
 
-    def process(self, overwrite = False):
+    def load_all_frames(self, overwrite: bool = False) -> None:
         logger.warning("Loading the video into individual frames. This will use a lot of memory")
         if not self._cache:
             raise ValueError("set `VideoData._cache = True` to cache the data")
@@ -39,10 +35,7 @@ class VideoData:
         for count, frame in self.frame_generator:
             self.frames[count] = frame
 
-    def bytes_to_np(self, image_bytes):
-        return np.array(Image.open(BytesIO(image_bytes)))
-
-    def frame_generator(self):
+    def frame_generator(self) -> Generator[Tuple[int, np.ndarray], None, None]:
         if self.frames is not None:
             for idx, img in self.frames.items():
                 yield idx,img
@@ -67,9 +60,9 @@ class VideoData:
                 self.frames[count] = img
             success, img = vidcap.read()
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> np.ndarray:
         if self.frames is None:
-            raise ValueError("Cannot index video until frames have been proessed.")
+            raise ValueError("Cannot select by index without iterating over the entire video or loading all frames.")
         return self.frames[idx]
 
     @validates_schema

@@ -1,13 +1,10 @@
-from typing import Optional
-import marshmallow_dataclass
-from labelbox.data.annotation_types.annotation import (
-    Annotation,
-)
 import uuid
-from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, default_none, required
+from marshmallow_dataclass import dataclass
+
+from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, required
 
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Metric(RequiredFieldMixin):
     metric_value: float = required()
 

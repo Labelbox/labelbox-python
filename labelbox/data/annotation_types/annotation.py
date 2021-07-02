@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 from uuid import uuid4
-import marshmallow_dataclass
+from marshmallow_dataclass import dataclass
 
 from labelbox.data.annotation_types.marshmallow import default_none, required
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
@@ -16,7 +16,7 @@ from labelbox.data.annotation_types.classification.classification import (
     Dropdown
 )
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Annotation():
     feature_id: Optional[str] = default_none() # Can be used to reference the feature in labelbox
     feature_schema_ref: FeatureSchemaRef = required() # This is not super meaningful to non-labelbox users. It is more the feature_type_id
@@ -36,12 +36,12 @@ class Annotation():
             "classifications" : [classification.to_mal_subclass_ndjson() for classification in self.classifications]
         }
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Frames:
     start: int
     end: int
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class VideoAnnotation(Annotation):
     data: VideoData = required()
     frames: List[Frames] = []

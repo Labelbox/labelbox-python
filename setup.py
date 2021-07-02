@@ -23,7 +23,7 @@ setuptools.setup(
         "backoff==1.10.0",
         "backports-datetime-fromisoformat==1.0.0; python_version < '3.7.0'",
         "dataclasses==0.7; python_version < '3.7.0'", "ndjson==0.3.1",
-        "requests>=2.22.0", "google-api-core>=1.22.1", "pydantic>=1.8,<2.0", "marshmallow_dataclass", "marshmallow", "shapely", "geojson", "numpy", "rasterio"
+        "requests>=2.22.0", "google-api-core>=1.22.1", "pydantic>=1.8,<2.0", "marshmallow_dataclass", "marshmallow", "shapely", "geojson", "numpy", "rasterio", "PILLOW", "opencv-python"
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
