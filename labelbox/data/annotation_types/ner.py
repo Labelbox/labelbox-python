@@ -1,10 +1,10 @@
 
 from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, required
-import marshmallow_dataclass
+from marshmallow_dataclass import dataclass
 from marshmallow import ValidationError
 from marshmallow.decorators import  validates_schema
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class TextEntity(RequiredFieldMixin):
     start: int = required()
     end: int = required()

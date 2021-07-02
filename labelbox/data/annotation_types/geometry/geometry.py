@@ -1,23 +1,23 @@
+from typing import Dict, Any, Union
+
+import geojson
+import numpy as np
+from shapely import geometry as geom
+from marshmallow_dataclass import dataclass
 
 from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin
-from labelbox.data.annotation_types.annotation import Annotation
-from shapely.geometry import shape
-import geojson
-import marshmallow_dataclass
-from typing import Dict, Any
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Geometry(RequiredFieldMixin):
     @property
     def geometry(self) -> geojson:
         raise NotImplementedError("Subclass must override this")
 
     @property
-    def shapely(self):
-        return shape(self.geometry)
+    def shapely(self) -> Union[geom.Point, geom.LineString, geom.Polygon, geom.MultiPoint, geom.MultiLineString, geom.MultiPolygon]:
+        return geom.shape(self.geometry)
 
-
-    def raster(self, height: int, width: int):
+    def raster(self, height: int, width: int) -> np.ndarray:
         raise NotImplementedError("Subclass must override this")
 
     def to_mal_ndjson(self) -> Dict[str, Any]:

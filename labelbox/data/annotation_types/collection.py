@@ -1,8 +1,7 @@
-
-
-from labelbox.data.annotation_types.annotation import Label
 from typing import Dict, List, Any
+
 from labelbox import Entity
+from labelbox.data.annotation_types.annotation import Label
 
 
 

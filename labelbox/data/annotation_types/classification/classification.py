@@ -1,30 +1,25 @@
+
 from typing import Any, List, Optional, Union
 
-import marshmallow_dataclass
+from marshmallow_dataclass import dataclass
+
+from labelbox.data.annotation_types.marshmallow import required
+from labelbox.data.annotation_types.reference import FeatureSchemaRef
 from labelbox.data.annotation_types.classification.classification import Classification
 from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, required
 
-from typing import Any, List, Optional, Union
-from labelbox.data.annotation_types.marshmallow import required, default_none
-import marshmallow_dataclass
 
-class ClassificationAnswer:
-    # TODO: Only one of these is required for now ....
-    value: str = default_none()
-    schema_id: str = default_none()
+class ClassificationAnswer(FeatureSchemaRef):
+    ...
 
-@marshmallow_dataclass.dataclass
-class Classification(RequiredFieldMixin):
-    name: str = (
-        required()
-    )
-    schema_id: str = (
-        required()
-    )
+@dataclass
+class Classification(RequiredFieldMixin, FeatureSchemaRef):
+    # This is a feature schema so that it can be a subclass or a top level.
+    # If using as a top level class, just pass None for the feature schema
     answer: Union[str, ClassificationAnswer, List[ClassificationAnswer]]
     classifications: List[Union["Radio", "CheckList", "Text", "Dropdown"]] = required()
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Radio(Classification):
     answer: ClassificationAnswer = required()
 
@@ -41,7 +36,7 @@ class Radio(Classification):
            ** self.to_mal_ndjson()
         }
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class CheckList(Classification):
     answer: List[ClassificationAnswer] = required()
 
@@ -59,7 +54,7 @@ class CheckList(Classification):
             **self.to_mal_ndjson()
         }
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Text(Classification):
     answer: str = required()
 
@@ -75,7 +70,7 @@ class Text(Classification):
         }
 
 
-@marshmallow_dataclass.dataclass
+@dataclass
 class Dropdown(Classification):
     answer: List[ClassificationAnswer] = required()
 

@@ -1,20 +1,18 @@
-from labelbox.data.annotation_types.reference import DataRowRef
-import logging
+
+from typing import Dict, Any
+from io import BytesIO
 
 import requests
-from marshmallow.decorators import validates_schema
-import cv2
-import marshmallow_dataclass
 import numpy as np
-from marshmallow import ValidationError
-from typing import Dict, Any, Union
-from io import BytesIO
 from PIL import Image
+from marshmallow_dataclass import dataclass
+from marshmallow import ValidationError
+from marshmallow.decorators import validates_schema
+
 from labelbox.data.annotation_types.marshmallow import default_none
-from labelbox import Entity
+from labelbox.data.annotation_types.reference import DataRowRef
 
-
-@marshmallow_dataclass.dataclass
+@dataclass
 class RasterData:
     """
 
@@ -27,11 +25,11 @@ class RasterData:
     _numpy = None
     _cache = True
 
-    def bytes_to_np(self, image_bytes):
+    def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         return np.array(Image.open(BytesIO(image_bytes)))
 
     @property
-    def numpy(self):
+    def numpy(self) -> np.ndarray:
         # This is where we raise the exception..
         if self.im_bytes:
             return self.bytes_to_np(self.im_bytes)
