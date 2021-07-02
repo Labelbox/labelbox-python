@@ -1,12 +1,13 @@
 
+from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin
 from labelbox.data.annotation_types.annotation import Annotation
-from shapely.geomtry import shape
+from shapely.geometry import shape
 import geojson
 import marshmallow_dataclass
 from typing import Dict, Any
 
 @marshmallow_dataclass.dataclass
-class Geometry:
+class Geometry(RequiredFieldMixin):
     @property
     def geometry(self) -> geojson:
         raise NotImplementedError("Subclass must override this")
