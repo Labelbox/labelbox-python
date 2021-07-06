@@ -1,15 +1,13 @@
 import uuid
-from marshmallow_dataclass import dataclass
 
-from labelbox.data.annotation_types.marshmallow import RequiredFieldMixin, required
+from pydantic import BaseModel
 
 
-@dataclass
-class Metric(RequiredFieldMixin):
-    metric_value: float = required()
+class Metric(BaseModel):
+    metric_value: float
 
     def to_mal_ndjson(self):
         return {
-            "metricValue" : self.metric_value,
-            "uuid" : str(uuid.uuid4()),
+            "metricValue": self.metric_value,
+            "uuid": str(uuid.uuid4()),
         }

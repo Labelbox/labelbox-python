@@ -1,22 +1,19 @@
-from typing import Optional, Union
-from uuid import UUID
-from marshmallow.decorators import validates_schema
-from labelbox.data.annotation_types.marshmallow import default_uuid, default_none
-from marshmallow_dataclass import dataclass
-from marshmallow import ValidationError
+from typing import Optional
+from pydantic import BaseModel, root_validator, ValidationError
 
 
-@dataclass
-class DataRowRef:
-    external_id: Union[str, UUID] = default_uuid()
-    uid: Optional[str] = default_none()
+class DataRowRef(BaseModel):
+    external_id: Optional[str] = None
+    uid: Optional[str] = None
 
-@dataclass
-class FeatureSchemaRef:
-    display_name: str = default_none()
-    schema_id: str = default_none()
 
-    @validates_schema
-    def must_provide_one(self, data, **_) -> None:
-        if not any([data.display_name, data.schema_id]):
-            raise ValidationError("Must provide either the display_name or a schema_id to indicate the feature schema")
+class FeatureSchemaRef(BaseModel):
+    display_name: Optional[str] = None
+    schema_id: Optional[str] = None
+
+    @root_validator
+    def must_provide_one(cls, values):
+        if not any([values.get('display_name'), values.get('schema_id')]):
+            raise ValidationError(
+                "One of `file_path`, `im_bytes`, or `url` required.")
+        return values
