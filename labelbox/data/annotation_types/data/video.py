@@ -5,27 +5,24 @@ from typing import Generator, Optional, Tuple, Dict, Any
 import cv2
 import requests
 import numpy as np
-from marshmallow import ValidationError
-from marshmallow_dataclass import dataclass
-from marshmallow.decorators import validates_schema
+from pydantic import BaseModel, ValidationError, root_validator
 
-from labelbox.data.annotation_types.marshmallow import default_none
 from labelbox.data.annotation_types.reference import DataRowRef
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class VideoData:
-    file_path: Optional[str] = default_none()
-    url: Optional[str] = default_none()
-    frames: Optional[Dict[int, np.ndarray]] = default_none()
-    data_row_ref: DataRowRef = default_none()
-    _numpy = None
-    _cache = False
+class VideoData(BaseModel):
+    file_path: Optional[str] = None
+    url: Optional[str] = None
+    frames: Optional[Dict[int, np.ndarray]] = None
+    data_row_ref: Optional[DataRowRef] = None
+    _cache = True
 
     def load_all_frames(self, overwrite: bool = False) -> None:
-        logger.warning("Loading the video into individual frames. This will use a lot of memory")
+        logger.warning(
+            "Loading the video into individual frames. This will use a lot of memory"
+        )
         if not self._cache:
             raise ValueError("set `VideoData._cache = True` to cache the data")
 
@@ -38,7 +35,7 @@ class VideoData:
     def frame_generator(self) -> Generator[Tuple[int, np.ndarray], None, None]:
         if self.frames is not None:
             for idx, img in self.frames.items():
-                yield idx,img
+                yield idx, img
         elif self.url and not self.file_path:
             file_path = f"/tmp/{uuid4()}.mp4"
             logger.info(f"Downloading the video locally to {file_path}")
@@ -54,7 +51,7 @@ class VideoData:
         success, img = vidcap.read()
         count = 0
         while success:
-            img = img[:,:,::-1]
+            img = img[:, :, ::-1]
             yield count,
             if self._cache:
                 self.frames[count] = img
@@ -62,13 +59,21 @@ class VideoData:
 
     def __getitem__(self, idx: int) -> np.ndarray:
         if self.frames is None:
-            raise ValueError("Cannot select by index without iterating over the entire video or loading all frames.")
+            raise ValueError(
+                "Cannot select by index without iterating over the entire video or loading all frames."
+            )
         return self.frames[idx]
 
-    @validates_schema
-    def validate_content(self, data: Dict[str, Any], **_) -> None:
-        file_path = data.get("file_path")
-        im_bytes = data.get("im_bytes")
-        url = data.get("url")
-        if not (file_path or im_bytes or url):
-            raise ValidationError("One of `file_path`, `im_bytes`, or `url` required.")
+    @root_validator
+    def validate_date(cls, values):
+        file_path = values.get("file_path")
+        im_bytes = values.get("url")
+        url = values.get("frames")
+        if file_path == im_bytes == url == None:
+            raise ValidationError(
+                "One of `file_path`, `frames`, or `url` required.")
+        return values
+
+    class Config:
+        # TODO: Create numpy array type
+        arbitrary_types_allowed = True
