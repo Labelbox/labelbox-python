@@ -1,46 +1,38 @@
-import marshmallow_dataclass
 import geojson
 from typing import Dict, Any
 import numpy as np
 
 from labelbox.data.annotation_types.geometry.geometry import Geometry
-from labelbox.data.annotation_types.marshmallow import required
 
-@marshmallow_dataclass.dataclass
+
 class Rectangle(Geometry):
-    top: float = required()
-    left: float = required()
-    height: float = required()
-    width: float = required()
+    top: float
+    left: float
+    height: float
+    width: float
 
     @property
     def geometry(self) -> geojson.geometry.Geometry:
-        return geojson.MultiPolygon(
-            [
-                [
-                    [
-                        [self.left, self.top + self.height],
-                        [self.left, self.top],
-                        [self.left + self.width, self.top],
-                        [self.left + self.width, self.top + self.height],
-                        # close the polygon
-                        [self.left, self.top + self.height],
-                    ]
-                ]
-            ]
-        )
+        return geojson.MultiPolygon([[[
+            [self.left, self.top + self.height],
+            [self.left, self.top],
+            [self.left + self.width, self.top],
+            [self.left + self.width, self.top + self.height],
+            # close the polygon
+            [self.left, self.top + self.height],
+        ]]])
 
     def to_mal_ndjson(self) -> Dict[str, Any]:
         return {
-            "bbox" : {
-                "top" : self.top,
-                "left" : self.left,
-                "height" : self.height,
-                "width" : self.width,
+            "bbox": {
+                "top": self.top,
+                "left": self.left,
+                "height": self.height,
+                "width": self.width,
             }
         }
 
     def raster(self, height: int, width: int) -> np.ndarray:
-        canvas = np.zeros((height, width), dtype = np.uint8)
+        canvas = np.zeros((height, width), dtype=np.uint8)
         raise NotImplementedError("")
         return

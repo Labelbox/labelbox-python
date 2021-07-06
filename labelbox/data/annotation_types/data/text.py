@@ -1,20 +1,19 @@
 from typing import Dict, Any
+from pydantic.class_validators import root_validator
+from pydantic.error_wrappers import ValidationError
 
 import requests
 import numpy as np
-from marshmallow_dataclass import dataclass
-from marshmallow import ValidationError
-from marshmallow.decorators import validates_schema
-
-from labelbox.data.annotation_types.marshmallow import default_none
+from pydantic import BaseModel
+from typing import Optional
 from labelbox.data.annotation_types.reference import DataRowRef
 
-@dataclass
-class TextData:
-    file_path: str = default_none()
-    text: str = default_none()
-    url: str = default_none()
-    data_row_ref: DataRowRef = default_none()
+
+class TextData(BaseModel):
+    file_path: Optional[str] = None
+    text: Optional[str] = None
+    url: Optional[str] = None
+    data_row_ref: Optional[DataRowRef] = None
     _cache = True
 
     @property
@@ -40,10 +39,12 @@ class TextData:
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
 
-    @validates_schema
-    def validate_content(self, data: Dict[str, Any], **_) -> None:
-        file_path = data.get("file_path")
-        im_bytes = data.get("im_bytes")
-        url = data.get("url")
-        if not (file_path or im_bytes or url):
-            raise ValidationError("One of `file_path`, `im_bytes`, or `url` required.")
+    @root_validator
+    def validate_date(cls, values):
+        file_path = values.get("file_path")
+        im_bytes = values.get("text")
+        url = values.get("url")
+        if file_path == im_bytes == url == None:
+            raise ValidationError(
+                "One of `file_path`, `im_bytes`, or `url` required.")
+        return values
