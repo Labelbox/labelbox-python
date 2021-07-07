@@ -1,20 +1,17 @@
-from typing import Any, List, Union
+from typing import Any, List, Union, ForwardRef
+
+from pydantic.main import BaseModel
 
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
 
+# Requires 3.7+
+Subclass = ForwardRef('Subclass')
 
 class ClassificationAnswer(FeatureSchemaRef):
     ...
 
 
-class Classification(FeatureSchemaRef):
-    # This is a feature schema so that it can be a subclass or a top level.
-    # If using as a top level class, just pass None for the feature schema
-    answer: Union[str, ClassificationAnswer, List[ClassificationAnswer]]
-    classifications: List[Union["Radio", "CheckList", "Text", "Dropdown"]] = []
-
-
-class Radio(Classification):
+class Radio(BaseModel):
     answer: ClassificationAnswer
 
     def to_mal_ndjson(self):
@@ -32,7 +29,7 @@ class Radio(Classification):
         return {"schemaId": self.schema_id, **self.to_mal_ndjson()}
 
 
-class CheckList(Classification):
+class CheckList(BaseModel):
     answer: List[ClassificationAnswer]
 
     def to_mal_ndjson(self):
@@ -49,7 +46,7 @@ class CheckList(Classification):
         return {"schemaId": self.schema_id, **self.to_mal_ndjson()}
 
 
-class Text(Classification):
+class Text(BaseModel):
     answer: str
 
     def to_mal_ndjson(self):
@@ -61,7 +58,7 @@ class Text(Classification):
         return {"schemaId": self.schema_id, **self.to_mal_ndjson()}
 
 
-class Dropdown(Classification):
+class Dropdown(BaseModel):
     answer: List[ClassificationAnswer]
 
     def to_mal_ndjson(self):
@@ -70,3 +67,12 @@ class Dropdown(Classification):
 
     def to_mal_subclass_ndjson(self):
         self.to_mal_ndjson()
+
+
+class Classification:
+    value: Union[Dropdown, Text, CheckList, Radio]
+
+class Subclass(Classification, FeatureSchemaRef):
+    classifications: List["Subclass"] = []
+# To support recursive subclasses
+Subclass.update_forward_refs()
