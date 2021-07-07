@@ -1,6 +1,7 @@
 FROM python:3.7
 
 RUN pip install pytest pytest-cases
+RUN apt-get -y update && apt install -y libsm6 libxext6 ffmpeg libfontconfig1 libxrender1 libgl1-mesa-glx
 
 WORKDIR /usr/src/labelbox
 COPY requirements.txt /usr/src/labelbox
