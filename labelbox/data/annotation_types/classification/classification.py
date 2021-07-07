@@ -1,4 +1,5 @@
 from typing import Any, List, Union, ForwardRef
+from pydantic.class_validators import validator
 
 from pydantic.main import BaseModel
 
@@ -17,7 +18,7 @@ class Radio(BaseModel):
 
 class CheckList(BaseModel):
     answer: List[ClassificationAnswer]
-
+    # TODO: Validate that there is only one of each answer
 
 class Text(BaseModel):
     answer: str
@@ -25,8 +26,9 @@ class Text(BaseModel):
 
 class Dropdown(BaseModel):
     answer: List[ClassificationAnswer]
+    # TODO: Validate that there is only one of each answer
 
-class Classification:
+class Classification(BaseModel):
     value: Union[Dropdown, Text, CheckList, Radio]
 
 class Subclass(Classification, FeatureSchemaRef):
