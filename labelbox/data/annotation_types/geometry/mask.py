@@ -35,14 +35,3 @@ class Mask(Geometry):
             return self.mask.url
         self.mask.url = signer(self.mask)
 
-    def to_mal_ndjson(self) -> Dict[str, Any]:
-        if self.mask.url is None:
-            raise ValueError(
-                "Please upload masks as signed urls before creating ndjson")
-
-        return {
-            'mask': {{
-                'instanceURI': self.mask.url,
-                'colorRGB': self.color_rgb
-            }}
-        }

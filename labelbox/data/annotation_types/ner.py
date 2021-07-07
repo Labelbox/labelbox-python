@@ -12,6 +12,3 @@ class TextEntity(BaseModel):
             raise ValidationError(
                 "Location end must be greater or equal to start")
         return values
-
-    def to_mal_ndjson(self):
-        return {"location": {"start": self.start, "end": self.end}}

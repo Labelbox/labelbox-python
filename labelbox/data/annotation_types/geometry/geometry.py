@@ -21,6 +21,3 @@ class Geometry(BaseModel):
 
     def raster(self, height: int, width: int) -> np.ndarray:
         raise NotImplementedError("Subclass must override this")
-
-    def to_mal_ndjson(self) -> Dict[str, Any]:
-        raise NotImplementedError("Subclass must override this")

@@ -22,15 +22,6 @@ class Rectangle(Geometry):
             [self.left, self.top + self.height],
         ]]])
 
-    def to_mal_ndjson(self) -> Dict[str, Any]:
-        return {
-            "bbox": {
-                "top": self.top,
-                "left": self.left,
-                "height": self.height,
-                "width": self.width,
-            }
-        }
 
     def raster(self, height: int, width: int) -> np.ndarray:
         canvas = np.zeros((height, width), dtype=np.uint8)
