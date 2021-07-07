@@ -4,19 +4,18 @@ from io import BytesIO
 from PIL import Image
 import numpy as np
 import requests
-from pydantic import BaseModel, ValidationError, root_validator
+from pydantic import ValidationError, root_validator
 
 from labelbox.data.annotation_types.reference import DataRowRef
 
 
-class RasterData(BaseModel):
+class RasterData(DataRowRef):
     """
 
     """
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
-    data_row_ref: Optional[DataRowRef] = None
     _cache = True
 
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
