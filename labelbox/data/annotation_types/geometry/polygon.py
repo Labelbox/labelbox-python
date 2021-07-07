@@ -21,6 +21,3 @@ class Polygon(Geometry):
         canvas = np.zeros((height, width), dtype=np.uint8)
         raise NotImplementedError("")
         return
-
-    def to_mal_ndjson(self) -> Dict[str, Any]:
-        return {"polygon": [point.to_mal_ndjson() for point in self.points]}

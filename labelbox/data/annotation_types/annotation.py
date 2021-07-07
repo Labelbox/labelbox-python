@@ -14,21 +14,6 @@ class Annotation(FeatureSchemaRef):
     classifications: List[Subclass] = []
     value: Union[Classification, Geometry, TextEntity]
 
-    def to_mal_ndjson(self, ontology: OntologyBuilder):
-        if self.value is None:
-            raise ValueError("")
-
-        return {
-            "uuid":
-                str(uuid4()),
-            'schemaId':
-                self.schema_id,
-            **self.value.to_mal_ndjson(), "classifications": [
-                classification.to_mal_subclass_ndjson()
-                for classification in self.classifications
-            ]
-        }
-
 
 class Frames(BaseModel):
     start: int
@@ -38,11 +23,4 @@ class Frames(BaseModel):
 class VideoAnnotation(Annotation):
     frames: List[Frames] = []
 
-    def to_mal_ndjson(self, ontology: OntologyBuilder):
-        payload = super(VideoAnnotation, self).to_mal_ndjson(ontology)
-        payload.update({
-            'frames': [{
-                "start": frame.start,
-                "end": frame.end
-            } for frame in self.frames]
-        })
+
