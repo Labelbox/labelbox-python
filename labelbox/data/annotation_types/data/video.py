@@ -5,14 +5,14 @@ from typing import Generator, Optional, Tuple, Dict, Any
 import cv2
 import urllib.request
 import numpy as np
-from pydantic import BaseModel, ValidationError, root_validator
+from pydantic import ValidationError, root_validator
 
 from labelbox.data.annotation_types.reference import DataRowRef
 
 logger = logging.getLogger(__name__)
 
 
-class VideoData(BaseModel):
+class VideoData(DataRowRef):
     file_path: Optional[str] = None
     url: Optional[str] = None
     frames: Optional[Dict[int, np.ndarray]] = None
