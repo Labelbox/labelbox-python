@@ -1,11 +1,9 @@
-from typing import Dict, Any
-from pydantic.class_validators import root_validator
-from pydantic.error_wrappers import ValidationError
+from typing import Dict, Any, Optional
 
 import requests
 import numpy as np
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, ValidationError, root_validator
+
 from labelbox.data.annotation_types.reference import DataRowRef
 
 

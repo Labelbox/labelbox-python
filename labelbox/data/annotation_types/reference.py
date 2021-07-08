@@ -15,5 +15,5 @@ class FeatureSchemaRef(BaseModel):
     def must_provide_one(cls, values):
         if not any([values.get('display_name'), values.get('schema_id')]):
             raise ValidationError(
-                "One of `file_path`, `im_bytes`, or `url` required.")
+                "One of `display_name`, or `schema_id` required.")
         return values
