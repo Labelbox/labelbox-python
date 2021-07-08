@@ -3,27 +3,28 @@ from typing import Dict, Any
 import numpy as np
 
 from labelbox.data.annotation_types.geometry.geometry import Geometry
+from labelbox.data.annotation_types.geometry.point import Point
 
 
 class Rectangle(Geometry):
-    top: float
-    left: float
-    height: float
-    width: float
+    start: Point
+    end: Point
 
     @property
     def geometry(self) -> geojson.geometry.Geometry:
-        return geojson.MultiPolygon([[[
-            [self.left, self.top + self.height],
-            [self.left, self.top],
-            [self.left + self.width, self.top],
-            [self.left + self.width, self.top + self.height],
+        return geojson.Polygon([[
+            [self.start.x, self.start.y],
+            [self.start.x, self.end.y],
+            [self.end.x, self.end.y],
+            [self.end.x, self.start.y],
             # close the polygon
-            [self.left, self.top + self.height],
-        ]]])
-
+            [self.start.x, self.start.y],
+        ]])
 
     def raster(self, height: int, width: int) -> np.ndarray:
         canvas = np.zeros((height, width), dtype=np.uint8)
         raise NotImplementedError("")
         return
+
+
+

@@ -35,3 +35,6 @@ class Subclass(Classification, FeatureSchemaRef):
     classifications: List["Subclass"] = []
 # To support recursive subclasses
 Subclass.update_forward_refs()
+
+
+
