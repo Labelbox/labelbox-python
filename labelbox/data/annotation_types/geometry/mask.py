@@ -16,7 +16,7 @@ class Mask(Geometry):
     @property
     def geometry(self):
         mask = self.mask.numpy
-        mask = np.alltrue(mask == self.color_rgb, axis=2)
+        mask = np.alltrue(mask == self.color_rgb, axis=2).astype(np.uint8)
         polygons = (
             shape(shp)
             for shp, val in shapes(mask, mask=None)

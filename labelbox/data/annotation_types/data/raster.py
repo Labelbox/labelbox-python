@@ -21,6 +21,17 @@ class RasterData(DataRowRef):
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         return np.array(Image.open(BytesIO(image_bytes)))
 
+    @classmethod
+    def from_np(cls, arr: np.array) -> "RasterData":
+        if arr.dtype != np.uint8:
+            raise TypeError("Numpy array representing segmentation mask must be np.uint8")
+        elif len(arr.shape) not in [2,3]:
+            raise ValueError(f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}")
+        im_bytes = BytesIO()
+        Image.fromarray(arr).save(im_bytes, format = "PNG")
+        return RasterData(im_bytes = im_bytes.getvalue())
+
+
     @property
     def numpy(self) -> np.ndarray:
         # This is where we raise the exception..
