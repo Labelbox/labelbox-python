@@ -2,16 +2,15 @@ from typing import Dict, Any, Optional
 
 import requests
 import numpy as np
-from pydantic import BaseModel, ValidationError, root_validator
+from pydantic import ValidationError, root_validator
 
 from labelbox.data.annotation_types.reference import DataRowRef
 
 
-class TextData(BaseModel):
+class TextData(DataRowRef):
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None
-    data_row_ref: Optional[DataRowRef] = None
     _cache = True
 
     @property

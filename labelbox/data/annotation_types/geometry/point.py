@@ -21,6 +21,3 @@ class Point(Geometry):
         canvas = np.zeros((height, width), dtype=np.uint8)
         raise NotImplementedError("")
         return canvas
-
-    def to_mal_ndjson(self) -> Dict[str, float]:
-        return {'x': self.x, 'y': self.y}
