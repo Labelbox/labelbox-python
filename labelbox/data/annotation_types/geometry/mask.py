@@ -16,7 +16,7 @@ class Mask(Geometry):
     @property
     def geometry(self):
         mask = self.mask.numpy
-        mask = np.alltrue(mask == self.color_rgb, axis=2)
+        mask = np.alltrue(mask == self.color_rgb, axis=2).astype(np.uint8)
         polygons = (
             shape(shp)
             for shp, val in shapes(mask, mask=None)
@@ -35,14 +35,3 @@ class Mask(Geometry):
             return self.mask.url
         self.mask.url = signer(self.mask)
 
-    def to_mal_ndjson(self) -> Dict[str, Any]:
-        if self.mask.url is None:
-            raise ValueError(
-                "Please upload masks as signed urls before creating ndjson")
-
-        return {
-            'mask': {{
-                'instanceURI': self.mask.url,
-                'colorRGB': self.color_rgb
-            }}
-        }
