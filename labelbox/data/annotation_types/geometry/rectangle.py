@@ -25,5 +25,3 @@ class Rectangle(Geometry):
         canvas = np.zeros((height, width), dtype=np.uint8)
         raise NotImplementedError("")
         return
-
-

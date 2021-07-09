@@ -42,7 +42,8 @@ class TextData(DataRowRef):
         elif self.text is not None:
             self.url = signer(self.text.encode())
         else:
-            raise ValueError("One of url, im_bytes, file_path, numpy must not be None.")
+            raise ValueError(
+                "One of url, im_bytes, file_path, numpy must not be None.")
         return self.url
 
     @root_validator

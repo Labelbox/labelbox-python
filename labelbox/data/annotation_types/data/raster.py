@@ -23,7 +23,7 @@ class RasterData(DataRowRef):
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
         im_bytes = BytesIO()
-        Image.fromarray(arr).save(im_bytes, format = "PNG")
+        Image.fromarray(arr).save(im_bytes, format="PNG")
         return im_bytes.getvalue()
 
     @property
@@ -49,7 +49,6 @@ class RasterData(DataRowRef):
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
 
-
     def create_url(self, signer: Callable[[bytes], str]) -> None:
         if self.url is not None:
             return self.url
@@ -61,7 +60,8 @@ class RasterData(DataRowRef):
         elif self.numpy is not None:
             self.url = signer(self.np_to_bytes(self.arr))
         else:
-            raise ValueError("One of url, im_bytes, file_path, numpy must not be None.")
+            raise ValueError(
+                "One of url, im_bytes, file_path, numpy must not be None.")
         return self.url
 
     @root_validator
@@ -75,16 +75,14 @@ class RasterData(DataRowRef):
                 "One of `file_path`, `im_bytes`, `url`, or `numpy` required.")
         if arr:
             if arr.dtype != np.uint8:
-                raise ValidationError("Numpy array representing segmentation mask must be np.uint8")
-            elif len(arr.shape) not in [2,3]:
-                raise ValidationError(f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}")
+                raise ValidationError(
+                    "Numpy array representing segmentation mask must be np.uint8"
+                )
+            elif len(arr.shape) not in [2, 3]:
+                raise ValidationError(
+                    f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}"
+                )
         return values
 
     class Config:
         copy_on_model_validation = False
-
-
-
-
-
-

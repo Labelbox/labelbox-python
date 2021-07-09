@@ -7,6 +7,7 @@ from labelbox.data.annotation_types.classification import Classification, Subcla
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.geometry import Geometry
 
+
 class Annotation(FeatureSchemaRef):
     feature_id: Optional[
         str] = None  # Can be used to reference the feature in labelbox
@@ -21,5 +22,3 @@ class Frames(BaseModel):
 
 class VideoAnnotation(Annotation):
     frames: List[Frames] = []
-
-
