@@ -16,7 +16,7 @@ class RasterData(DataRowRef):
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
-    numpy: Optional[np.ndarray] = None
+    arr: Optional[np.ndarray] = None
 
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         return np.array(Image.open(BytesIO(image_bytes)))
@@ -29,8 +29,8 @@ class RasterData(DataRowRef):
     @property
     def data(self) -> np.ndarray:
         # This is where we raise the exception..
-        if self.numpy is not None:
-            return self.numpy
+        if self.arr is not None:
+            return self.arr
         if self.im_bytes is not None:
             return self.bytes_to_np(self.im_bytes)
         elif self.file_path is not None:
@@ -57,11 +57,11 @@ class RasterData(DataRowRef):
         elif self.file_path is not None:
             with open(self.file_path, 'rb') as file:
                 self.url = signer(file.read())
-        elif self.numpy is not None:
+        elif self.arr is not None:
             self.url = signer(self.np_to_bytes(self.arr))
         else:
             raise ValueError(
-                "One of url, im_bytes, file_path, numpy must not be None.")
+                "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
     @root_validator
@@ -69,11 +69,11 @@ class RasterData(DataRowRef):
         file_path = values.get("file_path")
         im_bytes = values.get("im_bytes")
         url = values.get("url")
-        arr = values.get("numpy")
-        if file_path == im_bytes == url == arr == None:
+        arr = values.get("arr")
+        if file_path == im_bytes == url == (arr is None) == None:
             raise ValidationError(
-                "One of `file_path`, `im_bytes`, `url`, or `numpy` required.")
-        if arr:
+                "One of `file_path`, `im_bytes`, `url`, or `arr` required.")
+        if arr is not None:
             if arr.dtype != np.uint8:
                 raise ValidationError(
                     "Numpy array representing segmentation mask must be np.uint8"
@@ -85,4 +85,6 @@ class RasterData(DataRowRef):
         return values
 
     class Config:
+        # TODO: Create a type for numpy arrays
+        arbitrary_types_allowed = True
         copy_on_model_validation = False

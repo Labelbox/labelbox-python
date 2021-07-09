@@ -83,13 +83,11 @@ class Label(BaseModel):
                             subclass, subclass_options)
 
         for annotation in self.annotations:
-            #tool = tools.get(annotation.display_name)
-            #classification = classifications.get(annotation.display_name)
-            if isinstance(annotation, Classification):
+            if isinstance(annotation.value, Classification):
                 assign_classification_schema_ids(
                     annotation,
                     {tool.name: tool for tool in ontology_builder.tools})
-            elif isinstance(annotation, (Geometry, TextEntity)):
+            elif isinstance(annotation.value, (Geometry, TextEntity)):
                 tools = {tool.name: tool for tool in ontology_builder.tools}
                 tool = tools.get(annotation.display_name)
                 if annotation.schema_id is None:
@@ -98,7 +96,7 @@ class Label(BaseModel):
                             f"No tool matches display name {annotation.display_name}."
                             f"Must be one of {list(tools.keys())}.")
                     annotation.schema_id = tool.feature_schema_id
-                for classificaation in annotation.classifications:
+                for classification in annotation.classifications:
                     assign_classification_schema_ids(
-                        annotation,
+                        classification,
                         {tool.name: tool for tool in ontology_builder.tools})
