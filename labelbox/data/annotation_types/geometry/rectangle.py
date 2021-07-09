@@ -27,4 +27,3 @@ class Rectangle(Geometry):
         return
 
 
-

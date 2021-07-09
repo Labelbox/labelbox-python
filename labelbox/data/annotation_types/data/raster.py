@@ -80,6 +80,9 @@ class RasterData(DataRowRef):
                 raise ValidationError(f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}")
         return values
 
+    class Config:
+        copy_on_model_validation = False
+
 
 
 
