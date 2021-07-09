@@ -1,7 +1,7 @@
 import logging
 from uuid import uuid4
 import os
-from typing import Generator,Callable, Optional, Tuple, Dict, Any
+from typing import Generator, Callable, Optional, Tuple, Dict, Any
 
 import cv2
 import urllib.request
@@ -28,7 +28,11 @@ class VideoData(DataRowRef):
         for count, frame in self.frame_generator():
             self.frames[count] = frame
 
-    def frame_generator(self, load_frames = False, download_dir = '/tmp') -> Generator[Tuple[int, np.ndarray], None, None]:
+    def frame_generator(
+            self,
+            load_frames=False,
+            download_dir='/tmp'
+    ) -> Generator[Tuple[int, np.ndarray], None, None]:
         if self.frames is not None:
             for idx, img in self.frames.items():
                 yield idx, img
@@ -38,7 +42,7 @@ class VideoData(DataRowRef):
             logger.info(f"Downloading the video locally to {file_path}")
             urllib.request.urlretrieve(self.url, file_path)
             self.file_path = file_path
-                # TODO: If the filepath exists but there was no data we should use the url (and the opposite too)
+            # TODO: If the filepath exists but there was no data we should use the url (and the opposite too)
 
         vidcap = cv2.VideoCapture(self.file_path)
 
@@ -70,22 +74,27 @@ class VideoData(DataRowRef):
             self.file_path = self.frames_to_video(self.frames)
             self.url = self.create_url(signer)
         else:
-            raise ValueError("One of url, im_bytes, file_path, numpy must not be None.")
+            raise ValueError(
+                "One of url, im_bytes, file_path, numpy must not be None.")
         return self.url
 
-    def frames_to_video(self, frames: Dict[int, np.ndarray], fps = 20, save_dir = '/tmp') -> str:
+    def frames_to_video(self,
+                        frames: Dict[int, np.ndarray],
+                        fps=20,
+                        save_dir='/tmp') -> str:
         file_path = os.path.join(save_dir, f"{uuid4()}.mp4")
         out = None
         for key in frames.keys():
             frame = frames[key]
             if out is None:
-                out = cv2.VideoWriter(file_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, frame.shape[:2])
+                out = cv2.VideoWriter(file_path,
+                                      cv2.VideoWriter_fourcc(*'MP4V'), fps,
+                                      frame.shape[:2])
             out.write(frame)
         if out is None:
             return
         out.release()
         return file_path
-
 
     @root_validator
     def validate_data(cls, values):
