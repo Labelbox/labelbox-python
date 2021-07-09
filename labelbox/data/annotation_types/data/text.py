@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Callable, Dict, Any, Optional
 
 import requests
 import numpy as np
@@ -11,30 +11,39 @@ class TextData(DataRowRef):
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None
-    _cache = True
 
     @property
-    def numpy(self) -> np.ndarray:
+    def data(self) -> str:
         # This is where we raise the exception..
         if self.text:
-            return np.array(self.text)
+            return self.text
         elif self.file_path:
             # TODO: Throw error if file doesn't exist.
             # What does imread do?
             with open(self.file_path, "r") as file:
                 text = file.read()
-            if self._cache:
-                self.text = text
-            return np.array(text)
+            self.text = text
+            return text
         elif self.url:
             response = requests.get(self.url)
             response.raise_for_status()
             text = response.text
-            if self._cache:
-                self.text = text
-            return np.array(text)
+            self.text = text
+            return text
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
+
+    def create_url(self, signer: Callable[[bytes], str]) -> None:
+        if self.url is not None:
+            return self.url
+        elif self.file_path is not None:
+            with open(self.file_path, 'rb') as file:
+                self.url = signer(file.read())
+        elif self.text is not None:
+            self.url = signer(self.text.encode())
+        else:
+            raise ValueError("One of url, im_bytes, file_path, numpy must not be None.")
+        return self.url
 
     @root_validator
     def validate_date(cls, values):

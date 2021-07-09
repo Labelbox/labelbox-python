@@ -1,6 +1,7 @@
 import logging
 from uuid import uuid4
-from typing import Generator, Optional, Tuple, Dict, Any
+import os
+from typing import Generator,Callable, Optional, Tuple, Dict, Any
 
 import cv2
 import urllib.request
@@ -16,7 +17,6 @@ class VideoData(DataRowRef):
     file_path: Optional[str] = None
     url: Optional[str] = None
     frames: Optional[Dict[int, np.ndarray]] = None
-    data_row_ref: Optional[DataRowRef] = None
 
     def load_frames(self, overwrite: bool = False) -> None:
         logger.warning(
@@ -28,13 +28,13 @@ class VideoData(DataRowRef):
         for count, frame in self.frame_generator():
             self.frames[count] = frame
 
-    def frame_generator(self, load_frames = False) -> Generator[Tuple[int, np.ndarray], None, None]:
+    def frame_generator(self, load_frames = False, download_dir = '/tmp') -> Generator[Tuple[int, np.ndarray], None, None]:
         if self.frames is not None:
             for idx, img in self.frames.items():
                 yield idx, img
             return
         elif self.url and not self.file_path:
-            file_path = f"/tmp/{uuid4()}.mp4"
+            file_path = os.path.join(download_dir, f"{uuid4()}.mp4")
             logger.info(f"Downloading the video locally to {file_path}")
             urllib.request.urlretrieve(self.url, file_path)
             self.file_path = file_path
@@ -59,6 +59,33 @@ class VideoData(DataRowRef):
                 "Cannot select by index without iterating over the entire video or loading all frames."
             )
         return self.frames[idx]
+
+    def create_url(self, signer: Callable[[bytes], str]) -> None:
+        if self.url is not None:
+            return self.url
+        elif self.file_path is not None:
+            with open(self.file_path, 'rb') as file:
+                self.url = signer(file.read())
+        elif self.frames is not None:
+            self.file_path = self.frames_to_video(self.frames)
+            self.url = self.create_url(signer)
+        else:
+            raise ValueError("One of url, im_bytes, file_path, numpy must not be None.")
+        return self.url
+
+    def frames_to_video(self, frames: Dict[int, np.ndarray], fps = 20, save_dir = '/tmp') -> str:
+        file_path = os.path.join(save_dir, f"{uuid4()}.mp4")
+        out = None
+        for key in frames.keys():
+            frame = frames[key]
+            if out is None:
+                out = cv2.VideoWriter(file_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, frame.shape[:2])
+            out.write(frame)
+        if out is None:
+            return
+        out.release()
+        return file_path
+
 
     @root_validator
     def validate_data(cls, values):
