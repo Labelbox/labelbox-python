@@ -8,12 +8,5 @@ class DataRowRef(BaseModel):
 
 
 class FeatureSchemaRef(BaseModel):
-    display_name: Optional[str] = None
+    display_name: str
     schema_id: Optional[str] = None
-
-    @root_validator
-    def must_provide_one(cls, values):
-        if not any([values.get('display_name'), values.get('schema_id')]):
-            raise ValidationError(
-                "One of `display_name`, or `schema_id` required.")
-        return values

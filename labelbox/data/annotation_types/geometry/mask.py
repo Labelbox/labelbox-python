@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
 from rasterio.features import shapes
@@ -29,9 +29,5 @@ class Mask(Geometry):
         raise NotImplementedError("")
         return self.mask.numpy
 
-    def upload_mask(self, signer: Callable[[np.ndarray], str]) -> None:
-        # Only needs to be uploaded once across all references to this mask
-        if self.mask.url is not None:
-            return self.mask.url
-        self.mask.url = signer(self.mask)
-
+    def create_url(self, signer):
+        return self.mask.create_url(signer)
