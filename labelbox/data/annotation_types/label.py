@@ -1,6 +1,6 @@
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.geometry import Geometry
-from labelbox.data.annotation_types.classification.classification import Classification, ClassificationAnswer
+from labelbox.data.annotation_types.classification.classification import Classification, ClassificationAnswer, Text
 from labelbox.data.annotation_types.geometry.mask import Mask
 from typing import Union, List
 
@@ -58,8 +58,10 @@ class Label(BaseModel):
                     raise TypeError("Unexpected type found.")
                 answers = answer
             else:
-                # TODO: raise TypeError if not Text
-                pass
+                if not isinstance(answer, str):
+                    raise TypeError(
+                        f"Found unexpected answer type : {type(answer)}."
+                        "Expected `ClassificationAnswer`, `list`, or `str`")
 
             if answers is not None:
                 for answer in answers:
