@@ -20,6 +20,7 @@ class LabelingFrontend(DbObject):
     description = Field.String("description")
     iframe_url_path = Field.String("iframe_url_path")
 
+
 class LabelingFrontendOptions(DbObject):
     """ Label interface options.
 
