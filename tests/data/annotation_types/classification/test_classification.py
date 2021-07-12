@@ -14,10 +14,8 @@ def test_classification_answer():
 
     schema_id = "schema_id"
     display_name = "my_feature"
-    answer = ClassificationAnswer(schema_id=schema_id)
-
-    assert answer.schema_id == schema_id
-    assert answer.display_name is None
+    with pytest.raises(ValidationError):
+        answer = ClassificationAnswer(schema_id=schema_id)
 
     answer = ClassificationAnswer(display_name=display_name)
 
@@ -57,14 +55,17 @@ def test_subclass():
         },
         'classifications': []
     }
-    classification = Subclass(value=Text(answer=answer), schema_id=schema_id)
+    classification = Subclass(value=Text(answer=answer),
+                              display_name=display_name,
+                              schema_id=schema_id)
     assert classification.dict() == {
         'display_name': None,
         'schema_id': schema_id,
         'value': {
             'answer': answer
         },
-        'classifications': []
+        'classifications': [],
+        'display_name': display_name
     }
     classification = Subclass(value=Text(answer=answer),
                               schema_id=schema_id,
@@ -79,6 +80,7 @@ def test_subclass():
     }
 
     classification = Subclass(value=Text(answer=answer),
+                              display_name=display_name,
                               schema_id=schema_id,
                               classifications=[
                                   Subclass(value=Text(answer=answer),
@@ -86,7 +88,7 @@ def test_subclass():
                               ])
     assert classification.dict() == {
         'display_name':
-            None,
+            display_name,
         'schema_id':
             schema_id,
         'value': {
@@ -124,13 +126,14 @@ def test_radio():
     }
     classification = Subclass(value=Radio(answer=answer),
                               schema_id=schema_id,
+                              display_name=display_name,
                               classifications=[
                                   Subclass(value=Radio(answer=answer),
                                            display_name=display_name)
                               ])
     assert classification.dict() == {
         'display_name':
-            None,
+            display_name,
         'schema_id':
             schema_id,
         'value': {
@@ -176,13 +179,14 @@ def test_checklist():
     }
     classification = Subclass(value=CheckList(answer=[answer]),
                               schema_id=schema_id,
+                              display_name=display_name,
                               classifications=[
                                   Subclass(value=CheckList(answer=[answer]),
                                            display_name=display_name)
                               ])
     assert classification.dict() == {
         'display_name':
-            None,
+            display_name,
         'schema_id':
             schema_id,
         'value': {
@@ -227,13 +231,14 @@ def test_dropdown():
     }
     classification = Subclass(value=Dropdown(answer=[answer]),
                               schema_id=schema_id,
+                              display_name=display_name,
                               classifications=[
                                   Subclass(value=Dropdown(answer=[answer]),
                                            display_name=display_name)
                               ])
     assert classification.dict() == {
         'display_name':
-            None,
+            display_name,
         'schema_id':
             schema_id,
         'value': {
