@@ -20,10 +20,6 @@ class LabelingFrontend(DbObject):
     description = Field.String("description")
     iframe_url_path = Field.String("iframe_url_path")
 
-    # TODO other fields and relationships
-    projects = Relationship.ToMany("Project", True)
-
-
 class LabelingFrontendOptions(DbObject):
     """ Label interface options.
 
