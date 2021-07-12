@@ -22,8 +22,6 @@ def test_labeling_frontend_connecting_to_project(project):
 
     project.labeling_frontend.connect(frontend)
     assert project.labeling_frontend() == frontend
-    assert project in set(frontend.projects())
 
     project.labeling_frontend.disconnect(frontend)
     assert project.labeling_frontend() == None
-    assert project not in set(frontend.projects())
