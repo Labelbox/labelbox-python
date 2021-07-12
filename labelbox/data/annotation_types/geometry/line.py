@@ -19,8 +19,13 @@ class Line(Geometry):
     def raster(self,
                height: int,
                width: int,
-               line_buffer: Optional[int] = None) -> np.ndarray:
-        canvas = np.zeros((height, width), dtype=np.uint8)
+               thickness=1,
+               color=255) -> np.ndarray:
 
-        raise NotImplementedError("")
-        return canvas
+        canvas = np.zeros((height, width), dtype=np.uint8)
+        pts = np.array(self.geometry['coordinates']).astype(np.int32)
+        return cv2.polylines(canvas,
+                             pts,
+                             False,
+                             color=color,
+                             thickness=thickness)

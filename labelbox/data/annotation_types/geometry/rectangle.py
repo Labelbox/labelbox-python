@@ -1,6 +1,8 @@
-import geojson
 from typing import Dict, Any
+
 import numpy as np
+import cv2
+import geojson
 
 from labelbox.data.annotation_types.geometry.geometry import Geometry
 from labelbox.data.annotation_types.geometry.point import Point
@@ -21,7 +23,7 @@ class Rectangle(Geometry):
             [self.start.x, self.start.y],
         ]])
 
-    def raster(self, height: int, width: int) -> np.ndarray:
+    def raster(self, height: int, width: int, color: int = 255) -> np.ndarray:
         canvas = np.zeros((height, width), dtype=np.uint8)
-        raise NotImplementedError("")
-        return
+        pts = np.array(self.geometry['coordinates']).astype(np.int32)
+        return cv2.fillPoly(canvas, pts=pts, color=color)
