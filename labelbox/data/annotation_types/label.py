@@ -38,8 +38,8 @@ class Label(BaseModel):
         return data_row
 
     def assign_schema_ids(self, ontology_builder):
-
-        def assign_classification_schema_ids(annotation, tools):
+        # At this time, the ontology builder does not support classifications nested under other classifications
+        def assign_classification_schema_ids(annotation, answer, tools):
             tool = tools.get(annotation.display_name)
             if annotation.schema_id is None:
                 if tool is None:
@@ -50,43 +50,42 @@ class Label(BaseModel):
 
             options = {option.value: option for option in tool.options}
             answers = None
-            if isinstance(annotation.value.answer, ClassificationAnswer):
-                answers = [annotation.value.answer]
-            elif isinstance(annotation.value.answer, list):
-                if not isinstance(annotation.value.answer[0],
-                                  ClassificationAnswer):
+
+            if isinstance(answer, ClassificationAnswer):
+                answers = [answer]
+            elif isinstance(answer, list):
+                if not isinstance(answer[0], ClassificationAnswer):
                     raise TypeError("Unexpected type found.")
-                answers = annotation.value.answer
+                answers = answer
             else:
                 # TODO: raise TypeError if not Text
                 pass
 
-            # Nested classifications rely on the value picked...
-            # But that constraint isn't built into the hierarchy of annotation types.
-            # So this will throw an unclear exception.
-            # TODO: Handle these excpetions well.
             if answers is not None:
                 for answer in answers:
-                    # Note that subclasses will overwrite schema ids that already exist...
-                    # TODO: Update this to work like top level classifications.
                     option = options.get(answer.display_name)
                     if option is None:
                         raise ValueError(
                             f"No option matches display name {answer.display_name}."
-                            f"Must be one of {list(option.keys())}.")
+                            f"Must be one of {list(options.keys())}.")
                     answer.schema_id = option.feature_schema_id
                     subclass_options = {
-                        option.name: option for option in option.options
+                        option.value: option for option in option.options
                     }
                     for subclass in annotation.classifications:
+                        # If this is already a subclass this will break since the ontology
+                        # cannot handle this.
+                        # TODO: Throw exception...
                         assign_classification_schema_ids(
-                            subclass, subclass_options)
+                            subclass, subclass.value.answer, subclass_options)
 
         for annotation in self.annotations:
             if isinstance(annotation.value, Classification):
                 assign_classification_schema_ids(
-                    annotation,
-                    {tool.name: tool for tool in ontology_builder.tools})
+                    annotation, annotation.value.value.answer, {
+                        tool.name: tool
+                        for tool in ontology_builder.classifications
+                    })
             elif isinstance(annotation.value, (Geometry, TextEntity)):
                 tools = {tool.name: tool for tool in ontology_builder.tools}
                 tool = tools.get(annotation.display_name)
@@ -98,5 +97,5 @@ class Label(BaseModel):
                     annotation.schema_id = tool.feature_schema_id
                 for classification in annotation.classifications:
                     assign_classification_schema_ids(
-                        classification,
-                        {tool.name: tool for tool in ontology_builder.tools})
+                        classification, classification.value.answer,
+                        {tool.name: tool for tool in tool.classifications})
