@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import geojson
+import cv2
 from pydantic import ValidationError, validator
 
 from labelbox.data.annotation_types.geometry.point import Point
@@ -17,10 +18,10 @@ class Polygon(Geometry):
             self.points.append(self.points[0])
         return geojson.Polygon([[[point.x, point.y] for point in self.points]])
 
-    def raster(self, height: int, width: int) -> np.ndarray:
+    def raster(self, height: int, width: int, color=255) -> np.ndarray:
         canvas = np.zeros((height, width), dtype=np.uint8)
-        raise NotImplementedError("")
-        return
+        pts = np.array(self.geometry['coordinates']).astype(np.int32)
+        return cv2.fillPoly(canvas, pts=pts, color=color)
 
     @validator('points')
     def is_geom_valid(cls, points):

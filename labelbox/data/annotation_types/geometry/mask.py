@@ -15,7 +15,7 @@ class Mask(Geometry):
 
     @property
     def geometry(self):
-        mask = self.mask.numpy
+        mask = self.mask.data
         mask = np.alltrue(mask == self.color_rgb, axis=2).astype(np.uint8)
         polygons = (
             shape(shp)
@@ -24,10 +24,8 @@ class Mask(Geometry):
             if val >= 1)
         return MultiPolygon(polygons).__geo_interface__
 
-    def raster(self, height: int = None, width: int = None) -> np.ndarray:
-        # TODO: maybe resize with height and width or pad...
-        raise NotImplementedError("")
-        return self.mask.numpy
+    def raster(self) -> np.ndarray:
+        return self.mask.data
 
     def create_url(self, signer):
         return self.mask.create_url(signer)

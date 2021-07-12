@@ -1,5 +1,7 @@
 from typing import Dict, Optional
 
+import cv2
+
 from labelbox.data.annotation_types.geometry.geometry import Geometry
 
 import geojson
@@ -17,7 +19,10 @@ class Point(Geometry):
     def raster(self,
                height: int,
                width: int,
-               point_buffer: Optional[int] = None) -> np.ndarray:
+               thickness: int = 1,
+               color=255) -> np.ndarray:
         canvas = np.zeros((height, width), dtype=np.uint8)
-        raise NotImplementedError("")
-        return canvas
+        return cv2.circle(canvas, (int(self.x), int(self.y)),
+                          radius=thickness,
+                          color=color,
+                          thickness=-1)

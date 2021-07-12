@@ -60,7 +60,6 @@ def test_ref():
         x: (np.random.random((32, 32, 3)) * 255).astype(np.uint8)
         for x in range(5)
     }
-    data = VideoData(frames=data,
-                     data_row_ref=DataRowRef(external_id=external_id, uid=uid))
-    assert data.data_row_ref.external_id == external_id
-    assert data.data_row_ref.uid == uid
+    data = VideoData(frames=data, external_id=external_id, uid=uid)
+    assert data.external_id == external_id
+    assert data.uid == uid
