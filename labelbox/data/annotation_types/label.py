@@ -44,7 +44,7 @@ class Label(BaseModel):
             if annotation.schema_id is None:
                 if tool is None:
                     raise ValueError(
-                        f"No classification matches display name {annotation.display_name}."
+                        f"No classification matches display name {annotation.display_name}. "
                         f"Must be one of {list(tools.keys())}.")
                 annotation.schema_id = tool.feature_schema_id
 
@@ -68,16 +68,24 @@ class Label(BaseModel):
                     option = options.get(answer.display_name)
                     if option is None:
                         raise ValueError(
-                            f"No option matches display name {answer.display_name}."
+                            f"No option matches display name {answer.display_name}. "
                             f"Must be one of {list(options.keys())}.")
                     answer.schema_id = option.feature_schema_id
-                    subclass_options = {
-                        option.value: option for option in option.options
-                    }
+
+                    try:
+                        subclass_options = {
+                            option.value: option for option in option.options
+                        }
+                        print("try", subclass_options, option.options)
+
+                    except:
+                        subclass_options = {
+                            option.instructions: option for option in option.options
+                        }
+                        print("except", subclass_options, option.options)
+
+
                     for subclass in annotation.classifications:
-                        # If this is already a subclass this will break since the ontology
-                        # cannot handle this.
-                        # TODO: Throw exception...
                         assign_classification_schema_ids(
                             subclass, subclass.value.answer, subclass_options)
 
@@ -94,7 +102,7 @@ class Label(BaseModel):
                 if annotation.schema_id is None:
                     if tool is None:
                         raise ValueError(
-                            f"No tool matches display name {annotation.display_name}."
+                            f"No tool matches display name {annotation.display_name}. "
                             f"Must be one of {list(tools.keys())}.")
                     annotation.schema_id = tool.feature_schema_id
                 for classification in annotation.classifications:
