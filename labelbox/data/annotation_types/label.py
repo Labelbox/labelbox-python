@@ -1,10 +1,10 @@
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.geometry import Geometry
-from labelbox.data.annotation_types.classification.classification import Classification, ClassificationAnswer, Text
+from labelbox.data.annotation_types.classification.classification import Classification, ClassificationAnswer, Radio, Text
 from labelbox.data.annotation_types.geometry.mask import Mask
 from typing import Union, List
 
-from labelbox.schema.ontology import OntologyBuilder
+from labelbox.schema.ontology import Classification as OClassification
 from labelbox.data.annotation_types.annotation import Annotation
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.data.text import TextData
@@ -72,18 +72,10 @@ class Label(BaseModel):
                             f"Must be one of {list(options.keys())}.")
                     answer.schema_id = option.feature_schema_id
 
-                    try:
-                        subclass_options = {
-                            option.value: option for option in option.options
-                        }
-                        print("try", subclass_options, option.options)
-
-                    except:
-                        subclass_options = {
-                            option.instructions: option for option in option.options
-                        }
-                        print("except", subclass_options, option.options)
-
+                    subclass_options = {
+                        option.instructions if type(option) is OClassification
+                        else option.value: option for option in option.options
+                    }
 
                     for subclass in annotation.classifications:
                         assign_classification_schema_ids(

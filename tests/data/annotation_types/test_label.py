@@ -170,8 +170,3 @@ def test_highly_nested():
         0].schema_id == classification_schema_id
     assert label.annotations[0].classifications[
         0].value.answer.schema_id == option_schema_id
-
-    breakpoint()
-
-
-test_highly_nested()
