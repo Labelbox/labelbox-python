@@ -1,6 +1,6 @@
 from labelbox.orm.model import Entity
 from labelbox.data.annotation_types.classification.classification import Text, Radio, CheckList, Dropdown
-from typing import Dict, List, Any, Union
+from typing import Dict, Generator, Iterable, List, Any, Union
 from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from uuid import uuid4
@@ -10,26 +10,9 @@ from labelbox.schema.ontology import OntologyBuilder, Tool, Classification
 from labelbox.data.annotation_types.geometry import Rectangle, Polygon, Point, Mask, Line
 from labelbox.data.annotation_types.data.raster import RasterData
 
-tool_mapping = {
-    Rectangle: Tool.Type.BBOX,
-    Polygon: Tool.Type.POLYGON,
-    Point: Tool.Type.POINT,
-    Mask: Tool.Type.SEGMENTATION,
-    Line: Tool.Type.LINE,
-}
 
-classification_mapping = {
-    Text: Classification.Type.TEXT,
-    CheckList: Classification.Type.CHECKLIST,
-    Dropdown: Classification.Type.DROPDOWN,
-    Radio: Classification.Type.RADIO,
-}
-
-#TODO: Support partitioning the data. Otherwise this isn't going to support large datasets..
-
-
-class AnnotationCollection(BaseModel):
-    data: List[Label]
+class LabelCollection(BaseModel):
+    data: Iterable[Label]
 
     def assign_schema_ids(self, ontology_builder):
         """
@@ -38,7 +21,7 @@ class AnnotationCollection(BaseModel):
             - Updates the names to match the ontology.
         """
         for label in self.data:
-            for annotation in self.label:
+            for annotation in label.annotations:
                 annotation.assign_schema_ids(ontology_builder)
 
     def create_dataset(self, client, dataset_name, signer, max_concurrency=20):

@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 from uuid import uuid4
 from pydantic import BaseModel, root_validator
 from pydantic.error_wrappers import ValidationError
@@ -10,10 +10,9 @@ from labelbox.data.annotation_types.geometry import Geometry
 
 
 class Annotation(FeatureSchemaRef):
-    feature_id: Optional[
-        str] = None  # Can be used to reference the feature in labelbox
     classifications: List[Subclass] = []
     value: Union[Classification, Geometry, TextEntity]
+    extras: Dict[str, Any] = {}
 
 
 class Frames(BaseModel):
