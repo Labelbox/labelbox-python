@@ -1,4 +1,4 @@
-from typing import Any, List, Union, ForwardRef
+from typing import Any, Dict, List, Union, ForwardRef
 from pydantic.class_validators import validator
 
 from pydantic.main import BaseModel
@@ -33,6 +33,7 @@ class Dropdown(BaseModel):
 
 class Classification(BaseModel):
     value: Union[Dropdown, Text, CheckList, Radio]
+    extras: Dict[str, Any] = {}
 
 
 class Subclass(Classification, FeatureSchemaRef):

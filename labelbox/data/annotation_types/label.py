@@ -38,7 +38,7 @@ class Label(BaseModel):
         return data_row
 
     def assign_schema_ids(self, ontology_builder):
-        # At this time, the ontology builder does not support classifications nested under other classifications
+
         def assign_classification_schema_ids(annotation, answer, tools):
             tool = tools.get(annotation.display_name)
             if annotation.schema_id is None:
