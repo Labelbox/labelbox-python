@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 class Geometry(BaseModel):
-    extras: Dict[str, Any] = {}
+    extra: Dict[str, Any] = {}
 
     @property
     def geometry(self) -> geojson:

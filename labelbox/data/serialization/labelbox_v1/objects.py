@@ -1,5 +1,4 @@
-
-
+from pydantic.schema import schema
 from labelbox.data.annotation_types.classification.classification import Subclass
 from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.point import Point
@@ -36,36 +35,46 @@ class LBV1Rectangle(LBV1ObjectBase):
     bbox: BoxLocation
 
     def to_common(self) -> Rectangle:
-        return Rectangle(start=Point(x=self.left, y=self.top),
-                           end=Point(x=self.left + self.width,
-                                     y=self.top + self.height))
+        return Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
+                         end=Point(x=self.bbox.left + self.bbox.width,
+                                   y=self.bbox.top + self.bbox.height))
 
     @classmethod
-    def from_common(cls, rectangle : Rectangle, classifications: List[Subclass]) -> "LBV1Rectangle":
+    def from_common(cls, rectangle: Rectangle,
+                    classifications: List[Subclass],schema_id: str, title: str, value: str,  **extra) -> "LBV1Rectangle":
         return cls(
-            bbox = BoxLocation(
-                top = rectangle.start.y,
-                left = rectangle.start.x,
-                height = rectangle.end.y - rectangle.start.y,
-                width = rectangle.end.x - rectangle.start.x,
+            bbox=BoxLocation(
+                top=rectangle.start.y,
+                left=rectangle.start.x,
+                height=rectangle.end.y - rectangle.start.y,
+                width=rectangle.end.x - rectangle.start.x,
             ),
-            classifications = classifications
+            schema_id = schema_id,
+            title = title,
+            value = value,
+            classifications=classifications,
+            **extra
         )
-
 
 
 class LBV1Polygon(LBV1ObjectBase):
     polygon: List[PointLocation]
 
     def to_common(self) -> Polygon:
-        return Line(points=[Point(x=p.x, y=p.y) for p in self.polygon])
-
+        return Polygon(points=[Point(x=p.x, y=p.y) for p in self.polygon])
 
     @classmethod
-    def from_common(cls, polygon : Polygon, classifications: List[Subclass]) -> "LBV1Polygon":
+    def from_common(cls, polygon: Polygon,
+                    classifications: List[Subclass], schema_id: str, title: str, value: str, **extra) -> "LBV1Polygon":
         return cls(
-            polygon = [PointLocation(x = point.x, y = point.y) for point in polygon.points],
-            classifications = classifications
+            polygon=[
+                PointLocation(x=point.x, y=point.y) for point in polygon.points
+            ],
+            classifications=classifications,
+            schema_id = schema_id,
+            title = title,
+            value = value,
+            **extra
         )
 
 
@@ -76,12 +85,16 @@ class LBV1Point(LBV1ObjectBase):
         return Point(x=self.point.x, y=self.point.y)
 
     @classmethod
-    def from_common(cls, point : Point, classifications: List[Subclass]) -> "LBV1Point":
+    def from_common(cls, point: Point,
+                    classifications: List[Subclass],schema_id: str, title: str, value: str,  **extra) -> "LBV1Point":
         return cls(
-            point = PointLocation(x = point.x, y = point.y),
-            classifications = classifications
+            point=PointLocation(x=point.x, y=point.y),
+            classifications=classifications,
+            schema_id = schema_id,
+            title = title,
+            value = value,
+            **extra
         )
-
 
 
 class LBV1Line(LBV1ObjectBase):
@@ -91,10 +104,17 @@ class LBV1Line(LBV1ObjectBase):
         return Line(points=[Point(x=p.x, y=p.y) for p in self.line])
 
     @classmethod
-    def from_common(cls, polygon : Line, classifications: List[Subclass]) -> "LBV1Line":
+    def from_common(cls, polygon: Line,
+                    classifications: List[Subclass], schema_id: str, title: str, value: str, **extra) -> "LBV1Line":
         return cls(
-            line = [PointLocation(x = point.x, y = point.y) for point in polygon.points],
-            classifications = classifications
+            line=[
+                PointLocation(x=point.x, y=point.y) for point in polygon.points
+            ],
+            classifications=classifications,
+            schema_id = schema_id,
+            title = title,
+            value = value,
+            **extra
         )
 
 
@@ -102,18 +122,21 @@ class LBV1Mask(LBV1ObjectBase):
     instanceURI: str
 
     def to_common(self):
-        return Mask(
-            mask=RasterData(url=self.instanceURI), color_rgb=(255, 255, 255))
+        return Mask(mask=RasterData(url=self.instanceURI),
+                    color_rgb=(255, 255, 255))
 
     @classmethod
-    def from_common(cls, mask : Mask, classifications: List[Subclass]) -> "LBV1Line":
+    def from_common(cls, mask: Mask,
+                    classifications: List[Subclass],schema_id: str, title: str, value: str,  **extra) -> "LBV1Line":
+
         return cls(
-            instanceURI = mask.url,
-            classifications = classifications
+            instanceURI=mask.mask.url,
+            classifications=classifications,
+            schema_id = schema_id,
+            title = title,
+            value = value,
+            **{k:v for k,v in extra.items() if k != 'instanceURI'}
         )
 
 
 LBV1Object = Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1Mask]
-
-#LBV1Label(**data.json()[0])
-#LBV1Label(**data.json()[0]).dict(by_alias=True)

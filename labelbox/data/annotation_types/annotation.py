@@ -12,7 +12,7 @@ from labelbox.data.annotation_types.geometry import Geometry
 class Annotation(FeatureSchemaRef):
     classifications: List[Subclass] = []
     value: Union[Classification, Geometry, TextEntity]
-    extras: Dict[str, Any] = {}
+    extra: Dict[str, Any] = {}
 
 
 class Frames(BaseModel):
