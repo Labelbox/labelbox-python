@@ -1,4 +1,4 @@
-from labelbox.data.annotation.geometry.geometry import Geometry
+from labelbox.data.annotation_types.classification.classification import CheckList, Dropdown, Radio, Text
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.annotation import Annotation
 from labelbox.data.annotation_types import classification
@@ -6,11 +6,19 @@ from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.label import Label
-from labelbox.data.serialization.labelbox_v1.objects import LBV1Object
+from labelbox.data.annotation_types.geometry.line import Line
+from labelbox.data.annotation_types.geometry.point import Point
+from labelbox.data.annotation_types.geometry.polygon import Polygon
+from labelbox.data.annotation_types.geometry.rectangle import Rectangle
+from labelbox.data.annotation_types.geometry.mask import Mask
+from labelbox.data.serialization.labelbox_v1.objects import LBV1Line, LBV1Mask, LBV1Object, LBV1Point, LBV1Polygon, LBV1Rectangle
 from labelbox.data.serialization.labelbox_v1.classifications import LBV1Radio, LBV1Checklist, LBV1Text
 from pydantic import BaseModel, Field
-from typing import Callable, List, Text, Union
+from typing import Callable, List, Union
 
+
+# TODO: Use the meta field on the interface objects to support maintaing info
+# Even if it doesn't have a place or really matter...
 
 class _LBV1Label(BaseModel):
     objects: List[LBV1Object]
@@ -24,11 +32,39 @@ class _LBV1Label(BaseModel):
         objects = [obj.to_common() for obj in self.objects]
         return [*classifications, *objects]
 
-    def from_annotations(annotations: List[Annotation]):
+    def lookup_object(self, annotation: Annotation):
+        return {
+                Line : LBV1Line,
+                Point: LBV1Point,
+                Polygon: LBV1Polygon,
+                Rectangle: LBV1Rectangle,
+                Mask: LBV1Mask
+            }.get(type(annotation.value))
+
+    def lookup_classification(self, annotation: Annotation):
+        return {
+                Text: LBV1Text,
+                Dropdown: LBV1Checklist,
+                CheckList: LBV1Checklist,
+                Radio: LBV1Radio,
+            }.get(type(annotation.value))
+
+
+    def from_common(self, annotations: List[Annotation]):
+        objects = []
+        classifications = []
         for annotation in annotations:
-            if isinstance(annotation.value, Line):
-                # TODO: Implement this...
-                LBV1Line.from_annotation(annotation)
+            obj = self.lookup_object(annotation)
+            classification = self.lookup_classification(annotation)
+            if obj is not None:
+                raise TypeError(f"Unexpected type {type(annotation.value)}")
+            elif classification is not None:
+                return objects.append(obj.from_common(annotation.value, annotation.classifications))
+
+
+
+
+
 
 
 class LBV1Label(BaseModel):
@@ -64,4 +100,5 @@ class LBV1Label(BaseModel):
         return LBV1Label(label=_LBV1Label.from_annotations(label.annotations),
                          data_row_id=label.data.uid,
                          row_data=label.data.create_url(signer),
+1
                          external_id=label.data.external_id)

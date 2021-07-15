@@ -32,3 +32,5 @@ class LBV1Text(LBV1Feature):
 
     def to_common(self):
         return Text(answer=self.answer)
+
+
