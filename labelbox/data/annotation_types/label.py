@@ -2,7 +2,7 @@ from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.geometry import Geometry
 from labelbox.data.annotation_types.classification.classification import Classification, ClassificationAnswer, Radio, Text
 from labelbox.data.annotation_types.geometry.mask import Mask
-from typing import Union, List
+from typing import Union, List, Dict, Any
 
 from labelbox.schema.ontology import Classification as OClassification
 from labelbox.data.annotation_types.annotation import Annotation
@@ -17,6 +17,7 @@ class Label(BaseModel):
     # TODO: This sounds too much like the other label we need to rename this...
     data: Union[RasterData, TextData, VideoData]
     annotations: List[Union[Annotation, Metric]] = []
+    extra: Dict[str, Any] = {}
 
     def create_url_for_data(self, signer):
         return self.data.create_url(signer)

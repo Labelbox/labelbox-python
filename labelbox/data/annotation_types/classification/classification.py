@@ -10,7 +10,7 @@ Subclass = ForwardRef('Subclass')
 
 
 class ClassificationAnswer(FeatureSchemaRef):
-    ...
+    extra: Dict[str, Any]
 
 
 class Radio(BaseModel):
@@ -33,7 +33,7 @@ class Dropdown(BaseModel):
 
 class Classification(BaseModel):
     value: Union[Dropdown, Text, CheckList, Radio]
-    extras: Dict[str, Any] = {}
+    extra: Dict[str, Any] = {}
 
 
 class Subclass(Classification, FeatureSchemaRef):

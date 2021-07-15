@@ -1,4 +1,5 @@
-from labelbox.data.annotation_types.classification.classification import CheckList, Dropdown, Radio, Text
+from labelbox.data.annotation_types import annotation
+from labelbox.data.annotation_types.classification.classification import CheckList, Dropdown, Radio, Text, Subclass, Classification
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.annotation import Annotation
 from labelbox.data.annotation_types import classification
@@ -14,11 +15,11 @@ from labelbox.data.annotation_types.geometry.mask import Mask
 from labelbox.data.serialization.labelbox_v1.objects import LBV1Line, LBV1Mask, LBV1Object, LBV1Point, LBV1Polygon, LBV1Rectangle
 from labelbox.data.serialization.labelbox_v1.classifications import LBV1Radio, LBV1Checklist, LBV1Text
 from pydantic import BaseModel, Field
-from typing import Callable, List, Union
-
+from typing import Callable, List, Union, Optional
 
 # TODO: Use the meta field on the interface objects to support maintaing info
 # Even if it doesn't have a place or really matter...
+
 
 class _LBV1Label(BaseModel):
     objects: List[LBV1Object]
@@ -26,52 +27,114 @@ class _LBV1Label(BaseModel):
 
     def to_common(self):
         classifications = [
-            classification.to_common()
+            Annotation(value=classification.to_common(),
+                       classifications=[
+                           Classification(value=cls.to_common())
+                           for cls in classification.classifications
+                       ],
+                       display_name=classification.title)
             for classification in self.classifications
         ]
-        objects = [obj.to_common() for obj in self.objects]
+
+        objects = [
+            Annotation(
+                value=obj.to_common(),
+                classifications=[
+                           Subclass(value=cls.to_common(),
+                                    schema_id = cls.schema_id,
+                                    display_name=cls.title, extra = {'feature_id' : cls.feature_id, 'title' : cls.title, 'value' : cls.value})
+                           for cls in obj.classifications
+                       ],
+                display_name=obj.title,
+                alternative_name = obj.value,
+                schema_id = obj.schema_id,
+                extra = {
+                    'instanceURI' : obj.instanceURI,
+                    'color' : obj.color,
+                    'feature_id' : obj.feature_id,
+                }
+                )
+            for obj in self.objects
+        ]
         return [*classifications, *objects]
 
-    def lookup_object(self, annotation: Annotation):
+    @staticmethod
+    def lookup_object(annotation: Annotation):
         return {
-                Line : LBV1Line,
-                Point: LBV1Point,
-                Polygon: LBV1Polygon,
-                Rectangle: LBV1Rectangle,
-                Mask: LBV1Mask
-            }.get(type(annotation.value))
+            Line: LBV1Line,
+            Point: LBV1Point,
+            Polygon: LBV1Polygon,
+            Rectangle: LBV1Rectangle,
+            Mask: LBV1Mask
+        }.get(type(annotation.value))
 
-    def lookup_classification(self, annotation: Annotation):
+    @staticmethod
+    def lookup_classification(annotation: Annotation):
         return {
-                Text: LBV1Text,
-                Dropdown: LBV1Checklist,
-                CheckList: LBV1Checklist,
-                Radio: LBV1Radio,
-            }.get(type(annotation.value))
+            Text: LBV1Text,
+            Dropdown: LBV1Checklist,
+            CheckList: LBV1Checklist,
+            Radio: LBV1Radio,
+        }.get(type(annotation.value))
 
-
-    def from_common(self, annotations: List[Annotation]):
+    @classmethod
+    def from_common(cls, annotations: List[Annotation]) -> "_LBV1Label":
         objects = []
         classifications = []
         for annotation in annotations:
-            obj = self.lookup_object(annotation)
-            classification = self.lookup_classification(annotation)
+            obj = cls.lookup_object(annotation)
+            classification = cls.lookup_classification(annotation)
             if obj is not None:
-                raise TypeError(f"Unexpected type {type(annotation.value)}")
+                # TODO: Check for nested classifications. Say they will be ignored if not flattened..
+                # OR add support for flattening.
+                subclasses = []
+                for subclass in annotation.classifications:
+                    classification = cls.lookup_classification(subclass)
+                    if classification is None:
+                        raise TypeError(f"Unexpected type {type(annotation)}")
+                    print(subclass.schema_id)
+                    subclasses.append(classification.from_common(subclass.value, subclass.schema_id, **subclass.extra))
+
+                objects.append(
+                    obj.from_common(annotation.value,
+                                    subclasses, annotation.schema_id, annotation.display_name, annotation.alternative_name,  **annotation.extra))
             elif classification is not None:
-                return objects.append(obj.from_common(annotation.value, annotation.classifications))
+                classifications.append(
+                    classification.from_common(annotation.value, **subclass.extra))
+            else:
+                raise TypeError(f"Unexpected type {type(annotation.value)}")
+        return cls(objects=objects, classifications=classifications)
 
 
-
-
-
+class Review(BaseModel):
+    score: int
+    id: str
+    created_at: str = Field(..., alias = "createdAt")
+    created_by: str = Field(..., alias = "createdBy")
+    label_id: str = Field(..., alias = "labelId")
 
 
 class LBV1Label(BaseModel):
     label: _LBV1Label = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
     row_data: str = Field(..., alias="Labeled Data")
-    external_id: str = Field(..., alias="External ID")
+    external_id: Optional[str] = Field(None, alias="External ID")
+    created_by: Optional[str] = Field(None, alias = 'Created By')
+
+    id: Optional[str] = Field(None, alias = 'ID')
+    project_name: Optional[str] = Field(None, alias = 'Project Name')
+    created_at: Optional[str] = Field(None, alias = 'Created At')
+    updated_at: Optional[str] = Field(None, alias = 'Updated At')
+    seconds_to_label: Optional[float] = Field(None, alias = 'Seconds to Label')
+    agreement: Optional[float] = Field(None, alias = 'Agreement')
+    benchmark_agreement: Optional[float] = Field(None, alias = 'Benchmark Agreement')
+    benchmark_id: Optional[float] = Field(None, alias = 'Benchmark ID')
+    dataset_name: Optional[str] = Field(None, alias = 'Dataset Name')
+    reviews: Optional[List[Review]] = Field(None, alias = 'Reviews')
+    label_url: Optional[str] = Field(None, alias = 'View Label')
+    has_open_issues: Optional[float] = Field(None, alias = 'Has Open Issues')
+    skipped: Optional[bool] = Field(None, alias = 'Skipped')
+
 
     def construct_data_ref(self):
         # TODO: I think we can tell if this is a video or not just based on the export format ...
@@ -93,12 +156,30 @@ class LBV1Label(BaseModel):
 
     def to_common(self) -> Label:
         return Label(data=self.construct_data_ref(),
-                     annotations=self.label.to_common())
+                     annotations=self.label.to_common(),
+                     extra = {
+                         'Created By': self.created_by,
+                         'Project Name' : self.project_name,
+                         'ID'  :self.id,
+                         'Created At' : self.created_at,
+                         'Updated At' : self.updated_at,
+                         'Seconds to Label' : self.seconds_to_label,
+                         'Agreement': self.agreement,
+                         'Benchmark Agreement': self.benchmark_agreement,
+                         'Benchmark ID' : self.benchmark_id,
+                         'Dataset Name' : self.dataset_name,
+                         'Reviews' : [review.dict(by_alias = True) for review in self.reviews],
+                         'View Label' : self.label_url,
+                         'Has Open Issues' : self.has_open_issues,
+                         'Skipped' : self.skipped
+                     })
 
     @classmethod
     def from_common(cls, label: Label, signer: Callable):
-        return LBV1Label(label=_LBV1Label.from_annotations(label.annotations),
+        return LBV1Label(label=_LBV1Label.from_common(label.annotations),
                          data_row_id=label.data.uid,
                          row_data=label.data.create_url(signer),
-1
-                         external_id=label.data.external_id)
+                         external_id=label.data.external_id, **label.extra)
+
+    class Config:
+        allow_population_by_field_name = True
