@@ -11,7 +11,6 @@ class LBV1ClassificationAnswer(LBV1Feature):
     ...
 
 
-
 class LBV1Radio(LBV1Feature):
     answer: LBV1ClassificationAnswer
 

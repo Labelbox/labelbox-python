@@ -11,7 +11,7 @@ from labelbox.data.annotation_types.geometry import Geometry
 
 class Annotation(FeatureSchemaRef):
     classifications: List[Subclass] = []
-    value: Union[Classification, Geometry, TextEntity]
+    value: Union[Classification, TextEntity, Geometry]
     extra: Dict[str, Any] = {}
 
 

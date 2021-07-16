@@ -12,7 +12,7 @@ from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.polygon import Polygon
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
 from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.serialization.labelbox_v1.objects import LBV1Line, LBV1Mask, LBV1Object, LBV1Point, LBV1Polygon, LBV1Rectangle
+from labelbox.data.serialization.labelbox_v1.objects import LBV1Line, LBV1Mask, LBV1Object, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1TextEntity
 from labelbox.data.serialization.labelbox_v1.classifications import LBV1Radio, LBV1Checklist, LBV1Text
 from pydantic import BaseModel, Field
 from typing import Callable, List, Union, Optional
@@ -27,11 +27,10 @@ class _LBV1Label(BaseModel):
 
     def to_common(self):
         classifications = [
-            Annotation(value=classification.to_common(),
-                       classifications=[
-                           Classification(value=cls.to_common())
-                           for cls in classification.classifications
-                       ],
+            Annotation(value=Classification(value = classification.to_common()),
+                       # Labelbox doesn't support subclasses on image level classifications
+                       # These are added to top level classifications
+                       classifications=[],
                        display_name=classification.title)
             for classification in self.classifications
         ]
@@ -56,6 +55,7 @@ class _LBV1Label(BaseModel):
                 )
             for obj in self.objects
         ]
+
         return [*classifications, *objects]
 
     @staticmethod
@@ -65,7 +65,8 @@ class _LBV1Label(BaseModel):
             Point: LBV1Point,
             Polygon: LBV1Polygon,
             Rectangle: LBV1Rectangle,
-            Mask: LBV1Mask
+            Mask: LBV1Mask,
+            TextEntity: LBV1TextEntity
         }.get(type(annotation.value))
 
     @staticmethod
@@ -82,12 +83,13 @@ class _LBV1Label(BaseModel):
         objects = []
         classifications = []
         for annotation in annotations:
+            print(type(annotation))
             obj = cls.lookup_object(annotation)
-            classification = cls.lookup_classification(annotation)
             if obj is not None:
                 # TODO: Check for nested classifications. Say they will be ignored if not flattened..
                 # OR add support for flattening.
                 subclasses = []
+
                 for subclass in annotation.classifications:
                     classification = cls.lookup_classification(subclass)
                     if classification is None:
@@ -98,9 +100,10 @@ class _LBV1Label(BaseModel):
                 objects.append(
                     obj.from_common(annotation.value,
                                     subclasses, annotation.schema_id, annotation.display_name, annotation.alternative_name,  **annotation.extra))
-            elif classification is not None:
+            elif cls.lookup_classification(annotation.value) is not None:
+                classification = cls.lookup_classification(annotation.value)
                 classifications.append(
-                    classification.from_common(annotation.value, **subclass.extra))
+                    classification.from_common(annotation.value.value, annotation.schema_id))
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")
         return cls(objects=objects, classifications=classifications)
@@ -113,7 +116,7 @@ class Review(BaseModel):
     created_by: str = Field(..., alias = "createdBy")
     label_id: str = Field(..., alias = "labelId")
 
-
+# TODO: Rename this to LBV1Example and _LBV1Label to LBV1Label
 class LBV1Label(BaseModel):
     label: _LBV1Label = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
@@ -137,20 +140,23 @@ class LBV1Label(BaseModel):
 
 
     def construct_data_ref(self):
-        # TODO: I think we can tell if this is a video or not just based on the export format ...
+        # TODO: Handle video data types later ...
+
+        # TODO: If uncertain, check the annotations.
 
         keys = {'external_id': self.external_id, 'uid': self.data_row_id}
-        if self.row_data.endswith((".jpg", ".png", ".jpeg")):
+
+        if any([x in self.row_data for x in (".jpg", ".png", ".jpeg")]) and self.row_data.startswith(("http://", "https://")):
             return RasterData(url=self.row_data, **keys)
-        elif self.row_data.endswith((".txt", ".text")):
+        elif any([x in self.row_data for x in (".txt", ".text", ".html")]) and self.row_data.startswith(("http://", "https://")):
             return TextData(url=self.row_data, **keys)
         elif isinstance(self.row_data, str):
-            return TextData(text=self.row_data)
+            return TextData(text=self.row_data, **keys)
         elif len([
                 annotation for annotation in self.label.objects
                 if isinstance(annotation, TextEntity)
         ]):
-            return TextData(url=self.row_data)
+            return TextData(url=self.row_data, **keys)
         else:
             raise TypeError("Can't infer data type from row data.")
 
