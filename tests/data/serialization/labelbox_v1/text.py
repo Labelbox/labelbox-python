@@ -1,0 +1,27 @@
+from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
+import json
+
+
+
+payload = {'ID': 'ckr5ii9wi5zj90y4w08dx5w8p', 'DataRow ID': 'ckr5ih8p90zy90yuqfzzvgxw9', 'Labeled Data': 'https://storage.labelbox.com/ckqcx1czn06830y61gh9v02cs%2F9f5dba87-02de-38a3-9c3e-b2a2930d1abd-index.html?Expires=1627599485253&KeyName=labelbox-assets-key-3&Signature=TI7mcA6rz3a5jZhYGKEBS0Bc_w8', 'Label': {'objects': [{'featureId': 'ckr5iic3l00023h69qgs9g1zb', 'schemaId': 'ckr5ii5z463fn0y3e27x3fi32', 'color': '#1CE6FF', 'title': 'entity', 'value': 'entity', 'data': {'location': {'end': 44, 'start': 25}}, 'format': 'text.location', 'version': 1, 'instanceURI': 'https://api.labelbox.com/masks/feature/ckr5iic3l00023h69qgs9g1zb?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3FjeDFkMDMwNjg0MHk2MWJvd2I1anI1Iiwib3JnYW5pemF0aW9uSWQiOiJja3FjeDFjem4wNjgzMHk2MWdoOXYwMmNzIiwiaWF0IjoxNjI2Mzg5ODg1LCJleHAiOjE2Mjg5ODE4ODV9.d7SRXCiuudSBOsBoiwjg7rXxkB3BJd3CioZagam65l4'}, {'featureId': 'ckr5iinwh000c3h699f644v3u', 'schemaId': 'ckr5ii5z463fn0y3e27x3fi32', 'color': '#1CE6FF', 'title': 'entity', 'value': 'entity', 'data': {'location': {'end': 372, 'start': 372}}, 'format': 'text.location', 'version': 1, 'instanceURI': 'https://api.labelbox.com/masks/feature/ckr5iinwh000c3h699f644v3u?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3FjeDFkMDMwNjg0MHk2MWJvd2I1anI1Iiwib3JnYW5pemF0aW9uSWQiOiJja3FjeDFjem4wNjgzMHk2MWdoOXYwMmNzIiwiaWF0IjoxNjI2Mzg5ODg1LCJleHAiOjE2Mjg5ODE4ODV9.d7SRXCiuudSBOsBoiwjg7rXxkB3BJd3CioZagam65l4'}, {'featureId': 'ckr5iium5000f3h696nln2n7p', 'schemaId': 'ckr5ii5z463fn0y3e27x3fi32', 'color': '#1CE6FF', 'title': 'entity', 'value': 'entity', 'data': {'location': {'end': 256, 'start': 65}}, 'format': 'text.location', 'version': 1, 'instanceURI': 'https://api.labelbox.com/masks/feature/ckr5iium5000f3h696nln2n7p?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3FjeDFkMDMwNjg0MHk2MWJvd2I1anI1Iiwib3JnYW5pemF0aW9uSWQiOiJja3FjeDFjem4wNjgzMHk2MWdoOXYwMmNzIiwiaWF0IjoxNjI2Mzg5ODg1LCJleHAiOjE2Mjg5ODE4ODV9.d7SRXCiuudSBOsBoiwjg7rXxkB3BJd3CioZagam65l4'}, {'featureId': 'ckr5iifjm00053h69hg8b0666', 'schemaId': 'ckr5ii5z563fp0y3eext7dmn7', 'color': '#FF34FF', 'title': 'nested_entity', 'value': 'nested_entity', 'data': {'location': {'end': 318, 'start': 290}}, 'format': 'text.location', 'version': 1, 'instanceURI': 'https://api.labelbox.com/masks/feature/ckr5iifjm00053h69hg8b0666?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3FjeDFkMDMwNjg0MHk2MWJvd2I1anI1Iiwib3JnYW5pemF0aW9uSWQiOiJja3FjeDFjem4wNjgzMHk2MWdoOXYwMmNzIiwiaWF0IjoxNjI2Mzg5ODg1LCJleHAiOjE2Mjg5ODE4ODV9.d7SRXCiuudSBOsBoiwjg7rXxkB3BJd3CioZagam65l4', 'classifications': [{'featureId': 'ckr5iigvp00073h69iferdoef', 'schemaId': 'ckr5ii60r63ft0y3edi545k85', 'title': 'radio', 'value': 'radio', 'answer': {'featureId': 'ckr5iigvp00063h697vuffycr', 'schemaId': 'ckr5ii62c63fv0y3e7lwc1w9y', 'title': 'op1', 'value': 'op1'}}]}], 'classifications': [{'featureId': 'ckr5iijue00093h69vb5ec2o9', 'schemaId': 'ckr5ii5z363fl0y3egczwfokb', 'title': 'top_level_classification', 'value': 'top_level_classification', 'answer': {'featureId': 'ckr5iijue00083h69vk9a9rzb', 'schemaId': 'ckr5ii60q63fr0y3e2oky3u7j', 'title': 'op1', 'value': 'op1'}}]}, 'Created By': 'msokoloff+11@labelbox.com', 'Project Name': 'text-test', 'Created At': '2021-07-15T22:57:30.000Z', 'Updated At': '2021-07-15T22:57:30.268Z', 'Seconds to Label': 27.957, 'External ID': 'index.html', 'Agreement': -1, 'Benchmark Agreement': -1, 'Benchmark ID': None, 'Dataset Name': 'text_stuff', 'Reviews': [], 'View Label': 'https://editor.labelbox.com?project=ckr5ig0l062af0y5p7jhohg6q&label=ckr5ii9wi5zj90y4w08dx5w8p', 'Has Open Issues': 0, 'Skipped': False}
+
+collection = LBV1Converter.deserialize([payload])
+serialized = next(LBV1Converter.serialize(collection, None))
+
+
+assert serialized.keys() == payload.keys()
+for key in serialized:
+    if key != 'Label':
+        assert serialized[key] == payload[key]
+    elif key == 'Label':
+        for annotation_a, annotation_b in zip(serialized[key]['objects'],  payload[key]['objects']):
+            if not len(annotation_a['classifications']):
+                # We don't add a classification key to the payload if there is no classifications.
+                annotation_a.pop('classifications')
+            assert annotation_a != annotation_b
+
+
+
+
+
+
