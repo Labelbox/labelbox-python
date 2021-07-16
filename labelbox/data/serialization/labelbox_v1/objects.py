@@ -1,3 +1,5 @@
+from labelbox.data.annotation_types.ner import TextEntity
+from pydantic.main import create_model
 from pydantic.schema import schema
 from labelbox.data.annotation_types.classification.classification import Subclass
 from labelbox.data.annotation_types.geometry.line import Line
@@ -127,7 +129,7 @@ class LBV1Mask(LBV1ObjectBase):
 
     @classmethod
     def from_common(cls, mask: Mask,
-                    classifications: List[Subclass],schema_id: str, title: str, value: str,  **extra) -> "LBV1Line":
+                    classifications: List[Subclass],schema_id: str, title: str, value: str,  **extra) -> "LBV1Mask":
 
         return cls(
             instanceURI=mask.mask.url,
@@ -138,5 +140,38 @@ class LBV1Mask(LBV1ObjectBase):
             **{k:v for k,v in extra.items() if k != 'instanceURI'}
         )
 
+class TextPoint(BaseModel):
+    start: int
+    end: int
 
-LBV1Object = Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1Mask]
+class Location(BaseModel):
+    location: TextPoint
+
+
+class LBV1TextEntity(LBV1ObjectBase):
+    data: Location
+    format: str = "text.location"
+    version: int = 1
+
+    def to_common(self):
+        return TextEntity(
+            start = self.data.location.start,
+            end = self.data.location.end,
+        )
+
+    @classmethod
+    def from_common(cls, text_entity: TextEntity,
+                    classifications: List[Subclass],schema_id: str, title: str, value: str,  **extra) -> "LBV1TextEntity":
+
+        return cls(
+            data = {'location' : {'start' : text_entity.start, 'end' : text_entity.end}},
+            classifications=classifications,
+            schema_id = schema_id,
+            title = title,
+            value = value,
+            **extra
+        )
+
+
+
+LBV1Object = Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1TextEntity, LBV1Mask]
