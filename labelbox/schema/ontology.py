@@ -1,17 +1,17 @@
-import abc
-from dataclasses import dataclass, field
-from enum import Enum, auto
 import colorsys
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
-from typing import Any, Callable, Dict, List, Optional, Union
+import pydantic
 
-from labelbox.schema.project import Project
-from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
-from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.utils import snake_case, camel_case
 from labelbox.exceptions import InconsistentOntologyException
+from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Field, Relationship
+from labelbox.schema.project import Project
 
+FeatureSchemaId = pydantic.Field(str, min_length=25, max_length=25)
+SchemaId = pydantic.Field(str, min_length=25, max_length=25)
 
 @dataclass
 class Option:
@@ -32,7 +32,7 @@ class Option:
     """
     value: Union[str, int]
     schema_id: Optional[str] = None
-    feature_schema_id: Optional[str] = None
+    feature_schema_id: Optional[FeatureSchemaId] = None
     options: List["Classification"] = field(default_factory=list)
 
     @property
