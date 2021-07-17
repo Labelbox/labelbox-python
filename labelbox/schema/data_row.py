@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AssetAttachment
+from labelbox.schema.data_row_metadata import DataRowMetadataKind
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,57 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         attachment_type.value
         for attachment_type in AssetAttachment.AttachmentType
     }
+
+    def get_datarow_metadata(self):
+        """Get metadata for datarow
+
+        Args:
+            client: Labelbox client
+            mdo: MetadataOntology
+            datarow: DataRow
+        """
+
+        query = """query GetDataRowMetadataPyBeta($dataRowID: ID!) {
+              dataRow(where: {id: $dataRowID}) {
+                id
+                customMetadata {
+                    value
+                    schemaId
+                }
+              }
+            }
+        """
+        unparsed = self.client.execute(
+            query,
+            {"dataRowID": self.uid}
+        )["dataRow"]["customMetadata"]
+
+        parsed = []
+        for unp in unparsed:
+            detail = mdo.lookup_id(unp["schemaId"])
+            if detail["kind"] == DataRowMetadataKind.enum:
+                continue
+            par = {
+                "id": detail["id"],
+                "kind": detail["kind"],
+                "name": detail["name"],
+            }
+            if "parent" in detail:
+                parent = mdo.lookup_id(detail["parent"]["id"])
+                par["parent"] = {
+                    "id": parent["id"],
+                    "name": parent["name"]
+                }
+
+            value = unp["value"]
+
+            if detail["kind"] == DataRowMetadataKind.datetime:
+                value = datetime.fromisoformat(value[:-1])
+
+            par["value"] = value
+            parsed.append(par)
+
+        return parsed
 
     @staticmethod
     def bulk_delete(data_rows):
@@ -110,21 +163,3 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             })
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
-
-    def create_metadata(self, meta_type, meta_value):
-        """
-
-        This function is deprecated. Use create_attachment instead
-
-        Returns:
-            AssetMetadata
-        """
-        logger.warning(
-            "`create_metadata` is deprecated. Use `create_attachment` instead.")
-        attachment = self.create_attachment(meta_type, meta_value)
-        return Entity.AssetMetadata(
-            self.client, {
-                'id': attachment.uid,
-                'metaType': attachment.attachment_type,
-                'metaValue': attachment.attachment_value
-            })

@@ -13,6 +13,7 @@ import labelbox.exceptions
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.user import User
@@ -503,3 +504,12 @@ class Client:
             Roles are used for user management.
         """
         return role.get_roles(self)
+
+    def get_datarow_metadata_ontology(self):
+        """ Fetch the Data Row Metadata Ontology
+
+        Returns:
+            DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
+
+        """
+        return DataRowMetadataOntology(self)
