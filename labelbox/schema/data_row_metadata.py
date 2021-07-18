@@ -126,7 +126,7 @@ class DataRowMetadataOntology:
             index[f.id] = f
             if f.options:
                 for o in f.options:
-                    index[o.id] = f.id
+                    index[o.id] = o
         return index
 
     def _get_ontology(self):
