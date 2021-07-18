@@ -287,7 +287,7 @@ def _batch_items(iterable, size):
 def _batch_operations(
         batch_function: _BatchFunction,
         items: List,
-        batch_size: int = 500,
+        batch_size: int = 100,
 ):
     response = []
     for batch in _batch_items(items, batch_size):
