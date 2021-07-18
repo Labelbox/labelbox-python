@@ -16,3 +16,4 @@ import labelbox.schema.prediction
 import labelbox.schema.ontology
 import labelbox.schema.invite
 import labelbox.schema.role
+import labelbox.schema.data_row_metadata

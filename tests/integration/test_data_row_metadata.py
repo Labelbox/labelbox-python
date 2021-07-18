@@ -1,11 +1,6 @@
 import pytest
 
+def test_validate_metadata(datarow_metadata_ontology):
+        mdo = datarow_metadata_ontology
 
-
-@pytest.mark.parametrize()
-def test_validate_metadata():
-    @pytest.mark.parametrize("test_input,expected", [("3+5", 8), ("2+4", 6), ("6*9", 42)])
-
-
-
-def test_
+        assert mdo.client

@@ -3,15 +3,16 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-import pydantic
+from pydantic import constr
 
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.project import Project
 
-FeatureSchemaId = pydantic.Field(str, min_length=25, max_length=25)
-SchemaId = pydantic.Field(str, min_length=25, max_length=25)
+FeatureSchemaId = constr(min_length=25, max_length=25)
+SchemaId = constr(min_length=25, max_length=25)
+
 
 @dataclass
 class Option:
