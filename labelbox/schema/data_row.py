@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import List, Dict, Union
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
@@ -34,7 +35,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
-    # metadata = Field.List("metadata", )
+    metadata = Field.List("metadata")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
@@ -54,16 +55,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
 
-    def get_datarow_metadata(self):
+    @property
+    def metadata(self) -> Dict[str, Union[str, List[Dict]]]:
         """Get metadata for datarow
-
-        Args:
-            client: Labelbox client
-            mdo: MetadataOntology
-            datarow: DataRow
         """
 
-        query = """query GetDataRowMetadataPyBeta($dataRowID: ID!) {
+        query = """query GetDataRowMetadataBetaPyApi($dataRowID: ID!) {
               dataRow(where: {id: $dataRowID}) {
                 customMetadata {
                     value
@@ -72,12 +69,21 @@ class DataRow(DbObject, Updateable, BulkDeletable):
               }
             }
         """
-        unparsed = self.client.execute(
+
+        metadata = self.client.execute(
             query,
             {"dataRowID": self.uid}
         )["dataRow"]["customMetadata"]
 
-        return unparsed
+        return {
+            "data_row_id": self.uid,
+            "fields": [
+                {
+                    "schema_id": m["schemaId"],
+                    "value": m["value"]
+                } for m in metadata
+            ]
+        }
 
     @staticmethod
     def bulk_delete(data_rows):
