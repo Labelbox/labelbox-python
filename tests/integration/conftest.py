@@ -1,20 +1,20 @@
+import os
+import re
 from collections import namedtuple
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
-import os
-import re
 
 import pytest
 
-from labelbox.orm.query import results_query_part
-from labelbox.schema.invite import Invite
-from labelbox.pagination import PaginatedCollection
-from labelbox.schema.user import User
-from labelbox import LabelingFrontend
 from labelbox import Client
+from labelbox import LabelingFrontend
+from labelbox.orm.query import results_query_part
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.invite import Invite
+from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -124,7 +124,6 @@ def client(environ: str):
 
 @pytest.fixture
 def rand_gen():
-
     def gen(field_type):
         if field_type is str:
             return "".join(ascii_letters[randint(0,
@@ -153,9 +152,6 @@ def dataset(client, rand_gen):
     yield dataset
     dataset.delete()
 
-@pytest.fixture
-def datarow_metadata_ontology(client):
-    yield client.get_datarow_metadata_ontology()
 
 LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 
