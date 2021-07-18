@@ -153,6 +153,9 @@ def dataset(client, rand_gen):
     yield dataset
     dataset.delete()
 
+@pytest.fixture
+def datarow_metadata_ontology(client):
+    yield client.get_datarow_metadata_ontology()
 
 LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 

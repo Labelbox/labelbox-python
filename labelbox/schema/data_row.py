@@ -5,7 +5,6 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AssetAttachment
-from labelbox.schema.data_row_metadata import DataRowMetadataKind
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         updated_at (datetime)
         created_at (datetime)
         media_attributes (dict): generated media attributes for the datarow
+        metadta
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
@@ -34,20 +34,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
+    # metadata = Field.List("metadata", )
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
-
-    metadata = Relationship.ToMany(
-        "AssetMetadata",
-        False,
-        "metadata",
-        deprecation_warning=
-        "`DataRow.metadata()` is deprecated. Use `DataRow.attachments()` instead."
-    )
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
     predictions = Relationship.ToMany("Prediction", False)
 
@@ -55,6 +48,11 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         attachment_type.value
         for attachment_type in AssetAttachment.AttachmentType
     }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attachments.supports_filtering = False
+        self.attachments.supports_sorting = False
 
     def get_datarow_metadata(self):
         """Get metadata for datarow
@@ -67,7 +65,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         query = """query GetDataRowMetadataPyBeta($dataRowID: ID!) {
               dataRow(where: {id: $dataRowID}) {
-                id
                 customMetadata {
                     value
                     schemaId
@@ -80,32 +77,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             {"dataRowID": self.uid}
         )["dataRow"]["customMetadata"]
 
-        parsed = []
-        for unp in unparsed:
-            detail = mdo.lookup_id(unp["schemaId"])
-            if detail["kind"] == DataRowMetadataKind.enum:
-                continue
-            par = {
-                "id": detail["id"],
-                "kind": detail["kind"],
-                "name": detail["name"],
-            }
-            if "parent" in detail:
-                parent = mdo.lookup_id(detail["parent"]["id"])
-                par["parent"] = {
-                    "id": parent["id"],
-                    "name": parent["name"]
-                }
-
-            value = unp["value"]
-
-            if detail["kind"] == DataRowMetadataKind.datetime:
-                value = datetime.fromisoformat(value[:-1])
-
-            par["value"] = value
-            parsed.append(par)
-
-        return parsed
+        return unparsed
 
     @staticmethod
     def bulk_delete(data_rows):
@@ -115,13 +87,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             data_rows (list of DataRow): The DataRows to delete.
         """
         BulkDeletable._bulk_delete(data_rows, True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.metadata.supports_filtering = False
-        self.metadata.supports_sorting = False
-        self.attachments.supports_filtering = False
-        self.attachments.supports_sorting = False
 
     def create_attachment(self, attachment_type, attachment_value):
         """ Adds an AssetAttachment to a DataRow.
@@ -161,5 +126,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 attachment_value_param: attachment_value,
                 data_row_id_param: self.uid
             })
-        return Entity.AssetAttachment(self.client,
-                                      res["createDataRowAttachment"])
+        return Entity.AssetAttachment(
+            self.client,
+            res["createDataRowAttachment"]
+        )
