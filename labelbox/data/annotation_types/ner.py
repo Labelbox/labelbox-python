@@ -14,5 +14,5 @@ class TextEntity(BaseModel):
             if (isinstance(values['start'], int) and
                     values['start'] > values['end']):
                 raise ValidationError(
-                     "Location end must be greater or equal to start")
+                    "Location end must be greater or equal to start")
         return values

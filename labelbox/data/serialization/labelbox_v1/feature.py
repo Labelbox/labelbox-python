@@ -2,8 +2,6 @@ from pydantic import BaseModel, Field, root_validator
 from typing import Optional
 
 
-
-
 class LBV1Feature(BaseModel):
     keyframe: Optional[bool] = Field(None)
     title: str = None
@@ -19,13 +17,11 @@ class LBV1Feature(BaseModel):
         return values
 
     def dict(self, *args, **kwargs):
-        res  = super().dict(*args, **kwargs)
+        res = super().dict(*args, **kwargs)
         # This means these are not video frames ..
         if self.keyframe is None:
             res.pop('keyframe')
         return res
 
-
     class Config:
         allow_population_by_field_name = True
-

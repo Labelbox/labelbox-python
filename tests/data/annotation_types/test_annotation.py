@@ -16,7 +16,7 @@ def test_annotation():
         value=line,
         display_name=display_name,
     )
-    assert annotation.value.points[0].dict() == {'extra' : {}, 'x': 1., 'y': 2.}
+    assert annotation.value.points[0].dict() == {'extra': {}, 'x': 1., 'y': 2.}
     assert annotation.display_name == display_name
 
     # Check ner
@@ -39,7 +39,8 @@ def test_annotation():
             classifications=[line],
         )
 
-    subclass = ClassificationAnnotation(value = classification, display_name=display_name)
+    subclass = ClassificationAnnotation(value=classification,
+                                        display_name=display_name)
 
     ObjectAnnotation(
         value=line,
@@ -47,19 +48,22 @@ def test_annotation():
         classifications=[subclass],
     )
 
+
 def test_video_annotations():
     display_name = "line_feature"
     line = Line(points=[Point(x=1, y=2), Point(x=2, y=2)])
 
     # Wrong type
     with pytest.raises(ValidationError):
-        VideoClassificationAnnotation(value=line, display_name=display_name, frame = 1)
+        VideoClassificationAnnotation(value=line,
+                                      display_name=display_name,
+                                      frame=1)
 
     # Missing frames
     with pytest.raises(ValidationError):
         VideoClassificationAnnotation(value=line, display_name=display_name)
 
     VideoObjectAnnotation(value=line,
-                    display_name=display_name,
-                    keyframe = True,
-                    frame= 2)
+                          display_name=display_name,
+                          keyframe=True,
+                          frame=2)

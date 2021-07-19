@@ -1,4 +1,3 @@
-
 from typing import Any, Callable, Dict, Iterable, List, Generator
 import logging
 from multiprocessing import Queue
@@ -15,11 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class LBV1Converter:
+
     @staticmethod
     def deserialize_video(json_data: Iterable[Dict[str, Any]], client):
         # Use a queue to limit the number of cached example - only fetch as needed..
-        label_generator = (LBV1Label(**example).to_common(is_video = True) for example in VideoIterator(json_data, client))
-        return LabelCollection(data = label_generator)
+        label_generator = (LBV1Label(**example).to_common(is_video=True)
+                           for example in VideoIterator(json_data, client))
+        return LabelCollection(data=label_generator)
 
     #TODO: Deserialize should work with the serialized payload.
     # So json data can also be an updated video
@@ -40,31 +41,31 @@ class LBV1Converter:
             yield res.dict(by_alias=True)
 
 
-
-
 class VideoIterator:
+
     def __init__(self, examples, client):
         print
         self.queue = Queue(20)
         self.futures = []
         self.n_iters = len(examples)
-        with ThreadPoolExecutor(max_workers=  20) as executor:
+        with ThreadPoolExecutor(max_workers=20) as executor:
             for example in examples:
-                self.futures.append(executor.submit(self.prefetch, example, client))
-
+                self.futures.append(
+                    executor.submit(self.prefetch, example, client))
 
     def prefetch(self, example, client):
         try:
             if 'frames' in example['Label']:
-                req = requests.get(example['Label']['frames'], headers = {"Authorization": f"Bearer {client.api_key}"})
+                req = requests.get(
+                    example['Label']['frames'],
+                    headers={"Authorization": f"Bearer {client.api_key}"})
                 #example['Label'] = [ndjson.loads(req.text)[0]] # TODO: Remove this. This is just for testing...
                 example['Label'] = ndjson.loads(req.text)
             self.queue.put(example)
         except Exception as e:
             logger.warning(f"Unable to download frame. {e}")
             # If the frame is unable to be downloaded
-            self.n_iters -=1
-
+            self.n_iters -= 1
 
     def __next__(self):
         if self.n_iters == 0:

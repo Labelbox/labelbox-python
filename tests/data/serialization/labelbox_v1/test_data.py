@@ -1,3 +1,1 @@
-
-
 # TODO: Make sure our approach to determining the type of data works for all kinds of data...

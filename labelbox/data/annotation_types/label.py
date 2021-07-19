@@ -19,7 +19,6 @@ class Label(BaseModel):
     annotations: List[Union[AnnotationType, VideoAnnotationType, Metric]] = []
     extra: Dict[str, Any] = {}
 
-
     def create_url_for_data(self, signer):
         return self.data.create_url(signer)
 
@@ -42,24 +41,27 @@ class Label(BaseModel):
     def get_feature_schema_lookup(self, ontology_builder):
         tool_lookup = {}
         classification_lookup = {}
+
         def flatten_classification(classifications):
             for classification in classifications:
                 if isinstance(classification, OClassification):
-                    classification_lookup[classification.instructions] = classification.feature_schema_id
+                    classification_lookup[
+                        classification.
+                        instructions] = classification.feature_schema_id
                 elif isinstance(classification, Option):
-                    classification_lookup[classification.value] = classification.feature_schema_id
+                    classification_lookup[
+                        classification.value] = classification.feature_schema_id
                 else:
-                    raise TypeError(f"Unexpected type found in ontology. `{type(classification)}`")
+                    raise TypeError(
+                        f"Unexpected type found in ontology. `{type(classification)}`"
+                    )
                 flatten_classification(classification.options)
 
         for tool in ontology_builder.tools:
-                tool_lookup[tool.name] = tool.feature_schema_id
-                flatten_classification(tool.classifications)
+            tool_lookup[tool.name] = tool.feature_schema_id
+            flatten_classification(tool.classifications)
         flatten_classification(ontology_builder.classifications)
         return tool_lookup, classification_lookup
-
-
-
 
     def assign_schema_ids(self, ontology_builder):
         """
@@ -67,6 +69,7 @@ class Label(BaseModel):
 
 
         """
+
         def assign_or_raise(annotation, lookup):
             if annotation.schema_id is not None:
                 return
@@ -87,9 +90,12 @@ class Label(BaseModel):
                 for answer in classification.value.answer:
                     assign_or_raise(answer, lookup)
             else:
-                raise TypeError(f"Unexpected type for answer found. {type(classification.value.answer)}")
+                raise TypeError(
+                    f"Unexpected type for answer found. {type(classification.value.answer)}"
+                )
 
-        tool_lookup, classification_lookup = self.get_feature_schema_lookup(ontology_builder)
+        tool_lookup, classification_lookup = self.get_feature_schema_lookup(
+            ontology_builder)
         for annotation in self.annotations:
             if isinstance(annotation, ClassificationAnnotation):
                 assign_or_raise(annotation, classification_lookup)
@@ -100,10 +106,5 @@ class Label(BaseModel):
                     assign_or_raise(classification, classification_lookup)
                     assign_option(classification, classification_lookup)
             else:
-                raise TypeError(f"Unexpected type found for annotation. {type(annotation)}")
-
-
-
-
-
-
+                raise TypeError(
+                    f"Unexpected type found for annotation. {type(annotation)}")
