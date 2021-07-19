@@ -1,3 +1,5 @@
+# type: ignore
+
 import datetime
 from enum import Enum
 from itertools import chain
@@ -353,11 +355,16 @@ def _validate_parse_text(field: DataRowMetadataField):
     }]
 
 
-def _validate_enum_parse(schema: DataRowMetadataSchema,
-                         field: DataRowMetadataField):
-    if field.value not in {o.id for o in schema.options}:
-        raise ValueError(
-            f"Option `{field.value}` not found for {field.schema_id}")
+def _validate_enum_parse(
+        schema: DataRowMetadataSchema,
+        field: DataRowMetadataField
+):
+    if schema.options:
+        if field.value not in {o.id for o in schema.options}:
+            raise ValueError(
+                f"Option `{field.value}` not found for {field.schema_id}")
+    else:
+        raise ValueError("Incorrectly specified enum schema")
 
     return [{
         "schemaId": field.schema_id,
