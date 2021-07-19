@@ -1,20 +1,32 @@
-from typing import List, Optional, Union, Dict, Any
-from uuid import uuid4
-from pydantic import BaseModel, root_validator, validator
-from pydantic.error_wrappers import ValidationError
+from labelbox.data.annotation_types.classification.classification import Dropdown, Text, CheckList, Radio
+from typing import List, Union, Dict, Any
 
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
-from labelbox.data.annotation_types.classification import Classification, Subclass
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.geometry import Geometry
 
 
-class Annotation(FeatureSchemaRef):
-    classifications: List[Subclass] = []
-    value: Union[Classification, TextEntity, Geometry]
+class BaseAnnotation(FeatureSchemaRef):
+    classifications: List["ClassificationAnnotation"] = []
     extra: Dict[str, Any] = {}
 
-class VideoAnnotation(Annotation):
-    frame: int
-    keyframe: Optional[bool] = None # Can be None if Annotation is None
+class ObjectAnnotation(BaseAnnotation):
+    value: Union[TextEntity, Geometry]
 
+class ClassificationAnnotation(BaseAnnotation):
+    value: Union[Dropdown, Text, CheckList, Radio]
+
+ClassificationAnnotation.update_forward_refs()
+
+class VideoObjectAnnotation(ObjectAnnotation):
+    frame: int
+    keyframe: bool
+
+class VideoClassificationAnnotation(ClassificationAnnotation):
+    frame: int
+
+AnnotationType = Union[ClassificationAnnotation, ObjectAnnotation]
+VideoAnnotationType = Union[VideoObjectAnnotation, VideoClassificationAnnotation]
+
+VideoObjectAnnotation.update_forward_refs()
+ObjectAnnotation.update_forward_refs()
