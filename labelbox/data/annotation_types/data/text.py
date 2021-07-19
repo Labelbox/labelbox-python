@@ -45,11 +45,12 @@ class TextData(DataRowRef):
     @root_validator
     def validate_date(cls, values):
         file_path = values.get("file_path")
-        im_bytes = values.get("text")
+        text = values.get("text")
         url = values.get("url")
-        if file_path == im_bytes == url == None:
+        uid = values.get('uid')
+        if uid == file_path == text == url == None:
             raise ValidationError(
-                "One of `file_path`, `im_bytes`, or `url` required.")
+                "One of `file_path`, `text`, `uid`, or `url` required.")
         return values
 
     class config:

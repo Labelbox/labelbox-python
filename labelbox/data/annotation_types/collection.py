@@ -1,14 +1,11 @@
-from labelbox.orm.model import Entity
-from labelbox.data.annotation_types.classification.classification import Text, Radio, CheckList, Dropdown
-from typing import Dict, Generator, Iterable, List, Any, Union
-from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Iterable, List, Any
 from uuid import uuid4
 
+from pydantic import BaseModel
+
 from labelbox.data.annotation_types.label import Label
-from labelbox.schema.ontology import OntologyBuilder, Tool, Classification
-from labelbox.data.annotation_types.geometry import Rectangle, Polygon, Point, Mask, Line
-from labelbox.data.annotation_types.data.raster import RasterData
+from labelbox.orm.model import Entity
 
 
 class LabelCollection(BaseModel):

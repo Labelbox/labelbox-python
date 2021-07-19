@@ -1,10 +1,8 @@
+from typing import List, Union
+
+from pydantic.main import BaseModel
 from labelbox.data.annotation_types.classification.classification import Dropdown
 from labelbox.data.annotation_types.annotation import AnnotationType, ClassificationAnnotation
-from typing import List, Union
-from pydantic.main import BaseModel
-
-from pydantic.schema import schema
-from pydantic.typing import display_as_type
 
 from labelbox.data.serialization.labelbox_v1.feature import LBV1Feature
 from labelbox.data.annotation_types.classification import Text, Radio, CheckList, ClassificationAnswer
@@ -12,7 +10,6 @@ from labelbox.data.annotation_types.classification import Text, Radio, CheckList
 
 class LBV1ClassificationAnswer(LBV1Feature):
     ...
-
 
 class LBV1Radio(LBV1Feature):
     answer: LBV1ClassificationAnswer

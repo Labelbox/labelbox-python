@@ -17,7 +17,7 @@ class LBV1Feature(BaseModel):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        # This means these are not video frames ..
+        # This means these are no video frames ..
         if self.keyframe is None:
             res.pop('keyframe')
         return res

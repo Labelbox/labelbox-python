@@ -99,11 +99,13 @@ class VideoData(DataRowRef):
     @root_validator
     def validate_data(cls, values):
         file_path = values.get("file_path")
-        im_bytes = values.get("url")
-        url = values.get("frames")
-        if file_path == im_bytes == url == None:
+        url = values.get("url")
+        frames = values.get("frames")
+        uid = values.get("uid")
+
+        if uid == file_path == frames == url == None:
             raise ValidationError(
-                "One of `file_path`, `frames`, or `url` required.")
+                "One of `file_path`, `frames`, `uid`, or `url` required.")
         return values
 
     class Config:
