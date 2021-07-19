@@ -1,6 +1,6 @@
 from typing import List, Optional, Union, Dict, Any
 from uuid import uuid4
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, validator
 from pydantic.error_wrappers import ValidationError
 
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
@@ -14,21 +14,7 @@ class Annotation(FeatureSchemaRef):
     value: Union[Classification, TextEntity, Geometry]
     extra: Dict[str, Any] = {}
 
-
-class Frames(BaseModel):
-    start: int
-    end: int
-
-    @root_validator
-    def validate_start_end(cls, values):
-        if (isinstance(values['start'], int) and
-                values['start'] >= values['end']):
-            raise ValidationError(
-                "End frame index must be greater or equal to start")
-        if values['start'] < 0:
-            raise ValidationError("frame index cannot be negative")
-        return values
-
-
 class VideoAnnotation(Annotation):
-    frames: List[Frames]
+    frame: int
+    keyframe: Optional[bool] = None # Can be None if Annotation is None
+

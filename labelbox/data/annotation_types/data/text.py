@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Any, Optional
+from typing import Callable, Dict, Any, Literal, Optional
 
 import requests
 import numpy as np
@@ -11,6 +11,7 @@ class TextData(DataRowRef):
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None
+
 
     @property
     def data(self) -> str:
@@ -55,3 +56,6 @@ class TextData(DataRowRef):
             raise ValidationError(
                 "One of `file_path`, `im_bytes`, or `url` required.")
         return values
+
+    class config:
+        extra = 'forbid'

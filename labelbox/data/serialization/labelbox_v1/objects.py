@@ -20,6 +20,13 @@ class LBV1ObjectBase(LBV1Feature):
     instanceURI: Optional[str] = None
     classifications: List[Union[LBV1Radio, LBV1Checklist, LBV1Text]] = []
 
+    def dict(self, *args, **kwargs):
+        res  = super().dict(*args, **kwargs)
+        # This means these are not video frames ..
+        if self.instanceURI is None:
+            res.pop('instanceURI')
+        return res
+
 
 class PointLocation(BaseModel):
     x: float

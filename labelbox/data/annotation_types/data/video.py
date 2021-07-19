@@ -18,6 +18,7 @@ class VideoData(DataRowRef):
     url: Optional[str] = None
     frames: Optional[Dict[int, np.ndarray]] = None
 
+
     def load_frames(self, overwrite: bool = False) -> None:
         logger.warning(
             "Loading the video into individual frames. This will use a lot of memory"
@@ -109,3 +110,4 @@ class VideoData(DataRowRef):
     class Config:
         # TODO: Create numpy array type
         arbitrary_types_allowed = True
+        extra = 'forbid'

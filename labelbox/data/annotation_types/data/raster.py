@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Any, Optional
+from typing import Callable, Dict, Any, Literal, Optional
 from io import BytesIO
 
 from PIL import Image
@@ -88,3 +88,5 @@ class RasterData(DataRowRef):
         # TODO: Create a type for numpy arrays
         arbitrary_types_allowed = True
         copy_on_model_validation = False
+        extra = 'forbid'
+
