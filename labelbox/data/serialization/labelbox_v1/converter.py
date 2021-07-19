@@ -18,15 +18,18 @@ class LBV1Converter:
         """
         This method is only necessary if the json payload for the data contains links to the video data.
         """
-        label_generator = (LBV1Label(**example).to_common(is_video=True)
+        label_generator = (LBV1Label(**example).to_common()
                            for example in VideoIterator(json_data, client))
         return LabelCollection(data=label_generator)
 
     @staticmethod
     def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelCollection:
-        label_generator = (
-            LBV1Label(**example).to_common() for example in json_data)
-        return LabelCollection(data=label_generator)
+        def label_generator():
+            for example in json_data:
+                if 'frames' in example['Label']:
+                    raise ValueError("Use `LBV1Converter.deserialize_video` to process video")
+                yield LBV1Label(**example).to_common()
+        return LabelCollection(data=label_generator())
 
     @staticmethod
     def serialize(label_collection: LabelCollection,
