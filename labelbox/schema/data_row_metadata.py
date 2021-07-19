@@ -186,8 +186,17 @@ class DataRowMetadataOntology:
     ) -> List[DataRowMetadataBatchResponse]:
         """Upsert datarow metadata
 
+        >>>   metadata = DataRowMetadata(
+        >>>                 data_row_id="datarow-id",
+        >>>                 fields=[
+        >>>                        DataRowMetadataField(schema_id="schema-id", value="my-message"),
+        >>>                        ...
+        >>>                    ]
+        >>>    )
+        >>> metadata_ontology.batch_upsert([metadata])
+
         Args:
-            metadata: DataRow Metadata
+            metadata: List of DataRow Metadata
 
         Returns:
             response: []
@@ -214,13 +223,6 @@ class DataRowMetadataOntology:
             return self.client.execute(query, {"metadata": upserts})
 
         items = []
-        # TODO: use groupby to minimize unnecessary ops
-        # for k, g in groupby(
-        #         sorted(metadata, key=lambda x: x.data_row_id),
-        #         key=lambda x: x.data_row_id
-        # ):
-
-        #
         for m in metadata:
             items.append(
                 _UpsertBatchDataRowMetadata(

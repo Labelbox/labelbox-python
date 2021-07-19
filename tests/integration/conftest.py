@@ -124,6 +124,7 @@ def client(environ: str):
 
 @pytest.fixture
 def rand_gen():
+
     def gen(field_type):
         if field_type is str:
             return "".join(ascii_letters[randint(0,
