@@ -1,20 +1,18 @@
-from labelbox.data.annotation_types.ner import TextEntity
-from labelbox.data.annotation_types.geometry import Geometry
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer, Radio, Text
-from labelbox.data.annotation_types.geometry.mask import Mask
-from typing import Type, Union, List, Dict, Any
+from typing import Union, List, Dict, Any
+
+from pydantic import BaseModel
 
 from labelbox.schema.ontology import Classification as OClassification, Option
+from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
 from labelbox.data.annotation_types.annotation import AnnotationType, ClassificationAnnotation, ObjectAnnotation, VideoAnnotationType
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.data.annotation_types.metrics import Metric
-from pydantic import BaseModel
+from labelbox.data.annotation_types.geometry.mask import Mask
 
 
 class Label(BaseModel):
-    # TODO: This sounds too much like the other label we need to rename this...
     data: Union[VideoData, RasterData, TextData]
     annotations: List[Union[AnnotationType, VideoAnnotationType, Metric]] = []
     extra: Dict[str, Any] = {}

@@ -1,6 +1,6 @@
-from labelbox.data.annotation_types.classification.classification import Dropdown, Text, CheckList, Radio
 from typing import List, Union, Dict, Any
 
+from labelbox.data.annotation_types.classification.classification import Dropdown, Text, CheckList, Radio
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
 from labelbox.data.annotation_types.ner import TextEntity
 from labelbox.data.annotation_types.geometry import Geometry
@@ -16,7 +16,7 @@ class ObjectAnnotation(BaseAnnotation):
 
 
 class ClassificationAnnotation(BaseAnnotation):
-    value: Union[Dropdown, Text, CheckList, Radio]
+    value: Union[Text, CheckList, Radio, Dropdown]
 
 
 ClassificationAnnotation.update_forward_refs()

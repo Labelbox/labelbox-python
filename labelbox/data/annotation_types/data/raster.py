@@ -70,9 +70,10 @@ class RasterData(DataRowRef):
         im_bytes = values.get("im_bytes")
         url = values.get("url")
         arr = values.get("arr")
-        if file_path == im_bytes == url == None and arr is None:
+        uid = values.get('uid')
+        if uid == file_path == im_bytes == url == None and arr is None:
             raise ValidationError(
-                "One of `file_path`, `im_bytes`, `url`, or `arr` required.")
+                "One of `file_path`, `im_bytes`, `url`, `uid` or `arr` required.")
         if arr is not None:
             if arr.dtype != np.uint8:
                 raise ValidationError(

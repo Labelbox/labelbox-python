@@ -27,3 +27,5 @@ class Rectangle(Geometry):
         canvas = np.zeros((height, width), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
         return cv2.fillPoly(canvas, pts=pts, color=color)
+
+    # TODO: Validate the start points are less than the end points
