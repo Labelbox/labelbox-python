@@ -1,7 +1,9 @@
+# type: ignore
+
 import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Type
 
 from pydantic import constr
 
@@ -10,8 +12,8 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.project import Project
 
-FeatureSchemaId = constr(min_length=25, max_length=25)
-SchemaId = constr(min_length=25, max_length=25)
+FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
+SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
 @dataclass

@@ -3,7 +3,7 @@
 import datetime
 from enum import Enum
 from itertools import chain
-from typing import List, Optional, Dict, Union, Callable
+from typing import List, Optional, Dict, Union, Callable, Type
 
 from pydantic import BaseModel, conlist, constr
 
@@ -30,10 +30,10 @@ class DataRowMetadataSchema(BaseModel):
 DataRowMetadataSchema.update_forward_refs()
 
 # Constraints for metadata values
-Embedding = conlist(float, min_items=128, max_items=128)
-DateTime = datetime.datetime  # must be in UTC
-String = constr(max_length=500)
-OptionId = SchemaId  # enum option
+Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
+DateTime: Type[datetime.datetime] = datetime.datetime  # must be in UTC
+String: Type[str] = constr(max_length=500)
+OptionId: Type[SchemaId] = SchemaId  # enum option
 
 DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId]
 
