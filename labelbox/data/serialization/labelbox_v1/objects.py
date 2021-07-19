@@ -1,16 +1,18 @@
-from labelbox.data.annotation_types.annotation import AnnotationType, ClassificationAnnotation, ObjectAnnotation
-from labelbox.data.annotation_types.ner import TextEntity
+from typing import Any, List, Optional, Union
 
+from labelbox.data.annotation_types.annotation import (
+    AnnotationType, ClassificationAnnotation, ObjectAnnotation)
+from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.geometry.line import Line
+from labelbox.data.annotation_types.geometry.mask import Mask
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.polygon import Polygon
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.annotation_types.data.raster import RasterData
+from labelbox.data.annotation_types.ner import TextEntity
+from labelbox.data.serialization.labelbox_v1.classifications import (
+    LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text)
 from labelbox.data.serialization.labelbox_v1.feature import LBV1Feature
-from labelbox.data.serialization.labelbox_v1.classifications import LBV1Classifications, LBV1Radio, LBV1Checklist, LBV1Text
 from pydantic import BaseModel
-from typing import List, Optional, Union, Any
 
 
 class LBV1ObjectBase(LBV1Feature):
@@ -197,15 +199,16 @@ class LBV1Objects(BaseModel):
                                  'instanceURI': obj.instanceURI,
                                  'color': obj.color,
                                  'feature_id': obj.feature_id,
-                                 'value': obj.value
+                                 'value': obj.value,
+                                 #'keyframe' : getattr(obj, 'keyframe', None)
                              }) for obj in self.objects
         ]
-
         return objects
 
     @classmethod
     def from_common(cls, annotations: List[AnnotationType]) -> "LBV1Objects":
         objects = []
+
         for annotation in annotations:
             obj = cls.lookup_object(annotation)
             if obj is not None:
@@ -216,7 +219,7 @@ class LBV1Objects(BaseModel):
                 objects.append(
                     obj.from_common(annotation.value, subclasses,
                                     annotation.schema_id,
-                                    annotation.display_name, annotation.extra))
+                                    annotation.display_name, {'keyframe' : getattr(annotation, 'keyframe' , None), ** annotation.extra}))
 
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")

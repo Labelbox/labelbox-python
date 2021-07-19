@@ -1,30 +1,26 @@
-from typing import Any, Callable, Dict, Iterable, List, Generator
 import logging
-from multiprocessing import Queue
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Queue
+from typing import Any, Callable, Dict, Generator, Iterable
 
-import requests
 import ndjson
-
+import requests
 from labelbox.data.annotation_types.collection import LabelCollection
-from labelbox.data.serialization.labelbox_v1.label import LBV1Label
 from labelbox.data.annotation_types.label import Label
+from labelbox.data.serialization.labelbox_v1.label import LBV1Label
 
 logger = logging.getLogger(__name__)
 
 
 class LBV1Converter:
-
     @staticmethod
     def deserialize_video(json_data: Iterable[Dict[str, Any]], client):
-        # Use a queue to limit the number of cached example - only fetch as needed..
+        """
+        This method is only necessary if the json payload for the data contains links to the video data.
+        """
         label_generator = (LBV1Label(**example).to_common(is_video=True)
                            for example in VideoIterator(json_data, client))
         return LabelCollection(data=label_generator)
-
-    #TODO: Deserialize should work with the serialized payload.
-    # So json data can also be an updated video
-    # Instead of is_video being an option. We should just see if the frame data is a list. Also look for .mp4 or something.
 
     @staticmethod
     def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelCollection:
@@ -42,16 +38,12 @@ class LBV1Converter:
 
 
 class VideoIterator:
-
     def __init__(self, examples, client):
-        print
         self.queue = Queue(20)
-        self.futures = []
         self.n_iters = len(examples)
         with ThreadPoolExecutor(max_workers=20) as executor:
             for example in examples:
-                self.futures.append(
-                    executor.submit(self.prefetch, example, client))
+                executor.submit(self.prefetch, example, client)
 
     def prefetch(self, example, client):
         try:
@@ -59,7 +51,6 @@ class VideoIterator:
                 req = requests.get(
                     example['Label']['frames'],
                     headers={"Authorization": f"Bearer {client.api_key}"})
-                #example['Label'] = [ndjson.loads(req.text)[0]] # TODO: Remove this. This is just for testing...
                 example['Label'] = ndjson.loads(req.text)
             self.queue.put(example)
         except Exception as e:

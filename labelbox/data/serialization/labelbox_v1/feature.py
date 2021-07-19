@@ -9,7 +9,6 @@ class LBV1Feature(BaseModel):
     schema_id: str = Field(None, alias='schemaId')
     feature_id: Optional[str] = Field(None, alias='featureId')
 
-    # TODO: Validator that sets value == title if not set.
     @root_validator
     def check_ids(cls, values):
         if values.get('value') is None:
