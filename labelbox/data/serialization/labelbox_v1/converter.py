@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class LBV1Converter:
+
     @staticmethod
     def deserialize_video(json_data: Iterable[Dict[str, Any]], client):
         """
@@ -24,11 +25,15 @@ class LBV1Converter:
 
     @staticmethod
     def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelCollection:
+
         def label_generator():
             for example in json_data:
                 if 'frames' in example['Label']:
-                    raise ValueError("Use `LBV1Converter.deserialize_video` to process video")
+                    raise ValueError(
+                        "Use `LBV1Converter.deserialize_video` to process video"
+                    )
                 yield LBV1Label(**example).to_common()
+
         return LabelCollection(data=label_generator())
 
     @staticmethod
@@ -41,6 +46,7 @@ class LBV1Converter:
 
 
 class VideoIterator:
+
     def __init__(self, examples, client):
         self.queue = Queue(20)
         self.n_iters = len(examples)

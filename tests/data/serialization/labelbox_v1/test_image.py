@@ -337,6 +337,7 @@ payload = {
         False
 }
 
+
 def test_image():
     collection = LBV1Converter.deserialize([payload])
     serialized = next(LBV1Converter.serialize(collection, None))
@@ -347,7 +348,7 @@ def test_image():
             assert serialized[key] == payload[key]
         elif key == 'Label':
             for annotation_a, annotation_b in zip(serialized[key]['objects'],
-                                                payload[key]['objects']):
+                                                  payload[key]['objects']):
                 if not len(annotation_a['classifications']):
                     # We don't add a classification key to the payload if there is no classifications.
                     annotation_a.pop('classifications')
