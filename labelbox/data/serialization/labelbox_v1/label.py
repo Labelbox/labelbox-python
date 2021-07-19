@@ -1,19 +1,18 @@
-from labelbox.data.annotation_types.classification.classification import CheckList, Dropdown, Radio, Text
-from labelbox.data.annotation_types.ner import TextEntity
-from labelbox.data.annotation_types.annotation import AnnotationType, ClassificationAnnotation, ObjectAnnotation, VideoAnnotationType, VideoClassificationAnnotation, VideoObjectAnnotation
-from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.annotation_types.geometry.line import Line
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.polygon import Polygon
-from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.serialization.labelbox_v1.objects import LBV1Line, LBV1Mask, LBV1Objects, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1TextEntity
-from labelbox.data.serialization.labelbox_v1.classifications import LBV1Classifications, LBV1Radio, LBV1Checklist, LBV1Text
+from typing import Callable, List, Optional, Union
+
 from pydantic import BaseModel, Field
-from typing import Callable, List, Union, Optional
+
+from labelbox.data.annotation_types.annotation import (
+    AnnotationType, ClassificationAnnotation, ObjectAnnotation,
+    VideoAnnotationType, VideoClassificationAnnotation, VideoObjectAnnotation)
+from labelbox.data.annotation_types.data.raster import RasterData
+from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.label import Label
+from labelbox.data.annotation_types.ner import TextEntity
+from labelbox.data.serialization.labelbox_v1.classifications import \
+    LBV1Classifications
+from labelbox.data.serialization.labelbox_v1.objects import LBV1Objects
 
 
 class _LBV1Label(LBV1Classifications, LBV1Objects):
@@ -25,6 +24,7 @@ class _LBV1Label(LBV1Classifications, LBV1Objects):
 
     @classmethod
     def from_common(cls, annotations: List[AnnotationType]) -> "_LBV1Label":
+
         objects = LBV1Objects.from_common(
             [x for x in annotations if isinstance(x, ObjectAnnotation)])
         classifications = LBV1Classifications.from_common(
@@ -59,7 +59,8 @@ class _LBV1LabelVideo(_LBV1Label):
                                           extra={
                                               'feature_id': cls.feature_id,
                                               'title': cls.title,
-                                              'value': cls.value
+                                              'value': cls.value,
+                                              'keyframe': getattr(cls, 'keyframe' , None)
                                           }) for cls in obj.classifications
                                   ],
                                   display_name=obj.title,
@@ -67,6 +68,7 @@ class _LBV1LabelVideo(_LBV1Label):
                                   alternative_name=obj.value,
                                   schema_id=obj.schema_id,
                                   extra={
+                                      'value' : obj.value,
                                       'instanceURI': obj.instanceURI,
                                       'color': obj.color,
                                       'feature_id': obj.feature_id,
@@ -76,7 +78,7 @@ class _LBV1LabelVideo(_LBV1Label):
 
     @classmethod
     def from_common(
-            self, annotations: List[VideoAnnotationType]) -> "_LBV1LabelVideo":
+            cls, annotations: List[VideoAnnotationType]) -> "_LBV1LabelVideo":
         by_frames = {}
         for annotation in annotations:
             if annotation.frame in by_frames:
@@ -106,7 +108,7 @@ class Review(BaseModel):
     label_id: str = Field(..., alias="labelId")
 
 
-# TODO: Rename this to LBV1Example and _LBV1Label to LBV1Label
+
 class LBV1Label(BaseModel):
     label: Union[_LBV1Label, List[_LBV1LabelVideo]] = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
@@ -151,15 +153,19 @@ class LBV1Label(BaseModel):
         else:
             raise TypeError("Can't infer data type from row data.")
 
-    def to_common(self, is_video=False) -> Label:
-        if not is_video:
-            annotations = self.label.to_common()
-        else:
+    def to_common(self) -> Label:
+        is_video = False
+        if isinstance(self.label, list):
             annotations = []
             for lbl in self.label:
                 annotations.extend(lbl.to_common())
+            is_video = True
+        else:
+            annotations = self.label.to_common()
 
-        lbll = Label(
+
+
+        return Label(
             data=self.construct_data_ref(is_video),
             annotations=annotations,
             extra={
@@ -180,7 +186,6 @@ class LBV1Label(BaseModel):
                 'Has Open Issues': self.has_open_issues,
                 'Skipped': self.skipped
             })
-        return lbll
 
     @classmethod
     def from_common(cls, label: Label, signer: Callable):
@@ -189,6 +194,7 @@ class LBV1Label(BaseModel):
             label_ = _LBV1LabelVideo.from_common(label.annotations)
         else:
             label_ = _LBV1Label.from_common(label.annotations)
+
 
         return LBV1Label(label=label_,
                          data_row_id=label.data.uid,

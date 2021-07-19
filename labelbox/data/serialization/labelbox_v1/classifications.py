@@ -20,21 +20,20 @@ class LBV1Radio(LBV1Feature):
     def to_common(self):
         return Radio(answer=ClassificationAnswer(
             schema_id=self.answer.schema_id,
-            display_name=self.answer.value,
+            display_name=self.answer.title,
             extra={
                 'feature_id': self.answer.feature_id,
-                'alternative_name': self.answer.title
+                'value': self.answer.value
             }))
 
     @classmethod
     def from_common(cls, radio: Radio, schema_id: str, **extra) -> "LBV1Radio":
         return cls(
-            # TODO: Get the right order for alternative name and display name
             schema_id=schema_id,
             answer=LBV1ClassificationAnswer(
                 schema_id=radio.answer.schema_id,
-                title=radio.answer.extra['alternative_name'],
-                value=radio.answer.display_name,
+                title=radio.answer.display_name,
+                value=radio.answer.extra['value'],
                 feature_id=radio.answer.extra['feature_id']),
             **extra)
 
@@ -45,10 +44,10 @@ class LBV1Checklist(LBV1Feature):
     def to_common(self):
         return CheckList(answer=[
             ClassificationAnswer(schema_id=answer.schema_id,
-                                 display_name=answer.value,
+                                 display_name=answer.title,
                                  extra={
                                      'feature_id': answer.feature_id,
-                                     'alternative_name': answer.title
+                                     'value': answer.value
                                  }) for answer in self.answers
         ])
 
@@ -56,12 +55,11 @@ class LBV1Checklist(LBV1Feature):
     def from_common(cls, checklist: CheckList, schema_id: str,
                     **extra) -> "LBV1Checklist":
         return cls(
-            # TODO: Get the right order for alternative name and display name
             schema_id=schema_id,
             answers=[
                 LBV1ClassificationAnswer(schema_id=answer.schema_id,
-                                         title=answer.extra['alternative_name'],
-                                         value=answer.display_name,
+                                         title=answer.display_name,
+                                         value=answer.extra['value'],
                                          feature_id=answer.extra['feature_id'])
                 for answer in checklist.answer
             ],
@@ -95,7 +93,7 @@ class LBV1Classifications(BaseModel):
         classifications = [
             ClassificationAnnotation(value=classification.to_common(),
                                      classifications=[],
-                                     display_name=classification.title)
+                                     display_name=classification.title, extra = {'value': classification.value, 'feature_id' : classification.feature_id})
             for classification in self.classifications
         ]
         return classifications
@@ -110,9 +108,6 @@ class LBV1Classifications(BaseModel):
                 classifications.append(
                     classification.from_common(annotation.value,
                                                annotation.schema_id,
-                                               keyframe=getattr(
-                                                   annotation, 'keyframe',
-                                                   None),
                                                **annotation.extra))
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")
