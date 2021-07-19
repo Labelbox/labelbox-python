@@ -355,10 +355,8 @@ def _validate_parse_text(field: DataRowMetadataField):
     }]
 
 
-def _validate_enum_parse(
-        schema: DataRowMetadataSchema,
-        field: DataRowMetadataField
-):
+def _validate_enum_parse(schema: DataRowMetadataSchema,
+                         field: DataRowMetadataField):
     if schema.options:
         if field.value not in {o.id for o in schema.options}:
             raise ValueError(
