@@ -15,9 +15,10 @@ from pydantic import BaseModel
 
 class Label(BaseModel):
     # TODO: This sounds too much like the other label we need to rename this...
-    data: Union[RasterData, TextData, VideoData]
+    data: Union[VideoData, RasterData, TextData]
     annotations: List[Union[Annotation, Metric]] = []
     extra: Dict[str, Any] = {}
+
 
     def create_url_for_data(self, signer):
         return self.data.create_url(signer)
