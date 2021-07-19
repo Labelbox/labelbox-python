@@ -1,15 +1,19 @@
 from typing import List, Union
 
-from pydantic.main import BaseModel
-from labelbox.data.annotation_types.classification.classification import Dropdown
-from labelbox.data.annotation_types.annotation import AnnotationType, ClassificationAnnotation
-
+from labelbox.data.annotation_types.annotation import (AnnotationType,
+                                                       ClassificationAnnotation)
+from labelbox.data.annotation_types.classification import (CheckList,
+                                                           ClassificationAnswer,
+                                                           Radio, Text)
+from labelbox.data.annotation_types.classification.classification import \
+    Dropdown
 from labelbox.data.serialization.labelbox_v1.feature import LBV1Feature
-from labelbox.data.annotation_types.classification import Text, Radio, CheckList, ClassificationAnswer
+from pydantic.main import BaseModel
 
 
 class LBV1ClassificationAnswer(LBV1Feature):
     ...
+
 
 class LBV1Radio(LBV1Feature):
     answer: LBV1ClassificationAnswer
@@ -25,14 +29,13 @@ class LBV1Radio(LBV1Feature):
 
     @classmethod
     def from_common(cls, radio: Radio, schema_id: str, **extra) -> "LBV1Radio":
-        return cls(
-            schema_id=schema_id,
-            answer=LBV1ClassificationAnswer(
-                schema_id=radio.answer.schema_id,
-                title=radio.answer.display_name,
-                value=radio.answer.extra['value'],
-                feature_id=radio.answer.extra['feature_id']),
-            **extra)
+        return cls(schema_id=schema_id,
+                   answer=LBV1ClassificationAnswer(
+                       schema_id=radio.answer.schema_id,
+                       title=radio.answer.display_name,
+                       value=radio.answer.extra['value'],
+                       feature_id=radio.answer.extra['feature_id']),
+                   **extra)
 
 
 class LBV1Checklist(LBV1Feature):
@@ -51,16 +54,16 @@ class LBV1Checklist(LBV1Feature):
     @classmethod
     def from_common(cls, checklist: CheckList, schema_id: str,
                     **extra) -> "LBV1Checklist":
-        return cls(
-            schema_id=schema_id,
-            answers=[
-                LBV1ClassificationAnswer(schema_id=answer.schema_id,
-                                         title=answer.display_name,
-                                         value=answer.extra['value'],
-                                         feature_id=answer.extra['feature_id'])
-                for answer in checklist.answer
-            ],
-            **extra)
+        return cls(schema_id=schema_id,
+                   answers=[
+                       LBV1ClassificationAnswer(
+                           schema_id=answer.schema_id,
+                           title=answer.display_name,
+                           value=answer.extra['value'],
+                           feature_id=answer.extra['feature_id'])
+                       for answer in checklist.answer
+                   ],
+                   **extra)
 
 
 class LBV1Text(LBV1Feature):
@@ -90,7 +93,11 @@ class LBV1Classifications(BaseModel):
         classifications = [
             ClassificationAnnotation(value=classification.to_common(),
                                      classifications=[],
-                                     display_name=classification.title, extra = {'value': classification.value, 'feature_id' : classification.feature_id})
+                                     display_name=classification.title,
+                                     extra={
+                                         'value': classification.value,
+                                         'feature_id': classification.feature_id
+                                     })
             for classification in self.classifications
         ]
         return classifications

@@ -1,5 +1,3 @@
-
-
 from uuid import UUID, uuid4
 from pydantic import BaseModel, validator
 
@@ -12,6 +10,7 @@ class DataRow(BaseModel):
     id: str
     # TODO: If datarow.id is None. Then we will throw a nice error asking users to use our upload to dataset function.
 
+
 class NDJsonBase(BaseModel):
     uuid: str = None
     dataRow: DataRow
@@ -19,7 +18,6 @@ class NDJsonBase(BaseModel):
     @validator('uuid', pre=True, always=True)
     def set_id(cls, v):
         return v or str(uuid4())
-
 
     class Config:
         #alias_generator = to_camel
@@ -29,5 +27,3 @@ class NDJsonBase(BaseModel):
 class NDAnnotation(NDJsonBase):
     schemaId: str
     # TODO: If schema.id is None. Then we will throw a nice error asking users to use our assign schema id function.
-
-

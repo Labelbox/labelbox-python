@@ -2,7 +2,6 @@ from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
 from labelbox import Client
 import os
 
-
 annotations = [{
     'frameNumber':
         1,
@@ -7544,6 +7543,7 @@ payload = {
         False
 }
 
+
 def round_dict(data):
     for key in data:
         if isinstance(data[key], float):
@@ -7551,6 +7551,7 @@ def round_dict(data):
         elif isinstance(data[key], dict):
             data[key] = round_dict(data[key])
     return data
+
 
 def test_video():
     payload['Label'] = annotations
@@ -7562,12 +7563,15 @@ def test_video():
         if key != 'Label':
             assert serialized[key] == payload[key]
         elif key == 'Label':
-            for annotation_a, annotation_b in zip(serialized[key],  payload[key]):
-                assert annotation_a['frameNumber'] == annotation_b['frameNumber']
-                assert annotation_a['classifications'] == annotation_b['classifications']
+            for annotation_a, annotation_b in zip(serialized[key],
+                                                  payload[key]):
+                assert annotation_a['frameNumber'] == annotation_b[
+                    'frameNumber']
+                assert annotation_a['classifications'] == annotation_b[
+                    'classifications']
 
-                for obj_a, obj_b in zip(annotation_a['objects'], annotation_b['objects']):
+                for obj_a, obj_b in zip(annotation_a['objects'],
+                                        annotation_b['objects']):
                     obj_a = round_dict(obj_a)
                     obj_b = round_dict(obj_b)
                     assert obj_a == obj_b
-

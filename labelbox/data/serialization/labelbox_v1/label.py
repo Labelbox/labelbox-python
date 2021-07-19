@@ -49,30 +49,31 @@ class _LBV1LabelVideo(_LBV1Label):
         ]
 
         objects = [
-            VideoObjectAnnotation(value=obj.to_common(),
-                                  keyframe=obj.keyframe,
-                                  classifications=[
-                                      ClassificationAnnotation(
-                                          value=cls.to_common(),
-                                          schema_id=cls.schema_id,
-                                          display_name=cls.title,
-                                          extra={
-                                              'feature_id': cls.feature_id,
-                                              'title': cls.title,
-                                              'value': cls.value,
-                                              'keyframe': getattr(cls, 'keyframe' , None)
-                                          }) for cls in obj.classifications
-                                  ],
-                                  display_name=obj.title,
-                                  frame=self.frame_number,
-                                  alternative_name=obj.value,
-                                  schema_id=obj.schema_id,
-                                  extra={
-                                      'value' : obj.value,
-                                      'instanceURI': obj.instanceURI,
-                                      'color': obj.color,
-                                      'feature_id': obj.feature_id,
-                                  }) for obj in self.objects
+            VideoObjectAnnotation(
+                value=obj.to_common(),
+                keyframe=obj.keyframe,
+                classifications=[
+                    ClassificationAnnotation(
+                        value=cls.to_common(),
+                        schema_id=cls.schema_id,
+                        display_name=cls.title,
+                        extra={
+                            'feature_id': cls.feature_id,
+                            'title': cls.title,
+                            'value': cls.value,
+                            'keyframe': getattr(cls, 'keyframe', None)
+                        }) for cls in obj.classifications
+                ],
+                display_name=obj.title,
+                frame=self.frame_number,
+                alternative_name=obj.value,
+                schema_id=obj.schema_id,
+                extra={
+                    'value': obj.value,
+                    'instanceURI': obj.instanceURI,
+                    'color': obj.color,
+                    'feature_id': obj.feature_id,
+                }) for obj in self.objects
         ]
         return [*classifications, *objects]
 
@@ -106,7 +107,6 @@ class Review(BaseModel):
     created_at: str = Field(..., alias="createdAt")
     created_by: str = Field(..., alias="createdBy")
     label_id: str = Field(..., alias="labelId")
-
 
 
 class LBV1Label(BaseModel):
@@ -163,8 +163,6 @@ class LBV1Label(BaseModel):
         else:
             annotations = self.label.to_common()
 
-
-
         return Label(
             data=self.construct_data_ref(is_video),
             annotations=annotations,
@@ -194,7 +192,6 @@ class LBV1Label(BaseModel):
             label_ = _LBV1LabelVideo.from_common(label.annotations)
         else:
             label_ = _LBV1Label.from_common(label.annotations)
-
 
         return LBV1Label(label=label_,
                          data_row_id=label.data.uid,

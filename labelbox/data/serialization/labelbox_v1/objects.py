@@ -1,7 +1,8 @@
 from typing import Any, List, Optional, Union
 
-from labelbox.data.annotation_types.annotation import (
-    AnnotationType, ClassificationAnnotation, ObjectAnnotation)
+from labelbox.data.annotation_types.annotation import (AnnotationType,
+                                                       ClassificationAnnotation,
+                                                       ObjectAnnotation)
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.mask import Mask
@@ -181,27 +182,27 @@ class LBV1Objects(BaseModel):
 
     def to_common(self):
         objects = [
-            ObjectAnnotation(value=obj.to_common(),
-                             classifications=[
-                                 ClassificationAnnotation(
-                                     value=cls.to_common(),
-                                     schema_id=cls.schema_id,
-                                     display_name=cls.title,
-                                     extra={
-                                         'feature_id': cls.feature_id,
-                                         'title': cls.title,
-                                         'value': cls.value
-                                     }) for cls in obj.classifications
-                             ],
-                             display_name=obj.title,
-                             schema_id=obj.schema_id,
-                             extra={
-                                 'instanceURI': obj.instanceURI,
-                                 'color': obj.color,
-                                 'feature_id': obj.feature_id,
-                                 'value': obj.value,
-                                 #'keyframe' : getattr(obj, 'keyframe', None)
-                             }) for obj in self.objects
+            ObjectAnnotation(
+                value=obj.to_common(),
+                classifications=[
+                    ClassificationAnnotation(value=cls.to_common(),
+                                             schema_id=cls.schema_id,
+                                             display_name=cls.title,
+                                             extra={
+                                                 'feature_id': cls.feature_id,
+                                                 'title': cls.title,
+                                                 'value': cls.value
+                                             }) for cls in obj.classifications
+                ],
+                display_name=obj.title,
+                schema_id=obj.schema_id,
+                extra={
+                    'instanceURI': obj.instanceURI,
+                    'color': obj.color,
+                    'feature_id': obj.feature_id,
+                    'value': obj.value,
+                    #'keyframe' : getattr(obj, 'keyframe', None)
+                }) for obj in self.objects
         ]
         return objects
 
@@ -217,9 +218,12 @@ class LBV1Objects(BaseModel):
                     annotation.classifications).classifications
 
                 objects.append(
-                    obj.from_common(annotation.value, subclasses,
-                                    annotation.schema_id,
-                                    annotation.display_name, {'keyframe' : getattr(annotation, 'keyframe' , None), ** annotation.extra}))
+                    obj.from_common(
+                        annotation.value, subclasses, annotation.schema_id,
+                        annotation.display_name, {
+                            'keyframe': getattr(annotation, 'keyframe', None),
+                            **annotation.extra
+                        }))
 
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")

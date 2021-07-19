@@ -1,5 +1,6 @@
 from typing import Optional
-from pydantic import BaseModel
+
+from pydantic import BaseModel, ValidationError, root_validator
 
 
 class DataRowRef(BaseModel):
@@ -11,6 +12,10 @@ class FeatureSchemaRef(BaseModel):
     display_name: Optional[str] = None
     schema_id: Optional[str] = None
 
-    # TODO: Validate that one of these is set..
-
-
+    @root_validator
+    def must_set_one(cls, values):
+        if values['schema_id'] is None and values['display_name'] is None:
+            raise ValidationError(
+                "Must set either schema_id or display name for all feature schemas"
+            )
+        return values

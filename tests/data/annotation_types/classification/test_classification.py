@@ -1,11 +1,8 @@
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation
 import pytest
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation
+from labelbox.data.annotation_types.classification import (
+    CheckList, ClassificationAnswer, Dropdown, Radio, Text)
 from pydantic import ValidationError
-
-from labelbox.data.annotation_types.classification import (CheckList,
-                                                           ClassificationAnswer,
-                                                           Dropdown, Radio,
-                                                           Text)
 
 
 def test_classification_answer():
@@ -14,9 +11,6 @@ def test_classification_answer():
 
     schema_id = "schema_id"
     display_name = "my_feature"
-    with pytest.raises(ValidationError):
-        answer = ClassificationAnswer(schema_id=schema_id)
-
     answer = ClassificationAnswer(display_name=display_name)
 
     assert answer.schema_id is None
