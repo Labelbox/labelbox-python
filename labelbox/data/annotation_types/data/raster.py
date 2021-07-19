@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Any, Literal, Optional
+from typing import Callable, Dict, Any, Optional
 from io import BytesIO
 
 from PIL import Image

@@ -1,7 +1,6 @@
-from typing import Callable, Dict, Any, Literal, Optional
+from typing import Callable, Optional
 
 import requests
-import numpy as np
 from pydantic import ValidationError, root_validator
 
 from labelbox.data.annotation_types.reference import DataRowRef
@@ -15,12 +14,9 @@ class TextData(DataRowRef):
 
     @property
     def data(self) -> str:
-        # This is where we raise the exception..
         if self.text:
             return self.text
         elif self.file_path:
-            # TODO: Throw error if file doesn't exist.
-            # What does imread do?
             with open(self.file_path, "r") as file:
                 text = file.read()
             self.text = text
