@@ -11,7 +11,6 @@ class TextData(DataRowRef):
     text: Optional[str] = None
     url: Optional[str] = None
 
-
     @property
     def data(self) -> str:
         if self.text:

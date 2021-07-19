@@ -35,11 +35,12 @@ def test_schema_assignment_classification():
 
     label = Label(data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
                   annotations=[
-                      ClassificationAnnotation(value=Radio(
-        answer=ClassificationAnswer(display_name=option_display_name)),
-                                 display_name=radio_display_name),
+                      ClassificationAnnotation(
+                          value=Radio(answer=ClassificationAnswer(
+                              display_name=option_display_name)),
+                          display_name=radio_display_name),
                       ClassificationAnnotation(value=Text(answer="some text"),
-                                 display_name=text_display_name)
+                                               display_name=text_display_name)
                   ])
     radio_schema_id = "radio_schema_id"
     text_schema_id = "text_schema_id"
@@ -80,8 +81,8 @@ def test_schema_assignment_subclass():
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                       display_name=display_name,
-                       classifications=[classification])
+                             display_name=display_name,
+                             classifications=[classification])
         ])
     schema_id = "expected_id"
     classification_schema_id = "classification_id"
@@ -121,15 +122,15 @@ def test_highly_nested():
         classifications=[
             ClassificationAnnotation(value=Radio(answer=ClassificationAnswer(
                 display_name=nested_option_display_name)),
-                     display_name=nested_display_name)
+                                     display_name=nested_display_name)
         ])
     label = Label(
         data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                       display_name=display_name,
-                       classifications=[classification])
+                             display_name=display_name,
+                             classifications=[classification])
         ])
     schema_id = "expected_id"
     classification_schema_id = "classification_id"

@@ -6,7 +6,6 @@ from pydantic.main import BaseModel
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
 
 
-
 class ClassificationAnswer(FeatureSchemaRef):
     extra: Dict[str, Any] = {}
 

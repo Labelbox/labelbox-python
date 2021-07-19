@@ -89,4 +89,3 @@ class RasterData(DataRowRef):
         arbitrary_types_allowed = True
         copy_on_model_validation = False
         extra = 'forbid'
-
