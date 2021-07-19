@@ -71,18 +71,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         """
 
         metadata = self.client.execute(
-            query,
-            {"dataRowID": self.uid}
-        )["dataRow"]["customMetadata"]
+            query, {"dataRowID": self.uid})["dataRow"]["customMetadata"]
 
         return {
-            "data_row_id": self.uid,
-            "fields": [
-                {
-                    "schema_id": m["schemaId"],
-                    "value": m["value"]
-                } for m in metadata
-            ]
+            "data_row_id":
+                self.uid,
+            "fields": [{
+                "schema_id": m["schemaId"],
+                "value": m["value"]
+            } for m in metadata]
         }
 
     @staticmethod
@@ -132,7 +129,5 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 attachment_value_param: attachment_value,
                 data_row_id_param: self.uid
             })
-        return Entity.AssetAttachment(
-            self.client,
-            res["createDataRowAttachment"]
-        )
+        return Entity.AssetAttachment(self.client,
+                                      res["createDataRowAttachment"])
