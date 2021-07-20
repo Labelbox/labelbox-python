@@ -19,10 +19,10 @@ class NDLabel(BaseModel):
     def to_common(self) -> LabelGenerator:
         data_rows = {}
         for annotation in self.annotations:
-            if annotation.dataRow.id in data_rows:
-                data_rows[annotation.dataRow.id].append(annotation)
+            if annotation.data_row.id in data_rows:
+                data_rows[annotation.data_row.id].append(annotation)
             else:
-                data_rows[annotation.dataRow.id] = [annotation]
+                data_rows[annotation.data_row.id] = [annotation]
 
         def generate_annotations() -> LabelGenerator:
             for data_row_id, annotations in data_rows.items():

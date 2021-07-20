@@ -1,6 +1,6 @@
 from typing import List, Union, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 
 from ...annotation_types.annotation import AnnotationType, ClassificationAnnotation, VideoClassificationAnnotation
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
@@ -8,15 +8,18 @@ from .base import NDAnnotation
 
 
 class NDFeature(BaseModel):
-    schemaId: str  #= Field(..., alias = 'schemaId')
+    schema_id: str = Field(..., alias='schemaId')
 
-    @validator('schemaId', pre=True, always=True)
+    @validator('schema_id', pre=True, always=True)
     def validate_id(cls, v):
         if v is None:
             raise ValueError(
                 "Schema ids are not set. Use `LabelGenerator.assign_schema_ids`, `LabelCollection.assign_schema_ids`, or `Label.assign_schema_ids`."
             )
         return v
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class FrameLocation(BaseModel):
@@ -45,7 +48,7 @@ class NDTextSubclass(NDFeature):
     @classmethod
     def from_common(cls, annotation) -> "NDTextSubclass":
         return cls(answer=annotation.value.answer,
-                   schemaId=annotation.schema_id)
+                   schema_id=annotation.schema_id)
 
 
 class NDChecklistSubclass(NDFeature):
@@ -53,17 +56,17 @@ class NDChecklistSubclass(NDFeature):
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[
-            ClassificationAnswer(schema_id=answer.schemaId)
+            ClassificationAnswer(schema_id=answer.schema_id)
             for answer in self.answer
         ])
 
     @classmethod
     def from_common(cls, annotation) -> "NDChecklistSubclass":
         return cls(answer=[
-            NDFeature(schemaId=answer.schema_id)
+            NDFeature(schema_id=answer.schema_id)
             for answer in annotation.value.answer
         ],
-                   schemaId=annotation.schema_id)
+                   schema_id=annotation.schema_id)
 
 
 class NDRadioSubclass(NDFeature):
@@ -71,12 +74,13 @@ class NDRadioSubclass(NDFeature):
 
     def to_common(self) -> Radio:
         return Radio(answer=ClassificationAnswer(
-            schema_id=self.answer.schemaId))
+            schema_id=self.answer.schema_id))
 
     @classmethod
     def from_common(cls, annotation) -> "NDRadioSubclass":
-        return cls(answer=NDFeature(schemaId=annotation.value.answer.schema_id),
-                   schemaId=annotation.schema_id)
+        return cls(
+            answer=NDFeature(schema_id=annotation.value.answer.schema_id),
+            schema_id=annotation.schema_id)
 
 
 ### ====== End of subclasses
@@ -89,7 +93,7 @@ class NDText(NDAnnotation, NDTextSubclass):
         return cls(
             answer=annotation.value.answer,
             dataRow={'id': data.uid},
-            schemaId=annotation.schema_id,
+            schema_id=annotation.schema_id,
             uuid=annotation.extra.get('uuid'),
         )
 
@@ -99,11 +103,11 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
     @classmethod
     def from_common(cls, annotation, data) -> "NDChecklist":
         return cls(answer=[
-            NDFeature(schemaId=answer.schema_id)
+            NDFeature(schema_id=answer.schema_id)
             for answer in annotation.value.answer
         ],
                    dataRow={'id': data.uid},
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    frames=annotation.extra.get('frames'))
 
@@ -112,11 +116,12 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
     def from_common(cls, annotation, data) -> "NDRadio":
-        return cls(answer=NDFeature(schemaId=annotation.value.answer.schema_id),
-                   dataRow={'id': data.uid},
-                   schemaId=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   frames=annotation.extra.get('frames'))
+        return cls(
+            answer=NDFeature(schema_id=annotation.value.answer.schema_id),
+            dataRow={'id': data.uid},
+            schema_id=annotation.schema_id,
+            uuid=annotation.extra.get('uuid'),
+            frames=annotation.extra.get('frames'))
 
 
 class NDSubclassification:
@@ -135,7 +140,7 @@ class NDSubclassification:
     @staticmethod
     def to_common(annotation: AnnotationType) -> ClassificationAnnotation:
         return ClassificationAnnotation(value=annotation.to_common(),
-                                        schema_id=annotation.schemaId)
+                                        schema_id=annotation.schema_id)
 
     @staticmethod
     def lookup_subclassification(annotation: AnnotationType):
@@ -155,7 +160,7 @@ class NDClassification:
         annotation: AnnotationType
     ) -> Union[ClassificationAnnotation, VideoClassificationAnnotation]:
         common = ClassificationAnnotation(value=annotation.to_common(),
-                                          schema_id=annotation.schemaId,
+                                          schema_id=annotation.schema_id,
                                           extra={'uuid': annotation.uuid})
         if getattr(annotation, 'frames', None) is None:
             return [common]

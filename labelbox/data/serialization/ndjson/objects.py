@@ -40,7 +40,7 @@ class NDPoint(NDObject):
             'y': annotation.value.y
         },
                    dataRow=DataRow(id=data.uid),
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    classifications=[
                        NDSubclassification.from_common(annot)
@@ -61,7 +61,7 @@ class NDLine(NDObject):
             'y': pt.y
         } for pt in annotation.value.points],
                    dataRow=DataRow(id=data.uid),
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    classifications=[
                        NDSubclassification.from_common(annot)
@@ -83,7 +83,7 @@ class NDPolygon(NDObject):
             'y': pt.y
         } for pt in annotation.value.points],
                    dataRow=DataRow(id=data.uid),
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    classifications=[
                        NDSubclassification.from_common(annot)
@@ -107,7 +107,7 @@ class NDRectangle(NDObject):
             height=annotation.value.end.y - annotation.value.start.y,
             width=annotation.value.end.x - annotation.value.start.x),
                    dataRow=DataRow(id=data.uid),
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    classifications=[
                        NDSubclassification.from_common(annot)
@@ -132,7 +132,7 @@ class NDMask(NDObject):
         return cls(mask=_Mask(instanceURI=annotation.value.mask.url,
                               colorRGB=annotation.value.color_rgb),
                    dataRow=DataRow(id=data.uid),
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    classifications=[
                        NDSubclassification.from_common(annot)
@@ -158,7 +158,7 @@ class NDTextEntity(NDObject):
             end=annotation.value.end,
         ),
                    dataRow=DataRow(id=data.uid),
-                   schemaId=annotation.schema_id,
+                   schema_id=annotation.schema_id,
                    uuid=annotation.extra.get('uuid'),
                    classifications=[
                        NDSubclassification.from_common(annot)
@@ -176,7 +176,7 @@ class NDObject:
             for annot in annotation.classifications
         ]
         return ObjectAnnotation(value=common_annotation,
-                                schema_id=annotation.schemaId,
+                                schema_id=annotation.schema_id,
                                 classifications=classifications,
                                 extra={'uuid': annotation.uuid})
 
