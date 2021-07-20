@@ -1,11 +1,11 @@
-from typing import List, Optional, Dict, Any
+from typing import List
 
 import geojson
 import numpy as np
 import cv2
 
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.geometry import Geometry
+from .point import Point
+from .geometry import Geometry
 
 
 class Line(Geometry):

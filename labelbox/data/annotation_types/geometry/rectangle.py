@@ -3,8 +3,8 @@ from typing import Any, Dict
 import cv2
 import geojson
 import numpy as np
-from labelbox.data.annotation_types.geometry.geometry import Geometry
-from labelbox.data.annotation_types.geometry.point import Point
+from .geometry import Geometry
+from .point import Point
 
 
 class Rectangle(Geometry):

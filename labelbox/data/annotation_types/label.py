@@ -1,19 +1,15 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union, Callable
 
-from labelbox.data.annotation_types.annotation import (AnnotationType,
-                                                       ClassificationAnnotation,
-                                                       ObjectAnnotation,
-                                                       VideoAnnotationType)
-from labelbox.data.annotation_types.classification.classification import \
-    ClassificationAnswer
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.annotation_types.metrics import Metric
-from labelbox.schema.ontology import Classification as OClassification
-from labelbox.schema.ontology import Option
 from pydantic import BaseModel
+
+from labelbox.schema.ontology import Classification as OClassification, OntologyBuilder, Option
+from labelbox.orm.model import Entity
+from .classification import ClassificationAnswer
+from .data import VideoData, TextData, RasterData
+from .geometry.mask import Mask
+from .metrics import Metric
+from .annotation import (AnnotationType, ClassificationAnnotation,
+                         ObjectAnnotation, VideoAnnotationType)
 
 
 class Label(BaseModel):
@@ -21,7 +17,7 @@ class Label(BaseModel):
     annotations: List[Union[AnnotationType, VideoAnnotationType, Metric]] = []
     extra: Dict[str, Any] = {}
 
-    def add_url_to_data(self, signer):
+    def add_url_to_data(self, signer) -> "Label":
         """
         Only creates a url if one doesn't exist
         """
@@ -39,21 +35,44 @@ class Label(BaseModel):
             mask.create_url(signer)
         return self
 
-    def create_data_row(self, dataset, signer):
+    def create_data_row(self, dataset: "Entity.Dataset",
+                        signer: Callable[[bytes], str]) -> "Label":
         """
         Only overwrites if necessary
-
         """
         args = {'row_data': self.add_url_to_data(signer)}
         if self.data.external_id is not None:
-            args.update({'external'})
+            args.update({'external_id': self.data.external_id})
+
         if self.data.uid is None:
             data_row = dataset.create_data_row(**args)
             self.data.uid = data_row.uid
             self.data.external_id = data_row.external_id
         return self
 
-    def get_feature_schema_lookup(self, ontology_builder):
+    def assign_schema_ids(self, ontology_builder: OntologyBuilder) -> "Label":
+        """
+        Classifications get flattened when labeling.
+        """
+        tool_lookup, classification_lookup = self._get_feature_schema_lookup(
+            ontology_builder)
+        for annotation in self.annotations:
+            if isinstance(annotation, ClassificationAnnotation):
+                self._assign_or_raise(annotation, classification_lookup)
+                self._assign_option(annotation, classification_lookup)
+            elif isinstance(annotation, ObjectAnnotation):
+                self._assign_or_raise(annotation, tool_lookup)
+                for classification in annotation.classifications:
+                    self._assign_or_raise(classification, classification_lookup)
+                    self._assign_option(classification, classification_lookup)
+            else:
+                raise TypeError(
+                    f"Unexpected type found for annotation. {type(annotation)}")
+        return self
+
+    def _get_feature_schema_lookup(
+        self, ontology_builder: OntologyBuilder
+    ) -> Tuple[Dict[str, str], Dict[str, str]]:
         tool_lookup = {}
         classification_lookup = {}
 
@@ -78,47 +97,27 @@ class Label(BaseModel):
         flatten_classification(ontology_builder.classifications)
         return tool_lookup, classification_lookup
 
-    def assign_schema_ids(self, ontology_builder):
-        """
-        Classifications get flattened when labeling.
-        """
+    def _assign_or_raise(self, annotation, lookup: Dict[str, str]) -> None:
+        if annotation.schema_id is not None:
+            return
 
-        def assign_or_raise(annotation, lookup):
-            if annotation.schema_id is not None:
-                return
+        feature_schema_id = lookup.get(annotation.display_name)
+        if feature_schema_id is None:
+            raise ValueError(
+                f"No tool matches display name {annotation.display_name}. "
+                f"Must be one of {list(lookup.keys())}.")
+        annotation.schema_id = feature_schema_id
 
-            feature_schema_id = lookup.get(annotation.display_name)
-            if feature_schema_id is None:
-                raise ValueError(
-                    f"No tool matches display name {annotation.display_name}. "
-                    f"Must be one of {list(lookup.keys())}.")
-            annotation.schema_id = feature_schema_id
-
-        def assign_option(classification, lookup):
-            if isinstance(classification.value.answer, str):
-                pass
-            elif isinstance(classification.value.answer, ClassificationAnswer):
-                assign_or_raise(classification.value.answer, lookup)
-            elif isinstance(classification.value.answer, list):
-                for answer in classification.value.answer:
-                    assign_or_raise(answer, lookup)
-            else:
-                raise TypeError(
-                    f"Unexpected type for answer found. {type(classification.value.answer)}"
-                )
-
-        tool_lookup, classification_lookup = self.get_feature_schema_lookup(
-            ontology_builder)
-        for annotation in self.annotations:
-            if isinstance(annotation, ClassificationAnnotation):
-                assign_or_raise(annotation, classification_lookup)
-                assign_option(annotation, classification_lookup)
-            elif isinstance(annotation, ObjectAnnotation):
-                assign_or_raise(annotation, tool_lookup)
-                for classification in annotation.classifications:
-                    assign_or_raise(classification, classification_lookup)
-                    assign_option(classification, classification_lookup)
-            else:
-                raise TypeError(
-                    f"Unexpected type found for annotation. {type(annotation)}")
-        return self
+    def _assign_option(self, classification: ClassificationAnnotation,
+                       lookup: Dict[str, str]) -> None:
+        if isinstance(classification.value.answer, str):
+            pass
+        elif isinstance(classification.value.answer, ClassificationAnswer):
+            self._assign_or_raise(classification.value.answer, lookup)
+        elif isinstance(classification.value.answer, list):
+            for answer in classification.value.answer:
+                self._assign_or_raise(answer, lookup)
+        else:
+            raise TypeError(
+                f"Unexpected type for answer found. {type(classification.value.answer)}"
+            )

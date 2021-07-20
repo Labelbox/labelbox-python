@@ -1,12 +1,11 @@
-from PIL import Image
-import numpy as np
-from io import BytesIO
-from pydantic import ValidationError
 import urllib.request
-import pytest
+from io import BytesIO
 
+import numpy as np
+import pytest
 from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.reference import DataRowRef
+from PIL import Image
+from pydantic import ValidationError
 
 
 def test_validate_schema():

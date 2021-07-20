@@ -1,1 +1,2 @@
-from .classification import Dropdown, Text, CheckList, Radio, ClassificationAnswer
+from .classification import (Checklist, ClassificationAnswer, Dropdown, Radio,
+                             Text)

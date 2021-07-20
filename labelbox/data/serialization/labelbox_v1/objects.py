@@ -1,19 +1,15 @@
 from typing import Any, List, Optional, Union
 
-from labelbox.data.annotation_types.annotation import (AnnotationType,
-                                                       ClassificationAnnotation,
-                                                       ObjectAnnotation)
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.geometry.line import Line
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.polygon import Polygon
-from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from labelbox.data.annotation_types.ner import TextEntity
-from labelbox.data.serialization.labelbox_v1.classifications import (
-    LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text)
-from labelbox.data.serialization.labelbox_v1.feature import LBV1Feature
 from pydantic import BaseModel
+
+from ...annotation_types.annotation import (AnnotationType,
+                                            ClassificationAnnotation,
+                                            ObjectAnnotation)
+from ...annotation_types.data import RasterData
+from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
+from ...annotation_types.ner import TextEntity
+from .classifications import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text
+from .feature import LBV1Feature
 
 
 class LBV1ObjectBase(LBV1Feature):
@@ -104,7 +100,7 @@ class LBV1Point(LBV1ObjectBase):
 class LBV1Line(LBV1ObjectBase):
     line: List[PointLocation]
 
-    def to_common(self):
+    def to_common(self) -> Line:
         return Line(points=[Point(x=p.x, y=p.y) for p in self.line])
 
     @classmethod
@@ -123,7 +119,7 @@ class LBV1Line(LBV1ObjectBase):
 class LBV1Mask(LBV1ObjectBase):
     instanceURI: str
 
-    def to_common(self):
+    def to_common(self) -> Mask:
         return Mask(mask=RasterData(url=self.instanceURI),
                     color_rgb=(255, 255, 255))
 
@@ -132,6 +128,10 @@ class LBV1Mask(LBV1ObjectBase):
                     classifications: List[ClassificationAnnotation],
                     schema_id: str, title: str, extra) -> "LBV1Mask":
 
+        if mask.mask.url is None:
+            raise ValueError(
+                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelCollection.add_url_to_masks`, or `Label.add_url_to_masks`."
+            )
         return cls(instanceURI=mask.mask.url,
                    classifications=classifications,
                    schema_id=schema_id,
@@ -139,21 +139,21 @@ class LBV1Mask(LBV1ObjectBase):
                    **{k: v for k, v in extra.items() if k != 'instanceURI'})
 
 
-class TextPoint(BaseModel):
+class _TextPoint(BaseModel):
     start: int
     end: int
 
 
-class Location(BaseModel):
-    location: TextPoint
+class _Location(BaseModel):
+    location: _TextPoint
 
 
 class LBV1TextEntity(LBV1ObjectBase):
-    data: Location
+    data: _Location
     format: str = "text.location"
     version: int = 1
 
-    def to_common(self):
+    def to_common(self) -> TextEntity:
         return TextEntity(
             start=self.data.location.start,
             end=self.data.location.end,
@@ -176,11 +176,21 @@ class LBV1TextEntity(LBV1ObjectBase):
                    **extra)
 
 
+object_mapping = {
+    Line: LBV1Line,
+    Point: LBV1Point,
+    Polygon: LBV1Polygon,
+    Rectangle: LBV1Rectangle,
+    Mask: LBV1Mask,
+    TextEntity: LBV1TextEntity
+}
+
+
 class LBV1Objects(BaseModel):
     objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
                         LBV1TextEntity, LBV1Mask]]
 
-    def to_common(self):
+    def to_common(self) -> List[ObjectAnnotation]:
         objects = [
             ObjectAnnotation(
                 value=obj.to_common(),
@@ -211,7 +221,7 @@ class LBV1Objects(BaseModel):
         objects = []
 
         for annotation in annotations:
-            obj = cls.lookup_object(annotation)
+            obj = object_mapping.get(type(annotation.value))
             if obj is not None:
                 subclasses = []
                 subclasses = LBV1Classifications.from_common(
@@ -224,18 +234,6 @@ class LBV1Objects(BaseModel):
                             'keyframe': getattr(annotation, 'keyframe', None),
                             **annotation.extra
                         }))
-
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")
         return cls(objects=objects)
-
-    @staticmethod
-    def lookup_object(annotation: AnnotationType):
-        return {
-            Line: LBV1Line,
-            Point: LBV1Point,
-            Polygon: LBV1Polygon,
-            Rectangle: LBV1Rectangle,
-            Mask: LBV1Mask,
-            TextEntity: LBV1TextEntity
-        }.get(type(annotation.value))

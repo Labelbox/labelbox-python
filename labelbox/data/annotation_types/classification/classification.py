@@ -1,7 +1,8 @@
 from typing import Any, Dict, List
 
-from labelbox.data.annotation_types.reference import FeatureSchemaRef
 from pydantic.main import BaseModel
+
+from ..feature import FeatureSchemaRef
 
 
 class ClassificationAnswer(FeatureSchemaRef):
@@ -12,7 +13,7 @@ class Radio(BaseModel):
     answer: ClassificationAnswer
 
 
-class CheckList(BaseModel):
+class Checklist(BaseModel):
     answer: List[ClassificationAnswer]
 
 

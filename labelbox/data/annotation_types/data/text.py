@@ -1,11 +1,12 @@
 from typing import Callable, Optional
 
 import requests
-from labelbox.data.annotation_types.reference import DataRowRef
-from pydantic import ValidationError, root_validator
+from pydantic import root_validator
+
+from .base_data import BaseData
 
 
-class TextData(DataRowRef):
+class TextData(BaseData):
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None

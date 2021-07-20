@@ -1,4 +1,4 @@
-from uuid import UUID, uuid4
+from uuid import uuid4
 from pydantic import BaseModel, validator
 
 
@@ -7,8 +7,16 @@ def to_camel(string: str) -> str:
 
 
 class DataRow(BaseModel):
-    id: str
-    # TODO: If datarow.id is None. Then we will throw a nice error asking users to use our upload to dataset function.
+    id: str = None
+
+    @validator('id', pre=True, always=True)
+    def validate_id(cls, v):
+        if v is None:
+            raise ValueError(
+                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`, `LabelCollection.add_to_dataset`, or `Label.create_data_row`. "
+                "You can also manually assign the id for each `BaseData` object"
+            )
+        return v
 
 
 class NDJsonBase(BaseModel):
@@ -25,5 +33,12 @@ class NDJsonBase(BaseModel):
 
 
 class NDAnnotation(NDJsonBase):
-    schemaId: str
-    # TODO: If schema.id is None. Then we will throw a nice error asking users to use our assign schema id function.
+    schemaId: str = None
+
+    @validator('schemaId', pre=True, always=True)
+    def validate_id(cls, v):
+        if v is None:
+            raise ValueError(
+                "Schema ids are not set. Use `LabelGenerator.assign_schema_ids`, `LabelCollection.assign_schema_ids`, or `Label.assign_schema_ids`."
+            )
+        return v

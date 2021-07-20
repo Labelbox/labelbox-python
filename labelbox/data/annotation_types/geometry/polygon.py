@@ -5,8 +5,8 @@ import geojson
 import cv2
 from pydantic import ValidationError, validator
 
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.geometry import Geometry
+from .point import Point
+from .geometry import Geometry
 
 
 class Polygon(Geometry):

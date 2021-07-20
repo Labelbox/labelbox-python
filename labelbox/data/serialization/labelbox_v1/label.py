@@ -2,17 +2,14 @@ from typing import Callable, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from labelbox.data.annotation_types.annotation import (
+from ...annotation_types.annotation import (
     AnnotationType, ClassificationAnnotation, ObjectAnnotation,
     VideoAnnotationType, VideoClassificationAnnotation, VideoObjectAnnotation)
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.annotation_types.ner import TextEntity
-from labelbox.data.serialization.labelbox_v1.classifications import \
-    LBV1Classifications
-from labelbox.data.serialization.labelbox_v1.objects import LBV1Objects
+from ...annotation_types.data import RasterData, TextData, VideoData
+from ...annotation_types.label import Label
+from ...annotation_types.ner import TextEntity
+from .classifications import LBV1Classifications
+from .objects import LBV1Objects
 
 
 class _LBV1Label(LBV1Classifications, LBV1Objects):

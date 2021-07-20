@@ -1,12 +1,12 @@
-import logging
 from typing import Any, Callable, Dict, Generator, Iterable
+import logging
 
 import ndjson
 import requests
-from labelbox.data.annotation_types.collection import (LabelData,
-                                                       LabelGenerator,
-                                                       PrefetchGenerator)
-from labelbox.data.serialization.labelbox_v1.label import LBV1Label
+
+from ...annotation_types.collection import (LabelData, LabelGenerator,
+                                            PrefetchGenerator)
+from .label import LBV1Label
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class LBV1Converter:
         This method is only necessary if the json payload for the data contains links to the video data.
         """
         label_generator = (LBV1Label(**example).to_common()
-                           for example in VideoIterator(json_data, client))
+                           for example in LBV1VideoIterator(json_data, client))
         return LabelGenerator(data=label_generator)
 
     @staticmethod
@@ -44,7 +44,7 @@ class LBV1Converter:
             yield res.dict(by_alias=True)
 
 
-class VideoIterator(PrefetchGenerator):
+class LBV1VideoIterator(PrefetchGenerator):
 
     def __init__(self, examples, client):
         self.client = client

@@ -98,7 +98,7 @@ def test_adding_urls(signer):
                                                         3)).astype(np.uint8)),
                   annotations=[])
     uuid = str(uuid4())
-    generator = LabelGenerator([label]).add_urls_to_data(signer(uuid))
+    generator = LabelGenerator([label]).add_url_to_data(signer(uuid))
     assert label.data.url != uuid
     assert next(generator).data.url == uuid
     assert label.data.url == uuid
@@ -107,7 +107,7 @@ def test_adding_urls(signer):
                                                         3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
-    labels = LabelCollection([label]).add_urls_to_data(signer(uuid))
+    labels = LabelCollection([label]).add_url_to_data(signer(uuid))
     assert label.data.url == uuid
     assert next(labels).data.url == uuid
     assert labels[0].data.url == uuid
@@ -155,7 +155,7 @@ def test_adding_to_masks(signer):
                                         color_rgb=[255, 255, 255]))
         ])
     uuid = str(uuid4())
-    generator = LabelGenerator([label]).add_urls_to_masks(signer(uuid))
+    generator = LabelGenerator([label]).add_url_to_masks(signer(uuid))
     assert label.annotations[0].value.mask.url != uuid
     assert next(generator).annotations[0].value.mask.url == uuid
     assert label.annotations[0].value.mask.url == uuid
@@ -170,6 +170,6 @@ def test_adding_to_masks(signer):
                                         color_rgb=[255, 255, 255]))
         ])
     assert label.annotations[0].value.mask.url != uuid
-    labels = LabelCollection([label]).add_urls_to_masks(signer(uuid))
+    labels = LabelCollection([label]).add_url_to_masks(signer(uuid))
     assert next(labels).annotations[0].value.mask.url == uuid
     assert labels[0].annotations[0].value.mask.url == uuid
