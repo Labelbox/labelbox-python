@@ -1,10 +1,9 @@
 from typing import Any, Dict, List, Union
 
-from labelbox.data.annotation_types.classification.classification import (
-    CheckList, Dropdown, Radio, Text)
-from labelbox.data.annotation_types.geometry import Geometry
-from labelbox.data.annotation_types.ner import TextEntity
-from labelbox.data.annotation_types.reference import FeatureSchemaRef
+from .classification import Checklist, Dropdown, Radio, Text
+from .feature import FeatureSchemaRef
+from .geometry import Geometry
+from .ner import TextEntity
 
 
 class BaseAnnotation(FeatureSchemaRef):
@@ -17,7 +16,7 @@ class ObjectAnnotation(BaseAnnotation):
 
 
 class ClassificationAnnotation(BaseAnnotation):
-    value: Union[Text, CheckList, Radio, Dropdown]
+    value: Union[Text, Checklist, Radio, Dropdown]
 
 
 ClassificationAnnotation.update_forward_refs()

@@ -2,20 +2,15 @@ from itertools import groupby
 from operator import itemgetter
 from typing import List, Union
 
-from labelbox.data.annotation_types.annotation import (
-    ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation)
-from labelbox.data.annotation_types.collection import (LabelCollection,
-                                                       LabelData,
-                                                       LabelGenerator)
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.annotation_types.ner import TextEntity
-from labelbox.data.serialization.ndjson.classifications import (
-    NDClassification, NDClassificationType)
-from labelbox.data.serialization.ndjson.objects import NDObject, NDObjectType
 from pydantic import BaseModel
+
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation
+from ...annotation_types.collection import LabelData, LabelGenerator
+from ...annotation_types.data import RasterData, TextData, VideoData
+from ...annotation_types.label import Label
+from ...annotation_types.ner import TextEntity
+from .classifications import NDClassification, NDClassificationType
+from .objects import NDObject, NDObjectType
 
 
 class NDLabel(BaseModel):
@@ -56,7 +51,8 @@ class NDLabel(BaseModel):
             return RasterData
 
     @classmethod
-    def from_common(cls, data: LabelData):
+    def from_common(cls, data: LabelData) -> "NDLabel":
+        # TODO: Break this into smaller functions..
         for label in data:
             video_annotations = {}
             for annot in label.annotations:

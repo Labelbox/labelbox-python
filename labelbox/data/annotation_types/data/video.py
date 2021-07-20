@@ -1,18 +1,19 @@
 import logging
 import os
 import urllib.request
-from typing import Any, Callable, Dict, Generator, Optional, Tuple
+from typing import Callable, Dict, Generator, Optional, Tuple
 from uuid import uuid4
 
 import cv2
 import numpy as np
-from labelbox.data.annotation_types.reference import DataRowRef
-from pydantic import ValidationError, root_validator
+from pydantic import root_validator
+
+from .base_data import BaseData
 
 logger = logging.getLogger(__name__)
 
 
-class VideoData(DataRowRef):
+class VideoData(BaseData):
     file_path: Optional[str] = None
     url: Optional[str] = None
     frames: Optional[Dict[int, np.ndarray]] = None

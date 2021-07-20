@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 import cv2
 
-from labelbox.data.annotation_types.geometry.geometry import Geometry
+from .geometry import Geometry
 
 import geojson
 import numpy as np

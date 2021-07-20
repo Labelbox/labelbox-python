@@ -1,8 +1,6 @@
-from pydantic import ValidationError
 import pytest
-
 from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.reference import DataRowRef
+from pydantic import ValidationError
 
 
 def test_validate_schema():

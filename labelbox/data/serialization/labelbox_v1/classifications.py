@@ -1,14 +1,10 @@
 from typing import List, Union
 
-from labelbox.data.annotation_types.annotation import (AnnotationType,
-                                                       ClassificationAnnotation)
-from labelbox.data.annotation_types.classification import (CheckList,
-                                                           ClassificationAnswer,
-                                                           Radio, Text)
-from labelbox.data.annotation_types.classification.classification import \
-    Dropdown
-from labelbox.data.serialization.labelbox_v1.feature import LBV1Feature
 from pydantic.main import BaseModel
+
+from ...annotation_types.annotation import AnnotationType, ClassificationAnnotation
+from ...annotation_types.classification import Checklist, ClassificationAnswer, Radio, Text, Dropdown
+from .feature import LBV1Feature
 
 
 class LBV1ClassificationAnswer(LBV1Feature):
@@ -42,7 +38,7 @@ class LBV1Checklist(LBV1Feature):
     answers: List[LBV1ClassificationAnswer]
 
     def to_common(self):
-        return CheckList(answer=[
+        return Checklist(answer=[
             ClassificationAnswer(schema_id=answer.schema_id,
                                  display_name=answer.title,
                                  extra={
@@ -52,7 +48,7 @@ class LBV1Checklist(LBV1Feature):
         ])
 
     @classmethod
-    def from_common(cls, checklist: CheckList, schema_id: str,
+    def from_common(cls, checklist: Checklist, schema_id: str,
                     **extra) -> "LBV1Checklist":
         return cls(schema_id=schema_id,
                    answers=[
@@ -77,17 +73,16 @@ class LBV1Text(LBV1Feature):
         return cls(schema_id=schema_id, answer=text.answer, **extra)
 
 
+classification_mapping = {
+    Text: LBV1Text,
+    Dropdown: LBV1Checklist,
+    Checklist: LBV1Checklist,
+    Radio: LBV1Radio
+}
+
+
 class LBV1Classifications(BaseModel):
     classifications: List[Union[LBV1Radio, LBV1Checklist, LBV1Text]] = []
-
-    @staticmethod
-    def lookup_classification(annotation: AnnotationType):
-        return {
-            Text: LBV1Text,
-            Dropdown: LBV1Checklist,
-            CheckList: LBV1Checklist,
-            Radio: LBV1Radio,
-        }.get(type(annotation.value))
 
     def to_common(self):
         classifications = [
@@ -107,7 +102,7 @@ class LBV1Classifications(BaseModel):
                     annotations: List[AnnotationType]) -> "LBV1Classifications":
         classifications = []
         for annotation in annotations:
-            classification = cls.lookup_classification(annotation)
+            classification = classification_mapping.get(type(annotation.value))
             if classification is not None:
                 classifications.append(
                     classification.from_common(annotation.value,

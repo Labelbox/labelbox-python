@@ -3,11 +3,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Generator, Iterable, Union
 from uuid import uuid4
 
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.generator import PrefetchGenerator
-from labelbox.orm.model import Entity
-from labelbox.schema.ontology import OntologyBuilder
 from tqdm import tqdm
+
+from labelbox.schema.ontology import OntologyBuilder
+from labelbox.orm.model import Entity
+from ..generator import PrefetchGenerator
+from .label import Label
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class LabelCollection:
         # The workaround is creating a new dataset
         """
         self._ensure_unique_external_ids()
-        self.add_urls_to_data(signer, max_concurrency=max_concurrency)
+        self.add_url_to_data(signer, max_concurrency=max_concurrency)
         upload_task = dataset.create_data_rows([{
             Entity.DataRow.row_data: label.data.url,
             Entity.DataRow.external_id: label.data.external_id
@@ -89,9 +90,7 @@ class LabelCollection:
             label.data.uid = data_row_lookup[label.data.external_id]
         return self
 
-    def add_urls_to_masks(self,
-                          signer,
-                          max_concurrency=20) -> "LabelCollection":
+    def add_url_to_masks(self, signer, max_concurrency=20) -> "LabelCollection":
         """
         Creates a data row id for each data row that needs it. If the data row exists then it skips the row.
         TODO: Add error handling..
@@ -102,7 +101,7 @@ class LabelCollection:
             ...
         return self
 
-    def add_urls_to_data(self, signer, max_concurrency=20) -> "LabelCollection":
+    def add_url_to_data(self, signer, max_concurrency=20) -> "LabelCollection":
         """
         TODO: Add error handling..
         """
@@ -152,18 +151,18 @@ class LabelGenerator(PrefetchGenerator):
         self._fns['assign_schema_ids'] = _assign_ids
         return self
 
-    def add_urls_to_data(self, signer: Callable[[bytes],
-                                                str]) -> "LabelGenerator":
+    def add_url_to_data(self, signer: Callable[[bytes],
+                                               str]) -> "LabelGenerator":
         """
         Updates masks to have `url` attribute
         Doesn't update masks that already have urls
         """
 
-        def _add_urls_to_data(label: Label):
+        def _add_url_to_data(label: Label):
             label.add_url_to_data(signer)
             return label
 
-        self._fns['_add_urls_to_data'] = _add_urls_to_data
+        self._fns['_add_url_to_data'] = _add_url_to_data
         return self
 
     def add_to_dataset(self, dataset,
@@ -176,18 +175,18 @@ class LabelGenerator(PrefetchGenerator):
         self._fns['assign_datarow_ids'] = _add_to_dataset
         return self
 
-    def add_urls_to_masks(self, signer: Callable[[bytes],
-                                                 str]) -> "LabelGenerator":
+    def add_url_to_masks(self, signer: Callable[[bytes],
+                                                str]) -> "LabelGenerator":
         """
         Updates masks to have `url` attribute
         Doesn't update masks that already have urls
         """
 
-        def _add_urls_to_masks(label: Label):
+        def _add_url_to_masks(label: Label):
             label.add_url_to_masks(signer)
             return label
 
-        self._fns['add_urls_to_masks'] = _add_urls_to_masks
+        self._fns['add_url_to_masks'] = _add_url_to_masks
         return self
 
     def __next__(self):

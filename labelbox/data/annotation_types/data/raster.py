@@ -1,15 +1,17 @@
+from typing import Callable, Optional
 from io import BytesIO
-from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import requests
-from labelbox.data.annotation_types.reference import DataRowRef
+from pydantic import root_validator
 from PIL import Image
-from pydantic import ValidationError, root_validator
+
+from .base_data import BaseData
 
 
-class RasterData(DataRowRef):
+class RasterData(BaseData):
     """
+
 
     """
     im_bytes: Optional[bytes] = None
@@ -49,7 +51,6 @@ class RasterData(DataRowRef):
             raise ValueError("Must set either url, file_path or im_bytes")
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
-
         if self.url is not None:
             return self.url
         elif self.im_bytes is not None:

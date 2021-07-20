@@ -1,8 +1,7 @@
 import logging
 from typing import Any, Dict, Generator, Iterable
 
-from labelbox.data.annotation_types.collection import LabelData, LabelGenerator
-
+from ...annotation_types.collection import LabelData, LabelGenerator
 from .label import NDLabel
 
 logger = logging.getLogger(__name__)

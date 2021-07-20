@@ -1,6 +1,6 @@
 import pytest
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
-from labelbox.data.annotation_types.classification import (CheckList,
+from labelbox.data.annotation_types.classification import (Checklist,
                                                            ClassificationAnswer,
                                                            Dropdown, Radio,
                                                            Text)
@@ -171,12 +171,12 @@ def test_checklist():
     display_name = "my_feature"
 
     with pytest.raises(ValidationError):
-        classification = CheckList(answer=answer.display_name)
+        classification = Checklist(answer=answer.display_name)
 
     with pytest.raises(ValidationError):
-        classification = CheckList(answer=answer)
+        classification = Checklist(answer=answer)
 
-    classification = CheckList(answer=[answer])
+    classification = Checklist(answer=[answer])
     assert classification.dict() == {
         'answer': [{
             'display_name': answer.display_name,
@@ -185,11 +185,11 @@ def test_checklist():
         }]
     }
     classification = ClassificationAnnotation(
-        value=CheckList(answer=[answer]),
+        value=Checklist(answer=[answer]),
         schema_id=schema_id,
         display_name=display_name,
         classifications=[
-            ClassificationAnnotation(value=CheckList(answer=[answer]),
+            ClassificationAnnotation(value=Checklist(answer=[answer]),
                                      display_name=display_name)
         ])
     assert classification.dict() == {
