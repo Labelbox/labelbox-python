@@ -17,31 +17,17 @@ CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 
 @pytest.fixture
 def dr_md_ontology(client):
-    yield client.get_datarow_metadata_ontology()
-
-
-@pytest.fixture
-def datarow(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": IMG_URL,
-            "external_id": "my-image"
-        },
-    ])
-    task.wait_till_done()
-    dr = next(dataset.data_rows())
-    yield dr
-    dr.delete()
+    yield client.get_data_row_metadata_ontology()
 
 
 @pytest.fixture
 def big_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
-                                        {
-                                            "row_data": IMG_URL,
-                                            "external_id": "my-image"
-                                        },
-                                    ] * 1000)
+        {
+            "row_data": IMG_URL,
+            "external_id": "my-image"
+        },
+    ] * 1000)
     task.wait_till_done()
 
     yield dataset
@@ -97,6 +83,7 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, dr_md_ontology):
 
     for dr in big_dataset.export_data_rows():
         assert len(dr.metadata["fields"])
+        break
 
 
 def test_bulk_delete_datarow_metadata(datarow: DataRow, dr_md_ontology):
@@ -159,15 +146,21 @@ def test_upsert_non_existent_schema_id(datarow, dr_md_ontology):
 
 def test_parse_raw_metadata(dr_md_ontology):
     example = {
-        'data_row_id': 'ckr6kkfx801ui0yrtg9fje8xh',
-        'fields': [
-            {'schema_id': 'cko8s9r5v0001h2dk9elqdidh',
-             'value': 'my-new-message'},
-            {'schema_id': 'cko8sbczn0002h2dkdaxb5kal', 'value': {}},
-            {'schema_id': 'cko8sbscr0003h2dk04w86hof', 'value': {}},
-            {'schema_id': 'cko8sdzv70006h2dk8jg64zvb',
-             'value': '2021-07-20T21:41:14.606710Z'}
-        ]
+        'data_row_id':
+            'ckr6kkfx801ui0yrtg9fje8xh',
+        'fields': [{
+            'schema_id': 'cko8s9r5v0001h2dk9elqdidh',
+            'value': 'my-new-message'
+        }, {
+            'schema_id': 'cko8sbczn0002h2dkdaxb5kal',
+            'value': {}
+        }, {
+            'schema_id': 'cko8sbscr0003h2dk04w86hof',
+            'value': {}
+        }, {
+            'schema_id': 'cko8sdzv70006h2dk8jg64zvb',
+            'value': '2021-07-20T21:41:14.606710Z'
+        }]
     }
 
     parsed = dr_md_ontology.parse_metadata([example])
