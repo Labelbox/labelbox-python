@@ -27,6 +27,10 @@ class ThreadSafeGen:
 
 
 class PrefetchGenerator:
+    """
+    Applys functions asynchronously to the about of a generator.
+    Useful for modifying the generator results based on data from a network
+    """
 
     def __init__(self,
                  data: Iterable[Any],
@@ -49,18 +53,19 @@ class PrefetchGenerator:
             thread.daemon = True
             thread.start()
 
-    def process(self, value) -> Any:
+    def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
 
     def fill_queue(self):
         try:
             for value in self._data:
-                value = self.process(value)
+                value = self._process(value)
                 if value is None:
                     raise ValueError("Unexpected None")
                 self.queue.put(value)
         except Exception as e:
-            logger.warning(f"Unexpected exception while filling the queue. {e}")
+            logger.warning("Unexpected exception while filling the queue. %r",
+                           e)
         finally:
             self.queue.put(None)
 

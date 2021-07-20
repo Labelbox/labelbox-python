@@ -6,7 +6,7 @@ from ...annotation_types.data import RasterData
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import AnnotationType, ObjectAnnotation
-from .classifications import NDSubclassification, NDSubclassificationType
+from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation
 
 

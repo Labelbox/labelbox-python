@@ -2,10 +2,6 @@ from uuid import uuid4
 from pydantic import BaseModel, validator, Field
 
 
-def to_camel(string: str) -> str:
-    return ''.join(word.capitalize() for word in string.split('_'))
-
-
 class DataRow(BaseModel):
     id: str = None
 

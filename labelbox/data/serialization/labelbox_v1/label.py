@@ -8,7 +8,7 @@ from ...annotation_types.annotation import (
 from ...annotation_types.data import RasterData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
-from .classifications import LBV1Classifications
+from .classification import LBV1Classifications
 from .objects import LBV1Objects
 
 
@@ -41,7 +41,7 @@ class _LBV1LabelVideo(_LBV1Label):
                 classifications=[],
                 #keyframe = classification.keyframe,
                 frame=self.frame_number,
-                display_name=classification.title)
+                name=classification.title)
             for classification in self.classifications
         ]
 
@@ -53,7 +53,7 @@ class _LBV1LabelVideo(_LBV1Label):
                     ClassificationAnnotation(
                         value=cls.to_common(),
                         schema_id=cls.schema_id,
-                        display_name=cls.title,
+                        name=cls.title,
                         extra={
                             'feature_id': cls.feature_id,
                             'title': cls.title,
@@ -61,7 +61,7 @@ class _LBV1LabelVideo(_LBV1Label):
                             'keyframe': getattr(cls, 'keyframe', None)
                         }) for cls in obj.classifications
                 ],
-                display_name=obj.title,
+                name=obj.title,
                 frame=self.frame_number,
                 alternative_name=obj.value,
                 schema_id=obj.schema_id,
@@ -183,7 +183,7 @@ class LBV1Label(BaseModel):
             })
 
     @classmethod
-    def from_common(cls, label: Label, signer: Callable):
+    def from_common(cls, label: Label, signer: Callable[[bytes], str]):
         if isinstance(label.annotations[0],
                       (VideoObjectAnnotation, VideoClassificationAnnotation)):
             label_ = _LBV1LabelVideo.from_common(label.annotations)

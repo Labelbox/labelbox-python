@@ -14,14 +14,21 @@ logger = logging.getLogger(__name__)
 
 
 class VideoData(BaseData):
+    """
+    Represents video
+    """
     file_path: Optional[str] = None
     url: Optional[str] = None
     frames: Optional[Dict[int, np.ndarray]] = None
 
     def load_frames(self, overwrite: bool = False) -> None:
-        logger.warning(
-            "Loading the video into individual frames. This will use a lot of memory"
-        )
+        """
+        Loads all frames into memory at once in order to access in non-sequential order.
+        This will use a lot of memory, especially for longer videos
+
+        Args:
+            overwrite: Replace existing frames
+        """
         if self.frames and not overwrite:
             return
 
@@ -30,16 +37,23 @@ class VideoData(BaseData):
 
     def frame_generator(
             self,
-            load_frames=False,
+            cache_frames=False,
             download_dir='/tmp'
     ) -> Generator[Tuple[int, np.ndarray], None, None]:
+        """
+        A generator for accessing individual frames in a video.
+
+        Args:
+            cache_frames (bool): Whether or not to cache frames while iterating through the video.
+            download_dir (str): Directory to save the video to. Defaults to `/tmp` dir
+        """
         if self.frames is not None:
             for idx, img in self.frames.items():
                 yield idx, img
             return
         elif self.url and not self.file_path:
             file_path = os.path.join(download_dir, f"{uuid4()}.mp4")
-            logger.info(f"Downloading the video locally to {file_path}")
+            logger.info("Downloading the video locally to %s", file_path)
             urllib.request.urlretrieve(self.url, file_path)
             self.file_path = file_path
             # TODO: If the filepath exists but there was no data we should use the url (and the opposite too)
@@ -52,7 +66,7 @@ class VideoData(BaseData):
         while success:
             img = img[:, :, ::-1]
             yield count, img
-            if load_frames:
+            if cache_frames:
                 self.frames[count] = img
             success, img = vidcap.read()
             count += 1
@@ -65,6 +79,14 @@ class VideoData(BaseData):
         return self.frames[idx]
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
+        """
+        Utility for creating a url from any of the other video references.
+
+        Args:
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            url for the video
+        """
         if self.url is not None:
             return self.url
         elif self.file_path is not None:
@@ -82,6 +104,10 @@ class VideoData(BaseData):
                         frames: Dict[int, np.ndarray],
                         fps=20,
                         save_dir='/tmp') -> str:
+        """
+        Compresses the data by converting a set of individual frames to a single video.
+
+        """
         file_path = os.path.join(save_dir, f"{uuid4()}.mp4")
         out = None
         for key in frames.keys():

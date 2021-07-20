@@ -7,12 +7,21 @@ from .base_data import BaseData
 
 
 class TextData(BaseData):
+    """
+    Represents text data
+    """
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None
 
     @property
     def data(self) -> str:
+        """
+        Property that unifies the data access pattern for all references to the text.
+
+        Returns:
+            string representation of the text
+        """
         if self.text:
             return self.text
         elif self.file_path:
@@ -30,6 +39,14 @@ class TextData(BaseData):
             raise ValueError("Must set either url, file_path or im_bytes")
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
+        """
+        Utility for creating a url from any of the other text references.
+
+        Args:
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            url for the text
+        """
         if self.url is not None:
             return self.url
         elif self.file_path is not None:

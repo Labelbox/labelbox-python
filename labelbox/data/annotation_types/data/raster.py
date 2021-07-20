@@ -11,8 +11,7 @@ from .base_data import BaseData
 
 class RasterData(BaseData):
     """
-
-
+    Represents an image or segmentation mask.
     """
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
@@ -20,23 +19,46 @@ class RasterData(BaseData):
     arr: Optional[np.ndarray] = None
 
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
+        """
+        Converts image bytes to a numpy array
+        Args:
+            image_bytes (bytes): PNG encoded image
+        Returns:
+            numpy array representing the image
+        """
         return np.array(Image.open(BytesIO(image_bytes)))
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
+        """
+        Converts a numpy array to bytes
+        Args:
+            arr (np.array): numpy array representing the image
+        Returns:
+            png encoded bytes
+        """
+        if len(arr.shape) not in [2, 3]:
+            raise ValueError("unsupported image format")
+
+        if arr.dtype != np.uint8:
+            raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
+
         im_bytes = BytesIO()
         Image.fromarray(arr).save(im_bytes, format="PNG")
         return im_bytes.getvalue()
 
     @property
     def data(self) -> np.ndarray:
-        # This is where we raise the exception..
+        """
+        Property that unifies the data access pattern for all references to the raster.
+
+        Returns:
+            numpy representation of the raster
+        """
         if self.arr is not None:
             return self.arr
         if self.im_bytes is not None:
             return self.bytes_to_np(self.im_bytes)
         elif self.file_path is not None:
-            # TODO: Throw error if file doesn't exist.
-            # What does imread do?
             with open(self.file_path, "rb") as img:
                 im_bytes = img.read()
             self.im_bytes = im_bytes
@@ -50,7 +72,15 @@ class RasterData(BaseData):
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
 
-    def create_url(self, signer: Callable[[bytes], str]) -> None:
+    def create_url(self, signer: Callable[[bytes], str]) -> str:
+        """
+        Utility for creating a url from any of the other image representations.
+
+        Args:
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            url for the raster data
+        """
         if self.url is not None:
             return self.url
         elif self.im_bytes is not None:
