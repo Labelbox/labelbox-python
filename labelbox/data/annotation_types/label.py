@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Union
 
-from labelbox.data.annotation_types.annotation import (
-    AnnotationType, ClassificationAnnotation, ObjectAnnotation,
-    VideoAnnotationType)
+from labelbox.data.annotation_types.annotation import (AnnotationType,
+                                                       ClassificationAnnotation,
+                                                       ObjectAnnotation,
+                                                       VideoAnnotationType)
 from labelbox.data.annotation_types.classification.classification import \
     ClassificationAnswer
 from labelbox.data.annotation_types.data.raster import RasterData
@@ -27,7 +28,7 @@ class Label(BaseModel):
         self.data.create_url(signer)
         return self
 
-    def add_url_to_masks(self, signer):
+    def add_url_to_masks(self, signer) -> "Label":
         masks = []
         for annotation in self.annotations:
             # Allows us to upload shared masks once
@@ -39,16 +40,17 @@ class Label(BaseModel):
         return self
 
     def create_data_row(self, dataset, signer):
-        args = {
-            'row_data' : self.add_url_to_data(signer)
-        }
+        """
+        Only overwrites if necessary
+
+        """
+        args = {'row_data': self.add_url_to_data(signer)}
         if self.data.external_id is not None:
-            args.update({
-                'external'
-            })
-        data_row = dataset.create_data_row(**args)
-        self.data.uid = data_row.uid
-        self.data.external_id = data_row.external_id
+            args.update({'external'})
+        if self.data.uid is None:
+            data_row = dataset.create_data_row(**args)
+            self.data.uid = data_row.uid
+            self.data.external_id = data_row.external_id
         return self
 
     def get_feature_schema_lookup(self, ontology_builder):

@@ -1,14 +1,13 @@
 import logging
-from uuid import uuid4
 import os
-from typing import Generator, Callable, Optional, Tuple, Dict, Any
+import urllib.request
+from typing import Any, Callable, Dict, Generator, Optional, Tuple
+from uuid import uuid4
 
 import cv2
-import urllib.request
 import numpy as np
-from pydantic import ValidationError, root_validator
-
 from labelbox.data.annotation_types.reference import DataRowRef
+from pydantic import ValidationError, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +103,7 @@ class VideoData(DataRowRef):
         uid = values.get("uid")
 
         if uid == file_path == frames == url == None:
-            raise ValidationError(
+            raise ValueError(
                 "One of `file_path`, `frames`, `uid`, or `url` required.")
         return values
 

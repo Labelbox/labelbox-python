@@ -13,7 +13,8 @@ def round_dict(data):
 
 
 def test_video():
-    payload = json.load(open('tests/data/assets/labelbox_v1/video_export.json', 'r' ))
+    payload = json.load(
+        open('tests/data/assets/labelbox_v1/video_export.json', 'r'))
     collection = LBV1Converter.deserialize([payload])
     serialized = next(LBV1Converter.serialize(collection, None))
 

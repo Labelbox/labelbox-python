@@ -1,11 +1,11 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import Queue
 from typing import Any, Callable, Dict, Generator, Iterable
 
 import ndjson
 import requests
-from labelbox.data.annotation_types.collection import LabelData, LabelGenerator
+from labelbox.data.annotation_types.collection import (LabelData,
+                                                       LabelGenerator,
+                                                       PrefetchGenerator)
 from labelbox.data.serialization.labelbox_v1.label import LBV1Label
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ class LBV1Converter:
                         "Use `LBV1Converter.deserialize_video` to process video"
                     )
                 yield LBV1Label(**example).to_common()
+
         return LabelGenerator(data=label_generator())
 
     @staticmethod
@@ -43,33 +44,17 @@ class LBV1Converter:
             yield res.dict(by_alias=True)
 
 
-class VideoIterator:
+class VideoIterator(PrefetchGenerator):
+
     def __init__(self, examples, client):
-        self.queue = Queue(20)
-        self.n_iters = len(examples)
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            for example in examples:
-                executor.submit(self.prefetch, example, client)
+        self.client = client
 
-    def prefetch(self, example, client):
-        try:
-            if 'frames' in example['Label']:
-                req = requests.get(
-                    example['Label']['frames'],
-                    headers={"Authorization": f"Bearer {client.api_key}"})
-                example['Label'] = ndjson.loads(req.text)
-            self.queue.put(example)
-        except Exception as e:
-            logger.warning(f"Unable to download frame. {e}")
-            # If the frame is unable to be downloaded
-            self.n_iters -= 1
+        super().__init__(examples)
 
-    def __next__(self):
-        if self.n_iters == 0:
-            raise StopIteration("Iterated over all examples")
-        self.n_iters -= 1
-        res = self.queue.get()
-        return res
-
-    def __iter__(self):
-        return self
+    def process(self, value):
+        if 'frames' in value['Label']:
+            req = requests.get(
+                value['Label']['frames'],
+                headers={"Authorization": f"Bearer {self.client.api_key}"})
+            value['Label'] = ndjson.loads(req.text)
+            return value

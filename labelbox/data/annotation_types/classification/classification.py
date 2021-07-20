@@ -1,9 +1,7 @@
-from typing import Any, Dict, List, Union, ForwardRef
-from pydantic.class_validators import validator
-
-from pydantic.main import BaseModel
+from typing import Any, Dict, List
 
 from labelbox.data.annotation_types.reference import FeatureSchemaRef
+from pydantic.main import BaseModel
 
 
 class ClassificationAnswer(FeatureSchemaRef):
@@ -16,7 +14,6 @@ class Radio(BaseModel):
 
 class CheckList(BaseModel):
     answer: List[ClassificationAnswer]
-    # TODO: Validate that there is only one of each answer
 
 
 class Text(BaseModel):
@@ -25,4 +22,3 @@ class Text(BaseModel):
 
 class Dropdown(BaseModel):
     answer: List[ClassificationAnswer]
-    # TODO: Validate that there is only one of each answer
