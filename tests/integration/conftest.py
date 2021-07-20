@@ -154,6 +154,20 @@ def dataset(client, rand_gen):
     dataset.delete()
 
 
+@pytest.fixture
+def datarow(dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": IMG_URL,
+            "external_id": "my-image"
+        },
+    ])
+    task.wait_till_done()
+    dr = next(dataset.data_rows())
+    yield dr
+    dr.delete()
+
+
 LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 
 

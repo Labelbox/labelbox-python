@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "2.7.0"
+__version__ = "3.0.0+metadata-beta"
 
 from labelbox.client import Client
 from labelbox.schema.bulk_import_request import BulkImportRequest
@@ -18,3 +18,4 @@ from labelbox.schema.prediction import Prediction, PredictionModel
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
+from labelbox.schema.data_row_metadata import DataRowMetadataOntology
