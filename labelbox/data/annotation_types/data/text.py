@@ -1,9 +1,8 @@
 from typing import Callable, Optional
 
 import requests
-from pydantic import ValidationError, root_validator
-
 from labelbox.data.annotation_types.reference import DataRowRef
+from pydantic import ValidationError, root_validator
 
 
 class TextData(DataRowRef):
@@ -49,7 +48,7 @@ class TextData(DataRowRef):
         url = values.get("url")
         uid = values.get('uid')
         if uid == file_path == text == url == None:
-            raise ValidationError(
+            raise ValueError(
                 "One of `file_path`, `text`, `uid`, or `url` required.")
         return values
 

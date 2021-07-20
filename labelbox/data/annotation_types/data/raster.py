@@ -49,6 +49,7 @@ class RasterData(DataRowRef):
             raise ValueError("Must set either url, file_path or im_bytes")
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
+
         if self.url is not None:
             return self.url
         elif self.im_bytes is not None:
