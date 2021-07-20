@@ -24,7 +24,8 @@ def dr_md_ontology(client):
 def datarow(dataset: Dataset):
     task = dataset.create_data_rows([
         {
-            "row_data": IMG_URL
+            "row_data": IMG_URL,
+            "external_id": "my-image"
         },
     ])
     task.wait_till_done()
@@ -36,10 +37,11 @@ def datarow(dataset: Dataset):
 @pytest.fixture
 def big_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
-        {
-            "row_data": IMG_URL
-        },
-    ] * 1000)
+                                        {
+                                            "row_data": IMG_URL,
+                                            "external_id": "my-image"
+                                        },
+                                    ] * 1000)
     task.wait_till_done()
 
     yield dataset
@@ -73,7 +75,7 @@ def test_get_datarow_metadata_ontology(dr_md_ontology):
 
 def test_get_datarow_metadata(datarow):
     """No metadata"""
-    md = datarow.make_metadata
+    md = datarow.metadata
     assert not len(md["fields"])
     assert len(md)
 
@@ -153,3 +155,23 @@ def test_upsert_non_existent_schema_id(datarow, dr_md_ontology):
                                ])
     with pytest.raises(ValueError):
         dr_md_ontology.bulk_upsert([metadata])
+
+
+def test_parse_raw_metadata(dr_md_ontology):
+    example = {
+        'data_row_id': 'ckr6kkfx801ui0yrtg9fje8xh',
+        'fields': [
+            {'schema_id': 'cko8s9r5v0001h2dk9elqdidh',
+             'value': 'my-new-message'},
+            {'schema_id': 'cko8sbczn0002h2dkdaxb5kal', 'value': {}},
+            {'schema_id': 'cko8sbscr0003h2dk04w86hof', 'value': {}},
+            {'schema_id': 'cko8sdzv70006h2dk8jg64zvb',
+             'value': '2021-07-20T21:41:14.606710Z'}
+        ]
+    }
+
+    parsed = dr_md_ontology.parse_metadata([example])
+    assert len(parsed) == 1
+    row = parsed[0]
+    assert row.data_row_id == example["data_row_id"]
+    assert len(row.fields) == 3
