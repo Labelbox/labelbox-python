@@ -1,5 +1,5 @@
 from uuid import uuid4
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 
 
 def to_camel(string: str) -> str:
@@ -21,21 +21,20 @@ class DataRow(BaseModel):
 
 class NDJsonBase(BaseModel):
     uuid: str = None
-    dataRow: DataRow
+    data_row: DataRow = Field(..., alias="dataRow")
 
     @validator('uuid', pre=True, always=True)
     def set_id(cls, v):
         return v or str(uuid4())
 
     class Config:
-        #alias_generator = to_camel
         allow_population_by_field_name = True
 
 
 class NDAnnotation(NDJsonBase):
-    schemaId: str = None
+    schema_id: str = Field(None, alias="schemaId")
 
-    @validator('schemaId', pre=True, always=True)
+    @validator('schema_id', pre=True, always=True)
     def validate_id(cls, v):
         if v is None:
             raise ValueError(
