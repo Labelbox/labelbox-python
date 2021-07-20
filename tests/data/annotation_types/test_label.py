@@ -9,19 +9,19 @@ from labelbox.schema.ontology import OntologyBuilder, Tool, Classification as OC
 
 
 def test_schema_assignment_geometry():
-    display_name = "line_feature"
+    name = "line_feature"
     label = Label(
         data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(
                 value=Line(
                     points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                display_name=display_name,
+                name=name,
             )
         ])
     schema_id = "expected_id"
     ontology = OntologyBuilder(tools=[
-        Tool(Tool.Type.LINE, name=display_name, feature_schema_id=schema_id)
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)
     ])
     label.assign_schema_ids(ontology)
 
@@ -29,18 +29,18 @@ def test_schema_assignment_geometry():
 
 
 def test_schema_assignment_classification():
-    radio_display_name = "radio_display_name"
-    text_display_name = "text_display_name"
-    option_display_name = "my_option"
+    radio_name = "radio_name"
+    text_name = "text_name"
+    option_name = "my_option"
 
     label = Label(data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
                   annotations=[
                       ClassificationAnnotation(
                           value=Radio(answer=ClassificationAnswer(
-                              display_name=option_display_name)),
-                          display_name=radio_display_name),
+                              name=option_name)),
+                          name=radio_name),
                       ClassificationAnnotation(value=Text(answer="some text"),
-                                               display_name=text_display_name)
+                                               name=text_name)
                   ])
     radio_schema_id = "radio_schema_id"
     text_schema_id = "text_schema_id"
@@ -49,15 +49,15 @@ def test_schema_assignment_classification():
         tools=[],
         classifications=[
             OClassification(class_type=OClassification.Type.RADIO,
-                            instructions=radio_display_name,
+                            instructions=radio_name,
                             feature_schema_id=radio_schema_id,
                             options=[
-                                Option(value=option_display_name,
+                                Option(value=option_name,
                                        feature_schema_id=option_schema_id)
                             ]),
             OClassification(
                 class_type=OClassification.Type.TEXT,
-                instructions=text_display_name,
+                instructions=text_name,
                 feature_schema_id=text_schema_id,
             )
         ])
@@ -68,20 +68,20 @@ def test_schema_assignment_classification():
 
 
 def test_schema_assignment_subclass():
-    display_name = "line_feature"
-    radio_display_name = "radio_display_name"
-    option_display_name = "my_option"
+    name = "line_feature"
+    radio_name = "radio_name"
+    option_name = "my_option"
     classification = ClassificationAnnotation(
-        display_name=radio_display_name,
+        name=radio_name,
         value=Radio(answer=ClassificationAnswer(
-            display_name=option_display_name)),
+            name=option_name)),
     )
     label = Label(
         data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                             display_name=display_name,
+                             name=name,
                              classifications=[classification])
         ])
     schema_id = "expected_id"
@@ -89,14 +89,14 @@ def test_schema_assignment_subclass():
     option_schema_id = "option_schema_id"
     ontology = OntologyBuilder(tools=[
         Tool(Tool.Type.LINE,
-             name=display_name,
+             name=name,
              feature_schema_id=schema_id,
              classifications=[
                  OClassification(class_type=OClassification.Type.RADIO,
-                                 instructions=radio_display_name,
+                                 instructions=radio_name,
                                  feature_schema_id=classification_schema_id,
                                  options=[
-                                     Option(value=option_display_name,
+                                     Option(value=option_name,
                                             feature_schema_id=option_schema_id)
                                  ])
              ])
@@ -110,26 +110,26 @@ def test_schema_assignment_subclass():
 
 
 def test_highly_nested():
-    display_name = "line_feature"
-    radio_display_name = "radio_display_name"
-    nested_display_name = "nested_display_name"
-    option_display_name = "my_option"
-    nested_option_display_name = "nested_option_display_name"
+    name = "line_feature"
+    radio_name = "radio_name"
+    nested_name = "nested_name"
+    option_name = "my_option"
+    nested_option_name = "nested_option_name"
     classification = ClassificationAnnotation(
-        display_name=radio_display_name,
+        name=radio_name,
         value=Radio(answer=ClassificationAnswer(
-            display_name=option_display_name)),
+            name=option_name)),
         classifications=[
             ClassificationAnnotation(value=Radio(answer=ClassificationAnswer(
-                display_name=nested_option_display_name)),
-                                     display_name=nested_display_name)
+                name=nested_option_name)),
+                                     name=nested_name)
         ])
     label = Label(
         data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                             display_name=display_name,
+                             name=name,
                              classifications=[classification])
         ])
     schema_id = "expected_id"
@@ -138,26 +138,26 @@ def test_highly_nested():
     option_schema_id = "option_schema_id"
     ontology = OntologyBuilder(tools=[
         Tool(Tool.Type.LINE,
-             name=display_name,
+             name=name,
              feature_schema_id=schema_id,
              classifications=[
                  OClassification(
                      class_type=OClassification.Type.RADIO,
-                     instructions=radio_display_name,
+                     instructions=radio_name,
                      feature_schema_id=classification_schema_id,
                      options=[
                          Option(
-                             value=option_display_name,
+                             value=option_name,
                              feature_schema_id=option_schema_id,
                              options=[
                                  OClassification(
                                      class_type=OClassification.Type.RADIO,
-                                     instructions=nested_display_name,
+                                     instructions=nested_name,
                                      feature_schema_id=
                                      nested_classification_schema_id,
                                      options=[
                                          Option(
-                                             value=nested_option_display_name,
+                                             value=nested_option_name,
                                              feature_schema_id=
                                              nested_classification_schema_id)
                                      ])

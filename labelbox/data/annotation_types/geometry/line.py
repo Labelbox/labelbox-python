@@ -21,6 +21,17 @@ class Line(Geometry):
                width: int,
                thickness=1,
                color=255) -> np.ndarray:
+        """
+        Draw the line onto a 2d mask
+
+        Args:
+            height (int): height of the mask
+            width (int): width of the mask
+            thickness (int): How thick to draw the line
+            color (int): color for the line. Only a single int since this is a grayscale mask.
+        Returns:
+            numpy array representing the mask with the line drawn on it.
+        """
 
         canvas = np.zeros((height, width), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)

@@ -72,19 +72,19 @@ def test_conversion(list_of_labels):
 
 
 def test_adding_schema_ids():
-    display_name = "line_feature"
+    name = "line_feature"
     label = Label(
         data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(
                 value=Line(
                     points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                display_name=display_name,
+                name=name,
             )
         ])
     schema_id = "expected_id"
     ontology = OntologyBuilder(tools=[
-        Tool(Tool.Type.LINE, name=display_name, feature_schema_id=schema_id)
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)
     ])
     generator = LabelGenerator([label]).assign_schema_ids(ontology)
     assert next(generator).annotations[0].schema_id == schema_id
@@ -148,7 +148,7 @@ def test_adding_to_masks(signer):
     label = Label(
         data=RasterData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
-            ObjectAnnotation(display_name="1234",
+            ObjectAnnotation(name="1234",
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
@@ -163,7 +163,7 @@ def test_adding_to_masks(signer):
     label = Label(
         data=RasterData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
-            ObjectAnnotation(display_name="1234",
+            ObjectAnnotation(name="1234",
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),

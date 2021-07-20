@@ -19,6 +19,16 @@ class Polygon(Geometry):
         return geojson.Polygon([[[point.x, point.y] for point in self.points]])
 
     def raster(self, height: int, width: int, color=255) -> np.ndarray:
+        """
+        Draw the polygon onto a 2d mask
+
+        Args:
+            height (int): height of the mask
+            width (int): width of the mask
+            color (int): color for the polygon. Only a single int since this is a grayscale mask.
+        Returns:
+            numpy array representing the mask with the polygon drawn on it.
+        """
         canvas = np.zeros((height, width), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
         return cv2.fillPoly(canvas, pts=pts, color=color)

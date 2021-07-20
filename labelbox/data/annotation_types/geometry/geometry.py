@@ -7,6 +7,9 @@ from pydantic import BaseModel
 
 
 class Geometry(BaseModel):
+    """
+    Base class for geometry objects. Shouldn't be directly instantiated.
+    """
     extra: Dict[str, Any] = {}
 
     @property

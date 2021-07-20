@@ -19,12 +19,28 @@ class Label(BaseModel):
 
     def add_url_to_data(self, signer) -> "Label":
         """
-        Only creates a url if one doesn't exist
+        Creates signed urls for the data
+        Only uploads url if one doesn't already exist.
+
+        Args:
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            Label with updated references to new data url
         """
         self.data.create_url(signer)
         return self
 
     def add_url_to_masks(self, signer) -> "Label":
+        """
+        Creates signed urls for all masks in the Label.
+        Multiple masks can reference the same RasterData mask so this makes sure we only upload that url once.
+        Only uploads url if one doesn't already exist.
+
+        Args:
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            Label with updated references to new mask url
+        """
         masks = []
         for annotation in self.annotations:
             # Allows us to upload shared masks once
@@ -38,7 +54,14 @@ class Label(BaseModel):
     def create_data_row(self, dataset: "Entity.Dataset",
                         signer: Callable[[bytes], str]) -> "Label":
         """
-        Only overwrites if necessary
+        Creates a data row and adds to the given dataset.
+        Updates the label's data object to have the same external_id and uid as the data row.
+
+        Args:
+            dataset: labelbox dataset object to add the new data row to
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            Label with updated references to new data row
         """
         args = {'row_data': self.add_url_to_data(signer)}
         if self.data.external_id is not None:
@@ -52,7 +75,13 @@ class Label(BaseModel):
 
     def assign_schema_ids(self, ontology_builder: OntologyBuilder) -> "Label":
         """
-        Classifications get flattened when labeling.
+        Adds schema ids to all FeatureSchema objects in the Labels.
+        This is necessary for MAL.
+
+        Args:
+            ontology_builder: The ontology that matches the feature names assigned to objects in this dataset
+        Returns:
+            LabelCollection. useful for chaining these modifying functions
         """
         tool_lookup, classification_lookup = self._get_feature_schema_lookup(
             ontology_builder)
@@ -101,11 +130,10 @@ class Label(BaseModel):
         if annotation.schema_id is not None:
             return
 
-        feature_schema_id = lookup.get(annotation.display_name)
+        feature_schema_id = lookup.get(annotation.name)
         if feature_schema_id is None:
-            raise ValueError(
-                f"No tool matches display name {annotation.display_name}. "
-                f"Must be one of {list(lookup.keys())}.")
+            raise ValueError(f"No tool matches display name {annotation.name}. "
+                             f"Must be one of {list(lookup.keys())}.")
         annotation.schema_id = feature_schema_id
 
     def _assign_option(self, classification: ClassificationAnnotation,

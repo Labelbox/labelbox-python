@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -8,7 +8,7 @@ from ...annotation_types.annotation import (AnnotationType,
 from ...annotation_types.data import RasterData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
-from .classifications import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text
+from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text
 from .feature import LBV1Feature
 
 
@@ -25,12 +25,12 @@ class LBV1ObjectBase(LBV1Feature):
         return res
 
 
-class PointLocation(BaseModel):
+class _Point(BaseModel):
     x: float
     y: float
 
 
-class BoxLocation(BaseModel):
+class _Box(BaseModel):
     top: float
     left: float
     height: float
@@ -38,7 +38,7 @@ class BoxLocation(BaseModel):
 
 
 class LBV1Rectangle(LBV1ObjectBase):
-    bbox: BoxLocation
+    bbox: _Box
 
     def to_common(self) -> Rectangle:
         return Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
@@ -49,7 +49,7 @@ class LBV1Rectangle(LBV1ObjectBase):
     def from_common(cls, rectangle: Rectangle,
                     classifications: List[ClassificationAnnotation],
                     schema_id: str, title: str, extra) -> "LBV1Rectangle":
-        return cls(bbox=BoxLocation(
+        return cls(bbox=_Box(
             top=rectangle.start.y,
             left=rectangle.start.x,
             height=rectangle.end.y - rectangle.start.y,
@@ -62,7 +62,7 @@ class LBV1Rectangle(LBV1ObjectBase):
 
 
 class LBV1Polygon(LBV1ObjectBase):
-    polygon: List[PointLocation]
+    polygon: List[_Point]
 
     def to_common(self) -> Polygon:
         return Polygon(points=[Point(x=p.x, y=p.y) for p in self.polygon])
@@ -71,17 +71,16 @@ class LBV1Polygon(LBV1ObjectBase):
     def from_common(cls, polygon: Polygon,
                     classifications: List[ClassificationAnnotation],
                     schema_id: str, title: str, extra) -> "LBV1Polygon":
-        return cls(polygon=[
-            PointLocation(x=point.x, y=point.y) for point in polygon.points
-        ],
-                   classifications=classifications,
-                   schema_id=schema_id,
-                   title=title,
-                   **extra)
+        return cls(
+            polygon=[_Point(x=point.x, y=point.y) for point in polygon.points],
+            classifications=classifications,
+            schema_id=schema_id,
+            title=title,
+            **extra)
 
 
 class LBV1Point(LBV1ObjectBase):
-    point: PointLocation
+    point: _Point
 
     def to_common(self) -> Point:
         return Point(x=self.point.x, y=self.point.y)
@@ -90,7 +89,7 @@ class LBV1Point(LBV1ObjectBase):
     def from_common(cls, point: Point,
                     classifications: List[ClassificationAnnotation],
                     schema_id: str, title: str, extra) -> "LBV1Point":
-        return cls(point=PointLocation(x=point.x, y=point.y),
+        return cls(point=_Point(x=point.x, y=point.y),
                    classifications=classifications,
                    schema_id=schema_id,
                    title=title,
@@ -98,7 +97,7 @@ class LBV1Point(LBV1ObjectBase):
 
 
 class LBV1Line(LBV1ObjectBase):
-    line: List[PointLocation]
+    line: List[_Point]
 
     def to_common(self) -> Line:
         return Line(points=[Point(x=p.x, y=p.y) for p in self.line])
@@ -107,13 +106,12 @@ class LBV1Line(LBV1ObjectBase):
     def from_common(cls, polygon: Line,
                     classifications: List[ClassificationAnnotation],
                     schema_id: str, title: str, extra) -> "LBV1Line":
-        return cls(line=[
-            PointLocation(x=point.x, y=point.y) for point in polygon.points
-        ],
-                   classifications=classifications,
-                   schema_id=schema_id,
-                   title=title,
-                   **extra)
+        return cls(
+            line=[_Point(x=point.x, y=point.y) for point in polygon.points],
+            classifications=classifications,
+            schema_id=schema_id,
+            title=title,
+            **extra)
 
 
 class LBV1Mask(LBV1ObjectBase):
@@ -197,14 +195,14 @@ class LBV1Objects(BaseModel):
                 classifications=[
                     ClassificationAnnotation(value=cls.to_common(),
                                              schema_id=cls.schema_id,
-                                             display_name=cls.title,
+                                             name=cls.title,
                                              extra={
                                                  'feature_id': cls.feature_id,
                                                  'title': cls.title,
                                                  'value': cls.value
                                              }) for cls in obj.classifications
                 ],
-                display_name=obj.title,
+                name=obj.title,
                 schema_id=obj.schema_id,
                 extra={
                     'instanceURI': obj.instanceURI,
@@ -230,7 +228,7 @@ class LBV1Objects(BaseModel):
                 objects.append(
                     obj.from_common(
                         annotation.value, subclasses, annotation.schema_id,
-                        annotation.display_name, {
+                        annotation.name, {
                             'keyframe': getattr(annotation, 'keyframe', None),
                             **annotation.extra
                         }))

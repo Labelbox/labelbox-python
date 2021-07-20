@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Callable
 
 import numpy as np
 from rasterio.features import shapes
@@ -27,5 +27,14 @@ class Mask(Geometry):
     def raster(self) -> np.ndarray:
         return self.mask.data
 
-    def create_url(self, signer):
+    def create_url(self, signer: Callable[[bytes], str]) -> str:
+        """
+        Update the segmentation mask to have a url.
+        Only update the mask if it doesn't already have a url
+
+        Args:
+            signer: A function that accepts bytes and returns a signed url.
+        Returns:
+            the url for the mask
+        """
         return self.mask.create_url(signer)

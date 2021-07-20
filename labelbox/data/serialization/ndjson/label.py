@@ -9,7 +9,7 @@ from ...annotation_types.collection import LabelData, LabelGenerator
 from ...annotation_types.data import RasterData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
-from .classifications import NDClassification, NDClassificationType
+from .classification import NDClassification, NDClassificationType
 from .objects import NDObject, NDObjectType
 
 
