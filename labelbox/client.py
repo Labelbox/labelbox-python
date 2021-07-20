@@ -13,11 +13,12 @@ import labelbox.exceptions
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
+from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema import role
 from labelbox import __version__ as SDK_VERSION
@@ -44,7 +45,6 @@ class Client:
         Logging is defaulted to level WARNING. To receive more verbose
         output to console, update `logging.level` to the appropriate level.
 
-        >>> import logger
         >>> logging.basicConfig(level = logging.INFO)
         >>> client = Client("<APIKEY>")
 
@@ -505,8 +505,17 @@ class Client:
         """
         return role.get_roles(self)
 
-    def get_datarow_metadata_ontology(self):
-        """ Fetch the Data Row Metadata Ontology
+    def get_data_row(self, data_row_id):
+        """
+
+        Returns:
+            DataRow: returns a single data row given the data row id
+        """
+
+        return self._get_single(DataRow, data_row_id)
+
+    def get_data_row_metadata_ontology(self):
+        """
 
         Returns:
             DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
