@@ -4,7 +4,9 @@ from typing import List, Union
 
 from labelbox.data.annotation_types.annotation import (
     ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation)
-from labelbox.data.annotation_types.collection import LabelCollection
+from labelbox.data.annotation_types.collection import (LabelCollection,
+                                                       LabelData,
+                                                       LabelGenerator)
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.data.video import VideoData
@@ -19,7 +21,7 @@ from pydantic import BaseModel
 class NDLabel(BaseModel):
     annotations: List[Union[NDObjectType, NDClassificationType]]
 
-    def to_common(self):
+    def to_common(self) -> LabelGenerator:
         data_rows = {}
         for annotation in self.annotations:
             if annotation.dataRow.id in data_rows:
@@ -27,7 +29,7 @@ class NDLabel(BaseModel):
             else:
                 data_rows[annotation.dataRow.id] = [annotation]
 
-        def generate_annotations():
+        def generate_annotations() -> LabelGenerator:
             for data_row_id, annotations in data_rows.items():
                 annots = []
                 for annotation in annotations:
@@ -42,7 +44,7 @@ class NDLabel(BaseModel):
                 data = self.infer_media_types(annotations)(uid=data_row_id)
                 yield Label(annotations=annots, data=data)
 
-        return LabelCollection(data=generate_annotations())
+        return LabelGenerator(data=generate_annotations())
 
     def infer_media_types(self, annotations):
         types = {type(annotation) for annotation in annotations}
@@ -54,8 +56,8 @@ class NDLabel(BaseModel):
             return RasterData
 
     @classmethod
-    def from_common(cls, data: LabelCollection):
-        for label in data.data:
+    def from_common(cls, data: LabelData):
+        for label in data:
             video_annotations = {}
             for annot in label.annotations:
                 if isinstance(annot, VideoClassificationAnnotation):

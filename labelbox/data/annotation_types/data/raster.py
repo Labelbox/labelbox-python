@@ -1,12 +1,11 @@
-from typing import Callable, Dict, Any, Optional
 from io import BytesIO
+from typing import Any, Callable, Dict, Optional
 
-from PIL import Image
 import numpy as np
 import requests
-from pydantic import ValidationError, root_validator
-
 from labelbox.data.annotation_types.reference import DataRowRef
+from PIL import Image
+from pydantic import ValidationError, root_validator
 
 
 class RasterData(DataRowRef):
@@ -72,16 +71,16 @@ class RasterData(DataRowRef):
         arr = values.get("arr")
         uid = values.get('uid')
         if uid == file_path == im_bytes == url == None and arr is None:
-            raise ValidationError(
+            raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid` or `arr` required."
             )
         if arr is not None:
             if arr.dtype != np.uint8:
-                raise ValidationError(
+                raise TypeError(
                     "Numpy array representing segmentation mask must be np.uint8"
                 )
             elif len(arr.shape) not in [2, 3]:
-                raise ValidationError(
+                raise TypeError(
                     f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}"
                 )
         return values

@@ -1,15 +1,18 @@
-from typing import Union, List, Dict, Any
+from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel
-
-from labelbox.schema.ontology import Classification as OClassification, Option
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
-from labelbox.data.annotation_types.annotation import AnnotationType, ClassificationAnnotation, ObjectAnnotation, VideoAnnotationType
+from labelbox.data.annotation_types.annotation import (
+    AnnotationType, ClassificationAnnotation, ObjectAnnotation,
+    VideoAnnotationType)
+from labelbox.data.annotation_types.classification.classification import \
+    ClassificationAnswer
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.metrics import Metric
 from labelbox.data.annotation_types.geometry.mask import Mask
+from labelbox.data.annotation_types.metrics import Metric
+from labelbox.schema.ontology import Classification as OClassification
+from labelbox.schema.ontology import Option
+from pydantic import BaseModel
 
 
 class Label(BaseModel):
@@ -17,10 +20,14 @@ class Label(BaseModel):
     annotations: List[Union[AnnotationType, VideoAnnotationType, Metric]] = []
     extra: Dict[str, Any] = {}
 
-    def create_url_for_data(self, signer):
-        return self.data.create_url(signer)
+    def add_url_to_data(self, signer):
+        """
+        Only creates a url if one doesn't exist
+        """
+        self.data.create_url(signer)
+        return self
 
-    def create_url_for_masks(self, signer):
+    def add_url_to_masks(self, signer):
         masks = []
         for annotation in self.annotations:
             # Allows us to upload shared masks once
@@ -29,12 +36,20 @@ class Label(BaseModel):
                     masks.append(annotation.value.mask)
         for mask in masks:
             mask.create_url(signer)
+        return self
 
     def create_data_row(self, dataset, signer):
-        data_row = dataset.create_data_row(
-            row_data=self.create_url_for_data(signer))
+        args = {
+            'row_data' : self.add_url_to_data(signer)
+        }
+        if self.data.external_id is not None:
+            args.update({
+                'external'
+            })
+        data_row = dataset.create_data_row(**args)
         self.data.uid = data_row.uid
-        return data_row
+        self.data.external_id = data_row.external_id
+        return self
 
     def get_feature_schema_lookup(self, ontology_builder):
         tool_lookup = {}
@@ -64,8 +79,6 @@ class Label(BaseModel):
     def assign_schema_ids(self, ontology_builder):
         """
         Classifications get flattened when labeling.
-
-
         """
 
         def assign_or_raise(annotation, lookup):
@@ -106,3 +119,4 @@ class Label(BaseModel):
             else:
                 raise TypeError(
                     f"Unexpected type found for annotation. {type(annotation)}")
+        return self

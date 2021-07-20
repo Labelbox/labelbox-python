@@ -5,8 +5,7 @@ from typing import Any, Callable, Dict, Generator, Iterable
 
 import ndjson
 import requests
-from labelbox.data.annotation_types.collection import LabelCollection
-from labelbox.data.annotation_types.label import Label
+from labelbox.data.annotation_types.collection import LabelData, LabelGenerator
 from labelbox.data.serialization.labelbox_v1.label import LBV1Label
 
 logger = logging.getLogger(__name__)
@@ -21,10 +20,10 @@ class LBV1Converter:
         """
         label_generator = (LBV1Label(**example).to_common()
                            for example in VideoIterator(json_data, client))
-        return LabelCollection(data=label_generator)
+        return LabelGenerator(data=label_generator)
 
     @staticmethod
-    def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelCollection:
+    def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelGenerator:
 
         def label_generator():
             for example in json_data:
@@ -33,20 +32,18 @@ class LBV1Converter:
                         "Use `LBV1Converter.deserialize_video` to process video"
                     )
                 yield LBV1Label(**example).to_common()
-
-        return LabelCollection(data=label_generator())
+        return LabelGenerator(data=label_generator())
 
     @staticmethod
-    def serialize(label_collection: LabelCollection,
+    def serialize(labels: LabelData,
                   signer: Callable) -> Generator[Dict[str, Any], None, None]:
         # Note that the signer is only used if the data object doesn't already have a url
-        for label in label_collection.data:
+        for label in labels:
             res = LBV1Label.from_common(label, signer)
             yield res.dict(by_alias=True)
 
 
 class VideoIterator:
-
     def __init__(self, examples, client):
         self.queue = Queue(20)
         self.n_iters = len(examples)

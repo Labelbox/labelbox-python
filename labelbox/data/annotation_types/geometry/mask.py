@@ -1,11 +1,10 @@
 from typing import Any, Dict, Tuple
 
 import numpy as np
+from labelbox.data.annotation_types.data.raster import RasterData
+from labelbox.data.annotation_types.geometry.geometry import Geometry
 from rasterio.features import shapes
 from shapely.geometry import MultiPolygon, shape
-
-from labelbox.data.annotation_types.geometry.geometry import Geometry
-from labelbox.data.annotation_types.data.raster import RasterData
 
 
 class Mask(Geometry):

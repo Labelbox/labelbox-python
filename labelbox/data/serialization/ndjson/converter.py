@@ -1,26 +1,23 @@
 import logging
 from typing import Any, Dict, Generator, Iterable
 
-from labelbox.data.annotation_types.collection import LabelCollection
+from labelbox.data.annotation_types.collection import LabelData, LabelGenerator
 
 from .label import NDLabel
 
 logger = logging.getLogger(__name__)
 
-# TODO: Support videos
-
 
 class NDJsonConverter:
-
     @staticmethod
-    def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelCollection:
+    def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelGenerator:
         data = NDLabel(**{'annotations': json_data})
         return data.to_common()
 
     @staticmethod
     def serialize(
-        label_collection: LabelCollection
+        labels: LabelData
     ) -> Generator[Dict[str, Any], None, None]:
 
-        for example in NDLabel.from_common(label_collection):
+        for example in NDLabel.from_common(labels):
             yield example.dict(by_alias=True)

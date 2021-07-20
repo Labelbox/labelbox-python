@@ -20,8 +20,7 @@ def test_image():
     with open('tests/data/assets/ndjson/image_import.json', 'r') as file:
         data = json.load(file)
 
-    res = NDJsonConverter.deserialize(data)
-    res.data = list(res.data)
+    res = NDJsonConverter.deserialize(data).as_collection()
     res = list(NDJsonConverter.serialize(res))
     for r in res:
         r.pop('classifications', None)
