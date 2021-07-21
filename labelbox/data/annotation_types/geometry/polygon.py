@@ -1,9 +1,9 @@
-from typing import Any, Dict, List
+from typing import List
 
 import numpy as np
 import geojson
 import cv2
-from pydantic import ValidationError, validator
+from pydantic import validator
 
 from .point import Point
 from .geometry import Geometry
@@ -36,7 +36,7 @@ class Polygon(Geometry):
     @validator('points')
     def is_geom_valid(cls, points):
         if len(points) < 3:
-            raise ValidationError(
+            raise ValueError(
                 f"A polygon must have at least 3 points to be valid. Found {points}"
             )
         return points

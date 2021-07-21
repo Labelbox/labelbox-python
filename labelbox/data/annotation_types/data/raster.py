@@ -118,7 +118,9 @@ class RasterData(BaseData):
         return values
 
     class Config:
-        # TODO: Create a type for numpy arrays
+        # Required for numpy arrays
         arbitrary_types_allowed = True
+        # Required for sharing references
         copy_on_model_validation = False
+        # Required for discriminating between data types
         extra = 'forbid'

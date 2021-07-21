@@ -2,8 +2,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
-from ...annotation_types.annotation import (AnnotationType,
-                                            ClassificationAnnotation,
+from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
 from ...annotation_types.data import RasterData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
@@ -174,16 +173,6 @@ class LBV1TextEntity(LBV1ObjectBase):
                    **extra)
 
 
-object_mapping = {
-    Line: LBV1Line,
-    Point: LBV1Point,
-    Polygon: LBV1Polygon,
-    Rectangle: LBV1Rectangle,
-    Mask: LBV1Mask,
-    TextEntity: LBV1TextEntity
-}
-
-
 class LBV1Objects(BaseModel):
     objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
                         LBV1TextEntity, LBV1Mask]]
@@ -215,23 +204,37 @@ class LBV1Objects(BaseModel):
         return objects
 
     @classmethod
-    def from_common(cls, annotations: List[AnnotationType]) -> "LBV1Objects":
+    def from_common(cls, annotations: List[ObjectAnnotation]) -> "LBV1Objects":
         objects = []
-
         for annotation in annotations:
-            obj = object_mapping.get(type(annotation.value))
-            if obj is not None:
-                subclasses = []
-                subclasses = LBV1Classifications.from_common(
-                    annotation.classifications).classifications
+            obj = cls.lookup_object(annotation)
+            subclasses = []
+            subclasses = LBV1Classifications.from_common(
+                annotation.classifications).classifications
 
-                objects.append(
-                    obj.from_common(
-                        annotation.value, subclasses, annotation.schema_id,
-                        annotation.name, {
-                            'keyframe': getattr(annotation, 'keyframe', None),
-                            **annotation.extra
-                        }))
-            else:
-                raise TypeError(f"Unexpected type {type(annotation.value)}")
+            objects.append(
+                obj.from_common(
+                    annotation.value, subclasses, annotation.schema_id,
+                    annotation.name, {
+                        'keyframe': getattr(annotation, 'keyframe', None),
+                        **annotation.extra
+                    }))
         return cls(objects=objects)
+
+    @staticmethod
+    def lookup_object(annotation: ObjectAnnotation) -> "LBV1ObjectType":
+        result = {
+            Line: LBV1Line,
+            Point: LBV1Point,
+            Polygon: LBV1Polygon,
+            Rectangle: LBV1Rectangle,
+            Mask: LBV1Mask,
+            TextEntity: LBV1TextEntity
+        }.get(type(annotation.value))
+        if result is None:
+            raise TypeError(f"Unexpected type {type(annotation.value)}")
+        return result
+
+
+LBV1ObjectType = Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
+                       LBV1Mask, LBV1TextEntity]

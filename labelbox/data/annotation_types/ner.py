@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from pydantic import BaseModel, root_validator, ValidationError
+from pydantic import BaseModel, root_validator
 
 
 class TextEntity(BaseModel):

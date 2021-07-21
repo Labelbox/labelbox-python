@@ -98,8 +98,9 @@ class LBV1Classifications(BaseModel):
         return classifications
 
     @classmethod
-    def from_common(cls,
-                    annotations: List[AnnotationType]) -> "LBV1Classifications":
+    def from_common(
+            cls, annotations: List[ClassificationAnnotation]
+    ) -> "LBV1Classifications":
         classifications = []
         for annotation in annotations:
             classification = classification_mapping.get(type(annotation.value))

@@ -56,7 +56,6 @@ class VideoData(BaseData):
             logger.info("Downloading the video locally to %s", file_path)
             urllib.request.urlretrieve(self.url, file_path)
             self.file_path = file_path
-            # TODO: If the filepath exists but there was no data we should use the url (and the opposite too)
 
         vidcap = cv2.VideoCapture(self.file_path)
 
@@ -135,6 +134,7 @@ class VideoData(BaseData):
         return values
 
     class Config:
-        # TODO: Create numpy array type
+        # Required for numpy arrays
         arbitrary_types_allowed = True
+        # Required for discriminating between data types
         extra = 'forbid'

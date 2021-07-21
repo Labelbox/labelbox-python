@@ -71,4 +71,5 @@ class TextData(BaseData):
         return values
 
     class config:
+        # Required for discriminating between data types
         extra = 'forbid'

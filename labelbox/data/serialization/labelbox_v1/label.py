@@ -39,7 +39,6 @@ class _LBV1LabelVideo(_LBV1Label):
                 # Labelbox doesn't support subclasses on image level classifications
                 # These are added to top level classifications
                 classifications=[],
-                #keyframe = classification.keyframe,
                 frame=self.frame_number,
                 name=classification.title)
             for classification in self.classifications
@@ -58,7 +57,7 @@ class _LBV1LabelVideo(_LBV1Label):
                             'feature_id': cls.feature_id,
                             'title': cls.title,
                             'value': cls.value,
-                            'keyframe': getattr(cls, 'keyframe', None)
+                            #'keyframe': getattr(cls, 'keyframe', None)
                         }) for cls in obj.classifications
                 ],
                 name=obj.title,
@@ -111,29 +110,80 @@ class LBV1Label(BaseModel):
     data_row_id: str = Field(..., alias="DataRow ID")
     row_data: str = Field(..., alias="Labeled Data")
     external_id: Optional[str] = Field(None, alias="External ID")
-    created_by: Optional[str] = Field(None, alias='Created By')
 
-    id: Optional[str] = Field(None, alias='ID')
-    project_name: Optional[str] = Field(None, alias='Project Name')
-    created_at: Optional[str] = Field(None, alias='Created At')
-    updated_at: Optional[str] = Field(None, alias='Updated At')
-    seconds_to_label: Optional[float] = Field(None, alias='Seconds to Label')
-    agreement: Optional[float] = Field(None, alias='Agreement')
+    created_by: Optional[str] = Field(None,
+                                      alias='Created By',
+                                      extra_field=True)
+    project_name: Optional[str] = Field(None,
+                                        alias='Project Name',
+                                        extra_field=True)
+    id: Optional[str] = Field(None, alias='ID', extra_field=True)
+    created_at: Optional[str] = Field(None,
+                                      alias='Created At',
+                                      extra_field=True)
+    updated_at: Optional[str] = Field(None,
+                                      alias='Updated At',
+                                      extra_field=True)
+    seconds_to_label: Optional[float] = Field(None,
+                                              alias='Seconds to Label',
+                                              extra_field=True)
+    agreement: Optional[float] = Field(None,
+                                       alias='Agreement',
+                                       extra_field=True)
     benchmark_agreement: Optional[float] = Field(None,
-                                                 alias='Benchmark Agreement')
-    benchmark_id: Optional[float] = Field(None, alias='Benchmark ID')
-    dataset_name: Optional[str] = Field(None, alias='Dataset Name')
-    reviews: Optional[List[Review]] = Field(None, alias='Reviews')
-    label_url: Optional[str] = Field(None, alias='View Label')
-    has_open_issues: Optional[float] = Field(None, alias='Has Open Issues')
-    skipped: Optional[bool] = Field(None, alias='Skipped')
+                                                 alias='Benchmark Agreement',
+                                                 extra_field=True)
+    benchmark_id: Optional[float] = Field(None,
+                                          alias='Benchmark ID',
+                                          extra_field=True)
+    dataset_name: Optional[str] = Field(None,
+                                        alias='Dataset Name',
+                                        extra_field=True)
+    reviews: Optional[List[Review]] = Field(None,
+                                            alias='Reviews',
+                                            extra_field=True)
+    label_url: Optional[str] = Field(None, alias='View Label', extra_field=True)
+    has_open_issues: Optional[float] = Field(None,
+                                             alias='Has Open Issues',
+                                             extra_field=True)
+    skipped: Optional[bool] = Field(None, alias='Skipped', extra_field=True)
 
-    def construct_data_ref(self, is_video):
-        # TODO: Let users specify the type ...
+    def to_common(self) -> Label:
+        if isinstance(self.label, list):
+            annotations = []
+            for lbl in self.label:
+                annotations.extend(lbl.to_common())
+            data = VideoData(url=self.row_data,
+                             external_id=self.external_id,
+                             uid=self.data_row_id)
+        else:
+            annotations = self.label.to_common()
+            data = self._infer_media_type()
+
+        return Label(data=data,
+                     annotations=annotations,
+                     extra={
+                         field.alias: getattr(self, field_name)
+                         for field_name, field in self.__fields__.items()
+                         if field.field_info.extra.get('extra_field')
+                     })
+
+    @classmethod
+    def from_common(cls, label: Label, signer: Callable[[bytes], str]):
+        if isinstance(label.annotations[0],
+                      (VideoObjectAnnotation, VideoClassificationAnnotation)):
+            label_ = _LBV1LabelVideo.from_common(label.annotations)
+        else:
+            label_ = _LBV1Label.from_common(label.annotations)
+
+        return LBV1Label(label=label_,
+                         data_row_id=label.data.uid,
+                         row_data=label.data.create_url(signer),
+                         external_id=label.data.external_id,
+                         **label.extra)
+
+    def _infer_media_type(self):
         keys = {'external_id': self.external_id, 'uid': self.data_row_id}
-
-        if is_video:
-            return VideoData(url=self.row_data, **keys)
         if any([x in self.row_data for x in (".jpg", ".png", ".jpeg")
                ]) and self.row_data.startswith(("http://", "https://")):
             return RasterData(url=self.row_data, **keys)
@@ -149,52 +199,6 @@ class LBV1Label(BaseModel):
             return TextData(url=self.row_data, **keys)
         else:
             raise TypeError("Can't infer data type from row data.")
-
-    def to_common(self) -> Label:
-        is_video = False
-        if isinstance(self.label, list):
-            annotations = []
-            for lbl in self.label:
-                annotations.extend(lbl.to_common())
-            is_video = True
-        else:
-            annotations = self.label.to_common()
-
-        return Label(
-            data=self.construct_data_ref(is_video),
-            annotations=annotations,
-            extra={
-                'Created By': self.created_by,
-                'Project Name': self.project_name,
-                'ID': self.id,
-                'Created At': self.created_at,
-                'Updated At': self.updated_at,
-                'Seconds to Label': self.seconds_to_label,
-                'Agreement': self.agreement,
-                'Benchmark Agreement': self.benchmark_agreement,
-                'Benchmark ID': self.benchmark_id,
-                'Dataset Name': self.dataset_name,
-                'Reviews': [
-                    review.dict(by_alias=True) for review in self.reviews
-                ],
-                'View Label': self.label_url,
-                'Has Open Issues': self.has_open_issues,
-                'Skipped': self.skipped
-            })
-
-    @classmethod
-    def from_common(cls, label: Label, signer: Callable[[bytes], str]):
-        if isinstance(label.annotations[0],
-                      (VideoObjectAnnotation, VideoClassificationAnnotation)):
-            label_ = _LBV1LabelVideo.from_common(label.annotations)
-        else:
-            label_ = _LBV1Label.from_common(label.annotations)
-
-        return LBV1Label(label=label_,
-                         data_row_id=label.data.uid,
-                         row_data=label.data.create_url(signer),
-                         external_id=label.data.external_id,
-                         **label.extra)
 
     class Config:
         allow_population_by_field_name = True

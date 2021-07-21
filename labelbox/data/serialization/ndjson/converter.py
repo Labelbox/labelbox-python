@@ -27,6 +27,10 @@ class NDJsonConverter:
         """
         Converts a labelbox common object to the labelbox ndjson format (prediction import format)
 
+        Note that this function might fail for objects that are not supported by mal.
+        Not all edge cases are handling by custom exceptions, if you get a cryptic pydantic error message it is probably due to this.
+        We will continue to improve the error messages and add helper functions to deal with this.
+
         Args:
             labels: Either a LabelCollection or a LabelGenerator
         Returns:
