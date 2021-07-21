@@ -8,13 +8,15 @@ from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
 from .geometry.mask import Mask
 from .metrics import Metric
-from .annotation import (AnnotationType, ClassificationAnnotation,
-                         ObjectAnnotation, VideoAnnotationType)
+from .annotation import (ClassificationAnnotation, ObjectAnnotation,
+                         VideoClassificationAnnotation, VideoObjectAnnotation)
 
 
 class Label(BaseModel):
     data: Union[VideoData, RasterData, TextData]
-    annotations: List[Union[AnnotationType, VideoAnnotationType, Metric]] = []
+    annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
+                            VideoObjectAnnotation,
+                            VideoClassificationAnnotation, Metric]] = []
     extra: Dict[str, Any] = {}
 
     def add_url_to_data(self, signer) -> "Label":
