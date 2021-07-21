@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Generator, Iterable, Optional
+from typing import Any, Callable, Dict, Generator, Iterable
 import logging
 
 import ndjson

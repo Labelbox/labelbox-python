@@ -1,8 +1,11 @@
+from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.data.raster import RasterData
 from typing import List, Union, Optional
 
 from pydantic import BaseModel, validator, Field
 
-from ...annotation_types.annotation import AnnotationType, ClassificationAnnotation, VideoClassificationAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from .base import NDAnnotation
 
@@ -46,7 +49,8 @@ class NDTextSubclass(NDFeature):
         return Text(answer=self.answer)
 
     @classmethod
-    def from_common(cls, annotation) -> "NDTextSubclass":
+    def from_common(cls,
+                    annotation: ClassificationAnnotation) -> "NDTextSubclass":
         return cls(answer=annotation.value.answer,
                    schema_id=annotation.schema_id)
 
@@ -61,7 +65,8 @@ class NDChecklistSubclass(NDFeature):
         ])
 
     @classmethod
-    def from_common(cls, annotation) -> "NDChecklistSubclass":
+    def from_common(
+            cls, annotation: ClassificationAnnotation) -> "NDChecklistSubclass":
         return cls(answer=[
             NDFeature(schema_id=answer.schema_id)
             for answer in annotation.value.answer
@@ -77,7 +82,8 @@ class NDRadioSubclass(NDFeature):
             schema_id=self.answer.schema_id))
 
     @classmethod
-    def from_common(cls, annotation) -> "NDRadioSubclass":
+    def from_common(cls,
+                    annotation: ClassificationAnnotation) -> "NDRadioSubclass":
         return cls(
             answer=NDFeature(schema_id=annotation.value.answer.schema_id),
             schema_id=annotation.schema_id)
@@ -89,7 +95,8 @@ class NDRadioSubclass(NDFeature):
 class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDText":
+    def from_common(cls, annotation: ClassificationAnnotation,
+                    data: Union[TextData, RasterData]) -> "NDText":
         return cls(
             answer=annotation.value.answer,
             dataRow={'id': data.uid},
@@ -101,7 +108,10 @@ class NDText(NDAnnotation, NDTextSubclass):
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDChecklist":
+    def from_common(
+            cls, annotation: Union[ClassificationAnnotation,
+                                   VideoClassificationAnnotation],
+            data: Union[VideoData, TextData, RasterData]) -> "NDChecklist":
         return cls(answer=[
             NDFeature(schema_id=answer.schema_id)
             for answer in annotation.value.answer
@@ -115,7 +125,9 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDRadio":
+    def from_common(cls, annotation: Union[ClassificationAnnotation,
+                                           VideoClassificationAnnotation],
+                    data: Union[VideoData, TextData, RasterData]) -> "NDRadio":
         return cls(
             answer=NDFeature(schema_id=annotation.value.answer.schema_id),
             dataRow={'id': data.uid},
@@ -125,10 +137,10 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
 
 class NDSubclassification:
-    # TODO: Create a type for these unions
+
     @classmethod
     def from_common(
-        cls, annotation: AnnotationType
+        cls, annotation: ClassificationAnnotation
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         classify_obj = cls.lookup_subclassification(annotation)
         if classify_obj is None:
@@ -138,12 +150,15 @@ class NDSubclassification:
         return classify_obj.from_common(annotation)
 
     @staticmethod
-    def to_common(annotation: AnnotationType) -> ClassificationAnnotation:
+    def to_common(
+            annotation: "NDClassificationType") -> ClassificationAnnotation:
         return ClassificationAnnotation(value=annotation.to_common(),
                                         schema_id=annotation.schema_id)
 
     @staticmethod
-    def lookup_subclassification(annotation: AnnotationType):
+    def lookup_subclassification(
+        annotation: ClassificationAnnotation
+    ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         if isinstance(annotation, Dropdown):
             raise TypeError("Dropdowns are not supported for MAL")
         return {
@@ -157,7 +172,7 @@ class NDClassification:
 
     @staticmethod
     def to_common(
-        annotation: AnnotationType
+        annotation: "NDClassificationType"
     ) -> Union[ClassificationAnnotation, VideoClassificationAnnotation]:
         common = ClassificationAnnotation(value=annotation.to_common(),
                                           schema_id=annotation.schema_id,
@@ -173,7 +188,9 @@ class NDClassification:
 
     @classmethod
     def from_common(
-            cls, annotation: AnnotationType, data
+        cls, annotation: Union[ClassificationAnnotation,
+                               VideoClassificationAnnotation],
+        data: Union[VideoData, TextData, RasterData]
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         classify_obj = cls.lookup_classification(annotation)
         if classify_obj is None:
@@ -186,7 +203,9 @@ class NDClassification:
         return classify_obj.from_common(annotation, data)
 
     @staticmethod
-    def lookup_classification(annotation: AnnotationType):
+    def lookup_classification(
+            annotation: ObjectAnnotation
+    ) -> Union[NDText, NDChecklist, NDRadio]:
         if isinstance(annotation, Dropdown):
             raise TypeError("Dropdowns are not supported for MAL")
         return {

@@ -1,3 +1,4 @@
+from labelbox.data.annotation_types.data.text import TextData
 from typing import List, Tuple, Union
 
 from pydantic import BaseModel
@@ -5,7 +6,7 @@ from pydantic import BaseModel
 from ...annotation_types.data import RasterData
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
-from ...annotation_types.annotation import AnnotationType, ObjectAnnotation
+from ...annotation_types.annotation import ObjectAnnotation
 from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation
 
@@ -34,7 +35,8 @@ class NDPoint(NDObject):
 
     @classmethod
     # TODO Add typing for these args..
-    def from_common(cls, annotation, data) -> "NDPoint":
+    def from_common(cls, annotation: ObjectAnnotation,
+                    data: Union[RasterData, TextData]) -> "NDPoint":
         return cls(point={
             'x': annotation.value.x,
             'y': annotation.value.y
@@ -55,7 +57,8 @@ class NDLine(NDObject):
         return Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line])
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDLine":
+    def from_common(cls, annotation: ObjectAnnotation,
+                    data: Union[RasterData, TextData]) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
@@ -76,8 +79,8 @@ class NDPolygon(NDObject):
         return Polygon(points=[Point(x=pt.x, y=pt.y) for pt in self.polygon])
 
     @classmethod
-    # TODO: Type these annotations
-    def from_common(cls, annotation, data) -> "NDPolygon":
+    def from_common(cls, annotation: ObjectAnnotation,
+                    data: Union[RasterData, TextData]) -> "NDPolygon":
         return cls(polygon=[{
             'x': pt.x,
             'y': pt.y
@@ -100,7 +103,8 @@ class NDRectangle(NDObject):
                                    y=self.bbox.top + self.bbox.height))
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDRectangle":
+    def from_common(cls, annotation: ObjectAnnotation,
+                    data: Union[RasterData, TextData]) -> "NDRectangle":
         return cls(bbox=Bbox(
             top=annotation.value.start.y,
             left=annotation.value.start.x,
@@ -128,7 +132,8 @@ class NDMask(NDObject):
                     color_rgb=self.mask.colorRGB)
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDMask":
+    def from_common(cls, annotation: ObjectAnnotation,
+                    data: Union[RasterData, TextData]) -> "NDMask":
         return cls(mask=_Mask(instanceURI=annotation.value.mask.url,
                               colorRGB=annotation.value.color_rgb),
                    dataRow=DataRow(id=data.uid),
@@ -152,7 +157,8 @@ class NDTextEntity(NDObject):
         return TextEntity(start=self.location.start, end=self.location.end)
 
     @classmethod
-    def from_common(cls, annotation, data) -> "NDTextEntity":
+    def from_common(cls, annotation: ObjectAnnotation,
+                    data: Union[RasterData, TextData]) -> "NDTextEntity":
         return cls(location=Location(
             start=annotation.value.start,
             end=annotation.value.end,
@@ -169,7 +175,7 @@ class NDTextEntity(NDObject):
 class NDObject:
 
     @staticmethod
-    def to_common(annotation) -> ObjectAnnotation:
+    def to_common(annotation: "NDObjectType") -> ObjectAnnotation:
         common_annotation = annotation.to_common()
         classifications = [
             NDSubclassification.to_common(annot)
@@ -182,18 +188,14 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation, data
+        cls, annotation: ObjectAnnotation, data: Union[RasterData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
-        if obj is None:
-            raise TypeError(
-                f"Unable to convert object to MAL format. `{type(annotation.value)}`"
-            )
         return obj.from_common(annotation, data)
 
     @staticmethod
-    def lookup_object(annotation: AnnotationType):
-        return {
+    def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":
+        result = {
             Line: NDLine,
             Point: NDPoint,
             Polygon: NDPolygon,
@@ -201,7 +203,12 @@ class NDObject:
             Mask: NDMask,
             TextEntity: NDTextEntity
         }.get(type(annotation.value))
+        if result is None:
+            raise TypeError(
+                f"Unable to convert object to MAL format. `{type(annotation.value)}`"
+            )
+        return result
 
 
-NDObjectType = Union[Bbox, NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
+NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
                      NDTextEntity]
