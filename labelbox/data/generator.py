@@ -28,7 +28,7 @@ class ThreadSafeGen:
 
 class PrefetchGenerator:
     """
-    Applys functions asynchronously to the about of a generator.
+    Applys functions asynchronously to the output of a generator.
     Useful for modifying the generator results based on data from a network
     """
 
