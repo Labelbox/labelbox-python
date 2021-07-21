@@ -49,9 +49,5 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
     frame: int
 
 
-AnnotationType = Union[ClassificationAnnotation, ObjectAnnotation]
-VideoAnnotationType = Union[VideoObjectAnnotation,
-                            VideoClassificationAnnotation]
-
 VideoObjectAnnotation.update_forward_refs()
 ObjectAnnotation.update_forward_refs()

@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, root_validator
 
+from .types import Cuid
+
 
 class FeatureSchema(BaseModel):
     """
@@ -13,7 +15,7 @@ class FeatureSchema(BaseModel):
     to retroactively add schema ids by looking them up from the names.
     """
     name: Optional[str] = None
-    schema_id: Optional[str] = None
+    schema_id: Optional[Cuid] = None
 
     @root_validator
     def must_set_one(cls, values):

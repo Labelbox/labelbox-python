@@ -1,6 +1,9 @@
 from uuid import uuid4
 from pydantic import BaseModel, validator, Field
 
+from labelbox.utils import camel_case
+from ...annotation_types.types import Cuid
+
 
 class DataRow(BaseModel):
     id: str = None
@@ -17,7 +20,7 @@ class DataRow(BaseModel):
 
 class NDJsonBase(BaseModel):
     uuid: str = None
-    data_row: DataRow = Field(..., alias="dataRow")
+    data_row: DataRow
 
     @validator('uuid', pre=True, always=True)
     def set_id(cls, v):
@@ -25,10 +28,11 @@ class NDJsonBase(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        alias_generator = camel_case
 
 
 class NDAnnotation(NDJsonBase):
-    schema_id: str = Field(None, alias="schemaId")
+    schema_id: Cuid
 
     @validator('schema_id', pre=True, always=True)
     def validate_id(cls, v):

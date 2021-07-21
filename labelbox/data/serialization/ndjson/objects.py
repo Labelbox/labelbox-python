@@ -1,17 +1,17 @@
-from labelbox.data.annotation_types.data.text import TextData
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import BaseModel
 
-from ...annotation_types.data import RasterData
+from ...annotation_types.data import RasterData, TextData
 from ...annotation_types.ner import TextEntity
+from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
-from ...annotation_types.annotation import ObjectAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation
 
 
-class NDObject(NDAnnotation):
+class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
 
 
@@ -27,74 +27,70 @@ class Bbox(BaseModel):
     width: float
 
 
-class NDPoint(NDObject):
+class NDPoint(NDBaseObject):
     point: _Point
 
     def to_common(self) -> Point:
         return Point(x=self.point.x, y=self.point.y)
 
     @classmethod
-    # TODO Add typing for these args..
-    def from_common(cls, annotation: ObjectAnnotation,
+    def from_common(cls, point: Point,
+                    classifications: List[ClassificationAnnotation],
+                    schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[RasterData, TextData]) -> "NDPoint":
         return cls(point={
-            'x': annotation.value.x,
-            'y': annotation.value.y
+            'x': point.x,
+            'y': point.y
         },
                    dataRow=DataRow(id=data.uid),
-                   schema_id=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   classifications=[
-                       NDSubclassification.from_common(annot)
-                       for annot in annotation.classifications
-                   ])
+                   schema_id=schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
-class NDLine(NDObject):
+class NDLine(NDBaseObject):
     line: List[_Point]
 
     def to_common(self) -> Line:
         return Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line])
 
     @classmethod
-    def from_common(cls, annotation: ObjectAnnotation,
+    def from_common(cls, line: Line,
+                    classifications: List[ClassificationAnnotation],
+                    schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[RasterData, TextData]) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
-        } for pt in annotation.value.points],
+        } for pt in line.points],
                    dataRow=DataRow(id=data.uid),
-                   schema_id=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   classifications=[
-                       NDSubclassification.from_common(annot)
-                       for annot in annotation.classifications
-                   ])
+                   schema_id=schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
-class NDPolygon(NDObject):
+class NDPolygon(NDBaseObject):
     polygon: List[_Point]
 
     def to_common(self) -> Polygon:
         return Polygon(points=[Point(x=pt.x, y=pt.y) for pt in self.polygon])
 
     @classmethod
-    def from_common(cls, annotation: ObjectAnnotation,
+    def from_common(cls, polygon: Polygon,
+                    classifications: List[ClassificationAnnotation],
+                    schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[RasterData, TextData]) -> "NDPolygon":
         return cls(polygon=[{
             'x': pt.x,
             'y': pt.y
-        } for pt in annotation.value.points],
+        } for pt in polygon.points],
                    dataRow=DataRow(id=data.uid),
-                   schema_id=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   classifications=[
-                       NDSubclassification.from_common(annot)
-                       for annot in annotation.classifications
-                   ])
+                   schema_id=schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
-class NDRectangle(NDObject):
+class NDRectangle(NDBaseObject):
     bbox: Bbox
 
     def to_common(self) -> Rectangle:
@@ -103,20 +99,18 @@ class NDRectangle(NDObject):
                                    y=self.bbox.top + self.bbox.height))
 
     @classmethod
-    def from_common(cls, annotation: ObjectAnnotation,
+    def from_common(cls, rectangle: Rectangle,
+                    classifications: List[ClassificationAnnotation],
+                    schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[RasterData, TextData]) -> "NDRectangle":
-        return cls(bbox=Bbox(
-            top=annotation.value.start.y,
-            left=annotation.value.start.x,
-            height=annotation.value.end.y - annotation.value.start.y,
-            width=annotation.value.end.x - annotation.value.start.x),
+        return cls(bbox=Bbox(top=rectangle.start.y,
+                             left=rectangle.start.x,
+                             height=rectangle.end.y - rectangle.start.y,
+                             width=rectangle.end.x - rectangle.start.x),
                    dataRow=DataRow(id=data.uid),
-                   schema_id=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   classifications=[
-                       NDSubclassification.from_common(annot)
-                       for annot in annotation.classifications
-                   ])
+                   schema_id=schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
 class _Mask(BaseModel):
@@ -124,7 +118,7 @@ class _Mask(BaseModel):
     colorRGB: Tuple[int, int, int]
 
 
-class NDMask(NDObject):
+class NDMask(NDBaseObject):
     mask: _Mask
 
     def to_common(self) -> Mask:
@@ -132,17 +126,20 @@ class NDMask(NDObject):
                     color_rgb=self.mask.colorRGB)
 
     @classmethod
-    def from_common(cls, annotation: ObjectAnnotation,
+    def from_common(cls, mask: Mask,
+                    classifications: List[ClassificationAnnotation],
+                    schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[RasterData, TextData]) -> "NDMask":
-        return cls(mask=_Mask(instanceURI=annotation.value.mask.url,
-                              colorRGB=annotation.value.color_rgb),
+        if mask.mask.url is None:
+            raise ValueError(
+                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelCollection.add_url_to_masks`, or `Label.add_url_to_masks`."
+            )
+        return cls(mask=_Mask(instanceURI=mask.mask.url,
+                              colorRGB=mask.color_rgb),
                    dataRow=DataRow(id=data.uid),
-                   schema_id=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   classifications=[
-                       NDSubclassification.from_common(annot)
-                       for annot in annotation.classifications
-                   ])
+                   schema_id=schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
 class Location(BaseModel):
@@ -150,26 +147,25 @@ class Location(BaseModel):
     end: int
 
 
-class NDTextEntity(NDObject):
+class NDTextEntity(NDBaseObject):
     location: Location
 
     def to_common(self) -> TextEntity:
         return TextEntity(start=self.location.start, end=self.location.end)
 
     @classmethod
-    def from_common(cls, annotation: ObjectAnnotation,
+    def from_common(cls, text_entity: TextEntity,
+                    classifications: List[ClassificationAnnotation],
+                    schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[RasterData, TextData]) -> "NDTextEntity":
         return cls(location=Location(
-            start=annotation.value.start,
-            end=annotation.value.end,
+            start=text_entity.start,
+            end=text_entity.end,
         ),
                    dataRow=DataRow(id=data.uid),
-                   schema_id=annotation.schema_id,
-                   uuid=annotation.extra.get('uuid'),
-                   classifications=[
-                       NDSubclassification.from_common(annot)
-                       for annot in annotation.classifications
-                   ])
+                   schema_id=schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
 class NDObject:
@@ -191,7 +187,12 @@ class NDObject:
         cls, annotation: ObjectAnnotation, data: Union[RasterData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
-        return obj.from_common(annotation, data)
+        subclasses = [
+            NDSubclassification.from_common(annot)
+            for annot in annotation.classifications
+        ]
+        return obj.from_common(annotation.value, subclasses,
+                               annotation.schema_id, annotation.extra, data)
 
     @staticmethod
     def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":
