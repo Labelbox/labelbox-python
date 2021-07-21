@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Callable
+from typing import Callable, Tuple
 
 import numpy as np
 from rasterio.features import shapes
