@@ -83,9 +83,8 @@ def test_adding_schema_ids():
             )
         ])
     schema_id = "expected_id"
-    ontology = OntologyBuilder(tools=[
-        Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)
-    ])
+    ontology = OntologyBuilder(
+        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
     generator = LabelGenerator([label]).assign_schema_ids(ontology)
     assert next(generator).annotations[0].schema_id == schema_id
     labels = LabelCollection([label]).assign_schema_ids(ontology)

@@ -18,8 +18,7 @@ def test_classification_answer():
     assert answer.schema_id is None
     assert answer.name == name
 
-    answer = ClassificationAnswer(schema_id=schema_id,
-                                  name=name)
+    answer = ClassificationAnswer(schema_id=schema_id, name=name)
 
     assert answer.schema_id == schema_id
     assert answer.name == name
@@ -133,8 +132,7 @@ def test_radio():
         schema_id=schema_id,
         name=name,
         classifications=[
-            ClassificationAnnotation(value=Radio(answer=answer),
-                                     name=name)
+            ClassificationAnnotation(value=Radio(answer=answer), name=name)
         ])
     assert classification.dict() == {
         'name':
@@ -245,8 +243,7 @@ def test_dropdown():
         schema_id=schema_id,
         name=name,
         classifications=[
-            ClassificationAnnotation(value=Dropdown(answer=[answer]),
-                                     name=name)
+            ClassificationAnnotation(value=Dropdown(answer=[answer]), name=name)
         ])
     assert classification.dict() == {
         'name':

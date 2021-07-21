@@ -20,9 +20,8 @@ def test_schema_assignment_geometry():
             )
         ])
     schema_id = "expected_id"
-    ontology = OntologyBuilder(tools=[
-        Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)
-    ])
+    ontology = OntologyBuilder(
+        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
     label.assign_schema_ids(ontology)
 
     assert label.annotations[0].schema_id == schema_id
@@ -35,10 +34,9 @@ def test_schema_assignment_classification():
 
     label = Label(data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
                   annotations=[
-                      ClassificationAnnotation(
-                          value=Radio(answer=ClassificationAnswer(
-                              name=option_name)),
-                          name=radio_name),
+                      ClassificationAnnotation(value=Radio(
+                          answer=ClassificationAnswer(name=option_name)),
+                                               name=radio_name),
                       ClassificationAnnotation(value=Text(answer="some text"),
                                                name=text_name)
                   ])
@@ -73,8 +71,7 @@ def test_schema_assignment_subclass():
     option_name = "my_option"
     classification = ClassificationAnnotation(
         name=radio_name,
-        value=Radio(answer=ClassificationAnswer(
-            name=option_name)),
+        value=Radio(answer=ClassificationAnswer(name=option_name)),
     )
     label = Label(
         data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
@@ -117,8 +114,7 @@ def test_highly_nested():
     nested_option_name = "nested_option_name"
     classification = ClassificationAnnotation(
         name=radio_name,
-        value=Radio(answer=ClassificationAnswer(
-            name=option_name)),
+        value=Radio(answer=ClassificationAnswer(name=option_name)),
         classifications=[
             ClassificationAnnotation(value=Radio(answer=ClassificationAnswer(
                 name=nested_option_name)),
@@ -146,22 +142,21 @@ def test_highly_nested():
                      instructions=radio_name,
                      feature_schema_id=classification_schema_id,
                      options=[
-                         Option(
-                             value=option_name,
-                             feature_schema_id=option_schema_id,
-                             options=[
-                                 OClassification(
-                                     class_type=OClassification.Type.RADIO,
-                                     instructions=nested_name,
-                                     feature_schema_id=
-                                     nested_classification_schema_id,
-                                     options=[
-                                         Option(
-                                             value=nested_option_name,
-                                             feature_schema_id=
-                                             nested_classification_schema_id)
-                                     ])
-                             ])
+                         Option(value=option_name,
+                                feature_schema_id=option_schema_id,
+                                options=[
+                                    OClassification(
+                                        class_type=OClassification.Type.RADIO,
+                                        instructions=nested_name,
+                                        feature_schema_id=
+                                        nested_classification_schema_id,
+                                        options=[
+                                            Option(
+                                                value=nested_option_name,
+                                                feature_schema_id=
+                                                nested_classification_schema_id)
+                                        ])
+                                ])
                      ])
              ])
     ])
