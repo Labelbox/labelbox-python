@@ -39,8 +39,7 @@ def test_annotation():
             classifications=[line],
         )
 
-    subclass = ClassificationAnnotation(value=classification,
-                                        name=name)
+    subclass = ClassificationAnnotation(value=classification, name=name)
 
     ObjectAnnotation(
         value=line,
@@ -55,15 +54,10 @@ def test_video_annotations():
 
     # Wrong type
     with pytest.raises(ValidationError):
-        VideoClassificationAnnotation(value=line,
-                                      name=name,
-                                      frame=1)
+        VideoClassificationAnnotation(value=line, name=name, frame=1)
 
     # Missing frames
     with pytest.raises(ValidationError):
         VideoClassificationAnnotation(value=line, name=name)
 
-    VideoObjectAnnotation(value=line,
-                          name=name,
-                          keyframe=True,
-                          frame=2)
+    VideoObjectAnnotation(value=line, name=name, keyframe=True, frame=2)

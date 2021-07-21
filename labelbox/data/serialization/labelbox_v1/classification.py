@@ -4,6 +4,7 @@ from pydantic.main import BaseModel
 
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.classification import Checklist, ClassificationAnswer, Radio, Text, Dropdown
+from ...annotation_types.types import Cuid
 from .feature import LBV1Feature
 
 
@@ -24,7 +25,7 @@ class LBV1Radio(LBV1Feature):
             }))
 
     @classmethod
-    def from_common(cls, radio: Radio, schema_id: str, **extra) -> "LBV1Radio":
+    def from_common(cls, radio: Radio, schema_id: Cuid, **extra) -> "LBV1Radio":
         return cls(schema_id=schema_id,
                    answer=LBV1ClassificationAnswer(
                        schema_id=radio.answer.schema_id,
@@ -48,7 +49,7 @@ class LBV1Checklist(LBV1Feature):
         ])
 
     @classmethod
-    def from_common(cls, checklist: Checklist, schema_id: str,
+    def from_common(cls, checklist: Checklist, schema_id: Cuid,
                     **extra) -> "LBV1Checklist":
         return cls(schema_id=schema_id,
                    answers=[
@@ -69,22 +70,14 @@ class LBV1Text(LBV1Feature):
         return Text(answer=self.answer)
 
     @classmethod
-    def from_common(cls, text: Text, schema_id: str, **extra) -> "LBV1Text":
+    def from_common(cls, text: Text, schema_id: Cuid, **extra) -> "LBV1Text":
         return cls(schema_id=schema_id, answer=text.answer, **extra)
-
-
-classification_mapping = {
-    Text: LBV1Text,
-    Dropdown: LBV1Checklist,
-    Checklist: LBV1Checklist,
-    Radio: LBV1Radio
-}
 
 
 class LBV1Classifications(BaseModel):
     classifications: List[Union[LBV1Radio, LBV1Checklist, LBV1Text]] = []
 
-    def to_common(self):
+    def to_common(self) -> List[ClassificationAnnotation]:
         classifications = [
             ClassificationAnnotation(value=classification.to_common(),
                                      classifications=[],
@@ -103,7 +96,7 @@ class LBV1Classifications(BaseModel):
     ) -> "LBV1Classifications":
         classifications = []
         for annotation in annotations:
-            classification = classification_mapping.get(type(annotation.value))
+            classification = cls.lookup_classification(annotation)
             if classification is not None:
                 classifications.append(
                     classification.from_common(annotation.value,
@@ -112,3 +105,14 @@ class LBV1Classifications(BaseModel):
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")
         return cls(classifications=classifications)
+
+    @staticmethod
+    def lookup_classification(
+        annotation: ClassificationAnnotation
+    ) -> Union[LBV1Text, LBV1Checklist, LBV1Radio]:
+        return {
+            Text: LBV1Text,
+            Dropdown: LBV1Checklist,
+            Checklist: LBV1Checklist,
+            Radio: LBV1Radio
+        }.get(type(annotation.value))

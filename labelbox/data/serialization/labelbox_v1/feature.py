@@ -1,14 +1,17 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, root_validator
+
+from labelbox.utils import camel_case
+from ...annotation_types.types import Cuid
 
 
 class LBV1Feature(BaseModel):
-    keyframe: Optional[bool] = Field(None)
+    keyframe: Optional[bool] = None
     title: str = None
     value: Optional[str] = None
-    schema_id: str = Field(None, alias='schemaId')
-    feature_id: Optional[str] = Field(None, alias='featureId')
+    schema_id: Optional[Cuid] = None
+    feature_id: Optional[Cuid] = None
 
     @root_validator
     def check_ids(cls, values):
@@ -25,3 +28,4 @@ class LBV1Feature(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        alias_generator = camel_case

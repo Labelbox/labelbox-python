@@ -73,7 +73,6 @@ class LBV1VideoIterator(PrefetchGenerator):
 
     def __init__(self, examples, client):
         self.client = client
-
         super().__init__(examples)
 
     def _process(self, value):
