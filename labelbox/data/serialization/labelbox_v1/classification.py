@@ -2,7 +2,7 @@ from typing import List, Union
 
 from pydantic.main import BaseModel
 
-from ...annotation_types.annotation import AnnotationType, ClassificationAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.classification import Checklist, ClassificationAnswer, Radio, Text, Dropdown
 from .feature import LBV1Feature
 
