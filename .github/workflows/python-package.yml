@@ -47,13 +47,14 @@ jobs:
       uses: AlexanderMelde/yapf-action@master
       with:
         args: --verbose --recursive --parallel --style "google"
-
+    - name: upgrade pip
+      run: |
+        python -m pip install --upgrade pip
     - name: install labelbox package
       run: |
         python setup.py install
     - name: mypy
       run: |
-        python -m pip install --upgrade pip
         pip install mypy==0.782
         mypy -p labelbox --pretty --show-error-codes
     - name: Install package and test dependencies
