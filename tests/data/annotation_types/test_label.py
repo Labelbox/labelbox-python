@@ -5,7 +5,7 @@ import numpy as np
 
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.schema.ontology import OntologyBuilder, Tool, Classification as OClassification, Option
+from labelbox import OntologyBuilder, Tool, Classification as OClassification, Option
 
 
 def test_schema_assignment_geometry():

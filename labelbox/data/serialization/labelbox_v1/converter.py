@@ -1,6 +1,6 @@
 from requests.exceptions import HTTPError
 import labelbox
-from typing import Any, Callable, Dict, Generator, Iterable
+from typing import Any, Dict, Generator, Iterable
 import logging
 
 import ndjson
@@ -8,7 +8,7 @@ import requests
 from google.api_core import retry
 
 from .label import LBV1Label
-from ...annotation_types.collection import (LabelData, LabelGenerator,
+from ...annotation_types.collection import (LabelContainer, LabelGenerator,
                                             PrefetchGenerator)
 
 logger = logging.getLogger(__name__)
@@ -53,9 +53,7 @@ class LBV1Converter:
 
     @staticmethod
     def serialize(
-        labels: LabelData,
-        signer: Callable[[bytes],
-                         str]) -> Generator[Dict[str, Any], None, None]:
+        labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox json export format
 
@@ -65,7 +63,7 @@ class LBV1Converter:
             A generator for accessing the labelbox json export representation of the data
         """
         for label in labels:
-            res = LBV1Label.from_common(label, signer)
+            res = LBV1Label.from_common(label)
             yield res.dict(by_alias=True)
 
 

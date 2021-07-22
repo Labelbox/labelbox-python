@@ -503,3 +503,4 @@ class Client:
             Roles are used for user management.
         """
         return role.get_roles(self)
+

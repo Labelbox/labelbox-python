@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Union, Callable
 
 from pydantic import BaseModel
 
-from labelbox.schema.ontology import Classification as OClassification, OntologyBuilder, Option
+from labelbox import Classification as OClassification, OntologyBuilder, Option
 from labelbox.orm.model import Entity
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData

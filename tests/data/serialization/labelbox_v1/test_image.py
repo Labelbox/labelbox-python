@@ -8,7 +8,7 @@ def test_image():
         payload = json.load(file)
 
     collection = LBV1Converter.deserialize([payload])
-    serialized = next(LBV1Converter.serialize(collection, None))
+    serialized = next(LBV1Converter.serialize(collection))
 
     assert serialized.keys() == payload.keys()
     for key in serialized:
