@@ -1,15 +1,12 @@
-import abc
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 import colorsys
 
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from labelbox.schema.project import Project
-from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
-from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.utils import snake_case, camel_case
+from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Field, Relationship
 from labelbox.exceptions import InconsistentOntologyException
 
 
@@ -335,7 +332,7 @@ class OntologyBuilder:
                 self.tools[index].color = '#%02x%02x%02x' % rgb_color
 
     @classmethod
-    def from_project(cls, project: Project):
+    def from_project(cls, project: "Project"):
         ontology = project.ontology().normalized
         return OntologyBuilder.from_dict(ontology)
 

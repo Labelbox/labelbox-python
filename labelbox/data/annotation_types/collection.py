@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from tqdm import tqdm
 
-from labelbox.schema.ontology import OntologyBuilder
+from labelbox import OntologyBuilder
 from labelbox.orm.model import Entity
 from ..generator import PrefetchGenerator
 from .label import Label
@@ -62,7 +62,7 @@ class LabelCollection:
         upload_task = dataset.create_data_rows([{
             'row_data': label.data.url,
             'external_id': label.data.external_id
-        } for label in self])
+        } for label in self._data])
         upload_task.wait_till_done()
 
         data_row_lookup = {
@@ -128,6 +128,7 @@ class LabelCollection:
 
     def __next__(self) -> Label:
         if self._index == len(self._data):
+            self._index = 0
             raise StopIteration
 
         value = self._data[self._index]
