@@ -9,14 +9,8 @@ from .ner import TextEntity
 class BaseAnnotation(FeatureSchema):
     """ Base annotation class. Shouldn't be directly instantiated
     """
-    classifications: List["ClassificationAnnotation"] = []
+
     extra: Dict[str, Any] = {}
-
-
-class ObjectAnnotation(BaseAnnotation):
-    """Class representing objects annotations (non classifications or annotations that have a location)
-    """
-    value: Union[TextEntity, Geometry]
 
 
 class ClassificationAnnotation(BaseAnnotation):
@@ -24,7 +18,11 @@ class ClassificationAnnotation(BaseAnnotation):
     value: Union[Text, Checklist, Radio, Dropdown]
 
 
-ClassificationAnnotation.update_forward_refs()
+class ObjectAnnotation(BaseAnnotation):
+    """Class representing objects annotations (non classifications or annotations that have a location)
+    """
+    value: Union[TextEntity, Geometry]
+    classifications: List[ClassificationAnnotation] = []
 
 
 class VideoObjectAnnotation(ObjectAnnotation):
@@ -47,7 +45,3 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
         frame: The frame index that this annotation corresponds to
     """
     frame: int
-
-
-VideoObjectAnnotation.update_forward_refs()
-ObjectAnnotation.update_forward_refs()
