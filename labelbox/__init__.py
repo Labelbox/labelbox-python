@@ -1,9 +1,9 @@
 name = "labelbox"
 __version__ = "2.7.0"
 
+from labelbox.schema.project import Project
 from labelbox.client import Client
 from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.label import Label

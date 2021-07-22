@@ -4,10 +4,12 @@ import colorsys
 
 from typing import Any, Dict, List, Optional, Union
 
-from labelbox.schema.project import Project
+#from labelbox.schema.project import Project
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.exceptions import InconsistentOntologyException
+
+Project = "NONE"
 
 
 @dataclass
