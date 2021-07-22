@@ -47,12 +47,19 @@ jobs:
       uses: AlexanderMelde/yapf-action@master
       with:
         args: --verbose --recursive --parallel --style "google"
-    - name: upgrade pip
+    - name: dependencies
       run: |
         python -m pip install --upgrade pip
+        RUN apt-get -y update
+        RUN apt install -y libsm6 \
+                         libxext6 \
+                           ffmpeg \
+                   libfontconfig1 \
+                      libxrender1 \
+                  libgl1-mesa-glx \
+                  python3-opencv
     - name: install labelbox package
       run: |
-        pip install scikit-build
         python setup.py install
     - name: mypy
       run: |
