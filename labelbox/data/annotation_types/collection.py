@@ -238,7 +238,8 @@ class LabelGenerator(PrefetchGenerator):
         self._fns['add_url_to_masks'] = _add_url_to_masks
         return self
 
-    def register_background_fn(self, fn: Callable[[Label], Label], name: str) -> "LabelGenerator":
+    def register_background_fn(self, fn: Callable[[Label], Label],
+                               name: str) -> "LabelGenerator":
         """
         Allows users to add arbitrary io functions to the generator.
         These functions will be exectuted in parallel and added to a prefetch queue.
@@ -250,7 +251,6 @@ class LabelGenerator(PrefetchGenerator):
         """
         self._fns[name] = fn
         return self
-
 
     def __iter__(self):
         return self

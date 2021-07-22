@@ -2,6 +2,7 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.role import Role
 
+
 class User(DbObject):
     """ A User is a registered Labelbox user (for example you) associated with
     data they create or import and an Organization they belong to.

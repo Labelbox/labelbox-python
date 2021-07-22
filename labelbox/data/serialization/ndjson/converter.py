@@ -23,7 +23,8 @@ class NDJsonConverter:
         return data.to_common()
 
     @staticmethod
-    def serialize(labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
+    def serialize(
+            labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox ndjson format (prediction import format)
 
