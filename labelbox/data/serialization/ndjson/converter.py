@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Generator, Iterable
 
-from ...annotation_types.collection import LabelData, LabelGenerator
+from ...annotation_types.collection import LabelContainer, LabelGenerator
 from .label import NDLabel
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class NDJsonConverter:
         return data.to_common()
 
     @staticmethod
-    def serialize(labels: LabelData) -> Generator[Dict[str, Any], None, None]:
+    def serialize(labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox ndjson format (prediction import format)
 
