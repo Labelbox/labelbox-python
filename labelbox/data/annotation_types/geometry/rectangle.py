@@ -9,6 +9,9 @@ from .point import Point
 class Rectangle(Geometry):
     """
     Represents a 2d rectangle. Also known as a bounding box.
+
+    start: Top left coordinate of the rectangle
+    end: Bottom right coordinate of the rectangle
     """
     start: Point
     end: Point

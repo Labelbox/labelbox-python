@@ -151,7 +151,7 @@ def test_adding_to_masks(signer):
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
-                                        color_rgb=[255, 255, 255]))
+                                        color=[255, 255, 255]))
         ])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_url_to_masks(signer(uuid))
@@ -166,7 +166,7 @@ def test_adding_to_masks(signer):
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
-                                        color_rgb=[255, 255, 255]))
+                                        color=[255, 255, 255]))
         ])
     assert label.annotations[0].value.mask.url != uuid
     labels = LabelCollection([label]).add_url_to_masks(signer(uuid))

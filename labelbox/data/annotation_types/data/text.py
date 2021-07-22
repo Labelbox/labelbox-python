@@ -30,13 +30,22 @@ class TextData(BaseData):
             self.text = text
             return text
         elif self.url:
-            response = requests.get(self.url)
-            response.raise_for_status()
-            text = response.text
+            text = self.fetch_remote()
             self.text = text
             return text
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
+
+    def fetch_remote(self) -> str:
+        """
+        Method for accessing url.
+
+        If url is not publicly accessible or requires another access pattern
+        simply override this function
+        """
+        response = requests.get(self.url)
+        response.raise_for_status()
+        return response.text
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
         """

@@ -2,6 +2,7 @@ import logging
 import os
 import urllib.request
 from typing import Callable, Dict, Generator, Optional, Tuple
+from typing_extensions import Literal
 from uuid import uuid4
 
 import cv2
@@ -9,6 +10,7 @@ import numpy as np
 from pydantic import root_validator
 
 from .base_data import BaseData
+from ..types import TypedArray
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class VideoData(BaseData):
     """
     file_path: Optional[str] = None
     url: Optional[str] = None
-    frames: Optional[Dict[int, np.ndarray]] = None
+    frames: Optional[Dict[int, TypedArray[Literal['uint8']]]] = None
 
     def load_frames(self, overwrite: bool = False) -> None:
         """
@@ -33,7 +35,13 @@ class VideoData(BaseData):
             return
 
         for count, frame in self.frame_generator():
+            if self.frames is None:
+                self.frames = {}
             self.frames[count] = frame
+
+    @property
+    def data(self):
+        return self.frame_generator()
 
     def frame_generator(
             self,
@@ -48,26 +56,27 @@ class VideoData(BaseData):
             download_dir (str): Directory to save the video to. Defaults to `/tmp` dir
         """
         if self.frames is not None:
-            for idx, img in self.frames.items():
-                yield idx, img
+            for idx, frame in self.frames.items():
+                yield idx, frame
             return
         elif self.url and not self.file_path:
             file_path = os.path.join(download_dir, f"{uuid4()}.mp4")
             logger.info("Downloading the video locally to %s", file_path)
-            urllib.request.urlretrieve(self.url, file_path)
+            self.fetch_remote(file_path)
             self.file_path = file_path
 
         vidcap = cv2.VideoCapture(self.file_path)
 
-        success, img = vidcap.read()
+        success, frame = vidcap.read()
         count = 0
-        self.frames = {}
+        if cache_frames:
+            self.frames = {}
         while success:
-            img = img[:, :, ::-1]
-            yield count, img
+            frame = frame[:, :, ::-1]
+            yield count, frame
             if cache_frames:
-                self.frames[count] = img
-            success, img = vidcap.read()
+                self.frames[count] = frame
+            success, frame = vidcap.read()
             count += 1
 
     def __getitem__(self, idx: int) -> np.ndarray:
@@ -76,6 +85,18 @@ class VideoData(BaseData):
                 "Cannot select by index without iterating over the entire video or loading all frames."
             )
         return self.frames[idx]
+
+    def fetch_remote(self, local_path) -> None:
+        """
+        Method for downloading data from self.url
+
+        If url is not publicly accessible or requires another access pattern
+        simply override this function
+
+        Args:
+            local_path: Where to save the thing too.
+        """
+        urllib.request.urlretrieve(self.url, local_path)
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
         """
@@ -134,7 +155,5 @@ class VideoData(BaseData):
         return values
 
     class Config:
-        # Required for numpy arrays
-        arbitrary_types_allowed = True
         # Required for discriminating between data types
         extra = 'forbid'
