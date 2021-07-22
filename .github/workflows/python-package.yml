@@ -52,6 +52,7 @@ jobs:
         python -m pip install --upgrade pip
     - name: install labelbox package
       run: |
+        pip install scikit-build
         python setup.py install
     - name: mypy
       run: |
