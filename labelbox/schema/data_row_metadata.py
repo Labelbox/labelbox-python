@@ -275,6 +275,25 @@ class DataRowMetadataOntology:
     def bulk_delete(
         self, deletes: List[DeleteDataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
+        """ Delete metadata from a datarow by specifiying the fields you want to remove
+
+        >>> delete = DeleteDataRowMetadata(
+        >>>                 data_row_id="datarow-id",
+        >>>                 fields=[
+        >>>                        "schema-id-1",
+        >>>                        "schema-id-2"
+        >>>                        ...
+        >>>                    ]
+        >>>    )
+        >>> mdo.batch_delete([metadata])
+
+
+        Args:
+            deletes:
+
+        Returns:
+
+        """
 
         if not len(deletes):
             raise ValueError("Empty list passed")
@@ -316,10 +335,10 @@ class DataRowMetadataOntology:
             parsed = _validate_parse_datetime(metadatum)
         elif schema.kind == DataRowMetadataKind.string:
             parsed = _validate_parse_text(metadatum)
-        elif schema.kind == DataRowMetadataKind.enum:
-            parsed = _validate_enum_parse(schema, metadatum)
         elif schema.kind == DataRowMetadataKind.embedding:
             parsed = _validate_parse_embedding(metadatum)
+        elif schema.kind == DataRowMetadataKind.enum:
+            parsed = _validate_enum_parse(schema, metadatum)
         elif schema.kind == DataRowMetadataKind.option:
             raise ValueError("An option id should not be as a schema id")
         else:
@@ -332,18 +351,22 @@ class DataRowMetadataOntology:
         if not len(delete.fields):
             raise ValueError(f"No fields specified for {delete.data_row_id}")
 
+        deletes = set()
         for schema_id in delete.fields:
             if schema_id not in self.all_fields_id_index:
                 raise ValueError(
                     f"Schema Id `{schema_id}` not found in ontology")
 
             schema = self.all_fields_id_index[schema_id]
-            # TODO: change server implementation to delete by parent only
-            # if schema.kind == DataRowMetadataKind.option:
-            #     raise ValueError("Specify the parent to remove an option")
+            # handle users specifying enums by adding all option enums
+            if schema.kind == DataRowMetadataKind.enum:
+                [deletes.add(o.id) for o in schema.options]
+
+            deletes.add(schema.id)
 
         return _DeleteBatchDataRowMetadata(dataRowId=delete.data_row_id,
-                                           schemaIds=delete.fields).dict()
+                                           schemaIds=list(
+                                               delete.fields)).dict()
 
 
 def _batch_items(iterable, size):

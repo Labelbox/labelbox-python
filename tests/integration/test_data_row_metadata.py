@@ -16,7 +16,7 @@ CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 
 
 @pytest.fixture
-def dr_md_ontology(client):
+def mdo(client):
     yield client.get_data_row_metadata_ontology()
 
 
@@ -52,8 +52,7 @@ def make_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
-def test_get_datarow_metadata_ontology(dr_md_ontology):
-    mdo = dr_md_ontology
+def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.all_fields)
     assert len(mdo.reserved_fields)
     assert len(mdo.custom_fields) == 0
@@ -66,19 +65,19 @@ def test_get_datarow_metadata(datarow):
     assert len(md)
 
 
-def test_bulk_upsert_datarow_metadata(datarow, dr_md_ontology):
+def test_bulk_upsert_datarow_metadata(datarow, mdo):
     assert not len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
-    dr_md_ontology.bulk_upsert([metadata])
+    mdo.bulk_upsert([metadata])
     assert len(datarow.metadata["fields"])
 
 
 @pytest.mark.slow
-def test_large_bulk_upsert_datarow_metadata(big_dataset, dr_md_ontology):
+def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     metadata = []
     for dr in big_dataset.export_data_rows():
         metadata.append(make_metadata(dr.uid))
-    response = dr_md_ontology.bulk_upsert(metadata)
+    response = mdo.bulk_upsert(metadata)
     assert response
 
     for dr in big_dataset.export_data_rows():
@@ -86,41 +85,94 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, dr_md_ontology):
         break
 
 
-def test_bulk_delete_datarow_metadata(datarow: DataRow, dr_md_ontology):
-    """test bulk deletes for non non fields"""
+def test_bulk_delete_datarow_metadata(datarow, mdo):
+    """test bulk deletes for all fields
+
+    TODO: this fails because of the enum validation issue
+
+    """
     assert not len(datarow.metadata["fields"])
+
     metadata = make_metadata(datarow.uid)
-    metadata.fields = [
-        m for m in metadata.fields if m.schema_id != SPLIT_SCHEMA_ID
-    ]
-    dr_md_ontology.bulk_upsert([metadata])
+    mdo.bulk_upsert([metadata])
+
     assert len(datarow.metadata["fields"])
 
-    dr_md_ontology.bulk_delete([
+    mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid,
                               fields=[m.schema_id for m in metadata.fields])
     ])
-    assert not (len(datarow.metadata["fields"]))
+
+    assert not len(datarow.metadata["fields"])
 
 
-def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, dr_md_ontology):
+def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
+    """Delete a single from metadata"""
+    assert not len(datarow.metadata["fields"])
+
+    metadata = make_metadata(datarow.uid)
+    mdo.bulk_upsert([metadata])
+
+    assert len(datarow.metadata["fields"])
+
+    mdo.bulk_delete([
+        DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[TEXT_SCHEMA_ID])
+    ])
+
+    assert len(datarow.metadata["fields"]) == 4
+
+
+@pytest.mark.slow
+def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
+    metadata = []
+    for dr in big_dataset.export_data_rows():
+        metadata.append(
+            DataRowMetadata(data_row_id=dr.uid,
+                            fields=[
+                                DataRowMetadataField(
+                                    schema_id=EMBEDDING_SCHEMA_ID,
+                                    value=[0.1] * 128),
+                                DataRowMetadataField(schema_id=TEXT_SCHEMA_ID,
+                                                     value="test-message")
+                            ]))
+    response = mdo.bulk_upsert(metadata)
+    assert response
+
+    deletes = []
+    for dr in big_dataset.export_data_rows():
+        deletes.append(
+            DeleteDataRowMetadata(
+                data_row_id=dr.uid,
+                fields=[
+                    EMBEDDING_SCHEMA_ID,  #
+                    CAPTURE_DT_SCHEMA_ID
+                ]))
+
+    response = mdo.bulk_delete(deletes)
+    assert response
+    for dr in big_dataset.export_data_rows():
+        assert len(dr.metadata["fields"]) == 1
+        break
+
+
+def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
     """test bulk deletes for non non fields"""
     assert not len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
     metadata.fields = [
         m for m in metadata.fields if m.schema_id == SPLIT_SCHEMA_ID
     ]
-    dr_md_ontology.bulk_upsert([metadata])
+    mdo.bulk_upsert([metadata])
     assert len(datarow.metadata["fields"])
 
-    dr_md_ontology.bulk_delete([
+    mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid,
-                              fields=[TEST_SPLIT_ID, SPLIT_SCHEMA_ID])
+                              fields=[SPLIT_SCHEMA_ID])
     ])
-    assert not (len(datarow.metadata["fields"]))
+    assert not len(datarow.metadata["fields"])
 
 
-def test_raise_enum_upsert_schema_error(datarow, dr_md_ontology):
+def test_raise_enum_upsert_schema_error(datarow, mdo):
     """Setting an option id as the schema id will raise a Value Error"""
 
     metadata = DataRowMetadata(data_row_id=datarow.uid,
@@ -129,10 +181,10 @@ def test_raise_enum_upsert_schema_error(datarow, dr_md_ontology):
                                                         value=SPLIT_SCHEMA_ID),
                                ])
     with pytest.raises(ValueError):
-        dr_md_ontology.bulk_upsert([metadata])
+        mdo.bulk_upsert([metadata])
 
 
-def test_upsert_non_existent_schema_id(datarow, dr_md_ontology):
+def test_upsert_non_existent_schema_id(datarow, mdo):
     """Raise error on non-existent schema id"""
     metadata = DataRowMetadata(data_row_id=datarow.uid,
                                fields=[
@@ -141,10 +193,34 @@ def test_upsert_non_existent_schema_id(datarow, dr_md_ontology):
                                        value="message"),
                                ])
     with pytest.raises(ValueError):
-        dr_md_ontology.bulk_upsert([metadata])
+        mdo.bulk_upsert([metadata])
 
 
-def test_parse_raw_metadata(dr_md_ontology):
+def test_delete_non_existent_schema_id(datarow, mdo):
+    assert not len(datarow.metadata["fields"])
+    results = mdo.bulk_delete([
+        DeleteDataRowMetadata(data_row_id=datarow.uid,
+                              fields=[EMBEDDING_SCHEMA_ID])
+    ])
+    assert results
+
+
+@pytest.mark.slow
+def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
+    deletes = []
+    for dr in big_dataset.export_data_rows():
+        deletes.append(
+            DeleteDataRowMetadata(data_row_id=dr.uid,
+                                  fields=[EMBEDDING_SCHEMA_ID]))
+    response = mdo.bulk_delete(deletes)
+    assert response
+
+    for dr in big_dataset.export_data_rows():
+        assert not len(dr.metadata["fields"])
+        break
+
+
+def test_parse_raw_metadata(mdo):
     example = {
         'data_row_id':
             'ckr6kkfx801ui0yrtg9fje8xh',
@@ -163,7 +239,7 @@ def test_parse_raw_metadata(dr_md_ontology):
         }]
     }
 
-    parsed = dr_md_ontology.parse_metadata([example])
+    parsed = mdo.parse_metadata([example])
     assert len(parsed) == 1
     row = parsed[0]
     assert row.data_row_id == example["data_row_id"]
