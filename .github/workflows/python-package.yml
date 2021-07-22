@@ -49,17 +49,18 @@ jobs:
         args: --verbose --recursive --parallel --style "google"
     - name: dependencies
       run: |
-        python -m pip install --upgrade pip
         sudo apt-get -y update
         sudo apt install -y libsm6 \
                          libxext6 \
                            ffmpeg \
                    libfontconfig1 \
                       libxrender1 \
-                  libgl1-mesa-glx \
-                  python3-opencv
+                  libgl1-mesa-glx
     - name: install labelbox package
       run: |
+        python -m pip install --upgrade pip
+        which pip
+        python -m pip --version
         python setup.py install
     - name: mypy
       run: |
