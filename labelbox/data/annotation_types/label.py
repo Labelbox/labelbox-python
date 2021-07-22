@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Union, Callable
 
 from pydantic import BaseModel
 
-from labelbox.schema.ontology import Classification as OClassification, OntologyBuilder, Option
+from labelbox import Classification as OClassification, OntologyBuilder, Option
 from labelbox.orm.model import Entity
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
@@ -10,6 +10,8 @@ from .geometry.mask import Mask
 from .metrics import Metric
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
+
+from pydantic import validator
 
 
 class Label(BaseModel):
@@ -65,7 +67,7 @@ class Label(BaseModel):
         Returns:
             Label with updated references to new data row
         """
-        args = {'row_data': self.add_url_to_data(signer)}
+        args = {'row_data': self.data.create_url(signer)}
         if self.data.external_id is not None:
             args.update({'external_id': self.data.external_id})
 
@@ -151,3 +153,19 @@ class Label(BaseModel):
             raise TypeError(
                 f"Unexpected type for answer found. {type(classification.value.answer)}"
             )
+
+    @validator("annotations", pre=True)
+    def validate_union(cls, value):
+        supported = tuple([
+            field.type_
+            for field in cls.__fields__['annotations'].sub_fields[0].sub_fields
+        ])
+        if not isinstance(value, list):
+            raise TypeError(f"Annotations must be a list. Found {type(value)}")
+
+        for v in value:
+            if not isinstance(v, supported):
+                raise TypeError(
+                    f"Annotations should be a list containing the following classes : {supported}. Found {type(v)}"
+                )
+        return value

@@ -12,7 +12,7 @@ from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.mask import Mask
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.label import Label
-from labelbox.schema.ontology import OntologyBuilder, Tool
+from labelbox import OntologyBuilder, Tool
 
 
 @pytest.fixture
@@ -43,12 +43,12 @@ class FakeDataset:
     def create_data_rows(self, args):
         for arg in args:
             self.exports.append(
-                SimpleNamespace(row_data=arg[DataRow.row_data],
-                                external_id=arg[DataRow.external_id],
+                SimpleNamespace(row_data=arg['row_data'],
+                                external_id=arg['external_id'],
                                 uid=self.uid))
         return self
 
-    def wait_til_done(self):
+    def wait_till_done(self):
         pass
 
     def export_data_rows(self):
@@ -151,7 +151,7 @@ def test_adding_to_masks(signer):
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
-                                        color_rgb=[255, 255, 255]))
+                                        color=[255, 255, 255]))
         ])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_url_to_masks(signer(uuid))
@@ -166,7 +166,7 @@ def test_adding_to_masks(signer):
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
-                                        color_rgb=[255, 255, 255]))
+                                        color=[255, 255, 255]))
         ])
     assert label.annotations[0].value.mask.url != uuid
     labels = LabelCollection([label]).add_url_to_masks(signer(uuid))

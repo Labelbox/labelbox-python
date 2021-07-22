@@ -3,10 +3,12 @@ from io import BytesIO
 
 import numpy as np
 import requests
+from typing_extensions import Literal
 from pydantic import root_validator
 from PIL import Image
 
 from .base_data import BaseData
+from ..types import TypedArray
 
 
 class RasterData(BaseData):
@@ -16,7 +18,7 @@ class RasterData(BaseData):
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
-    arr: Optional[np.ndarray] = None
+    arr: Optional[TypedArray[Literal['uint8']]] = None
 
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         """
@@ -64,13 +66,22 @@ class RasterData(BaseData):
             self.im_bytes = im_bytes
             return self.bytes_to_np(im_bytes)
         elif self.url is not None:
-            response = requests.get(self.url)
-            response.raise_for_status()
-            im_bytes = response.content
+            im_bytes = self.fetch_remote()
             self.im_bytes = im_bytes
             return self.bytes_to_np(im_bytes)
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
+
+    def fetch_remote(self) -> bytes:
+        """
+        Method for accessing url.
+
+        If url is not publicly accessible or requires another access pattern
+        simply override this function
+        """
+        response = requests.get(self.url)
+        response.raise_for_status()
+        return response.content
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
@@ -95,7 +106,7 @@ class RasterData(BaseData):
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
-    @root_validator
+    @root_validator()
     def validate_args(cls, values):
         file_path = values.get("file_path")
         im_bytes = values.get("im_bytes")
@@ -118,8 +129,6 @@ class RasterData(BaseData):
         return values
 
     class Config:
-        # Required for numpy arrays
-        arbitrary_types_allowed = True
         # Required for sharing references
         copy_on_model_validation = False
         # Required for discriminating between data types

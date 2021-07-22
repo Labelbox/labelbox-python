@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from tqdm import tqdm
 
-from labelbox.schema.ontology import OntologyBuilder
+from labelbox import OntologyBuilder
 from labelbox.orm.model import Entity
 from ..generator import PrefetchGenerator
 from .label import Label
@@ -60,10 +60,10 @@ class LabelCollection:
         self._ensure_unique_external_ids()
         self.add_url_to_data(signer, max_concurrency=max_concurrency)
         upload_task = dataset.create_data_rows([{
-            Entity.DataRow.row_data: label.data.url,
-            Entity.DataRow.external_id: label.data.external_id
+            'row_data': label.data.url,
+            'external_id': label.data.external_id
         } for label in self._data])
-        upload_task.wait_til_done()
+        upload_task.wait_till_done()
 
         data_row_lookup = {
             data_row.external_id: data_row.uid
@@ -114,7 +114,7 @@ class LabelCollection:
         external_ids = set()
         for label in self._data:
             if label.data.external_id is None:
-                label.data.external_id = uuid4()
+                label.data.external_id = str(uuid4())
             else:
                 if label.data.external_id in external_ids:
                     raise ValueError(
@@ -128,6 +128,7 @@ class LabelCollection:
 
     def __next__(self) -> Label:
         if self._index == len(self._data):
+            self._index = 0
             raise StopIteration
 
         value = self._data[self._index]
@@ -237,6 +238,20 @@ class LabelGenerator(PrefetchGenerator):
         self._fns['add_url_to_masks'] = _add_url_to_masks
         return self
 
+    def register_background_fn(self, fn: Callable[[Label], Label],
+                               name: str) -> "LabelGenerator":
+        """
+        Allows users to add arbitrary io functions to the generator.
+        These functions will be exectuted in parallel and added to a prefetch queue.
+
+        Args:
+            fn: Callable that modifies a label and then returns the same label
+                - For performance reasons, this function shouldn't run if the object already has the desired state.
+            name: Register the name of the function. If the name already exists, then the function will be replaced.
+        """
+        self._fns[name] = fn
+        return self
+
     def __iter__(self):
         return self
 
@@ -255,4 +270,4 @@ class LabelGenerator(PrefetchGenerator):
         return self._process(value)
 
 
-LabelData = Union[LabelCollection, LabelGenerator]
+LabelContainer = Union[LabelCollection, LabelGenerator]
