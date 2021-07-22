@@ -77,6 +77,8 @@ class PrefetchGenerator:
         while value is None:
             self.completed_threads += 1
             if self.completed_threads == self.max_concurrency:
+                for thread in self.threads:
+                    thread.join()
                 raise StopIteration
             value = self.queue.get()
         return value
