@@ -53,6 +53,9 @@ class PrefetchGenerator:
             thread.daemon = True
             thread.start()
 
+        # Can only iterate over once it the queue.get hangs forever.
+        self.done = False
+
     def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
 
@@ -73,12 +76,15 @@ class PrefetchGenerator:
         return self
 
     def __next__(self) -> Any:
+        if self.done:
+            raise StopIteration
         value = self.queue.get()
         while value is None:
             self.completed_threads += 1
             if self.completed_threads == self.max_concurrency:
                 for thread in self.threads:
                     thread.join()
+                self.done = True
                 raise StopIteration
             value = self.queue.get()
         return value

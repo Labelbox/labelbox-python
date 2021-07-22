@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from tqdm import tqdm
 
-from labelbox import OntologyBuilder
+from labelbox.schema import ontology
 from labelbox.orm.model import Entity
 from ..generator import PrefetchGenerator
 from .label import Label
@@ -25,7 +25,8 @@ class LabelCollection:
         self._index = 0
 
     def assign_schema_ids(
-            self, ontology_builder: OntologyBuilder) -> "LabelCollection":
+            self,
+            ontology_builder: "ontology.OntologyBuilder") -> "LabelCollection":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
         This is necessary for MAL.
@@ -166,7 +167,8 @@ class LabelGenerator(PrefetchGenerator):
         return LabelCollection(data=list(self))
 
     def assign_schema_ids(
-            self, ontology_builder: OntologyBuilder) -> "LabelGenerator":
+            self,
+            ontology_builder: "ontology.OntologyBuilder") -> "LabelGenerator":
 
         def _assign_ids(label: Label):
             label.assign_schema_ids(ontology_builder)

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Union, Callable
 
 from pydantic import BaseModel
 
-from labelbox import Classification as OClassification, OntologyBuilder, Option
+from labelbox.schema import ontology
 from labelbox.orm.model import Entity
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
@@ -77,7 +77,8 @@ class Label(BaseModel):
             self.data.external_id = data_row.external_id
         return self
 
-    def assign_schema_ids(self, ontology_builder: OntologyBuilder) -> "Label":
+    def assign_schema_ids(
+            self, ontology_builder: ontology.OntologyBuilder) -> "Label":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
         This is necessary for MAL.
@@ -104,18 +105,18 @@ class Label(BaseModel):
         return self
 
     def _get_feature_schema_lookup(
-        self, ontology_builder: OntologyBuilder
+        self, ontology_builder: ontology.OntologyBuilder
     ) -> Tuple[Dict[str, str], Dict[str, str]]:
         tool_lookup = {}
         classification_lookup = {}
 
         def flatten_classification(classifications):
             for classification in classifications:
-                if isinstance(classification, OClassification):
+                if isinstance(classification, ontology.OClassification):
                     classification_lookup[
                         classification.
                         instructions] = classification.feature_schema_id
-                elif isinstance(classification, Option):
+                elif isinstance(classification, ontology.Option):
                     classification_lookup[
                         classification.value] = classification.feature_schema_id
                 else:

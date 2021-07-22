@@ -79,7 +79,7 @@ class LBV1VideoIterator(PrefetchGenerator):
     def _process(self, value):
         if 'frames' in value['Label']:
             req = self._request(value)
-            value['Label'] = ndjson.loads(req.text)
+            value['Label'] = ndjson.loads(req)
             return value
 
     @retry.Retry(predicate=retry.if_exception_type(HTTPError))

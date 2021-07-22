@@ -1,9 +1,10 @@
-from typing import Callable, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 from pydantic.class_validators import validator
 from rasterio.features import shapes
 from shapely.geometry import MultiPolygon, shape
+import cv2
 
 from ..data.raster import RasterData
 from .geometry import Geometry
@@ -25,9 +26,15 @@ class Mask(Geometry):
             if val >= 1)
         return MultiPolygon(polygons).__geo_interface__
 
-    def raster(self, binary=False) -> np.ndarray:
+    def raster(self,
+               height: Optional[int] = None,
+               width: Optional[int] = None,
+               binary=False) -> np.ndarray:
         """
         Removes all pixels from the segmentation mask that do not equal self.color
+
+        Args:
+            height:
 
         Returns:
             np.ndarray representing only this object
@@ -36,10 +43,14 @@ class Mask(Geometry):
         if len(mask.shape) == 2:
             mask = np.expand_dims(mask, axis=-1)
         mask = np.alltrue(mask == self.color, axis=2).astype(np.uint8)
+        if height is not None or width is not None:
+            mask = cv2.resize(mask,
+                              (width or mask.shape[1], height or mask.shape[0]))
+
         if binary:
             return mask
         elif isinstance(self.color, int):
-            return mask * self.color
+            mask = mask * self.color
         else:
             color_image = np.zeros((mask.shape[0], mask.shape[1], 3),
                                    dtype=np.uint8)
