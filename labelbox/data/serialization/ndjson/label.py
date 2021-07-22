@@ -25,7 +25,8 @@ class NDLabel(BaseModel):
             data=self._generate_annotations(grouped_annotations))
 
     @classmethod
-    def from_common(cls, data: LabelContainer) -> Generator["NDLabel", None, None]:
+    def from_common(cls,
+                    data: LabelContainer) -> Generator["NDLabel", None, None]:
         for label in data:
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)

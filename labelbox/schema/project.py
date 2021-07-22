@@ -204,7 +204,7 @@ class Project(DbObject, Updateable, Deletable):
         json_data = self.export_labels_json()
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels_json(self, timeout_seconds = 60):
+    def export_labels_json(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 

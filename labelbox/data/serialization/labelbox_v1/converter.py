@@ -53,7 +53,7 @@ class LBV1Converter:
 
     @staticmethod
     def serialize(
-        labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
+            labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox json export format
 
