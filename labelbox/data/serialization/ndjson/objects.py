@@ -123,7 +123,7 @@ class NDMask(NDBaseObject):
 
     def to_common(self) -> Mask:
         return Mask(mask=RasterData(url=self.mask.instanceURI),
-                    color_rgb=self.mask.colorRGB)
+                    color=self.mask.colorRGB)
 
     @classmethod
     def from_common(cls, mask: Mask,
@@ -134,8 +134,7 @@ class NDMask(NDBaseObject):
             raise ValueError(
                 "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelCollection.add_url_to_masks`, or `Label.add_url_to_masks`."
             )
-        return cls(mask=_Mask(instanceURI=mask.mask.url,
-                              colorRGB=mask.color_rgb),
+        return cls(mask=_Mask(instanceURI=mask.mask.url, colorRGB=mask.color),
                    dataRow=DataRow(id=data.uid),
                    schema_id=schema_id,
                    uuid=extra.get('uuid'),

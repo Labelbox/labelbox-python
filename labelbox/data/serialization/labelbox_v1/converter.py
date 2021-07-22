@@ -1,8 +1,11 @@
+from requests.exceptions import HTTPError
+import labelbox
 from typing import Any, Callable, Dict, Generator, Iterable
 import logging
 
 import ndjson
 import requests
+from google.api_core import retry
 
 from .label import LBV1Label
 from ...annotation_types.collection import (LabelData, LabelGenerator,
@@ -77,8 +80,16 @@ class LBV1VideoIterator(PrefetchGenerator):
 
     def _process(self, value):
         if 'frames' in value['Label']:
-            req = requests.get(
-                value['Label']['frames'],
-                headers={"Authorization": f"Bearer {self.client.api_key}"})
+            req = self._request(value)
             value['Label'] = ndjson.loads(req.text)
             return value
+
+    @retry.Retry(predicate=retry.if_exception_type(HTTPError))
+    def _request(self, value):
+        req = requests.get(
+            value['Label']['frames'],
+            headers={"Authorization": f"Bearer {self.client.api_key}"})
+        if req.status_code == 401:
+            raise labelbox.exceptions.AuthenticationError("Invalid API key")
+        req.raise_for_status()
+        return req.text
