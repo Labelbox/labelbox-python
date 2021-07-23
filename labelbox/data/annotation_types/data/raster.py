@@ -72,6 +72,9 @@ class RasterData(BaseData):
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
 
+    def set_fetch_fn(self, fn):
+        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
+
     def fetch_remote(self) -> bytes:
         """
         Method for accessing url.
