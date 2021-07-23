@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Union
 
+from pydantic.main import BaseModel
+
 from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
 from .geometry import Geometry
@@ -9,7 +11,6 @@ from .ner import TextEntity
 class BaseAnnotation(FeatureSchema):
     """ Base annotation class. Shouldn't be directly instantiated
     """
-
     extra: Dict[str, Any] = {}
 
 
