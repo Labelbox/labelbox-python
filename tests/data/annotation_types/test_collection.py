@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from labelbox import DataRow
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.collection import (LabelCollection,
+from labelbox.data.annotation_types.collection import (LabelList,
                                                        LabelGenerator)
 from labelbox.data.annotation_types.data.raster import RasterData
 from labelbox.data.annotation_types.geometry.line import Line
@@ -66,7 +66,7 @@ def test_generator(list_of_labels):
 
 def test_conversion(list_of_labels):
     generator = LabelGenerator(list_of_labels)
-    label_collection = generator.as_collection()
+    label_collection = generator.as_list()
     assert len(label_collection) == len(list_of_labels)
     assert [x for x in label_collection] == list_of_labels
 
@@ -87,7 +87,7 @@ def test_adding_schema_ids():
         tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
     generator = LabelGenerator([label]).assign_schema_ids(ontology)
     assert next(generator).annotations[0].schema_id == schema_id
-    labels = LabelCollection([label]).assign_schema_ids(ontology)
+    labels = LabelList([label]).assign_schema_ids(ontology)
     assert next(labels).annotations[0].schema_id == schema_id
     assert labels[0].annotations[0].schema_id == schema_id
 
@@ -106,7 +106,7 @@ def test_adding_urls(signer):
                                                         3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
-    labels = LabelCollection([label]).add_url_to_data(signer(uuid))
+    labels = LabelList([label]).add_url_to_data(signer(uuid))
     assert label.data.url == uuid
     assert next(labels).data.url == uuid
     assert labels[0].data.url == uuid
@@ -133,7 +133,7 @@ def test_adding_to_dataset(signer):
     assert label.data.url != uuid
     assert label.data.external_id == None
     assert label.data.uid != dataset.uid
-    labels = LabelCollection([label]).add_to_dataset(dataset, signer(uuid))
+    labels = LabelList([label]).add_to_dataset(dataset, signer(uuid))
     assert label.data.url == uuid
     assert label.data.external_id != None
     assert label.data.uid == dataset.uid
@@ -169,6 +169,6 @@ def test_adding_to_masks(signer):
                                         color=[255, 255, 255]))
         ])
     assert label.annotations[0].value.mask.url != uuid
-    labels = LabelCollection([label]).add_url_to_masks(signer(uuid))
+    labels = LabelList([label]).add_url_to_masks(signer(uuid))
     assert next(labels).annotations[0].value.mask.url == uuid
     assert labels[0].annotations[0].value.mask.url == uuid
