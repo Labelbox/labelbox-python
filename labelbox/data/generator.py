@@ -2,6 +2,7 @@ import logging
 import threading
 from queue import Queue
 from typing import Any, Iterable
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +45,12 @@ class PrefetchGenerator:
         self.queue = Queue(prefetch_limit)
         self._data = ThreadSafeGen(self._data)
         self.completed_threads = 0
+        self.done = False
         self.max_concurrency = max_concurrency
-        self.threads = [
-            threading.Thread(target=self.fill_queue)
-            for _ in range(max_concurrency)
-        ]
-        for thread in self.threads:
-            thread.daemon = True
-            thread.start()
+        with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+            self.futures = [
+                executor.submit(self.fill_queue) for _ in range(max_concurrency)
+            ]
 
     def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
@@ -73,12 +72,13 @@ class PrefetchGenerator:
         return self
 
     def __next__(self) -> Any:
+        if self.done:
+            raise StopIteration
         value = self.queue.get()
         while value is None:
             self.completed_threads += 1
             if self.completed_threads == self.max_concurrency:
-                for thread in self.threads:
-                    thread.join()
+                self.done = True
                 raise StopIteration
             value = self.queue.get()
         return value
