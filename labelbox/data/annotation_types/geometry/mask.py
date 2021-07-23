@@ -50,7 +50,7 @@ class Mask(Geometry):
         if binary:
             return mask
         elif isinstance(self.color, int):
-            mask = mask * self.color
+            return mask * self.color
         else:
             color_image = np.zeros((mask.shape[0], mask.shape[1], 3),
                                    dtype=np.uint8)
