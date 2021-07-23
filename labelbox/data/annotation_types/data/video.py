@@ -116,8 +116,7 @@ class VideoData(BaseData):
             self.file_path = self.frames_to_video(self.frames)
             self.url = self.create_url(signer)
         else:
-            raise ValueError(
-                "One of url, file_path, frames must not be None.")
+            raise ValueError("One of url, file_path, frames must not be None.")
         return self.url
 
     def frames_to_video(self,
