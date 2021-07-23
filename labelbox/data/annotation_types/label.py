@@ -1,3 +1,5 @@
+from collections import defaultdict
+from labelbox.data.annotation_types import geometry
 from typing import Any, Dict, List, Tuple, Union, Callable
 
 from pydantic import BaseModel
@@ -20,6 +22,29 @@ class Label(BaseModel):
                             VideoObjectAnnotation,
                             VideoClassificationAnnotation, Metric]] = []
     extra: Dict[str, Any] = {}
+
+    def object_annotations(self) -> List[ObjectAnnotation]:
+        return [
+            annot for annot in self.annotations
+            if isinstance(annot, ObjectAnnotation)
+        ]
+
+    def classification_annotations(self) -> List[ClassificationAnnotation]:
+        return [
+            annot for annot in self.annotations
+            if isinstance(annot, ClassificationAnnotation)
+        ]
+
+    def frame_annotations(
+        self
+    ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
+        frame_dict = defaultdict(list)
+        for annotation in self.annotations:
+            if isinstance(
+                    annotation,
+                (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                frame_dict[annotation.frame].append(annotation)
+        return frame_dict
 
     def add_url_to_data(self, signer) -> "Label":
         """
