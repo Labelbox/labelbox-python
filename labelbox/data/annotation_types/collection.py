@@ -193,7 +193,7 @@ class LabelGenerator(PrefetchGenerator):
             label.add_url_to_data(signer)
             return label
 
-        self._fns['_add_url_to_data'] = _add_url_to_data
+        self._fns['add_url_to_data'] = _add_url_to_data
         return self
 
     def add_to_dataset(self, dataset: "Entity.Dataset",
