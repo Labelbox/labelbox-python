@@ -112,7 +112,7 @@ class Label(BaseModel):
 
         def flatten_classification(classifications):
             for classification in classifications:
-                if isinstance(classification, ontology.OClassification):
+                if isinstance(classification, ontology.Classification):
                     classification_lookup[
                         classification.
                         instructions] = classification.feature_schema_id
