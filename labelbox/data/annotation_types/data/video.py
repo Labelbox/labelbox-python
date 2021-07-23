@@ -86,6 +86,9 @@ class VideoData(BaseData):
             )
         return self.frames[idx]
 
+    def set_fetch_fn(self, fn):
+        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
+
     def fetch_remote(self, local_path) -> None:
         """
         Method for downloading data from self.url
