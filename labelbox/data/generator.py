@@ -33,10 +33,7 @@ class PrefetchGenerator:
     Useful for modifying the generator results based on data from a network
     """
 
-    def __init__(self,
-                 data: Iterable[Any],
-                 prefetch_limit=20,
-                 max_concurrency=4):
+    def __init__(self, data: Iterable[Any], prefetch_limit=20, num_executors=4):
         if isinstance(data, (list, tuple)):
             self._data = (r for r in data)
         else:
@@ -46,10 +43,10 @@ class PrefetchGenerator:
         self._data = ThreadSafeGen(self._data)
         self.completed_threads = 0
         self.done = False
-        self.max_concurrency = max_concurrency
-        with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+        self.num_executors = num_executors
+        with ThreadPoolExecutor(max_workers=num_executors) as executor:
             self.futures = [
-                executor.submit(self.fill_queue) for _ in range(max_concurrency)
+                executor.submit(self.fill_queue) for _ in range(num_executors)
             ]
 
     def _process(self, value) -> Any:
@@ -77,7 +74,7 @@ class PrefetchGenerator:
         value = self.queue.get()
         while value is None:
             self.completed_threads += 1
-            if self.completed_threads == self.max_concurrency:
+            if self.completed_threads == self.num_executors:
                 self.done = True
                 raise StopIteration
             value = self.queue.get()
