@@ -22,13 +22,16 @@ setuptools.setup(
     install_requires=[
         "backoff==1.10.0",
         "backports-datetime-fromisoformat==1.0.0; python_version < '3.7.0'",
-        "dataclasses==0.7; python_version < '3.7.0'", "ndjson==0.3.1",
-        "requests>=2.22.0", "google-api-core>=1.22.1", "pydantic>=1.8,<2.0",
+        "dataclasses==0.7; python_version < '3.7.0'",
+        "ndjson==0.3.1",
+        "requests>=2.22.0",
+        "google-api-core>=1.22.1",
+        "pydantic>=1.8,<2.0",
     ],
     extras_require={
         'data': [
-            "shapely", "geojson", "numpy", "rasterio", "PILLOW", "opencv-python",
-        "typeguard", "tqdm"
+            "shapely", "geojson", "numpy", "rasterio", "PILLOW",
+            "opencv-python", "typeguard", "tqdm"
         ],
     },
     classifiers=[
