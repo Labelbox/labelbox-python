@@ -20,6 +20,15 @@ class RasterData(BaseData):
     url: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
 
+    @classmethod
+    def from_2D_arr(cls, arr: TypedArray[Literal['uint8']], **kwargs):
+        if len(arr.shape):
+            raise ValueError(
+                f"Found array with shape {arr.shape}. Expected two dimensions ([W,H])"
+            )
+        arr = np.stack((arr,) * 3, axis=-1)
+        return cls(arr=arr, **kwargs)
+
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         """
         Converts image bytes to a numpy array
@@ -38,9 +47,9 @@ class RasterData(BaseData):
         Returns:
             png encoded bytes
         """
-        if len(arr.shape) not in [2, 3]:
-            raise ValueError("unsupported image format")
-
+        if len(arr.shape) != 3:
+            raise ValueError("unsupported image format. Must be 3D ([H,W,C])."
+                             "Use RasterData.from_2D_arr to construct from 2D")
         if arr.dtype != np.uint8:
             raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
 
@@ -71,6 +80,9 @@ class RasterData(BaseData):
             return self.bytes_to_np(im_bytes)
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
+
+    def set_fetch_fn(self, fn):
+        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
     def fetch_remote(self) -> bytes:
         """
@@ -122,11 +134,18 @@ class RasterData(BaseData):
                 raise TypeError(
                     "Numpy array representing segmentation mask must be np.uint8"
                 )
-            elif len(arr.shape) not in [2, 3]:
-                raise TypeError(
-                    f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}"
-                )
+            elif len(arr.shape) != 3:
+                raise ValueError(
+                    "unsupported image format. Must be 3D ([H,W,C])."
+                    "Use RasterData.from_2D_arr to construct from 2D")
         return values
+
+    def __repr__(self) -> str:
+        symbol_or_none = lambda data: '...' if data is not None else None
+        return  f"RasterData(im_bytes={symbol_or_none(self.im_bytes)}," \
+                f"file_path={self.file_path}," \
+                f"url={self.url}," \
+                f"arr={symbol_or_none(self.arr)})"
 
     class Config:
         # Required for sharing references

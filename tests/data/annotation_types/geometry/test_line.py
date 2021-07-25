@@ -2,8 +2,7 @@ from pydantic import ValidationError
 import pytest
 import cv2
 
-from labelbox.data.annotation_types.geometry import Point
-from labelbox.data.annotation_types.geometry import Line
+from labelbox.data.annotation_types.geometry import Point, Line
 
 
 def test_line():
@@ -21,4 +20,4 @@ def test_line():
     assert line.shapely.__geo_interface__ == expected
 
     raster = line.raster(height=32, width=32)
-    assert (cv2.imread("tests/data/assets/line.png")[:, :, 0] == raster).all()
+    assert (cv2.imread("tests/data/assets/line.png") == raster).all()
