@@ -1,5 +1,5 @@
 from labelbox.utils import camel_case
-from typing import Callable, List, Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -148,6 +148,7 @@ class LBV1Label(BaseModel):
         else:
             annotations = self.label.to_common()
             data = self._infer_media_type()
+            print(data)
 
         return Label(data=data,
                      annotations=annotations,
@@ -158,16 +159,22 @@ class LBV1Label(BaseModel):
                      })
 
     @classmethod
-    def from_common(cls, label: Label, signer: Callable[[bytes], str]):
+    def from_common(cls, label: Label):
         if isinstance(label.annotations[0],
                       (VideoObjectAnnotation, VideoClassificationAnnotation)):
             label_ = LBV1LabelAnnotationsVideo.from_common(label.annotations)
         else:
             label_ = LBV1LabelAnnotations.from_common(label.annotations)
 
+        if label.data.url is None:
+            raise ValueError(
+                "Url attribute required for serializing data objects. "
+                "Use <LabelList,LabelGenerator>.add_url_to_data "
+                "or <LabelList,LabelGenerator>.add_to_dataset")
+
         return LBV1Label(label=label_,
                          data_row_id=label.data.uid,
-                         row_data=label.data.create_url(signer),
+                         row_data=label.data.url,
                          external_id=label.data.external_id,
                          **label.extra)
 

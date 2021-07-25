@@ -5,15 +5,16 @@ from uuid import uuid4
 
 from tqdm import tqdm
 
-from labelbox.schema.ontology import OntologyBuilder
+from labelbox.schema import ontology
 from labelbox.orm.model import Entity
+from ..ontology import get_classifications, get_tools
 from ..generator import PrefetchGenerator
 from .label import Label
 
 logger = logging.getLogger(__name__)
 
 
-class LabelCollection:
+class LabelList:
     """
     A container for interacting with a collection of labels.
     Less memory efficient than LabelGenerator but more performant and convenient to use.
@@ -25,15 +26,15 @@ class LabelCollection:
         self._index = 0
 
     def assign_schema_ids(
-            self, ontology_builder: OntologyBuilder) -> "LabelCollection":
+            self, ontology_builder: "ontology.OntologyBuilder") -> "LabelList":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
         This is necessary for MAL.
 
         Args:
-            ontology_builder: The ontology that matches the feature names assigned to objects in this LabelCollection
+            ontology_builder: The ontology that matches the feature names assigned to objects in this LabelList
         Returns:
-            LabelCollection. useful for chaining these modifying functions
+            LabelList. useful for chaining these modifying functions
         """
         for label in self._data:
             label.assign_schema_ids(ontology_builder)
@@ -42,7 +43,7 @@ class LabelCollection:
     def add_to_dataset(self,
                        dataset: "Entity.Dataset",
                        signer: Callable[[bytes], str],
-                       max_concurrency=20) -> "LabelCollection":
+                       max_concurrency=20) -> "LabelList":
         """
         Creates data rows from each labels data object and attaches the data to the given dataset.
         Updates the label's data object to have the same external_id and uid as the data row.
@@ -55,15 +56,15 @@ class LabelCollection:
             dataset: labelbox dataset object to add the new data row to
             signer: A function that accepts bytes and returns a signed url.
         Returns:
-            LabelCollection with updated references to new data rows
+            LabelList with updated references to new data rows
         """
         self._ensure_unique_external_ids()
         self.add_url_to_data(signer, max_concurrency=max_concurrency)
         upload_task = dataset.create_data_rows([{
-            Entity.DataRow.row_data: label.data.url,
-            Entity.DataRow.external_id: label.data.external_id
+            'row_data': label.data.url,
+            'external_id': label.data.external_id
         } for label in self._data])
-        upload_task.wait_til_done()
+        upload_task.wait_till_done()
 
         data_row_lookup = {
             data_row.external_id: data_row.uid
@@ -73,9 +74,9 @@ class LabelCollection:
             label.data.uid = data_row_lookup[label.data.external_id]
         return self
 
-    def add_url_to_masks(self, signer, max_concurrency=20) -> "LabelCollection":
+    def add_url_to_masks(self, signer, max_concurrency=20) -> "LabelList":
         """
-        Creates signed urls for all masks in the LabelCollection.
+        Creates signed urls for all masks in the LabelList.
         Multiple masks can reference the same RasterData mask so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
@@ -84,7 +85,7 @@ class LabelCollection:
             max_concurrency: how many threads to use for uploading.
                 Should be balanced to match the signing services capabilities.
         Returns:
-            LabelCollection with updated references to the new mask urls
+            LabelList with updated references to the new mask urls
         """
         for row in self._apply_threaded(
             [label.add_url_to_masks for label in self._data], max_concurrency,
@@ -92,7 +93,7 @@ class LabelCollection:
             ...
         return self
 
-    def add_url_to_data(self, signer, max_concurrency=20) -> "LabelCollection":
+    def add_url_to_data(self, signer, max_concurrency=20) -> "LabelList":
         """
         Creates signed urls for the data
         Only uploads url if one doesn't already exist.
@@ -102,7 +103,7 @@ class LabelCollection:
             max_concurrency: how many threads to use for uploading.
                 Should be balanced to match the signing services capabilities.
         Returns:
-            LabelCollection with updated references to the new data urls
+            LabelList with updated references to the new data urls
         """
         for row in self._apply_threaded(
             [label.add_url_to_data for label in self._data], max_concurrency,
@@ -110,11 +111,21 @@ class LabelCollection:
             ...
         return self
 
+    def get_ontology(self) -> ontology.OntologyBuilder:
+        classifications = []
+        tools = []
+        for label in self._data:
+            tools = get_tools(label.object_annotations(), tools)
+            classifications = get_classifications(
+                label.classification_annotations(), classifications)
+        return ontology.OntologyBuilder(tools=tools,
+                                        classifications=classifications)
+
     def _ensure_unique_external_ids(self) -> None:
         external_ids = set()
         for label in self._data:
             if label.data.external_id is None:
-                label.data.external_id = uuid4()
+                label.data.external_id = str(uuid4())
             else:
                 if label.data.external_id in external_ids:
                     raise ValueError(
@@ -122,12 +133,16 @@ class LabelCollection:
                     )
             external_ids.add(label.data.external_id)
 
-    def __iter__(self) -> "LabelCollection":
+    def append(self, label: Label):
+        self._data.append(label)
+
+    def __iter__(self) -> "LabelList":
         self._index = 0
         return self
 
     def __next__(self) -> Label:
         if self._index == len(self._data):
+            self._index = 0
             raise StopIteration
 
         value = self._data[self._index]
@@ -154,18 +169,19 @@ class LabelGenerator(PrefetchGenerator):
     A container for interacting with a collection of labels.
 
     Use this class if you have larger data. It is slightly harder to work with
-    than the LabelCollection but will be much more memory efficient.
+    than the LabelList but will be much more memory efficient.
     """
 
     def __init__(self, data: Generator[Label, None, None], *args, **kwargs):
         self._fns = {}
         super().__init__(data, *args, **kwargs)
 
-    def as_collection(self) -> "LabelCollection":
-        return LabelCollection(data=list(self))
+    def as_list(self) -> "LabelList":
+        return LabelList(data=list(self))
 
     def assign_schema_ids(
-            self, ontology_builder: OntologyBuilder) -> "LabelGenerator":
+            self,
+            ontology_builder: "ontology.OntologyBuilder") -> "LabelGenerator":
 
         def _assign_ids(label: Label):
             label.assign_schema_ids(ontology_builder)
@@ -190,7 +206,7 @@ class LabelGenerator(PrefetchGenerator):
             label.add_url_to_data(signer)
             return label
 
-        self._fns['_add_url_to_data'] = _add_url_to_data
+        self._fns['add_url_to_data'] = _add_url_to_data
         return self
 
     def add_to_dataset(self, dataset: "Entity.Dataset",
@@ -199,7 +215,7 @@ class LabelGenerator(PrefetchGenerator):
         Creates data rows from each labels data object and attaches the data to the given dataset.
         Updates the label's data object to have the same external_id and uid as the data row.
 
-        This is a lot slower than LabelCollection.add_to_dataset but also more memory efficient.
+        This is a lot slower than LabelList.add_to_dataset but also more memory efficient.
 
         Args:
             dataset: labelbox dataset object to add the new data row to
@@ -237,6 +253,20 @@ class LabelGenerator(PrefetchGenerator):
         self._fns['add_url_to_masks'] = _add_url_to_masks
         return self
 
+    def register_background_fn(self, fn: Callable[[Label], Label],
+                               name: str) -> "LabelGenerator":
+        """
+        Allows users to add arbitrary io functions to the generator.
+        These functions will be exectuted in parallel and added to a prefetch queue.
+
+        Args:
+            fn: Callable that modifies a label and then returns the same label
+                - For performance reasons, this function shouldn't run if the object already has the desired state.
+            name: Register the name of the function. If the name already exists, then the function will be replaced.
+        """
+        self._fns[name] = fn
+        return self
+
     def __iter__(self):
         return self
 
@@ -255,4 +285,4 @@ class LabelGenerator(PrefetchGenerator):
         return self._process(value)
 
 
-LabelData = Union[LabelCollection, LabelGenerator]
+LabelCollection = Union[LabelList, LabelGenerator]

@@ -30,8 +30,8 @@ class LBV1Radio(LBV1Feature):
                    answer=LBV1ClassificationAnswer(
                        schema_id=radio.answer.schema_id,
                        title=radio.answer.name,
-                       value=radio.answer.extra['value'],
-                       feature_id=radio.answer.extra['feature_id']),
+                       value=radio.answer.extra.get('value'),
+                       feature_id=radio.answer.extra.get('feature_id')),
                    **extra)
 
 
@@ -56,8 +56,8 @@ class LBV1Checklist(LBV1Feature):
                        LBV1ClassificationAnswer(
                            schema_id=answer.schema_id,
                            title=answer.name,
-                           value=answer.extra['value'],
-                           feature_id=answer.extra['feature_id'])
+                           value=answer.extra.get('value'),
+                           feature_id=answer.extra.get('feature_id'))
                        for answer in checklist.answer
                    ],
                    **extra)

@@ -3,16 +3,18 @@ from uuid import uuid4
 
 import numpy as np
 import pytest
-from labelbox import DataRow
-from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.collection import (LabelCollection,
-                                                       LabelGenerator)
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.geometry.line import Line
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.label import Label
-from labelbox.schema.ontology import OntologyBuilder, Tool
+
+from labelbox.data.annotation_types import (
+    LabelList,
+    LabelGenerator,
+    ObjectAnnotation,
+    RasterData,
+    Line,
+    Mask,
+    Point,
+    Label
+)
+from labelbox import OntologyBuilder, Tool
 
 
 @pytest.fixture
@@ -43,12 +45,12 @@ class FakeDataset:
     def create_data_rows(self, args):
         for arg in args:
             self.exports.append(
-                SimpleNamespace(row_data=arg[DataRow.row_data],
-                                external_id=arg[DataRow.external_id],
+                SimpleNamespace(row_data=arg['row_data'],
+                                external_id=arg['external_id'],
                                 uid=self.uid))
         return self
 
-    def wait_til_done(self):
+    def wait_till_done(self):
         pass
 
     def export_data_rows(self):
@@ -66,7 +68,7 @@ def test_generator(list_of_labels):
 
 def test_conversion(list_of_labels):
     generator = LabelGenerator(list_of_labels)
-    label_collection = generator.as_collection()
+    label_collection = generator.as_list()
     assert len(label_collection) == len(list_of_labels)
     assert [x for x in label_collection] == list_of_labels
 
@@ -87,7 +89,7 @@ def test_adding_schema_ids():
         tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
     generator = LabelGenerator([label]).assign_schema_ids(ontology)
     assert next(generator).annotations[0].schema_id == schema_id
-    labels = LabelCollection([label]).assign_schema_ids(ontology)
+    labels = LabelList([label]).assign_schema_ids(ontology)
     assert next(labels).annotations[0].schema_id == schema_id
     assert labels[0].annotations[0].schema_id == schema_id
 
@@ -106,7 +108,7 @@ def test_adding_urls(signer):
                                                         3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
-    labels = LabelCollection([label]).add_url_to_data(signer(uuid))
+    labels = LabelList([label]).add_url_to_data(signer(uuid))
     assert label.data.url == uuid
     assert next(labels).data.url == uuid
     assert labels[0].data.url == uuid
@@ -133,7 +135,7 @@ def test_adding_to_dataset(signer):
     assert label.data.url != uuid
     assert label.data.external_id == None
     assert label.data.uid != dataset.uid
-    labels = LabelCollection([label]).add_to_dataset(dataset, signer(uuid))
+    labels = LabelList([label]).add_to_dataset(dataset, signer(uuid))
     assert label.data.url == uuid
     assert label.data.external_id != None
     assert label.data.uid == dataset.uid
@@ -151,7 +153,7 @@ def test_adding_to_masks(signer):
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
-                                        color_rgb=[255, 255, 255]))
+                                        color=[255, 255, 255]))
         ])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_url_to_masks(signer(uuid))
@@ -166,9 +168,9 @@ def test_adding_to_masks(signer):
                              value=Mask(mask=RasterData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
-                                        color_rgb=[255, 255, 255]))
+                                        color=[255, 255, 255]))
         ])
     assert label.annotations[0].value.mask.url != uuid
-    labels = LabelCollection([label]).add_url_to_masks(signer(uuid))
+    labels = LabelList([label]).add_url_to_masks(signer(uuid))
     assert next(labels).annotations[0].value.mask.url == uuid
     assert labels[0].annotations[0].value.mask.url == uuid
