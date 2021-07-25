@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Generator, Iterable
 
-from ...annotation_types.collection import LabelData, LabelGenerator
+from ...annotation_types.collection import LabelCollection, LabelGenerator
 from .label import NDLabel
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ class NDJsonConverter:
         return data.to_common()
 
     @staticmethod
-    def serialize(labels: LabelData) -> Generator[Dict[str, Any], None, None]:
+    def serialize(
+            labels: LabelCollection) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox ndjson format (prediction import format)
 
@@ -32,7 +33,7 @@ class NDJsonConverter:
         We will continue to improve the error messages and add helper functions to deal with this.
 
         Args:
-            labels: Either a LabelCollection or a LabelGenerator
+            labels: Either a LabelList or a LabelGenerator
         Returns:
             A generator for accessing the ndjson representation of the data
         """
