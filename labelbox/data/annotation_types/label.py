@@ -14,7 +14,6 @@ from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
 
 
-
 class Label(BaseModel):
     data: Union[VideoData, RasterData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
