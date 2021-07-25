@@ -17,6 +17,7 @@ from labelbox.exceptions import InvalidQueryError, LabelboxError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.data.serialization import LBV1Converter
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
@@ -199,7 +200,14 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def export_labels(self, timeout_seconds=60):
+    def export_labels(self):
+        json_data = self.export_labels_json()
+        if 'frames' in json_data[0]['Label']:
+            # Assumes all data rows in this project are video.
+            return LBV1Converter.deserialize_video(json_data, self.client)
+        return LBV1Converter.deserialize(json_data)
+
+    def export_labels_json(self, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
@@ -221,7 +229,9 @@ class Project(DbObject, Updateable, Deletable):
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
             if not res["shouldPoll"]:
-                return res["downloadUrl"]
+                response = requests.get(res["downloadUrl"])
+                response.raise_for_status()
+                return response.json()
 
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:

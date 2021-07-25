@@ -1,4 +1,3 @@
-from labelbox.schema.project import Project
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.role import Role
@@ -41,7 +40,7 @@ class User(DbObject):
     org_role = Relationship.ToOne("OrgRole", False)
 
     def update_org_role(self, role: Role):
-        """ Updated the `User`s organization role. 
+        """ Updated the `User`s organization role.
 
         See client.get_roles() to get all valid roles
         If you a user is converted from project level permissions to org level permissions and then convert back, their permissions will remain for each individual project
@@ -52,7 +51,7 @@ class User(DbObject):
         """
         user_id_param = "userId"
         role_id_param = "roleId"
-        query_str = """mutation SetOrganizationRolePyApi($%s: ID!, $%s: ID!) { 
+        query_str = """mutation SetOrganizationRolePyApi($%s: ID!, $%s: ID!) {
             setOrganizationRole(data: {userId: $userId, roleId: $roleId}) { id name }}
         """ % (user_id_param, role_id_param)
 
@@ -61,7 +60,7 @@ class User(DbObject):
             role_id_param: role.uid
         })
 
-    def remove_from_project(self, project: Project):
+    def remove_from_project(self, project: "Project"):
         """ Removes a User from a project. Only used for project based users.
         Project based user means their org role is "NONE"
 
@@ -71,13 +70,13 @@ class User(DbObject):
         """
         self.upsert_project_role(project, self.client.get_roles()['NONE'])
 
-    def upsert_project_role(self, project: Project, role: Role):
+    def upsert_project_role(self, project: "Project", role: Role):
         """ Updates or replaces a User's role in a project.
 
         Args:
             project (Project): The project to update the users permissions for
             role (Role): The role to assign to this user in this project.
-        
+
         """
         org_role = self.org_role()
         if org_role.name.upper() != 'NONE':
