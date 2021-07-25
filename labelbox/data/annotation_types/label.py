@@ -111,7 +111,7 @@ class Label(BaseModel):
         Args:
             ontology_builder: The ontology that matches the feature names assigned to objects in this dataset
         Returns:
-            LabelCollection. useful for chaining these modifying functions
+            Label. useful for chaining these modifying functions
         """
         tool_lookup, classification_lookup = self._get_feature_schema_lookup(
             ontology_builder)
