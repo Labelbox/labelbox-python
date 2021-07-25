@@ -26,9 +26,10 @@ class Rectangle(Geometry):
             [self.start.x, self.start.y],
         ]])
 
-    def raster(self, height: int, width: int, color: int = 255) -> np.ndarray:
+    def raster(self, height: int, width: int,
+               color: int = (255, 255, 255)) -> np.ndarray:
         """
-        Draw the rectangle onto a 2d mask
+        Draw the rectangle onto a 3d mask
 
         Args:
             height (int): height of the mask
@@ -37,6 +38,6 @@ class Rectangle(Geometry):
         Returns:
             numpy array representing the mask with the rectangle drawn on it.
         """
-        canvas = np.zeros((height, width), dtype=np.uint8)
+        canvas = np.zeros((height, width, 3), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
         return cv2.fillPoly(canvas, pts=pts, color=color)

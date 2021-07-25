@@ -1,3 +1,4 @@
+from labelbox.data.ontology import get_classifications, get_tools
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Generator, Iterable, Union
@@ -110,6 +111,16 @@ class LabelList:
             ...
         return self
 
+    def get_ontology(self) -> ontology.OntologyBuilder:
+        classifications = []
+        tools = []
+        for label in self._data:
+            tools = get_tools(label.object_annotations(), tools)
+            classifications = get_classifications(
+                label.classification_annotations(), classifications)
+        return ontology.OntologyBuilder(tools=tools,
+                                        classifications=classifications)
+
     def _ensure_unique_external_ids(self) -> None:
         external_ids = set()
         for label in self._data:
@@ -121,6 +132,9 @@ class LabelList:
                         f"External ids must be unique for bulk uploading. Found {label.data.external_id} more than once."
                     )
             external_ids.add(label.data.external_id)
+
+    def append(self, label: Label):
+        self._data.append(label)
 
     def __iter__(self) -> "LabelList":
         self._index = 0

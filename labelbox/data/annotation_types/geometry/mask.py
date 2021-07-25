@@ -14,7 +14,7 @@ class Mask(Geometry):
     # Raster data can be shared across multiple masks... or not
     mask: RasterData
     # RGB or Grayscale
-    color: Union[int, Tuple[int, int, int]]
+    color: Tuple[int, int, int]
 
     @property
     def geometry(self):
@@ -40,17 +40,12 @@ class Mask(Geometry):
             np.ndarray representing only this object
         """
         mask = self.mask.data
-        if len(mask.shape) == 2:
-            mask = np.expand_dims(mask, axis=-1)
         mask = np.alltrue(mask == self.color, axis=2).astype(np.uint8)
         if height is not None or width is not None:
             mask = cv2.resize(mask,
                               (width or mask.shape[1], height or mask.shape[0]))
-
         if binary:
             return mask
-        elif isinstance(self.color, int):
-            return mask * self.color
         else:
             color_image = np.zeros((mask.shape[0], mask.shape[1], 3),
                                    dtype=np.uint8)
