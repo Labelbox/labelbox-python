@@ -6,7 +6,7 @@ from collections import defaultdict
 from pydantic import BaseModel
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation
-from ...annotation_types.collection import LabelData, LabelGenerator
+from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import RasterData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
@@ -25,7 +25,8 @@ class NDLabel(BaseModel):
             data=self._generate_annotations(grouped_annotations))
 
     @classmethod
-    def from_common(cls, data: LabelData) -> Generator["NDLabel", None, None]:
+    def from_common(cls,
+                    data: LabelCollection) -> Generator["NDLabel", None, None]:
         for label in data:
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)

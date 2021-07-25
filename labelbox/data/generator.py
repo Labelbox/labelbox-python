@@ -2,6 +2,7 @@ import logging
 import threading
 from queue import Queue
 from typing import Any, Iterable
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,7 @@ class PrefetchGenerator:
     Useful for modifying the generator results based on data from a network
     """
 
-    def __init__(self,
-                 data: Iterable[Any],
-                 prefetch_limit=20,
-                 max_concurrency=4):
+    def __init__(self, data: Iterable[Any], prefetch_limit=20, num_executors=4):
         if isinstance(data, (list, tuple)):
             self._data = (r for r in data)
         else:
@@ -44,14 +42,13 @@ class PrefetchGenerator:
         self.queue = Queue(prefetch_limit)
         self._data = ThreadSafeGen(self._data)
         self.completed_threads = 0
-        self.max_concurrency = max_concurrency
-        self.threads = [
-            threading.Thread(target=self.fill_queue)
-            for _ in range(max_concurrency)
-        ]
-        for thread in self.threads:
-            thread.daemon = True
-            thread.start()
+        # Can only iterate over once it the queue.get hangs forever.
+        self.done = False
+        self.num_executors = num_executors
+        with ThreadPoolExecutor(max_workers=num_executors) as executor:
+            self.futures = [
+                executor.submit(self.fill_queue) for _ in range(num_executors)
+            ]
 
     def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
@@ -73,10 +70,13 @@ class PrefetchGenerator:
         return self
 
     def __next__(self) -> Any:
+        if self.done:
+            raise StopIteration
         value = self.queue.get()
         while value is None:
             self.completed_threads += 1
-            if self.completed_threads == self.max_concurrency:
+            if self.completed_threads == self.num_executors:
+                self.done = True
                 raise StopIteration
             value = self.queue.get()
         return value
