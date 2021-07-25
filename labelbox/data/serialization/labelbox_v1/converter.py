@@ -1,11 +1,14 @@
-from typing import Any, Callable, Dict, Generator, Iterable
+from requests.exceptions import HTTPError
+import labelbox
+from typing import Any, Dict, Generator, Iterable
 import logging
 
 import ndjson
 import requests
+from google.api_core import retry
 
 from .label import LBV1Label
-from ...annotation_types.collection import (LabelData, LabelGenerator,
+from ...annotation_types.collection import (LabelCollection, LabelGenerator,
                                             PrefetchGenerator)
 
 logger = logging.getLogger(__name__)
@@ -50,19 +53,17 @@ class LBV1Converter:
 
     @staticmethod
     def serialize(
-        labels: LabelData,
-        signer: Callable[[bytes],
-                         str]) -> Generator[Dict[str, Any], None, None]:
+            labels: LabelCollection) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox json export format
 
         Args:
-            labels: Either a LabelCollection or a LabelGenerator
+            labels: Either a LabelList or a LabelGenerator (LabelCollection)
         Returns:
             A generator for accessing the labelbox json export representation of the data
         """
         for label in labels:
-            res = LBV1Label.from_common(label, signer)
+            res = LBV1Label.from_common(label)
             yield res.dict(by_alias=True)
 
 
@@ -77,8 +78,16 @@ class LBV1VideoIterator(PrefetchGenerator):
 
     def _process(self, value):
         if 'frames' in value['Label']:
-            req = requests.get(
-                value['Label']['frames'],
-                headers={"Authorization": f"Bearer {self.client.api_key}"})
-            value['Label'] = ndjson.loads(req.text)
+            req = self._request(value)
+            value['Label'] = ndjson.loads(req)
             return value
+
+    @retry.Retry(predicate=retry.if_exception_type(HTTPError))
+    def _request(self, value):
+        req = requests.get(
+            value['Label']['frames'],
+            headers={"Authorization": f"Bearer {self.client.api_key}"})
+        if req.status_code == 401:
+            raise labelbox.exceptions.AuthenticationError("Invalid API key")
+        req.raise_for_status()
+        return req.text

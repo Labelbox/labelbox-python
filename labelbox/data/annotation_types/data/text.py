@@ -30,13 +30,25 @@ class TextData(BaseData):
             self.text = text
             return text
         elif self.url:
-            response = requests.get(self.url)
-            response.raise_for_status()
-            text = response.text
+            text = self.fetch_remote()
             self.text = text
             return text
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
+
+    def set_fetch_fn(self, fn):
+        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
+
+    def fetch_remote(self) -> str:
+        """
+        Method for accessing url.
+
+        If url is not publicly accessible or requires another access pattern
+        simply override this function
+        """
+        response = requests.get(self.url)
+        response.raise_for_status()
+        return response.text
 
     def create_url(self, signer: Callable[[bytes], str]) -> None:
         """
@@ -69,6 +81,11 @@ class TextData(BaseData):
             raise ValueError(
                 "One of `file_path`, `text`, `uid`, or `url` required.")
         return values
+
+    def __repr__(self) -> str:
+        return  f"TextData(file_path={self.file_path}," \
+                f"text={self.text[:30] + '...' if self.text is not None else None}," \
+                f"url={self.url})"
 
     class config:
         # Required for discriminating between data types

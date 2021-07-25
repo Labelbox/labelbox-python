@@ -2,7 +2,7 @@ from pydantic import ValidationError
 import pytest
 import cv2
 
-from labelbox.data.annotation_types.geometry import Point, Rectangle
+from labelbox.data.annotation_types import Point, Rectangle
 
 
 def test_rectangle():
@@ -17,5 +17,4 @@ def test_rectangle():
     assert rectangle.shapely.__geo_interface__ == expected
 
     raster = rectangle.raster(height=32, width=32)
-    assert (cv2.imread("tests/data/assets/rectangle.png")[:, :,
-                                                          0] == raster).all()
+    assert (cv2.imread("tests/data/assets/rectangle.png") == raster).all()

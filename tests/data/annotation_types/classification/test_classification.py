@@ -1,10 +1,14 @@
 import pytest
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation
-from labelbox.data.annotation_types.classification import (Checklist,
-                                                           ClassificationAnswer,
-                                                           Dropdown, Radio,
-                                                           Text)
 from pydantic import ValidationError
+
+from labelbox.data.annotation_types import (
+    Checklist,
+    ClassificationAnswer,
+    Dropdown,
+    Radio,
+    Text,
+    ClassificationAnnotation
+)
 
 
 def test_classification_answer():
@@ -49,8 +53,7 @@ def test_subclass():
         'extra': {},
         'value': {
             'answer': answer
-        },
-        'classifications': []
+        }
     }
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name=name,
@@ -62,7 +65,6 @@ def test_subclass():
         'value': {
             'answer': answer
         },
-        'classifications': [],
         'name': name
     }
     classification = ClassificationAnnotation(value=Text(answer=answer),
@@ -74,37 +76,7 @@ def test_subclass():
         'extra': {},
         'value': {
             'answer': answer
-        },
-        'classifications': []
-    }
-
-    classification = ClassificationAnnotation(value=Text(answer=answer),
-                                              name=name,
-                                              schema_id=schema_id,
-                                              classifications=[
-                                                  ClassificationAnnotation(
-                                                      value=Text(answer=answer),
-                                                      name=name)
-                                              ])
-
-    assert classification.dict() == {
-        'name':
-            name,
-        'extra': {},
-        'schema_id':
-            schema_id,
-        'value': {
-            'answer': answer
-        },
-        'classifications': [{
-            'name': name,
-            'extra': {},
-            'schema_id': None,
-            'value': {
-                'answer': answer
-            },
-            'classifications': []
-        }]
+        }
     }
 
 
@@ -127,18 +99,12 @@ def test_radio():
             'extra': {}
         }
     }
-    classification = ClassificationAnnotation(
-        value=Radio(answer=answer),
-        schema_id=schema_id,
-        name=name,
-        classifications=[
-            ClassificationAnnotation(value=Radio(answer=answer), name=name)
-        ])
+    classification = ClassificationAnnotation(value=Radio(answer=answer),
+                                              schema_id=schema_id,
+                                              name=name)
     assert classification.dict() == {
-        'name':
-            name,
-        'schema_id':
-            schema_id,
+        'name': name,
+        'schema_id': schema_id,
         'extra': {},
         'value': {
             'answer': {
@@ -146,20 +112,7 @@ def test_radio():
                 'schema_id': None,
                 'extra': {}
             }
-        },
-        'classifications': [{
-            'name': name,
-            'schema_id': None,
-            'extra': {},
-            'value': {
-                'answer': {
-                    'name': answer.name,
-                    'schema_id': None,
-                    'extra': {}
-                }
-            },
-            'classifications': []
-        }]
+        }
     }
 
 
@@ -186,15 +139,10 @@ def test_checklist():
         value=Checklist(answer=[answer]),
         schema_id=schema_id,
         name=name,
-        classifications=[
-            ClassificationAnnotation(value=Checklist(answer=[answer]),
-                                     name=name)
-        ])
+    )
     assert classification.dict() == {
-        'name':
-            name,
-        'schema_id':
-            schema_id,
+        'name': name,
+        'schema_id': schema_id,
         'extra': {},
         'value': {
             'answer': [{
@@ -203,19 +151,6 @@ def test_checklist():
                 'extra': {}
             }]
         },
-        'classifications': [{
-            'name': name,
-            'schema_id': None,
-            'extra': {},
-            'value': {
-                'answer': [{
-                    'name': answer.name,
-                    'schema_id': None,
-                    'extra': {}
-                }]
-            },
-            'classifications': []
-        }]
     }
 
 
@@ -238,18 +173,12 @@ def test_dropdown():
             'extra': {}
         }]
     }
-    classification = ClassificationAnnotation(
-        value=Dropdown(answer=[answer]),
-        schema_id=schema_id,
-        name=name,
-        classifications=[
-            ClassificationAnnotation(value=Dropdown(answer=[answer]), name=name)
-        ])
+    classification = ClassificationAnnotation(value=Dropdown(answer=[answer]),
+                                              schema_id=schema_id,
+                                              name=name)
     assert classification.dict() == {
-        'name':
-            name,
-        'schema_id':
-            schema_id,
+        'name': name,
+        'schema_id': schema_id,
         'extra': {},
         'value': {
             'answer': [{
@@ -257,18 +186,5 @@ def test_dropdown():
                 'schema_id': None,
                 'extra': {}
             }]
-        },
-        'classifications': [{
-            'name': name,
-            'schema_id': None,
-            'extra': {},
-            'value': {
-                'answer': [{
-                    'name': answer.name,
-                    'schema_id': None,
-                    'extra': {}
-                }]
-            },
-            'classifications': []
-        }]
+        }
     }
