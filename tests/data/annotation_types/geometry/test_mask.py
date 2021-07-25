@@ -4,8 +4,7 @@ import pytest
 import numpy as np
 import cv2
 
-from labelbox.data.annotation_types.geometry import Point, Rectangle, Mask
-from labelbox.data.annotation_types.data.raster import RasterData
+from labelbox.data.annotation_types import RasterData, Point, Rectangle, Mask
 
 
 def test_mask():
@@ -50,10 +49,10 @@ def test_mask():
     gt1 = Rectangle(start=Point(x=0, y=0),
                     end=Point(x=10, y=10)).raster(height=raster1.shape[0],
                                                   width=raster1.shape[1],
-                                                  color=1)
+                                                  color=(255,255,255))
     gt2 = Rectangle(start=Point(x=20, y=20),
                     end=Point(x=30, y=30)).raster(height=raster2.shape[0],
                                                   width=raster2.shape[1],
-                                                  color=1)
-    assert ((np.max(raster1, axis=-1) > 0) == gt1).all()
-    assert ((np.max(raster2, axis=-1) > 0) == gt2).all()
+                                                  color=(0,255,255))
+    assert (raster1 == gt1).all()
+    assert (raster2 == gt2).all()

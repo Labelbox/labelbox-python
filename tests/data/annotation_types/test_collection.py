@@ -3,15 +3,17 @@ from uuid import uuid4
 
 import numpy as np
 import pytest
-from labelbox import DataRow
-from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.collection import (LabelList,
-                                                       LabelGenerator)
-from labelbox.data.annotation_types.data.raster import RasterData
-from labelbox.data.annotation_types.geometry.line import Line
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.label import Label
+
+from labelbox.data.annotation_types import (
+    LabelList,
+    LabelGenerator,
+    ObjectAnnotation,
+    RasterData,
+    Line,
+    Mask,
+    Point,
+    Label
+)
 from labelbox import OntologyBuilder, Tool
 
 

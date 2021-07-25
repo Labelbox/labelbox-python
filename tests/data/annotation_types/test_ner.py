@@ -1,4 +1,4 @@
-from labelbox.data.annotation_types.ner import TextEntity
+from labelbox.data.annotation_types import TextEntity
 
 
 def test_ner():

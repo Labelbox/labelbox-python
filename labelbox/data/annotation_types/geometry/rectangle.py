@@ -27,7 +27,7 @@ class Rectangle(Geometry):
         ]])
 
     def raster(self, height: int, width: int,
-               color: int = (255, 255, 255)) -> np.ndarray:
+               color = (255, 255, 255)) -> np.ndarray:
         """
         Draw the rectangle onto a 3d mask
 
