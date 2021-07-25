@@ -40,13 +40,11 @@ class Option:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
-        return Option(value=dictionary["value"],
-                      schema_id=dictionary.get("schemaNodeId", None),
-                      feature_schema_id=dictionary.get("featureSchemaId", None),
-                      options=[
-                          Classification.from_dict(o)
-                          for o in dictionary.get("options", [])
-                      ])
+        return cls(
+            value=dictionary["value"],
+            schema_id=dictionary.get("schemaNodeId", None),
+            feature_schema_id=dictionary.get("featureSchemaId", None),
+            options=[cls.from_dict(o) for o in dictionary.get("options", [])])
 
     def asdict(self) -> Dict[str, Any]:
         return {
@@ -119,16 +117,15 @@ class Classification:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
-        return Classification(
-            class_type=Classification.Type(dictionary["type"]),
-            instructions=dictionary["instructions"],
-            required=dictionary.get("required", False),
-            options=[Option.from_dict(o) for o in dictionary["options"]],
-            schema_id=dictionary.get("schemaNodeId", None),
-            feature_schema_id=dictionary.get("featureSchemaId", None))
+        return cls(class_type=cls.Type(dictionary["type"]),
+                   instructions=dictionary["instructions"],
+                   required=dictionary.get("required", False),
+                   options=[Option.from_dict(o) for o in dictionary["options"]],
+                   schema_id=dictionary.get("schemaNodeId", None),
+                   feature_schema_id=dictionary.get("featureSchemaId", None))
 
     def asdict(self) -> Dict[str, Any]:
-        if self.class_type in Classification._REQUIRES_OPTIONS \
+        if self.class_type in self._REQUIRES_OPTIONS \
                 and len(self.options) < 1:
             raise InconsistentOntologyException(
                 f"Classification '{self.instructions}' requires options.")
@@ -199,16 +196,16 @@ class Tool:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
-        return Tool(name=dictionary['name'],
-                    schema_id=dictionary.get("schemaNodeId", None),
-                    feature_schema_id=dictionary.get("featureSchemaId", None),
-                    required=dictionary.get("required", False),
-                    tool=Tool.Type(dictionary["tool"]),
-                    classifications=[
-                        Classification.from_dict(c)
-                        for c in dictionary["classifications"]
-                    ],
-                    color=dictionary["color"])
+        return cls(name=dictionary['name'],
+                   schema_id=dictionary.get("schemaNodeId", None),
+                   feature_schema_id=dictionary.get("featureSchemaId", None),
+                   required=dictionary.get("required", False),
+                   tool=cls.Type(dictionary["tool"]),
+                   classifications=[
+                       Classification.from_dict(c)
+                       for c in dictionary["classifications"]
+                   ],
+                   color=dictionary["color"])
 
     def asdict(self) -> Dict[str, Any]:
         return {
@@ -309,12 +306,11 @@ class OntologyBuilder:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
-        return OntologyBuilder(
-            tools=[Tool.from_dict(t) for t in dictionary["tools"]],
-            classifications=[
-                Classification.from_dict(c)
-                for c in dictionary["classifications"]
-            ])
+        return cls(tools=[Tool.from_dict(t) for t in dictionary["tools"]],
+                   classifications=[
+                       Classification.from_dict(c)
+                       for c in dictionary["classifications"]
+                   ])
 
     def asdict(self):
         self._update_colors()
@@ -336,7 +332,7 @@ class OntologyBuilder:
     @classmethod
     def from_project(cls, project: "Project"):
         ontology = project.ontology().normalized
-        return OntologyBuilder.from_dict(ontology)
+        return cls.from_dict(ontology)
 
     def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):
