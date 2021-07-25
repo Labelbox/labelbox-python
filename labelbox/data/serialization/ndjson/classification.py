@@ -189,10 +189,6 @@ class NDClassification:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
-        if len(annotation.classifications):
-            raise ValueError(
-                "Nested classifications not supported by this format")
-
         return classify_obj.from_common(annotation.value, annotation.schema_id,
                                         annotation.extra, data)
 

@@ -169,8 +169,8 @@ class LBV1Label(BaseModel):
         if label.data.url is None:
             raise ValueError(
                 "Url attribute required for serializing data objects. "
-                "Use <LabelCollection,LabelGenerator>.add_url_to_data "
-                "or <LabelCollection,LabelGenerator>.add_to_dataset")
+                "Use <LabelList,LabelGenerator>.add_url_to_data "
+                "or <LabelList,LabelGenerator>.add_to_dataset")
 
         return LBV1Label(label=label_,
                          data_row_id=label.data.uid,

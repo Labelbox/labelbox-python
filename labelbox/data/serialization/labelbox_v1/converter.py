@@ -8,7 +8,7 @@ import requests
 from google.api_core import retry
 
 from .label import LBV1Label
-from ...annotation_types.collection import (LabelContainer, LabelGenerator,
+from ...annotation_types.collection import (LabelCollection, LabelGenerator,
                                             PrefetchGenerator)
 
 logger = logging.getLogger(__name__)
@@ -53,12 +53,12 @@ class LBV1Converter:
 
     @staticmethod
     def serialize(
-            labels: LabelContainer) -> Generator[Dict[str, Any], None, None]:
+            labels: LabelCollection) -> Generator[Dict[str, Any], None, None]:
         """
         Converts a labelbox common object to the labelbox json export format
 
         Args:
-            labels: Either a LabelCollection or a LabelGenerator
+            labels: Either a LabelList or a LabelGenerator (LabelCollection)
         Returns:
             A generator for accessing the labelbox json export representation of the data
         """
