@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-from labelbox.data.annotation_types.data.video import VideoData
 from pydantic import ValidationError
+
+from labelbox.data.annotation_types import VideoData
 
 
 def test_validate_schema():
@@ -36,7 +37,6 @@ def test_file_path():
 
 
 def test_file_url():
-    # Url points to the same cat video as we have above
     url = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
     raster_data = VideoData(url=url)
 
