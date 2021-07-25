@@ -123,7 +123,7 @@ class LBV1Mask(LBV1ObjectBase):
 
     def to_common(self) -> Mask:
         return Mask(mask=RasterData(url=self.instanceURI),
-                    color_rgb=(255, 255, 255))
+                    color=(255, 255, 255))
 
     @classmethod
     def from_common(cls, mask: Mask,

@@ -3,10 +3,12 @@ from io import BytesIO
 
 import numpy as np
 import requests
+from typing_extensions import Literal
 from pydantic import root_validator
 from PIL import Image
 
 from .base_data import BaseData
+from ..types import TypedArray
 
 
 class RasterData(BaseData):
@@ -16,7 +18,16 @@ class RasterData(BaseData):
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
-    arr: Optional[np.ndarray] = None
+    arr: Optional[TypedArray[Literal['uint8']]] = None
+
+    @classmethod
+    def from_2D_arr(cls, arr: TypedArray[Literal['uint8']], **kwargs):
+        if len(arr.shape):
+            raise ValueError(
+                f"Found array with shape {arr.shape}. Expected two dimensions ([W,H])"
+            )
+        arr = np.stack((arr,) * 3, axis=-1)
+        return cls(arr=arr, **kwargs)
 
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         """
@@ -36,9 +47,9 @@ class RasterData(BaseData):
         Returns:
             png encoded bytes
         """
-        if len(arr.shape) not in [2, 3]:
-            raise ValueError("unsupported image format")
-
+        if len(arr.shape) != 3:
+            raise ValueError("unsupported image format. Must be 3D ([H,W,C])."
+                             "Use RasterData.from_2D_arr to construct from 2D")
         if arr.dtype != np.uint8:
             raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
 
@@ -64,13 +75,25 @@ class RasterData(BaseData):
             self.im_bytes = im_bytes
             return self.bytes_to_np(im_bytes)
         elif self.url is not None:
-            response = requests.get(self.url)
-            response.raise_for_status()
-            im_bytes = response.content
+            im_bytes = self.fetch_remote()
             self.im_bytes = im_bytes
             return self.bytes_to_np(im_bytes)
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
+
+    def set_fetch_fn(self, fn):
+        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
+
+    def fetch_remote(self) -> bytes:
+        """
+        Method for accessing url.
+
+        If url is not publicly accessible or requires another access pattern
+        simply override this function
+        """
+        response = requests.get(self.url)
+        response.raise_for_status()
+        return response.content
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
@@ -95,7 +118,7 @@ class RasterData(BaseData):
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
-    @root_validator
+    @root_validator()
     def validate_args(cls, values):
         file_path = values.get("file_path")
         im_bytes = values.get("im_bytes")
@@ -111,15 +134,20 @@ class RasterData(BaseData):
                 raise TypeError(
                     "Numpy array representing segmentation mask must be np.uint8"
                 )
-            elif len(arr.shape) not in [2, 3]:
-                raise TypeError(
-                    f"Numpy array must have 2 or 3 dims. Found shape {arr.shape}"
-                )
+            elif len(arr.shape) != 3:
+                raise ValueError(
+                    "unsupported image format. Must be 3D ([H,W,C])."
+                    "Use RasterData.from_2D_arr to construct from 2D")
         return values
 
+    def __repr__(self) -> str:
+        symbol_or_none = lambda data: '...' if data is not None else None
+        return  f"RasterData(im_bytes={symbol_or_none(self.im_bytes)}," \
+                f"file_path={self.file_path}," \
+                f"url={self.url}," \
+                f"arr={symbol_or_none(self.arr)})"
+
     class Config:
-        # Required for numpy arrays
-        arbitrary_types_allowed = True
         # Required for sharing references
         copy_on_model_validation = False
         # Required for discriminating between data types

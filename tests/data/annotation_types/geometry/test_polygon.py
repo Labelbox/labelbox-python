@@ -2,8 +2,7 @@ from pydantic import ValidationError
 import pytest
 import cv2
 
-from labelbox.data.annotation_types.geometry import Point
-from labelbox.data.annotation_types.geometry import Polygon
+from labelbox.data.annotation_types import Polygon, Point
 
 
 def test_polygon():
@@ -25,5 +24,4 @@ def test_polygon():
     assert polygon.shapely.__geo_interface__ == expected
 
     raster = polygon.raster(10, 10)
-    assert (cv2.imread("tests/data/assets/polygon.png")[:, :,
-                                                        0] == raster).all()
+    assert (cv2.imread("tests/data/assets/polygon.png") == raster).all()
