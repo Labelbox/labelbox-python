@@ -1,12 +1,11 @@
 from collections import defaultdict
-from labelbox.data.ontology import get_feature_schema_lookup
-
 from typing import Any, Callable, Dict, List, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from labelbox.schema import ontology
 from labelbox.orm.model import Entity
+from ..ontology import get_feature_schema_lookup
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
 from .geometry import Mask
@@ -14,9 +13,6 @@ from .metrics import Metric
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
 
-from pydantic import validator
-
-from labelbox.data.annotation_types import geometry
 
 
 class Label(BaseModel):
