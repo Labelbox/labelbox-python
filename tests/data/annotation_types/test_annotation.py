@@ -1,18 +1,11 @@
-
 import pytest
 from pydantic import ValidationError
 
-from labelbox.data.annotation_types import (
-    Text,
-    Point,
-    Line,
-    ClassificationAnnotation,
-    ObjectAnnotation,
-    VideoClassificationAnnotation,
-    VideoObjectAnnotation,
-    TextEntity
-)
-
+from labelbox.data.annotation_types import (Text, Point, Line,
+                                            ClassificationAnnotation,
+                                            ObjectAnnotation,
+                                            VideoClassificationAnnotation,
+                                            VideoObjectAnnotation, TextEntity)
 
 
 def test_annotation():
