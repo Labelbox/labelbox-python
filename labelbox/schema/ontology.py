@@ -1,15 +1,12 @@
-import abc
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 import colorsys
 
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from labelbox.schema.project import Project
-from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
-from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.utils import snake_case, camel_case
+from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Field, Relationship
 from labelbox.exceptions import InconsistentOntologyException
 
 
@@ -17,7 +14,7 @@ from labelbox.exceptions import InconsistentOntologyException
 class Option:
     """
     An option is a possible answer within a Classification object in
-    a Project's ontology. 
+    a Project's ontology.
 
     To instantiate, only the "value" parameter needs to be passed in.
 
@@ -69,13 +66,13 @@ class Option:
 @dataclass
 class Classification:
     """
-    A classfication to be added to a Project's ontology. The  
+    A classfication to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
     To instantiate, the "class_type" and "instructions" parameters must
     be passed in.
 
-    The "options" parameter holds a list of Option objects. This is not 
+    The "options" parameter holds a list of Option objects. This is not
     necessary for some Classification types, such as TEXT. To see which
     types require options, look at the "_REQUIRES_OPTIONS" class variable.
 
@@ -160,13 +157,13 @@ class Tool:
     To instantiate, the "tool" and "name" parameters must
     be passed in.
 
-    The "classifications" parameter holds a list of Classification objects. 
+    The "classifications" parameter holds a list of Classification objects.
     This can be used to add nested classifications to a tool.
 
     Example(s):
         tool = Tool(
             tool = Tool.Type.LINE,
-            name = "Tool example")    
+            name = "Tool example")
         classification = Classification(
             class_type = Classification.Type.TEXT,
             instructions = "Classification Example")
@@ -287,9 +284,9 @@ class OntologyBuilder:
     for making Project ontologies from scratch. OntologyBuilder can also
     pull from an already existing Project's ontology.
 
-    There are no required instantiation arguments. 
+    There are no required instantiation arguments.
 
-    To create an ontology, use the asdict() method after fully building your 
+    To create an ontology, use the asdict() method after fully building your
     ontology within this class, and inserting it into project.setup() as the
     "labeling_frontend_options" parameter.
 
@@ -303,7 +300,7 @@ class OntologyBuilder:
         tools: (list)
         classifications: (list)
 
-    
+
     """
     tools: List[Tool] = field(default_factory=list)
     classifications: List[Classification] = field(default_factory=list)
