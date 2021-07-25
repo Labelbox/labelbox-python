@@ -24,5 +24,5 @@ from .data import VideoData
 
 from .label import Label
 
-from .collection import LabelCollection
+from .collection import LabelList
 from .collection import LabelGenerator

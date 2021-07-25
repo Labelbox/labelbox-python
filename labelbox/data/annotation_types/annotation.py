@@ -15,7 +15,7 @@ class BaseAnnotation(FeatureSchema):
 
 
 class ClassificationAnnotation(BaseAnnotation):
-    """Class represneting classification annotations (annotations that don't have a location) """
+    """Class representing classification annotations (annotations that don't have a location) """
     value: Union[Text, Checklist, Radio, Dropdown]
 
 
