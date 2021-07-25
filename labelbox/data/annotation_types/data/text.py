@@ -82,6 +82,11 @@ class TextData(BaseData):
                 "One of `file_path`, `text`, `uid`, or `url` required.")
         return values
 
+    def __repr__(self) -> str:
+        return  f"TextData(file_path={self.file_path}," \
+                f"text={self.text[:30] + '...' if self.text is not None else None}," \
+                f"url={self.url})"
+
     class config:
         # Required for discriminating between data types
         extra = 'forbid'

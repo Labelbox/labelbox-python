@@ -1,6 +1,7 @@
 from collections import defaultdict
-from labelbox.data.annotation_types import geometry
-from typing import Any, Dict, List, Tuple, Union, Callable
+from labelbox.data.ontology import get_feature_schema_lookup
+
+from typing import Any, Callable, Dict, List, Union
 
 from pydantic import BaseModel
 
@@ -8,12 +9,14 @@ from labelbox.schema import ontology
 from labelbox.orm.model import Entity
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
-from .geometry.mask import Mask
+from .geometry import Mask
 from .metrics import Metric
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
 
 from pydantic import validator
+
+from labelbox.data.annotation_types import geometry
 
 
 class Label(BaseModel):
@@ -74,7 +77,11 @@ class Label(BaseModel):
         for annotation in self.annotations:
             # Allows us to upload shared masks once
             if isinstance(annotation.value, Mask):
-                if annotation.value.mask not in masks:
+                in_list = False
+                for mask in masks:
+                    if annotation.value.mask is mask:
+                        in_list = True
+                if not in_list:
                     masks.append(annotation.value.mask)
         for mask in masks:
             mask.create_url(signer)
@@ -113,7 +120,7 @@ class Label(BaseModel):
         Returns:
             Label. useful for chaining these modifying functions
         """
-        tool_lookup, classification_lookup = self._get_feature_schema_lookup(
+        tool_lookup, classification_lookup = get_feature_schema_lookup(
             ontology_builder)
         for annotation in self.annotations:
             if isinstance(annotation, ClassificationAnnotation):
@@ -129,40 +136,13 @@ class Label(BaseModel):
                     f"Unexpected type found for annotation. {type(annotation)}")
         return self
 
-    def _get_feature_schema_lookup(
-        self, ontology_builder: ontology.OntologyBuilder
-    ) -> Tuple[Dict[str, str], Dict[str, str]]:
-        tool_lookup = {}
-        classification_lookup = {}
-
-        def flatten_classification(classifications):
-            for classification in classifications:
-                if isinstance(classification, ontology.Classification):
-                    classification_lookup[
-                        classification.
-                        instructions] = classification.feature_schema_id
-                elif isinstance(classification, ontology.Option):
-                    classification_lookup[
-                        classification.value] = classification.feature_schema_id
-                else:
-                    raise TypeError(
-                        f"Unexpected type found in ontology. `{type(classification)}`"
-                    )
-                flatten_classification(classification.options)
-
-        for tool in ontology_builder.tools:
-            tool_lookup[tool.name] = tool.feature_schema_id
-            flatten_classification(tool.classifications)
-        flatten_classification(ontology_builder.classifications)
-        return tool_lookup, classification_lookup
-
     def _assign_or_raise(self, annotation, lookup: Dict[str, str]) -> None:
         if annotation.schema_id is not None:
             return
 
         feature_schema_id = lookup.get(annotation.name)
         if feature_schema_id is None:
-            raise ValueError(f"No tool matches display name {annotation.name}. "
+            raise ValueError(f"No tool matches name {annotation.name}. "
                              f"Must be one of {list(lookup.keys())}.")
         annotation.schema_id = feature_schema_id
 

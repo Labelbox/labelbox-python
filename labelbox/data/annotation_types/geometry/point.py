@@ -17,9 +17,9 @@ class Point(Geometry):
                height: int,
                width: int,
                thickness: int = 1,
-               color=255) -> np.ndarray:
+               color=(255, 255, 255)) -> np.ndarray:
         """
-        Draw the point onto a 2d mask
+        Draw the point onto a 3d mask
 
         Args:
             height (int): height of the mask
@@ -29,7 +29,7 @@ class Point(Geometry):
         Returns:
             numpy array representing the mask with the point drawn on it.
         """
-        canvas = np.zeros((height, width), dtype=np.uint8)
+        canvas = np.zeros((height, width, 3), dtype=np.uint8)
         return cv2.circle(canvas, (int(self.x), int(self.y)),
                           radius=thickness,
                           color=color,

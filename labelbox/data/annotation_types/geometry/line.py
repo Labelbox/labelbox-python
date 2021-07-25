@@ -20,9 +20,9 @@ class Line(Geometry):
                height: int,
                width: int,
                thickness=1,
-               color=255) -> np.ndarray:
+               color=(255, 255, 255)) -> np.ndarray:
         """
-        Draw the line onto a 2d mask
+        Draw the line onto a 3d mask
 
         Args:
             height (int): height of the mask
@@ -32,8 +32,7 @@ class Line(Geometry):
         Returns:
             numpy array representing the mask with the line drawn on it.
         """
-
-        canvas = np.zeros((height, width), dtype=np.uint8)
+        canvas = np.zeros((height, width, 3), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
         return cv2.polylines(canvas,
                              pts,
