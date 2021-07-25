@@ -1,20 +1,9 @@
 from typing import Dict, List, Tuple
 
 from labelbox.schema import ontology
-from .annotation_types import (
-    Text,
-    Dropdown,
-    Checklist,
-    Radio,
-    ClassificationAnnotation,
-    ObjectAnnotation,
-    Mask,
-    Point,
-    Line,
-    Polygon,
-    Rectangle,
-    TextEntity
-)
+from .annotation_types import (Text, Dropdown, Checklist, Radio,
+                               ClassificationAnnotation, ObjectAnnotation, Mask,
+                               Point, Line, Polygon, Rectangle, TextEntity)
 
 
 def get_feature_schema_lookup(
