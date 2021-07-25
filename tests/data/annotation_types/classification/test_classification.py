@@ -1,14 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from labelbox.data.annotation_types import (
-    Checklist,
-    ClassificationAnswer,
-    Dropdown,
-    Radio,
-    Text,
-    ClassificationAnnotation
-)
+from labelbox.data.annotation_types import (Checklist, ClassificationAnswer,
+                                            Dropdown, Radio, Text,
+                                            ClassificationAnnotation)
 
 
 def test_classification_answer():

@@ -1,17 +1,10 @@
 import numpy as np
 
 from labelbox import OntologyBuilder, Tool, Classification as OClassification, Option
-from labelbox.data.annotation_types import (
-    ClassificationAnswer,
-    Radio,
-    Text,
-    ClassificationAnnotation,
-    ObjectAnnotation,
-    Point,
-    Line,
-    RasterData,
-    Label
-)
+from labelbox.data.annotation_types import (ClassificationAnswer, Radio, Text,
+                                            ClassificationAnnotation,
+                                            ObjectAnnotation, Point, Line,
+                                            RasterData, Label)
 
 
 def test_schema_assignment_geometry():
