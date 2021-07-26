@@ -29,7 +29,9 @@ class Label(BaseModel):
         return self.get_annotations_by_type(ClassificationAnnotation)
 
     def get_annotations_by_type(self, annotation_type):
-        return [annot for annot in self.annotations if isinstance(annotation_type)]
+        return [
+            annot for annot in self.annotations if isinstance(annotation_type)
+        ]
 
     def frame_annotations(
         self

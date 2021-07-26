@@ -12,7 +12,10 @@ from ..annotation_types.annotation import BaseAnnotation
 from labelbox.data import annotation_types
 
 
-def mask_miou(predictions: List[Mask], ground_truths: List[Mask], resize_height = None, resize_width = None) -> float:
+def mask_miou(predictions: List[Mask],
+              ground_truths: List[Mask],
+              resize_height=None,
+              resize_width=None) -> float:
     """
     Creates prediction and label binary mask for all features with the same feature schema id.
     Masks are flattened and treated as one class.
@@ -24,12 +27,22 @@ def mask_miou(predictions: List[Mask], ground_truths: List[Mask], resize_height 
     Returns:
         float indicating iou score
     """
-    prediction_np = np.max([pred.raster(binary = True, height = resize_height, width = resize_width ) for pred in predictions], axis = 0)
-    ground_truth_np = np.max([ground_truth.raster(binary = True, height = resize_height, width = resize_width ) for ground_truth in ground_truths], axis = 0)
+    prediction_np = np.max([
+        pred.raster(binary=True, height=resize_height, width=resize_width)
+        for pred in predictions
+    ],
+                           axis=0)
+    ground_truth_np = np.max([
+        ground_truth.raster(
+            binary=True, height=resize_height, width=resize_width)
+        for ground_truth in ground_truths
+    ],
+                             axis=0)
     if prediction_np.shape != ground_truth_np.shape:
-        raise ValueError("Prediction and mask must have the same shape."
-                        f" Found {prediction_np.shape}/{ground_truth_np.shape}."
-                         " Add resize params to fix this.")
+        raise ValueError(
+            "Prediction and mask must have the same shape."
+            f" Found {prediction_np.shape}/{ground_truth_np.shape}."
+            " Add resize params to fix this.")
     return _mask_iou(ground_truth_np, prediction_np)
 
 
@@ -59,9 +72,12 @@ def classification_miou(predictions: List[ClassificationAnnotation],
     if isinstance(prediction.value, Text):
         return float(prediction.value.answer == label.value.answer)
     elif isinstance(prediction.value, Radio):
-        return float(prediction.value.answer.schema_id == label.value.answer.schema_id)
+        return float(
+            prediction.value.answer.schema_id == label.value.answer.schema_id)
     elif isinstance(prediction.value, Checklist):
-        schema_ids_pred = {answer.schema_id for answer in prediction.value.answer}
+        schema_ids_pred = {
+            answer.schema_id for answer in prediction.value.answer
+        }
         schema_ids_label = {answer.schema_id for answer in label.value.answer}
         return float(
             len(schema_ids_label & schema_ids_pred) /
@@ -135,8 +151,10 @@ def vector_miou(predictions: List[Geometry], labels: List[Geometry],
     return np.mean(solution_agreements)
 
 
-def feature_miou(predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-                 labels: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+def feature_miou(predictions: List[Union[ObjectAnnotation,
+                                         ClassificationAnnotation]],
+                 labels: List[Union[ObjectAnnotation,
+                                    ClassificationAnnotation]],
                  include_subclasses=True) -> Optional[float]:
     """
     Computes iou score for all features with the same feature schema id.
@@ -166,7 +184,8 @@ def feature_miou(predictions: List[Union[ObjectAnnotation, ClassificationAnnotat
     elif isinstance(predictions[0].value, ClassificationAnnotation):
         return classification_miou(predictions, labels)
     else:
-        raise ValueError(f"Unexpected annotation found. Found {type(predictions[0])}")
+        raise ValueError(
+            f"Unexpected annotation found. Found {type(predictions[0])}")
 
 
 def _create_schema_lookup(annotations: List[BaseAnnotation]):
@@ -175,10 +194,11 @@ def _create_schema_lookup(annotations: List[BaseAnnotation]):
         grouped_annotations[annotation.schema_id] = annotation
     return grouped_annotations
 
+
 def data_row_miou(ground_truth: Label,
-                 predictions: Label,
-                 include_classifications=True,
-                 include_subclasses=True) -> float:
+                  predictions: Label,
+                  include_classifications=True,
+                  include_subclasses=True) -> float:
     """
     # At this point all object should have schema ids.
 
@@ -191,9 +211,12 @@ def data_row_miou(ground_truth: Label,
         float indicating the iou score for this data row.
     """
     annotation_types = None if include_classifications else Geometry
-    prediction_annotations = predictions.get_annotations_by_attr(attr = "name", annotation_types = annotation_types)
-    ground_truth_annotations = ground_truth.get_annotations_by_attr(attr = "name", annotation_types = annotation_types)
-    feature_schemas = set(prediction_annotations.keys()).union(set(ground_truth_annotations.keys()))
+    prediction_annotations = predictions.get_annotations_by_attr(
+        attr="name", annotation_types=annotation_types)
+    ground_truth_annotations = ground_truth.get_annotations_by_attr(
+        attr="name", annotation_types=annotation_types)
+    feature_schemas = set(prediction_annotations.keys()).union(
+        set(ground_truth_annotations.keys()))
     ious = [
         feature_miou(prediction_annotations[feature_schema],
                      ground_truth_annotations[feature_schema],
@@ -206,13 +229,13 @@ def data_row_miou(ground_truth: Label,
     return np.mean(ious)
 
 
-def _get_vector_pairs(predictions: List[Geometry], ground_truths: List[Geometry]):
+def _get_vector_pairs(predictions: List[Geometry],
+                      ground_truths: List[Geometry]):
     """
     # Get iou score for all pairs of labels and predictions
     """
     return [(prediction, ground_truth,
-             _polygon_iou(prediction.shapely,
-                          ground_truth.shapely))
+             _polygon_iou(prediction.shapely, ground_truth.shapely))
             for prediction, ground_truth in product(predictions, ground_truths)]
 
 
@@ -238,4 +261,3 @@ def _instance_urls_to_binary_mask(urls: List[str],
     masks = _remove_opacity_channel([url_to_numpy(url) for url in urls])
     return np.sum([np.all(mask == color, axis=-1) for mask in masks],
                   axis=0) > 0
-

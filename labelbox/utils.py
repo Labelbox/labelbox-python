@@ -1,5 +1,6 @@
 import re
 
+
 def _convert(s, sep, title):
     components = re.findall(r"[A-Z][a-z0-9]*|[a-z][a-z0-9]*", s)
     components = list(map(str.lower, filter(None, components)))
