@@ -67,7 +67,6 @@ class Project(DbObject, Updateable, Deletable):
     datasets = Relationship.ToMany("Dataset", True)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
-    reviews = Relationship.ToMany("Review", True)
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
