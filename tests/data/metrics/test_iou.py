@@ -4,11 +4,12 @@ import math
 import numpy as np
 import base64
 
-from labelbox.data.metrics.iou import datarow_miou
+from labelbox.data.metrics.iou import data_row_miou
+from labelbox.data.serialization import NDJsonConverter, LBV1Converter
 
 
 def check_iou(pair):
-    assert datarow_miou(pair.labels, pair.predictions) == pair.expected
+    assert data_row_miou(next(LBV1Converter.deserialize(pair.labels)), next(NDJsonConverter.deserialize(pair.predictions)) ) == pair.expected
 
 
 def strings_to_fixtures(strings):
@@ -72,5 +73,5 @@ def test_vector_with_subclass(pair):
 
 @parametrize("pair", strings_to_fixtures(["point_pair", "line_pair"]))
 def test_others(pair):
-    assert math.isclose(datarow_miou(pair.labels, pair.predictions),
+    assert math.isclose(data_row_miou(pair.labels, pair.predictions),
                         pair.expected)
