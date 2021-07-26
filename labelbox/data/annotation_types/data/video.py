@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import cv2
 import numpy as np
+from google.api_core import retry
 from pydantic import root_validator
 
 from .base_data import BaseData
@@ -89,6 +90,7 @@ class VideoData(BaseData):
     def set_fetch_fn(self, fn):
         object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
+    @retry.Retry(deadline=15.)
     def fetch_remote(self, local_path) -> None:
         """
         Method for downloading data from self.url
@@ -101,6 +103,7 @@ class VideoData(BaseData):
         """
         urllib.request.urlretrieve(self.url, local_path)
 
+    @retry.Retry(deadline=15.)
     def create_url(self, signer: Callable[[bytes], str]) -> None:
         """
         Utility for creating a url from any of the other video references.

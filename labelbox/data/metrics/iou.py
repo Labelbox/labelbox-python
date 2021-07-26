@@ -1,51 +1,40 @@
 # type: ignore
+from labelbox.data.annotation_types.classification.classification import Checklist, Text, Radio
+from labelbox.data.annotation_types import feature
 from typing import Dict, Any, List, Optional, Tuple, Union
 from shapely.geometry import Polygon
 from itertools import product
 import numpy as np
+from collections import defaultdict
 
-from labelbox.data.metrics.preprocess import label_to_ndannotation
-from labelbox.schema.bulk_import_request import (NDAnnotation, NDChecklist,
-                                                 NDClassification, NDTool,
-                                                 NDMask, NDPoint, NDPolygon,
-                                                 NDPolyline, NDRadio, NDText,
-                                                 NDRectangle)
-from labelbox.data.metrics.preprocess import (create_schema_lookup,
-                                              url_to_numpy)
-
-VectorTool = Union[NDPoint, NDRectangle, NDPolyline, NDPolygon]
-ClassificationTool = Union[NDText, NDRadio, NDChecklist]
+from ..annotation_types import Label, ObjectAnnotation, ClassificationAnnotation, Mask, Geometry
+from ..annotation_types.annotation import BaseAnnotation
+from labelbox.data import annotation_types
 
 
-def mask_miou(predictions: List[NDMask], labels: List[NDMask]) -> float:
+def mask_miou(predictions: List[Mask], ground_truths: List[Mask], resize_height = None, resize_width = None) -> float:
     """
     Creates prediction and label binary mask for all features with the same feature schema id.
+    Masks are flattened and treated as one class.
+    If you want to treat each object as an instance then convert each mask to a polygon annotation.
 
     Args:
         predictions: List of masks objects
-        labels: List of masks objects
+        ground_truths: List of masks objects
     Returns:
         float indicating iou score
     """
-
-    colors_pred = {tuple(pred.mask['colorRGB']) for pred in predictions}
-    colors_label = {tuple(label.mask['colorRGB']) for label in labels}
-    error_msg = "segmentation {} should all have the same color. Found {}"
-    if len(colors_pred) > 1:
-        raise ValueError(error_msg.format("predictions", colors_pred))
-    elif len(colors_label) > 1:
-        raise ValueError(error_msg.format("labels", colors_label))
-
-    pred_mask = _instance_urls_to_binary_mask(
-        [pred.mask['instanceURI'] for pred in predictions], colors_pred.pop())
-    label_mask = _instance_urls_to_binary_mask(
-        [label.mask['instanceURI'] for label in labels], colors_label.pop())
-    assert label_mask.shape == pred_mask.shape
-    return _mask_iou(label_mask, pred_mask)
+    prediction_np = np.max([pred.raster(binary = True, height = resize_height, width = resize_width ) for pred in predictions], axis = 0)
+    ground_truth_np = np.max([ground_truth.raster(binary = True, height = resize_height, width = resize_width ) for ground_truth in ground_truths], axis = 0)
+    if prediction_np.shape != ground_truth_np.shape:
+        raise ValueError("Prediction and mask must have the same shape."
+                        f" Found {prediction_np.shape}/{ground_truth_np.shape}."
+                         " Add resize params to fix this.")
+    return _mask_iou(ground_truth_np, prediction_np)
 
 
-def classification_miou(predictions: List[ClassificationTool],
-                        labels: List[ClassificationTool]) -> float:
+def classification_miou(predictions: List[ClassificationAnnotation],
+                        labels: List[ClassificationAnnotation]) -> float:
     """
     Computes iou for classification features.
 
@@ -67,13 +56,13 @@ def classification_miou(predictions: List[ClassificationTool],
             "Classification features must be the same type to compute agreement. "
             f"Found `{type(prediction)}` and `{type(label)}`")
 
-    if isinstance(prediction, NDText):
-        return float(prediction.answer == label.answer)
-    elif isinstance(prediction, NDRadio):
-        return float(prediction.answer.schemaId == label.answer.schemaId)
-    elif isinstance(prediction, NDChecklist):
-        schema_ids_pred = {answer.schemaId for answer in prediction.answers}
-        schema_ids_label = {answer.schemaId for answer in label.answers}
+    if isinstance(prediction.value, Text):
+        return float(prediction.value.answer == label.value.answer)
+    elif isinstance(prediction.value, Radio):
+        return float(prediction.value.answer.schema_id == label.value.answer.schema_id)
+    elif isinstance(prediction.value, Checklist):
+        schema_ids_pred = {answer.schema_id for answer in prediction.value.answer}
+        schema_ids_label = {answer.schema_id for answer in label.value.answer}
         return float(
             len(schema_ids_label & schema_ids_pred) /
             len(schema_ids_label | schema_ids_pred))
@@ -82,8 +71,8 @@ def classification_miou(predictions: List[ClassificationTool],
 
 
 def subclassification_miou(
-        subclass_predictions: List[ClassificationTool],
-        subclass_labels: List[ClassificationTool]) -> Optional[float]:
+        subclass_predictions: List[ClassificationAnnotation],
+        subclass_labels: List[ClassificationAnnotation]) -> Optional[float]:
     """
 
     Computes subclass iou score between two vector tools that were matched.
@@ -96,12 +85,10 @@ def subclassification_miou(
         miou across all subclasses.
     """
 
-    subclass_predictions = create_schema_lookup(subclass_predictions)
-    subclass_labels = create_schema_lookup(subclass_labels)
+    subclass_predictions = _create_schema_lookup(subclass_predictions)
+    subclass_labels = _create_schema_lookup(subclass_labels)
     feature_schemas = set(subclass_predictions.keys()).union(
         set(subclass_labels.keys()))
-    # There should only be one feature schema per subclass.
-
     classification_iou = [
         feature_miou(subclass_predictions[feature_schema],
                      subclass_labels[feature_schema])
@@ -111,7 +98,7 @@ def subclassification_miou(
     return None if not len(classification_iou) else np.mean(classification_iou)
 
 
-def vector_miou(predictions: List[VectorTool], labels: List[VectorTool],
+def vector_miou(predictions: List[Geometry], labels: List[Geometry],
                 include_subclasses) -> float:
     """
     Computes an iou score for vector tools.
@@ -148,8 +135,8 @@ def vector_miou(predictions: List[VectorTool], labels: List[VectorTool],
     return np.mean(solution_agreements)
 
 
-def feature_miou(predictions: List[NDAnnotation],
-                 labels: List[NDAnnotation],
+def feature_miou(predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+                 labels: List[Union[ObjectAnnotation, ClassificationAnnotation]],
                  include_subclasses=True) -> Optional[float]:
     """
     Computes iou score for all features with the same feature schema id.
@@ -159,7 +146,6 @@ def feature_miou(predictions: List[NDAnnotation],
         labels: List of labels with the same feature schema.
     Returns:
         float representing the iou score for the feature type if score can be computed otherwise None.
-
     """
     if len(predictions):
         keys = predictions[0]
@@ -170,32 +156,31 @@ def feature_miou(predictions: List[NDAnnotation],
         # Ignore examples that do not have any labels or predictions
         return None
 
-    tool_types = {type(annot) for annot in predictions
-                 }.union({type(annot) for annot in labels})
-
-    if len(tool_types) > 1:
-        raise ValueError(
-            "feature_miou predictions and annotations should all be of the same type"
-        )
-
-    tool_type = tool_types.pop()
-    if tool_type == NDMask:
+    if isinstance(predictions[0].value, Mask):
+        # TODO: A mask can have subclasses too.. Why are we treating this differently?
         return mask_miou(predictions, labels)
-    elif tool_type in NDTool.get_union_types():
+    elif isinstance(predictions[0].value, Geometry):
         return vector_miou(predictions,
                            labels,
                            include_subclasses=include_subclasses)
-    elif tool_type in NDClassification.get_union_types():
+    elif isinstance(predictions[0].value, ClassificationAnnotation):
         return classification_miou(predictions, labels)
     else:
-        raise ValueError(f"Unexpected annotation found. Found {tool_type}")
+        raise ValueError(f"Unexpected annotation found. Found {type(predictions[0])}")
 
 
-def datarow_miou(label_content: List[Dict[str, Any]],
-                 ndjsons: List[Dict[str, Any]],
+def _create_schema_lookup(annotations: List[BaseAnnotation]):
+    grouped_annotations = defaultdict(list)
+    for annotation in annotations:
+        grouped_annotations[annotation.schema_id] = annotation
+    return grouped_annotations
+
+def data_row_miou(ground_truth: Label,
+                 predictions: Label,
                  include_classifications=True,
                  include_subclasses=True) -> float:
     """
+    # At this point all object should have schema ids.
 
     Args:
         label_content : one row from the bulk label export - `project.export_labels()`
@@ -204,15 +189,14 @@ def datarow_miou(label_content: List[Dict[str, Any]],
         include_subclassifications: Whether or not to factor in subclassifications into the iou score
     Returns:
         float indicating the iou score for this data row.
-
     """
-
-    predictions, labels, feature_schemas = _preprocess_args(
-        label_content, ndjsons, include_classifications)
-
+    annotation_types = None if include_classifications else Geometry
+    prediction_annotations = predictions.get_annotations_by_attr(attr = "name", annotation_types = annotation_types)
+    ground_truth_annotations = ground_truth.get_annotations_by_attr(attr = "name", annotation_types = annotation_types)
+    feature_schemas = set(prediction_annotations.keys()).union(set(ground_truth_annotations.keys()))
     ious = [
-        feature_miou(predictions[feature_schema],
-                     labels[feature_schema],
+        feature_miou(prediction_annotations[feature_schema],
+                     ground_truth_annotations[feature_schema],
                      include_subclasses=include_subclasses)
         for feature_schema in feature_schemas
     ]
@@ -222,60 +206,14 @@ def datarow_miou(label_content: List[Dict[str, Any]],
     return np.mean(ious)
 
 
-def _preprocess_args(
-    label_content: List[Dict[str, Any]],
-    ndjsons: List[Dict[str, Any]],
-    include_classifications=True
-) -> Tuple[Dict[str, List[NDAnnotation]], Dict[str, List[NDAnnotation]],
-           List[str]]:
-    """
-
-    This function takes in the raw json payloads, validates, and converts to python objects.
-    In the future datarow_miou will directly take the objects as args.
-
-    Args:
-        label_content : one row from the bulk label export - `project.export_labels()`
-        ndjsons: Model predictions in the ndjson format specified here (https://docs.labelbox.com/data-model/en/index-en#annotations)
-    Returns a tuple containing:
-        - a dict for looking up a list of predictions by feature schema id
-        - a dict for looking up a list of labels by feature schema id
-        - a list of a all feature schema ids
-
-    """
-    labels = label_content['Label'].get('objects')
-    if include_classifications:
-        labels += label_content['Label'].get('classifications')
-
-    predictions = [NDAnnotation(**pred.copy()) for pred in ndjsons]
-
-    unique_datarows = {pred.dataRow.id for pred in predictions}
-    if len(unique_datarows):
-        # Empty set of annotations is valid (if labels exist but no inferences then iou will be 0.)
-        if unique_datarows != {label_content['DataRow ID']}:
-            raise ValueError(
-                f"There should only be one datarow passed to the datarow_miou function. Found {unique_datarows}"
-            )
-
-    labels = [
-        label_to_ndannotation(label, label_content['DataRow ID'])
-        for label in labels
-    ]
-
-    labels = create_schema_lookup(labels)
-    predictions = create_schema_lookup(predictions)
-
-    feature_schemas = set(predictions.keys()).union(set(labels.keys()))
-    return predictions, labels, feature_schemas
-
-
-def _get_vector_pairs(predictions: List[Dict[str, Any]], labels):
+def _get_vector_pairs(predictions: List[Geometry], ground_truths: List[Geometry]):
     """
     # Get iou score for all pairs of labels and predictions
     """
-    return [(prediction, label,
-             _polygon_iou(prediction.to_shapely_poly(),
-                          label.to_shapely_poly()))
-            for prediction, label in product(predictions, labels)]
+    return [(prediction, ground_truth,
+             _polygon_iou(prediction.shapely,
+                          ground_truth.shapely))
+            for prediction, ground_truth in product(predictions, ground_truths)]
 
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
@@ -300,3 +238,4 @@ def _instance_urls_to_binary_mask(urls: List[str],
     masks = _remove_opacity_channel([url_to_numpy(url) for url in urls])
     return np.sum([np.all(mask == color, axis=-1) for mask in masks],
                   axis=0) > 0
+
