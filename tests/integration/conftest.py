@@ -147,6 +147,28 @@ def rand_gen():
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
+
+    def create_label(**kwargs):
+        """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
+        Args:
+            **kwargs: Label attributes. At minimum, the label `DataRow`.
+        """
+        Label = Entity.Label
+        kwargs[Label.project] = project
+        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
+                                                    0.0)
+        data = {
+            Label.attribute(attr) if isinstance(attr, str) else attr:
+            value.uid if isinstance(value, DbObject) else value
+            for attr, value in kwargs.items()
+        }
+        query_str, params = query.create(Label, data)
+        query_str = query_str.replace(
+            "data: {", "data: {type: {connect: {name: \"Any\"}} ")
+        res = project.client.execute(query_str, params)
+        return Label(project.client, res["createLabel"])
+
+    project.create_label = create_label
     yield project
     project.delete()
 
