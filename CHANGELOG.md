@@ -1,5 +1,14 @@
 # Changelog
 
+# Next Release
+
+## Removed
+* Deprecated functions
+    - project.reviews()
+    - project.create_prediction()
+    - project.create_prediction_model()
+    - project.create_label()
+
 # Version 2.7.0 (2021-06-27)
 ## Added
 * Added `dataset.export_data_rows()` which returns all `DataRows` for a `Dataset`.

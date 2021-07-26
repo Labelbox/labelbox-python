@@ -40,11 +40,13 @@ class Option:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
-        return cls(
-            value=dictionary["value"],
-            schema_id=dictionary.get("schemaNodeId", None),
-            feature_schema_id=dictionary.get("featureSchemaId", None),
-            options=[cls.from_dict(o) for o in dictionary.get("options", [])])
+        return cls(value=dictionary["value"],
+                   schema_id=dictionary.get("schemaNodeId", None),
+                   feature_schema_id=dictionary.get("featureSchemaId", None),
+                   options=[
+                       Classification.from_dict(o)
+                       for o in dictionary.get("options", [])
+                   ])
 
     def asdict(self) -> Dict[str, Any]:
         return {
