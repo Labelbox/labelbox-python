@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from itertools import islice
-from multiprocessing.dummy import Pool as ThreadPool
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import ndjson
 from io import StringIO
@@ -121,8 +121,11 @@ class Dataset(DbObject, Updateable, Deletable):
                 item = {DataRow.row_data: item_url, DataRow.external_id: item}
             return item
 
-        with ThreadPool(file_upload_thread_count) as thread_pool:
-            items = thread_pool.map(upload_if_necessary, items)
+        with ThreadPoolExecutor(file_upload_thread_count) as executor:
+            futures = [
+                executor.submit(upload_if_necessary, item) for item in items
+            ]
+            items = [future.result() for future in as_completed(futures)]
 
         def convert_item(item):
             # Don't make any changes to tms data

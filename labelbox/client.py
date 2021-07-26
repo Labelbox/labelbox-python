@@ -254,6 +254,8 @@ class Client:
                                     filename=filename,
                                     content_type=content_type)
 
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.InternalServerError))
     def upload_data(self,
                     content: bytes,
                     filename: str = None,
@@ -298,6 +300,11 @@ class Client:
                 "1": (filename, content, content_type) if
                      (filename and content_type) else content
             })
+
+        if response.status_code == 502:
+            error_502 = '502 Bad Gateway'
+            raise labelbox.exceptions.InternalServerError(error_502)
+
         try:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON
