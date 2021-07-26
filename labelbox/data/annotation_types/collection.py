@@ -5,8 +5,9 @@ from uuid import uuid4
 
 from tqdm import tqdm
 
-from labelbox import OntologyBuilder
+from labelbox.schema import ontology
 from labelbox.orm.model import Entity
+from ..ontology import get_classifications, get_tools
 from ..generator import PrefetchGenerator
 from .label import Label
 
@@ -24,8 +25,8 @@ class LabelList:
         self._data = data
         self._index = 0
 
-    def assign_schema_ids(self,
-                          ontology_builder: OntologyBuilder) -> "LabelList":
+    def assign_schema_ids(
+            self, ontology_builder: "ontology.OntologyBuilder") -> "LabelList":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
         This is necessary for MAL.
@@ -110,6 +111,16 @@ class LabelList:
             ...
         return self
 
+    def get_ontology(self) -> ontology.OntologyBuilder:
+        classifications = []
+        tools = []
+        for label in self._data:
+            tools = get_tools(label.object_annotations(), tools)
+            classifications = get_classifications(
+                label.classification_annotations(), classifications)
+        return ontology.OntologyBuilder(tools=tools,
+                                        classifications=classifications)
+
     def _ensure_unique_external_ids(self) -> None:
         external_ids = set()
         for label in self._data:
@@ -121,6 +132,9 @@ class LabelList:
                         f"External ids must be unique for bulk uploading. Found {label.data.external_id} more than once."
                     )
             external_ids.add(label.data.external_id)
+
+    def append(self, label: Label):
+        self._data.append(label)
 
     def __iter__(self) -> "LabelList":
         self._index = 0
@@ -166,7 +180,8 @@ class LabelGenerator(PrefetchGenerator):
         return LabelList(data=list(self))
 
     def assign_schema_ids(
-            self, ontology_builder: OntologyBuilder) -> "LabelGenerator":
+            self,
+            ontology_builder: "ontology.OntologyBuilder") -> "LabelGenerator":
 
         def _assign_ids(label: Label):
             label.assign_schema_ids(ontology_builder)

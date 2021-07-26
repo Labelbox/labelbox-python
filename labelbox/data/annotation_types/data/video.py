@@ -86,6 +86,9 @@ class VideoData(BaseData):
             )
         return self.frames[idx]
 
+    def set_fetch_fn(self, fn):
+        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
+
     def fetch_remote(self, local_path) -> None:
         """
         Method for downloading data from self.url
@@ -152,6 +155,11 @@ class VideoData(BaseData):
             raise ValueError(
                 "One of `file_path`, `frames`, `uid`, or `url` required.")
         return values
+
+    def __repr__(self) -> str:
+        return  f"TextData(file_path={self.file_path}," \
+                f"frames={'...' if self.frames is not None else None}," \
+                f"url={self.url})"
 
     class Config:
         # Required for discriminating between data types
