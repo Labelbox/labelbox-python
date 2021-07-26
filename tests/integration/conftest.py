@@ -147,6 +147,7 @@ def rand_gen():
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
+
     def create_label(**kwargs):
         """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
         Args:
@@ -166,6 +167,7 @@ def project(client, rand_gen):
             "data: {", "data: {type: {connect: {name: \"Any\"}} ")
         res = project.client.execute(query_str, params)
         return Label(project.client, res["createLabel"])
+
     project.create_label = create_label
     yield project
     project.delete()
