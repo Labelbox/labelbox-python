@@ -55,8 +55,7 @@ def test_label_update(label_pack):
     assert label.label == "something else"
 
 
-def test_label_filter_order(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+def test_label_filter_order(client, project, rand_gen):
     dataset_1 = client.create_dataset(name=rand_gen(str), projects=project)
     dataset_2 = client.create_dataset(name=rand_gen(str), projects=project)
     data_row_1 = dataset_1.create_data_row(row_data=IMG_URL)
