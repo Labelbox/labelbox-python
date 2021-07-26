@@ -240,5 +240,3 @@ def test_ontology_asdict(project) -> None:
 def test_from_project_ontology(client, project) -> None:
     o = OntologyBuilder.from_project(project)
     assert o.asdict() == project.ontology().normalized
-
-
