@@ -12,6 +12,7 @@ from .geometry import Mask
 from .metrics import Metric
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
+from labelbox.data.annotation_types import annotation
 
 
 class Label(BaseModel):
@@ -22,16 +23,13 @@ class Label(BaseModel):
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
-        return [
-            annot for annot in self.annotations
-            if isinstance(annot, ObjectAnnotation)
-        ]
+        return self.get_annotations_by_type(ObjectAnnotation)
 
     def classification_annotations(self) -> List[ClassificationAnnotation]:
-        return [
-            annot for annot in self.annotations
-            if isinstance(annot, ClassificationAnnotation)
-        ]
+        return self.get_annotations_by_type(ClassificationAnnotation)
+
+    def get_annotations_by_type(self, annotation_type):
+        return [annot for annot in self.annotations if isinstance(annotation_type)]
 
     def frame_annotations(
         self
