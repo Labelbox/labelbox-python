@@ -42,6 +42,7 @@ class PrefetchGenerator:
         self.queue = Queue(prefetch_limit)
         self._data = ThreadSafeGen(self._data)
         self.completed_threads = 0
+        # Can only iterate over once it the queue.get hangs forever.
         self.done = False
         self.num_executors = num_executors
         with ThreadPoolExecutor(max_workers=num_executors) as executor:

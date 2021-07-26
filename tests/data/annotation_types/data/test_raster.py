@@ -3,9 +3,10 @@ from io import BytesIO
 
 import numpy as np
 import pytest
-from labelbox.data.annotation_types.data.raster import RasterData
 from PIL import Image
 from pydantic import ValidationError
+
+from labelbox.data.annotation_types.data import RasterData
 
 
 def test_validate_schema():
