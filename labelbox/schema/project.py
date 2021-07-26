@@ -96,38 +96,6 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
 
-    def create_label(self, **kwargs):
-        """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
-        Args:
-            **kwargs: Label attributes. At minimum, the label `DataRow`.
-        """
-        # Copy-paste of Client._create code so we can inject
-        # a connection to Type. Type objects are on their way to being
-        # deprecated and we don't want the Py client lib user to know
-        # about them. At the same time they're connected to a Label at
-        # label creation in a non-standard way (connect via name).
-        logger.warning(
-            "`create_label` is deprecated and is not compatible with the new editor."
-        )
-
-        Label = Entity.Label
-
-        kwargs[Label.project] = self
-        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
-                                                    0.0)
-        data = {
-            Label.attribute(attr) if isinstance(attr, str) else attr:
-            value.uid if isinstance(value, DbObject) else value
-            for attr, value in kwargs.items()
-        }
-
-        query_str, params = query.create(Label, data)
-        # Inject connection to Type
-        query_str = query_str.replace(
-            "data: {", "data: {type: {connect: {name: \"Any\"}} ")
-        res = self.client.execute(query_str, params)
-        return Label(self.client, res["createLabel"])
-
     def labels(self, datasets=None, order_by=None):
         """ Custom relationship expansion method to support limited filtering.
 
