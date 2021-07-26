@@ -67,7 +67,6 @@ class Project(DbObject, Updateable, Deletable):
     datasets = Relationship.ToMany("Dataset", True)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
-    reviews = Relationship.ToMany("Review", True)
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
@@ -95,38 +94,6 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str,
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
-
-    def create_label(self, **kwargs):
-        """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
-        Args:
-            **kwargs: Label attributes. At minimum, the label `DataRow`.
-        """
-        # Copy-paste of Client._create code so we can inject
-        # a connection to Type. Type objects are on their way to being
-        # deprecated and we don't want the Py client lib user to know
-        # about them. At the same time they're connected to a Label at
-        # label creation in a non-standard way (connect via name).
-        logger.warning(
-            "`create_label` is deprecated and is not compatible with the new editor."
-        )
-
-        Label = Entity.Label
-
-        kwargs[Label.project] = self
-        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
-                                                    0.0)
-        data = {
-            Label.attribute(attr) if isinstance(attr, str) else attr:
-            value.uid if isinstance(value, DbObject) else value
-            for attr, value in kwargs.items()
-        }
-
-        query_str, params = query.create(Label, data)
-        # Inject connection to Type
-        query_str = query_str.replace(
-            "data: {", "data: {type: {connect: {name: \"Any\"}} ")
-        res = self.client.execute(query_str, params)
-        return Label(self.client, res["createLabel"])
 
     def labels(self, datasets=None, order_by=None):
         """ Custom relationship expansion method to support limited filtering.
@@ -536,77 +503,6 @@ class Project(DbObject, Updateable, Deletable):
             id_param, id_param, queue_type)
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
-
-    def create_prediction_model(self, name, version):
-        """ Creates a PredictionModel connected to a Legacy Editor Project.
-
-        Args:
-            name (str): The new PredictionModel's name.
-            version (int): The new PredictionModel's version.
-        Returns:
-            A newly created PredictionModel.
-        """
-
-        logger.warning(
-            "`create_prediction_model` is deprecated and is not compatible with the new editor."
-        )
-
-        PM = Entity.PredictionModel
-        model = self.client._create(PM, {
-            PM.name.name: name,
-            PM.version.name: version
-        })
-        self.active_prediction_model.connect(model)
-        return model
-
-    def create_prediction(self, label, data_row, prediction_model=None):
-        """ Creates a Prediction within a Legacy Editor Project. Not supported
-        in the new Editor.
-
-        Args:
-            label (str): The `label` field of the new Prediction.
-            data_row (DataRow): The DataRow for which the Prediction is created.
-            prediction_model (PredictionModel or None): The PredictionModel
-                within which the new Prediction is created. If None then this
-                Project's active_prediction_model is used.
-        Return:
-            A newly created Prediction.
-        Raises:
-            labelbox.excepions.InvalidQueryError: if given `prediction_model`
-                is None and this Project's active_prediction_model is also
-                None.
-        """
-        logger.warning(
-            "`create_prediction` is deprecated and is not compatible with the new editor."
-        )
-
-        if prediction_model is None:
-            prediction_model = self.active_prediction_model()
-            if prediction_model is None:
-                raise InvalidQueryError(
-                    "Project '%s' has no active prediction model" % self.name)
-
-        label_param = "label"
-        model_param = "prediction_model_id"
-        project_param = "project_id"
-        data_row_param = "data_row_id"
-
-        Prediction = Entity.Prediction
-        query_str = """mutation CreatePredictionPyApi(
-            $%s: String!, $%s: ID!, $%s: ID!, $%s: ID!) {createPrediction(
-            data: {label: $%s, predictionModelId: $%s, projectId: $%s,
-                   dataRowId: $%s})
-            {%s}}""" % (label_param, model_param, project_param, data_row_param,
-                        label_param, model_param, project_param, data_row_param,
-                        query.results_query_part(Prediction))
-        params = {
-            label_param: label,
-            model_param: prediction_model.uid,
-            data_row_param: data_row.uid,
-            project_param: self.uid
-        }
-        res = self.client.execute(query_str, params)
-        return Prediction(self.client, res["createPrediction"])
 
     def enable_model_assisted_labeling(self, toggle: bool = True) -> bool:
         """ Turns model assisted labeling either on or off based on input
