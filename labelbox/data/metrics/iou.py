@@ -101,8 +101,8 @@ def subclassification_miou(
         miou across all subclasses.
     """
 
-    subclass_predictions = _create_schema_lookup(subclass_predictions)
-    subclass_labels = _create_schema_lookup(subclass_labels)
+    subclass_predictions = _create_name_lookup(subclass_predictions)
+    subclass_labels = _create_name_lookup(subclass_labels)
     feature_schemas = set(subclass_predictions.keys()).union(
         set(subclass_labels.keys()))
     classification_iou = [
@@ -188,11 +188,7 @@ def feature_miou(predictions: List[Union[ObjectAnnotation,
             f"Unexpected annotation found. Found {type(predictions[0])}")
 
 
-def _create_schema_lookup(annotations: List[BaseAnnotation]):
-    grouped_annotations = defaultdict(list)
-    for annotation in annotations:
-        grouped_annotations[annotation.schema_id] = annotation
-    return grouped_annotations
+
 
 
 def data_row_miou(ground_truth: Label,
@@ -210,11 +206,9 @@ def data_row_miou(ground_truth: Label,
     Returns:
         float indicating the iou score for this data row.
     """
-    annotation_types = None if include_classifications else Geometry
-    prediction_annotations = predictions.get_annotations_by_attr(
-        attr="name", annotation_types=annotation_types)
-    ground_truth_annotations = ground_truth.get_annotations_by_attr(
-        attr="name", annotation_types=annotation_types)
+
+    prediction_annotations = _create_name_lookup(predictions.annotations)
+    ground_truth_annotations = _create_name_lookup(ground_truth.annotations)
     feature_schemas = set(prediction_annotations.keys()).union(
         set(ground_truth_annotations.keys()))
     ious = [
@@ -228,6 +222,11 @@ def data_row_miou(ground_truth: Label,
         return None
     return np.mean(ious)
 
+def _create_name_lookup(annotations: List[BaseAnnotation]):
+    grouped_annotations = defaultdict(list)
+    for annotation in annotations:
+        grouped_annotations[annotation.name] = annotation
+    return grouped_annotations
 
 def _get_vector_pairs(predictions: List[Geometry],
                       ground_truths: List[Geometry]):
@@ -249,15 +248,3 @@ def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
 def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> float:
     """Computes iou between two binary segmentation masks."""
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
-
-
-def _remove_opacity_channel(masks: List[np.ndarray]) -> List[np.ndarray]:
-    return [mask[:, :, :3] if mask.shape[-1] == 4 else mask for mask in masks]
-
-
-def _instance_urls_to_binary_mask(urls: List[str],
-                                  color: Tuple[int, int, int]) -> np.ndarray:
-    """Downloads segmentation masks and turns the image into a binary mask."""
-    masks = _remove_opacity_channel([url_to_numpy(url) for url in urls])
-    return np.sum([np.all(mask == color, axis=-1) for mask in masks],
-                  axis=0) > 0
