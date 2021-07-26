@@ -537,28 +537,6 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
 
-    def create_prediction_model(self, name, version):
-        """ Creates a PredictionModel connected to a Legacy Editor Project.
-
-        Args:
-            name (str): The new PredictionModel's name.
-            version (int): The new PredictionModel's version.
-        Returns:
-            A newly created PredictionModel.
-        """
-
-        logger.warning(
-            "`create_prediction_model` is deprecated and is not compatible with the new editor."
-        )
-
-        PM = Entity.PredictionModel
-        model = self.client._create(PM, {
-            PM.name.name: name,
-            PM.version.name: version
-        })
-        self.active_prediction_model.connect(model)
-        return model
-
     def create_prediction(self, label, data_row, prediction_model=None):
         """ Creates a Prediction within a Legacy Editor Project. Not supported
         in the new Editor.
