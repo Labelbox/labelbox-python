@@ -537,55 +537,6 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
 
-    def create_prediction(self, label, data_row, prediction_model=None):
-        """ Creates a Prediction within a Legacy Editor Project. Not supported
-        in the new Editor.
-
-        Args:
-            label (str): The `label` field of the new Prediction.
-            data_row (DataRow): The DataRow for which the Prediction is created.
-            prediction_model (PredictionModel or None): The PredictionModel
-                within which the new Prediction is created. If None then this
-                Project's active_prediction_model is used.
-        Return:
-            A newly created Prediction.
-        Raises:
-            labelbox.excepions.InvalidQueryError: if given `prediction_model`
-                is None and this Project's active_prediction_model is also
-                None.
-        """
-        logger.warning(
-            "`create_prediction` is deprecated and is not compatible with the new editor."
-        )
-
-        if prediction_model is None:
-            prediction_model = self.active_prediction_model()
-            if prediction_model is None:
-                raise InvalidQueryError(
-                    "Project '%s' has no active prediction model" % self.name)
-
-        label_param = "label"
-        model_param = "prediction_model_id"
-        project_param = "project_id"
-        data_row_param = "data_row_id"
-
-        Prediction = Entity.Prediction
-        query_str = """mutation CreatePredictionPyApi(
-            $%s: String!, $%s: ID!, $%s: ID!, $%s: ID!) {createPrediction(
-            data: {label: $%s, predictionModelId: $%s, projectId: $%s,
-                   dataRowId: $%s})
-            {%s}}""" % (label_param, model_param, project_param, data_row_param,
-                        label_param, model_param, project_param, data_row_param,
-                        query.results_query_part(Prediction))
-        params = {
-            label_param: label,
-            model_param: prediction_model.uid,
-            data_row_param: data_row.uid,
-            project_param: self.uid
-        }
-        res = self.client.execute(query_str, params)
-        return Prediction(self.client, res["createPrediction"])
-
     def enable_model_assisted_labeling(self, toggle: bool = True) -> bool:
         """ Turns model assisted labeling either on or off based on input
 
