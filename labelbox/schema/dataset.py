@@ -34,6 +34,7 @@ class Dataset(DbObject, Updateable, Deletable):
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
+    row_count = Field.Int("row_count")
 
     # Relationships
     projects = Relationship.ToMany("Project", True)
