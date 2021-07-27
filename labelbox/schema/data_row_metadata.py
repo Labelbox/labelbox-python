@@ -106,6 +106,8 @@ class DataRowMetadataOntology:
     def __init__(self, client):
         self.client = client
 
+        self._batch_size = 50
+
         # TODO: consider making these properties to stay in sync with server
         self._raw_ontology: Dict = self._get_ontology()
         # all fields
@@ -129,14 +131,14 @@ class DataRowMetadataOntology:
         ]
         self.custom_id_index: Dict[SchemaId,
                                    DataRowMetadataSchema] = self._make_id_index(
-                                       self.custom_fields)
+            self.custom_fields)
         self.custom_name_index: Dict[str, DataRowMetadataSchema] = {
             f.name: f for f in self.custom_fields
         }
 
     @staticmethod
     def _make_id_index(
-        fields: List[DataRowMetadataSchema]
+            fields: List[DataRowMetadataSchema]
     ) -> Dict[SchemaId, DataRowMetadataSchema]:
         index = {}
         for f in fields:
@@ -185,9 +187,9 @@ class DataRowMetadataOntology:
         return fields
 
     def parse_metadata(
-        self, unparsed: List[Dict[str,
-                                  List[Union[str,
-                                             Dict]]]]) -> List[DataRowMetadata]:
+            self, unparsed: List[Dict[str,
+                                      List[Union[str,
+                                                 Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
         >>> mdo.parse_metadata([datarow.metadata])
@@ -245,7 +247,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_upsert(
-            upserts: List[_UpsertBatchDataRowMetadata]
+                upserts: List[_UpsertBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
 
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
@@ -270,10 +272,10 @@ class DataRowMetadataOntology:
                         chain.from_iterable(
                             self._parse_upsert(m) for m in m.fields))).dict())
 
-        return _batch_operations(_batch_upsert, items)
+        return _batch_operations(_batch_upsert, items, self._batch_size)
 
     def bulk_delete(
-        self, deletes: List[DeleteDataRowMetadata]
+            self, deletes: List[DeleteDataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """ Delete metadata from a datarow by specifiying the fields you want to remove
 
@@ -299,7 +301,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_delete(
-            deletes: List[_DeleteBatchDataRowMetadata]
+                deletes: List[_DeleteBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowCustomMetadataBatchDeleteInput!]!) {
               deleteDataRowCustomMetadata(data: $deletes) {
@@ -318,7 +320,7 @@ class DataRowMetadataOntology:
         for m in deletes:
             items.append(self._validate_delete(m))
 
-        return _batch_operations(_batch_delete, items)
+        return _batch_operations(_batch_delete, items, batch_size=self._batch_size if self._batch_size < 25 else 25)
 
     def _parse_upsert(
             self, metadatum: DataRowMetadataField
@@ -376,9 +378,9 @@ def _batch_items(iterable, size):
 
 
 def _batch_operations(
-    batch_function: _BatchFunction,
-    items: List,
-    batch_size: int = 100,
+        batch_function: _BatchFunction,
+        items: List,
+        batch_size: int = 100,
 ):
     response = []
     for batch in _batch_items(items, batch_size):
