@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Union
+
+from typing import Any, Callable, Dict, List, Union, Optional
 
 from pydantic import BaseModel, validator
 
@@ -10,11 +11,13 @@ from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
 from .geometry import Mask
 from .metrics import ScalarMetric
+from .types import Cuid
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
 
 
 class Label(BaseModel):
+    uid: Optional[Cuid] = None
     data: Union[VideoData, RasterData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
