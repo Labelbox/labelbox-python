@@ -71,6 +71,12 @@ class NDChecklistSubclass(NDFeature):
         ],
                    schema_id=schema_id)
 
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if 'answers' in res:
+            res['answer'] = res.pop('answers')
+        return res
+
 
 class NDRadioSubclass(NDFeature):
     answer: NDFeature
