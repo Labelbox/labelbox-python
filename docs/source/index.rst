@@ -102,22 +102,6 @@ Organization
    :members:
    :show-inheritance:
 
-Prediction
----------------------------------
-
-.. automodule:: labelbox.schema.prediction
-   :members: Prediction
-   :exclude-members: PredictionModel
-   :show-inheritance:
-
-PredictionModel
----------------------------------
-.. automodule:: labelbox.schema.prediction
-    :members: PredictionModel
-    :exclude-members: Prediction
-    :show-inheritance:
-    :noindex:
-
 Project
 ------------------------------
 

@@ -25,7 +25,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         labels (Relationship): `ToMany` relationship to Label
         attachments (Relationship) `ToMany` relationship with AssetAttachment
         metadata (Relationship): This Relationship is Deprecated. Please use `DataRow.attachments()` instead
-        predictions (Relationship): `ToMany` relationship to Prediction
     """
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
@@ -47,7 +46,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         "`DataRow.metadata()` is deprecated. Use `DataRow.attachments()` instead."
     )
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
-    predictions = Relationship.ToMany("Prediction", False)
 
     supported_meta_types = supported_attachment_types = {
         attachment_type.value
