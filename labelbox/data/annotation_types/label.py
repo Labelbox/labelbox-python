@@ -9,17 +9,16 @@ from ..ontology import get_feature_schema_lookup
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
 from .geometry import Mask
-from .metrics import Metric
+from .metrics import ScalarMetric
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
-from labelbox.data.annotation_types import annotation
 
 
 class Label(BaseModel):
     data: Union[VideoData, RasterData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
-                            VideoClassificationAnnotation, Metric]] = []
+                            VideoClassificationAnnotation, ScalarMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
