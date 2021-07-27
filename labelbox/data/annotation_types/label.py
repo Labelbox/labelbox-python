@@ -25,14 +25,15 @@ class Label(BaseModel):
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
-        return self.get_annotations_by_type(ObjectAnnotation)
+        return self._get_annotations_by_type(ObjectAnnotation)
 
     def classification_annotations(self) -> List[ClassificationAnnotation]:
-        return self.get_annotations_by_type(ClassificationAnnotation)
+        return self._get_annotations_by_type(ClassificationAnnotation)
 
-    def get_annotations_by_type(self, annotation_type):
+    def _get_annotations_by_type(self, annotation_type):
         return [
-            annot for annot in self.annotations if isinstance(annotation_type)
+            annot for annot in self.annotations
+            if isinstance(annot, annotation_type)
         ]
 
     def frame_annotations(

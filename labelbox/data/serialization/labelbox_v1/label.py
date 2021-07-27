@@ -121,7 +121,7 @@ class LBV1Label(BaseModel):
                  List[LBV1LabelAnnotationsVideo]] = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
     row_data: str = Field(None, alias="Labeled Data")
-    id: Optional[str] = Field(None, alias = 'ID')
+    id: Optional[str] = Field(None, alias='ID')
     external_id: Optional[str] = Field(None, alias="External ID")
 
     created_by: Optional[str] = Extra('Created By')
@@ -151,7 +151,7 @@ class LBV1Label(BaseModel):
             data = self._infer_media_type()
 
         return Label(data=data,
-                     uid = self.id,
+                     uid=self.id,
                      annotations=annotations,
                      extra={
                          field.alias: getattr(self, field_name)
@@ -168,7 +168,7 @@ class LBV1Label(BaseModel):
             label_ = LBV1LabelAnnotations.from_common(label.annotations)
 
         return LBV1Label(label=label_,
-                         id = label.uid,
+                         id=label.uid,
                          data_row_id=label.data.uid,
                          row_data=label.data.url,
                          external_id=label.data.external_id,
