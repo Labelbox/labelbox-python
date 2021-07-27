@@ -1,6 +1,5 @@
 import pytest
 import requests
-
 from labelbox import Dataset
 from labelbox.exceptions import ResourceNotFoundError
 

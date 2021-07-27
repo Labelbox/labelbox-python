@@ -47,13 +47,21 @@ jobs:
       uses: AlexanderMelde/yapf-action@master
       with:
         args: --verbose --recursive --parallel --style "google"
-
+    - name: dependencies
+      run: |
+        sudo apt-get -y update
+        sudo apt install -y libsm6 \
+                         libxext6 \
+                           ffmpeg \
+                   libfontconfig1 \
+                      libxrender1 \
+                  libgl1-mesa-glx
     - name: install labelbox package
       run: |
-        python setup.py install
+        python -m pip install --upgrade pip
+        python -m pip install .
     - name: mypy
       run: |
-        python -m pip install --upgrade pip
         pip install mypy==0.782
         mypy -p labelbox --pretty --show-error-codes
     - name: Install package and test dependencies

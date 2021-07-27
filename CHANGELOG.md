@@ -1,5 +1,14 @@
 # Changelog
 
+# Next Release
+## Removed
+* Deprecated functions
+    - project.reviews()
+    - project.create_prediction()
+    - project.create_prediction_model()
+    - project.create_label()
+
+
 # Version 2.7b1+mea (2021-06-27)
 ## Fix
 * No longer convert `ModelRun.created_by_id` to cuid on construction of a `ModelRun`.
