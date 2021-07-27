@@ -6,16 +6,20 @@ import base64
 
 from labelbox.data.metrics.iou import data_row_miou
 from labelbox.data.serialization import NDJsonConverter, LBV1Converter
-from labelbox.data.annotation_types import Label, RasterData
+from labelbox.data.annotation_types import Label, RasterData, Mask
 
 
-def check_iou(pair):
+def check_iou(pair, mask=False):
     default = Label(data=RasterData(uid="ckppihxc10005aeyjen11h7jh"))
-    assert math.isclose(
-        data_row_miou(
-            next(LBV1Converter.deserialize([pair.labels])),
-            next(NDJsonConverter.deserialize(pair.predictions), default)),
-        pair.expected)
+    prediction = next(NDJsonConverter.deserialize(pair.predictions), default)
+    label = next(LBV1Converter.deserialize([pair.labels]))
+    if mask:
+        for annotation in [*prediction.annotations, *label.annotations]:
+            if isinstance(annotation.value, Mask):
+                annotation.value.mask.arr = np.frombuffer(
+                    base64.b64decode(annotation.value.mask.url.encode('utf-8')),
+                    dtype=np.uint8).reshape((32, 32, 3))
+    assert math.isclose(data_row_miou(label, prediction), pair.expected)
 
 
 def strings_to_fixtures(strings):
@@ -25,11 +29,7 @@ def strings_to_fixtures(strings):
 def test_overlapping(polygon_pair, box_pair, mask_pair):
     check_iou(polygon_pair)
     check_iou(box_pair)
-    #with patch('labelbox.data.metrics.iou.url_to_numpy',
-    #           side_effect=lambda x: np.frombuffer(
-    #               base64.b64decode(x.encode('utf-8')), dtype=np.uint8).reshape(
-    #                   (32, 32, 3))):
-    #    #check_iou(mask_pair)
+    check_iou(mask_pair, True)
 
 
 @parametrize("pair",

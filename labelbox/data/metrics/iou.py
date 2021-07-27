@@ -12,8 +12,8 @@ from ..annotation_types.annotation import BaseAnnotation
 from labelbox.data import annotation_types
 
 
-def mask_miou(predictions: List[Mask],
-              ground_truths: List[Mask],
+def mask_miou(predictions: List[ObjectAnnotation],
+              ground_truths: List[ObjectAnnotation],
               resize_height=None,
               resize_width=None) -> float:
     """
@@ -27,13 +27,15 @@ def mask_miou(predictions: List[Mask],
     Returns:
         float indicating iou score
     """
+    #TODO: Filter out non-masks object annotations maybe..
+
     prediction_np = np.max([
-        pred.raster(binary=True, height=resize_height, width=resize_width)
+        pred.value.raster(binary=True, height=resize_height, width=resize_width)
         for pred in predictions
     ],
                            axis=0)
     ground_truth_np = np.max([
-        ground_truth.raster(
+        ground_truth.value.raster(
             binary=True, height=resize_height, width=resize_width)
         for ground_truth in ground_truths
     ],
