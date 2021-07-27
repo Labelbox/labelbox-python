@@ -8,15 +8,12 @@ class Model(DbObject):
         can make predictions on new data.
         Attributes:
             name (str)
-            ontology (Relationship): `ToOne` relationship to Ontology
-            model_runs (Relationship): `ToMany` relationship to ModelRun (TODO)
-            slices (Relationship): `ToMany` relationship to Slice (TODO)
+            model_runs (Relationship): `ToMany` relationship to ModelRun
         """
 
     name = Field.String("name")
-
     model_runs = Relationship.ToMany("ModelRun", False)
-    ontology = Relationship.ToOne("Ontology", False)
+
 
     def create_model_run(self, name):
         """ Creates a model run belonging to this model.
