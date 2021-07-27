@@ -120,7 +120,7 @@ class LBV1Label(BaseModel):
     label: Union[LBV1LabelAnnotations,
                  List[LBV1LabelAnnotationsVideo]] = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
-    row_data: str = Field(..., alias="Labeled Data")
+    row_data: str = Field(None, alias="Labeled Data")
     external_id: Optional[str] = Field(None, alias="External ID")
 
     created_by: Optional[str] = Extra('Created By')
@@ -166,12 +166,6 @@ class LBV1Label(BaseModel):
             label_ = LBV1LabelAnnotationsVideo.from_common(label.annotations)
         else:
             label_ = LBV1LabelAnnotations.from_common(label.annotations)
-
-        if label.data.url is None:
-            raise ValueError(
-                "Url attribute required for serializing data objects. "
-                "Use <LabelList,LabelGenerator>.add_url_to_data "
-                "or <LabelList,LabelGenerator>.add_to_dataset")
 
         return LBV1Label(label=label_,
                          data_row_id=label.data.uid,
