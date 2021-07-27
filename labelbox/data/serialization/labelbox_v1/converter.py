@@ -3,6 +3,7 @@ import logging
 
 import ndjson
 import requests
+from copy import deepcopy
 from requests.exceptions import HTTPError
 from google.api_core import retry
 
@@ -79,6 +80,7 @@ class LBV1VideoIterator(PrefetchGenerator):
         super().__init__(examples)
 
     def _process(self, value):
+        value = deepcopy(value)
         if 'frames' in value['Label']:
             req = self._request(value)
             value['Label'] = ndjson.loads(req)
