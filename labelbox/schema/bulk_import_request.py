@@ -10,7 +10,6 @@ import backoff
 import ndjson
 import requests
 from pydantic import BaseModel, validator
-from requests.api import request
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set)
