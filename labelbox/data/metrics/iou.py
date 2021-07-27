@@ -7,7 +7,7 @@ from itertools import product
 import numpy as np
 from collections import defaultdict
 
-from ..annotation_types import Label, ObjectAnnotation, ClassificationAnnotation, Mask, Geometry
+from ..annotation_types import Label, ObjectAnnotation, ClassificationAnnotation, Mask, Geometry, Point, Line
 from ..annotation_types.annotation import BaseAnnotation
 from labelbox.data import annotation_types
 
@@ -114,8 +114,10 @@ def subclassification_miou(
     return None if not len(classification_iou) else np.mean(classification_iou)
 
 
-def vector_miou(predictions: List[Geometry], labels: List[Geometry],
-                include_subclasses) -> float:
+def vector_miou(predictions: List[ObjectAnnotation],
+                labels: List[ObjectAnnotation],
+                include_subclasses,
+                buffer=70.) -> float:
     """
     Computes an iou score for vector tools.
 
@@ -127,15 +129,16 @@ def vector_miou(predictions: List[Geometry], labels: List[Geometry],
         miou score for the feature schema
 
     """
-    pairs = _get_vector_pairs(predictions, labels)
+    pairs = _get_vector_pairs(predictions, labels, buffer=buffer)
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     solution_agreements = []
     solution_features = set()
     all_features = set()
     for pred, label, agreement in pairs:
-        all_features.update({pred.uuid, label.uuid})
-        if pred.uuid not in solution_features and label.uuid not in solution_features:
-            solution_features.update({pred.uuid, label.uuid})
+        all_features.update({id(pred), id(label)})
+        if id(pred) not in solution_features and id(
+                label) not in solution_features:
+            solution_features.update({id(pred), id(label)})
             if include_subclasses:
                 classification_iou = subclassification_miou(
                     pred.classifications, label.classifications)
@@ -181,14 +184,11 @@ def feature_miou(predictions: List[Union[ObjectAnnotation,
         return vector_miou(predictions,
                            labels,
                            include_subclasses=include_subclasses)
-    elif isinstance(predictions[0].value, ClassificationAnnotation):
+    elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_miou(predictions, labels)
     else:
         raise ValueError(
-            f"Unexpected annotation found. Found {type(predictions[0])}")
-
-
-
+            f"Unexpected annotation found. Found {type(predictions[0].value)}")
 
 
 def data_row_miou(ground_truth: Label,
@@ -206,7 +206,6 @@ def data_row_miou(ground_truth: Label,
     Returns:
         float indicating the iou score for this data row.
     """
-
     prediction_annotations = _create_name_lookup(predictions.annotations)
     ground_truth_annotations = _create_name_lookup(ground_truth.annotations)
     feature_schemas = set(prediction_annotations.keys()).union(
@@ -222,20 +221,33 @@ def data_row_miou(ground_truth: Label,
         return None
     return np.mean(ious)
 
+
 def _create_name_lookup(annotations: List[BaseAnnotation]):
     grouped_annotations = defaultdict(list)
     for annotation in annotations:
-        grouped_annotations[annotation.name] = annotation
+        grouped_annotations[annotation.name].append(annotation)
     return grouped_annotations
 
-def _get_vector_pairs(predictions: List[Geometry],
-                      ground_truths: List[Geometry]):
+
+def _get_vector_pairs(
+        predictions: List[ObjectAnnotation],
+        ground_truths: List[ObjectAnnotation], buffer: float
+) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, float]]:
     """
     # Get iou score for all pairs of labels and predictions
     """
-    return [(prediction, ground_truth,
-             _polygon_iou(prediction.shapely, ground_truth.shapely))
-            for prediction, ground_truth in product(predictions, ground_truths)]
+    pairs = []
+    for prediction, ground_truth in product(predictions, ground_truths):
+        if isinstance(prediction.value, Geometry) and isinstance(
+                ground_truth.value, Geometry):
+            if isinstance(prediction.value, (Line, Point)):
+                score = _polygon_iou(prediction.value.shapely.buffer(buffer),
+                                     ground_truth.value.shapely.buffer(buffer))
+            else:
+                score = _polygon_iou(prediction.value.shapely,
+                                     ground_truth.value.shapely)
+            pairs.append((prediction, ground_truth, score))
+    return pairs
 
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:

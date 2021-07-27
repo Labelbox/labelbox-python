@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation
@@ -55,7 +55,7 @@ class NDTextSubclass(NDFeature):
 
 
 class NDChecklistSubclass(NDFeature):
-    answer: List[NDFeature]
+    answer: List[NDFeature] = Field(..., alias='answers')
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[
