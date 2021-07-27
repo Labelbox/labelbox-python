@@ -8,14 +8,15 @@ import base64
 
 class NameSpace(SimpleNamespace):
 
-    def __init__(self, predictions, labels, expected):
+    def __init__(self, predictions, labels, expected, classifications=None):
         super(NameSpace,
               self).__init__(predictions=predictions,
                              labels={
                                  'DataRow ID': 'ckppihxc10005aeyjen11h7jh',
+                                 'Labeled Data': "https://.jpg",
                                  'Label': {
                                      'objects': labels,
-                                     'classifications': []
+                                     'classifications': classifications or []
                                  }
                              },
                              expected=expected)
@@ -260,16 +261,17 @@ def mask_pair():
 
 @pytest.fixture
 def matching_radio():
-    return NameSpace(labels=[{
-        'featureId': '1234567890111213141516171',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'answer': {
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
-        }
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId': '1234567890111213141516171',
+                         'schemaId': 'ckrm02no8000008l3arwp6h4f',
+                         'answer': {
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
+                         }
+                     }],
                      predictions=[{
                          'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         'schemaId': 'ckrm02no8000008l3arwp6h4f',
                          'dataRow': {
                              'id': 'ckppihxc10005aeyjen11h7jh'
                          },
@@ -298,36 +300,38 @@ def empty_radio_label():
 
 @pytest.fixture
 def empty_radio_prediction():
-    return NameSpace(labels=[{
-        'featureId': '1234567890111213141516171',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'answer': {
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
-        }
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId': '1234567890111213141516171',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         'answer': {
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
+                         }
+                     }],
                      predictions=[],
                      expected=0)
 
 
 @pytest.fixture
 def matching_checklist():
-    return NameSpace(labels=[{
-        'featureId':
-            '1234567890111213141516171',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'uuid':
-            '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'answers': [{
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        }, {
-            'schemaId': 'ckppide010001aeyj0yhiaghc'
-        }, {
-            'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
-        }]
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId':
+                             '1234567890111213141516171',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'uuid':
+                             '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         }, {
+                             'schemaId': 'ckppide010001aeyj0yhiaghc'
+                         }, {
+                             'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
+                         }]
+                     }],
                      predictions=[{
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
@@ -349,25 +353,26 @@ def matching_checklist():
 
 @pytest.fixture
 def partially_matching_checklist_1():
-    return NameSpace(labels=[{
-        'featureId':
-            '1234567890111213141516171',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'uuid':
-            '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'answers': [{
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        }, {
-            'schemaId': 'ckppide010001aeyj0yhiaghc'
-        }, {
-            'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
-        }, {
-            'schemaId': 'ckppie29m0003aeyjk1ixzcom'
-        }]
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId':
+                             '1234567890111213141516171',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'uuid':
+                             '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         }, {
+                             'schemaId': 'ckppide010001aeyj0yhiaghc'
+                         }, {
+                             'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
+                         }, {
+                             'schemaId': 'ckppie29m0003aeyjk1ixzcom'
+                         }]
+                     }],
                      predictions=[{
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
@@ -391,21 +396,22 @@ def partially_matching_checklist_1():
 
 @pytest.fixture
 def partially_matching_checklist_2():
-    return NameSpace(labels=[{
-        'featureId':
-            '1234567890111213141516171',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'uuid':
-            '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'answers': [{
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        }, {
-            'schemaId': 'ckppide010001aeyj0yhiaghc'
-        }]
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId':
+                             '1234567890111213141516171',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'uuid':
+                             '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         }, {
+                             'schemaId': 'ckppide010001aeyj0yhiaghc'
+                         }]
+                     }],
                      predictions=[{
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
@@ -429,25 +435,26 @@ def partially_matching_checklist_2():
 
 @pytest.fixture
 def partially_matching_checklist_3():
-    return NameSpace(labels=[{
-        'featureId':
-            '1234567890111213141516171',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'uuid':
-            '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-        'schemaId':
-            'ckppid25v0000aeyjmxfwlc7t',
-        'answers': [{
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        }, {
-            'schemaId': 'ckppide010001aeyj0yhiaghc'
-        }, {
-            'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
-        }, {
-            'schemaId': 'ckppiebx80004aeyjuwvos69e'
-        }]
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId':
+                             '1234567890111213141516171',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'uuid':
+                             '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         }, {
+                             'schemaId': 'ckppide010001aeyj0yhiaghc'
+                         }, {
+                             'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
+                         }, {
+                             'schemaId': 'ckppiebx80004aeyjuwvos69e'
+                         }]
+                     }],
                      predictions=[{
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
@@ -483,27 +490,29 @@ def empty_checklist_label():
 
 @pytest.fixture
 def empty_checklist_prediction():
-    return NameSpace(labels=[{
-        'featureId': '1234567890111213141516171',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'dataRow': {
-            'id': 'ckppihxc10005aeyjen11h7jh'
-        },
-        'answers': [{
-            'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
-        }]
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId': '1234567890111213141516171',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         'dataRow': {
+                             'id': 'ckppihxc10005aeyjen11h7jh'
+                         },
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
+                         }]
+                     }],
                      predictions=[],
                      expected=0)
 
 
 @pytest.fixture
 def matching_text():
-    return NameSpace(labels=[{
-        'featureId': '1234567890111213141516171',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'answer': 'test'
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId': '1234567890111213141516171',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         'answer': 'test'
+                     }],
                      predictions=[{
                          'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
                          'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
@@ -517,11 +526,12 @@ def matching_text():
 
 @pytest.fixture
 def not_matching_text():
-    return NameSpace(labels=[{
-        'featureId': '1234567890111213141516171',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'answer': 'test'
-    }],
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId': '1234567890111213141516171',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         'answer': 'test'
+                     }],
                      predictions=[{
                          'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
                          'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
