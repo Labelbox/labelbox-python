@@ -320,7 +320,7 @@ class DataRowMetadataOntology:
         for m in deletes:
             items.append(self._validate_delete(m))
 
-        return _batch_operations(_batch_delete, items, batch_size=self._batch_size if self._batch_size < 25 else 25)
+        return _batch_operations(_batch_delete, items, batch_size=self._batch_size)
 
     def _parse_upsert(
             self, metadatum: DataRowMetadataField
