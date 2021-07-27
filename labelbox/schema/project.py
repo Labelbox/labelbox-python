@@ -50,8 +50,6 @@ class Project(DbObject, Updateable, Deletable):
         labeling_parameter_overrides (Relationship): `ToMany` relationship to LabelingParameterOverride
         webhooks (Relationship): `ToMany` relationship to Webhook
         benchmarks (Relationship): `ToMany` relationship to Benchmark
-        active_prediction_model (Relationship): `ToOne` relationship to PredictionModel
-        predictions (Relationship): `ToMany` relationship to Prediction
         ontology (Relationship): `ToOne` relationship to Ontology
     """
     name = Field.String("name")
@@ -74,9 +72,6 @@ class Project(DbObject, Updateable, Deletable):
         "LabelingParameterOverride", False, "labeling_parameter_overrides")
     webhooks = Relationship.ToMany("Webhook", False)
     benchmarks = Relationship.ToMany("Benchmark", False)
-    active_prediction_model = Relationship.ToOne("PredictionModel", False,
-                                                 "active_prediction_model")
-    predictions = Relationship.ToMany("Prediction", False)
     ontology = Relationship.ToOne("Ontology", True)
 
     def members(self):
