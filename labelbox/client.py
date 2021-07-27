@@ -304,6 +304,8 @@ class Client:
         if response.status_code == 502:
             error_502 = '502 Bad Gateway'
             raise labelbox.exceptions.InternalServerError(error_502)
+        elif response.status_code == 503:
+            raise labelbox.exceptions.InternalServerError(response.text)
 
         try:
             file_data = response.json().get("data", None)
