@@ -167,14 +167,33 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def export_labels(self):
-        json_data = self.export_labels_json()
-        if 'frames' in json_data[0]['Label']:
-            # Assumes all data rows in this project are video.
-            return LBV1Converter.deserialize_video(json_data, self.client)
+    def video_label_generator(self, timeout_seconds=60):
+        """
+        Download video annotations
+
+        Returns:
+            LabelGenerator for accessing labels for each video
+        """
+        json_data = self.export_labels(download=True,
+                                       timeout_seconds=timeout_seconds)
+        if 'frames' not in json_data[0]['Label']:
+            raise ValueError(
+                "frames key not found in the first label. Cannot export video data."
+            )
+        return LBV1Converter.deserialize_video(json_data, self.client)
+
+    def label_generator(self, timeout_seconds=60):
+        """
+        Download text and image annotations
+
+        Returns:
+            LabelGenerator for accessing labels for each text or image
+        """
+        json_data = self.export_labels(download=True,
+                                       timeout_seconds=timeout_seconds)
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels_json(self, timeout_seconds=60):
+    def export_labels(self, download=False, timeout_seconds=60):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
@@ -196,9 +215,13 @@ class Project(DbObject, Updateable, Deletable):
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
             if not res["shouldPoll"]:
-                response = requests.get(res["downloadUrl"])
-                response.raise_for_status()
-                return response.json()
+                url = res['downloadUrl']
+                if not download:
+                    return url
+                else:
+                    response = requests.get(url)
+                    response.raise_for_status()
+                    return response.json()
 
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
