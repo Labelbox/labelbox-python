@@ -1,5 +1,4 @@
 import uuid
-from time import sleep
 
 import pytest
 
@@ -110,7 +109,6 @@ def configured_project(client, project, ontology, dataset):
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         dataset.create_data_row(row_data=IMG_URL)
     project.datasets.connect(dataset)
-    sleep(1)
     yield project
 
 
