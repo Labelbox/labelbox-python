@@ -12,7 +12,7 @@ class DataRow(BaseModel):
     def validate_id(cls, v):
         if v is None:
             raise ValueError(
-                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`, `LabelCollection.add_to_dataset`, or `Label.create_data_row`. "
+                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`, `LabelList.add_to_dataset`, or `Label.create_data_row`. "
                 "You can also manually assign the id for each `BaseData` object"
             )
         return v
@@ -38,6 +38,6 @@ class NDAnnotation(NDJsonBase):
     def validate_id(cls, v):
         if v is None:
             raise ValueError(
-                "Schema ids are not set. Use `LabelGenerator.assign_schema_ids`, `LabelCollection.assign_schema_ids`, or `Label.assign_schema_ids`."
+                "Schema ids are not set. Use `LabelGenerator.assign_schema_ids`, `LabelList.assign_schema_ids`, or `Label.assign_schema_ids`."
             )
         return v

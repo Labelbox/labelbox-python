@@ -133,7 +133,7 @@ class LBV1Mask(LBV1ObjectBase):
 
         if mask.mask.url is None:
             raise ValueError(
-                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelCollection.add_url_to_masks`, or `Label.add_url_to_masks`."
+                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelList.add_url_to_masks`, or `Label.add_url_to_masks`."
             )
         return cls(instanceURI=mask.mask.url,
                    classifications=classifications,

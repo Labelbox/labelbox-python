@@ -1,12 +1,13 @@
-from requests.exceptions import HTTPError
-import labelbox
 from typing import Any, Dict, Generator, Iterable
 import logging
 
 import ndjson
 import requests
+from copy import deepcopy
+from requests.exceptions import HTTPError
 from google.api_core import retry
 
+import labelbox
 from .label import LBV1Label
 from ...annotation_types.collection import (LabelCollection, LabelGenerator,
                                             PrefetchGenerator)
@@ -17,12 +18,14 @@ logger = logging.getLogger(__name__)
 class LBV1Converter:
 
     @staticmethod
-    def deserialize_video(json_data: Iterable[Dict[str, Any]], client):
+    def deserialize_video(json_data: Iterable[Dict[str, Any]],
+                          client: labelbox.Client):
         """
         Converts a labelbox video export into the common labelbox format.
 
         Args:
             json_data: An iterable representing the labelbox video export.
+            client: The labelbox client for downloading video annotations
         Returns:
             LabelGenerator containing the video data.
         """
@@ -79,10 +82,11 @@ class LBV1VideoIterator(PrefetchGenerator):
         super().__init__(examples)
 
     def _process(self, value):
+        value = deepcopy(value)
         if 'frames' in value['Label']:
             req = self._request(value)
             value['Label'] = ndjson.loads(req)
-            return value
+        return value
 
     @retry.Retry(predicate=retry.if_exception_type(HTTPError))
     def _request(self, value):
