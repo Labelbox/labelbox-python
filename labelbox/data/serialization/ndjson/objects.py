@@ -132,7 +132,7 @@ class NDMask(NDBaseObject):
                     data: Union[RasterData, TextData]) -> "NDMask":
         if mask.mask.url is None:
             raise ValueError(
-                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelCollection.add_url_to_masks`, or `Label.add_url_to_masks`."
+                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelList.add_url_to_masks`, or `Label.add_url_to_masks`."
             )
         return cls(mask=_Mask(instanceURI=mask.mask.url, colorRGB=mask.color),
                    dataRow=DataRow(id=data.uid),
