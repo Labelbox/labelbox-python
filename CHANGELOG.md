@@ -6,7 +6,6 @@
 ## Added
 * Annotation types
     - A set of python objects for working with labelbox data
-    - Create with `project.label_generator()` or `project.video_label_generator()`
     - See example notebooks on how to use under examples/annotation_types
     - Note that these types are not yet supported for tiled imagery
 * MEA Support
@@ -14,8 +13,9 @@
 * Metadata support
     - New metadata features are now fully supported by the SDK
 * Easier export
-    - project.export_labels accepts a boolean indicating whether or not to download the result
-    - Video exports are much simpler using the new `project.video_label_generator()`
+    - `project.export_labels()` accepts a boolean indicating whether or not to download the result
+    - Create annotation objects direclty from exports with `project.label_generator()` or `project.video_label_generator()`
+    - `project.video_label_generator()` asynchronously fetches video annotations
 * Retry logic on data uploads
     - Bulk creation of data rows will be more reliable
 * Datasets
