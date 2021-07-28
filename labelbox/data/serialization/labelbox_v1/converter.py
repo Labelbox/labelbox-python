@@ -57,6 +57,8 @@ class LBV1Converter:
         """
         Converts a labelbox common object to the labelbox json export format
 
+        Note that any metric annotations will not be written since they are not defined in the LBV1 format.
+
         Args:
             labels: Either a LabelList or a LabelGenerator (LabelCollection)
         Returns:

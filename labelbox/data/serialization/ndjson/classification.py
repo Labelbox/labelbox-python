@@ -101,7 +101,7 @@ class NDText(NDAnnotation, NDTextSubclass):
                     data: Union[TextData, RasterData]) -> "NDText":
         return cls(
             answer=text.answer,
-            dataRow={'id': data.uid},
+            data_row={'id': data.uid},
             schema_id=schema_id,
             uuid=extra.get('uuid'),
         )
@@ -116,7 +116,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
         return cls(answer=[
             NDFeature(schema_id=answer.schema_id) for answer in checklist.answer
         ],
-                   dataRow={'id': data.uid},
+                   data_row={'id': data.uid},
                    schema_id=schema_id,
                    uuid=extra.get('uuid'),
                    frames=extra.get('frames'))
@@ -128,7 +128,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     def from_common(cls, radio: Radio, schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[VideoData, TextData, RasterData]) -> "NDRadio":
         return cls(answer=NDFeature(schema_id=radio.answer.schema_id),
-                   dataRow={'id': data.uid},
+                   data_row={'id': data.uid},
                    schema_id=schema_id,
                    uuid=extra.get('uuid'),
                    frames=extra.get('frames'))

@@ -6,6 +6,7 @@ from enum import Enum
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
+import time
 import uuid
 import os
 import re
@@ -333,6 +334,7 @@ def configured_project_with_label(client, rand_gen, annotation_submit_fn):
     upload_task = MALPredictionImport.create_from_objects(
         client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
+    time.sleep(1)
     annotation_submit_fn(project.uid, data_row.uid)
     yield project
     dataset.delete()
