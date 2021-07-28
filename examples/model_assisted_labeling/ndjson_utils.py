@@ -8,8 +8,9 @@ import numpy as np
 import uuid
 
 
-def create_boxes_ndjson(datarow_id: str, schema_id: str, top: float, left: float,
-                        bottom: float, right: float) -> Dict[str, Any]:
+def create_boxes_ndjson(datarow_id: str, schema_id: str, top: float,
+                        left: float, bottom: float,
+                        right: float) -> Dict[str, Any]:
     """
     * https://docs.labelbox.com/data-model/en/index-en#bounding-box
 
@@ -64,8 +65,8 @@ def create_polygon_ndjson(datarow_id: str, schema_id: str,
 
 
 def create_mask_ndjson(client: Client, datarow_id: str, schema_id: str,
-                       segmentation_mask: np.ndarray, color: Tuple[int, int,
-                                                     int]) -> Dict[str, Any]:
+                       segmentation_mask: np.ndarray,
+                       color: Tuple[int, int, int]) -> Dict[str, Any]:
     """
     Creates a mask for each object in the image
     * https://docs.labelbox.com/data-model/en/index-en#segmentation-mask
@@ -80,8 +81,8 @@ def create_mask_ndjson(client: Client, datarow_id: str, schema_id: str,
         ndjson representation of a segmentation mask
     """
 
-    colorize = np.concatenate(([segmentation_mask[..., np.newaxis] * c for c in color]),
-                              axis=2)
+    colorize = np.concatenate(
+        ([segmentation_mask[..., np.newaxis] * c for c in color]), axis=2)
     img_bytes = BytesIO()
     Image.fromarray(colorize).save(img_bytes, format="PNG")
     #* Use your own signed urls so that you can resign the data
@@ -100,8 +101,9 @@ def create_mask_ndjson(client: Client, datarow_id: str, schema_id: str,
     }
 
 
-def create_point_ndjson(datarow_id: str, schema_id: str, top: float, left: float,
-                        bottom: float, right: float) -> Dict[str, Any]:
+def create_point_ndjson(datarow_id: str, schema_id: str, top: float,
+                        left: float, bottom: float,
+                        right: float) -> Dict[str, Any]:
     """
     * https://docs.labelbox.com/data-model/en/index-en#point
 
