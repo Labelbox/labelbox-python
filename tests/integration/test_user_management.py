@@ -1,4 +1,5 @@
 from labelbox import ProjectRole
+import pytest
 
 
 def test_org_invite(client, organization, environ, queries):
@@ -72,6 +73,9 @@ def test_project_invite(client, organization, project_pack, queries):
     queries.cancel_invite(client, invite.uid)
 
 
+@pytest.mark.skip(
+    "Unable to programatically create user without accepting an email invite. Add back once there is a workaround."
+)
 def test_member_management(client, organization, project, project_based_user):
     roles = client.get_roles()
     assert not len(list(project_based_user.projects()))
