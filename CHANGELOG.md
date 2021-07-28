@@ -2,12 +2,48 @@
 
 # Next Release
 
+# Version 3.0b0
+## Added
+* Annotation types
+    - A set of python objects for working with labelbox data
+    - Create with `project.label_generator()` or `project.video_label_generator()`
+    - See example notebooks on how to use under examples/annotation_types
+    - Note that these types are not yet supported for tiled imagery
+* MEA Support
+    - Beta MEA users can now just use the latest SDK release
+* Metadata support
+    - New metadata feature is now fully supported in the SDK
+* Easier export
+    - project.export_labels accepts a boolean indicating whether or not to download the result
+    - Video exports are much simpler using the new `project.video_label_generator()`
+* Retry logic on data uploads
+    - Bulk creation of data rows will be more reliable
+* Datasets
+    - Determine the number of data rows just by calling `dataset.row_count`.
+    - Updated threading logic in create_data_rows() to make it compatible with aws lambdas
+* `OntologyBuilder`, `Classification`, `Option`, and `Tool` can now be imported from `labelbox` instead of `labelbox.schema.ontology`
+
+
 ## Removed
-* Deprecated functions
-    - project.reviews()
-    - project.create_prediction()
-    - project.create_prediction_model()
-    - project.create_label()
+* Deprecated:
+    - `project.reviews()`
+    - `project.create_prediction()`
+    - `project.create_prediction_model()`
+    - `project.create_label()`
+    - `Project.predictions()`
+    - `Project.active_prediction_model`
+    - `data_row.predictions`
+    - `PredictionModel`
+    - `Prediction`
+* Replaced:
+    - `data_row.metadata()` use `data_row.attachments()` instead
+    - `data_row.create_metadata()` use `data_row.create_attachments()` instead
+    - `AssetMetadata` use `AssetAttachment` instead
+
+## Misc
+* Data processing dependencies are not installed by default to for users that only want client functionality.
+* To install all dependencies required for the data modules (annotation types and mea metric calculation) use `pip install labelbox[data]`
+
 
 # Version 2.7.0 (2021-06-27)
 ## Added
