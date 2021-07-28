@@ -12,7 +12,7 @@
 * MEA Support
     - Beta MEA users can now just use the latest SDK release
 * Metadata support
-    - New metadata feature is now fully supported in the SDK
+    - New metadata features are now fully supported by the SDK
 * Easier export
     - project.export_labels accepts a boolean indicating whether or not to download the result
     - Video exports are much simpler using the new `project.video_label_generator()`
@@ -21,8 +21,8 @@
 * Datasets
     - Determine the number of data rows just by calling `dataset.row_count`.
     - Updated threading logic in create_data_rows() to make it compatible with aws lambdas
-* `OntologyBuilder`, `Classification`, `Option`, and `Tool` can now be imported from `labelbox` instead of `labelbox.schema.ontology`
-
+* Ontology
+    - `OntologyBuilder`, `Classification`, `Option`, and `Tool` can now be imported from `labelbox` instead of `labelbox.schema.ontology`
 
 ## Removed
 * Deprecated:
@@ -40,10 +40,15 @@
     - `data_row.create_metadata()` use `data_row.create_attachments()` instead
     - `AssetMetadata` use `AssetAttachment` instead
 
+## Fixes
+* Support derived classes of ontology objects when using `from_dict`
+* Notebooks:
+    - Video export bug where the code would fail if the exported projects had tools other than bounding boxes
+    - MAL demos were broken due to an image download failing.
+
 ## Misc
 * Data processing dependencies are not installed by default to for users that only want client functionality.
 * To install all dependencies required for the data modules (annotation types and mea metric calculation) use `pip install labelbox[data]`
-
 
 # Version 2.7.0 (2021-06-27)
 ## Added
