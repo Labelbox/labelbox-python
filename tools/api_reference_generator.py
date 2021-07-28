@@ -42,7 +42,7 @@ SCHEMA_CLASSES = [
     labelbox.Project, labelbox.Dataset, labelbox.DataRow, labelbox.Label,
     labelbox.AssetMetadata, labelbox.LabelingFrontend, labelbox.Task,
     labelbox.Webhook, labelbox.User, labelbox.Organization, labelbox.Review,
-    labelbox.Prediction, labelbox.PredictionModel, LabelerPerformance
+    LabelerPerformance
 ]
 
 ERROR_CLASSES = [LabelboxError] + LabelboxError.__subclasses__()

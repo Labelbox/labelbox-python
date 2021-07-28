@@ -12,7 +12,6 @@ import labelbox.schema.review
 import labelbox.schema.task
 import labelbox.schema.user
 import labelbox.schema.webhook
-import labelbox.schema.prediction
 import labelbox.schema.ontology
 import labelbox.schema.invite
 import labelbox.schema.role

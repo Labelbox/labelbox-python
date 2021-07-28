@@ -1,4 +1,5 @@
 import uuid
+
 import pytest
 
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -115,7 +116,6 @@ def configured_project(client, project, ontology, dataset):
 def prediction_id_mapping(configured_project):
     #Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized
-    inferences = []
     datarows = [d for d in list(configured_project.datasets())[0].data_rows()]
     result = {}
 
