@@ -6,6 +6,7 @@
 ## Added
 * Annotation types
     - A set of python objects for working with labelbox data
+    - Creates a standard interface for both exports and imports
     - See example notebooks on how to use under examples/annotation_types
     - Note that these types are not yet supported for tiled imagery
 * MEA Support
