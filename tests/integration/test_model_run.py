@@ -11,9 +11,7 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     model_run = model.create_model_run(name)
     assert model_run.name == name
     assert model_run.model_id == model.uid
-    # TODO: Uncomment this out once https://github.com/Labelbox/labelbox-python/pull/189 is merged.
-    #assert model_run.created_by_id == client.get_user(
-    #).uid
+    assert model_run.created_by_id == client.get_user().uid
 
     label = list(project.labels())[0]
     model_run.upsert_labels([label.uid])

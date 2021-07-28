@@ -23,7 +23,7 @@ class RasterData(BaseData):
 
     @classmethod
     def from_2D_arr(cls, arr: TypedArray[Literal['uint8']], **kwargs):
-        if len(arr.shape):
+        if len(arr.shape) != 2:
             raise ValueError(
                 f"Found array with shape {arr.shape}. Expected two dimensions ([W,H])"
             )
@@ -38,7 +38,7 @@ class RasterData(BaseData):
         Returns:
             numpy array representing the image
         """
-        return np.array(Image.open(BytesIO(image_bytes)))
+        return np.array(Image.open(BytesIO(image_bytes)))[:, :, :3]
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
         """
