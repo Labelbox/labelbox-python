@@ -12,7 +12,6 @@ import labelbox.schema.model
 import labelbox.schema.model_run
 import labelbox.schema.ontology
 import labelbox.schema.organization
-import labelbox.schema.prediction
 import labelbox.schema.project
 import labelbox.schema.review
 import labelbox.schema.role
