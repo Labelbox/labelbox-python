@@ -6,6 +6,10 @@ from enum import Enum
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
+import uuid
+import os
+import re
+
 import pytest
 
 from labelbox import Client, LabelingFrontend
