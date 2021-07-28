@@ -3,6 +3,7 @@ from io import BytesIO
 
 import numpy as np
 import requests
+from google.api_core import retry
 from typing_extensions import Literal
 from pydantic import root_validator
 from PIL import Image
@@ -37,7 +38,7 @@ class RasterData(BaseData):
         Returns:
             numpy array representing the image
         """
-        return np.array(Image.open(BytesIO(image_bytes)))
+        return np.array(Image.open(BytesIO(image_bytes)))[:, :, :3]
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
         """
@@ -84,6 +85,7 @@ class RasterData(BaseData):
     def set_fetch_fn(self, fn):
         object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
+    @retry.Retry(deadline=15.)
     def fetch_remote(self) -> bytes:
         """
         Method for accessing url.
@@ -95,6 +97,7 @@ class RasterData(BaseData):
         response.raise_for_status()
         return response.content
 
+    @retry.Retry(deadline=15.)
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
         Utility for creating a url from any of the other image representations.

@@ -19,6 +19,7 @@ class FeatureSchema(BaseModel):
 
     @root_validator
     def must_set_one(cls, values):
+
         if values['schema_id'] is None and values['name'] is None:
             raise ValueError(
                 "Must set either schema_id or name for all feature schemas")
