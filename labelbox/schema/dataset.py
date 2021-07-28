@@ -23,6 +23,7 @@ class Dataset(DbObject, Updateable, Deletable):
         description (str)
         updated_at (datetime)
         created_at (datetime)
+        row_count (int): The number of rows in the dataset. Fetch the dataset again to update since this is cached.
 
         projects (Relationship): `ToMany` relationship to Project
         data_rows (Relationship): `ToMany` relationship to DataRow
