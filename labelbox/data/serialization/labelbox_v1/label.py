@@ -42,7 +42,8 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
         classifications = [
             VideoClassificationAnnotation(value=classification.to_common(),
                                           frame=self.frame_number,
-                                          name=classification.title)
+                                          name=classification.title,
+                                          schema_id=classification.schema_id)
             for classification in self.classifications
         ]
 

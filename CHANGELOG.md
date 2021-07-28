@@ -8,7 +8,6 @@
     - project.create_prediction_model()
     - project.create_label()
 
-
 # Version 2.7b1+mea (2021-06-27)
 ## Fix
 * No longer convert `ModelRun.created_by_id` to cuid on construction of a `ModelRun`.
@@ -18,7 +17,6 @@
 ## Fix
 * Update `AnnotationGroup` to expect labelId to be a cuid instead of uuid.
 * Update `datarow_miou` to support masks with multiple classes in them.
-
 
 # Version 2.7.0 (2021-06-27)
 ## Added
