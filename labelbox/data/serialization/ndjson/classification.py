@@ -17,7 +17,7 @@ class NDFeature(BaseModel):
     def validate_id(cls, v):
         if v is None:
             raise ValueError(
-                "Schema ids are not set. Use `LabelGenerator.assign_schema_ids`, `LabelCollection.assign_schema_ids`, or `Label.assign_schema_ids`."
+                "Schema ids are not set. Use `LabelGenerator.assign_schema_ids`, `LabelList.assign_schema_ids`, or `Label.assign_schema_ids`."
             )
         return v
 

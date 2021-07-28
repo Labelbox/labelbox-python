@@ -4,12 +4,10 @@ import colorsys
 
 from typing import Any, Dict, List, Optional, Union
 
-#from labelbox.schema.project import Project
+from labelbox.schema import project
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.exceptions import InconsistentOntologyException
-
-Project = "NONE"
 
 
 @dataclass
@@ -332,7 +330,7 @@ class OntologyBuilder:
                 self.tools[index].color = '#%02x%02x%02x' % rgb_color
 
     @classmethod
-    def from_project(cls, project: "Project"):
+    def from_project(cls, project: "project.Project"):
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
 

@@ -210,8 +210,8 @@ class LBV1Label(BaseModel):
                 # To use this converter on data with this url format
                 #   filter out empty examples from the payload before deserializing.
                 raise TypeError(
-                    "Can't infer data type from row data. Remove empty examples before trying again"
-                )
+                    "Can't infer data type from row data. Remove empty examples before trying again. "
+                    f"row_data: {self.row_data[:200]}")
 
     def _has_object_annotations(self):
         return len(self.label.objects) > 0
