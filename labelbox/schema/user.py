@@ -1,6 +1,7 @@
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.role import Role
+from labelbox.schema.project import Project
 
 
 class User(DbObject):
