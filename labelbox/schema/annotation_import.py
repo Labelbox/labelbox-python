@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class AnnotationImport(DbObject):
-    # This class replaces BulkImportRequest
+    # This class will replace BulkImportRequest.
+    # Currently this exists for the MEA beta.
+    # Use BulkImportRequest for now if you are not using MEA.
+
     id_name: str
     import_type: ImportType
 
