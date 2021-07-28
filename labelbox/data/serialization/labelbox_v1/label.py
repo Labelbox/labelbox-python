@@ -148,7 +148,6 @@ class LBV1Label(BaseModel):
         else:
             annotations = self.label.to_common()
             data = self._infer_media_type()
-            print(data)
 
         return Label(data=data,
                      annotations=annotations,
