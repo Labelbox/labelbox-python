@@ -15,7 +15,7 @@
     - New metadata features are now fully supported by the SDK
 * Easier export
     - `project.export_labels()` accepts a boolean indicating whether or not to download the result
-    - Create annotation objects direclty from exports with `project.label_generator()` or `project.video_label_generator()`
+    - Create annotation objects directly from exports with `project.label_generator()` or `project.video_label_generator()`
     - `project.video_label_generator()` asynchronously fetches video annotations
 * Retry logic on data uploads
     - Bulk creation of data rows will be more reliable
