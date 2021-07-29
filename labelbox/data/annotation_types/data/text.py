@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 
 import requests
+from google.api_core import retry
 from pydantic import root_validator
 
 from .base_data import BaseData
@@ -39,6 +40,7 @@ class TextData(BaseData):
     def set_fetch_fn(self, fn):
         object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
+    @retry.Retry(deadline=15.)
     def fetch_remote(self) -> str:
         """
         Method for accessing url.
@@ -50,6 +52,7 @@ class TextData(BaseData):
         response.raise_for_status()
         return response.text
 
+    @retry.Retry(deadline=15.)
     def create_url(self, signer: Callable[[bytes], str]) -> None:
         """
         Utility for creating a url from any of the other text references.

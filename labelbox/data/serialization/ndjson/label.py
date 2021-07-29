@@ -1,4 +1,6 @@
 from itertools import groupby
+from labelbox.data.annotation_types.metrics import ScalarMetric
+
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
@@ -10,12 +12,13 @@ from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import RasterData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
-from .classification import NDChecklistSubclass, NDClassification, NDRadioSubclass, NDClassificationType
+from .metric import NDMetricAnnotation, NDMetricType
+from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType
 
 
 class NDLabel(BaseModel):
-    annotations: List[Union[NDObjectType, NDClassificationType]]
+    annotations: List[Union[NDObjectType, NDClassificationType, NDMetricType]]
 
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
@@ -33,7 +36,8 @@ class NDLabel(BaseModel):
 
     def _generate_annotations(
         self, grouped_annotations: Dict[str, List[Union[NDObjectType,
-                                                        NDClassificationType]]]
+                                                        NDClassificationType,
+                                                        NDMetricType]]]
     ) -> Generator[Label, None, None]:
         for data_row_id, annotations in grouped_annotations.items():
             annots = []
@@ -42,6 +46,8 @@ class NDLabel(BaseModel):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
+                elif isinstance(annotation, NDMetricType):
+                    annots.append(NDMetricAnnotation.to_common(annotation))
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
@@ -99,6 +105,8 @@ class NDLabel(BaseModel):
                 yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation, ObjectAnnotation):
                 yield NDObject.from_common(annotation, label.data)
+            elif isinstance(annotation, ScalarMetric):
+                yield NDMetricAnnotation.from_common(annotation, label.data)
             else:
                 raise TypeError(
                     f"Unable to convert object to MAL format. `{type(annotation.value)}`"

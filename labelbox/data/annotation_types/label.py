@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Union
+
+from typing import Any, Callable, Dict, List, Union, Optional
 
 from pydantic import BaseModel, validator
 
@@ -9,28 +10,30 @@ from ..ontology import get_feature_schema_lookup
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, RasterData
 from .geometry import Mask
-from .metrics import Metric
+from .metrics import ScalarMetric
+from .types import Cuid
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
 
 
 class Label(BaseModel):
+    uid: Optional[Cuid] = None
     data: Union[VideoData, RasterData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
-                            VideoClassificationAnnotation, Metric]] = []
+                            VideoClassificationAnnotation, ScalarMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
-        return [
-            annot for annot in self.annotations
-            if isinstance(annot, ObjectAnnotation)
-        ]
+        return self._get_annotations_by_type(ObjectAnnotation)
 
     def classification_annotations(self) -> List[ClassificationAnnotation]:
+        return self._get_annotations_by_type(ClassificationAnnotation)
+
+    def _get_annotations_by_type(self, annotation_type):
         return [
             annot for annot in self.annotations
-            if isinstance(annot, ClassificationAnnotation)
+            if isinstance(annot, annotation_type)
         ]
 
     def frame_annotations(

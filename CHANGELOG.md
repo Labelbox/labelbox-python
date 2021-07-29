@@ -1,7 +1,5 @@
 # Changelog
 
-# Next Release
-
 # Version 3.0b0
 ## Added
 * Annotation types
@@ -51,9 +49,23 @@
 * Data processing dependencies are not installed by default to for users that only want client functionality.
 * To install all dependencies required for the data modules (annotation types and mea metric calculation) use `pip install labelbox[data]`
 
+# Version 2.7b1+mea (2021-06-27)
+## Fix
+* No longer convert `ModelRun.created_by_id` to cuid on construction of a `ModelRun`.
+    * This was causing queries for ModelRuns to fail.
+
+# Version 2.7b0+mea (2021-06-27)
+## Fix
+* Update `AnnotationGroup` to expect labelId to be a cuid instead of uuid.
+* Update `datarow_miou` to support masks with multiple classes in them.
+
 # Version 2.7.0 (2021-06-27)
 ## Added
 * Added `dataset.export_data_rows()` which returns all `DataRows` for a `Dataset`.
+
+# Version 2.6b2+mea (2021-06-16)
+## Added
+* `ModelRun.annotation_groups()` to fetch data rows and label information for a model run
 
 # Version 2.6.0 (2021-06-11)
 ## Fix
@@ -66,6 +78,15 @@
     * Use `DataRow.attachments()` instead of `DataRow.metadata()`
     * Use `DataRow.create_attachment()` instead of `DataRow.create_metadata()`
 * Update pydantic version
+
+# Version 2.5b0+mea (2021-06-11)
+## Added
+* Added new `Model` and 'ModelRun` entities
+* Update client to support creating and querying for `Model`s
+* Implement new prediction import pipeline to support both MAL and MEA
+* Added notebook to demonstrate how to use MEA
+* Added `datarow_miou` for calculating datarow level iou scores
+
 
 # Version 2.5.6 (2021-05-19)
 ## Fix

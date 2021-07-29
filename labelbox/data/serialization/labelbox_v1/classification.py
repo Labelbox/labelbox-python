@@ -82,6 +82,7 @@ class LBV1Classifications(BaseModel):
             ClassificationAnnotation(value=classification.to_common(),
                                      classifications=[],
                                      name=classification.title,
+                                     schema_id=classification.schema_id,
                                      extra={
                                          'value': classification.value,
                                          'feature_id': classification.feature_id

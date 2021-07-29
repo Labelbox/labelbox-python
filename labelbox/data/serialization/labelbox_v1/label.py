@@ -42,7 +42,8 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
         classifications = [
             VideoClassificationAnnotation(value=classification.to_common(),
                                           frame=self.frame_number,
-                                          name=classification.title)
+                                          name=classification.title,
+                                          schema_id=classification.schema_id)
             for classification in self.classifications
         ]
 
@@ -119,12 +120,12 @@ class LBV1Label(BaseModel):
     label: Union[LBV1LabelAnnotations,
                  List[LBV1LabelAnnotationsVideo]] = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
-    row_data: str = Field(..., alias="Labeled Data")
+    row_data: str = Field(None, alias="Labeled Data")
+    id: Optional[str] = Field(None, alias='ID')
     external_id: Optional[str] = Field(None, alias="External ID")
 
     created_by: Optional[str] = Extra('Created By')
     project_name: Optional[str] = Extra('Project Name')
-    id: Optional[str] = Extra('ID')
     created_at: Optional[str] = Extra('Created At')
     updated_at: Optional[str] = Extra('Updated At')
     seconds_to_label: Optional[float] = Extra('Seconds to Label')
@@ -150,6 +151,7 @@ class LBV1Label(BaseModel):
             data = self._infer_media_type()
 
         return Label(data=data,
+                     uid=self.id,
                      annotations=annotations,
                      extra={
                          field.alias: getattr(self, field_name)
@@ -165,13 +167,8 @@ class LBV1Label(BaseModel):
         else:
             label_ = LBV1LabelAnnotations.from_common(label.annotations)
 
-        if label.data.url is None:
-            raise ValueError(
-                "Url attribute required for serializing data objects. "
-                "Use <LabelList,LabelGenerator>.add_url_to_data "
-                "or <LabelList,LabelGenerator>.add_to_dataset")
-
         return LBV1Label(label=label_,
+                         id=label.uid,
                          data_row_id=label.data.uid,
                          row_data=label.data.url,
                          external_id=label.data.external_id,
