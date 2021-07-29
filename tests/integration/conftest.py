@@ -277,6 +277,7 @@ def configured_project(project, client, rand_gen):
 
 @pytest.fixture
 def annotation_submit_fn(client):
+
     def submit(project_id, data_row_id):
         feature_result = client.execute(
             """query featuresPyApi ($project_id : ID!, $datarow_id: ID!
