@@ -5,9 +5,10 @@ from enum import Enum
 from itertools import chain
 from typing import List, Optional, Dict, Union, Callable, Type
 
-from pydantic import BaseModel, conlist, constr
+from pydantic import BaseModel, conlist, constr, root_validator
 
 from labelbox.schema.ontology import SchemaId
+from labelbox.utils import camel_case
 
 
 class DataRowMetadataKind(Enum):
@@ -33,37 +34,49 @@ DataRowMetadataSchema.update_forward_refs()
 # Constraints for metadata values
 Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
 DateTime: Type[datetime.datetime] = datetime.datetime  # must be in UTC
-String: Type[str] = constr(max_length=500)
+String: Type[str] = constr(max_length=1000000)  # 500)
 OptionId: Type[SchemaId] = SchemaId  # enum option
 
 DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId]
 
 
+class CamelCaseMixin(BaseModel):
+
+    class Config:
+        allow_population_by_field_name = True
+        alias_generator = camel_case
+
+
 # Metadata base class
-class DataRowMetadataField(BaseModel):
+class DataRowMetadataField(CamelCaseMixin):
     schema_id: SchemaId
     value: DataRowMetadataValue
 
 
-class DataRowMetadata(BaseModel):
+class DataRowMetadata(CamelCaseMixin):
     data_row_id: str
     fields: List[DataRowMetadataField]
 
 
-class DeleteDataRowMetadata(BaseModel):
+class DeleteDataRowMetadata(CamelCaseMixin):
     data_row_id: str
     fields: List[SchemaId]
 
 
-class DataRowMetadataBatchResponseFields:
+class DataRowMetadataBatchResponseFields(CamelCaseMixin):
     schema_id: str
     value: DataRowMetadataValue
 
 
-class DataRowMetadataBatchResponse:
+class DataRowMetadataBatchResponse(CamelCaseMixin):
     data_row_id: str
     error: str
     fields: List[DataRowMetadataBatchResponseFields]
+
+    @root_validator(pre=True)
+    def handle_enums(cls, values):
+        breakpoint()
+        return values
 
 
 # --- Batch GraphQL Objects ---
@@ -71,20 +84,20 @@ class DataRowMetadataBatchResponse:
 
 
 # Bulk upsert values
-class _UpsertDataRowMetadataInput(BaseModel):
-    schemaId: str
+class _UpsertDataRowMetadataInput(CamelCaseMixin):
+    schema_id: str
     value: Union[str, List, dict]
 
 
 # Batch of upsert values for a datarow
-class _UpsertBatchDataRowMetadata(BaseModel):
-    dataRowId: str
+class _UpsertBatchDataRowMetadata(CamelCaseMixin):
+    data_row_id: str
     fields: List[_UpsertDataRowMetadataInput]
 
 
-class _DeleteBatchDataRowMetadata(BaseModel):
-    dataRowId: str
-    schemaIds: List[SchemaId]
+class _DeleteBatchDataRowMetadata(CamelCaseMixin):
+    data_row_id: str
+    schema_ids: List[SchemaId]
 
 
 _BatchInputs = Union[List[_UpsertBatchDataRowMetadata],
@@ -99,7 +112,7 @@ class DataRowMetadataOntology:
     reserved and custom. Reserved fields are defined by Labelbox and used for creating
     specific experiences in the platform.
 
-    >>> mdo = client.get_datarow_metadata_ontology()
+    >>> mdo = client.get_data_row_metadata_ontology()
 
     """
 
@@ -131,14 +144,14 @@ class DataRowMetadataOntology:
         ]
         self.custom_id_index: Dict[SchemaId,
                                    DataRowMetadataSchema] = self._make_id_index(
-            self.custom_fields)
+                                       self.custom_fields)
         self.custom_name_index: Dict[str, DataRowMetadataSchema] = {
             f.name: f for f in self.custom_fields
         }
 
     @staticmethod
     def _make_id_index(
-            fields: List[DataRowMetadataSchema]
+        fields: List[DataRowMetadataSchema]
     ) -> Dict[SchemaId, DataRowMetadataSchema]:
         index = {}
         for f in fields:
@@ -187,9 +200,9 @@ class DataRowMetadataOntology:
         return fields
 
     def parse_metadata(
-            self, unparsed: List[Dict[str,
-                                      List[Union[str,
-                                                 Dict]]]]) -> List[DataRowMetadata]:
+        self, unparsed: List[Dict[str,
+                                  List[Union[str,
+                                             Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
         >>> mdo.parse_metadata([datarow.metadata])
@@ -201,7 +214,6 @@ class DataRowMetadataOntology:
             metadata: List of `DataRowMetadata`
 
         """
-
         parsed = []
         for dr in unparsed:
             fields = []
@@ -219,13 +231,13 @@ class DataRowMetadataOntology:
                 fields.append(field)
             parsed.append(
                 DataRowMetadata(data_row_id=dr["data_row_id"], fields=fields))
-
         return parsed
 
     def bulk_upsert(
             self, metadata: List[DataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """Upsert datarow metadata
+
 
         >>> metadata = DataRowMetadata(
         >>>                 data_row_id="datarow-id",
@@ -240,14 +252,26 @@ class DataRowMetadataOntology:
             metadata: List of DataRow Metadata
 
         Returns:
-            response: []
+            response: List of response objects containing the status of the upsert, the data row id,
+
+
+            class DataRowMetadataBatchResponseFields:
+    schema_id: str
+    value: DataRowMetadataValue
+
+
+class DataRowMetadataBatchResponse:
+    data_row_id: str
+    error: str
+    fields: List[DataRowMetadataBatchResponseFields]
+
         """
 
         if not (len(metadata)):
             raise ValueError("Empty list passed")
 
         def _batch_upsert(
-                upserts: List[_UpsertBatchDataRowMetadata]
+            upserts: List[_UpsertBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
 
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
@@ -260,22 +284,28 @@ class DataRowMetadataOntology:
                 }
             }
             }"""
-
-            return self.client.execute(query, {"metadata": upserts})
+            res = self.client.execute(
+                query, {"metadata": upserts})['upsertDataRowCustomMetadata']
+            breakpoint()
+            return [DataRowMetadataBatchResponse(**r) for r in res]
 
         items = []
         for m in metadata:
             items.append(
                 _UpsertBatchDataRowMetadata(
-                    dataRowId=m.data_row_id,
+                    data_row_id=m.data_row_id,
                     fields=list(
                         chain.from_iterable(
-                            self._parse_upsert(m) for m in m.fields))).dict())
+                            self._parse_upsert(m) for m in m.fields))).dict(
+                                by_alias=True))
 
-        return _batch_operations(_batch_upsert, items, self._batch_size)
+        breakpoint()
+        res = _batch_operations(_batch_upsert, items, self._batch_size)
+        breakpoint()
+        return res
 
     def bulk_delete(
-            self, deletes: List[DeleteDataRowMetadata]
+        self, deletes: List[DeleteDataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """ Delete metadata from a datarow by specifiying the fields you want to remove
 
@@ -291,9 +321,10 @@ class DataRowMetadataOntology:
 
 
         Args:
-            deletes:
+            deletes: Data row and schema ids to delete
 
         Returns:
+            list of
 
         """
 
@@ -301,7 +332,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_delete(
-                deletes: List[_DeleteBatchDataRowMetadata]
+            deletes: List[_DeleteBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowCustomMetadataBatchDeleteInput!]!) {
               deleteDataRowCustomMetadata(data: $deletes) {
@@ -314,13 +345,15 @@ class DataRowMetadataOntology:
               }
             }
             """
-            return self.client.execute(query, {"deletes": deletes})
 
-        items = []
-        for m in deletes:
-            items.append(self._validate_delete(m))
+            res = self.client.execute(query, {"deletes": deletes})
+            breakpoint()
+            return res
 
-        return _batch_operations(_batch_delete, items, batch_size=self._batch_size)
+        items = [self._validate_delete(m) for m in deletes]
+        return _batch_operations(_batch_delete,
+                                 items,
+                                 batch_size=self._batch_size)
 
     def _parse_upsert(
             self, metadatum: DataRowMetadataField
@@ -378,17 +411,17 @@ def _batch_items(iterable, size):
 
 
 def _batch_operations(
-        batch_function: _BatchFunction,
-        items: List,
-        batch_size: int = 100,
+    batch_function: _BatchFunction,
+    items: List,
+    batch_size: int = 100,
 ):
     response = []
+
     for batch in _batch_items(items, batch_size):
         response += batch_function(batch)
         # TODO: understand this better
         # if len(response):
         #     raise ValueError(response)
-
     return response
 
 
@@ -410,11 +443,7 @@ def _validate_parse_datetime(field: DataRowMetadataField):
 def _validate_parse_text(field: DataRowMetadataField):
     if not isinstance(field.value, str):
         raise ValueError("Invalid value")
-
-    return [{
-        "schemaId": field.schema_id,
-        "value": field.value,
-    }]
+    return [field.dict(by_alias=True)]
 
 
 def _validate_enum_parse(schema: DataRowMetadataSchema,

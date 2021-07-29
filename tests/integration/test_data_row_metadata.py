@@ -36,7 +36,7 @@ def big_dataset(dataset: Dataset):
 
 def make_metadata(dr_id) -> DataRowMetadata:
     embeddings = [0.0] * 128
-    msg = "my-message"
+    msg = "my-message" * 1000
     time = datetime.utcnow()
 
     metadata = DataRowMetadata(
@@ -166,8 +166,7 @@ def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
     assert len(datarow.metadata["fields"])
 
     mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=datarow.uid,
-                              fields=[SPLIT_SCHEMA_ID])
+        DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
     assert not len(datarow.metadata["fields"])
 
