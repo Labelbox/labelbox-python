@@ -30,6 +30,7 @@ IMG_URL = "https://picsum.photos/200/300"
 
 
 class Environ(Enum):
+    LOCAL = 'local'
     PROD = 'prod'
     STAGING = 'staging'
 
@@ -52,13 +53,17 @@ def environ() -> Environ:
 def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
+    elif environ == Environ.STAGING:
+        return 'http://host.docker.internal:8080/graphql'
     return 'https://staging-api.labelbox.com/graphql'
 
 
 def testing_api_key(environ: str) -> str:
     if environ == Environ.PROD:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-    return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    elif environ == Environ.STAGING:
+        return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
 def cancel_invite(client, invite_id):
