@@ -124,21 +124,7 @@ class AnnotationImport(DbObject):
 
     @classmethod
     def _build_import_predictions_query(cls, file_args: str, vars: str):
-        cls.validate_cls()
-        query_str = """mutation createAnnotationImportPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
-        createAnnotationImport(data: {
-            %s : $parent_id
-            name: $name
-            %s
-            predictionType: $predictionType
-        }) {
-        __typename
-        ... on ModelAssistedLabelingPredictionImport {%s}
-        ... on ModelErrorAnalysisPredictionImport {%s}
-        }}""" % (vars, cls.id_name, file_args,
-                 query.results_query_part(MALPredictionImport),
-                 query.results_query_part(MEAPredictionImport))
-        return query_str
+        raise NotImplementedError("")
 
     @classmethod
     def validate_cls(cls):
@@ -182,8 +168,7 @@ class AnnotationImport(DbObject):
                                   params={
                                       "fileUrl": url,
                                       "parent_id": parent_id,
-                                      'name': name,
-                                      'predictionType': cls.import_type.value
+                                      'name': name
                                   })
         return cls(client, response['createAnnotationImport'])
 
@@ -215,8 +200,7 @@ class AnnotationImport(DbObject):
             "file": None,
             "contentLength": content_len,
             "parent_id": parent_id,
-            "name": name,
-            "predictionType": cls.import_type.value
+            "name": name
         }
         operations = json.dumps({"variables": variables, "query": query_str})
         data = {
@@ -226,8 +210,9 @@ class AnnotationImport(DbObject):
         file_data = (file_name, bytes_data, NDJSON_MIME_TYPE)
         files = {file_name: file_data}
 
-        response = client.execute(data=data, files=files)
-        return cls(client, response['createAnnotationImport'])
+        print(data)
+        breakpoint()
+        return  client.execute(data=data, files=files)
 
     @classmethod
     def _create_from_objects(cls, client, parent_id, name, predictions):
@@ -268,14 +253,26 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def create_from_file(cls, client, model_run_id, name, path):
-        return cls._create_from_file(client=client,
+        breakpoint()
+        return cls(client, cls._create_from_file(client=client,
                                      parent_id=model_run_id,
                                      name=name,
-                                     path=path)
+                                     path=path)['createModelErrorAnalysisPredictionImport'])
 
     @classmethod
     def create_from_objects(cls, client, model_run_id, name, predictions):
-        return cls._create_from_objects(client, model_run_id, name, predictions)
+        return cls(client, cls._create_from_objects(client, model_run_id, name, predictions)['createModelErrorAnalysisPredictionImport'])
+
+    @classmethod
+    def _build_import_predictions_query(cls, file_args: str, vars: str):
+        query_str = """mutation createAnnotationImportPyApi($parent_id : ID!, $name: String!, %s) {
+        createModelErrorAnalysisPredictionImport(data: {
+            %s : $parent_id
+            name: $name
+            %s
+        }) {%s}
+        }""" % (vars, cls.id_name, file_args,query.results_query_part(cls))
+        return query_str
 
 
 class MALPredictionImport(AnnotationImport):
@@ -288,11 +285,26 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def create_from_file(cls, client, project_id, name, path):
-        return cls._create_from_file(client=client,
+        return cls(client, cls._create_from_file(client=client,
                                      parent_id=project_id,
                                      name=name,
-                                     path=path)
+                                     path=path)['createModelAssistedLabelingPredictionImport'])
 
     @classmethod
     def create_from_objects(cls, client, project_id, name, predictions):
-        return cls._create_from_objects(client, project_id, name, predictions)
+        return cls(client, cls._create_from_objects(client, project_id, name, predictions)['createModelAssistedLabelingPredictionImport'])
+
+    @classmethod
+    def _build_import_predictions_query(cls, file_args: str, vars: str):
+        query_str = """mutation createAnnotationImportPyApi($parent_id : ID!, $name: String!, %s) {
+        createModelAssistedLabelingPredictionImport(data: {
+            %s : $parent_id
+            name: $name
+            %s
+        }) {%s}
+        }""" % (vars, cls.id_name, file_args,
+                 query.results_query_part(cls))
+        return query_str
+
+
+
