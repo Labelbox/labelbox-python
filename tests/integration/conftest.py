@@ -334,8 +334,9 @@ def configured_project_with_label(client, rand_gen, annotation_submit_fn):
     upload_task = MALPredictionImport.create_from_objects(
         client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
-    time.sleep(1)
+    time.sleep(2)
     annotation_submit_fn(project.uid, data_row.uid)
+    time.sleep(2)
     yield project
     dataset.delete()
     project.delete()

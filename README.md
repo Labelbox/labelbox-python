@@ -39,6 +39,10 @@ Install using Python's Pip manager.
 ```
 pip install labelbox
 ```
+To install dependencies required for data processing modules use:
+```
+pip install labelbox[data]
+```
 
 ## Documentation
 

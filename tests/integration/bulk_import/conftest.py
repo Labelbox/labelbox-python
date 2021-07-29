@@ -105,7 +105,7 @@ def ontology():
 @pytest.fixture
 def configured_project(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
