@@ -36,7 +36,7 @@ def big_dataset(dataset: Dataset):
 
 def make_metadata(dr_id) -> DataRowMetadata:
     embeddings = [0.0] * 128
-    msg = "my-message" * 1000
+    msg = "a" * 50 + "a"
     time = datetime.utcnow()
 
     metadata = DataRowMetadata(
@@ -77,8 +77,8 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     metadata = []
     for dr in big_dataset.export_data_rows():
         metadata.append(make_metadata(dr.uid))
-    response = mdo.bulk_upsert(metadata)
-    assert response
+    errors = mdo.bulk_upsert(metadata)
+    assert len(errors) == 0
 
     for dr in big_dataset.export_data_rows():
         assert len(dr.metadata["fields"])
@@ -94,9 +94,10 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
     assert not len(datarow.metadata["fields"])
 
     metadata = make_metadata(datarow.uid)
-    mdo.bulk_upsert([metadata])
+    print(mdo.bulk_upsert([metadata]))
 
     assert len(datarow.metadata["fields"])
+
 
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid,
@@ -135,8 +136,8 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
                                 DataRowMetadataField(schema_id=TEXT_SCHEMA_ID,
                                                      value="test-message")
                             ]))
-    response = mdo.bulk_upsert(metadata)
-    assert response
+    errors = mdo.bulk_upsert(metadata)
+    assert len(errors) == 0
 
     deletes = []
     for dr in big_dataset.export_data_rows():
@@ -148,8 +149,8 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
                     CAPTURE_DT_SCHEMA_ID
                 ]))
 
-    response = mdo.bulk_delete(deletes)
-    assert response
+    errors = mdo.bulk_delete(deletes)
+    assert len(errors) == 0
     for dr in big_dataset.export_data_rows():
         assert len(dr.metadata["fields"]) == 1
         break
@@ -197,11 +198,11 @@ def test_upsert_non_existent_schema_id(datarow, mdo):
 
 def test_delete_non_existent_schema_id(datarow, mdo):
     assert not len(datarow.metadata["fields"])
-    results = mdo.bulk_delete([
+    mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid,
                               fields=[EMBEDDING_SCHEMA_ID])
     ])
-    assert results
+    # No message is returned
 
 
 @pytest.mark.slow
@@ -211,8 +212,8 @@ def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
         deletes.append(
             DeleteDataRowMetadata(data_row_id=dr.uid,
                                   fields=[EMBEDDING_SCHEMA_ID]))
-    response = mdo.bulk_delete(deletes)
-    assert response
+    errors = mdo.bulk_delete(deletes)
+    assert len(errors) == 0
 
     for dr in big_dataset.export_data_rows():
         assert not len(dr.metadata["fields"])
@@ -221,19 +222,19 @@ def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
 
 def test_parse_raw_metadata(mdo):
     example = {
-        'data_row_id':
+        'dataRowId':
             'ckr6kkfx801ui0yrtg9fje8xh',
         'fields': [{
-            'schema_id': 'cko8s9r5v0001h2dk9elqdidh',
+            'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
             'value': 'my-new-message'
         }, {
-            'schema_id': 'cko8sbczn0002h2dkdaxb5kal',
+            'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
             'value': {}
         }, {
-            'schema_id': 'cko8sbscr0003h2dk04w86hof',
+            'schemaId': 'cko8sbscr0003h2dk04w86hof',
             'value': {}
         }, {
-            'schema_id': 'cko8sdzv70006h2dk8jg64zvb',
+            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
             'value': '2021-07-20T21:41:14.606710Z'
         }]
     }
@@ -241,5 +242,10 @@ def test_parse_raw_metadata(mdo):
     parsed = mdo.parse_metadata([example])
     assert len(parsed) == 1
     row = parsed[0]
-    assert row.data_row_id == example["data_row_id"]
+    assert row.data_row_id == example["dataRowId"]
     assert len(row.fields) == 3
+
+
+
+
+
