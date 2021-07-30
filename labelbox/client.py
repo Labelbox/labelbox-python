@@ -16,6 +16,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.project import Project
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.model import Model
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
@@ -39,7 +40,8 @@ class Client:
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
-                 enable_experimental=False):
+                 enable_experimental=False,
+                 app_url="https://app.labelbox.com"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -52,6 +54,7 @@ class Client:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
             enable_experimental (bool): Indicates whether or not to use experimental features
+            app_url (str) : host url for all links to the web app
         Raises:
             labelbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
@@ -69,7 +72,10 @@ class Client:
             logger.info("Experimental features have been enabled")
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
-        self.endpoint = endpoint
+        self.app_url = app_url
+
+        # TODO: Make endpoints non-internal or support them as experimental
+        self.endpoint = endpoint.replace('/graphql', '/_gql')
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -79,7 +85,13 @@ class Client:
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
-    def execute(self, query, params=None, timeout=30.0, experimental=False):
+    def execute(self,
+                query=None,
+                params=None,
+                data=None,
+                files=None,
+                timeout=30.0,
+                experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -89,6 +101,8 @@ class Client:
         Args:
             query (str): The query to execute.
             params (dict): Query parameters referenced within the query.
+            data (str): json string containing the query to execute
+            files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
         Returns:
@@ -107,8 +121,9 @@ class Client:
                 most likely due to connection issues.
             labelbox.exceptions.LabelboxError: If an unknown error of any
                 kind occurred.
+            ValueError: If query and data are both None.
         """
-        logger.debug("Query: %s, params: %r", query, params)
+        logger.debug("Query: %s, params: %r, data %r", query, params, data)
 
         # Convert datetimes to UTC strings.
         def convert_value(value):
@@ -117,19 +132,31 @@ class Client:
                 value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
             return value
 
-        if params is not None:
-            params = {
-                key: convert_value(value) for key, value in params.items()
-            }
-
-        data = json.dumps({'query': query, 'variables': params}).encode('utf-8')
-
+        if query is not None:
+            if params is not None:
+                params = {
+                    key: convert_value(value) for key, value in params.items()
+                }
+            data = json.dumps({
+                'query': query,
+                'variables': params
+            }).encode('utf-8')
+        elif data is None:
+            raise ValueError("query and data cannot both be none")
         try:
-            response = requests.post(self.endpoint.replace('/graphql', '/_gql')
-                                     if experimental else self.endpoint,
-                                     data=data,
-                                     headers=self.headers,
-                                     timeout=timeout)
+            request = {
+                'url': self.endpoint,
+                'data': data,
+                'headers': self.headers,
+                'timeout': timeout
+            }
+            if files:
+                request.update({'files': files})
+                request['headers'] = {
+                    'Authorization': self.headers['Authorization']
+                }
+
+            response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -255,6 +282,8 @@ class Client:
                                     filename=filename,
                                     content_type=content_type)
 
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.InternalServerError))
     def upload_data(self,
                     content: bytes,
                     filename: str = None,
@@ -299,6 +328,13 @@ class Client:
                 "1": (filename, content, content_type) if
                      (filename and content_type) else content
             })
+
+        if response.status_code == 502:
+            error_502 = '502 Bad Gateway'
+            raise labelbox.exceptions.InternalServerError(error_502)
+        elif response.status_code == 503:
+            raise labelbox.exceptions.InternalServerError(response.text)
+
         try:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON
@@ -377,7 +413,7 @@ class Client:
         """
         return self._get_single(Organization, None)
 
-    def _get_all(self, db_object_type, where):
+    def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
 
         Args:
@@ -387,8 +423,9 @@ class Client:
         Returns:
             An iterable of `db_object_type` instances.
         """
-        not_deleted = db_object_type.deleted == False
-        where = not_deleted if where is None else where & not_deleted
+        if filter_deleted:
+            not_deleted = db_object_type.deleted == False
+            where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
         return PaginatedCollection(
@@ -522,3 +559,57 @@ class Client:
 
         """
         return DataRowMetadataOntology(self)
+
+    def get_model(self, model_id):
+        """ Gets a single Model with the given ID.
+
+            >>> model = client.get_model("<model_id>")
+
+        Args:
+            model_id (str): Unique ID of the Model.
+        Returns:
+            The sought Model.
+        Raises:
+            labelbox.exceptions.ResourceNotFoundError: If there is no
+                Model with the given ID.
+        """
+        return self._get_single(Model, model_id)
+
+    def get_models(self, where=None):
+        """ Fetches all the models the user has access to.
+
+            >>> models = client.get_models(where=(Model.name == "<model_name>"))
+
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Returns:
+            An iterable of Models (typically a PaginatedCollection).
+        """
+        return self._get_all(Model, where, filter_deleted=False)
+
+    def create_model(self, name, ontology_id):
+        """ Creates a Model object on the server.
+
+        >>> model = client.create_model(<model_name>, <ontology_id>)
+
+        Args:
+            name (string): Name of the model
+            ontology_id (string): ID of the related ontology
+        Returns:
+            A new Model object.
+        Raises:
+            InvalidAttributeError: If the Model type does not contain
+                any of the attribute names given in kwargs.
+        """
+        query_str = """mutation createModelPyApi($name: String!, $ontologyId: ID!){
+            createModel(data: {name : $name, ontologyId : $ontologyId}){
+                    %s
+                }
+            }""" % query.results_query_part(Model)
+
+        result = self.execute(query_str, {
+            "name": name,
+            "ontologyId": ontology_id
+        })
+        return Model(self, result['createModel'])
