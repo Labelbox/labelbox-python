@@ -98,7 +98,6 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
 
     assert len(datarow.metadata["fields"])
 
-
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid,
                               fields=[m.schema_id for m in metadata.fields])
@@ -244,8 +243,3 @@ def test_parse_raw_metadata(mdo):
     row = parsed[0]
     assert row.data_row_id == example["dataRowId"]
     assert len(row.fields) == 3
-
-
-
-
-
