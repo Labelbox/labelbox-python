@@ -1,11 +1,7 @@
-from typing import Any, Dict, List, Union
-
 import pytest
 
-from labelbox import LabelingFrontend
 from labelbox.exceptions import InconsistentOntologyException
-from labelbox.schema.ontology import Tool, Classification, Option, \
-    Ontology, OntologyBuilder
+from labelbox import Tool, Classification, Option, OntologyBuilder
 
 _SAMPLE_ONTOLOGY = {
     "tools": [{
