@@ -42,15 +42,13 @@ def environ() -> Environ:
 def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
-    #return 'https://staging-api.labelbox.com/graphql'
-    return "http://host.docker.internal:8080/_gql"
+    return 'https://staging-api.labelbox.com/graphql'
 
 
 def testing_api_key(environ: str) -> str:
     if environ == Environ.PROD:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-    #return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
-    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3E4bHkxbjYwMDAxdHl5amUydGVkaWxuIiwib3JnYW5pemF0aW9uSWQiOiJja3E4bHkxbWMwMDAwdHl5ajQydTE3cmNhIiwiYXBpS2V5SWQiOiJja3JxNzl6ODIwMWphYzJ5amNla2JmbmFtIiwic2VjcmV0IjoiMzY5MDE2YWEzYzg2ODNhMjk0ZTc3ZjIxMGE4YWFkNWQiLCJpYXQiOjE2Mjc2NDA3NDgsImV4cCI6MjI1ODc5Mjc0OH0.icBIdWJkW8oK3Z3wLN9-C8R9rQPxox3wTQTTbpqI3Ro"
+    return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
 
 
 def cancel_invite(client, invite_id):
