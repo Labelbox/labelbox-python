@@ -36,7 +36,7 @@ def big_dataset(dataset: Dataset):
 
 def make_metadata(dr_id) -> DataRowMetadata:
     embeddings = [0.0] * 128
-    msg = "a" * 50 + "a"
+    msg = "A message"
     time = datetime.utcnow()
 
     metadata = DataRowMetadata(
