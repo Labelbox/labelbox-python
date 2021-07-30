@@ -1,5 +1,4 @@
 # type: ignore
-
 import datetime
 from enum import Enum
 from itertools import chain
