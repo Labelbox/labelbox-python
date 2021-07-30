@@ -59,9 +59,8 @@ def test_get(client, model_run):
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     model_run.add_predictions(name=name, predictions=url)
 
-    annotation_import = MEAPredictionImport.from_name(client,
-                                                      parent_id=model_run.uid,
-                                                      name=name)
+    annotation_import = MEAPredictionImport.from_name(
+        client, model_run_id=model_run.uid, name=name)
 
     assert annotation_import.model_run_id == model_run.uid
     check_running_state(annotation_import, name, url)

@@ -1,5 +1,6 @@
 from typing import Dict, Iterable, Union
 from pathlib import Path
+import os
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
@@ -48,8 +49,12 @@ class ModelRun(DbObject):
         """
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
-            return MEAPredictionImport.create_from_file(path=predictions,
-                                                        **kwargs)
+            if os.path.exists(predictions):
+                return MEAPredictionImport.create_from_file(path=predictions,
+                                                            **kwargs)
+            else:
+                return MEAPredictionImport.create_from_url(url=predictions,
+                                                           **kwargs)
         elif isinstance(predictions, Iterable):
             return MEAPredictionImport.create_from_objects(
                 predictions=predictions, **kwargs)
