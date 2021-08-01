@@ -38,7 +38,10 @@ class RasterData(BaseData):
         Returns:
             numpy array representing the image
         """
-        return np.array(Image.open(BytesIO(image_bytes)))[:, :, :3]
+        arr = np.array(Image.open(BytesIO(image_bytes)))
+        if len(arr.shape) == 2:
+            arr = np.stack((arr,) * 3, axis=-1)
+        return arr[:, :, :3]
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
         """
@@ -74,7 +77,8 @@ class RasterData(BaseData):
             with open(self.file_path, "rb") as img:
                 im_bytes = img.read()
             self.im_bytes = im_bytes
-            return self.bytes_to_np(im_bytes)
+            arr = self.bytes_to_np(im_bytes)
+            return arr
         elif self.url is not None:
             im_bytes = self.fetch_remote()
             self.im_bytes = im_bytes

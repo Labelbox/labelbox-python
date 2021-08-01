@@ -1,26 +1,54 @@
-
-
-
 # Mapping can be used to select classes as instsance or segmentation
 # By default polygon will be instance and segmentation will be semantic
 
 # Will use subclasses too..
 # checklist and radio will be turned into underscore delimitated names
 
+from labelbox.data.serialization.coco.annotation import CocoInstanceDataset, CocoPanopticDataset
 
 
 class COCOConverter:
-    def serialize_to_object_detection(mapping = None):
-        # Polygons and boxes are converted
-        # Optionally extract objects
+    """
+    Note that this class is only compatible with image data.. it will ignore other data types.
+    # TODO: Filter out video annotations..
+    """
 
-    def serialize_to_panoptic(mapping = None):
-        ...
-        # coco panoptic assigns each pixel an object
-        # Instance segmentation for polygons
-        # Semantic segmentation for masks
+    def serialize_to_object_detection(data):
+        im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
+        labels = COCOConverter.deserialize_instance(data, image_root=im_root)
+        return CocoInstanceDataset.from_common(labels=labels,
+                                               image_root=im_root).dict()
 
+    def serialize_to_panoptic(data):
+        #im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
+        #labels = COCOConverter.deserialize_panoptic(data, image_root = im_root, seg_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/2017_panoptic/imq/panoptic_val2017")
+        im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
+        labels = COCOConverter.deserialize_instance(data, image_root=im_root)
+        res = CocoPanopticDataset.from_common(
+            labels=labels,
+            image_root=im_root,
+            seg_root=
+            "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/masks"
+        )
+        return res.dict()
 
-        # Convert to fpn compatible model with:
-        # https://github.com/facebookresearch/detectron2/blob/master/datasets/prepare_panoptic_fpn.py
+    @classmethod
+    def deserialize_panoptic(
+        cls,
+        data,
+        image_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017",
+        seg_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/2017_panoptic/imq/panoptic_val2017"
+    ):
+        objs = CocoPanopticDataset(**data)
+        gen = objs.to_common(image_root, seg_root)
+        return gen
 
+    @classmethod
+    def deserialize_instance(
+        cls,
+        data,
+        image_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
+    ):
+        objs = CocoInstanceDataset(**data)
+        gen = objs.to_common(image_root)
+        return gen
