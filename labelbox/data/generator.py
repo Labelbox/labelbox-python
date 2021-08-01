@@ -2,7 +2,6 @@ import logging
 import threading
 from queue import Queue
 from typing import Any, Iterable
-from concurrent.futures import ThreadPoolExecutor
 import threading
 
 logger = logging.getLogger(__name__)
