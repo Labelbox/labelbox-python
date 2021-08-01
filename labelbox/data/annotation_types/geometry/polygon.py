@@ -18,8 +18,11 @@ class Polygon(Geometry):
             self.points.append(self.points[0])
         return geojson.Polygon([[[point.x, point.y] for point in self.points]])
 
-    def raster(self, height: int, width: int,
-               color=(255, 255, 255)) -> np.ndarray:
+    def raster(self,
+               height: int,
+               width: int,
+               color=(255, 255, 255),
+               canvas=None) -> np.ndarray:
         """
         Draw the polygon onto a 3d mask
 
@@ -30,7 +33,8 @@ class Polygon(Geometry):
         Returns:
             numpy array representing the mask with the polygon drawn on it.
         """
-        canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        if canvas is None:
+            canvas = np.zeros((height, width, 3), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
         return cv2.fillPoly(canvas, pts=pts, color=color)
 

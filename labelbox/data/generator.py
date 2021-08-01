@@ -3,6 +3,7 @@ import threading
 from queue import Queue
 from typing import Any, Iterable
 from concurrent.futures import ThreadPoolExecutor
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +46,13 @@ class PrefetchGenerator:
         # Can only iterate over once it the queue.get hangs forever.
         self.done = False
         self.num_executors = num_executors
-        with ThreadPoolExecutor(max_workers=num_executors) as executor:
-            self.futures = [
-                executor.submit(self.fill_queue) for _ in range(num_executors)
-            ]
+        self.threads = [
+            threading.Thread(target=self.fill_queue)
+            for _ in range(num_executors)
+        ]
+        for thread in self.threads:
+            thread.daemon = True
+            thread.start()
 
     def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
@@ -77,6 +81,8 @@ class PrefetchGenerator:
             self.completed_threads += 1
             if self.completed_threads == self.num_executors:
                 self.done = True
+                for thread in self.threads:
+                    thread.join()
                 raise StopIteration
             value = self.queue.get()
         return value
