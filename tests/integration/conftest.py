@@ -160,8 +160,7 @@ def project(client, rand_gen):
         """
         Label = Entity.Label
         kwargs[Label.project] = project
-        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
-                                                    0.0)
+        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,0.0)
         data = {
             Label.attribute(attr) if isinstance(attr, str) else attr:
             value.uid if isinstance(value, DbObject) else value
@@ -191,9 +190,11 @@ LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 @pytest.fixture
 def label_pack(project, rand_gen):
     client = project.client
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = client.create_dataset(name=rand_gen(str))
+    project.datasets.connect(dataset)
     data_row = dataset.create_data_row(row_data=IMG_URL)
     label = project.create_label(data_row=data_row, label=rand_gen(str))
+    time.sleep(10)
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
 

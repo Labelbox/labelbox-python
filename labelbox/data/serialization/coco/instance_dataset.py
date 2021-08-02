@@ -17,6 +17,7 @@ from ...annotation_types.collection import LabelCollection
 
 
 def get_image(label, image_root, image_id):
+    # TODO: This should prob just be the file name...
     path = os.path.join(image_root, f"{image_id}.jpg")
 
     if not os.path.exists(path):
