@@ -102,7 +102,6 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
     assert not len(datarow.metadata["fields"])
 
     metadata = make_metadata(datarow.uid)
-    print(mdo.bulk_upsert([metadata]))
 
     assert len(datarow.metadata["fields"])
 
