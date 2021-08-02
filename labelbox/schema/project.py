@@ -191,12 +191,6 @@ class Project(DbObject, Updateable, Deletable):
         """
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds)
-
-        if 'LBV1Converter' not in dir():
-            raise ImportError(
-                "Missing depdencies to import converter. "
-                "Use `pip install labelbox[data]` to add missing dependencies. "
-                "Or download raw jso with project.export_labels()")
         _check_converter_import()
         return LBV1Converter.deserialize(json_data)
 
