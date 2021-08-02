@@ -24,11 +24,11 @@ def mdo(client):
 @pytest.fixture
 def big_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
-                                        {
-                                            "row_data": IMG_URL,
-                                            "external_id": "my-image"
-                                        },
-                                    ] * 1000)
+        {
+            "row_data": IMG_URL,
+            "external_id": "my-image"
+        },
+    ] * 1000)
     task.wait_till_done()
 
     yield dataset
