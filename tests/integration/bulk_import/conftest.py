@@ -317,8 +317,8 @@ def model_run(client, rand_gen, configured_project, annotation_submit_fn,
     model_run_s = model.create_model_run(name)
 
     time.sleep(3)
-    model_run_s.upsert_labels(
-        [label.uid for label in configured_project.labels()])
+    labels = configured_project.export_labels(download=True)
+    model_run_s.upsert_labels([label['ID'] for label in labels])
     time.sleep(3)
 
     yield model_run_s
