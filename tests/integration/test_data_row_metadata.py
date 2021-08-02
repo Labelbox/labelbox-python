@@ -3,7 +3,8 @@ from datetime import datetime
 import pytest
 
 from labelbox import DataRow, Dataset
-from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DeleteDataRowMetadata
+from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DeleteDataRowMetadata, \
+    DataRowMetadataOntology
 
 IMG_URL = "https://picsum.photos/id/829/200/300"
 FAKE_SCHEMA_ID = "0" * 25
@@ -23,11 +24,11 @@ def mdo(client):
 @pytest.fixture
 def big_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
-        {
-            "row_data": IMG_URL,
-            "external_id": "my-image"
-        },
-    ] * 1000)
+                                        {
+                                            "row_data": IMG_URL,
+                                            "external_id": "my-image"
+                                        },
+                                    ] * 1000)
     task.wait_till_done()
 
     yield dataset
@@ -65,11 +66,18 @@ def test_get_datarow_metadata(datarow):
     assert len(md)
 
 
-def test_bulk_upsert_datarow_metadata(datarow, mdo):
+def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
     assert not len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
     assert len(datarow.metadata["fields"])
+
+
+def test_parse_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
+    assert not len(datarow.metadata["fields"])
+    metadata = make_metadata(datarow.uid)
+    mdo.bulk_upsert([metadata])
+    assert mdo.parse_metadata([datarow.metadata])
 
 
 @pytest.mark.slow

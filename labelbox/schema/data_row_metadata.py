@@ -194,10 +194,13 @@ class DataRowMetadataOntology:
 
         """
         parsed = []
+        if isinstance(unparsed, dict):
+            raise ValueError("Pass a list of dictionaries")
+
         for dr in unparsed:
             fields = []
             for f in dr["fields"]:
-                schema = self.all_fields_id_index[f["schemaId"]]
+                schema = self.all_fields_id_index[f["schema_id"]]
                 if schema.kind == DataRowMetadataKind.enum:
                     continue
                 elif schema.kind == DataRowMetadataKind.option:
@@ -209,7 +212,7 @@ class DataRowMetadataOntology:
 
                 fields.append(field)
             parsed.append(
-                DataRowMetadata(data_row_id=dr["dataRowId"], fields=fields))
+                DataRowMetadata(data_row_id=dr["data_row_id"], fields=fields))
         return parsed
 
     def bulk_upsert(
@@ -371,8 +374,8 @@ class DataRowMetadataOntology:
             deletes.add(schema.id)
 
         return _DeleteBatchDataRowMetadata(
-            dataRowId=delete.data_row_id,
-            schemaIds=list(delete.fields)).dict(by_alias=True)
+            data_row_id=delete.data_row_id,
+            schema_ids=list(delete.fields)).dict(by_alias=True)
 
 
 def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
