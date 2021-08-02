@@ -18,8 +18,6 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
-logger = logging.getLogger(__name__)
-
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
 except AttributeError:
@@ -30,6 +28,8 @@ try:
     from labelbox.data.serialization import LBV1Converter
 except ImportError:
     pass
+
+logger = logging.getLogger(__name__)
 
 
 class Project(DbObject, Updateable, Deletable):
