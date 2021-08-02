@@ -4,7 +4,8 @@
 # Will use subclasses too..
 # checklist and radio will be turned into underscore delimitated names
 
-from labelbox.data.serialization.coco.annotation import CocoInstanceDataset, CocoPanopticDataset
+from labelbox.data.serialization.coco.instance_dataset import CocoInstanceDataset
+from labelbox.data.serialization.coco.panoptic_dataset import CocoPanopticDataset
 
 
 class COCOConverter:
