@@ -102,6 +102,7 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
     assert not len(datarow.metadata["fields"])
 
     metadata = make_metadata(datarow.uid)
+    mdo.bulk_upsert([metadata])
 
     assert len(datarow.metadata["fields"])
 
@@ -228,19 +229,19 @@ def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
 
 def test_parse_raw_metadata(mdo):
     example = {
-        'dataRowId':
+        'data_row_id':
             'ckr6kkfx801ui0yrtg9fje8xh',
         'fields': [{
-            'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
+            'schema_id': 'cko8s9r5v0001h2dk9elqdidh',
             'value': 'my-new-message'
         }, {
-            'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
+            'schema_id': 'cko8sbczn0002h2dkdaxb5kal',
             'value': {}
         }, {
-            'schemaId': 'cko8sbscr0003h2dk04w86hof',
+            'schema_id': 'cko8sbscr0003h2dk04w86hof',
             'value': {}
         }, {
-            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
+            'schema_id': 'cko8sdzv70006h2dk8jg64zvb',
             'value': '2021-07-20T21:41:14.606710Z'
         }]
     }
@@ -248,5 +249,5 @@ def test_parse_raw_metadata(mdo):
     parsed = mdo.parse_metadata([example])
     assert len(parsed) == 1
     row = parsed[0]
-    assert row.data_row_id == example["dataRowId"]
+    assert row.data_row_id == example["data_row_id"]
     assert len(row.fields) == 3

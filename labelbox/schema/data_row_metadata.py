@@ -39,7 +39,7 @@ OptionId: Type[SchemaId] = SchemaId  # enum option
 DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId]
 
 
-class CamelCaseMixin(BaseModel):
+class _CamelCaseMixin(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
@@ -47,22 +47,22 @@ class CamelCaseMixin(BaseModel):
 
 
 # Metadata base class
-class DataRowMetadataField(CamelCaseMixin):
+class DataRowMetadataField(_CamelCaseMixin):
     schema_id: SchemaId
     value: DataRowMetadataValue
 
 
-class DataRowMetadata(CamelCaseMixin):
+class DataRowMetadata(_CamelCaseMixin):
     data_row_id: str
     fields: List[DataRowMetadataField]
 
 
-class DeleteDataRowMetadata(CamelCaseMixin):
+class DeleteDataRowMetadata(_CamelCaseMixin):
     data_row_id: str
     fields: List[SchemaId]
 
 
-class DataRowMetadataBatchResponse(CamelCaseMixin):
+class DataRowMetadataBatchResponse(_CamelCaseMixin):
     data_row_id: str
     error: str
     fields: List[Union[DataRowMetadataField, SchemaId]]
@@ -73,18 +73,18 @@ class DataRowMetadataBatchResponse(CamelCaseMixin):
 
 
 # Bulk upsert values
-class _UpsertDataRowMetadataInput(CamelCaseMixin):
+class _UpsertDataRowMetadataInput(_CamelCaseMixin):
     schema_id: str
     value: Union[str, List, dict]
 
 
 # Batch of upsert values for a datarow
-class _UpsertBatchDataRowMetadata(CamelCaseMixin):
+class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
     data_row_id: str
     fields: List[_UpsertDataRowMetadataInput]
 
 
-class _DeleteBatchDataRowMetadata(CamelCaseMixin):
+class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_id: str
     schema_ids: List[SchemaId]
 
@@ -238,7 +238,7 @@ class DataRowMetadataOntology:
             An empty list means the upload was successful.
         """
 
-        if not (len(metadata)):
+        if not len(metadata):
             raise ValueError("Empty list passed")
 
         def _batch_upsert(
