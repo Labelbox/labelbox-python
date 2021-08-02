@@ -20,7 +20,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         updated_at (datetime)
         created_at (datetime)
         media_attributes (dict): generated media attributes for the datarow
-        metadta
+        metadata (dict): uploaded metadata
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
