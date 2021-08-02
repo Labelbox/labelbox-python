@@ -17,13 +17,17 @@ from labelbox.exceptions import InvalidQueryError, LabelboxError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
-from labelbox.data.serialization import LBV1Converter
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
 except AttributeError:
     from backports.datetime_fromisoformat import MonkeyPatch
     MonkeyPatch.patch_fromisoformat()
+
+try:
+    from labelbox.data.serialization import LBV1Converter
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +179,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 "frames key not found in the first label. Cannot export video data."
             )
+        _check_converter_import()
         return LBV1Converter.deserialize_video(json_data, self.client)
 
     def label_generator(self, timeout_seconds=60):
@@ -186,6 +191,7 @@ class Project(DbObject, Updateable, Deletable):
         """
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds)
+        _check_converter_import()
         return LBV1Converter.deserialize(json_data)
 
     def export_labels(self, download=False, timeout_seconds=60):
@@ -647,3 +653,11 @@ LabelerPerformance = namedtuple(
     "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
+
+
+def _check_converter_import():
+    if 'LBV1Converter' not in globals():
+        raise ImportError(
+            "Missing dependencies to import converter. "
+            "Use `pip install labelbox[data]` to add missing dependencies. "
+            "or download raw json with project.export_labels()")
