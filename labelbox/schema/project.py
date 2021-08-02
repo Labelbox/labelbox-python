@@ -656,7 +656,7 @@ LabelerPerformance.__doc__ = (
 
 
 def _check_converter_import():
-    if 'LBV1Converter' not in dir():
+    if 'LBV1Converter' not in globals():
         raise ImportError(
             "Missing dependencies to import converter. "
             "Use `pip install labelbox[data]` to add missing dependencies. "
