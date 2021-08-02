@@ -112,7 +112,6 @@ def queries():
 
 
 class IntegrationClient(Client):
-
     def __init__(self, environ: str) -> None:
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
