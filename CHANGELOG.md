@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.0b0
+# Version 3.0.0-rc0
 ## Added
 * Annotation types
     - A set of python objects for working with labelbox data
