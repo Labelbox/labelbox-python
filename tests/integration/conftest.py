@@ -1,30 +1,25 @@
 import os
 import re
+import uuid
+import time
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
 from random import randint
 from string import ascii_letters
 from types import SimpleNamespace
-import time
-import uuid
-import os
-import re
 
 import pytest
 
-from labelbox import Client, LabelingFrontend
-from labelbox.orm.query import results_query_part
-from labelbox.schema.invite import Invite
-from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Entity
+from labelbox import Client
+from labelbox import LabelingFrontend
 from labelbox.orm import query
+from labelbox.schema.annotation_import import MALPredictionImport
+from labelbox.orm.db_object import Entity, DbObject
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
-
-from labelbox.schema.ontology import OntologyBuilder, Tool
-from labelbox import LabelingFrontend, MALPredictionImport
+from labelbox import OntologyBuilder, Tool
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -79,7 +74,7 @@ def get_project_invites(client, project_id):
         project(where: {id: $%s}) {id
         invites(from: $from, first: $first) { nodes { %s
         projectInvites { projectId projectRoleName } } nextCursor}}}
-    """ % (id_param, id_param, results_query_part(Invite))
+    """ % (id_param, id_param, query.results_query_part(Invite))
     return PaginatedCollection(client,
                                query_str, {id_param: project_id},
                                ['project', 'invites', 'nodes'],
@@ -184,6 +179,20 @@ def dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
     dataset.delete()
+
+
+@pytest.fixture
+def datarow(dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": IMG_URL,
+            "external_id": "my-image"
+        },
+    ])
+    task.wait_till_done()
+    dr = next(dataset.data_rows())
+    yield dr
+    dr.delete()
 
 
 LabelPack = namedtuple("LabelPack", "project dataset data_row label")
