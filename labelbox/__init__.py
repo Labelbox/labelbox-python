@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "3.0b0"
+__version__ = "3.0.0-rc0"
 
 from labelbox.schema.project import Project
 from labelbox.client import Client
