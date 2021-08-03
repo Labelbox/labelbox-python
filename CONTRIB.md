@@ -47,7 +47,7 @@ yapf labelbox -i --verbose --recursive --parallel --style "google"
 Each release should follow the following steps:
 
 1. Update the Python SDK package version in `REPO_ROOT/setup.py`
-2. Make sure the `CHANGELOG.md` contains appropriate info 
+2. Make sure the `CHANGELOG.md` contains appropriate info
 3. Commit these changes and tag the commit in Git as `vX.Y`
 4. Merge `develop` to `master` (fast-forward only).
 5. Create a GitHub release.
@@ -55,6 +55,3 @@ Each release should follow the following steps:
   - Build the library in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
   - Upload the distribution archives in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives)
   with credentials for the `labelbox` PyPI user.
-  - Run the `REPO_ROOT/tools/api_reference_generator.py` script to update
-  [HelpDocs documentation](https://labelbox.helpdocs.io/docs/). You will need
-  to provide a HelpDocs API key for.
