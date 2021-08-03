@@ -29,8 +29,16 @@ class LBV1Converter:
         Returns:
             LabelGenerator containing the video data.
         """
-        label_generator = (LBV1Label(**example).to_common()
-                           for example in LBV1VideoIterator(json_data, client))
+
+        def label_generator():
+            for example in LBV1VideoIterator(json_data, client):
+                if example['Label']:
+                    if 'frames' not in example['Label']:
+                        raise ValueError(
+                            "Use `LBV1Converter.deserialize` to process non-video data"
+                        )
+                    yield LBV1Label(**example).to_common()
+
         return LabelGenerator(data=label_generator)
 
     @staticmethod
@@ -50,7 +58,9 @@ class LBV1Converter:
                     raise ValueError(
                         "Use `LBV1Converter.deserialize_video` to process video"
                     )
-                yield LBV1Label(**example).to_common()
+                if example['Label']:
+                    # Don't construct empty dict
+                    yield LBV1Label(**example).to_common()
 
         return LabelGenerator(data=label_generator())
 
