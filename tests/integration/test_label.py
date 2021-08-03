@@ -9,6 +9,7 @@ from labelbox import Label
 IMG_URL = "https://picsum.photos/200/300"
 
 
+@pytest.mark.skip("Cannot query for labels created with create_label")
 def test_labels(label_pack):
     project, dataset, data_row, label = label_pack
 
@@ -55,6 +56,7 @@ def test_label_update(label_pack):
     assert label.label == "something else"
 
 
+@pytest.mark.skip("Cannot query for labels created with create_label")
 def test_label_filter_order(client, project, rand_gen):
     dataset_1 = client.create_dataset(name=rand_gen(str), projects=project)
     dataset_2 = client.create_dataset(name=rand_gen(str), projects=project)
@@ -83,6 +85,7 @@ def test_label_filter_order(client, project, rand_gen):
     project.delete()
 
 
+@pytest.mark.skip("Cannot query for labels created with create_label")
 def test_label_bulk_deletion(project, rand_gen):
     dataset = project.client.create_dataset(name=rand_gen(str),
                                             projects=project)
