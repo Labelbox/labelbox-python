@@ -40,7 +40,7 @@ from labelbox.schema.project import LabelerPerformance
 GENERAL_CLASSES = [labelbox.Client]
 SCHEMA_CLASSES = [
     labelbox.Project, labelbox.Dataset, labelbox.DataRow, labelbox.Label,
-    labelbox.AssetMetadata, labelbox.LabelingFrontend, labelbox.Task,
+    labelbox.LabelingFrontend, labelbox.Task,
     labelbox.Webhook, labelbox.User, labelbox.Organization, labelbox.Review,
     LabelerPerformance
 ]
