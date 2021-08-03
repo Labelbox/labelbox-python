@@ -1,7 +1,10 @@
 import uuid
+
 import pytest
+import time
 
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.annotation_import import MALPredictionImport
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -100,23 +103,27 @@ def ontology():
 
 
 @pytest.fixture
-def configured_project(client, project, ontology, dataset):
+def configured_project(client, ontology, rand_gen):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
+    data_row_ids = []
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
-        dataset.create_data_row(row_data=IMG_URL)
+        data_row_ids.append(dataset.create_data_row(row_data=IMG_URL).uid)
     project.datasets.connect(dataset)
+    project.data_row_ids = data_row_ids
     yield project
+    project.delete()
+    dataset.delete()
 
 
 @pytest.fixture
 def prediction_id_mapping(configured_project):
     #Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized
-    inferences = []
-    datarows = [d for d in list(configured_project.datasets())[0].data_rows()]
     result = {}
 
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
@@ -128,7 +135,7 @@ def prediction_id_mapping(configured_project):
             "uuid": str(uuid.uuid4()),
             "schemaId": tool['featureSchemaId'],
             "dataRow": {
-                "id": datarows[idx].uid,
+                "id": configured_project.data_row_ids[idx],
             },
             'tool': tool
         }
@@ -266,11 +273,54 @@ def video_checklist_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def predictions(polygon_inference, rectangle_inference, line_inference,
-                entity_inference, segmentation_inference, checklist_inference,
-                text_inference):
+def model_run_predictions(polygon_inference, rectangle_inference,
+                          line_inference):
+    # Not supporting mask since there isn't a signed url representing a seg mask to upload
+    return [polygon_inference, rectangle_inference, line_inference]
+
+
+@pytest.fixture
+def object_predictions(polygon_inference, rectangle_inference, line_inference,
+                       entity_inference, segmentation_inference):
     return [
         polygon_inference, rectangle_inference, line_inference,
-        entity_inference, segmentation_inference, checklist_inference,
-        text_inference
+        entity_inference, segmentation_inference
     ]
+
+
+@pytest.fixture
+def classification_predictions(checklist_inference, text_inference):
+    return [checklist_inference, text_inference]
+
+
+@pytest.fixture
+def predictions(object_predictions, classification_predictions):
+    return object_predictions + classification_predictions
+
+
+@pytest.fixture
+def model_run(client, rand_gen, configured_project, annotation_submit_fn,
+              model_run_predictions):
+    configured_project.enable_model_assisted_labeling()
+    ontology = configured_project.ontology()
+
+    upload_task = MALPredictionImport.create_from_objects(
+        client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
+        model_run_predictions)
+    upload_task.wait_until_done()
+
+    for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
+        annotation_submit_fn(configured_project.uid, data_row_id)
+
+    data = {"name": rand_gen(str), "ontology_id": ontology.uid}
+    model = client.create_model(data["name"], data["ontology_id"])
+    name = rand_gen(str)
+    model_run_s = model.create_model_run(name)
+
+    time.sleep(3)
+    labels = configured_project.export_labels(download=True)
+    model_run_s.upsert_labels([label['ID'] for label in labels])
+    time.sleep(3)
+
+    yield model_run_s
+    # TODO: Delete resources when that is possible ..

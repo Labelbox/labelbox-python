@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from itertools import islice
-from multiprocessing.dummy import Pool as ThreadPool
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import ndjson
 from io import StringIO
@@ -23,6 +23,7 @@ class Dataset(DbObject, Updateable, Deletable):
         description (str)
         updated_at (datetime)
         created_at (datetime)
+        row_count (int): The number of rows in the dataset. Fetch the dataset again to update since this is cached.
 
         projects (Relationship): `ToMany` relationship to Project
         data_rows (Relationship): `ToMany` relationship to DataRow
@@ -34,6 +35,7 @@ class Dataset(DbObject, Updateable, Deletable):
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
+    row_count = Field.Int("row_count")
 
     # Relationships
     projects = Relationship.ToMany("Project", True)
@@ -120,8 +122,11 @@ class Dataset(DbObject, Updateable, Deletable):
                 item = {DataRow.row_data: item_url, DataRow.external_id: item}
             return item
 
-        with ThreadPool(file_upload_thread_count) as thread_pool:
-            items = thread_pool.map(upload_if_necessary, items)
+        with ThreadPoolExecutor(file_upload_thread_count) as executor:
+            futures = [
+                executor.submit(upload_if_necessary, item) for item in items
+            ]
+            items = [future.result() for future in as_completed(futures)]
 
         def convert_item(item):
             # Don't make any changes to tms data

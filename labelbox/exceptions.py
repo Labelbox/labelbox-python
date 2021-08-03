@@ -36,7 +36,7 @@ class ResourceNotFoundError(LabelboxError):
             db_object_type (type): A labelbox.schema.DbObject subtype.
             params (dict): Dict of params identifying the sought resource.
         """
-        super().__init__("Resouce '%s' not found for params: %r" %
+        super().__init__("Resource '%s' not found for params: %r" %
                          (db_object_type.type_name(), params))
         self.db_object_type = db_object_type
         self.params = params

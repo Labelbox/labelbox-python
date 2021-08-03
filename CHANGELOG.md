@@ -1,8 +1,71 @@
 # Changelog
 
+# Version 3.0.0-rc0
+## Added
+* Annotation types
+    - A set of python objects for working with labelbox data
+    - Creates a standard interface for both exports and imports
+    - See example notebooks on how to use under examples/annotation_types
+    - Note that these types are not yet supported for tiled imagery
+* MEA Support
+    - Beta MEA users can now just use the latest SDK release
+* Metadata support
+    - New metadata features are now fully supported by the SDK
+* Easier export
+    - `project.export_labels()` accepts a boolean indicating whether or not to download the result
+    - Create annotation objects directly from exports with `project.label_generator()` or `project.video_label_generator()`
+    - `project.video_label_generator()` asynchronously fetches video annotations
+* Retry logic on data uploads
+    - Bulk creation of data rows will be more reliable
+* Datasets
+    - Determine the number of data rows just by calling `dataset.row_count`.
+    - Updated threading logic in create_data_rows() to make it compatible with aws lambdas
+* Ontology
+    - `OntologyBuilder`, `Classification`, `Option`, and `Tool` can now be imported from `labelbox` instead of `labelbox.schema.ontology`
+
+## Removed
+* Deprecated:
+    - `project.reviews()`
+    - `project.create_prediction()`
+    - `project.create_prediction_model()`
+    - `project.create_label()`
+    - `Project.predictions()`
+    - `Project.active_prediction_model`
+    - `data_row.predictions`
+    - `PredictionModel`
+    - `Prediction`
+* Replaced:
+    - `data_row.metadata()` use `data_row.attachments()` instead
+    - `data_row.create_metadata()` use `data_row.create_attachments()` instead
+    - `AssetMetadata` use `AssetAttachment` instead
+
+## Fixes
+* Support derived classes of ontology objects when using `from_dict`
+* Notebooks:
+    - Video export bug where the code would fail if the exported projects had tools other than bounding boxes
+    - MAL demos were broken due to an image download failing.
+
+## Misc
+* Data processing dependencies are not installed by default to for users that only want client functionality.
+* To install all dependencies required for the data modules (annotation types and mea metric calculation) use `pip install labelbox[data]`
+
+# Version 2.7b1+mea (2021-06-27)
+## Fix
+* No longer convert `ModelRun.created_by_id` to cuid on construction of a `ModelRun`.
+    * This was causing queries for ModelRuns to fail.
+
+# Version 2.7b0+mea (2021-06-27)
+## Fix
+* Update `AnnotationGroup` to expect labelId to be a cuid instead of uuid.
+* Update `datarow_miou` to support masks with multiple classes in them.
+
 # Version 2.7.0 (2021-06-27)
 ## Added
 * Added `dataset.export_data_rows()` which returns all `DataRows` for a `Dataset`.
+
+# Version 2.6b2+mea (2021-06-16)
+## Added
+* `ModelRun.annotation_groups()` to fetch data rows and label information for a model run
 
 # Version 2.6.0 (2021-06-11)
 ## Fix
@@ -15,6 +78,15 @@
     * Use `DataRow.attachments()` instead of `DataRow.metadata()`
     * Use `DataRow.create_attachment()` instead of `DataRow.create_metadata()`
 * Update pydantic version
+
+# Version 2.5b0+mea (2021-06-11)
+## Added
+* Added new `Model` and 'ModelRun` entities
+* Update client to support creating and querying for `Model`s
+* Implement new prediction import pipeline to support both MAL and MEA
+* Added notebook to demonstrate how to use MEA
+* Added `datarow_miou` for calculating datarow level iou scores
+
 
 # Version 2.5.6 (2021-05-19)
 ## Fix

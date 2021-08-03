@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+from typing import List, Dict, Union
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
@@ -18,6 +20,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         updated_at (datetime)
         created_at (datetime)
         media_attributes (dict): generated media attributes for the datarow
+        metadata (dict): uploaded metadata
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
@@ -25,7 +28,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         labels (Relationship): `ToMany` relationship to Label
         attachments (Relationship) `ToMany` relationship with AssetAttachment
         metadata (Relationship): This Relationship is Deprecated. Please use `DataRow.attachments()` instead
-        predictions (Relationship): `ToMany` relationship to Prediction
     """
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
@@ -38,21 +40,44 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     labels = Relationship.ToMany("Label", True)
-
-    metadata = Relationship.ToMany(
-        "AssetMetadata",
-        False,
-        "metadata",
-        deprecation_warning=
-        "`DataRow.metadata()` is deprecated. Use `DataRow.attachments()` instead."
-    )
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
-    predictions = Relationship.ToMany("Prediction", False)
 
     supported_meta_types = supported_attachment_types = {
         attachment_type.value
         for attachment_type in AssetAttachment.AttachmentType
     }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attachments.supports_filtering = False
+        self.attachments.supports_sorting = False
+
+    @property
+    def metadata(self) -> Dict[str, Union[str, List[Dict]]]:
+        """Get metadata for datarow
+        """
+
+        query = """query GetDataRowMetadataBetaPyApi($dataRowID: ID!) {
+              dataRow(where: {id: $dataRowID}) {
+                customMetadata {
+                    value
+                    schemaId
+                }
+              }
+            }
+        """
+
+        metadata = self.client.execute(
+            query, {"dataRowID": self.uid})["dataRow"]["customMetadata"]
+
+        return {
+            "data_row_id":
+                self.uid,
+            "fields": [{
+                "schema_id": m["schemaId"],
+                "value": m["value"]
+            } for m in metadata]
+        }
 
     @staticmethod
     def bulk_delete(data_rows):
@@ -62,13 +87,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             data_rows (list of DataRow): The DataRows to delete.
         """
         BulkDeletable._bulk_delete(data_rows, True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.metadata.supports_filtering = False
-        self.metadata.supports_sorting = False
-        self.attachments.supports_filtering = False
-        self.attachments.supports_sorting = False
 
     def create_attachment(self, attachment_type, attachment_value):
         """ Adds an AssetAttachment to a DataRow.
@@ -110,21 +128,3 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             })
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
-
-    def create_metadata(self, meta_type, meta_value):
-        """
-
-        This function is deprecated. Use create_attachment instead
-
-        Returns:
-            AssetMetadata
-        """
-        logger.warning(
-            "`create_metadata` is deprecated. Use `create_attachment` instead.")
-        attachment = self.create_attachment(meta_type, meta_value)
-        return Entity.AssetMetadata(
-            self.client, {
-                'id': attachment.uid,
-                'metaType': attachment.attachment_type,
-                'metaValue': attachment.attachment_value
-            })
