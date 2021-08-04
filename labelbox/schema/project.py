@@ -199,7 +199,7 @@ class Project(DbObject, Updateable, Deletable):
         is_video = [
             'frames' in row['Label'] for row in json_data if row['Label']
         ]
-        if len(is_video) and not any(is_video):
+        if len(is_video) and any(is_video):
             raise ValueError(
                 "Found video data rows in export. "
                 "Use project.export_labels() to export projects with mixed data types. "
