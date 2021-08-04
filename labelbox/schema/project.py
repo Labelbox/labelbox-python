@@ -166,20 +166,28 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def video_label_generator(self, timeout_seconds=60):
+    def video_label_generator(self, timeout_seconds=120):
         """
         Download video annotations
 
         Returns:
             LabelGenerator for accessing labels for each video
         """
+        _check_converter_import()
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds)
-        if 'frames' not in json_data[0]['Label']:
+        if json_data is None:
+            raise TimeoutError(
+                f"Unable to download labels in {timeout_seconds} seconds."
+                "Please try again or contact support if the issue persists.")
+        is_video = [
+            'frames' in row['Label'] for row in json_data if row['Label']
+        ]
+        if len(is_video) and not all(is_video):
             raise ValueError(
-                "frames key not found in the first label. Cannot export video data."
-            )
-        _check_converter_import()
+                "Found non-video data rows in export. "
+                "Use project.export_labels() to export projects with mixed data types. "
+                "Or use project.label_generator() for text and imagery data.")
         return LBV1Converter.deserialize_video(json_data, self.client)
 
     def label_generator(self, timeout_seconds=60):
@@ -189,9 +197,21 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             LabelGenerator for accessing labels for each text or image
         """
+        _check_converter_import()
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds)
-        _check_converter_import()
+        if json_data is None:
+            raise TimeoutError(
+                f"Unable to download labels in {timeout_seconds} seconds."
+                "Please try again or contact support if the issue persists.")
+        is_video = [
+            'frames' in row['Label'] for row in json_data if row['Label']
+        ]
+        if len(is_video) and any(is_video):
+            raise ValueError(
+                "Found video data rows in export. "
+                "Use project.export_labels() to export projects with mixed data types. "
+                "Or use project.video_label_generator() for video data.")
         return LBV1Converter.deserialize(json_data)
 
     def export_labels(self, download=False, timeout_seconds=60):
