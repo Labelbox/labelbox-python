@@ -57,7 +57,7 @@
 | Annotation Type Basics  | [Github](annotation_types/basics.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/basics.ipynb) |
 | Converters                 | [Github](annotation_types/converters.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/converters.ipynb) |
 | Label Containers           | [Github](annotation_types/label_containers.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/label_containers.ipynb) |
-
+| MAL Using Annotation Types | [Github](annotation_types/mal_using_annotation_types.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/mal_using_annotation_types.ipynb) |
 
 ## [Model Diagnostics](model_diagnostics)
 | Notebook                    | Github                            | Google Colab |
