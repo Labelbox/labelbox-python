@@ -29,13 +29,10 @@ class LBV1Converter:
         Returns:
             LabelGenerator containing the video data.
         """
-
-        def label_generator():
-            for example in LBV1VideoIterator(json_data, client):
-                if example['Label']:
-                    yield LBV1Label(**example).to_common()
-
-        return LabelGenerator(data=label_generator())
+        label_generator = (LBV1Label(**example).to_common()
+                           for example in LBV1VideoIterator(json_data, client)
+                           if example['Label'])
+        return LabelGenerator(data=label_generator)
 
     @staticmethod
     def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelGenerator:
