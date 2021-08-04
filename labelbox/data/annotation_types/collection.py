@@ -1,6 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable, Generator, Iterable, Union
+from typing import Callable, Generator, Iterable, Union, Optional
 from uuid import uuid4
 
 from tqdm import tqdm
@@ -21,8 +21,8 @@ class LabelList:
     Use on smaller datasets.
     """
 
-    def __init__(self, data: Iterable[Label]):
-        self._data = data
+    def __init__(self, data: Optional[Iterable[Label]] = None):
+        self._data = [] if data is None else data
         self._index = 0
 
     def assign_schema_ids(
