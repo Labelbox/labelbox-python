@@ -1,6 +1,11 @@
 # Changelog
 
-# Version 3.0.0-rc0
+# Version 3.0.0-rc1 (2021-08-05)
+## Added
+* Model diagnostics notebooks
+* Minor annotation type improvements
+
+# Version 3.0.0-rc0 (2021-08-04)
 ## Added
 * Annotation types
     - A set of python objects for working with labelbox data
