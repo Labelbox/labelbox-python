@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Union, Tuple
 
 import numpy as np
 import geojson
@@ -19,24 +19,28 @@ class Polygon(Geometry):
         return geojson.Polygon([[[point.x, point.y] for point in self.points]])
 
     def raster(self,
-               height: int,
-               width: int,
-               color=(255, 255, 255),
-               canvas=None) -> np.ndarray:
+               height: Optional[int] = None,
+               width: Optional[int] = None,
+               color: Union[int, Tuple] = (255, 255, 255),
+               thickness: int = -1,
+               canvas: Optional[np.ndarray] = None) -> np.ndarray:
         """
         Draw the polygon onto a 3d mask
-
         Args:
             height (int): height of the mask
             width (int): width of the mask
-            color (int): color for the polygon. Only a single int since this is a grayscale mask.
+            color (int): color for the polygon.
+                  RGB values by default but if a 2D canvas is provided this can set this to an int.
+            thickness (int): How thick to make the polygon border. -1 fills in the polygon
+            canvas (np.ndarray): Canvas to draw the polygon on
         Returns:
             numpy array representing the mask with the polygon drawn on it.
         """
-        if canvas is None:
-            canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        canvas = self.get_or_create_canvas(height, width, canvas)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
-        return cv2.fillPoly(canvas, pts=pts, color=color)
+        if thickness == -1:
+            return cv2.fillPoly(canvas, pts, color)
+        return cv2.polylines(canvas, pts, True, color, thickness)
 
     @validator('points')
     def is_geom_valid(cls, points):

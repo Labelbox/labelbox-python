@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union
+from typing import Dict, Any, Optional, Union
 
 import geojson
 import numpy as np
@@ -23,5 +23,14 @@ class Geometry(BaseModel):
                geom.MultiLineString, geom.MultiPolygon]:
         return geom.shape(self.geometry)
 
-    def raster(self, height: int, width: int) -> np.ndarray:
+    def raster(self, *args, **kwargs) -> np.ndarray:
         raise NotImplementedError("Subclass must override this")
+
+    def get_or_create_canvas(self, height: Optional[int], width: Optional[int],
+                             canvas: Optional[np.ndarray]) -> np.ndarray:
+        if canvas is None:
+            if height is None or width is None:
+                raise ValueError(
+                    "Must either provide canvas or height and width")
+            canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        return canvas
