@@ -23,5 +23,5 @@ class Geometry(BaseModel):
                geom.MultiLineString, geom.MultiPolygon]:
         return geom.shape(self.geometry)
 
-    def raster(self, height: int, width: int) -> np.ndarray:
+    def raster(self, *args, **kwargs) -> np.ndarray:
         raise NotImplementedError("Subclass must override this")

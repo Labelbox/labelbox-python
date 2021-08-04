@@ -1,3 +1,5 @@
+from typing import Optional
+
 import cv2
 import geojson
 import numpy as np
@@ -26,11 +28,14 @@ class Rectangle(Geometry):
             [self.start.x, self.start.y],
         ]])
 
-    def raster(self, height: int, width: int,
-               color=(255, 255, 255)) -> np.ndarray:
+    def raster(self,
+               height: Optional[int] = None,
+               width: Optional[int] = None,
+               color=(255, 255, 255),
+               thickness=-1,
+               canvas=None) -> np.ndarray:
         """
         Draw the rectangle onto a 3d mask
-
         Args:
             height (int): height of the mask
             width (int): width of the mask
@@ -38,6 +43,12 @@ class Rectangle(Geometry):
         Returns:
             numpy array representing the mask with the rectangle drawn on it.
         """
-        canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        if canvas is None:
+            if height is None or width is None:
+                raise ValueError(
+                    "Must either provide canvas or height and width")
+            canvas = np.zeros((height, width, 3), dtype=np.uint8)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
-        return cv2.fillPoly(canvas, pts=pts, color=color)
+        if thickness == -1:
+            return cv2.fillPoly(canvas, pts, color)
+        return cv2.polylines(canvas, pts, True, color, thickness)
