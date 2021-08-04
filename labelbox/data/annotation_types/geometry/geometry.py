@@ -27,7 +27,7 @@ class Geometry(BaseModel):
         raise NotImplementedError("Subclass must override this")
 
     def get_or_create_canvas(self, height: Optional[int], width: Optional[int],
-                             canvas: Optional[np.ndarray]):
+                             canvas: Optional[np.ndarray]) -> np.ndarray:
         if canvas is None:
             if height is None or width is None:
                 raise ValueError(
