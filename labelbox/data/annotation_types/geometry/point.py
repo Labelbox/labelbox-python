@@ -1,3 +1,5 @@
+from typing import Optional, Tuple, Union
+
 import geojson
 import numpy as np
 import cv2
@@ -14,22 +16,24 @@ class Point(Geometry):
         return geojson.Point([self.x, self.y])
 
     def raster(self,
-               height: int,
-               width: int,
+               height: Optional[int] = None,
+               width: Optional[int] = None,
                thickness: int = 1,
-               color=(255, 255, 255)) -> np.ndarray:
+               color: Union[Tuple, int] = (255, 255, 255),
+               canvas: Optional[np.ndarray] = None) -> np.ndarray:
         """
         Draw the point onto a 3d mask
-
         Args:
             height (int): height of the mask
             width (int): width of the mask
             thickness (int): pixel radius of the point
-            color (int): color for the point. Only a single int since this is a grayscale mask.
+            color (int): color for the point.
+                  RGB values by default but if a 2D canvas is provided this can set this to an int.
+            canvas (np.ndarray): Canvas to draw the point on
         Returns:
             numpy array representing the mask with the point drawn on it.
         """
-        canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        canvas = self.get_or_create_canvas(height, width, canvas)
         return cv2.circle(canvas, (int(self.x), int(self.y)),
                           radius=thickness,
                           color=color,
