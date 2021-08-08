@@ -2,7 +2,7 @@
 
 from labelbox.data.serialization.coco.categories import Categories
 from labelbox.data.serialization.coco.annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_decoding
-from labelbox.data.serialization.coco.image import CocoImage
+from labelbox.data.serialization.coco.image import CocoImage, get_image
 from typing import Any, Dict, List
 from pydantic import BaseModel
 from ...annotation_types import RasterData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
@@ -16,18 +16,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from ...annotation_types.collection import LabelCollection
 
 
-def get_image(label, image_root, image_id):
-    # TODO: This should prob just be the file name...
-    path = os.path.join(image_root, f"{image_id}.jpg")
-
-    if not os.path.exists(path):
-        im = Image.fromarray(label.data.data)
-        im.save(path)
-        w, h = im.size
-    else:
-        w, h = imagesize.get(path)
-
-    return CocoImage(id=image_id, width=w, height=h, file_name=path)
 
 
 def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,

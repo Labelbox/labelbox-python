@@ -14,9 +14,9 @@ class COCOConverter:
     # TODO: Filter out video annotations..
     """
 
-    def serialize_to_object_detection(data):
+    def serialize_to_object_detection(data, image_root):
         im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
-        labels = COCOConverter.deserialize_instance(data, image_root=im_root)
+        labels = COCOConverter.deserialize_instance(data, image_root=image_root)
         return CocoInstanceDataset.from_common(labels=labels,
                                                image_root=im_root).dict()
 
@@ -34,7 +34,7 @@ class COCOConverter:
         return res.dict()
 
     @classmethod
-    def deserialize_panoptic(
+    def deserializei_panoptic(
         cls,
         data,
         image_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017",
