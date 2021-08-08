@@ -34,12 +34,7 @@ class Line(Geometry):
         Returns:
             numpy array representing the mask with the line drawn on it.
         """
-<<<<<<< HEAD
-        if canvas is None:
-            canvas = np.zeros((height, width, 3), dtype=np.uint8)
-=======
         canvas = self.get_or_create_canvas(height, width, canvas)
->>>>>>> 71d3643cdba268702cf5c796c6c43755750cd88c
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
         return cv2.polylines(canvas,
                              pts,
