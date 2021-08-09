@@ -2,7 +2,7 @@
 
 # Version 3.0.0-rc2 (2021-08-09)
 ## Updates
-* Rename `data` property of TextData, RasterData, and VideoData types to `value`.
+* Rename `data` property of TextData, ImageData, and VideoData types to `value`.
 * Decrease wait time between updates for `BulkImportRequest.wait_until_done()`
 * Organization is no longer used to create the LFO in `Project.setup()`
 

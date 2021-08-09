@@ -7,7 +7,7 @@ from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation,
                                             VideoClassificationAnnotation,
                                             VideoObjectAnnotation)
-from ...annotation_types.data import RasterData, TextData, VideoData
+from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
 from .classification import LBV1Classifications
@@ -191,14 +191,14 @@ class LBV1Label(BaseModel):
         elif self._has_object_annotations():
             # If it has object annotations and none are text annotations then it must be an image
             if self._is_url():
-                return RasterData(url=self.row_data, **data_row_info)
+                return ImageData(url=self.row_data, **data_row_info)
             else:
-                return RasterData(text=self.row_data, **data_row_info)
+                return ImageData(text=self.row_data, **data_row_info)
         else:
             # no annotations to infer data type from.
             # Use information from the row_data format if possible.
             if self._row_contains((".jpg", ".png", ".jpeg")) and self._is_url():
-                return RasterData(url=self.row_data, **data_row_info)
+                return ImageData(url=self.row_data, **data_row_info)
             elif self._row_contains(
                 (".txt", ".text", ".html")) and self._is_url():
                 return TextData(url=self.row_data, **data_row_info)

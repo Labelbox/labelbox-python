@@ -6,13 +6,13 @@ from rasterio.features import shapes
 from shapely.geometry import MultiPolygon, shape
 import cv2
 
-from ..data.raster import RasterData
+from ..data.raster import ImageData
 from .geometry import Geometry
 
 
 class Mask(Geometry):
     # Raster data can be shared across multiple masks... or not
-    mask: RasterData
+    mask: ImageData
     # RGB or Grayscale
     color: Tuple[int, int, int]
 
