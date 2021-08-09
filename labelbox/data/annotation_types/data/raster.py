@@ -59,7 +59,7 @@ class RasterData(BaseData):
         return im_bytes.getvalue()
 
     @property
-    def data(self) -> np.ndarray:
+    def value(self) -> np.ndarray:
         """
         Property that unifies the data access pattern for all references to the raster.
 

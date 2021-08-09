@@ -16,7 +16,7 @@ class TextData(BaseData):
     url: Optional[str] = None
 
     @property
-    def data(self) -> str:
+    def value(self) -> str:
         """
         Property that unifies the data access pattern for all references to the text.
 
