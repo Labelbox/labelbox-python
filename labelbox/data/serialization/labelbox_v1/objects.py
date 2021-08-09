@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
-from ...annotation_types.data import RasterData
+from ...annotation_types.data import ImageData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
@@ -122,8 +122,7 @@ class LBV1Mask(LBV1ObjectBase):
     instanceURI: str
 
     def to_common(self) -> Mask:
-        return Mask(mask=RasterData(url=self.instanceURI),
-                    color=(255, 255, 255))
+        return Mask(mask=ImageData(url=self.instanceURI), color=(255, 255, 255))
 
     @classmethod
     def from_common(cls, mask: Mask,

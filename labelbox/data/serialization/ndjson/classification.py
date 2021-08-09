@@ -6,7 +6,7 @@ from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
-from ...annotation_types.data import TextData, VideoData, RasterData
+from ...annotation_types.data import TextData, VideoData, ImageData
 from .base import NDAnnotation
 
 
@@ -98,7 +98,7 @@ class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
     def from_common(cls, text: Text, schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[TextData, RasterData]) -> "NDText":
+                    data: Union[TextData, ImageData]) -> "NDText":
         return cls(
             answer=text.answer,
             data_row={'id': data.uid},
@@ -112,7 +112,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
     @classmethod
     def from_common(
             cls, checklist: Checklist, schema_id: Cuid, extra: Dict[str, Any],
-            data: Union[VideoData, TextData, RasterData]) -> "NDChecklist":
+            data: Union[VideoData, TextData, ImageData]) -> "NDChecklist":
         return cls(answer=[
             NDFeature(schema_id=answer.schema_id) for answer in checklist.answer
         ],
@@ -126,7 +126,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
     def from_common(cls, radio: Radio, schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[VideoData, TextData, RasterData]) -> "NDRadio":
+                    data: Union[VideoData, TextData, ImageData]) -> "NDRadio":
         return cls(answer=NDFeature(schema_id=radio.answer.schema_id),
                    data_row={'id': data.uid},
                    schema_id=schema_id,
@@ -188,7 +188,7 @@ class NDClassification:
     def from_common(
         cls, annotation: Union[ClassificationAnnotation,
                                VideoClassificationAnnotation],
-        data: Union[VideoData, TextData, RasterData]
+        data: Union[VideoData, TextData, ImageData]
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         classify_obj = cls.lookup_classification(annotation)
         if classify_obj is None:
