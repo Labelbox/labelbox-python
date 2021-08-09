@@ -1,5 +1,11 @@
 # Changelog
 
+# Version 3.0.0-rc2 (2021-08-09)
+## Updates
+* Rename `data` property of TextData, RasterData, and VideoData types to `value`.
+* Decrease wait time between updates for `BulkImportRequest.wait_until_done()`
+
+
 # Version 3.0.0-rc1 (2021-08-05)
 ## Added
 * Model diagnostics notebooks
