@@ -89,7 +89,7 @@ def test_adding_schema_ids():
 
 def test_adding_urls(signer):
     label = Label(data=ImageData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_url_to_data(signer(uuid))
@@ -98,7 +98,7 @@ def test_adding_urls(signer):
     assert label.data.url == uuid
 
     label = Label(data=ImageData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
     labels = LabelList([label]).add_url_to_data(signer(uuid))
@@ -110,7 +110,7 @@ def test_adding_urls(signer):
 def test_adding_to_dataset(signer):
     dataset = FakeDataset()
     label = Label(data=ImageData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_to_dataset(dataset, signer(uuid))
@@ -123,7 +123,7 @@ def test_adding_to_dataset(signer):
 
     dataset = FakeDataset()
     label = Label(data=ImageData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
     assert label.data.external_id == None
