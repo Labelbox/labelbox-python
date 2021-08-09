@@ -107,7 +107,7 @@ class CocoPanopticDataset(BaseModel):
         #TODO: Check if directory structure exists and prompt to overwrite..
         # Or set a flag idk.
 
-        with ProcessPoolExecutor(max_workers=12) as exc:
+        with ProcessPoolExecutor(max_workers=8) as exc:
             futures = [
                 exc.submit(process_label, label, idx, image_root, seg_root)
                 for idx, label in enumerate(labels)
