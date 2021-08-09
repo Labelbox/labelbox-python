@@ -127,7 +127,7 @@ class CocoInstanceDataset(BaseModel):
         futures = []
         coco_categories = {}
 
-        with ProcessPoolExecutor(max_workers=12) as exc:
+        with ProcessPoolExecutor(max_workers=8) as exc:
             futures = [
                 exc.submit(process_label, label, idx, image_root)
                 for idx, label in enumerate(labels)
