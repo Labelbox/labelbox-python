@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import cv2
 
-from labelbox.data.annotation_types import RasterData, Point, Rectangle, Mask
+from labelbox.data.annotation_types import ImageData, Point, Rectangle, Mask
 
 
 def test_mask():
@@ -14,7 +14,7 @@ def test_mask():
     mask_data = np.zeros((32, 32, 3), dtype=np.uint8)
     mask_data = cv2.rectangle(mask_data, (0, 0), (10, 10), (255, 255, 255), -1)
     mask_data = cv2.rectangle(mask_data, (20, 20), (30, 30), (0, 255, 255), -1)
-    mask_data = RasterData(arr=mask_data)
+    mask_data = ImageData(arr=mask_data)
 
     mask1 = Mask(mask=mask_data, color=(255, 255, 255))
 

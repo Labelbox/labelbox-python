@@ -12,7 +12,7 @@ from .base_data import BaseData
 from ..types import TypedArray
 
 
-class RasterData(BaseData):
+class ImageData(BaseData):
     """
     Represents an image or segmentation mask.
     """
@@ -50,7 +50,7 @@ class RasterData(BaseData):
         """
         if len(arr.shape) != 3:
             raise ValueError("unsupported image format. Must be 3D ([H,W,C])."
-                             "Use RasterData.from_2D_arr to construct from 2D")
+                             "Use ImageData.from_2D_arr to construct from 2D")
         if arr.dtype != np.uint8:
             raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
 
@@ -59,7 +59,7 @@ class RasterData(BaseData):
         return im_bytes.getvalue()
 
     @property
-    def data(self) -> np.ndarray:
+    def value(self) -> np.ndarray:
         """
         Property that unifies the data access pattern for all references to the raster.
 
@@ -140,12 +140,12 @@ class RasterData(BaseData):
             elif len(arr.shape) != 3:
                 raise ValueError(
                     "unsupported image format. Must be 3D ([H,W,C])."
-                    "Use RasterData.from_2D_arr to construct from 2D")
+                    "Use ImageData.from_2D_arr to construct from 2D")
         return values
 
     def __repr__(self) -> str:
         symbol_or_none = lambda data: '...' if data is not None else None
-        return  f"RasterData(im_bytes={symbol_or_none(self.im_bytes)}," \
+        return  f"ImageData(im_bytes={symbol_or_none(self.im_bytes)}," \
                 f"file_path={self.file_path}," \
                 f"url={self.url}," \
                 f"arr={symbol_or_none(self.arr)})"
