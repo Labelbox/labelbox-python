@@ -41,7 +41,7 @@ class VideoData(BaseData):
             self.frames[count] = frame
 
     @property
-    def data(self):
+    def value(self):
         return self.frame_generator()
 
     def frame_generator(

@@ -4,13 +4,13 @@ from labelbox import OntologyBuilder, Tool, Classification as OClassification, O
 from labelbox.data.annotation_types import (ClassificationAnswer, Radio, Text,
                                             ClassificationAnnotation,
                                             ObjectAnnotation, Point, Line,
-                                            RasterData, Label)
+                                            ImageData, Label)
 
 
 def test_schema_assignment_geometry():
     name = "line_feature"
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(
                 value=Line(
@@ -31,7 +31,7 @@ def test_schema_assignment_classification():
     text_name = "text_name"
     option_name = "my_option"
 
-    label = Label(data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+    label = Label(data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
                   annotations=[
                       ClassificationAnnotation(value=Radio(
                           answer=ClassificationAnswer(name=option_name)),
@@ -73,7 +73,7 @@ def test_schema_assignment_subclass():
         value=Radio(answer=ClassificationAnswer(name=option_name)),
     )
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
@@ -120,7 +120,7 @@ def test_highly_nested():
                                      name=nested_name)
         ])
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import BaseModel
 
-from ...annotation_types.data import RasterData, TextData
+from ...annotation_types.data import ImageData, TextData
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
@@ -37,7 +37,7 @@ class NDPoint(NDBaseObject):
     def from_common(cls, point: Point,
                     classifications: List[ClassificationAnnotation],
                     schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[RasterData, TextData]) -> "NDPoint":
+                    data: Union[ImageData, TextData]) -> "NDPoint":
         return cls(point={
             'x': point.x,
             'y': point.y
@@ -58,7 +58,7 @@ class NDLine(NDBaseObject):
     def from_common(cls, line: Line,
                     classifications: List[ClassificationAnnotation],
                     schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[RasterData, TextData]) -> "NDLine":
+                    data: Union[ImageData, TextData]) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
@@ -79,7 +79,7 @@ class NDPolygon(NDBaseObject):
     def from_common(cls, polygon: Polygon,
                     classifications: List[ClassificationAnnotation],
                     schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[RasterData, TextData]) -> "NDPolygon":
+                    data: Union[ImageData, TextData]) -> "NDPolygon":
         return cls(polygon=[{
             'x': pt.x,
             'y': pt.y
@@ -102,7 +102,7 @@ class NDRectangle(NDBaseObject):
     def from_common(cls, rectangle: Rectangle,
                     classifications: List[ClassificationAnnotation],
                     schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[RasterData, TextData]) -> "NDRectangle":
+                    data: Union[ImageData, TextData]) -> "NDRectangle":
         return cls(bbox=Bbox(top=rectangle.start.y,
                              left=rectangle.start.x,
                              height=rectangle.end.y - rectangle.start.y,
@@ -122,14 +122,14 @@ class NDMask(NDBaseObject):
     mask: _Mask
 
     def to_common(self) -> Mask:
-        return Mask(mask=RasterData(url=self.mask.instanceURI),
+        return Mask(mask=ImageData(url=self.mask.instanceURI),
                     color=self.mask.colorRGB)
 
     @classmethod
     def from_common(cls, mask: Mask,
                     classifications: List[ClassificationAnnotation],
                     schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[RasterData, TextData]) -> "NDMask":
+                    data: Union[ImageData, TextData]) -> "NDMask":
         if mask.mask.url is None:
             raise ValueError(
                 "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelList.add_url_to_masks`, or `Label.add_url_to_masks`."
@@ -156,7 +156,7 @@ class NDTextEntity(NDBaseObject):
     def from_common(cls, text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation],
                     schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[RasterData, TextData]) -> "NDTextEntity":
+                    data: Union[ImageData, TextData]) -> "NDTextEntity":
         return cls(location=Location(
             start=text_entity.start,
             end=text_entity.end,
@@ -183,7 +183,7 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation: ObjectAnnotation, data: Union[RasterData, TextData]
+        cls, annotation: ObjectAnnotation, data: Union[ImageData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
         subclasses = [

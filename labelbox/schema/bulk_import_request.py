@@ -192,7 +192,7 @@ class BulkImportRequest(DbObject):
         res = res[utils.camel_case(BulkImportRequest.type_name())]
         self._set_field_values(res)
 
-    def wait_until_done(self, sleep_time_seconds: int = 30) -> None:
+    def wait_until_done(self, sleep_time_seconds: int = 5) -> None:
         """Blocks import job until certain conditions are met.
 
         Blocks until the BulkImportRequest.state changes either to

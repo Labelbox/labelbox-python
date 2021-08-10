@@ -8,7 +8,7 @@ from labelbox.schema import ontology
 from labelbox.orm.model import Entity
 from ..ontology import get_feature_schema_lookup
 from .classification import ClassificationAnswer
-from .data import VideoData, TextData, RasterData
+from .data import VideoData, TextData, ImageData
 from .geometry import Mask
 from .metrics import ScalarMetric
 from .types import Cuid
@@ -18,7 +18,7 @@ from .annotation import (ClassificationAnnotation, ObjectAnnotation,
 
 class Label(BaseModel):
     uid: Optional[Cuid] = None
-    data: Union[VideoData, RasterData, TextData]
+    data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
                             VideoClassificationAnnotation, ScalarMetric]] = []
@@ -63,7 +63,7 @@ class Label(BaseModel):
     def add_url_to_masks(self, signer) -> "Label":
         """
         Creates signed urls for all masks in the Label.
-        Multiple masks can reference the same RasterData mask so this makes sure we only upload that url once.
+        Multiple masks can reference the same ImageData mask so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:
