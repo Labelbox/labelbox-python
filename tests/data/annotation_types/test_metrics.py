@@ -1,5 +1,5 @@
 from labelbox.data.annotation_types.collection import LabelList
-from labelbox.data.annotation_types import ScalarMetric, Label, RasterData
+from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
 
 
 def test_scalar_metric():
@@ -7,7 +7,7 @@ def test_scalar_metric():
     metric = ScalarMetric(value=value)
     assert metric.value == value
 
-    label = Label(data=RasterData(uid="ckrmd9q8g000009mg6vej7hzg"),
+    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg"),
                   annotations=[metric])
     expected = {
         'data': {
