@@ -152,7 +152,7 @@ def assert_file_content(url: str, predictions):
 def test_delete(client, configured_project, predictions):
 
     id_param = "project_id"
-    query_str = """query bulk_import_requests($%s: ID!) {bulkImportRequests(where: {projectId: $%s}) {id}}""" % (
+    query_str = """query bulk_import_requestsPyApi($%s: ID!) {bulkImportRequests(where: {projectId: $%s}) {id}}""" % (
         id_param, id_param)
     name = str(uuid.uuid4())
 
