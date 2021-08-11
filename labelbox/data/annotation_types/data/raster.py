@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 from io import BytesIO
+from abc import ABC
 
 import numpy as np
 from pydantic import BaseModel
@@ -13,7 +14,7 @@ from .base_data import BaseData
 from ..types import TypedArray
 
 
-class RasterData(BaseModel):
+class RasterData(BaseModel, ABC):
     """
     Represents an image or segmentation mask.
     """

@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional, Union, Tuple
+from abc import ABC, abstractmethod
 
 import geojson
 import numpy as np
@@ -6,15 +7,11 @@ from shapely import geometry as geom
 from pydantic import BaseModel
 
 
-class Geometry(BaseModel):
+class Geometry(BaseModel, ABC):
     """
-    Base class for geometry objects. Shouldn't be directly instantiated.
+    Base class for geometry objects.
     """
     extra: Dict[str, Any] = {}
-
-    @property
-    def geometry(self) -> geojson:
-        raise NotImplementedError("Subclass must override this")
 
     @property
     def shapely(
@@ -22,14 +19,6 @@ class Geometry(BaseModel):
     ) -> Union[geom.Point, geom.LineString, geom.Polygon, geom.MultiPoint,
                geom.MultiLineString, geom.MultiPolygon]:
         return geom.shape(self.geometry)
-
-    def raster(self,
-               height: Optional[int] = None,
-               width: Optional[int] = None,
-               canvas: Optional[np.ndarray] = None,
-               color: Optional[Union[int, Tuple[int, int, int]]] = None,
-               thickness: Optional[int] = 1) -> np.ndarray:
-        raise NotImplementedError("Subclass must override this")
 
     def get_or_create_canvas(self, height: Optional[int], width: Optional[int],
                              canvas: Optional[np.ndarray]) -> np.ndarray:
@@ -39,3 +28,17 @@ class Geometry(BaseModel):
                     "Must either provide canvas or height and width")
             canvas = np.zeros((height, width, 3), dtype=np.uint8)
         return canvas
+
+    @property
+    @abstractmethod
+    def geometry(self) -> geojson:
+        pass
+
+    @abstractmethod
+    def raster(self,
+               height: Optional[int] = None,
+               width: Optional[int] = None,
+               canvas: Optional[np.ndarray] = None,
+               color: Optional[Union[int, Tuple[int, int, int]]] = None,
+               thickness: Optional[int] = 1) -> np.ndarray:
+        pass
