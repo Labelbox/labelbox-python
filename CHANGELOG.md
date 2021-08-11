@@ -1,5 +1,11 @@
 # Changelog
 
+# Version 3.0.0-rc3 (2021-08-11)
+## Updates
+* Geometry.raster now has a consistent interface and improved functionality
+* renamed schema_id to feature_schema_id in the `FeatureSchema` class
+* ImageData can load 2d images or masks
+
 # Version 3.0.0-rc2 (2021-08-09)
 ## Updates
 * Rename `data` property of TextData, ImageData, and VideoData types to `value`.
