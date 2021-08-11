@@ -35,9 +35,14 @@ If the installation completes with a warning re: pip not being in your path, you
 export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
 ```
 
-Install using Python's Pip manager.
+Install SDK locally, using Python's Pip manager
 ```
-pip install labelbox
+pip3 install -e .
+```
+
+Install dependencies
+```
+pip3 install -r requirements.txt
 ```
 
 ## Documentation
@@ -55,7 +60,7 @@ user@machine:~$ export LABELBOX_API_KEY="<your api key here>"
 user@machine:~$ python3
 
 from labelbox import Client
-client = Client()
+client = Client(api_key="your_key_here", endpoint="http://localhost:8080/_gql")
 ```
 
 ## Contribution
