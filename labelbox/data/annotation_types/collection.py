@@ -77,7 +77,7 @@ class LabelList:
     def add_url_to_masks(self, signer, max_concurrency=20) -> "LabelList":
         """
         Creates signed urls for all masks in the LabelList.
-        Multiple masks can reference the same ImageData mask so this makes sure we only upload that url once.
+        Multiple masks objects can reference the same MaskData so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:
@@ -235,7 +235,7 @@ class LabelGenerator(PrefetchGenerator):
                                                 str]) -> "LabelGenerator":
         """
         Creates signed urls for all masks in the LabelGenerator.
-        Multiple masks can reference the same ImageData mask so this makes sure we only upload that url once.
+        Multiple masks can reference the same MaskData so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:

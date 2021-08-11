@@ -5,6 +5,7 @@
 * Geometry.raster now has a consistent interface and improved functionality
 * renamed schema_id to feature_schema_id in the `FeatureSchema` class
 * ImageData can load 2d images or masks
+* Mask objects now use `MaskData` to represent segmentation masks instead of `ImageData`
 
 # Version 3.0.0-rc2 (2021-08-09)
 ## Updates
