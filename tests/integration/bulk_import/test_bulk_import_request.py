@@ -157,7 +157,7 @@ def test_delete(client, configured_project, predictions):
 
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=predictions)
-    bulk_import_request.wait_til_done()
+    bulk_import_request.wait_until_done()
     all_import_requests = client.execute(query_str,
                                          {id_param: configured_project.uid})
     assert len(all_import_requests['bulkImportRequests']) == 1
