@@ -54,8 +54,8 @@ def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
-        return 'http://host.docker.internal:8080/graphql'
-    return 'https://staging-api.labelbox.com/graphql'
+        return 'https://staging-api.labelbox.com/graphql'
+    return 'http://host.docker.internal:8080/graphql'
 
 
 def testing_api_key(environ: str) -> str:
