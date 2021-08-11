@@ -2,6 +2,7 @@ from typing import Callable, Optional
 from io import BytesIO
 
 import numpy as np
+from pydantic import BaseModel
 import requests
 from google.api_core import retry
 from typing_extensions import Literal
@@ -12,7 +13,7 @@ from .base_data import BaseData
 from ..types import TypedArray
 
 
-class ImageData(BaseData):
+class RasterData(BaseModel):
     """
     Represents an image or segmentation mask.
     """
@@ -52,8 +53,10 @@ class ImageData(BaseData):
             png encoded bytes
         """
         if len(arr.shape) != 3:
-            raise ValueError("unsupported image format. Must be 3D ([H,W,C])."
-                             "Use ImageData.from_2D_arr to construct from 2D")
+            raise ValueError(
+                "unsupported image format. Must be 3D ([H,W,C])."
+                f"Use {self.__class__.__name__}.from_2D_arr to construct from 2D"
+            )
         if arr.dtype != np.uint8:
             raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
 
@@ -143,12 +146,12 @@ class ImageData(BaseData):
             elif len(arr.shape) != 3:
                 raise ValueError(
                     "unsupported image format. Must be 3D ([H,W,C])."
-                    "Use ImageData.from_2D_arr to construct from 2D")
+                    f"Use {cls.__name__}.from_2D_arr to construct from 2D")
         return values
 
     def __repr__(self) -> str:
         symbol_or_none = lambda data: '...' if data is not None else None
-        return  f"ImageData(im_bytes={symbol_or_none(self.im_bytes)}," \
+        return  f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)}," \
                 f"file_path={self.file_path}," \
                 f"url={self.url}," \
                 f"arr={symbol_or_none(self.arr)})"
@@ -158,3 +161,11 @@ class ImageData(BaseData):
         copy_on_model_validation = False
         # Required for discriminating between data types
         extra = 'forbid'
+
+
+class MaskData(RasterData):
+    ...
+
+
+class ImageData(RasterData, BaseData):
+    ...

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import BaseModel
 
-from ...annotation_types.data import ImageData, TextData
+from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
@@ -122,7 +122,7 @@ class NDMask(NDBaseObject):
     mask: _Mask
 
     def to_common(self) -> Mask:
-        return Mask(mask=ImageData(url=self.mask.instanceURI),
+        return Mask(mask=MaskData(url=self.mask.instanceURI),
                     color=self.mask.colorRGB)
 
     @classmethod

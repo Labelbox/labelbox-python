@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from labelbox.data.annotation_types import (LabelList, LabelGenerator,
-                                            ObjectAnnotation, ImageData, Line,
-                                            Mask, Point, Label)
+                                            ObjectAnnotation, ImageData,
+                                            MaskData, Line, Mask, Point, Label)
 from labelbox import OntologyBuilder, Tool
 
 
@@ -144,7 +144,7 @@ def test_adding_to_masks(signer):
         data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
             ObjectAnnotation(name="1234",
-                             value=Mask(mask=ImageData(
+                             value=Mask(mask=MaskData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
                                         color=[255, 255, 255]))
@@ -159,7 +159,7 @@ def test_adding_to_masks(signer):
         data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
             ObjectAnnotation(name="1234",
-                             value=Mask(mask=ImageData(
+                             value=Mask(mask=MaskData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
                                         color=[255, 255, 255]))
