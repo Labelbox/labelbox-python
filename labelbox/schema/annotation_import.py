@@ -126,7 +126,7 @@ class AnnotationImport(DbObject):
         """Synchronizes values of all fields with the database.
         """
         cls = type(self)
-        res = cls._from_name(self.client, self.parent_id, self.name, raw=True)
+        res = cls.from_name(self.client, self.parent_id, self.name)
         self._set_field_values(res)
 
     @classmethod
@@ -259,7 +259,7 @@ class MEAPredictionImport(AnnotationImport):
         if response is None: 
            raise labelbox.exceptions.ResourceNotFoundError(MEAPredictionImport, params)
 
-        return response
+        return response["modelErrorAnalysisPredictionImport"]
 
 
 class MALPredictionImport(AnnotationImport):
@@ -310,4 +310,4 @@ class MALPredictionImport(AnnotationImport):
         if response is None: 
            raise labelbox.exceptions.ResourceNotFoundError(MALPredictionImport, params)
 
-        return response
+        return response["modelAssistedLabelingPredictionImport"]
