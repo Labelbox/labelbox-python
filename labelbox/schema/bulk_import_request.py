@@ -11,8 +11,8 @@ import ndjson
 import requests
 from pydantic import BaseModel, validator
 from typing_extensions import Literal
-from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple,
-                    Union, Type, Set)
+from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
+                    Type, Set)
 
 import labelbox
 from labelbox import utils
@@ -79,14 +79,13 @@ def _send_create_file_command(
     response_data = response_json.get("data", None)
     if response_data is None:
         raise labelbox.exceptions.LabelboxError(
-            "Failed to upload, message: %s" %
-            response_json.get("errors", None))
+            "Failed to upload, message: %s" % response_json.get("errors", None))
 
     if not response_data.get("createBulkImportRequest", None):
         raise labelbox.exceptions.LabelboxError(
             "Failed to create BulkImportRequest, message: %s" %
-            response_json.get("errors", None)
-            or response_data.get("error", None))
+            response_json.get("errors", None) or
+            response_data.get("error", None))
 
     return response_data
 
@@ -434,8 +433,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
             uids.add(uuid)
-        except (pydantic.ValidationError, ValueError, TypeError,
-                KeyError) as e:
+        except (pydantic.ValidationError, ValueError, TypeError, KeyError) as e:
             raise labelbox.exceptions.MALValidationError(
                 f"Invalid NDJson on line {idx}") from e
 
@@ -519,6 +517,7 @@ class VideoSupported(BaseModel):
 #Base class for a special kind of union.
 # Compatible with pydantic. Improves error messages over a traditional union
 class SpecialUnion:
+
     def __new__(cls, **kwargs):
         return cls.build(kwargs)
 
@@ -656,11 +655,10 @@ class NDChecklist(VideoSupported, NDBase):
 
     def validate_feature_schemas(self, valid_feature_schemas):
         #Test top level feature schema for this tool
-        super(NDChecklist,
-              self).validate_feature_schemas(valid_feature_schemas)
+        super(NDChecklist, self).validate_feature_schemas(valid_feature_schemas)
         #Test the feature schemas provided to the answer field
-        if len(set([answer.schemaId
-                    for answer in self.answers])) != len(self.answers):
+        if len(set([answer.schemaId for answer in self.answers])) != len(
+                self.answers):
             raise ValueError(
                 f"Duplicated featureSchema found for checklist {self.uuid}")
         for answer in self.answers:
@@ -729,8 +727,7 @@ class NDPolygon(NDBaseTool):
     def is_geom_valid(cls, v):
         if len(v) < 3:
             raise ValueError(
-                f"A polygon must have at least 3 points to be valid. Found {v}"
-            )
+                f"A polygon must have at least 3 points to be valid. Found {v}")
         return v
 
 
@@ -802,8 +799,7 @@ class NDMask(NDBaseTool):
         #Does the dtype matter? Can it be a float?
         if not isinstance(colors, (tuple, list)):
             raise ValueError(
-                f"Received color that is not a list or tuple. Found : {colors}"
-            )
+                f"Received color that is not a list or tuple. Found : {colors}")
         elif len(colors) != 3:
             raise ValueError(
                 f"Must provide RGB values for segmentation colors. Found : {colors}"
@@ -819,7 +815,7 @@ class NDTool(
         SpecialUnion,
         Type[Union[NDMask,  # type: ignore
                    NDTextEntity, NDPoint, NDRectangle, NDPolyline,
-                   NDPolygon, ]]):
+                   NDPolygon,]]):
     ...
 
 
@@ -827,6 +823,7 @@ class NDAnnotation(
         SpecialUnion,
         Type[Union[NDTool,  # type: ignore
                    NDClassification]]):
+
     @classmethod
     def build(cls: Any, data) -> "NDBase":
         if not isinstance(data, dict):
