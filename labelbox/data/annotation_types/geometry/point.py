@@ -37,4 +37,4 @@ class Point(Geometry):
         return cv2.circle(canvas, (int(self.x), int(self.y)),
                           radius=thickness,
                           color=color,
-                          thickness=1)
+                          thickness=-1)
