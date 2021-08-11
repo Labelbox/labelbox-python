@@ -40,10 +40,11 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
 
     def to_common(self):
         classifications = [
-            VideoClassificationAnnotation(value=classification.to_common(),
-                                          frame=self.frame_number,
-                                          name=classification.title,
-                                          schema_id=classification.schema_id)
+            VideoClassificationAnnotation(
+                value=classification.to_common(),
+                frame=self.frame_number,
+                name=classification.title,
+                feature_schema_id=classification.schema_id)
             for classification in self.classifications
         ]
 
@@ -53,7 +54,7 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
                                   classifications=[
                                       ClassificationAnnotation(
                                           value=cls.to_common(),
-                                          schema_id=cls.schema_id,
+                                          feature_schema_id=cls.schema_id,
                                           name=cls.title,
                                           extra={
                                               'feature_id': cls.feature_id,
@@ -64,7 +65,7 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
                                   name=obj.title,
                                   frame=self.frame_number,
                                   alternative_name=obj.value,
-                                  schema_id=obj.schema_id,
+                                  feature_schema_id=obj.schema_id,
                                   extra={
                                       'value': obj.value,
                                       'instanceURI': obj.instanceURI,

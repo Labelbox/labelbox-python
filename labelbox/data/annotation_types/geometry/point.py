@@ -18,9 +18,9 @@ class Point(Geometry):
     def raster(self,
                height: Optional[int] = None,
                width: Optional[int] = None,
-               thickness: int = 1,
-               color: Union[Tuple, int] = (255, 255, 255),
-               canvas: Optional[np.ndarray] = None) -> np.ndarray:
+               canvas: Optional[np.ndarray] = None,
+               color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
+               thickness: int = 10) -> np.ndarray:
         """
         Draw the point onto a 3d mask
         Args:
