@@ -17,8 +17,9 @@ def test_create_from_url(configured_project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
-    bulk_import_request = configured_project.upload_annotations(
-        name=name, annotations=url, validate=False)
+    bulk_import_request = configured_project.upload_annotations(name=name,
+                                                                annotations=url,
+                                                                validate=False)
 
     assert bulk_import_request.project() == configured_project
     assert bulk_import_request.name == name
@@ -125,8 +126,9 @@ def test_wait_till_done(rectangle_inference, configured_project):
     url = configured_project.client.upload_data(content=ndjson.dumps(
         [rectangle_inference]),
                                                 sign=True)
-    bulk_import_request = configured_project.upload_annotations(
-        name=name, annotations=url, validate=False)
+    bulk_import_request = configured_project.upload_annotations(name=name,
+                                                                annotations=url,
+                                                                validate=False)
 
     assert len(bulk_import_request.inputs) == 1
     bulk_import_request.wait_until_done()
