@@ -118,35 +118,6 @@ class AnnotationImport(DbObject):
         response.raise_for_status()
         return ndjson.loads(response.text)
 
-    @classmethod
-    def _from_name(cls,
-                   client: "labelbox.Client",
-                   parent_id: str,
-                   name: str,
-                   raw=False
-                  ) -> Union["MEAPredictionImport", "MALPredictionImport"]:
-        query_str = """query getImportPyApi($parent_id : ID!, $name: String!) {
-            annotationImport(
-                where: {%s: $parent_id, name: $name}){
-                    __typename
-                ... on ModelAssistedLabelingPredictionImport {%s}
-                ... on ModelErrorAnalysisPredictionImport {%s}
-                }}""" % \
-                (
-                    cls._parent_id_field,
-                    query.results_query_part(MALPredictionImport),
-                    query.results_query_part(MEAPredictionImport)
-        )
-
-        response = client.execute(query_str, {
-            'name': name,
-            'parent_id': parent_id
-        })
-        if raw:
-            return response['annotationImport']
-
-        return cls(client, response['annotationImport'])
-
     @staticmethod
     def _make_file_name(parent_id: str, name: str) -> str:
         return f"{parent_id}__{name}.ndjson"
@@ -269,12 +240,26 @@ class MEAPredictionImport(AnnotationImport):
                                     parent_id=model_run_id,
                                     name=name,
                                     url=url)
-
+                                    
     @classmethod
     def from_name(
             cls, client: "labelbox.Client", model_run_id: str,
-            name: str) -> Union["MEAPredictionImport", "MALPredictionImport"]:
-        return cls._from_name(client, model_run_id, name)
+            name: str) -> "MEAPredictionImport":
+
+        query_str = """query getModelErrorAnalysisPredictionImportPyApi($modelRunId : ID!, $name: String!) {
+            modelErrorAnalysisPredictionImport(
+                where: {modelRunId: $modelRunId, name: $name}){
+                    %s
+                }}""" % query.results_query_part(cls)
+        params = {
+            "modelRunId": model_run_id,
+            "name": name,
+        }
+        response = client.execute(query_str, params)
+        if response is None: 
+           raise labelbox.exceptions.ResourceNotFoundError(MEAPredictionImport, params)
+
+        return response
 
 
 class MALPredictionImport(AnnotationImport):
@@ -310,5 +295,19 @@ class MALPredictionImport(AnnotationImport):
     @classmethod
     def from_name(
             cls, client: "labelbox.Client", project_id: str,
-            name: str) -> Union["MEAPredictionImport", "MALPredictionImport"]:
-        return cls._from_name(client, project_id, name)
+            name: str) -> "MALPredictionImport":
+
+        query_str = """query getModelAssistedLabelingPredictionImportPyApi($projectId : ID!, $name: String!) {
+            modelAssistedLabelingPredictionImport(
+                where: {projectId: $projectId, name: $name}){
+                    %s
+                }}""" % query.results_query_part(cls)
+        params = {
+            "projectId": project_id,
+            "name": name,
+        }
+        response = client.execute(query_str, params)
+        if response is None: 
+           raise labelbox.exceptions.ResourceNotFoundError(MALPredictionImport, params)
+
+        return response
