@@ -38,7 +38,10 @@ class ImageData(BaseData):
         Returns:
             numpy array representing the image
         """
-        return np.array(Image.open(BytesIO(image_bytes)))[:, :, :3]
+        arr = np.array(Image.open(BytesIO(image_bytes)))
+        if len(arr.shape) == 2:
+            arr = np.stack((arr,) * 3, axis=-1)
+        return arr[:, :, :3]
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
         """

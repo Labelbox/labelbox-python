@@ -27,7 +27,7 @@ class Geometry(BaseModel):
                height: Optional[int] = None,
                width: Optional[int] = None,
                canvas: Optional[np.ndarray] = None,
-               color: Optional[Union[int, Tuple[int,int,int]]] = None,
+               color: Optional[Union[int, Tuple[int, int, int]]] = None,
                thickness: Optional[int] = 1) -> np.ndarray:
         raise NotImplementedError("Subclass must override this")
 

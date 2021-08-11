@@ -19,9 +19,8 @@ class Point(Geometry):
                height: Optional[int] = None,
                width: Optional[int] = None,
                canvas: Optional[np.ndarray] = None,
-               color: Union[int, Tuple[int,int,int]] = (255, 255, 255),
-               thickness: int = 10
-               ) -> np.ndarray:
+               color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
+               thickness: int = 10) -> np.ndarray:
         """
         Draw the point onto a 3d mask
         Args:
@@ -38,4 +37,4 @@ class Point(Geometry):
         return cv2.circle(canvas, (int(self.x), int(self.y)),
                           radius=thickness,
                           color=color,
-                          thickness=-1)
+                          thickness=1)
