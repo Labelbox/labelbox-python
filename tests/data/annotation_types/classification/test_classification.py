@@ -10,16 +10,17 @@ def test_classification_answer():
     with pytest.raises(ValidationError):
         ClassificationAnswer()
 
-    schema_id = "schema_id"
+    feature_schema_id = "schema_id"
     name = "my_feature"
     answer = ClassificationAnswer(name=name)
 
-    assert answer.schema_id is None
+    assert answer.feature_schema_id is None
     assert answer.name == name
 
-    answer = ClassificationAnswer(schema_id=schema_id, name=name)
+    answer = ClassificationAnswer(feature_schema_id=feature_schema_id,
+                                  name=name)
 
-    assert answer.schema_id == schema_id
+    assert answer.feature_schema_id == feature_schema_id
     assert answer.name == name
 
 
@@ -35,7 +36,7 @@ def test_classification():
 
 def test_subclass():
     answer = "1234"
-    schema_id = "11232"
+    feature_schema_id = "11232"
     name = "my_feature"
     with pytest.raises(ValidationError):
         # Should have feature schema info
@@ -44,30 +45,32 @@ def test_subclass():
                                               name=name)
     assert classification.dict() == {
         'name': name,
-        'schema_id': None,
+        'feature_schema_id': None,
         'extra': {},
         'value': {
             'answer': answer
         }
     }
-    classification = ClassificationAnnotation(value=Text(answer=answer),
-                                              name=name,
-                                              schema_id=schema_id)
+    classification = ClassificationAnnotation(
+        value=Text(answer=answer),
+        name=name,
+        feature_schema_id=feature_schema_id)
     assert classification.dict() == {
         'name': None,
-        'schema_id': schema_id,
+        'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': answer
         },
         'name': name
     }
-    classification = ClassificationAnnotation(value=Text(answer=answer),
-                                              schema_id=schema_id,
-                                              name=name)
+    classification = ClassificationAnnotation(
+        value=Text(answer=answer),
+        feature_schema_id=feature_schema_id,
+        name=name)
     assert classification.dict() == {
         'name': name,
-        'schema_id': schema_id,
+        'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': answer
@@ -77,7 +80,7 @@ def test_subclass():
 
 def test_radio():
     answer = ClassificationAnswer(name="1")
-    schema_id = "feature_schema_id"
+    feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
     with pytest.raises(ValidationError):
@@ -90,21 +93,22 @@ def test_radio():
     assert classification.dict() == {
         'answer': {
             'name': answer.name,
-            'schema_id': None,
+            'feature_schema_id': None,
             'extra': {}
         }
     }
-    classification = ClassificationAnnotation(value=Radio(answer=answer),
-                                              schema_id=schema_id,
-                                              name=name)
+    classification = ClassificationAnnotation(
+        value=Radio(answer=answer),
+        feature_schema_id=feature_schema_id,
+        name=name)
     assert classification.dict() == {
         'name': name,
-        'schema_id': schema_id,
+        'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': {
                 'name': answer.name,
-                'schema_id': None,
+                'feature_schema_id': None,
                 'extra': {}
             }
         }
@@ -113,7 +117,7 @@ def test_radio():
 
 def test_checklist():
     answer = ClassificationAnswer(name="1")
-    schema_id = "feature_schema_id"
+    feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
     with pytest.raises(ValidationError):
@@ -126,23 +130,23 @@ def test_checklist():
     assert classification.dict() == {
         'answer': [{
             'name': answer.name,
-            'schema_id': None,
+            'feature_schema_id': None,
             'extra': {}
         }]
     }
     classification = ClassificationAnnotation(
         value=Checklist(answer=[answer]),
-        schema_id=schema_id,
+        feature_schema_id=feature_schema_id,
         name=name,
     )
     assert classification.dict() == {
         'name': name,
-        'schema_id': schema_id,
+        'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': [{
                 'name': answer.name,
-                'schema_id': None,
+                'feature_schema_id': None,
                 'extra': {}
             }]
         },
@@ -151,7 +155,7 @@ def test_checklist():
 
 def test_dropdown():
     answer = ClassificationAnswer(name="1")
-    schema_id = "feature_schema_id"
+    feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
     with pytest.raises(ValidationError):
@@ -164,21 +168,22 @@ def test_dropdown():
     assert classification.dict() == {
         'answer': [{
             'name': '1',
-            'schema_id': None,
+            'feature_schema_id': None,
             'extra': {}
         }]
     }
-    classification = ClassificationAnnotation(value=Dropdown(answer=[answer]),
-                                              schema_id=schema_id,
-                                              name=name)
+    classification = ClassificationAnnotation(
+        value=Dropdown(answer=[answer]),
+        feature_schema_id=feature_schema_id,
+        name=name)
     assert classification.dict() == {
         'name': name,
-        'schema_id': schema_id,
+        'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': [{
                 'name': answer.name,
-                'schema_id': None,
+                'feature_schema_id': None,
                 'extra': {}
             }]
         }
