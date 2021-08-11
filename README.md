@@ -67,18 +67,23 @@ client = Client(api_key="your_key_here", endpoint="http://localhost:8080/_gql")
 Please consult `CONTRIB.md`
 
 ## Testing
-1. Update the `Makefile` with your `staging` or `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
+1. Update the `Makefile` with your `local`, `staging`, `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
 2. To test on `staging`:
 ```
-make test-staging
+make test-staging PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
 ```
 
 3. To test on `prod`:
 ```
-make test-prod
+make test-prod PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
 ```
 
 4. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
 ```
 make -B {build|test-staging|test_prod}
+```
+
+Or you can just run everything in a single command:
+```
+docker build -t local/labelbox-python:test . && make test-staging PATH_TO_TEST= LABELBOX_TEST_API_KEY=
 ```
