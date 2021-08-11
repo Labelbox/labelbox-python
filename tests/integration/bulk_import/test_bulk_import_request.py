@@ -147,3 +147,12 @@ def test_wait_till_done(rectangle_inference, configured_project):
 def assert_file_content(url: str, predictions):
     response = requests.get(url)
     assert response.text == ndjson.dumps(predictions)
+
+
+def test_delete(configured_project, predictions):
+    name = str(uuid.uuid4())
+
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_til_done()
+    bulk_import_request.delete()
