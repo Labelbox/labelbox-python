@@ -30,7 +30,7 @@ def get_iou_across_features(
     predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]]
 ) -> Optional[float]:
     """
-    Groups annotations by schema_id or name (which is available), calculates iou score and returns the mean across all features.
+    Groups annotations by feature_schema_id or name (which is available), calculates iou score and returns the mean across all features.
 
     Args:
         ground_truth : Label containing human annotations or annotations known to be correct
@@ -189,7 +189,8 @@ def radio_iou(ground_truth: Radio, prediction: Radio) -> float:
     """
     Calculates agreement between ground truth and predicted radio values
     """
-    return float(prediction.answer.schema_id == ground_truth.answer.schema_id)
+    return float(prediction.answer.feature_schema_id ==
+                 ground_truth.answer.feature_schema_id)
 
 
 def text_iou(ground_truth: Text, prediction: Text) -> float:
@@ -203,8 +204,10 @@ def checklist_iou(ground_truth: Checklist, prediction: Checklist) -> float:
     """
     Calculates agreement between ground truth and predicted checklist items
     """
-    schema_ids_pred = {answer.schema_id for answer in prediction.answer}
-    schema_ids_label = {answer.schema_id for answer in ground_truth.answer}
+    schema_ids_pred = {answer.feature_schema_id for answer in prediction.answer}
+    schema_ids_label = {
+        answer.feature_schema_id for answer in ground_truth.answer
+    }
     return float(
         len(schema_ids_label & schema_ids_pred) /
         len(schema_ids_label | schema_ids_pred))
@@ -219,13 +222,13 @@ def _create_feature_lookup(
     Args:
         annotations: List of annotations to group
     Returns:
-        a dict where each key is the schema_id (or name)
-        and the value is a list of annotations that have that schema_id (or name)
+        a dict where each key is the feature_schema_id (or name)
+        and the value is a list of annotations that have that feature_schema_id (or name)
 
     """
     grouped_annotations = defaultdict(list)
     for annotation in annotations:
-        grouped_annotations[annotation.schema_id or
+        grouped_annotations[annotation.feature_schema_id or
                             annotation.name].append(annotation)
     return grouped_annotations
 

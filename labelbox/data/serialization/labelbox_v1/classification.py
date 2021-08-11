@@ -17,7 +17,7 @@ class LBV1Radio(LBV1Feature):
 
     def to_common(self):
         return Radio(answer=ClassificationAnswer(
-            schema_id=self.answer.schema_id,
+            feature_schema_id=self.answer.schema_id,
             name=self.answer.title,
             extra={
                 'feature_id': self.answer.feature_id,
@@ -25,10 +25,11 @@ class LBV1Radio(LBV1Feature):
             }))
 
     @classmethod
-    def from_common(cls, radio: Radio, schema_id: Cuid, **extra) -> "LBV1Radio":
-        return cls(schema_id=schema_id,
+    def from_common(cls, radio: Radio, feature_schema_id: Cuid,
+                    **extra) -> "LBV1Radio":
+        return cls(schema_id=feature_schema_id,
                    answer=LBV1ClassificationAnswer(
-                       schema_id=radio.answer.schema_id,
+                       schema_id=radio.answer.feature_schema_id,
                        title=radio.answer.name,
                        value=radio.answer.extra.get('value'),
                        feature_id=radio.answer.extra.get('feature_id')),
@@ -40,7 +41,7 @@ class LBV1Checklist(LBV1Feature):
 
     def to_common(self):
         return Checklist(answer=[
-            ClassificationAnswer(schema_id=answer.schema_id,
+            ClassificationAnswer(feature_schema_id=answer.schema_id,
                                  name=answer.title,
                                  extra={
                                      'feature_id': answer.feature_id,
@@ -49,12 +50,12 @@ class LBV1Checklist(LBV1Feature):
         ])
 
     @classmethod
-    def from_common(cls, checklist: Checklist, schema_id: Cuid,
+    def from_common(cls, checklist: Checklist, feature_schema_id: Cuid,
                     **extra) -> "LBV1Checklist":
-        return cls(schema_id=schema_id,
+        return cls(schema_id=feature_schema_id,
                    answers=[
                        LBV1ClassificationAnswer(
-                           schema_id=answer.schema_id,
+                           schema_id=answer.feature_schema_id,
                            title=answer.name,
                            value=answer.extra.get('value'),
                            feature_id=answer.extra.get('feature_id'))
@@ -70,8 +71,9 @@ class LBV1Text(LBV1Feature):
         return Text(answer=self.answer)
 
     @classmethod
-    def from_common(cls, text: Text, schema_id: Cuid, **extra) -> "LBV1Text":
-        return cls(schema_id=schema_id, answer=text.answer, **extra)
+    def from_common(cls, text: Text, feature_schema_id: Cuid,
+                    **extra) -> "LBV1Text":
+        return cls(schema_id=feature_schema_id, answer=text.answer, **extra)
 
 
 class LBV1Classifications(BaseModel):
@@ -82,7 +84,7 @@ class LBV1Classifications(BaseModel):
             ClassificationAnnotation(value=classification.to_common(),
                                      classifications=[],
                                      name=classification.title,
-                                     schema_id=classification.schema_id,
+                                     feature_schema_id=classification.schema_id,
                                      extra={
                                          'value': classification.value,
                                          'feature_id': classification.feature_id
@@ -101,7 +103,7 @@ class LBV1Classifications(BaseModel):
             if classification is not None:
                 classifications.append(
                     classification.from_common(annotation.value,
-                                               annotation.schema_id,
+                                               annotation.feature_schema_id,
                                                **annotation.extra))
             else:
                 raise TypeError(f"Unexpected type {type(annotation.value)}")
