@@ -36,14 +36,14 @@ class NDPoint(NDBaseObject):
     @classmethod
     def from_common(cls, point: Point,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, extra: Dict[str, Any],
+                    feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDPoint":
         return cls(point={
             'x': point.x,
             'y': point.y
         },
                    dataRow=DataRow(id=data.uid),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
@@ -57,14 +57,14 @@ class NDLine(NDBaseObject):
     @classmethod
     def from_common(cls, line: Line,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, extra: Dict[str, Any],
+                    feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
         } for pt in line.points],
                    dataRow=DataRow(id=data.uid),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
@@ -78,14 +78,14 @@ class NDPolygon(NDBaseObject):
     @classmethod
     def from_common(cls, polygon: Polygon,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, extra: Dict[str, Any],
+                    feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDPolygon":
         return cls(polygon=[{
             'x': pt.x,
             'y': pt.y
         } for pt in polygon.points],
                    dataRow=DataRow(id=data.uid),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
@@ -101,14 +101,14 @@ class NDRectangle(NDBaseObject):
     @classmethod
     def from_common(cls, rectangle: Rectangle,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, extra: Dict[str, Any],
+                    feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDRectangle":
         return cls(bbox=Bbox(top=rectangle.start.y,
                              left=rectangle.start.x,
                              height=rectangle.end.y - rectangle.start.y,
                              width=rectangle.end.x - rectangle.start.x),
                    dataRow=DataRow(id=data.uid),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
@@ -128,7 +128,7 @@ class NDMask(NDBaseObject):
     @classmethod
     def from_common(cls, mask: Mask,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, extra: Dict[str, Any],
+                    feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDMask":
         if mask.mask.url is None:
             raise ValueError(
@@ -136,7 +136,7 @@ class NDMask(NDBaseObject):
             )
         return cls(mask=_Mask(instanceURI=mask.mask.url, colorRGB=mask.color),
                    dataRow=DataRow(id=data.uid),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
@@ -155,14 +155,14 @@ class NDTextEntity(NDBaseObject):
     @classmethod
     def from_common(cls, text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, extra: Dict[str, Any],
+                    feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDTextEntity":
         return cls(location=Location(
             start=text_entity.start,
             end=text_entity.end,
         ),
                    dataRow=DataRow(id=data.uid),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
@@ -177,7 +177,7 @@ class NDObject:
             for annot in annotation.classifications
         ]
         return ObjectAnnotation(value=common_annotation,
-                                schema_id=annotation.schema_id,
+                                feature_schema_id=annotation.schema_id,
                                 classifications=classifications,
                                 extra={'uuid': annotation.uuid})
 
@@ -191,7 +191,8 @@ class NDObject:
             for annot in annotation.classifications
         ]
         return obj.from_common(annotation.value, subclasses,
-                               annotation.schema_id, annotation.extra, data)
+                               annotation.feature_schema_id, annotation.extra,
+                               data)
 
     @staticmethod
     def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":

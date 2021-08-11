@@ -107,7 +107,7 @@ class Label(BaseModel):
             self.data.external_id = data_row.external_id
         return self
 
-    def assign_schema_ids(
+    def assign_feature_schema_ids(
             self, ontology_builder: ontology.OntologyBuilder) -> "Label":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
@@ -135,14 +135,14 @@ class Label(BaseModel):
         return self
 
     def _assign_or_raise(self, annotation, lookup: Dict[str, str]) -> None:
-        if annotation.schema_id is not None:
+        if annotation.feature_schema_id is not None:
             return
 
         feature_schema_id = lookup.get(annotation.name)
         if feature_schema_id is None:
             raise ValueError(f"No tool matches name {annotation.name}. "
                              f"Must be one of {list(lookup.keys())}.")
-        annotation.schema_id = feature_schema_id
+        annotation.feature_schema_id = feature_schema_id
 
     def _assign_option(self, classification: ClassificationAnnotation,
                        lookup: Dict[str, str]) -> None:

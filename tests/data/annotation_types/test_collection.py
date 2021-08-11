@@ -77,14 +77,15 @@ def test_adding_schema_ids():
                 name=name,
             )
         ])
-    schema_id = "expected_id"
-    ontology = OntologyBuilder(
-        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
-    generator = LabelGenerator([label]).assign_schema_ids(ontology)
-    assert next(generator).annotations[0].schema_id == schema_id
-    labels = LabelList([label]).assign_schema_ids(ontology)
-    assert next(labels).annotations[0].schema_id == schema_id
-    assert labels[0].annotations[0].schema_id == schema_id
+    feature_schema_id = "expected_id"
+    ontology = OntologyBuilder(tools=[
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=feature_schema_id)
+    ])
+    generator = LabelGenerator([label]).assign_feature_schema_ids(ontology)
+    assert next(generator).annotations[0].feature_schema_id == feature_schema_id
+    labels = LabelList([label]).assign_feature_schema_ids(ontology)
+    assert next(labels).annotations[0].feature_schema_id == feature_schema_id
+    assert labels[0].annotations[0].feature_schema_id == feature_schema_id
 
 
 def test_adding_urls(signer):
