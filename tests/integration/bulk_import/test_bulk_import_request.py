@@ -17,9 +17,8 @@ def test_create_from_url(configured_project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
-    bulk_import_request = configured_project.upload_annotations(name=name,
-                                                                annotations=url,
-                                                                validate=False)
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=url, validate=False)
 
     assert bulk_import_request.project() == configured_project
     assert bulk_import_request.name == name
@@ -126,9 +125,8 @@ def test_wait_till_done(rectangle_inference, configured_project):
     url = configured_project.client.upload_data(content=ndjson.dumps(
         [rectangle_inference]),
                                                 sign=True)
-    bulk_import_request = configured_project.upload_annotations(name=name,
-                                                                annotations=url,
-                                                                validate=False)
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=url, validate=False)
 
     assert len(bulk_import_request.inputs) == 1
     bulk_import_request.wait_until_done()
@@ -150,15 +148,21 @@ def assert_file_content(url: str, predictions):
 
 
 def test_delete(client, configured_project, predictions):
+
+    id_param = "project_id"
+    query_str = """query bulk_import_requests($%s: ID!) {bulkImportRequests(where: {projectId: $%s}) {id}}""" % (
+        id_param, id_param)
+
     name = str(uuid.uuid4())
 
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=predictions)
     bulk_import_request.wait_til_done()
-    bulk_import_request.delete()
+    all_import_requests = client.execute(query_str,
+                                         {id_param: configured_project.uid})
+    assert len(all_import_requests['bulkImportRequests']) == 1
 
-    id_param = "project_id"
-    query_str = """query bulk_import_requests($%s: ID!) {bulkImportRequests(where: {projectId: $%s}) {id}}""" % (
-        id_param, id_param)
-    all_import_requests = client.execute(query_str, {id_param: project.uid})
+    bulk_import_request.delete()
+    all_import_requests = client.execute(query_str,
+                                         {id_param: configured_project.uid})
     assert len(all_import_requests['bulkImportRequests']) == 0
