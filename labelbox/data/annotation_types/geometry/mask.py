@@ -18,7 +18,7 @@ class Mask(Geometry):
 
     @property
     def geometry(self):
-        mask = self.raster(color = 1)
+        mask = self.raster(color=1)
         polygons = (
             shape(shp)
             for shp, val in shapes(mask, mask=None)
@@ -30,9 +30,8 @@ class Mask(Geometry):
                height: Optional[int] = None,
                width: Optional[int] = None,
                canvas: Optional[np.ndarray] = None,
-               color: Optional[Union[int, Tuple[int,int,int]]] = None,
-               thickness = None
-               ) -> np.ndarray:
+               color: Optional[Union[int, Tuple[int, int, int]]] = None,
+               thickness=None) -> np.ndarray:
         """
         # TODO: Optionally use the color. a color of 1 will result in a binary canvas
 
@@ -65,12 +64,10 @@ class Mask(Geometry):
         if isinstance(color, (tuple, list)):
             dims = dims + [len(color)]
 
-        canvas = canvas if canvas is not None else np.zeros(tuple(dims), dtype=np.uint8)
+        canvas = canvas if canvas is not None else np.zeros(tuple(dims),
+                                                            dtype=np.uint8)
         canvas[mask.astype(np.bool)] = color
         return canvas
-
-
-
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """

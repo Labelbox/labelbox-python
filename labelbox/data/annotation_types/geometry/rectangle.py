@@ -32,7 +32,7 @@ class Rectangle(Geometry):
                height: Optional[int] = None,
                width: Optional[int] = None,
                canvas: Optional[np.ndarray] = None,
-               color: Union[int, Tuple[int,int,int]] = (255, 255, 255),
+               color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
                thickness: int = -1) -> np.ndarray:
         """
         Draw the rectangle onto a 3d mask
