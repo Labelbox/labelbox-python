@@ -17,11 +17,11 @@ class Line(Geometry):
             [[[point.x, point.y] for point in self.points]])
 
     def raster(self,
-               height: Optional[int] = None,
+              height: Optional[int] = None,
                width: Optional[int] = None,
-               thickness: int = 1,
-               color: Union[Tuple, int] = (255, 255, 255),
-               canvas: Optional[np.ndarray] = None) -> np.ndarray:
+               canvas: Optional[np.ndarray] = None,
+               color: Union[int, Tuple[int,int,int]] = (255, 255, 255),
+               thickness: int = 5) -> np.ndarray:
         """
         Draw the line onto a 3d mask
         Args:
