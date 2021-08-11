@@ -63,7 +63,7 @@ class Label(BaseModel):
     def add_url_to_masks(self, signer) -> "Label":
         """
         Creates signed urls for all masks in the Label.
-        Multiple masks can reference the same ImageData mask so this makes sure we only upload that url once.
+        Multiple masks can reference the same MaskData mask so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:
