@@ -83,7 +83,7 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
-        self._verify = True
+        self._verify_ssl = True
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -146,20 +146,20 @@ class Client:
         elif data is None:
             raise ValueError("query and data cannot both be none")
         try:
-            request = {
+            request_params = {
                 'url': self.endpoint,
                 'data': data,
                 'headers': self.headers,
                 'timeout': timeout,
-                'verify': self._verify
+                'verify': self._verify_ssl
             }
             if files:
-                request.update({'files': files})
-                request['headers'] = {
+                request_params.update({'files': files})
+                request_params['headers'] = {
                     'Authorization': self.headers['Authorization']
                 }
 
-            response = requests.post(**request)
+            response = requests.post(**request_params)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
