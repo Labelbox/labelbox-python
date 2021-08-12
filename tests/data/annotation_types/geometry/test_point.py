@@ -18,5 +18,5 @@ def test_point():
     expected['coordinates'] = tuple(expected['coordinates'])
     assert point.shapely.__geo_interface__ == expected
 
-    raster = point.raster(height=32, width=32)
+    raster = point.raster(height=32, width=32, thickness=1)
     assert (cv2.imread("tests/data/assets/point.png") == raster).all()
