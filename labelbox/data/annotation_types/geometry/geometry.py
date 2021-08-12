@@ -35,10 +35,10 @@ class Geometry(BaseModel, ABC):
         pass
 
     @abstractmethod
-    def raster(self,
-               height: Optional[int] = None,
-               width: Optional[int] = None,
-               canvas: Optional[np.ndarray] = None,
-               color: Optional[Union[int, Tuple[int, int, int]]] = None,
-               thickness: Optional[int] = 1) -> np.ndarray:
+    def draw(self,
+             height: Optional[int] = None,
+             width: Optional[int] = None,
+             canvas: Optional[np.ndarray] = None,
+             color: Optional[Union[int, Tuple[int, int, int]]] = None,
+             thickness: Optional[int] = 1) -> np.ndarray:
         pass

@@ -11,14 +11,13 @@ from .geometry import Geometry
 
 
 class Mask(Geometry):
-    # Raster data can be shared across multiple masks... or not
+    # Mask data can be shared across multiple masks
     mask: MaskData
-    # RGB or Grayscale
     color: Tuple[int, int, int]
 
     @property
     def geometry(self):
-        mask = self.raster(color=1)
+        mask = self.draw(color=1)
         polygons = (
             shape(shp)
             for shp, val in shapes(mask, mask=None)
@@ -26,17 +25,14 @@ class Mask(Geometry):
             if val >= 1)
         return MultiPolygon(polygons).__geo_interface__
 
-    def raster(self,
-               height: Optional[int] = None,
-               width: Optional[int] = None,
-               canvas: Optional[np.ndarray] = None,
-               color: Optional[Union[int, Tuple[int, int, int]]] = None,
-               thickness=None) -> np.ndarray:
+    def draw(self,
+             height: Optional[int] = None,
+             width: Optional[int] = None,
+             canvas: Optional[np.ndarray] = None,
+             color: Optional[Union[int, Tuple[int, int, int]]] = None,
+             thickness=None) -> np.ndarray:
         """
-        # TODO: Optionally use the color. a color of 1 will result in a binary canvas
-
-
-        Removes all pixels from the segmentation mask that do not equal self.color
+        Converts the Mask object into a numpy array
 
         Args:
             height (int): Optionally resize mask height before drawing.
