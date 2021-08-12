@@ -41,18 +41,18 @@ def test_mask():
     assert (gt_mask == mask1.mask.arr).all()
     assert (gt_mask == mask2.mask.arr).all()
 
-    raster1 = mask1.raster()
-    raster2 = mask2.raster()
+    raster1 = mask1.draw()
+    raster2 = mask2.draw()
 
     assert (raster1 != raster2).any()
 
     gt1 = Rectangle(start=Point(x=0, y=0),
-                    end=Point(x=10, y=10)).raster(height=raster1.shape[0],
-                                                  width=raster1.shape[1],
-                                                  color=(255, 255, 255))
+                    end=Point(x=10, y=10)).draw(height=raster1.shape[0],
+                                                width=raster1.shape[1],
+                                                color=(255, 255, 255))
     gt2 = Rectangle(start=Point(x=20, y=20),
-                    end=Point(x=30, y=30)).raster(height=raster2.shape[0],
-                                                  width=raster2.shape[1],
-                                                  color=(0, 255, 255))
+                    end=Point(x=30, y=30)).draw(height=raster2.shape[0],
+                                                width=raster2.shape[1],
+                                                color=(0, 255, 255))
     assert (raster1 == gt1).all()
     assert (raster2 == gt2).all()
