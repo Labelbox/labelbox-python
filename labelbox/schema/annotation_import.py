@@ -259,7 +259,7 @@ class MEAPredictionImport(AnnotationImport):
         if response is None: 
            raise labelbox.exceptions.ResourceNotFoundError(MEAPredictionImport, params)
 
-        return response["modelErrorAnalysisPredictionImport"]
+        return cls(client, response["modelErrorAnalysisPredictionImport"])
 
 
 class MALPredictionImport(AnnotationImport):
@@ -310,4 +310,4 @@ class MALPredictionImport(AnnotationImport):
         if response is None: 
            raise labelbox.exceptions.ResourceNotFoundError(MALPredictionImport, params)
 
-        return response["modelAssistedLabelingPredictionImport"]
+        return cls(client, response["modelAssistedLabelingPredictionImport"])
