@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.0.1 (2021-08-12)
+## Fix
+* Issue with inferring text type from export
+
 # Version 3.0.0 (2021-08-12)
 ## Added
 * Annotation types
