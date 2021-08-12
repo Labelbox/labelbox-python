@@ -28,12 +28,12 @@ class Rectangle(Geometry):
             [self.start.x, self.start.y],
         ]])
 
-    def raster(self,
-               height: Optional[int] = None,
-               width: Optional[int] = None,
-               canvas: Optional[np.ndarray] = None,
-               color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
-               thickness: int = -1) -> np.ndarray:
+    def draw(self,
+             height: Optional[int] = None,
+             width: Optional[int] = None,
+             canvas: Optional[np.ndarray] = None,
+             color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
+             thickness: int = -1) -> np.ndarray:
         """
         Draw the rectangle onto a 3d mask
         Args:

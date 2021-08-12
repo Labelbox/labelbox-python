@@ -128,10 +128,10 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
     Returns:
         float representing the iou score for the masks
     """
-    prediction_np = np.max([pred.value.raster(color=1) for pred in predictions],
+    prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
                            axis=0)
     ground_truth_np = np.max(
-        [ground_truth.value.raster(color=1) for ground_truth in ground_truths],
+        [ground_truth.value.draw(color=1) for ground_truth in ground_truths],
         axis=0)
     if prediction_np.shape != ground_truth_np.shape:
         raise ValueError(
