@@ -16,12 +16,12 @@ class Line(Geometry):
         return geojson.MultiLineString(
             [[[point.x, point.y] for point in self.points]])
 
-    def raster(self,
-               height: Optional[int] = None,
-               width: Optional[int] = None,
-               canvas: Optional[np.ndarray] = None,
-               color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
-               thickness: int = 1) -> np.ndarray:
+    def draw(self,
+             height: Optional[int] = None,
+             width: Optional[int] = None,
+             canvas: Optional[np.ndarray] = None,
+             color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
+             thickness: int = 1) -> np.ndarray:
         """
         Draw the line onto a 3d mask
         Args:

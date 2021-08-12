@@ -16,5 +16,5 @@ def test_rectangle():
     expected['coordinates'] = tuple([tuple([tuple(x) for x in points[0]])])
     assert rectangle.shapely.__geo_interface__ == expected
 
-    raster = rectangle.raster(height=32, width=32)
+    raster = rectangle.draw(height=32, width=32)
     assert (cv2.imread("tests/data/assets/rectangle.png") == raster).all()
