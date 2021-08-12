@@ -83,6 +83,7 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
+        self._verify = True
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -149,7 +150,8 @@ class Client:
                 'url': self.endpoint,
                 'data': data,
                 'headers': self.headers,
-                'timeout': timeout
+                'timeout': timeout,
+                'verify': self._verify
             }
             if files:
                 request.update({'files': files})
