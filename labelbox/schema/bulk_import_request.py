@@ -387,7 +387,7 @@ class BulkImportRequest(DbObject):
         return cls(client, response_data["createBulkImportRequest"])
 
     def delete(self) -> None:
-        """ Deletes the BulkImportRequest object
+        """ Deletes the import job and also any annotations created by this import.
         
         Returns: 
             None
