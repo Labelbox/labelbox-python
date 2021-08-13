@@ -9,9 +9,8 @@ from ...annotation_types.annotation import (ClassificationAnnotation,
                                             VideoObjectAnnotation)
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
-from ...annotation_types.ner import TextEntity
 from .classification import LBV1Classifications
-from .objects import LBV1Objects
+from .objects import LBV1Objects, LBV1TextEntity
 
 
 class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
@@ -220,7 +219,7 @@ class LBV1Label(BaseModel):
     def _has_text_annotations(self):
         return len([
             annotation for annotation in self.label.objects
-            if isinstance(annotation, TextEntity)
+            if isinstance(annotation, LBV1TextEntity)
         ]) > 0
 
     def _row_contains(self, substrs):
