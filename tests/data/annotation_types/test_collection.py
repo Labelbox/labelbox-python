@@ -5,14 +5,14 @@ import numpy as np
 import pytest
 
 from labelbox.data.annotation_types import (LabelList, LabelGenerator,
-                                            ObjectAnnotation, RasterData, Line,
-                                            Mask, Point, Label)
+                                            ObjectAnnotation, ImageData,
+                                            MaskData, Line, Mask, Point, Label)
 from labelbox import OntologyBuilder, Tool
 
 
 @pytest.fixture
 def list_of_labels():
-    return [Label(data=RasterData(url="http://someurl")) for _ in range(5)]
+    return [Label(data=ImageData(url="http://someurl")) for _ in range(5)]
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ def test_conversion(list_of_labels):
 def test_adding_schema_ids():
     name = "line_feature"
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(
                 value=Line(
@@ -77,19 +77,20 @@ def test_adding_schema_ids():
                 name=name,
             )
         ])
-    schema_id = "expected_id"
-    ontology = OntologyBuilder(
-        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
-    generator = LabelGenerator([label]).assign_schema_ids(ontology)
-    assert next(generator).annotations[0].schema_id == schema_id
-    labels = LabelList([label]).assign_schema_ids(ontology)
-    assert next(labels).annotations[0].schema_id == schema_id
-    assert labels[0].annotations[0].schema_id == schema_id
+    feature_schema_id = "expected_id"
+    ontology = OntologyBuilder(tools=[
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=feature_schema_id)
+    ])
+    generator = LabelGenerator([label]).assign_feature_schema_ids(ontology)
+    assert next(generator).annotations[0].feature_schema_id == feature_schema_id
+    labels = LabelList([label]).assign_feature_schema_ids(ontology)
+    assert next(labels).annotations[0].feature_schema_id == feature_schema_id
+    assert labels[0].annotations[0].feature_schema_id == feature_schema_id
 
 
 def test_adding_urls(signer):
-    label = Label(data=RasterData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+    label = Label(data=ImageData(arr=np.random.random((32, 32,
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_url_to_data(signer(uuid))
@@ -97,8 +98,8 @@ def test_adding_urls(signer):
     assert next(generator).data.url == uuid
     assert label.data.url == uuid
 
-    label = Label(data=RasterData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+    label = Label(data=ImageData(arr=np.random.random((32, 32,
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
     labels = LabelList([label]).add_url_to_data(signer(uuid))
@@ -109,8 +110,8 @@ def test_adding_urls(signer):
 
 def test_adding_to_dataset(signer):
     dataset = FakeDataset()
-    label = Label(data=RasterData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+    label = Label(data=ImageData(arr=np.random.random((32, 32,
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     uuid = str(uuid4())
     generator = LabelGenerator([label]).add_to_dataset(dataset, signer(uuid))
@@ -122,8 +123,8 @@ def test_adding_to_dataset(signer):
     assert label.data.url == uuid
 
     dataset = FakeDataset()
-    label = Label(data=RasterData(arr=np.random.random((32, 32,
-                                                        3)).astype(np.uint8)),
+    label = Label(data=ImageData(arr=np.random.random((32, 32,
+                                                       3)).astype(np.uint8)),
                   annotations=[])
     assert label.data.url != uuid
     assert label.data.external_id == None
@@ -140,10 +141,10 @@ def test_adding_to_dataset(signer):
 
 def test_adding_to_masks(signer):
     label = Label(
-        data=RasterData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
+        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
             ObjectAnnotation(name="1234",
-                             value=Mask(mask=RasterData(
+                             value=Mask(mask=MaskData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
                                         color=[255, 255, 255]))
@@ -155,10 +156,10 @@ def test_adding_to_masks(signer):
     assert label.annotations[0].value.mask.url == uuid
 
     label = Label(
-        data=RasterData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
+        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
             ObjectAnnotation(name="1234",
-                             value=Mask(mask=RasterData(
+                             value=Mask(mask=MaskData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
                                         color=[255, 255, 255]))

@@ -418,8 +418,7 @@ class Project(DbObject, Updateable, Deletable):
             LFO, {
                 LFO.project: self,
                 LFO.labeling_frontend: labeling_frontend,
-                LFO.customization_options: labeling_frontend_options,
-                LFO.organization: organization
+                LFO.customization_options: labeling_frontend_options
             })
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
