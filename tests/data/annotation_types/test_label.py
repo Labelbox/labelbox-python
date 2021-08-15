@@ -4,13 +4,13 @@ from labelbox import OntologyBuilder, Tool, Classification as OClassification, O
 from labelbox.data.annotation_types import (ClassificationAnswer, Radio, Text,
                                             ClassificationAnnotation,
                                             ObjectAnnotation, Point, Line,
-                                            RasterData, Label)
+                                            ImageData, Label)
 
 
 def test_schema_assignment_geometry():
     name = "line_feature"
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(
                 value=Line(
@@ -18,12 +18,13 @@ def test_schema_assignment_geometry():
                 name=name,
             )
         ])
-    schema_id = "expected_id"
-    ontology = OntologyBuilder(
-        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
-    label.assign_schema_ids(ontology)
+    feature_schema_id = "expected_id"
+    ontology = OntologyBuilder(tools=[
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=feature_schema_id)
+    ])
+    label.assign_feature_schema_ids(ontology)
 
-    assert label.annotations[0].schema_id == schema_id
+    assert label.annotations[0].feature_schema_id == feature_schema_id
 
 
 def test_schema_assignment_classification():
@@ -31,7 +32,7 @@ def test_schema_assignment_classification():
     text_name = "text_name"
     option_name = "my_option"
 
-    label = Label(data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+    label = Label(data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
                   annotations=[
                       ClassificationAnnotation(value=Radio(
                           answer=ClassificationAnswer(name=option_name)),
@@ -58,10 +59,11 @@ def test_schema_assignment_classification():
                 feature_schema_id=text_schema_id,
             )
         ])
-    label.assign_schema_ids(ontology)
-    assert label.annotations[0].schema_id == radio_schema_id
-    assert label.annotations[1].schema_id == text_schema_id
-    assert label.annotations[0].value.answer.schema_id == option_schema_id
+    label.assign_feature_schema_ids(ontology)
+    assert label.annotations[0].feature_schema_id == radio_schema_id
+    assert label.annotations[1].feature_schema_id == text_schema_id
+    assert label.annotations[
+        0].value.answer.feature_schema_id == option_schema_id
 
 
 def test_schema_assignment_subclass():
@@ -73,20 +75,20 @@ def test_schema_assignment_subclass():
         value=Radio(answer=ClassificationAnswer(name=option_name)),
     )
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
                              name=name,
                              classifications=[classification])
         ])
-    schema_id = "expected_id"
+    feature_schema_id = "expected_id"
     classification_schema_id = "classification_id"
     option_schema_id = "option_schema_id"
     ontology = OntologyBuilder(tools=[
         Tool(Tool.Type.LINE,
              name=name,
-             feature_schema_id=schema_id,
+             feature_schema_id=feature_schema_id,
              classifications=[
                  OClassification(class_type=OClassification.Type.RADIO,
                                  instructions=radio_name,
@@ -97,12 +99,12 @@ def test_schema_assignment_subclass():
                                  ])
              ])
     ])
-    label.assign_schema_ids(ontology)
-    assert label.annotations[0].schema_id == schema_id
+    label.assign_feature_schema_ids(ontology)
+    assert label.annotations[0].feature_schema_id == feature_schema_id
     assert label.annotations[0].classifications[
-        0].schema_id == classification_schema_id
+        0].feature_schema_id == classification_schema_id
     assert label.annotations[0].classifications[
-        0].value.answer.schema_id == option_schema_id
+        0].value.answer.feature_schema_id == option_schema_id
 
 
 def test_highly_nested():
@@ -120,21 +122,21 @@ def test_highly_nested():
                                      name=nested_name)
         ])
     label = Label(
-        data=RasterData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
         annotations=[
             ObjectAnnotation(value=Line(
                 points=[Point(x=1, y=2), Point(x=2, y=2)]),
                              name=name,
                              classifications=[classification])
         ])
-    schema_id = "expected_id"
+    feature_schema_id = "expected_id"
     classification_schema_id = "classification_id"
     nested_classification_schema_id = "nested_classification_schema_id"
     option_schema_id = "option_schema_id"
     ontology = OntologyBuilder(tools=[
         Tool(Tool.Type.LINE,
              name=name,
-             feature_schema_id=schema_id,
+             feature_schema_id=feature_schema_id,
              classifications=[
                  OClassification(
                      class_type=OClassification.Type.RADIO,
@@ -159,9 +161,9 @@ def test_highly_nested():
                      ])
              ])
     ])
-    label.assign_schema_ids(ontology)
-    assert label.annotations[0].schema_id == schema_id
+    label.assign_feature_schema_ids(ontology)
+    assert label.annotations[0].feature_schema_id == feature_schema_id
     assert label.annotations[0].classifications[
-        0].schema_id == classification_schema_id
+        0].feature_schema_id == classification_schema_id
     assert label.annotations[0].classifications[
-        0].value.answer.schema_id == option_schema_id
+        0].value.answer.feature_schema_id == option_schema_id

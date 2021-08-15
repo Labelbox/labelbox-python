@@ -25,7 +25,7 @@ class LabelList:
         self._data = [] if data is None else data
         self._index = 0
 
-    def assign_schema_ids(
+    def assign_feature_schema_ids(
             self, ontology_builder: "ontology.OntologyBuilder") -> "LabelList":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
@@ -37,7 +37,7 @@ class LabelList:
             LabelList. useful for chaining these modifying functions
         """
         for label in self._data:
-            label.assign_schema_ids(ontology_builder)
+            label.assign_feature_schema_ids(ontology_builder)
         return self
 
     def add_to_dataset(self,
@@ -77,7 +77,7 @@ class LabelList:
     def add_url_to_masks(self, signer, max_concurrency=20) -> "LabelList":
         """
         Creates signed urls for all masks in the LabelList.
-        Multiple masks can reference the same RasterData mask so this makes sure we only upload that url once.
+        Multiple masks objects can reference the same MaskData so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:
@@ -179,15 +179,15 @@ class LabelGenerator(PrefetchGenerator):
     def as_list(self) -> "LabelList":
         return LabelList(data=list(self))
 
-    def assign_schema_ids(
+    def assign_feature_schema_ids(
             self,
             ontology_builder: "ontology.OntologyBuilder") -> "LabelGenerator":
 
         def _assign_ids(label: Label):
-            label.assign_schema_ids(ontology_builder)
+            label.assign_feature_schema_ids(ontology_builder)
             return label
 
-        self._fns['assign_schema_ids'] = _assign_ids
+        self._fns['assign_feature_schema_ids'] = _assign_ids
         return self
 
     def add_url_to_data(self, signer: Callable[[bytes],
@@ -235,7 +235,7 @@ class LabelGenerator(PrefetchGenerator):
                                                 str]) -> "LabelGenerator":
         """
         Creates signed urls for all masks in the LabelGenerator.
-        Multiple masks can reference the same RasterData mask so this makes sure we only upload that url once.
+        Multiple masks can reference the same MaskData so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:
