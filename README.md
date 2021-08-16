@@ -56,7 +56,7 @@ pip3 install -r requirements.txt
 Labelbox uses API keys to validate requests. You can create and manage API keys on [Labelbox](https://app.labelbox.com/account/api-keys). Pass your API key as an environment variable. Then, import and initialize the API Client.
 
 ```
-user@machine:~$ export LABELBOX_API_KEY="<your api key here>"
+user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
 user@machine:~$ python3
 
 from labelbox import Client
@@ -68,17 +68,25 @@ Please consult `CONTRIB.md`
 
 ## Testing
 1. Update the `Makefile` with your `local`, `staging`, `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
-2. To test on `staging`:
+2. To test on `local`: 
 ```
-make test-staging PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
-```
-
-3. To test on `prod`:
-```
-make test-prod PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
+user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
+make test-local  # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
 ```
 
-4. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
+3. To test on `staging`:
+```
+user@machine:~$ export LABELBOX_TEST_API_KEY_STAGING="<your staging api key here>"
+make test-staging # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
+```
+
+4. To test on `prod`:
+```
+user@machine:~$ export LABELBOX_TEST_API_KEY_PROD="<your prod api key here>"
+make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
+```
+
+5. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
 ```
 make -B {build|test-staging|test_prod}
 ```
