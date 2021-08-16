@@ -93,7 +93,7 @@ class RasterData(BaseModel, ABC):
     def set_fetch_fn(self, fn):
         object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
-    @retry.Retry(deadline=15.)
+    @retry.Retry(deadline=60.)
     def fetch_remote(self) -> bytes:
         """
         Method for accessing url.
@@ -105,7 +105,7 @@ class RasterData(BaseModel, ABC):
         response.raise_for_status()
         return response.content
 
-    @retry.Retry(deadline=15.)
+    @retry.Retry(deadline=30.)
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
         Utility for creating a url from any of the other image representations.

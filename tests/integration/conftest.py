@@ -107,6 +107,7 @@ def queries():
 
 
 class IntegrationClient(Client):
+
     def __init__(self, environ: str) -> None:
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
@@ -155,7 +156,8 @@ def project(client, rand_gen):
         """
         Label = Entity.Label
         kwargs[Label.project] = project
-        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,0.0)
+        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
+                                                    0.0)
         data = {
             Label.attribute(attr) if isinstance(attr, str) else attr:
             value.uid if isinstance(value, DbObject) else value

@@ -1,21 +1,17 @@
 # https://cocodataset.org/#format-data
 
-from labelbox.data.serialization.coco.categories import Categories
+from labelbox.data.serialization.coco.categories import Categories, hash_category_name
 from labelbox.data.serialization.coco.annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_decoding
-from labelbox.data.serialization.coco.image import CocoImage, get_image
+from labelbox.data.serialization.coco.image import CocoImage, get_image, get_image_id
 from typing import Any, Dict, List
 from pydantic import BaseModel
-from ...annotation_types import RasterData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
+from ...annotation_types import ImageData, MaskData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
 import numpy as np
-import imagesize
 from PIL import Image
-import hashlib
 from tqdm import tqdm
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from ...annotation_types.collection import LabelCollection
-
-
 
 
 def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
@@ -42,7 +38,7 @@ def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
 
 
 def vector_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
-                                     image_id, category_id):
+                                     image_id: int, category_id):
     shapely = annotation.value.shapely
     xmin, ymin, xmax, ymax = shapely.bounds
     segmentation = []
@@ -69,7 +65,7 @@ def rle_to_common(class_annotations, class_name):
     mask = rle_decoding(class_annotations.segmentation.counts,
                         *class_annotations.segmentation.size[::-1])
     return ObjectAnnotation(name=class_name,
-                            value=Mask(mask=RasterData.from_2D_arr(mask),
+                            value=Mask(mask=MaskData.from_2D_arr(mask),
                                        color=[1, 1, 1]))
 
 
@@ -86,19 +82,18 @@ def segmentations_to_common(class_annotations, class_name):
     return annotations
 
 
-def process_label(label, idx, image_root):
+def process_label(label: Label, idx, image_root):
     annot_idx = idx * 10000
-    image_id = idx  # everything has to be an int.. #label.data.uid or idx
-    image = get_image(label, image_root, idx)
+    image_id = get_image_id(label, idx)
+    image = get_image(label, image_root, image_id)
     coco_annotations = []
     annotation_lookup = get_annotation_lookup(label.annotations)
     categories = {}
     for class_name in annotation_lookup:
         for annotation in annotation_lookup[class_name]:
             if annotation.name not in categories:
-                categories[annotation.name] = int(
-                    hashlib.sha256(annotation.name.encode('utf-8')).hexdigest(),
-                    16) % 10**8
+                categories[annotation.name] = hash_category_name(
+                    annotation.name)
             if isinstance(annotation.value, Mask):
                 coco_annotations.append(
                     mask_to_coco_object_annotation(annotation, annot_idx,
@@ -162,7 +157,7 @@ class CocoInstanceDataset(BaseModel):
                     f"Cannot find file {im_path}. Make sure `image_root` is set properly"
                 )
 
-            data = RasterData(file_path=im_path)
+            data = ImageData(file_path=im_path)
             annotations = []
             for class_annotations in annotation_lookup[image.id]:
                 if isinstance(class_annotations.segmentation, RLE):

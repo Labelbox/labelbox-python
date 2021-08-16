@@ -3,9 +3,22 @@
 
 # Will use subclasses too..
 # checklist and radio will be turned into underscore delimitated names
+from typing import Dict, Any
+import os
 
+from labelbox.data.annotation_types.collection import LabelCollection, LabelGenerator
 from labelbox.data.serialization.coco.instance_dataset import CocoInstanceDataset
 from labelbox.data.serialization.coco.panoptic_dataset import CocoPanopticDataset
+
+
+def create_path_if_not_exists(path: str):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def validate_path(path, name):
+    if not os.path.exists(path):
+        raise ValueError(f"{name} {path} must exist")
 
 
 class COCOConverter:
@@ -14,42 +27,36 @@ class COCOConverter:
     # TODO: Filter out video annotations..
     """
 
-    def serialize_to_object_detection(data, image_root):
-        im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
-        labels = COCOConverter.deserialize_instance(data, image_root=image_root)
+    def serialize_instances(labels: LabelCollection,
+                            image_root: str) -> Dict[str, Any]:
+        """
+        Compatible with masks, polygons, and masks. Will turn masks into individual instances
+        """
+        create_path_if_not_exists(image_root)
         return CocoInstanceDataset.from_common(labels=labels,
-                                               image_root=im_root).dict()
+                                               image_root=image_root).dict()
 
-    def serialize_to_panoptic(data):
-        #im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
-        #labels = COCOConverter.deserialize_panoptic(data, image_root = im_root, seg_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/2017_panoptic/imq/panoptic_val2017")
-        im_root = "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
-        labels = COCOConverter.deserialize_instance(data, image_root=im_root)
-        res = CocoPanopticDataset.from_common(
-            labels=labels,
-            image_root=im_root,
-            seg_root=
-            "/Users/matthewsokoloff/Projects/labelbox-python/explore/images/masks"
-        )
-        return res.dict()
+    def serialize_panoptic(labels: LabelCollection, image_root: str,
+                           mask_root: str) -> Dict[str, Any]:
+        create_path_if_not_exists(image_root)
+        create_path_if_not_exists(mask_root)
+        return CocoPanopticDataset.from_common(labels=labels,
+                                               image_root=image_root,
+                                               mask_root=mask_root).dict()
 
     @classmethod
-    def deserializei_panoptic(
-        cls,
-        data,
-        image_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017",
-        seg_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/2017_panoptic/imq/panoptic_val2017"
-    ):
-        objs = CocoPanopticDataset(**data)
-        gen = objs.to_common(image_root, seg_root)
-        return gen
+    def deserialize_panoptic(cls, json_data: Dict[str, Any], image_root: str,
+                             mask_root: str) -> LabelGenerator:
+        validate_path(image_root, 'image_root')
+        validate_path(mask_root, 'mask_root')
+        objs = CocoPanopticDataset(**json_data)
+        gen = objs.to_common(image_root, mask_root)
+        return LabelGenerator(data=gen)
 
     @classmethod
-    def deserialize_instance(
-        cls,
-        data,
-        image_root="/Users/matthewsokoloff/Projects/labelbox-python/explore/images/val2017"
-    ):
-        objs = CocoInstanceDataset(**data)
+    def deserialize_instances(cls, json_data: Dict[str, Any],
+                              image_root: str) -> LabelGenerator:
+        validate_path(image_root, 'image_root')
+        objs = CocoInstanceDataset(**json_data)
         gen = objs.to_common(image_root)
-        return gen
+        return LabelGenerator(data=gen)
