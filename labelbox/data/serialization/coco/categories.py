@@ -7,7 +7,7 @@ class Categories(BaseModel):
     id: int
     name: str
     supercategory: str
-    isthing: Optional[int]
+    isthing: int = 1
 
 
 def hash_category_name(name: str) -> int:
