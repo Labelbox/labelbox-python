@@ -88,10 +88,5 @@ make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LA
 
 5. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
 ```
-make -B {build|test-staging|test_prod}
-```
-
-Or you can just run everything in a single command:
-```
-docker build -t local/labelbox-python:test . && make test-staging PATH_TO_TEST= LABELBOX_TEST_API_KEY=
+make -B {build|test-staging|test-prod}
 ```
