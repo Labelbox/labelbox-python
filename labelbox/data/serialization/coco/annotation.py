@@ -45,7 +45,7 @@ class COCOObjectAnnotation(BaseModel):
     segmentation: Union[RLE, List[List[float]]]  # [[x1,y1,x2,y2,x3,y3...]]
     area: float
     bbox: Tuple[float, float, float, float]  #[x,y,w,h],
-    iscrowd: int = 0  # 0 or 1
+    iscrowd: int = 0
 
 
 class PanopticAnnotation(BaseModel):

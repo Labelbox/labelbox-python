@@ -37,12 +37,16 @@ class COCOConverter:
                                                image_root=image_root).dict()
 
     def serialize_panoptic(labels: LabelCollection, image_root: str,
-                           mask_root: str) -> Dict[str, Any]:
+                           mask_root: str, all_stuff: bool = False) -> Dict[str, Any]:
+        """
+        All stuff turns every class into segmentation classes
+
+        """
         create_path_if_not_exists(image_root)
         create_path_if_not_exists(mask_root)
         return CocoPanopticDataset.from_common(labels=labels,
                                                image_root=image_root,
-                                               mask_root=mask_root).dict()
+                                               mask_root=mask_root, all_stuff=all_stuff).dict()
 
     @classmethod
     def deserialize_panoptic(cls, json_data: Dict[str, Any], image_root: str,

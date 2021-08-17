@@ -34,6 +34,8 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
 
 
 def mask_to_coco_segment_info(canvas: np.ndarray, annotation, category_id):
+    # Expects a unique color for each class....
+    # Also there is a possible conflict with vector classes being draw. TODO: Use ID instead
     mask = annotation.value.draw()
     shapely = annotation.value.shapely
     xmin, ymin, xmax, ymax = shapely.bounds
@@ -45,7 +47,11 @@ def mask_to_coco_segment_info(canvas: np.ndarray, annotation, category_id):
                        bbox=[xmin, ymin, xmax - xmin, ymax - ymin]), canvas
 
 
-def process_label(label: Label, idx: Union[int, str], image_root, mask_root):
+def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all_stuff = False):
+    """
+    Masks become stuff
+    Polygon and rectangle become thing
+    """
     annotations = get_annotation_lookup(label.annotations)
     image_id = get_image_id(label, idx)
     image = get_image(label, image_root, image_id)
@@ -54,8 +60,9 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root):
     segments = []
     categories = {}
     is_thing = {}
-    for class_name in annotations:
-        for annot_idx, annotation in enumerate(annotations[class_name]):
+
+    for class_idx, class_name in enumerate(annotations):
+        for annotation_idx, annotation in enumerate(annotations[class_name]):
             categories[annotation.name] = hash_category_name(annotation.name)
             if isinstance(annotation.value, Mask):
                 segment, canvas = (mask_to_coco_segment_info(
@@ -68,10 +75,10 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root):
                     vector_to_coco_segment_info(
                         canvas,
                         annotation,
-                        annotation_idx=annot_idx,
+                        annotation_idx=(class_idx if all_stuff else annotation_idx) + 1,
                         image=image,
                         category_id=categories[annotation.name]))
-                is_thing[annotation.name] = 1
+                is_thing[annotation.name] = 1 - int(all_stuff)
         # TODO: Report on unconverted annotations.
 
     mask_file = image.file_name.replace('.jpg', '.png')
@@ -90,14 +97,14 @@ class CocoPanopticDataset(BaseModel):
     categories: List[Categories]
 
     @classmethod
-    def from_common(cls, labels: LabelCollection, image_root, mask_root):
+    def from_common(cls, labels: LabelCollection, image_root, mask_root, all_stuff):
         all_coco_annotations = []
         coco_categories = {}
         coco_things = {}
         images = []
         with ProcessPoolExecutor(max_workers=8) as exc:
             futures = [
-                exc.submit(process_label, label, idx, image_root, mask_root)
+                exc.submit(process_label, label, idx, image_root, mask_root, all_stuff)
                 for idx, label in enumerate(labels)
             ]
             for future in tqdm(as_completed(futures)):

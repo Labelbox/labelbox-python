@@ -133,16 +133,19 @@ class CocoInstanceDataset(BaseModel):
                 all_coco_annotations.extend(annotations)
                 coco_categories.update(categories)
 
+
+        categories=[
+                Categories(id=idx,
+                            name=name,
+                            supercategory='all',
+       isthing=0)
+                                       for name, idx in coco_categories.items()
+                                   ]
         return CocoInstanceDataset(info={'image_root': image_root},
                                    images=images,
                                    annotations=all_coco_annotations,
-                                   categories=[
-                                       Categories(id=idx,
-                                                  name=name,
-                                                  supercategory='all',
-                                                  isthing=0)
-                                       for name, idx in coco_categories.items()
-                                   ])
+                                   categories=categories)
+
 
     def to_common(self, image_root):
         category_lookup = {
