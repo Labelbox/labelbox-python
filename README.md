@@ -71,19 +71,19 @@ Please consult `CONTRIB.md`
 2. To test on `local`: 
 ```
 user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
-make test-local  # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
+make test-local  # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_LOCAL=specify_here_or_export_me
 ```
 
 3. To test on `staging`:
 ```
 user@machine:~$ export LABELBOX_TEST_API_KEY_STAGING="<your staging api key here>"
-make test-staging # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
+make test-staging # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_STAGING=specify_here_or_export_me
 ```
 
 4. To test on `prod`:
 ```
 user@machine:~$ export LABELBOX_TEST_API_KEY_PROD="<your prod api key here>"
-make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY=specify_here_or_export_me
+make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_PROD=specify_here_or_export_me
 ```
 
 5. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
