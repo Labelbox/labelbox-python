@@ -195,6 +195,9 @@ class Client:
                     return error
             return None
 
+        def get_error_status_code(error):
+            return error["extensions"]["exception"]["status"]
+
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
@@ -242,7 +245,7 @@ class Client:
         if internal_server_error is not None:
             message = internal_server_error.get("message")
 
-            if message.startswith(("Syntax Error", "Invite(s) cannot be sent")):
+            if get_error_status_code(internal_server_error) == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
