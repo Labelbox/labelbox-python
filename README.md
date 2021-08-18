@@ -56,11 +56,22 @@ pip3 install -r requirements.txt
 Labelbox uses API keys to validate requests. You can create and manage API keys on [Labelbox](https://app.labelbox.com/account/api-keys). Pass your API key as an environment variable. Then, import and initialize the API Client.
 
 ```
-user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
+user@machine:~$ export LABELBOX_API_KEY="<your local api key here>"
 user@machine:~$ python3
 
 from labelbox import Client
-client = Client(api_key="your_key_here", endpoint="http://localhost:8080/_gql")
+client = Client()
+```
+* Update api_key and endpoint if not using the production cloud deployment
+```
+# On prem
+client = Client( endpoint = "<local deployment>")
+
+# Local
+client = Client(api_key=os.environ['LABELBOX_TEST_API_KEY_LOCAL'], endpoint="http://localhost:8080/graphql")
+
+# Staging
+client = Client(api_key=os.environ['LABELBOX_TEST_API_KEY_LOCAL'], endpoint="https://staging-api.labelbox.com/graphql")
 ```
 
 ## Contribution
@@ -68,7 +79,7 @@ Please consult `CONTRIB.md`
 
 ## Testing
 1. Update the `Makefile` with your `local`, `staging`, `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
-2. To test on `local`: 
+2. To test on `local`:
 ```
 user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
 make test-local  # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_LOCAL=specify_here_or_export_me
