@@ -6,7 +6,7 @@
 * Delete Bulk Import Requests with `BulkImportRequest.delete()`
 
 ## Misc
-* Updated MEAPredictionImport class to use latest grapqhql endpoint
+* Updated MEAPredictionImport class to use latest grapqhql endpoints
 
 
 # Version 3.0.1 (2021-08-12)
