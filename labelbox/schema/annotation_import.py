@@ -1,25 +1,26 @@
-from typing import Any, Dict, List, Union
 import functools
-import os
 import json
-import time
 import logging
+import os
+import time
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Union
 
 import backoff
 import ndjson
 import requests
 
 import labelbox
-from labelbox.schema.enums import AnnotationImportState
+from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.orm import query
+from labelbox.schema.enums import AnnotationImportState
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
 
-class AnnotationImport(DbObject):
+class AnnotationImport(DbObject, ABC):
     name = Field.String("name")
     state = Field.Enum(AnnotationImportState, "state")
     input_file_url = Field.String("input_file_url")
@@ -121,6 +122,10 @@ class AnnotationImport(DbObject):
     @staticmethod
     def _make_file_name(parent_id: str, name: str) -> str:
         return f"{parent_id}__{name}.ndjson"
+
+    @abstractmethod
+    def from_name(cls, client, parent, name):
+        ...
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
@@ -240,11 +245,10 @@ class MEAPredictionImport(AnnotationImport):
                                     parent_id=model_run_id,
                                     name=name,
                                     url=url)
-                                    
+
     @classmethod
-    def from_name(
-            cls, client: "labelbox.Client", model_run_id: str,
-            name: str) -> "MEAPredictionImport":
+    def from_name(cls, client: "labelbox.Client", model_run_id: str,
+                  name: str) -> "MEAPredictionImport":
 
         query_str = """query getModelErrorAnalysisPredictionImportPyApi($modelRunId : ID!, $name: String!) {
             modelErrorAnalysisPredictionImport(
@@ -256,8 +260,9 @@ class MEAPredictionImport(AnnotationImport):
             "name": name,
         }
         response = client.execute(query_str, params)
-        if response is None: 
-           raise labelbox.exceptions.ResourceNotFoundError(MEAPredictionImport, params)
+        if response is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                MEAPredictionImport, params)
 
         return cls(client, response["modelErrorAnalysisPredictionImport"])
 
@@ -293,9 +298,8 @@ class MALPredictionImport(AnnotationImport):
                                     url=url)
 
     @classmethod
-    def from_name(
-            cls, client: "labelbox.Client", project_id: str,
-            name: str) -> "MALPredictionImport":
+    def from_name(cls, client: "labelbox.Client", project_id: str,
+                  name: str) -> "MALPredictionImport":
 
         query_str = """query getModelAssistedLabelingPredictionImportPyApi($projectId : ID!, $name: String!) {
             modelAssistedLabelingPredictionImport(
@@ -307,7 +311,8 @@ class MALPredictionImport(AnnotationImport):
             "name": name,
         }
         response = client.execute(query_str, params)
-        if response is None: 
-           raise labelbox.exceptions.ResourceNotFoundError(MALPredictionImport, params)
+        if response is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                MALPredictionImport, params)
 
         return cls(client, response["modelAssistedLabelingPredictionImport"])

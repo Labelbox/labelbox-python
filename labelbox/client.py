@@ -192,7 +192,7 @@ class Client:
                 if obj in keywords:
                     return error
             return None
-        
+
         def get_error_status_code(error):
             return error["extensions"]["exception"]["status"]
 
