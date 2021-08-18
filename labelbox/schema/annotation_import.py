@@ -130,11 +130,11 @@ class AnnotationImport(DbObject):
         """Synchronizes values of all fields with the database.
         """
         cls = type(self)
-        res = cls.from_name(self.client, self.parent_id, self.name)
+        res = cls.from_name(self.client, self.parent_id, self.name, as_json = True)
         self._set_field_values(res)
 
     @classmethod
-    def from_name(cls, client: "labelbox.Client", parent_id: str, name: str):
+    def from_name(cls, client: "labelbox.Client", parent_id: str, name: str, as_json: bool = False):
         raise NotImplementedError("Inheriting class must override")
 
     @property
@@ -225,7 +225,7 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def from_name(cls, client: "labelbox.Client", model_run_id: str,
-                  name: str) -> "MEAPredictionImport":
+                  name: str, as_json: bool =  False) -> "MEAPredictionImport":
         """
         Retrieves an MEA import job.
 
@@ -249,7 +249,9 @@ class MEAPredictionImport(AnnotationImport):
         if response is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 MEAPredictionImport, params)
-
+        response = response["modelErrorAnalysisPredictionImport"]
+        if as_json:
+            return response
         return cls(client, response["modelErrorAnalysisPredictionImport"])
 
     @classmethod
@@ -264,7 +266,7 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_file_mutation(cls) -> str:
-        return """mutation create%sPyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        return """mutation createMeaPredictionImportPyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createModelErrorAnalysisPredictionImport(data: {
                 modelRunId: $modelRunId name: $name filePayload: { file: $file, contentLength: $contentLength}
         }) {%s}
@@ -377,7 +379,7 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def from_name(cls, client: "labelbox.Client", project_id: str,
-                  name: str) -> "MALPredictionImport":
+                  name: str, as_json: bool = False) -> "MALPredictionImport":
         """
         Retrieves an MAL import job.
 
@@ -401,12 +403,14 @@ class MALPredictionImport(AnnotationImport):
         if response is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 MALPredictionImport, params)
-
+        response = response["modelAssistedLabelingPredictionImport"]
+        if as_json:
+            return response
         return cls(client, response["modelAssistedLabelingPredictionImport"])
 
     @classmethod
     def _get_url_mutation(cls) -> str:
-        return """mutation createMeaPredictionImportPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
+        return """mutation createMALPredictionImportPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
             createModelAssistedLabelingPredictionImport(data: {
                 projectId: $projectId
                 name: $name
@@ -416,7 +420,7 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_file_mutation(cls) -> str:
-        return """mutation create%sPyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        return """mutation createMALPredictionImportPyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createModelAssistedLabelingPredictionImport(data: {
                 projectId: $projectId name: $name filePayload: { file: $file, contentLength: $contentLength}
         }) {%s}
