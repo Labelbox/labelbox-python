@@ -50,10 +50,10 @@ class ModelRun(DbObject):
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
             if os.path.exists(predictions):
-                return MEAPredictionImport.create_from_file(path=predictions,
-                                                            **kwargs)
+                return MEAPredictionImport.create_from_file(
+                    path=str(predictions), **kwargs)
             else:
-                return MEAPredictionImport.create_from_url(url=predictions,
+                return MEAPredictionImport.create_from_url(url=str(predictions),
                                                            **kwargs)
         elif isinstance(predictions, Iterable):
             return MEAPredictionImport.create_from_objects(
