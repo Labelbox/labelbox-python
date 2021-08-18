@@ -1,5 +1,67 @@
 # Changelog
 
+# Version 3.0.1 (2021-08-12)
+## Fix
+* Issue with inferring text type from export
+
+# Version 3.0.0 (2021-08-12)
+## Added
+* Annotation types
+    - A set of python objects for working with labelbox data
+    - Creates a standard interface for both exports and imports
+    - See example notebooks on how to use under examples/annotation_types
+    - Note that these types are not yet supported for tiled imagery
+* MEA Support
+    - Beta MEA users can now just use the latest SDK release
+* Metadata support
+    - New metadata features are now fully supported by the SDK
+* Easier export
+    - `project.export_labels()` accepts a boolean indicating whether or not to download the result
+    - Create annotation objects directly from exports with `project.label_generator()` or `project.video_label_generator()`
+    - `project.video_label_generator()` asynchronously fetches video annotations
+* Retry logic on data uploads
+    - Bulk creation of data rows will be more reliable
+* Datasets
+    - Determine the number of data rows just by calling `dataset.row_count`.
+    - Updated threading logic in create_data_rows() to make it compatible with aws lambdas
+* Ontology
+    - `OntologyBuilder`, `Classification`, `Option`, and `Tool` can now be imported from `labelbox` instead of `labelbox.schema.ontology`
+
+## Removed
+* Deprecated:
+    - `project.reviews()`
+    - `project.create_prediction()`
+    - `project.create_prediction_model()`
+    - `project.create_label()`
+    - `Project.predictions()`
+    - `Project.active_prediction_model`
+    - `data_row.predictions`
+    - `PredictionModel`
+    - `Prediction`
+* Replaced:
+    - `data_row.metadata()` use `data_row.attachments()` instead
+    - `data_row.create_metadata()` use `data_row.create_attachments()` instead
+    - `AssetMetadata` use `AssetAttachment` instead
+
+## Fixes
+* Support derived classes of ontology objects when using `from_dict`
+* Notebooks:
+    - Video export bug where the code would fail if the exported projects had tools other than bounding boxes
+    - MAL demos were broken due to an image download failing.
+
+## Misc
+* Data processing dependencies are not installed by default to for users that only want client functionality.
+* To install all dependencies required for the data modules (annotation types and mea metric calculation) use `pip install labelbox[data]`
+* Decrease wait time between updates for `BulkImportRequest.wait_until_done()`.
+* Organization is no longer used to create the LFO in `Project.setup()`
+
+
+# Version 3.0.0-rc3 (2021-08-11)
+## Updates
+* Geometry.raster now has a consistent interface and improved functionality
+* renamed schema_id to feature_schema_id in the `FeatureSchema` class
+* `Mask` objects now use `MaskData` to represent segmentation masks instead of `ImageData`
+
 # Version 3.0.0-rc2 (2021-08-09)
 ## Updates
 * Rename `data` property of TextData, ImageData, and VideoData types to `value`.
