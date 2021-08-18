@@ -44,6 +44,10 @@ Install dependencies
 ```
 pip3 install -r requirements.txt
 ```
+To install dependencies required for data processing modules use:
+```
+pip install labelbox[data]
+```
 
 ## Documentation
 

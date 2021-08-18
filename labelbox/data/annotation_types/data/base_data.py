@@ -1,9 +1,10 @@
+from abc import ABC
 from typing import Optional
 
 from pydantic import BaseModel
 
 
-class BaseData(BaseModel):
+class BaseData(BaseModel, ABC):
     """
     Base class for objects representing data.
     This class shouldn't directly be used

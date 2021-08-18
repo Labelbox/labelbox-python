@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
-from ...annotation_types.data import RasterData, TextData, VideoData
+from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
 from .metric import NDMetricAnnotation, NDMetricType
@@ -57,14 +57,14 @@ class NDLabel(BaseModel):
 
     def _infer_media_type(
         self, annotations: List[Union[NDObjectType, NDClassificationType]]
-    ) -> Union[TextEntity, TextData, RasterData]:
+    ) -> Union[TextEntity, TextData, ImageData]:
         types = {type(annotation) for annotation in annotations}
         if TextEntity in types:
             return TextData
         elif VideoClassificationAnnotation in types:
             return VideoData
         else:
-            return RasterData
+            return ImageData
 
     @staticmethod
     def _get_consecutive_frames(
@@ -82,7 +82,7 @@ class NDLabel(BaseModel):
         video_annotations = defaultdict(list)
         for annot in label.annotations:
             if isinstance(annot, VideoClassificationAnnotation):
-                video_annotations[annot.schema_id].append(annot)
+                video_annotations[annot.feature_schema_id].append(annot)
 
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(
