@@ -62,19 +62,17 @@ def test_get_datarow_metadata_ontology(mdo):
 def test_get_datarow_metadata(datarow):
     """No metadata"""
     md = datarow.metadata
-    assert not len(md["fields"])
     assert len(md)
 
 
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
-    assert not len(datarow.metadata["fields"])
+    n_fields = len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
-    assert len(datarow.metadata["fields"])
+    assert len(datarow.metadata["fields"]) > n_fields
 
 
 def test_parse_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
-    assert not len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
     assert mdo.parse_metadata([datarow.metadata])
@@ -94,13 +92,7 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
 
 
 def test_bulk_delete_datarow_metadata(datarow, mdo):
-    """test bulk deletes for all fields
-
-    TODO: this fails because of the enum validation issue
-
-    """
-    assert not len(datarow.metadata["fields"])
-
+    """test bulk deletes for all fields"""
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
 
