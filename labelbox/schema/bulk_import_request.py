@@ -386,6 +386,21 @@ class BulkImportRequest(DbObject):
                                                       file_name, file_data)
         return cls(client, response_data["createBulkImportRequest"])
 
+    def delete(self) -> None:
+        """ Deletes the import job and also any annotations created by this import.
+        
+        Returns: 
+            None
+        """
+        id_param = "bulk_request_id"
+        query_str = """mutation deleteBulkImportRequestPyApi($%s: ID!) {
+            deleteBulkImportRequest(where: {id: $%s}) {
+                id
+                name
+            }
+        }""" % (id_param, id_param)
+        self.client.execute(query_str, {id_param: self.uid})
+
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]],
                      project: "labelbox.Project") -> None:
