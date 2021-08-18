@@ -11,16 +11,17 @@ class FeatureSchema(BaseModel):
     Could be a annotation, a subclass, or an option.
     Schema ids might not be known when constructing these objects so both a name and schema id are valid.
 
-    Use `LabelList.assign_schema_ids` or `LabelGenerator.assign_schema_ids`
+    Use `LabelList.assign_feature_schema_ids` or `LabelGenerator.assign_feature_schema_ids`
     to retroactively add schema ids by looking them up from the names.
     """
     name: Optional[str] = None
-    schema_id: Optional[Cuid] = None
+    feature_schema_id: Optional[Cuid] = None
 
     @root_validator
     def must_set_one(cls, values):
 
-        if values['schema_id'] is None and values['name'] is None:
+        if values['feature_schema_id'] is None and values['name'] is None:
             raise ValueError(
-                "Must set either schema_id or name for all feature schemas")
+                "Must set either feature_schema_id or name for all feature schemas"
+            )
         return values

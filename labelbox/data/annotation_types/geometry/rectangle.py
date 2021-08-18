@@ -1,3 +1,5 @@
+from typing import Optional, Union, Tuple
+
 import cv2
 import geojson
 import numpy as np
@@ -26,18 +28,26 @@ class Rectangle(Geometry):
             [self.start.x, self.start.y],
         ]])
 
-    def raster(self, height: int, width: int,
-               color=(255, 255, 255)) -> np.ndarray:
+    def draw(self,
+             height: Optional[int] = None,
+             width: Optional[int] = None,
+             canvas: Optional[np.ndarray] = None,
+             color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
+             thickness: int = -1) -> np.ndarray:
         """
         Draw the rectangle onto a 3d mask
-
         Args:
             height (int): height of the mask
             width (int): width of the mask
-            color (int): color for the rectangle. Only a single int since this is a grayscale mask.
+            color (int): color for the polygon.
+                  RGB values by default but if a 2D canvas is provided this can set this to an int.
+            thickness (int): How thick to make the rectangle border. -1 fills in the rectangle
+            canvas (np.ndarray): Canvas to draw rectangle on
         Returns:
             numpy array representing the mask with the rectangle drawn on it.
         """
-        canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        canvas = self.get_or_create_canvas(height, width, canvas)
         pts = np.array(self.geometry['coordinates']).astype(np.int32)
-        return cv2.fillPoly(canvas, pts=pts, color=color)
+        if thickness == -1:
+            return cv2.fillPoly(canvas, pts, color)
+        return cv2.polylines(canvas, pts, True, color, thickness)

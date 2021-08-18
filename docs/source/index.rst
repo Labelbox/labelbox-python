@@ -21,12 +21,6 @@ AssetAttachment
    :members:
    :show-inheritance:
 
-AssetMetadata
---------------------------------------
-
-.. automodule:: labelbox.schema.asset_metadata
-   :members:
-   :show-inheritance:
 
 Benchmark
 --------------------------------
