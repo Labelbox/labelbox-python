@@ -130,11 +130,18 @@ class AnnotationImport(DbObject):
         """Synchronizes values of all fields with the database.
         """
         cls = type(self)
-        res = cls.from_name(self.client, self.parent_id, self.name, as_json = True)
+        res = cls.from_name(self.client,
+                            self.parent_id,
+                            self.name,
+                            as_json=True)
         self._set_field_values(res)
 
     @classmethod
-    def from_name(cls, client: "labelbox.Client", parent_id: str, name: str, as_json: bool = False):
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  parent_id: str,
+                  name: str,
+                  as_json: bool = False):
         raise NotImplementedError("Inheriting class must override")
 
     @property
@@ -224,8 +231,11 @@ class MEAPredictionImport(AnnotationImport):
             raise ValueError(f"Url {url} is not reachable")
 
     @classmethod
-    def from_name(cls, client: "labelbox.Client", model_run_id: str,
-                  name: str, as_json: bool =  False) -> "MEAPredictionImport":
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  model_run_id: str,
+                  name: str,
+                  as_json: bool = False) -> "MEAPredictionImport":
         """
         Retrieves an MEA import job.
 
@@ -378,8 +388,11 @@ class MALPredictionImport(AnnotationImport):
             raise ValueError(f"Url {url} is not reachable")
 
     @classmethod
-    def from_name(cls, client: "labelbox.Client", project_id: str,
-                  name: str, as_json: bool = False) -> "MALPredictionImport":
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  project_id: str,
+                  name: str,
+                  as_json: bool = False) -> "MALPredictionImport":
         """
         Retrieves an MAL import job.
 
