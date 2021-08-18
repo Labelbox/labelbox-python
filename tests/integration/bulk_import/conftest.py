@@ -1,4 +1,3 @@
-from labelbox.schema.bulk_import_request import BulkImportRequest
 import uuid
 
 import pytest
@@ -305,7 +304,7 @@ def model_run(client, rand_gen, configured_project, annotation_submit_fn,
     configured_project.enable_model_assisted_labeling()
     ontology = configured_project.ontology()
 
-    upload_task = BulkImportRequest.create_from_objects(
+    upload_task = MALPredictionImport.create_from_objects(
         client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
         model_run_predictions)
     upload_task.wait_until_done()

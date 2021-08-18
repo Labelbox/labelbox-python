@@ -219,7 +219,7 @@ class MEAPredictionImport(AnnotationImport):
                                    "fileUrl": url,
                                    "modelRunId": model_run_id,
                                    'name': name
-                               })["modelErrorAnalysisPredictionImport"])
+                               })["createModelErrorAnalysisPredictionImport"])
         else:
             raise ValueError(f"Url {url} is not reachable")
 
@@ -252,11 +252,11 @@ class MEAPredictionImport(AnnotationImport):
         response = response["modelErrorAnalysisPredictionImport"]
         if as_json:
             return response
-        return cls(client, response["modelErrorAnalysisPredictionImport"])
+        return cls(client, response)
 
     @classmethod
     def _get_url_mutation(cls) -> str:
-        return """mutation createMeaPredictionImportPyApi($modelRunId : ID!, $name: String!, $fileUrl: String!) {
+        return """mutation createMEAPredictionImportPyApi($modelRunId : ID!, $name: String!, $fileUrl: String!) {
             createModelErrorAnalysisPredictionImport(data: {
                 modelRunId: $modelRunId
                 name: $name
@@ -266,7 +266,7 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_file_mutation(cls) -> str:
-        return """mutation createMeaPredictionImportPyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        return """mutation createMEAPredictionImportPyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createModelErrorAnalysisPredictionImport(data: {
                 modelRunId: $modelRunId name: $name filePayload: { file: $file, contentLength: $contentLength}
         }) {%s}
@@ -406,7 +406,7 @@ class MALPredictionImport(AnnotationImport):
         response = response["modelAssistedLabelingPredictionImport"]
         if as_json:
             return response
-        return cls(client, response["modelAssistedLabelingPredictionImport"])
+        return cls(client, response)
 
     @classmethod
     def _get_url_mutation(cls) -> str:
