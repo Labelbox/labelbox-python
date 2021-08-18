@@ -111,9 +111,11 @@ def configured_project(client, ontology, rand_gen):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
+    data_row_ids = []
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
-        dataset.create_data_row(row_data=IMG_URL)
+        data_row_ids.append(dataset.create_data_row(row_data=IMG_URL).uid)
     project.datasets.connect(dataset)
+    project.data_row_ids = data_row_ids
     yield project
     project.delete()
     dataset.delete()
@@ -123,7 +125,6 @@ def configured_project(client, ontology, rand_gen):
 def prediction_id_mapping(configured_project):
     #Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized
-    datarows = [d for d in list(configured_project.datasets())[0].data_rows()]
     result = {}
 
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
@@ -135,7 +136,7 @@ def prediction_id_mapping(configured_project):
             "uuid": str(uuid.uuid4()),
             "schemaId": tool['featureSchemaId'],
             "dataRow": {
-                "id": datarows[idx].uid,
+                "id": configured_project.data_row_ids[idx],
             },
             'tool': tool
         }
@@ -318,8 +319,8 @@ def model_run(client, rand_gen, configured_project, annotation_submit_fn,
     model_run_s = model.create_model_run(name)
 
     time.sleep(3)
-    model_run_s.upsert_labels(
-        [label.uid for label in configured_project.labels()])
+    labels = configured_project.export_labels(download=True)
+    model_run_s.upsert_labels([label['ID'] for label in labels])
     time.sleep(3)
 
     yield model_run_s

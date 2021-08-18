@@ -1,4 +1,3 @@
-import labelbox.schema.asset_metadata
 import labelbox.schema.asset_attachment
 import labelbox.schema.bulk_import_request
 import labelbox.schema.annotation_import
@@ -18,3 +17,4 @@ import labelbox.schema.role
 import labelbox.schema.task
 import labelbox.schema.user
 import labelbox.schema.webhook
+import labelbox.schema.data_row_metadata

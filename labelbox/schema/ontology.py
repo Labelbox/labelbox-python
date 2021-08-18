@@ -1,13 +1,19 @@
+# type: ignore
+
+import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
-import colorsys
+from typing import Any, Dict, List, Optional, Union, Type
 
-from typing import Any, Dict, List, Optional, Union
+from pydantic import constr
 
 from labelbox.schema import project
+from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.exceptions import InconsistentOntologyException
+
+FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
+SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
 @dataclass
@@ -29,7 +35,7 @@ class Option:
     """
     value: Union[str, int]
     schema_id: Optional[str] = None
-    feature_schema_id: Optional[str] = None
+    feature_schema_id: Optional[FeatureSchemaId] = None
     options: List["Classification"] = field(default_factory=list)
 
     @property

@@ -23,5 +23,5 @@ def test_polygon():
         [tuple([tuple(x) for x in points + [points[0]]])])
     assert polygon.shapely.__geo_interface__ == expected
 
-    raster = polygon.raster(10, 10)
+    raster = polygon.draw(10, 10)
     assert (cv2.imread("tests/data/assets/polygon.png") == raster).all()
