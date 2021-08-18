@@ -6,19 +6,18 @@ from rasterio.features import shapes
 from shapely.geometry import MultiPolygon, shape
 import cv2
 
-from ..data.raster import ImageData
+from ..data import MaskData
 from .geometry import Geometry
 
 
 class Mask(Geometry):
-    # Raster data can be shared across multiple masks... or not
-    mask: ImageData
-    # RGB or Grayscale
+    # Mask data can be shared across multiple masks
+    mask: MaskData
     color: Tuple[int, int, int]
 
     @property
     def geometry(self):
-        mask = self.raster(binary=True)
+        mask = self.draw(color=1)
         polygons = (
             shape(shp)
             for shp, val in shapes(mask, mask=None)
@@ -26,31 +25,45 @@ class Mask(Geometry):
             if val >= 1)
         return MultiPolygon(polygons).__geo_interface__
 
-    def raster(self,
-               height: Optional[int] = None,
-               width: Optional[int] = None,
-               binary=False) -> np.ndarray:
+    def draw(self,
+             height: Optional[int] = None,
+             width: Optional[int] = None,
+             canvas: Optional[np.ndarray] = None,
+             color: Optional[Union[int, Tuple[int, int, int]]] = None,
+             thickness=None) -> np.ndarray:
         """
-        Removes all pixels from the segmentation mask that do not equal self.color
+        Converts the Mask object into a numpy array
 
         Args:
-            height:
-
+            height (int): Optionally resize mask height before drawing.
+            width (int): Optionally resize mask width before drawing.
+            canvas (np.ndarray): Optionall provide a canvas to draw on
+            color (Union[int, Tuple[int,int,int]]): Color to draw the canvas.
+                Defaults to using the encoded color in the mask.
+                int will return the mask as a 1d array
+                tuple[int,int,int] will return the mask as a 3d array
+            thickness (None): Unused, exists for a consistent interface.
         Returns:
             np.ndarray representing only this object
+                as opposed to the mask that this object references which might have multiple objects determined by colors
         """
+
         mask = self.mask.value
         mask = np.alltrue(mask == self.color, axis=2).astype(np.uint8)
+
         if height is not None or width is not None:
             mask = cv2.resize(mask,
                               (width or mask.shape[1], height or mask.shape[0]))
-        if binary:
-            return mask
-        else:
-            color_image = np.zeros((mask.shape[0], mask.shape[1], 3),
-                                   dtype=np.uint8)
-            color_image[mask.astype(np.bool)] = self.color
-            return color_image
+
+        dims = [mask.shape[0], mask.shape[1]]
+        color = color or self.color
+        if isinstance(color, (tuple, list)):
+            dims = dims + [len(color)]
+
+        canvas = canvas if canvas is not None else np.zeros(tuple(dims),
+                                                            dtype=np.uint8)
+        canvas[mask.astype(np.bool)] = color
+        return canvas
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """

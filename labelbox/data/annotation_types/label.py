@@ -63,7 +63,7 @@ class Label(BaseModel):
     def add_url_to_masks(self, signer) -> "Label":
         """
         Creates signed urls for all masks in the Label.
-        Multiple masks can reference the same ImageData mask so this makes sure we only upload that url once.
+        Multiple masks can reference the same MaskData mask so this makes sure we only upload that url once.
         Only uploads url if one doesn't already exist.
 
         Args:
@@ -107,7 +107,7 @@ class Label(BaseModel):
             self.data.external_id = data_row.external_id
         return self
 
-    def assign_schema_ids(
+    def assign_feature_schema_ids(
             self, ontology_builder: ontology.OntologyBuilder) -> "Label":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
@@ -135,14 +135,14 @@ class Label(BaseModel):
         return self
 
     def _assign_or_raise(self, annotation, lookup: Dict[str, str]) -> None:
-        if annotation.schema_id is not None:
+        if annotation.feature_schema_id is not None:
             return
 
         feature_schema_id = lookup.get(annotation.name)
         if feature_schema_id is None:
             raise ValueError(f"No tool matches name {annotation.name}. "
                              f"Must be one of {list(lookup.keys())}.")
-        annotation.schema_id = feature_schema_id
+        annotation.feature_schema_id = feature_schema_id
 
     def _assign_option(self, classification: ClassificationAnnotation,
                        lookup: Dict[str, str]) -> None:
