@@ -1,33 +1,25 @@
-from enum import Enum
-from labelbox.schema.enums import AnnotationImportState, ImportType
-from typing import Any, Dict, List
 import functools
-import os
 import json
-import time
 import logging
+import os
+import time
+from typing import Any, Dict, List, BinaryIO
 
 import backoff
 import ndjson
 import requests
 
 import labelbox
+from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.orm import query
+from labelbox.schema.enums import AnnotationImportState
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
 
 class AnnotationImport(DbObject):
-    # This class will replace BulkImportRequest.
-    # Currently this exists for the MEA beta.
-    # Use BulkImportRequest for now if you are not using MEA.
-
-    id_name: str
-    import_type: ImportType
-
     name = Field.String("name")
     state = Field.Enum(AnnotationImportState, "state")
     input_file_url = Field.String("input_file_url")
@@ -123,101 +115,8 @@ class AnnotationImport(DbObject):
         return ndjson.loads(response.text)
 
     @classmethod
-    def _build_import_predictions_query(cls, file_args: str, vars: str):
-        cls.validate_cls()
-        query_str = """mutation createAnnotationImportPyApi($parent_id : ID!, $name: String!, $predictionType : PredictionType!, %s) {
-        createAnnotationImport(data: {
-            %s : $parent_id
-            name: $name
-            %s
-            predictionType: $predictionType
-        }) {
-        __typename
-        ... on ModelAssistedLabelingPredictionImport {%s}
-        ... on ModelErrorAnalysisPredictionImport {%s}
-        }}""" % (vars, cls.id_name, file_args,
-                 query.results_query_part(MALPredictionImport),
-                 query.results_query_part(MEAPredictionImport))
-        return query_str
-
-    @classmethod
-    def validate_cls(cls):
-        supported_base_classes = {MALPredictionImport, MEAPredictionImport}
-        if cls not in {MALPredictionImport, MEAPredictionImport}:
-            raise TypeError(
-                f"Can't directly use the base AnnotationImport class. Must use one of {supported_base_classes}"
-            )
-
-    @classmethod
-    def from_name(cls, client, parent_id, name: str, raw=False):
-        cls.validate_cls()
-        query_str = """query getImportPyApi($parent_id : ID!, $name: String!) {
-            annotationImport(
-                where: {%s: $parent_id, name: $name}){
-                    __typename
-                ... on ModelAssistedLabelingPredictionImport {%s}
-                ... on ModelErrorAnalysisPredictionImport {%s}
-                }}""" % \
-                (
-                    cls.id_name,
-                    query.results_query_part(MALPredictionImport),
-                    query.results_query_part(MEAPredictionImport)
-        )
-
-        response = client.execute(query_str, {
-            'name': name,
-            'parent_id': parent_id
-        })
-        if raw:
-            return response['annotationImport']
-
-        return cls(client, response['annotationImport'])
-
-    @classmethod
-    def _create_from_url(cls, client, parent_id, name, url):
-        file_args = "fileUrl : $fileUrl"
-        query_str = cls._build_import_predictions_query(file_args,
-                                                        "$fileUrl: String!")
-        response = client.execute(query_str,
-                                  params={
-                                      "fileUrl": url,
-                                      "parent_id": parent_id,
-                                      'name': name,
-                                      'predictionType': cls.import_type.value
-                                  })
-        return cls(client, response['createAnnotationImport'])
-
-    @staticmethod
-    def _make_file_name(parent_id: str, name: str) -> str:
-        return f"{parent_id}__{name}.ndjson"
-
-    def refresh(self) -> None:
-        """Synchronizes values of all fields with the database.
-        """
-        cls = type(self)
-        res = cls.from_name(self.client,
-                            self.get_parent_id(),
-                            self.name,
-                            raw=True)
-        self._set_field_values(res)
-
-    @classmethod
-    def _create_from_bytes(cls, client, parent_id, name, bytes_data,
-                           content_len):
-        file_name = cls._make_file_name(parent_id, name)
-        file_args = """filePayload: {
-                file: $file,
-                contentLength: $contentLength
-            }"""
-        query_str = cls._build_import_predictions_query(
-            file_args, "$file: Upload!, $contentLength: Int!")
-        variables = {
-            "file": None,
-            "contentLength": content_len,
-            "parent_id": parent_id,
-            "name": name,
-            "predictionType": cls.import_type.value
-        }
+    def _create_from_bytes(cls, client, variables, query_str, file_name,
+                           bytes_data) -> Dict[str, Any]:
         operations = json.dumps({"variables": variables, "query": query_str})
         data = {
             "operations": operations,
@@ -225,74 +124,333 @@ class AnnotationImport(DbObject):
         }
         file_data = (file_name, bytes_data, NDJSON_MIME_TYPE)
         files = {file_name: file_data}
+        return client.execute(data=data, files=files)
 
-        response = client.execute(data=data, files=files)
-        return cls(client, response['createAnnotationImport'])
+    def refresh(self) -> None:
+        """Synchronizes values of all fields with the database.
+        """
+        cls = type(self)
+        res = cls.from_name(self.client,
+                            self.parent_id,
+                            self.name,
+                            as_json=True)
+        self._set_field_values(res)
 
     @classmethod
-    def _create_from_objects(cls, client, parent_id, name, predictions):
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  parent_id: str,
+                  name: str,
+                  as_json: bool = False):
+        raise NotImplementedError("Inheriting class must override")
+
+    @property
+    def parent_id(self) -> str:
+        raise NotImplementedError("Inheriting class must override")
+
+
+class MEAPredictionImport(AnnotationImport):
+    model_run_id = Field.String("model_run_id")
+
+    @property
+    def parent_id(self) -> str:
+        """
+        Identifier for this import. Used to refresh the status
+        """
+        return self.model_run_id
+
+    @classmethod
+    def create_from_file(cls, client: "labelbox.Client", model_run_id: str,
+                         name: str, path: str) -> "MEAPredictionImport":
+        """
+        Create an MEA prediction import job from a file of annotations
+
+        Args:
+            client: Labelbox Client for executing queries
+            model_run_id: Model run to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            path: Path to ndjson file containing annotations
+        Returns:
+            MEAPredictionImport
+        """
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                return cls._create_mea_import_from_bytes(
+                    client, model_run_id, name, f,
+                    os.stat(path).st_size)
+        else:
+            raise ValueError(f"File {path} is not accessible")
+
+    @classmethod
+    def create_from_objects(cls, client: "labelbox.Client", model_run_id: str,
+                            name, predictions) -> "MEAPredictionImport":
+        """
+        Create an MEA prediction import job from an in memory dictionary
+
+        Args:
+            client: Labelbox Client for executing queries
+            model_run_id: Model run to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            predictions: List of prediction annotations
+        Returns:
+            MEAPredictionImport
+        """
         data_str = ndjson.dumps(predictions)
         if not data_str:
             raise ValueError('annotations cannot be empty')
         data = data_str.encode('utf-8')
-        return cls._create_from_bytes(client, parent_id, name, data, len(data))
+        return cls._create_mea_import_from_bytes(client, model_run_id, name,
+                                                 data, len(data))
 
     @classmethod
-    def _create_from_file(cls, client, parent_id, name, path):
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                return cls._create_from_bytes(client, parent_id, name, f,
-                                              os.stat(path).st_size)
-        elif requests.head(path):
-            return cls._create_from_url(client, parent_id, name, path)
-        raise ValueError(
-            f"Path {path} is not accessible locally or on a remote server")
+    def create_from_url(cls, client: "labelbox.Client", model_run_id: str,
+                        name: str, url: str) -> "MEAPredictionImport":
+        """
+        Create an MEA prediction import job from a url
+        The url must point to a file containing prediction annotations.
 
-    def create_from_objects(*args, **kwargs):
-        raise NotImplementedError("")
-
-    def create_from_file(*args, **kwargs):
-        raise NotImplementedError("")
-
-    def get_parent_id(*args, **kwargs):
-        raise NotImplementedError("")
-
-
-class MEAPredictionImport(AnnotationImport):
-    id_name = "modelRunId"
-    import_type = ImportType.MODEL_ERROR_ANALYSIS
-    model_run_id = Field.String("model_run_id")
-
-    def get_parent_id(self):
-        return self.model_run_id
-
-    @classmethod
-    def create_from_file(cls, client, model_run_id, name, path):
-        return cls._create_from_file(client=client,
-                                     parent_id=model_run_id,
-                                     name=name,
-                                     path=path)
+        Args:
+            client: Labelbox Client for executing queries
+            model_run_id: Model run to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            url: Url pointing to file to upload
+        Returns:
+            MEAPredictionImport
+        """
+        if requests.head(url):
+            query_str = cls._get_url_mutation()
+            return cls(
+                client,
+                client.execute(query_str,
+                               params={
+                                   "fileUrl": url,
+                                   "modelRunId": model_run_id,
+                                   'name': name
+                               })["createModelErrorAnalysisPredictionImport"])
+        else:
+            raise ValueError(f"Url {url} is not reachable")
 
     @classmethod
-    def create_from_objects(cls, client, model_run_id, name, predictions):
-        return cls._create_from_objects(client, model_run_id, name, predictions)
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  model_run_id: str,
+                  name: str,
+                  as_json: bool = False) -> "MEAPredictionImport":
+        """
+        Retrieves an MEA import job.
+
+        Args:
+            client: Labelbox Client for executing queries
+            model_run_id: ID used for querying import jobs
+            name: Name of the import job.
+        Returns:
+            MEAPredictionImport
+        """
+        query_str = """query getModelErrorAnalysisPredictionImportPyApi($modelRunId : ID!, $name: String!) {
+            modelErrorAnalysisPredictionImport(
+                where: {modelRunId: $modelRunId, name: $name}){
+                    %s
+                }}""" % query.results_query_part(cls)
+        params = {
+            "modelRunId": model_run_id,
+            "name": name,
+        }
+        response = client.execute(query_str, params)
+        if response is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                MEAPredictionImport, params)
+        response = response["modelErrorAnalysisPredictionImport"]
+        if as_json:
+            return response
+        return cls(client, response)
+
+    @classmethod
+    def _get_url_mutation(cls) -> str:
+        return """mutation createMEAPredictionImportPyApi($modelRunId : ID!, $name: String!, $fileUrl: String!) {
+            createModelErrorAnalysisPredictionImport(data: {
+                modelRunId: $modelRunId
+                name: $name
+                fileUrl: $fileUrl
+            }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _get_file_mutation(cls) -> str:
+        return """mutation createMEAPredictionImportPyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+            createModelErrorAnalysisPredictionImport(data: {
+                modelRunId: $modelRunId name: $name filePayload: { file: $file, contentLength: $contentLength}
+        }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _create_mea_import_from_bytes(
+            cls, client: "labelbox.Client", model_run_id: str, name: str,
+            bytes_data: BinaryIO, content_len: int) -> "MEAPredictionImport":
+        file_name = f"{model_run_id}__{name}.ndjson"
+        variables = {
+            "file": None,
+            "contentLength": content_len,
+            "modelRunId": model_run_id,
+            "name": name
+        }
+        query_str = cls._get_file_mutation()
+        res = cls._create_from_bytes(
+            client,
+            variables,
+            query_str,
+            file_name,
+            bytes_data,
+        )
+        return cls(client, res["createModelErrorAnalysisPredictionImport"])
 
 
 class MALPredictionImport(AnnotationImport):
-    id_name = "projectId"
-    import_type = ImportType.MODEL_ASSISTED_LABELING
     project = Relationship.ToOne("Project", cache=True)
 
-    def get_parent_id(self):
+    @property
+    def parent_id(self) -> str:
+        """
+        Identifier for this import. Used to refresh the status
+        """
         return self.project().uid
 
     @classmethod
-    def create_from_file(cls, client, project_id, name, path):
-        return cls._create_from_file(client=client,
-                                     parent_id=project_id,
-                                     name=name,
-                                     path=path)
+    def create_from_file(cls, client: "labelbox.Client", project_id: str,
+                         name: str, path: str) -> "MALPredictionImport":
+        """
+        Create an MAL prediction import job from a file of annotations
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id: Project to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            path: Path to ndjson file containing annotations
+        Returns:
+            MALPredictionImport
+        """
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                return cls._create_mea_import_from_bytes(
+                    client, project_id, name, f,
+                    os.stat(path).st_size)
+        else:
+            raise ValueError(f"File {path} is not accessible")
 
     @classmethod
-    def create_from_objects(cls, client, project_id, name, predictions):
-        return cls._create_from_objects(client, project_id, name, predictions)
+    def create_from_objects(
+            cls, client: "labelbox.Client", project_id: str, name: str,
+            predictions: List[Dict[str, Any]]) -> "MALPredictionImport":
+        """
+        Create an MAL prediction import job from an in memory dictionary
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id: Project to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            predictions: List of prediction annotations
+        Returns:
+            MALPredictionImport
+        """
+        data_str = ndjson.dumps(predictions)
+        if not data_str:
+            raise ValueError('annotations cannot be empty')
+        data = data_str.encode('utf-8')
+        return cls._create_mea_import_from_bytes(client, project_id, name, data,
+                                                 len(data))
+
+    @classmethod
+    def create_from_url(cls, client: "labelbox.Client", project_id: str,
+                        name: str, url: str) -> "MALPredictionImport":
+        """
+        Create an MAL prediction import job from a url
+        The url must point to a file containing prediction annotations.
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id: Project to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            url: Url pointing to file to upload
+        Returns:
+            MALPredictionImport
+        """
+        if requests.head(url):
+            query_str = cls._get_url_mutation()
+            return cls(
+                client,
+                client.execute(
+                    query_str,
+                    params={
+                        "fileUrl": url,
+                        "projectId": project_id,
+                        'name': name
+                    })["createModelAssistedLabelingPredictionImport"])
+        else:
+            raise ValueError(f"Url {url} is not reachable")
+
+    @classmethod
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  project_id: str,
+                  name: str,
+                  as_json: bool = False) -> "MALPredictionImport":
+        """
+        Retrieves an MAL import job.
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id:  ID used for querying import jobs
+            name: Name of the import job.
+        Returns:
+            MALPredictionImport
+        """
+        query_str = """query getModelAssistedLabelingPredictionImportPyApi($projectId : ID!, $name: String!) {
+            modelAssistedLabelingPredictionImport(
+                where: {projectId: $projectId, name: $name}){
+                    %s
+                }}""" % query.results_query_part(cls)
+        params = {
+            "projectId": project_id,
+            "name": name,
+        }
+        response = client.execute(query_str, params)
+        if response is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                MALPredictionImport, params)
+        response = response["modelAssistedLabelingPredictionImport"]
+        if as_json:
+            return response
+        return cls(client, response)
+
+    @classmethod
+    def _get_url_mutation(cls) -> str:
+        return """mutation createMALPredictionImportPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
+            createModelAssistedLabelingPredictionImport(data: {
+                projectId: $projectId
+                name: $name
+                fileUrl: $fileUrl
+            }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _get_file_mutation(cls) -> str:
+        return """mutation createMALPredictionImportPyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+            createModelAssistedLabelingPredictionImport(data: {
+                projectId: $projectId name: $name filePayload: { file: $file, contentLength: $contentLength}
+        }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _create_mea_import_from_bytes(
+            cls, client: "labelbox.Client", project_id: str, name: str,
+            bytes_data: BinaryIO, content_len: int) -> "MALPredictionImport":
+        file_name = f"{project_id}__{name}.ndjson"
+        variables = {
+            "file": None,
+            "contentLength": content_len,
+            "projectId": project_id,
+            "name": name
+        }
+        query_str = cls._get_file_mutation()
+        res = cls._create_from_bytes(client, variables, query_str, file_name,
+                                     bytes_data)
+        return cls(client, res["createModelAssistedLabelingPredictionImport"])
