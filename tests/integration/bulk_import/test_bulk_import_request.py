@@ -147,7 +147,7 @@ def assert_file_content(url: str, predictions):
     assert response.text == ndjson.dumps(predictions)
 
 
-def test_bulk_import_requests(client, configured_project, predictions):
+def test_project_bulk_import_requests(client, configured_project, predictions):
     result = configured_project.bulk_import_requests()
     assert len(list(result)) == 0
 
