@@ -18,7 +18,8 @@ from .classification import Dropdown
 from .classification import Radio
 from .classification import Text
 
-from .data import RasterData
+from .data import ImageData
+from .data import MaskData
 from .data import TextData
 from .data import VideoData
 

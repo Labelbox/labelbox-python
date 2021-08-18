@@ -18,14 +18,14 @@ def test_text():
 def test_url():
     url = "https://filesamples.com/samples/document/txt/sample3.txt"
     text_data = TextData(url=url)
-    text = text_data.data
+    text = text_data.value
     assert len(text) == 3541
 
 
 def test_file():
     file_path = "tests/data/assets/sample_text.txt"
     text_data = TextData(file_path=file_path)
-    text = text_data.data
+    text = text_data.value
     assert len(text) == 3541
 
 

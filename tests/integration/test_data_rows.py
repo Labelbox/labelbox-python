@@ -9,6 +9,10 @@ from labelbox.exceptions import InvalidQueryError
 IMG_URL = "https://picsum.photos/id/829/200/300"
 
 
+def test_get_data_row(datarow, client):
+    assert client.get_data_row(datarow.uid)
+
+
 def test_data_row_bulk_creation(dataset, rand_gen):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
@@ -165,4 +169,4 @@ def test_data_row_iteration(dataset, rand_gen) -> None:
         },
     ])
     task.wait_till_done()
-    data_row = next(dataset.data_rows())
+    assert next(dataset.data_rows())
