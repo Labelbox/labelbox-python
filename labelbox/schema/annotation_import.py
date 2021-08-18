@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import time
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List, BinaryIO
 
 import backoff
@@ -20,7 +19,7 @@ NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
 
-class AnnotationImport(DbObject, ABC):
+class AnnotationImport(DbObject):
     name = Field.String("name")
     state = Field.Enum(AnnotationImportState, "state")
     input_file_url = Field.String("input_file_url")
@@ -135,14 +134,12 @@ class AnnotationImport(DbObject, ABC):
         self._set_field_values(res)
 
     @classmethod
-    @abstractmethod
-    def from_name(cls, client, parent_id: str, name):
-        ...
+    def from_name(cls, client: "labelbox.Client", parent_id: str, name: str):
+        raise NotImplementedError("Inheriting class must override")
 
     @property
-    @abstractmethod
     def parent_id(self) -> str:
-        ...
+        raise NotImplementedError("Inheriting class must override")
 
 
 class MEAPredictionImport(AnnotationImport):
