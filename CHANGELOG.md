@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.1.0 (2021-08-18)
+## Added
+* Support for new HTML attachment type
+* Delete Bulk Import Requests with `BulkImportRequest.delete()`
+
+## Misc
+* Updated MEAPredictionImport class to use latest grapqhql endpoints
+
+
 # Version 3.0.1 (2021-08-12)
 ## Fix
 * Issue with inferring text type from export
