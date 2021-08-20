@@ -6,7 +6,6 @@ from labelbox import DataRow, Dataset
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DeleteDataRowMetadata, \
     DataRowMetadataOntology
 
-IMG_URL = "https://picsum.photos/id/829/200/300"
 FAKE_SCHEMA_ID = "0" * 25
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TRAIN_SPLIT_ID = "cko8sbscr0003h2dk04w86hof"
@@ -22,13 +21,14 @@ def mdo(client):
 
 
 @pytest.fixture
-def big_dataset(dataset: Dataset):
+def big_dataset(client, dataset: Dataset, image_url):
+    image_url = client
     task = dataset.create_data_rows([
         {
-            "row_data": IMG_URL,
+            "row_data": image_url,
             "external_id": "my-image"
         },
-    ] * 1000)
+    ] * 500)
     task.wait_till_done()
 
     yield dataset
