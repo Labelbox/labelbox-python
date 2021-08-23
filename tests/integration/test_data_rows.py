@@ -60,9 +60,9 @@ def test_data_row_large_bulk_creation(dataset, image_url):
         fp.flush()
         task = dataset.create_data_rows([{
             DataRow.row_data: image_url
-        }] * 4500 + [fp.name] * 500)
+        }] * 750 + [fp.name] * 250)
     assert task.status == "IN_PROGRESS"
-    task.wait_till_done()
+    task.wait_till_done(timeout_seconds=120)
     assert task.status == "COMPLETE"
     data_rows = len(list(dataset.data_rows())) == 5003
 
