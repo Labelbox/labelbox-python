@@ -27,7 +27,7 @@ def big_dataset(dataset: Dataset, image_url):
             "row_data": image_url,
             "external_id": "my-image"
         },
-    ] * 500)
+    ] * 100)
     task.wait_till_done()
 
     yield dataset
@@ -105,24 +105,28 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
 
 def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
     """Delete a single from metadata"""
-    assert not len(datarow.metadata["fields"])
+    n_fields = len(datarow.metadata["fields"])
 
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
 
-    assert len(datarow.metadata["fields"])
+    assert len(datarow.metadata["fields"]) == (n_fields + 5)
 
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[TEXT_SCHEMA_ID])
     ])
 
-    assert len(datarow.metadata["fields"]) == 4
+    assert len(datarow.metadata["fields"]) == (n_fields + 4)
 
 
 @pytest.mark.slow
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     metadata = []
-    for dr in big_dataset.export_data_rows():
+    n_fields_start = 0
+    for idx, dr in enumerate(big_dataset.export_data_rows()):
+        if idx == 0:
+            n_fields_start = len(dr.metadata["fields"])
+
         metadata.append(
             DataRowMetadata(data_row_id=dr.uid,
                             fields=[
@@ -148,24 +152,26 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     errors = mdo.bulk_delete(deletes)
     assert len(errors) == 0
     for dr in big_dataset.export_data_rows():
-        assert len(dr.metadata["fields"]) == 1
+        assert len(dr.metadata["fields"]) == 1 + n_fields_start
         break
 
 
 def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
     """test bulk deletes for non non fields"""
-    assert not len(datarow.metadata["fields"])
+    n_fields = len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
     metadata.fields = [
         m for m in metadata.fields if m.schema_id == SPLIT_SCHEMA_ID
     ]
     mdo.bulk_upsert([metadata])
-    assert len(datarow.metadata["fields"])
+    assert len(datarow.metadata["fields"]) == len(
+        set([x.schema_id for x in metadata.fields] +
+            [x['schema_id'] for x in datarow.metadata["fields"]]))
 
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
-    assert not len(datarow.metadata["fields"])
+    assert len(datarow.metadata["fields"]) == n_fields
 
 
 def test_raise_enum_upsert_schema_error(datarow, mdo):
@@ -193,7 +199,6 @@ def test_upsert_non_existent_schema_id(datarow, mdo):
 
 
 def test_delete_non_existent_schema_id(datarow, mdo):
-    assert not len(datarow.metadata["fields"])
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid,
                               fields=[EMBEDDING_SCHEMA_ID])
@@ -204,7 +209,10 @@ def test_delete_non_existent_schema_id(datarow, mdo):
 @pytest.mark.slow
 def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
     deletes = []
-    for dr in big_dataset.export_data_rows():
+    n_fields_start = 0
+    for idx, dr in enumerate(big_dataset.export_data_rows()):
+        if idx == 0:
+            n_fields_start = len(dr.metadata["fields"])
         deletes.append(
             DeleteDataRowMetadata(data_row_id=dr.uid,
                                   fields=[EMBEDDING_SCHEMA_ID]))
@@ -212,7 +220,7 @@ def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
     assert len(errors) == 0
 
     for dr in big_dataset.export_data_rows():
-        assert not len(dr.metadata["fields"])
+        assert len(dr.metadata["fields"]) == n_fields_start
         break
 
 
