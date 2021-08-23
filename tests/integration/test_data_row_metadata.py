@@ -27,7 +27,7 @@ def big_dataset(dataset: Dataset, image_url):
             "row_data": image_url,
             "external_id": "my-image"
         },
-    ] * 100)
+    ] * 250)
     task.wait_till_done()
 
     yield dataset
