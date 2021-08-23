@@ -21,8 +21,7 @@ def mdo(client):
 
 
 @pytest.fixture
-def big_dataset(client, dataset: Dataset, image_url):
-    image_url = client
+def big_dataset(dataset: Dataset, image_url):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
@@ -97,13 +96,11 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
     mdo.bulk_upsert([metadata])
 
     assert len(datarow.metadata["fields"])
-
-    mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=datarow.uid,
-                              fields=[m.schema_id for m in metadata.fields])
-    ])
-
-    assert not len(datarow.metadata["fields"])
+    upload_ids = [m.schema_id for m in metadata.fields]
+    mdo.bulk_delete(
+        [DeleteDataRowMetadata(data_row_id=datarow.uid, fields=upload_ids)])
+    remaining_ids = set([f['schema_id'] for f in datarow.metadata["fields"]])
+    assert not len(remaining_ids.intersection(set(upload_ids)))
 
 
 def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
