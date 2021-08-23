@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from labelbox.data.annotation_types import (LabelList, LabelGenerator,
-                                            ObjectAnnotation, ImageData, Line,
-                                            Mask, Point, Label)
+                                            ObjectAnnotation, ImageData,
+                                            MaskData, Line, Mask, Point, Label)
 from labelbox import OntologyBuilder, Tool
 
 
@@ -77,14 +77,15 @@ def test_adding_schema_ids():
                 name=name,
             )
         ])
-    schema_id = "expected_id"
-    ontology = OntologyBuilder(
-        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
-    generator = LabelGenerator([label]).assign_schema_ids(ontology)
-    assert next(generator).annotations[0].schema_id == schema_id
-    labels = LabelList([label]).assign_schema_ids(ontology)
-    assert next(labels).annotations[0].schema_id == schema_id
-    assert labels[0].annotations[0].schema_id == schema_id
+    feature_schema_id = "expected_id"
+    ontology = OntologyBuilder(tools=[
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=feature_schema_id)
+    ])
+    generator = LabelGenerator([label]).assign_feature_schema_ids(ontology)
+    assert next(generator).annotations[0].feature_schema_id == feature_schema_id
+    labels = LabelList([label]).assign_feature_schema_ids(ontology)
+    assert next(labels).annotations[0].feature_schema_id == feature_schema_id
+    assert labels[0].annotations[0].feature_schema_id == feature_schema_id
 
 
 def test_adding_urls(signer):
@@ -143,7 +144,7 @@ def test_adding_to_masks(signer):
         data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
             ObjectAnnotation(name="1234",
-                             value=Mask(mask=ImageData(
+                             value=Mask(mask=MaskData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
                                         color=[255, 255, 255]))
@@ -158,7 +159,7 @@ def test_adding_to_masks(signer):
         data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
         annotations=[
             ObjectAnnotation(name="1234",
-                             value=Mask(mask=ImageData(
+                             value=Mask(mask=MaskData(
                                  arr=np.random.random((32, 32,
                                                        3)).astype(np.uint8)),
                                         color=[255, 255, 255]))

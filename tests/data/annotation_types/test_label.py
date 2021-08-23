@@ -18,12 +18,13 @@ def test_schema_assignment_geometry():
                 name=name,
             )
         ])
-    schema_id = "expected_id"
-    ontology = OntologyBuilder(
-        tools=[Tool(Tool.Type.LINE, name=name, feature_schema_id=schema_id)])
-    label.assign_schema_ids(ontology)
+    feature_schema_id = "expected_id"
+    ontology = OntologyBuilder(tools=[
+        Tool(Tool.Type.LINE, name=name, feature_schema_id=feature_schema_id)
+    ])
+    label.assign_feature_schema_ids(ontology)
 
-    assert label.annotations[0].schema_id == schema_id
+    assert label.annotations[0].feature_schema_id == feature_schema_id
 
 
 def test_schema_assignment_classification():
@@ -58,10 +59,11 @@ def test_schema_assignment_classification():
                 feature_schema_id=text_schema_id,
             )
         ])
-    label.assign_schema_ids(ontology)
-    assert label.annotations[0].schema_id == radio_schema_id
-    assert label.annotations[1].schema_id == text_schema_id
-    assert label.annotations[0].value.answer.schema_id == option_schema_id
+    label.assign_feature_schema_ids(ontology)
+    assert label.annotations[0].feature_schema_id == radio_schema_id
+    assert label.annotations[1].feature_schema_id == text_schema_id
+    assert label.annotations[
+        0].value.answer.feature_schema_id == option_schema_id
 
 
 def test_schema_assignment_subclass():
@@ -80,13 +82,13 @@ def test_schema_assignment_subclass():
                              name=name,
                              classifications=[classification])
         ])
-    schema_id = "expected_id"
+    feature_schema_id = "expected_id"
     classification_schema_id = "classification_id"
     option_schema_id = "option_schema_id"
     ontology = OntologyBuilder(tools=[
         Tool(Tool.Type.LINE,
              name=name,
-             feature_schema_id=schema_id,
+             feature_schema_id=feature_schema_id,
              classifications=[
                  OClassification(class_type=OClassification.Type.RADIO,
                                  instructions=radio_name,
@@ -97,12 +99,12 @@ def test_schema_assignment_subclass():
                                  ])
              ])
     ])
-    label.assign_schema_ids(ontology)
-    assert label.annotations[0].schema_id == schema_id
+    label.assign_feature_schema_ids(ontology)
+    assert label.annotations[0].feature_schema_id == feature_schema_id
     assert label.annotations[0].classifications[
-        0].schema_id == classification_schema_id
+        0].feature_schema_id == classification_schema_id
     assert label.annotations[0].classifications[
-        0].value.answer.schema_id == option_schema_id
+        0].value.answer.feature_schema_id == option_schema_id
 
 
 def test_highly_nested():
@@ -127,14 +129,14 @@ def test_highly_nested():
                              name=name,
                              classifications=[classification])
         ])
-    schema_id = "expected_id"
+    feature_schema_id = "expected_id"
     classification_schema_id = "classification_id"
     nested_classification_schema_id = "nested_classification_schema_id"
     option_schema_id = "option_schema_id"
     ontology = OntologyBuilder(tools=[
         Tool(Tool.Type.LINE,
              name=name,
-             feature_schema_id=schema_id,
+             feature_schema_id=feature_schema_id,
              classifications=[
                  OClassification(
                      class_type=OClassification.Type.RADIO,
@@ -159,9 +161,9 @@ def test_highly_nested():
                      ])
              ])
     ])
-    label.assign_schema_ids(ontology)
-    assert label.annotations[0].schema_id == schema_id
+    label.assign_feature_schema_ids(ontology)
+    assert label.annotations[0].feature_schema_id == feature_schema_id
     assert label.annotations[0].classifications[
-        0].schema_id == classification_schema_id
+        0].feature_schema_id == classification_schema_id
     assert label.annotations[0].classifications[
-        0].value.answer.schema_id == option_schema_id
+        0].value.answer.feature_schema_id == option_schema_id

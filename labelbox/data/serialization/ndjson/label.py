@@ -82,7 +82,7 @@ class NDLabel(BaseModel):
         video_annotations = defaultdict(list)
         for annot in label.annotations:
             if isinstance(annot, VideoClassificationAnnotation):
-                video_annotations[annot.schema_id].append(annot)
+                video_annotations[annot.feature_schema_id].append(annot)
 
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(
