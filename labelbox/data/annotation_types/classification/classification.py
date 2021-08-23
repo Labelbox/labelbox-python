@@ -9,7 +9,7 @@ class ClassificationAnswer(FeatureSchema):
     """
     - Represents a classification option.
     - Because it inherits from FeatureSchema
-        the option can be represented with either the name or schema_id
+        the option can be represented with either the name or feature_schema_id
     """
     extra: Dict[str, Any] = {}
 

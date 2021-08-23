@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
-from ...annotation_types.data import ImageData
+from ...annotation_types.data import MaskData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
@@ -48,7 +48,7 @@ class LBV1Rectangle(LBV1ObjectBase):
     @classmethod
     def from_common(cls, rectangle: Rectangle,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, title: str,
+                    feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Rectangle":
         return cls(bbox=_Box(
             top=rectangle.start.y,
@@ -56,7 +56,7 @@ class LBV1Rectangle(LBV1ObjectBase):
             height=rectangle.end.y - rectangle.start.y,
             width=rectangle.end.x - rectangle.start.x,
         ),
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    title=title,
                    classifications=classifications,
                    **extra)
@@ -71,12 +71,12 @@ class LBV1Polygon(LBV1ObjectBase):
     @classmethod
     def from_common(cls, polygon: Polygon,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, title: str,
+                    feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Polygon":
         return cls(
             polygon=[_Point(x=point.x, y=point.y) for point in polygon.points],
             classifications=classifications,
-            schema_id=schema_id,
+            schema_id=feature_schema_id,
             title=title,
             **extra)
 
@@ -90,11 +90,11 @@ class LBV1Point(LBV1ObjectBase):
     @classmethod
     def from_common(cls, point: Point,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, title: str,
+                    feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Point":
         return cls(point=_Point(x=point.x, y=point.y),
                    classifications=classifications,
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    title=title,
                    **extra)
 
@@ -108,12 +108,12 @@ class LBV1Line(LBV1ObjectBase):
     @classmethod
     def from_common(cls, polygon: Line,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, title: str,
+                    feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Line":
         return cls(
             line=[_Point(x=point.x, y=point.y) for point in polygon.points],
             classifications=classifications,
-            schema_id=schema_id,
+            schema_id=feature_schema_id,
             title=title,
             **extra)
 
@@ -122,12 +122,12 @@ class LBV1Mask(LBV1ObjectBase):
     instanceURI: str
 
     def to_common(self) -> Mask:
-        return Mask(mask=ImageData(url=self.instanceURI), color=(255, 255, 255))
+        return Mask(mask=MaskData(url=self.instanceURI), color=(255, 255, 255))
 
     @classmethod
     def from_common(cls, mask: Mask,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, title: str,
+                    feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Mask":
 
         if mask.mask.url is None:
@@ -136,7 +136,7 @@ class LBV1Mask(LBV1ObjectBase):
             )
         return cls(instanceURI=mask.mask.url,
                    classifications=classifications,
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    title=title,
                    **{k: v for k, v in extra.items() if k != 'instanceURI'})
 
@@ -164,7 +164,7 @@ class LBV1TextEntity(LBV1ObjectBase):
     @classmethod
     def from_common(cls, text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation],
-                    schema_id: Cuid, title: str,
+                    feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1TextEntity":
 
         return cls(data={
@@ -174,7 +174,7 @@ class LBV1TextEntity(LBV1ObjectBase):
             }
         },
                    classifications=classifications,
-                   schema_id=schema_id,
+                   schema_id=feature_schema_id,
                    title=title,
                    **extra)
 
@@ -189,7 +189,7 @@ class LBV1Objects(BaseModel):
                              classifications=[
                                  ClassificationAnnotation(
                                      value=cls.to_common(),
-                                     schema_id=cls.schema_id,
+                                     feature_schema_id=cls.schema_id,
                                      name=cls.title,
                                      extra={
                                          'feature_id': cls.feature_id,
@@ -198,7 +198,7 @@ class LBV1Objects(BaseModel):
                                      }) for cls in obj.classifications
                              ],
                              name=obj.title,
-                             schema_id=obj.schema_id,
+                             feature_schema_id=obj.schema_id,
                              extra={
                                  'instanceURI': obj.instanceURI,
                                  'color': obj.color,
@@ -219,7 +219,7 @@ class LBV1Objects(BaseModel):
 
             objects.append(
                 obj.from_common(
-                    annotation.value, subclasses, annotation.schema_id,
+                    annotation.value, subclasses, annotation.feature_schema_id,
                     annotation.name, {
                         'keyframe': getattr(annotation, 'keyframe', None),
                         **annotation.extra
