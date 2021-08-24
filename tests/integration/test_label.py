@@ -6,8 +6,6 @@ import requests
 
 from labelbox import Label
 
-IMG_URL = "https://picsum.photos/200/300"
-
 
 @pytest.mark.skip("Cannot query for labels created with create_label")
 def test_labels(label_pack):
@@ -57,11 +55,11 @@ def test_label_update(label_pack):
 
 
 @pytest.mark.skip("Cannot query for labels created with create_label")
-def test_label_filter_order(client, project, rand_gen):
+def test_label_filter_order(client, project, rand_gen, image_url):
     dataset_1 = client.create_dataset(name=rand_gen(str), projects=project)
     dataset_2 = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row_1 = dataset_1.create_data_row(row_data=IMG_URL)
-    data_row_2 = dataset_2.create_data_row(row_data=IMG_URL)
+    data_row_1 = dataset_1.create_data_row(row_data=image_url)
+    data_row_2 = dataset_2.create_data_row(row_data=image_url)
 
     l1 = project.create_label(data_row=data_row_1, label="l1")
     time.sleep(1)  #Ensure there is no race condition
@@ -86,11 +84,11 @@ def test_label_filter_order(client, project, rand_gen):
 
 
 @pytest.mark.skip("Cannot query for labels created with create_label")
-def test_label_bulk_deletion(project, rand_gen):
+def test_label_bulk_deletion(project, rand_gen, image_url):
     dataset = project.client.create_dataset(name=rand_gen(str),
                                             projects=project)
-    row_1 = dataset.create_data_row(row_data=IMG_URL)
-    row_2 = dataset.create_data_row(row_data=IMG_URL)
+    row_1 = dataset.create_data_row(row_data=image_url)
+    row_2 = dataset.create_data_row(row_data=image_url)
 
     l1 = project.create_label(data_row=row_1, label="l1")
     l2 = project.create_label(data_row=row_1, label="l2")
