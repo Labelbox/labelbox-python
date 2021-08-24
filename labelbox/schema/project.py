@@ -583,7 +583,8 @@ class Project(DbObject, Updateable, Deletable):
             "showingPredictionsToLabelers"]
 
     def bulk_import_requests(self):
-        """ passpasspass
+        """ Returns bulk import request objects. These are returned with
+        the oldest first, and most recent last.
         """
 
         id_param = "project_id"
