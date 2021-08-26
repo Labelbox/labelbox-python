@@ -149,21 +149,38 @@ def assert_file_content(url: str, predictions):
     assert response.text == ndjson.dumps(predictions)
 
 
-def test_delete(client, configured_project, predictions):
+def test_project_bulk_import_requests(client, configured_project, predictions):
+    result = configured_project.bulk_import_requests()
+    assert len(list(result)) == 0
 
-    id_param = "project_id"
-    query_str = """query bulk_import_requestsPyApi($%s: ID!) {bulkImportRequests(where: {projectId: $%s}) {id}}""" % (
-        id_param, id_param)
+    name = str(uuid.uuid4())
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+
+    name = str(uuid.uuid4())
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+
+    name = str(uuid.uuid4())
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+
+    result = configured_project.bulk_import_requests()
+    assert len(list(result)) == 3
+
+
+def test_delete(client, configured_project, predictions):
     name = str(uuid.uuid4())
 
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=predictions)
     bulk_import_request.wait_until_done()
-    all_import_requests = client.execute(query_str,
-                                         {id_param: configured_project.uid})
-    assert len(all_import_requests['bulkImportRequests']) == 1
+    all_import_requests = configured_project.bulk_import_requests()
+    assert len(list(all_import_requests)) == 1
 
     bulk_import_request.delete()
-    all_import_requests = client.execute(query_str,
-                                         {id_param: configured_project.uid})
-    assert len(all_import_requests['bulkImportRequests']) == 0
+    all_import_requests = configured_project.bulk_import_requests()
+    assert len(list(all_import_requests)) == 0

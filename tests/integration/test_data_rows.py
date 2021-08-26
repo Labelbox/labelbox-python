@@ -6,24 +6,22 @@ import requests
 from labelbox import DataRow
 from labelbox.exceptions import InvalidQueryError
 
-IMG_URL = "https://picsum.photos/id/829/200/300"
-
 
 def test_get_data_row(datarow, client):
     assert client.get_data_row(datarow.uid)
 
 
-def test_data_row_bulk_creation(dataset, rand_gen):
+def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
     # Test creation using URL
     task = dataset.create_data_rows([
         {
-            DataRow.row_data: IMG_URL
+            DataRow.row_data: image_url
         },
         {
-            "row_data": IMG_URL
+            "row_data": image_url
         },
     ])
     assert task in client.get_user().created_tasks()
@@ -35,7 +33,7 @@ def test_data_row_bulk_creation(dataset, rand_gen):
 
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == 2
-    assert {data_row.row_data for data_row in data_rows} == {IMG_URL}
+    assert {data_row.row_data for data_row in data_rows} == {image_url}
 
     # Test creation using file name
     with NamedTemporaryFile() as fp:
@@ -46,40 +44,51 @@ def test_data_row_bulk_creation(dataset, rand_gen):
         task.wait_till_done()
         assert task.status == "COMPLETE"
 
+        task = dataset.create_data_rows([{
+            "row_data": fp.name,
+            'external_id': 'some_name'
+        }])
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+
+        task = dataset.create_data_rows([{"row_data": fp.name}])
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+
     data_rows = list(dataset.data_rows())
-    assert len(data_rows) == 3
-    url = ({data_row.row_data for data_row in data_rows} - {IMG_URL}).pop()
+    assert len(data_rows) == 5
+    url = ({data_row.row_data for data_row in data_rows} - {image_url}).pop()
     assert requests.get(url).content == data
 
     data_rows[0].delete()
 
 
 @pytest.mark.slow
-def test_data_row_large_bulk_creation(dataset, rand_gen):
+def test_data_row_large_bulk_creation(dataset, image_url):
     # Do a longer task and expect it not to be complete immediately
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
         fp.flush()
         task = dataset.create_data_rows([{
-            DataRow.row_data: IMG_URL
-        }] * 4500 + [fp.name] * 500)
+            DataRow.row_data: image_url
+        }] * 750 + [fp.name] * 250)
     assert task.status == "IN_PROGRESS"
-    task.wait_till_done()
+    task.wait_till_done(timeout_seconds=120)
     assert task.status == "COMPLETE"
-    data_rows = len(list(dataset.data_rows())) == 5003
+    assert len(list(dataset.data_rows())) == 1000
 
 
 @pytest.mark.xfail(reason="DataRow.dataset() relationship not set")
-def test_data_row_single_creation(dataset, rand_gen):
+def test_data_row_single_creation(dataset, rand_gen, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
-    data_row = dataset.create_data_row(row_data=IMG_URL)
+    data_row = dataset.create_data_row(row_data=image_url)
     assert len(list(dataset.data_rows())) == 1
     assert data_row.dataset() == dataset
     assert data_row.created_by() == client.get_user()
     assert data_row.organization() == client.get_organization()
-    assert requests.get(IMG_URL).content == \
+    assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
 
@@ -92,9 +101,9 @@ def test_data_row_single_creation(dataset, rand_gen):
         assert requests.get(data_row_2.row_data).content == data
 
 
-def test_data_row_update(dataset, rand_gen):
+def test_data_row_update(dataset, rand_gen, image_url):
     external_id = rand_gen(str)
-    data_row = dataset.create_data_row(row_data=IMG_URL,
+    data_row = dataset.create_data_row(row_data=image_url,
                                        external_id=external_id)
     assert data_row.external_id == external_id
 
@@ -103,14 +112,14 @@ def test_data_row_update(dataset, rand_gen):
     assert data_row.external_id == external_id_2
 
 
-def test_data_row_filtering_sorting(dataset, rand_gen):
+def test_data_row_filtering_sorting(dataset, image_url):
     task = dataset.create_data_rows([
         {
-            DataRow.row_data: IMG_URL,
+            DataRow.row_data: image_url,
             DataRow.external_id: "row1"
         },
         {
-            DataRow.row_data: IMG_URL,
+            DataRow.row_data: image_url,
             DataRow.external_id: "row2"
         },
     ])
@@ -133,9 +142,9 @@ def test_data_row_filtering_sorting(dataset, rand_gen):
         dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
 
 
-def test_data_row_deletion(dataset, rand_gen):
+def test_data_row_deletion(dataset, image_url):
     task = dataset.create_data_rows([{
-        DataRow.row_data: IMG_URL,
+        DataRow.row_data: image_url,
         DataRow.external_id: str(i)
     } for i in range(10)])
     task.wait_till_done()
@@ -159,14 +168,45 @@ def test_data_row_deletion(dataset, rand_gen):
     assert {dr.external_id for dr in data_rows} == expected
 
 
-def test_data_row_iteration(dataset, rand_gen) -> None:
+def test_data_row_iteration(dataset, image_url) -> None:
     task = dataset.create_data_rows([
         {
-            DataRow.row_data: IMG_URL
+            DataRow.row_data: image_url
         },
         {
-            "row_data": IMG_URL
+            "row_data": image_url
         },
     ])
     task.wait_till_done()
     assert next(dataset.data_rows())
+
+
+def test_data_row_attachments(dataset, image_url):
+    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
+                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    task = dataset.create_data_rows([{
+        "row_data": image_url,
+        "external_id": "test-id",
+        "attachments": [{
+            "type": attachment_type,
+            "value": attachment_value
+        }]
+    } for attachment_type, attachment_value in attachments])
+
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(attachments)
+    for data_row in data_rows:
+        assert len(list(data_row.attachments())) == 1
+        assert data_row.external_id == "test-id"
+
+    with pytest.raises(ValueError) as exc:
+        task = dataset.create_data_rows([{
+            "row_data": image_url,
+            "external_id": "test-id",
+            "attachments": [{
+                "type": "INVALID",
+                "value": "123"
+            }]
+        }])
