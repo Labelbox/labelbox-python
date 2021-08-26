@@ -1,3 +1,4 @@
+from labelbox import utils
 import os
 import json
 import logging
@@ -81,13 +82,17 @@ class Dataset(DbObject, Updateable, Deletable):
         is uploaded to Labelbox and a DataRow referencing it is created.
 
         If an item is a `dict`, then it could support one of the two following structures
-            1. For static imagery, video, and text it should map `DataRow` fields (or their names) to values.
-               At the minimum an `item` passed as a `dict` must contain a `DataRow.row_data` key and value.
+            1. For static imagery, video, and text it should map `DataRow` field names to values.
+               At the minimum an `item` passed as a `dict` must contain a `row_data` key and value.
+               If the value for row_data is a local file path and the path exists,
+               then the local file will be uploaded to labelbox.
+
             2. For tiled imagery the dict must match the import structure specified in the link below
                https://docs.labelbox.com/data-model/en/index-en#tiled-imagery-import
 
         >>> dataset.create_data_rows([
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
+        >>>     {DataRow.row_data:"/path/to/file1.jpg"},
         >>>     "path/to/file2.jpg",
         >>>     {"tileLayerUrl" : "http://", ...}
         >>>     ])
@@ -115,64 +120,105 @@ class Dataset(DbObject, Updateable, Deletable):
         DataRow = Entity.DataRow
 
         def upload_if_necessary(item):
-            if isinstance(item, str):
-                item_url = self.client.upload_file(item)
-                # Convert item from str into a dict so it gets processed
-                # like all other dicts.
-                item = {DataRow.row_data: item_url, DataRow.external_id: item}
+            row_data = item['row_data']
+            if os.path.exists(row_data):
+                item_url = self.client.upload_file(item['row_data'])
+                item = {
+                    "row_data": item_url,
+                    "external_id": item.get('external_id', item['row_data']),
+                    "attachments": item.get('attachments', [])
+                }
             return item
 
-        with ThreadPoolExecutor(file_upload_thread_count) as executor:
-            futures = [
-                executor.submit(upload_if_necessary, item) for item in items
-            ]
-            items = [future.result() for future in as_completed(futures)]
+        def validate_attachments(item):
+            attachments = item.get('attachments')
+            if attachments:
+                if isinstance(attachments, list):
+                    for attachment in attachments:
+                        Entity.AssetAttachment.validate_attachment_json(
+                            attachment)
+                else:
+                    raise ValueError(
+                        f"Attachments must be a list. Found {type(attachments)}"
+                    )
+            return attachments
+
+        def format_row(item):
+            # Formats user input into a consistent dict structure
+            if isinstance(item, dict):
+                # Convert fields to strings
+                item = {
+                    key.name if isinstance(key, Field) else key: value
+                    for key, value in item.items()
+                }
+            elif isinstance(item, str):
+                # The main advantage of using a string over a dict is that the user is specifying
+                # that the file should exist locally.
+                # That info is lost after this section so we should check for it here.
+                if not os.path.exists(item):
+                    raise ValueError(f"Filepath {item} does not exist.")
+                item = {"row_data": item, "external_id": item}
+            return item
+
+        def validate_keys(item):
+            if 'row_data' not in item:
+                raise InvalidQueryError(
+                    "`row_data` missing when creating DataRow.")
+
+            invalid_keys = set(item) - {
+                *{f.name for f in DataRow.fields()}, 'attachments'
+            }
+            if invalid_keys:
+                raise InvalidAttributeError(DataRow, invalid_keys)
+            return item
 
         def convert_item(item):
             # Don't make any changes to tms data
             if "tileLayerUrl" in item:
+                validate_attachments(item)
                 return item
-            # Convert string names to fields.
-            item = {
-                key if isinstance(key, Field) else DataRow.field(key): value
-                for key, value in item.items()
-            }
+            # Convert all payload variations into the same dict format
+            item = format_row(item)
+            # Make sure required keys exist (and there are no extra keys)
+            validate_keys(item)
+            # Make sure attachments are valid
+            validate_attachments(item)
+            # Upload any local file paths
+            item = upload_if_necessary(item)
 
-            if DataRow.row_data not in item:
-                raise InvalidQueryError(
-                    "DataRow.row_data missing when creating DataRow.")
-
-            invalid_keys = set(item) - set(DataRow.fields())
-            if invalid_keys:
-                raise InvalidAttributeError(DataRow, invalid_keys)
-
-            # Item is valid, convert it to a dict {graphql_field_name: value}
-            # Need to change the name of DataRow.row_data to "data"
             return {
-                "data" if key == DataRow.row_data else key.graphql_name: value
+                "data" if key == "row_data" else utils.camel_case(key): value
                 for key, value in item.items()
             }
+
+        if not isinstance(items, list):
+            raise ValueError(
+                f"Must pass a list to create_data_rows. Found {type(items)}")
+
+        with ThreadPoolExecutor(file_upload_thread_count) as executor:
+            futures = [executor.submit(convert_item, item) for item in items]
+            items = [future.result() for future in as_completed(futures)]
 
         # Prepare and upload the desciptor file
-        items = [convert_item(item) for item in items]
         data = json.dumps(items)
         descriptor_url = self.client.upload_data(data)
-
         # Create data source
         dataset_param = "datasetId"
         url_param = "jsonUrl"
         query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
             appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
-            ){ taskId accepted } } """ % (dataset_param, url_param,
-                                          dataset_param, url_param)
+            ){ taskId accepted errorMessage } } """ % (dataset_param, url_param,
+                                                       dataset_param, url_param)
+
         res = self.client.execute(query_str, {
             dataset_param: self.uid,
             url_param: descriptor_url
         })
         res = res["appendRowsToDataset"]
         if not res["accepted"]:
+            msg = res['errorMessage']
             raise InvalidQueryError(
-                "Server did not accept DataRow creation request")
+                f"Server did not accept DataRow creation request. {msg}")
 
         # Fetch and return the task.
         task_id = res["taskId"]
