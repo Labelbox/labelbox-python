@@ -74,6 +74,22 @@ class ModelRun(DbObject):
             lambda client, res: AnnotationGroup(client, self.model_id, res),
             ['annotationGroups', 'pageInfo', 'endCursor'])
 
+    def delete_model_runs(self):
+        """ Deletes specified model run.
+
+        Returns:
+            Query execution success.
+        """
+        ids_param = "ids"
+        query_str = """mutation DeleteModelRunPyApi($%s: [ID!]! {
+            deleteModelRuns(where: {ids: $%s}) {%s}}""" % (
+            ids_param, ids_param
+        )
+        res = self.client.execute(query_str, {
+            ids_param: self.uid
+        })
+        return res
+
 
 class AnnotationGroup(DbObject):
     label_id = Field.String("label_id")
@@ -89,3 +105,23 @@ class AnnotationGroup(DbObject):
         app_url = self.client.app_url
         endpoint = f"{app_url}/models/{self.model_id}/{self.model_run_id}/AllDatarowsSlice/{self.uid}?view=carousel"
         return endpoint
+
+    def delete_annotation_groups(self, data_row_ids):
+        """ Deletes annotation groups by data row ids for a model run.
+
+        Args:
+            data_row_ids (list): List of data row ids to delete annotation groups.
+        Returns:
+            Query execution success.
+        """
+        model_run_id_param = "modelRunId"
+        data_row_ids_param = "dataRowIds"
+        query_str = """mutation DeleteModelRunDataRowsPyApi($%s: ID!, $%s: [ID!]! {
+            deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s}) {%s}}""" % (
+            model_run_id_param, data_row_ids_param, model_run_id_param, data_row_ids_param
+        )
+        res = self.client.execute(query_str, {
+            model_run_id_param: self.model_run_id,
+            data_row_ids_param: data_row_ids
+        })
+        return res
