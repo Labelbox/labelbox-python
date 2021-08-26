@@ -77,7 +77,7 @@ def test_get_data_row_for_external_id(dataset, rand_gen, image_url):
 
     task = dataset.create_data_rows(
         [dict(row_data=image_url, external_id=external_id)])
-    task.wait_until_done()
+    task.wait_til_done()
     assert len(dataset.data_rows_for_external_id(external_id)) == 3
 
 
