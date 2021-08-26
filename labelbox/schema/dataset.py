@@ -1,3 +1,4 @@
+from labelbox import utils
 import os
 import json
 import logging
@@ -74,6 +75,13 @@ class Dataset(DbObject, Updateable, Deletable):
         return self.client._create(DataRow, kwargs)
 
     def create_data_rows(self, items):
+
+        ## NOTE TODOS
+        """
+        Add attachments (works with all types)
+        Add external ids to bulk imports
+        improved error handling (why job was accepted or not)
+        """
         """ Creates multiple DataRow objects based on the given `items`.
 
         Each element in `items` can be either a `str` or a `dict`. If
@@ -117,47 +125,82 @@ class Dataset(DbObject, Updateable, Deletable):
         def upload_if_necessary(item):
             if isinstance(item, str):
                 item_url = self.client.upload_file(item)
-                # Convert item from str into a dict so it gets processed
-                # like all other dicts.
                 item = {DataRow.row_data: item_url, DataRow.external_id: item}
+            elif isinstance(item, dict):
+                if os.path.exists(item['row_data']):
+                    item_url = self.client.upload_file(item['row_data'])
+                    parts = {
+                        DataRow.row_data:
+                            item_url,
+                        DataRow.external_id:
+                            item.get('external_id', item['row_data'])
+                    }
+                    attachments = item.get('attachments')
+                    if attachments:
+                        item = {**parts, **{'attachments': attachments}}
+                    else:
+                        item = parts
             return item
 
-        with ThreadPoolExecutor(file_upload_thread_count) as executor:
-            futures = [
-                executor.submit(upload_if_necessary, item) for item in items
-            ]
-            items = [future.result() for future in as_completed(futures)]
+        def validate_attachments(item):
+            attachments = item.get('attachments')
+            if attachments:
+                if isinstance(attachments, list):
+                    for attachment in attachments:
+                        for required_key in ['type', 'value']:
+                            if required_key not in attachment:
+                                raise ValueError(
+                                    f"Must provide a `{required_key}` key for each attachment. Found {attachment}."
+                                )
+                        attachment_type = attachment.get('type')
+                        if attachment_type not in DataRow.supported_attachment_types:
+                            raise ValueError(
+                                f"meta_type must be one of {DataRow.supported_attachment_types}. Found {attachment_type}"
+                            )
+                else:
+                    raise ValueError(
+                        f"Attachments must be a list. Found {type(attachments)}"
+                    )
+            return attachments
 
         def convert_item(item):
             # Don't make any changes to tms data
+            validate_attachments(item)
             if "tileLayerUrl" in item:
                 return item
-            # Convert string names to fields.
+
+            item = upload_if_necessary(item)
+            # Convert fields to string names.
             item = {
-                key if isinstance(key, Field) else DataRow.field(key): value
+                key.name if isinstance(key, Field) else key: value
                 for key, value in item.items()
             }
 
-            if DataRow.row_data not in item:
+            if 'row_data' not in item:
                 raise InvalidQueryError(
-                    "DataRow.row_data missing when creating DataRow.")
+                    "`row_data` missing when creating DataRow.")
 
-            invalid_keys = set(item) - set(DataRow.fields())
+            # TODO: This is technically breaking. but also idt anyone is using the other fields.
+            invalid_keys = set(item) - {
+                'row_data', 'external_id', 'attachments'
+            }
             if invalid_keys:
                 raise InvalidAttributeError(DataRow, invalid_keys)
 
             # Item is valid, convert it to a dict {graphql_field_name: value}
             # Need to change the name of DataRow.row_data to "data"
             return {
-                "data" if key == DataRow.row_data else key.graphql_name: value
+                "data" if key == "row_data" else utils.camel_case(key): value
                 for key, value in item.items()
             }
 
+        with ThreadPoolExecutor(file_upload_thread_count) as executor:
+            futures = [executor.submit(convert_item, item) for item in items]
+            items = [future.result() for future in as_completed(futures)]
+
         # Prepare and upload the desciptor file
-        items = [convert_item(item) for item in items]
         data = json.dumps(items)
         descriptor_url = self.client.upload_data(data)
-
         # Create data source
         dataset_param = "datasetId"
         url_param = "jsonUrl"
