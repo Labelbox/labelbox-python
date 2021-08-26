@@ -2,7 +2,7 @@
 
 # Version 3.2.0 (2021-08-26)
 ## Added
-* List Bulk Import Requests for a project with `Project.bulk_import_requests()`
+* List `BulkImportRequest`s for a project with `Project.bulk_import_requests()`
 * Improvemens to `Dataset.create_data_rows()`
     * Add attachments when bulk importing data rows
     * Provide external ids when creating data rows from local files
