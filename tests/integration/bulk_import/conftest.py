@@ -6,8 +6,6 @@ import time
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import MALPredictionImport
 
-IMG_URL = "https://picsum.photos/200/300"
-
 
 @pytest.fixture
 def ontology():
@@ -103,7 +101,7 @@ def ontology():
 
 
 @pytest.fixture
-def configured_project(client, ontology, rand_gen):
+def configured_project(client, ontology, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str))
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
@@ -112,7 +110,7 @@ def configured_project(client, ontology, rand_gen):
     project.setup(editor, ontology)
     data_row_ids = []
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
-        data_row_ids.append(dataset.create_data_row(row_data=IMG_URL).uid)
+        data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
