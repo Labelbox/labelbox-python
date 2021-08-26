@@ -1,5 +1,16 @@
 # Changelog
 
+# Version 3.2.0 (2021-08-26)
+## Added
+* List `BulkImportRequest`s for a project with `Project.bulk_import_requests()`
+* Improvemens to `Dataset.create_data_rows()`
+    * Add attachments when bulk importing data rows
+    * Provide external ids when creating data rows from local files
+    * Get more informative error messages when the api rejects an import
+
+## Fix
+* Bug causing `project.label_generator()` to fail when projects had benchmarks
+
 # Version 3.1.0 (2021-08-18)
 ## Added
 * Support for new HTML attachment type
