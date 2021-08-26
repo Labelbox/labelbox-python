@@ -75,6 +75,11 @@ def test_get_data_row_for_external_id(dataset, rand_gen, image_url):
     dataset.create_data_row(row_data=image_url, external_id=external_id)
     assert len(dataset.data_rows_for_external_id(external_id)) == 2
 
+    task = dataset.create_data_rows(
+        [dict(row_data=image_url, external_id=external_id)])
+    task.wait_until_done()
+    assert len(dataset.data_rows_for_external_id(external_id)) == 3
+
 
 def test_upload_video_file(dataset, sample_video: str) -> None:
     """
@@ -104,4 +109,3 @@ def test_data_row_export(dataset, image_url):
     result = list(dataset.export_data_rows())
     assert len(result) == n_data_rows
     assert set(result) == ids
-

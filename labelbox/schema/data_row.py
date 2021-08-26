@@ -42,10 +42,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     labels = Relationship.ToMany("Label", True)
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
 
-    supported_meta_types = supported_attachment_types = {
-        attachment_type.value
-        for attachment_type in AssetAttachment.AttachmentType
-    }
+    supported_meta_types = supported_attachment_types = set(
+        AssetAttachment.AttachmentType.__members__)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,11 +101,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Raises:
             ValueError: asset_type must be one of the supported types.
         """
-
-        if attachment_type not in self.supported_attachment_types:
-            raise ValueError(
-                f"meta_type must be one of {self.supported_attachment_types}. Found {attachment_type}"
-            )
+        AssetAttachment.validate_attachment_type(attachment_type)
 
         attachment_type_param = "type"
         attachment_value_param = "value"

@@ -44,8 +44,19 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
         task.wait_till_done()
         assert task.status == "COMPLETE"
 
+        task = dataset.create_data_rows([{
+            "row_data": fp.name,
+            'external_id': 'some_name'
+        }])
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+
+        task = dataset.create_data_rows([{"row_data": fp.name}])
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+
     data_rows = list(dataset.data_rows())
-    assert len(data_rows) == 3
+    assert len(data_rows) == 5
     url = ({data_row.row_data for data_row in data_rows} - {image_url}).pop()
     assert requests.get(url).content == data
 
@@ -64,7 +75,7 @@ def test_data_row_large_bulk_creation(dataset, image_url):
     assert task.status == "IN_PROGRESS"
     task.wait_till_done(timeout_seconds=120)
     assert task.status == "COMPLETE"
-    data_rows = len(list(dataset.data_rows())) == 5003
+    assert len(list(dataset.data_rows())) == 1000
 
 
 @pytest.mark.xfail(reason="DataRow.dataset() relationship not set")
@@ -168,3 +179,34 @@ def test_data_row_iteration(dataset, image_url) -> None:
     ])
     task.wait_till_done()
     assert next(dataset.data_rows())
+
+
+def test_data_row_attachments(dataset, image_url):
+    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
+                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    task = dataset.create_data_rows([{
+        "row_data": image_url,
+        "external_id": "test-id",
+        "attachments": [{
+            "type": attachment_type,
+            "value": attachment_value
+        }]
+    } for attachment_type, attachment_value in attachments])
+
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(attachments)
+    for data_row in data_rows:
+        assert len(list(data_row.attachments())) == 1
+        assert data_row.external_id == "test-id"
+
+    with pytest.raises(ValueError) as exc:
+        task = dataset.create_data_rows([{
+            "row_data": image_url,
+            "external_id": "test-id",
+            "attachments": [{
+                "type": "INVALID",
+                "value": "123"
+            }]
+        }])
