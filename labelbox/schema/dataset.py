@@ -191,6 +191,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 for key, value in item.items()
             }
 
+        if not isinstance(items, list):
+            raise ValueError(
+                f"Must pass a list to create_data_rows. Found {type(items)}")
+
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [executor.submit(convert_item, item) for item in items]
             items = [future.result() for future in as_completed(futures)]
