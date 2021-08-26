@@ -106,3 +106,4 @@ def test_data_row_export(dataset):
     result = list(dataset.export_data_rows())
     assert len(result) == n_data_rows
     assert set(result) == ids
+
