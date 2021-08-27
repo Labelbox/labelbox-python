@@ -15,3 +15,7 @@
 * This is a helper notebook for users without access to the Databricks Secrets API
 * Allows you to store your Labelbox API key outside of your main notebook, for better security
 * We do recommend you use the Secrets API whenever possible
+
+More information about the Connector is available on [PyPI](https://pypi.org/project/labelspark/) 
+
+[Connector Source Code](https://github.com/Labelbox/labelspark/)
