@@ -6,8 +6,8 @@
 
 
 #### labelbox_databricks_example.ipynb
-* Take a DataFrame of unstructured data
-* Create the dataset in Labelbox with the Connector
+* Load DataFrame of unstructured data (URLs to video, images, or text) 
+* Create the dataset in Labelbox
 * Annotate in Labelbox
 * Load annotations into Databricks for easy querying and model training
 
