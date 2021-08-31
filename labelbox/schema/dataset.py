@@ -136,8 +136,7 @@ class Dataset(DbObject, Updateable, Deletable):
             if attachments:
                 if isinstance(attachments, list):
                     for attachment in attachments:
-                        AssetAttachment.validate_attachment_json(
-                            attachment)
+                        AssetAttachment.validate_attachment_json(attachment)
                 else:
                     raise ValueError(
                         f"Attachments must be a list. Found {type(attachments)}"
