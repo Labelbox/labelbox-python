@@ -388,8 +388,8 @@ class BulkImportRequest(DbObject):
 
     def delete(self) -> None:
         """ Deletes the import job and also any annotations created by this import.
-        
-        Returns: 
+
+        Returns:
             None
         """
         id_param = "bulk_request_id"
@@ -634,7 +634,6 @@ class NDBase(NDFeatureSchema):
 
 
 ###### Classifications ######
-
 
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
