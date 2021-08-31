@@ -119,8 +119,7 @@ class AnnotationGroup(DbObject):
             deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s})}""" % (
             model_run_id_param, data_row_ids_param, model_run_id_param, data_row_ids_param
         )
-        res = self.client.execute(query_str, {
+        self.client.execute(query_str, {
             model_run_id_param: self.model_run_id,
             data_row_ids_param: data_row_ids
         })
-        return res
