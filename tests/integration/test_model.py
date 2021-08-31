@@ -18,3 +18,14 @@ def test_model(client, configured_project, rand_gen):
 
     model = client.get_model(model.uid)
     assert model.name == data["name"]
+
+
+def test_model_delete(client):
+    before = list(client.get_models())
+
+    model = before[0]
+    model.delete_model()
+
+    after = list(client.get_models())
+
+    assert len(before) == len(after) + 1

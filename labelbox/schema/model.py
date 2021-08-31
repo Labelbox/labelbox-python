@@ -42,11 +42,10 @@ class Model(DbObject):
             Query execution success.
         """
         ids_param = "ids"
-        query_str = """mutation DeleteModelPyApi($%s: [ID!]! {
-            deleteModels(where: {ids: $%s}) {%s}}""" % (
+        query_str = """mutation DeleteModelPyApi($%s: ID!) {
+            deleteModels(where: {ids: [$%s]})}""" % (
             ids_param, ids_param
         )
-        res = self.client.execute(query_str, {
-            ids_param: self.uid
+        self.client.execute(query_str, {
+            ids_param: str(self.uid)
         })
-        return res
