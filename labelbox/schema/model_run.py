@@ -74,21 +74,20 @@ class ModelRun(DbObject):
             lambda client, res: AnnotationGroup(client, self.model_id, res),
             ['annotationGroups', 'pageInfo', 'endCursor'])
 
-    def delete_model_runs(self):
+    def delete_model_run(self):
         """ Deletes specified model run.
 
         Returns:
             Query execution success.
         """
         ids_param = "ids"
-        query_str = """mutation DeleteModelRunPyApi($%s: [ID!]! {
-            deleteModelRuns(where: {ids: $%s}) {%s}}""" % (
+        query_str = """mutation DeleteModelRunPyApi($%s: ID!) {
+            deleteModelRuns(where: {ids: [$%s]})}""" % (
             ids_param, ids_param
         )
-        res = self.client.execute(query_str, {
-            ids_param: self.uid
+        self.client.execute(query_str, {
+            ids_param: str(self.uid)
         })
-        return res
 
 
 class AnnotationGroup(DbObject):
@@ -117,7 +116,7 @@ class AnnotationGroup(DbObject):
         model_run_id_param = "modelRunId"
         data_row_ids_param = "dataRowIds"
         query_str = """mutation DeleteModelRunDataRowsPyApi($%s: ID!, $%s: [ID!]! {
-            deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s}) {%s}}""" % (
+            deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s})}""" % (
             model_run_id_param, data_row_ids_param, model_run_id_param, data_row_ids_param
         )
         res = self.client.execute(query_str, {
