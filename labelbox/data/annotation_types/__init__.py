@@ -29,3 +29,6 @@ from .collection import LabelList
 from .collection import LabelGenerator
 
 from .metrics import ScalarMetric
+from .metrics import CustomScalarMetric
+from .metrics import MetricAggregation
+
