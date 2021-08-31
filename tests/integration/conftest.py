@@ -85,7 +85,8 @@ def get_project_invites(client, project_id):
                                query_str, {id_param: project_id},
                                ['project', 'invites', 'nodes'],
                                Invite,
-                               cursor_path=['project', 'invites', 'nextCursor'],
+                               cursor_path=['project',
+                                            'invites', 'nextCursor'],
                                experimental=True)
 
 
@@ -134,7 +135,9 @@ def client(environ: str):
 
 
 @pytest.fixture(scope="session")
-def image_url(client):
+def image_url(client, environ: str):
+    if environ == Environ.LOCAL:
+        return IMG_URL
     return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
