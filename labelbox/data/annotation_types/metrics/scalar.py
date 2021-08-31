@@ -16,3 +16,6 @@ class CustomScalarMetric(BaseModel):
     subclass_name: Optional[str] = None
     aggregation: MetricAggregation = MetricAggregation.ARITHMETIC_MEAN
     extra: Dict[str, Any] = {}
+
+
+# TODO: Create a metric type that is used once....
