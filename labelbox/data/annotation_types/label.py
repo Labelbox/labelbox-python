@@ -22,7 +22,8 @@ class Label(BaseModel):
     data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
-                            VideoClassificationAnnotation, ScalarMetric, CustomScalarMetric]] = []
+                            VideoClassificationAnnotation, CustomScalarMetric,
+                            ScalarMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
