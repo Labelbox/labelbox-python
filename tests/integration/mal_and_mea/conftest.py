@@ -120,7 +120,7 @@ def configured_project(client, ontology, rand_gen, image_url):
 
 @pytest.fixture
 def prediction_id_mapping(configured_project):
-    #Maps tool types to feature schema ids
+    # Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized
     result = {}
 
@@ -179,7 +179,7 @@ def rectangle_inference(prediction_id_mapping):
                 "schemaId":
                     rectangle['tool']['classifications'][0]['options'][0]
                     ['featureSchemaId']
-            }
+                    }
         }]
     })
     del rectangle['tool']
@@ -297,10 +297,22 @@ def predictions(object_predictions, classification_predictions):
 
 
 @pytest.fixture
-def model_run(client, rand_gen, configured_project, annotation_submit_fn,
-              model_run_predictions):
-    configured_project.enable_model_assisted_labeling()
+def model(client, rand_gen, configured_project):
     ontology = configured_project.ontology()
+
+    data = {"name": rand_gen(str), "ontology_id": ontology.uid}
+    return client.create_model(data["name"], data["ontology_id"])
+
+
+@pytest.fixture
+def model_run(rand_gen, model):
+    name = rand_gen(str)
+    return model.create_model_run(name)
+
+
+@pytest.fixture
+def model_run_annotation_groups(client, configured_project, annotation_submit_fn, model_run_predictions, model_run):
+    configured_project.enable_model_assisted_labeling()
 
     upload_task = MALPredictionImport.create_from_objects(
         client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
@@ -310,15 +322,10 @@ def model_run(client, rand_gen, configured_project, annotation_submit_fn,
     for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
         annotation_submit_fn(configured_project.uid, data_row_id)
 
-    data = {"name": rand_gen(str), "ontology_id": ontology.uid}
-    model = client.create_model(data["name"], data["ontology_id"])
-    name = rand_gen(str)
-    model_run_s = model.create_model_run(name)
-
     time.sleep(3)
     labels = configured_project.export_labels(download=True)
-    model_run_s.upsert_labels([label['ID'] for label in labels])
+    model_run.upsert_labels([label['ID'] for label in labels])
     time.sleep(3)
 
-    yield model_run_s
+    yield model_run
     # TODO: Delete resources when that is possible ..

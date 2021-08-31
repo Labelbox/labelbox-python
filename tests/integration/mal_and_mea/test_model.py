@@ -20,7 +20,7 @@ def test_model(client, configured_project, rand_gen):
     assert model.name == data["name"]
 
 
-def test_model_delete(client):
+def test_model_delete(client, model):
     before = list(client.get_models())
 
     model = before[0]
