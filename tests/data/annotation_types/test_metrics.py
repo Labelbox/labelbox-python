@@ -1,9 +1,9 @@
+import pytest
+
 from labelbox.data.annotation_types.metrics.aggregations import MetricAggregation
 from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
 from labelbox.data.annotation_types.collection import LabelList
 from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
-
-import pytest
 
 
 def test_scalar_metric():
