@@ -635,6 +635,7 @@ class NDBase(NDFeatureSchema):
 
 ###### Classifications ######
 
+
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
     answer: str = pydantic.Field(determinant=True)
