@@ -1,7 +1,6 @@
+from labelbox.data.annotation_types.metrics.aggregations import MetricAggregation
 from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
-from typing import Literal, Union
-
-from fiftyone.core.collections import aggregation
+from typing import Union, Optional
 
 from labelbox.data.annotation_types.data import ImageData, TextData
 from labelbox.data.annotation_types.metrics import ScalarMetric
@@ -24,34 +23,54 @@ class NDDataRowScalarMetric(NDJsonBase):
 
 
 class NDCustomScalarMetric(NDJsonBase):
-    metric_name: float
+    metric_name: str
     metric_value: float
-    sublcass_name: float
-    aggregation: Union[Literal["ARITHMETIC_MEAN"], Literal["GEOMETRIC_MEAN"],
-                       Literal["HARMONIC_MEAN"], Literal["SUM"]]
+    feature_name: Optional[str] = None
+    subclass_name: Optional[str] = None
+    aggregation: MetricAggregation
 
     def to_common(self) -> CustomScalarMetric:
-        return ScalarMetric(value=self.metric_value, extra={'uuid': self.uuid})
+        return CustomScalarMetric(
+            metric_value=self.metric_value,
+            metric_name=self.metric_name,
+            feature_name=self.feature_name,
+            subclass_name=self.subclass_name,
+            aggregation=MetricAggregation[self.aggregation],
+            extra={'uuid': self.uuid})
 
     @classmethod
-    def from_common(cls, metric: ScalarMetric,
+    def from_common(cls, metric: CustomScalarMetric,
                     data: Union[TextData, ImageData]) -> "NDCustomScalarMetric":
         return NDCustomScalarMetric(uuid=metric.extra.get('uuid'),
-                                    metric_value=metric.value,
+                                    metric_value=metric.metric_value,
+                                    metric_name=metric.metric_name,
+                                    feature_name=metric.feature_name,
+                                    subclass_name=metric.subclass_name,
+                                    aggregation=metric.aggregation.value,
                                     data_row={'id': data.uid})
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        for field in ['featureName', 'subclassName']:
+            if res[field] is None:
+                res.pop(field)
+        return res
+
+    class Config:
+        use_enum_values = True
 
 
 class NDMetricAnnotation:
 
     @classmethod
     def to_common(cls, annotation: "NDMetricType") -> ScalarMetric:
-
         return annotation.to_common()
 
     @classmethod
     def from_common(cls, annotation: Union[ScalarMetric, CustomScalarMetric],
                     data: Union[TextData, ImageData]) -> "NDMetricType":
-        return NDDataRowScalarMetric.from_common(annotation, data)
+        obj = cls.lookup_object(annotation)
+        return obj.from_common(annotation, data)
 
     @staticmethod
     def lookup_object(
@@ -66,4 +85,4 @@ class NDMetricAnnotation:
         return result
 
 
-NDMetricType = Union[NDDataRowScalarMetric, NDCustomScalarMetric]
+NDMetricType = Union[NDCustomScalarMetric, NDDataRowScalarMetric]
