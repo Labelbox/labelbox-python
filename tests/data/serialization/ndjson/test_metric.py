@@ -16,7 +16,7 @@ def test_metric():
     list(LBV1Converter.serialize(label_list))
 
 
-def test_metric():
+def test_custom_metric():
     with open('tests/data/assets/ndjson/custom_scalar_import.json',
               'r') as file:
         data = json.load(file)
