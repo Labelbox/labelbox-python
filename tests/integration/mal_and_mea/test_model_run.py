@@ -39,7 +39,7 @@ def test_model_run_delete(client, model_run):
     assert len(before) == len(after) + 1
 
 
-def test_model_run_delete(client, model_run_annotation_groups):
+def test_model_run_annotation_groups_delete(client, model_run_annotation_groups):
     models = list(client.get_models())
     model = models[0]
     model_runs = list(model.model_runs())
