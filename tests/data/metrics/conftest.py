@@ -675,3 +675,11 @@ def point_pair():
                          }
                      }],
                      expected=0.879113232477017)
+
+
+# TODO:
+# Test no predictions and no labels
+# We want the behvaior to be
+# (len(predictions) ==0  and len(labels)> 0) == 0
+# (len(predictions) > 1  and len(labels) == 0) == 0
+# (len(predictions) ==0   and len(labels) == 0) == None
