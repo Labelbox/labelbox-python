@@ -40,5 +40,17 @@ def test_model_run_delete(client, model_run):
 
 
 def test_model_run_delete(client, model_run_annotation_groups):
-    # TODO
-    pass
+    models = list(client.get_models())
+    model = models[0]
+    model_runs = list(model.model_runs())
+    model_run = model_runs[0]
+
+    before = list(model_run.annotation_groups())
+    annotation_group = before[0]
+    
+    data_row_id = annotation_group.data_row().uid
+    model_run.delete_annotation_groups(data_row_ids=[data_row_id])
+
+    after = list(model_run.annotation_groups())
+    
+    assert len(before) == len(after) + 1
