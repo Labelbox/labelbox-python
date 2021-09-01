@@ -118,6 +118,7 @@ class Dataset(DbObject, Updateable, Deletable):
         """
         file_upload_thread_count = 20
         DataRow = Entity.DataRow
+        AssetAttachment = Entity.AssetAttachment
 
         def upload_if_necessary(item):
             row_data = item['row_data']
@@ -135,8 +136,7 @@ class Dataset(DbObject, Updateable, Deletable):
             if attachments:
                 if isinstance(attachments, list):
                     for attachment in attachments:
-                        Entity.AssetAttachment.validate_attachment_json(
-                            attachment)
+                        AssetAttachment.validate_attachment_json(attachment)
                 else:
                     raise ValueError(
                         f"Attachments must be a list. Found {type(attachments)}"
