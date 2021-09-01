@@ -1,4 +1,5 @@
 from itertools import groupby
+from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
 from labelbox.data.annotation_types.metrics import ScalarMetric
 
 from operator import itemgetter
@@ -12,7 +13,7 @@ from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
-from .metric import NDMetricAnnotation, NDMetricType
+from .metric import NDCustomScalarMetric, NDMetricAnnotation, NDMetricType
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType
 
@@ -39,6 +40,7 @@ class NDLabel(BaseModel):
                                                         NDClassificationType,
                                                         NDMetricType]]]
     ) -> Generator[Label, None, None]:
+
         for data_row_id, annotations in grouped_annotations.items():
             annots = []
             for annotation in annotations:
@@ -46,7 +48,8 @@ class NDLabel(BaseModel):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
-                elif isinstance(annotation, NDMetricType):
+                elif isinstance(annotation, NDMetricType.__args__):
+
                     annots.append(NDMetricAnnotation.to_common(annotation))
                 else:
                     raise TypeError(
@@ -105,9 +108,9 @@ class NDLabel(BaseModel):
                 yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation, ObjectAnnotation):
                 yield NDObject.from_common(annotation, label.data)
-            elif isinstance(annotation, ScalarMetric):
+            elif isinstance(annotation, (ScalarMetric, CustomScalarMetric)):
                 yield NDMetricAnnotation.from_common(annotation, label.data)
             else:
                 raise TypeError(
-                    f"Unable to convert object to MAL format. `{type(annotation.value)}`"
+                    f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"
                 )
