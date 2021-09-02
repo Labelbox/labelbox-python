@@ -34,3 +34,14 @@ class Model(DbObject):
             model_id_param: self.uid
         })
         return ModelRun(self.client, res["createModelRun"])
+
+    def delete(self):
+        """ Deletes specified model.
+
+        Returns:
+            Query execution success.
+        """
+        ids_param = "ids"
+        query_str = """mutation DeleteModelPyApi($%s: ID!) {
+            deleteModels(where: {ids: [$%s]})}""" % (ids_param, ids_param)
+        self.client.execute(query_str, {ids_param: str(self.uid)})
