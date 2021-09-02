@@ -1,5 +1,5 @@
 # type: ignore
-from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
 from typing import Dict, List, Optional, Tuple, Union
 from shapely.geometry import Polygon
 from itertools import product
@@ -10,7 +10,7 @@ from ..annotation_types import (Label, ObjectAnnotation,
                                 ClassificationAnnotation, Mask, Geometry, Point,
                                 Line, Checklist, Text, Radio)
 
-from .utils import get_lookup_pair
+from .utils import get_feature_pairs
 
 
 """
@@ -23,27 +23,39 @@ We will get stats for each and the stats will support flattening
 data_row_iou()
 
 Is it even possible to return a None? If both are none then they won't have keys..
+Everything will have types. That is the MO of the
+
+Nike - Somehow getting issue with empty masks. idk wtf
 """
-
-def feature_miou(
-    ground_truth : List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    prediction: List[Union[ObjectAnnotation, ClassificationAnnotation]]) -> List[CustomScalarMetric]:
-    # Classifications are supported because we just take a naive approach to them..
-    return [
-        CustomScalarMetric(metric_name = "iou", metric_value = value, feature_name = name)
-        for name, value in get_iou_across_features(ground_truth, prediction)
-        if value is not None
-    ]
-
-
 
 # TODO: What should we call this?
 # We should be returning these objects..
-def data_row_miou_v2(ground_truth: Label, prediction: Label, include_subclasses = True) -> List[CustomScalarMetric]:
-    return CustomScalarMetric(
-        metric_name = "iou",
-        metric_value = data_row_miou(ground_truth=ground_truth, prediction=prediction, include_subclasses = include_subclasses)
-    )
+def data_row_miou_v2(ground_truth: Label, prediction: Label, include_subclasses = True) -> List[ScalarMetric]:
+    feature_ious = data_row_miou(ground_truth.annotations,
+                                   prediction.annotations, include_subclasses)
+    return [ScalarMetric(metric_name = "iou", value = feature_ious)]
+
+def features_miou(
+    ground_truths : List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]], include_subclasses = True) -> List[ScalarMetric]:
+    """
+    Groups annotations by feature_schema_id or name (which is available), calculates iou score and returns the mean across all features.
+
+    Args:
+        ground_truth : Label containing human annotations or annotations known to be correct
+        prediction: Label representing model predictions
+    Returns:
+        float indicating the iou score for all features represented in the annotations passed to this function.
+        Returns None if there are no annotations in ground_truth or prediction annotations
+    """
+    # Classifications are supported because we just take a naive approach to them..
+    annotation_pairs = get_feature_pairs(predictions, ground_truths)
+    return  [
+        ScalarMetric(
+            metric_name = "iou",
+            value = feature_miou(annotation_pair[0], annotation_pair[1], include_subclasses)
+            ) for annotation_pair in annotation_pairs
+    ]
 
 
 def data_row_miou(ground_truth: Label, prediction: Label, include_subclasses = True) -> Optional[float]:
@@ -57,79 +69,14 @@ def data_row_miou(ground_truth: Label, prediction: Label, include_subclasses = T
         float indicating the iou score for this data row.
         Returns None if there are no annotations in ground_truth or prediction Labels
     """
-    feature_ious = get_iou_across_features(ground_truth.annotations,
+    feature_ious = features_miou(ground_truth.annotations,
                                    prediction.annotations, include_subclasses)
-    return average_ious(feature_ious)
-
-
-def subclass_ious(ground_truth: Label, prediction: Label) -> Dict[str, Optional[float]]:
-    """
-    # This function effectively flattens all Label classes and computes the iou.
-    # Text is ignored for this function.
-    # So for Radio or Checkbox  if you have an animal detection model and the model predicts:
-    # Polygon - cat
-        Radio - orange
-        Checklist - fluffy
-
-    # This all gets grouped into one category cat:orange:fluffy
-    # This has to match
-
-    The most appropriate use case for this is if you have one radio subclasses that you prefer to treat as top level.
-    Otherwise this function is a bit naive and if you want something to specifically suite
-    your use case then create a new function based off this one.
-
-    """
-
-
-    prediction_annotations, ground_truth_annotations, keys = get_lookup_pair(prediction.annotations, ground_truth.annotations)
-
-
-    def _create_classification_feature_lookup(annotations: Union[List[ObjectAnnotation], List[ClassificationAnnotation]]):
-        # Note that these annotations should all be of the same type..
-
-        if not len(annotations) or isinstance(annotations[0], ClassificationAnnotation):
-            return annotations
-
-    ious = []
-    for key in keys:
-        # We shouldn't have any nones. Since the keys are generated by the presence of the object.
-        [classification.value.answer for classification in annotation.classifications if isinstance(classification.value, Radio)]
-        prediction_annotations = prediction_annotations[key]
-        gt_annotations = gt_annotations[key]
-
-
-
-
-
+    return average_ious({feature.metric_name: feature.value for feature in feature_ious})
 
 
 def average_ious(feature_ious : Dict[str, Optional[float]]) -> Optional[float]:
     ious = [iou for iou in feature_ious.values() if iou is not None]
     return None if not len(ious) else np.mean(ious)
-
-
-def get_iou_across_features(
-    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    include_subclasses = True
-) -> Optional[float]:
-    """
-    Groups annotations by feature_schema_id or name (which is available), calculates iou score and returns the mean across all features.
-
-    Args:
-        ground_truth : Label containing human annotations or annotations known to be correct
-        prediction: Label representing model predictions
-    Returns:
-        float indicating the iou score for all features represented in the annotations passed to this function.
-        Returns None if there are no annotations in ground_truth or prediction annotations
-    """
-    prediction_annotations, ground_truth_annotations, keys = get_lookup_pair(predictions, ground_truths)
-    ious = {
-        key: feature_miou(ground_truth_annotations[key],
-                     prediction_annotations[key], include_subclasses)
-        for key in keys
-    }
-    return ious
 
 
 

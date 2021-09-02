@@ -21,7 +21,7 @@ class Radio(BaseModel):
 
 class Checklist(BaseModel):
     """ A classification with many selected options allowed """
-    answer: List[ClassificationAnswer]
+    answers: List[ClassificationAnswer]
 
 
 class Text(BaseModel):
