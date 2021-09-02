@@ -40,15 +40,16 @@ def test_create_from_objects(model_run_annotation_groups, object_predictions):
     assert_file_content(annotation_import.input_file_url, object_predictions)
 
 
-def test_create_from_local_file(tmp_path, model_run_annotation_groups, object_predictions):
+def test_create_from_local_file(tmp_path, model_run_annotation_groups,
+                                object_predictions):
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         ndjson.dump(object_predictions, f)
 
-    annotation_import = model_run_annotation_groups.add_predictions(name=name,
-                                                                    predictions=str(file_path))
+    annotation_import = model_run_annotation_groups.add_predictions(
+        name=name, predictions=str(file_path))
 
     assert annotation_import.model_run_id == model_run_annotation_groups.uid
     check_running_state(annotation_import, name)
