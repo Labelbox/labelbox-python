@@ -17,7 +17,9 @@ class LBV1Radio(LBV1Feature):
     answer: LBV1ClassificationAnswer
 
     def to_common(self) -> Radio:
-        return Radio(answer=ClassificationAnswer(feature_schema_id=self.answer.schema_id, name=self.answer.title,
+        return Radio(answer=ClassificationAnswer(
+            feature_schema_id=self.answer.schema_id,
+            name=self.answer.title,
             extra={
                 'feature_id': self.answer.feature_id,
                 'value': self.answer.value
@@ -26,8 +28,7 @@ class LBV1Radio(LBV1Feature):
     @classmethod
     def from_common(cls, radio: Radio, feature_schema_id: Cuid,
                     **extra) -> "LBV1Radio":
-        return cls(
-                schema_id=feature_schema_id,
+        return cls(schema_id=feature_schema_id,
                    answer=LBV1ClassificationAnswer(
                        schema_id=radio.answer.feature_schema_id,
                        title=radio.answer.name,
@@ -40,8 +41,7 @@ class LBV1Checklist(LBV1Feature):
     answers: List[LBV1ClassificationAnswer]
 
     def to_common(self) -> Checklist:
-        return Checklist(
-            answer=[
+        return Checklist(answer=[
             ClassificationAnswer(feature_schema_id=answer.schema_id,
                                  name=answer.title,
                                  extra={
@@ -67,9 +67,9 @@ class LBV1Checklist(LBV1Feature):
 
 class LBV1Dropdown(LBV1Feature):
     answer: List[LBV1ClassificationAnswer]
+
     def to_common(self) -> Dropdown:
-        return Dropdown(
-            answer=[
+        return Dropdown(answer=[
             ClassificationAnswer(feature_schema_id=answer.schema_id,
                                  name=answer.title,
                                  extra={
@@ -81,7 +81,7 @@ class LBV1Dropdown(LBV1Feature):
     @classmethod
     def from_common(cls, dropdown: Dropdown, feature_schema_id: Cuid,
                     **extra) -> "LBV1Dropdown":
-        return cls(schema_id = feature_schema_id,
+        return cls(schema_id=feature_schema_id,
                    answers=[
                        LBV1ClassificationAnswer(
                            schema_id=answer.feature_schema_id,
@@ -106,7 +106,8 @@ class LBV1Text(LBV1Feature):
 
 
 class LBV1Classifications(BaseModel):
-    classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown, LBV1Checklist]] = []
+    classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
+                                LBV1Checklist]] = []
 
     def to_common(self) -> List[ClassificationAnnotation]:
         classifications = [
