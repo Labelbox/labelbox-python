@@ -120,7 +120,7 @@ def configured_project(client, ontology, rand_gen, image_url):
 
 @pytest.fixture
 def prediction_id_mapping(configured_project):
-    # Maps tool types to feature schema ids
+    #Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized
     result = {}
 
@@ -179,7 +179,7 @@ def rectangle_inference(prediction_id_mapping):
                 "schemaId":
                     rectangle['tool']['classifications'][0]['options'][0]
                     ['featureSchemaId']
-                    }
+            }
         }]
     })
     del rectangle['tool']
@@ -311,7 +311,9 @@ def model_run(rand_gen, model):
 
 
 @pytest.fixture
-def model_run_annotation_groups(client, configured_project, annotation_submit_fn, model_run_predictions, model_run):
+def model_run_annotation_groups(client, configured_project,
+                                annotation_submit_fn, model_run_predictions,
+                                model_run):
     configured_project.enable_model_assisted_labeling()
 
     upload_task = MALPredictionImport.create_from_objects(

@@ -85,8 +85,7 @@ def get_project_invites(client, project_id):
                                query_str, {id_param: project_id},
                                ['project', 'invites', 'nodes'],
                                Invite,
-                               cursor_path=['project',
-                                            'invites', 'nextCursor'],
+                               cursor_path=['project', 'invites', 'nextCursor'],
                                experimental=True)
 
 

@@ -53,8 +53,8 @@ class ModelRun(DbObject):
                 return MEAPredictionImport.create_from_file(
                     path=str(predictions), **kwargs)
             else:
-                return MEAPredictionImport.create_from_url(
-                    url=str(predictions), **kwargs)
+                return MEAPredictionImport.create_from_url(url=str(predictions),
+                                                           **kwargs)
         elif isinstance(predictions, Iterable):
             return MEAPredictionImport.create_from_objects(
                 predictions=predictions, **kwargs)
