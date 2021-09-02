@@ -1,4 +1,5 @@
 from itertools import groupby
+from labelbox.data.annotation_types.classification.classification import Dropdown
 from labelbox.data.annotation_types.metrics import ScalarMetric
 
 from operator import itemgetter
@@ -102,6 +103,9 @@ class NDLabel(BaseModel):
         ]
         for annotation in non_video_annotations:
             if isinstance(annotation, ClassificationAnnotation):
+                if isinstance(annotation.value, Dropdown):
+                    raise ValueError("Dropdowns are not supported by the NDJson format."
+                                    " Please filter out Dropdown annotations before converting.")
                 yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation, ObjectAnnotation):
                 yield NDObject.from_common(annotation, label.data)
