@@ -217,17 +217,21 @@ def test_data_row_attachments(dataset, image_url):
 def test_create_data_rows_sync_attachments(dataset, image_url):
     attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
                    ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments_per_data_row = 3
     dataset.create_data_rows_sync([{
-        "row_data": image_url,
-        "external_id": "test-id",
+        "row_data":
+            image_url,
+        "external_id":
+            "test-id",
         "attachments": [{
             "type": attachment_type,
             "value": attachment_value
-        }]
+        } for _ in range(attachments_per_data_row)]
     } for attachment_type, attachment_value in attachments])
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(attachments)
-    assert list(len(data_rows[0].attachments())) == len(attachments)
+    for data_row in data_rows:
+        assert len(list(data_row.attachments())) == attachments_per_data_row
 
 
 def test_create_data_rows_sync_mixed_upload(dataset, image_url):
