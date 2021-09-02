@@ -30,7 +30,7 @@ def test_model_run_delete(client, model_run):
     before = list(model_before.model_runs())
 
     model_run = before[0]
-    model_run.delete_model_run()
+    model_run.delete()
 
     models_after = list(client.get_models())
     model_after = models_after[0]

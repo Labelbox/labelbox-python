@@ -35,7 +35,7 @@ class Model(DbObject):
         })
         return ModelRun(self.client, res["createModelRun"])
 
-    def delete_model(self):
+    def delete(self):
         """ Deletes specified model.
 
         Returns:
