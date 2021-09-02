@@ -240,7 +240,7 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
         fp.flush()
-        task = dataset.create_data_rows([{
+        dataset.create_data_rows_sync([{
             DataRow.row_data: image_url
         }] * n_urls + [fp.name] * n_local)
     assert len(list(dataset.data_rows())) == n_local + n_urls
