@@ -134,9 +134,7 @@ def client(environ: str):
 
 
 @pytest.fixture(scope="session")
-def image_url(client, environ: str):
-    if environ == Environ.LOCAL:
-        return IMG_URL
+def image_url(client):
     return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
