@@ -14,7 +14,6 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
 logger = logging.getLogger(__name__)
-import time
 
 
 class Dataset(DbObject, Updateable, Deletable):
