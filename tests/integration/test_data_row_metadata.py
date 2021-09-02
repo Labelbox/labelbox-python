@@ -119,7 +119,7 @@ def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
     assert len(datarow.metadata["fields"]) == (n_fields + 4)
 
 
-@pytest.mark.slow
+@pytest.mark.skip
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     metadata = []
     n_fields_start = 0
