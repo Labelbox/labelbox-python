@@ -40,7 +40,7 @@ class Task(DbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=60):
+    def wait_till_done(self, timeout_seconds=300):
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
 

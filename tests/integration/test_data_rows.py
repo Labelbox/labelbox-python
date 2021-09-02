@@ -66,16 +66,18 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
 @pytest.mark.slow
 def test_data_row_large_bulk_creation(dataset, image_url):
     # Do a longer task and expect it not to be complete immediately
+    n_local = 2000
+    n_urls = 250
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
         fp.flush()
         task = dataset.create_data_rows([{
             DataRow.row_data: image_url
-        }] * 750 + [fp.name] * 250)
+        }] * n_local + [fp.name] * n_urls)
     assert task.status == "IN_PROGRESS"
-    task.wait_till_done(timeout_seconds=120)
+    task.wait_till_done()
     assert task.status == "COMPLETE"
-    assert len(list(dataset.data_rows())) == 1000
+    assert len(list(dataset.data_rows())) == n_local + n_urls
 
 
 @pytest.mark.xfail(reason="DataRow.dataset() relationship not set")
@@ -210,3 +212,31 @@ def test_data_row_attachments(dataset, image_url):
                 "value": "123"
             }]
         }])
+
+
+def test_create_data_rows_sync_attachments(dataset, image_url):
+    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
+                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    dataset.create_data_rows_sync([{
+        "row_data": image_url,
+        "external_id": "test-id",
+        "attachments": [{
+            "type": attachment_type,
+            "value": attachment_value
+        }]
+    } for attachment_type, attachment_value in attachments])
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(attachments)
+    assert list(len(data_rows[0].attachments())) == len(attachments)
+
+
+def test_create_data_rows_sync_mixed_upload(dataset, image_url):
+    n_local = 100
+    n_urls = 100
+    with NamedTemporaryFile() as fp:
+        fp.write("Test data".encode())
+        fp.flush()
+        task = dataset.create_data_rows([{
+            DataRow.row_data: image_url
+        }] * n_urls + [fp.name] * n_local)
+    assert len(list(dataset.data_rows())) == n_local + n_urls

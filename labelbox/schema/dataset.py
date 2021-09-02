@@ -14,6 +14,7 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 
 logger = logging.getLogger(__name__)
+import time
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -69,13 +70,111 @@ class Dataset(DbObject, Updateable, Deletable):
         row_data = kwargs[DataRow.row_data.name]
         if os.path.exists(row_data):
             kwargs[DataRow.row_data.name] = self.client.upload_file(row_data)
-
         kwargs[DataRow.dataset.name] = self
-
         return self.client._create(DataRow, kwargs)
 
+    def create_data_rows_sync(self, items):
+        """ Synchronously bulk upload data rows.
+
+        Use this instead of `Dataset.create_data_rows` for smaller batches of data rows that need to be uploaded quickly.
+        Cannot use this for uploads containing more than 1000 data rows.
+        Each data row is also limited to 5 attachments.
+
+        Args:
+            items (iterable of (dict or str)):
+                See the docstring for `Dataset._create_descriptor_file` for more information.
+        Returns:
+            None. If the function doesn't raise an exception then the import was successful.
+
+        Raises:
+            InvalidQueryError: If the `items` parameter does not conform to
+                the specification in Dataset._create_descriptor_file or if the server did not accept the
+                DataRow creation request (unknown reason).
+            InvalidAttributeError: If there are fields in `items` not valid for
+                a DataRow.
+            ValueError: When the upload parameters are invalid
+        """
+        max_data_rows_supported = 1000
+        max_attachments_per_data_row = 5
+        if len(items) > max_data_rows_supported:
+            raise ValueError(
+                f"Dataset.create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
+                " For larger imports use the async function Dataset.create_data_rows()"
+            )
+        descriptor_url = self._create_descriptor_file(
+            items, max_attachments_per_data_row=max_attachments_per_data_row)
+        dataset_param = "datasetId"
+        url_param = "jsonUrl"
+        query_str = """mutation AppendRowsToDatasetSyncPyApi($%s: ID!, $%s: String!){
+            appendRowsToDatasetSync(data:{datasetId: $%s, jsonFileUrl: $%s}
+            ){dataset{id}}} """ % (dataset_param, url_param, dataset_param,
+                                   url_param)
+        self.client.execute(query_str, {
+            dataset_param: self.uid,
+            url_param: descriptor_url
+        })
+
     def create_data_rows(self, items):
-        """ Creates multiple DataRow objects based on the given `items`.
+        """ Asynchronously bulk upload data rows
+
+        Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 100 data rows.
+
+        Args:
+            items (iterable of (dict or str)): See the docstring for `Dataset._create_descriptor_file` for more information
+
+        Returns:
+            Task representing the data import on the server side. The Task
+            can be used for inspecting task progress and waiting until it's done.
+
+        Raises:
+            InvalidQueryError: If the `items` parameter does not conform to
+                the specification above or if the server did not accept the
+                DataRow creation request (unknown reason).
+            ResourceNotFoundError: If unable to retrieve the Task for the
+                import process. This could imply that the import failed.
+            InvalidAttributeError: If there are fields in `items` not valid for
+                a DataRow.
+            ValueError: When the upload parameters are invalid
+        """
+        descriptor_url = self._create_descriptor_file(items)
+        # Create data source
+        dataset_param = "datasetId"
+        url_param = "jsonUrl"
+        query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
+            appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
+            ){ taskId accepted errorMessage } } """ % (dataset_param, url_param,
+                                                       dataset_param, url_param)
+
+        res = self.client.execute(query_str, {
+            dataset_param: self.uid,
+            url_param: descriptor_url
+        })
+        res = res["appendRowsToDataset"]
+        if not res["accepted"]:
+            msg = res['errorMessage']
+            raise InvalidQueryError(
+                f"Server did not accept DataRow creation request. {msg}")
+
+        # Fetch and return the task.
+        task_id = res["taskId"]
+        user = self.client.get_user()
+        task = list(user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(task) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task = task[0]
+        task._user = user
+        return task
+
+    def _create_descriptor_file(self, items, max_attachments_per_data_row=None):
+        """
+        This function is shared by both `Dataset.create_data_rows` and `Dataset.create_data_rows_sync`
+        to prepare the input file. The user defined input is validated, processed, and json stringified.
+        Finally the json data is uploaded to gcs and a uri is returned. This uri can be passed to
+
+
 
         Each element in `items` can be either a `str` or a `dict`. If
         it is a `str`, then it is interpreted as a local file path. The file
@@ -102,19 +201,19 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             items (iterable of (dict or str)): See above for details.
+            max_attachments_per_data_row (Optional[int]): Param used during attachment validation to determine
+                if the user has provided too many attachments.
 
         Returns:
-            Task representing the data import on the server side. The Task
-            can be used for inspecting task progress and waiting until it's done.
+            uri (string): A reference to the uploaded json data.
 
         Raises:
             InvalidQueryError: If the `items` parameter does not conform to
                 the specification above or if the server did not accept the
                 DataRow creation request (unknown reason).
-            ResourceNotFoundError: If unable to retrieve the Task for the
-                import process. This could imply that the import failed.
             InvalidAttributeError: If there are fields in `items` not valid for
                 a DataRow.
+            ValueError: When the upload parameters are invalid
         """
         file_upload_thread_count = 20
         DataRow = Entity.DataRow
@@ -135,6 +234,12 @@ class Dataset(DbObject, Updateable, Deletable):
             attachments = item.get('attachments')
             if attachments:
                 if isinstance(attachments, list):
+                    if max_attachments_per_data_row and len(
+                            attachments) > max_attachments_per_data_row:
+                        raise ValueError(
+                            f"Max attachments number of supported attachments per data row is {max_attachments_per_data_row}."
+                            f" Found {len(attachments)}. Condense multiple attachments into one with the HTML attachment type if necessary."
+                        )
                     for attachment in attachments:
                         AssetAttachment.validate_attachment_json(attachment)
                 else:
@@ -198,40 +303,9 @@ class Dataset(DbObject, Updateable, Deletable):
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [executor.submit(convert_item, item) for item in items]
             items = [future.result() for future in as_completed(futures)]
-
         # Prepare and upload the desciptor file
         data = json.dumps(items)
-        descriptor_url = self.client.upload_data(data)
-        # Create data source
-        dataset_param = "datasetId"
-        url_param = "jsonUrl"
-        query_str = """mutation AppendRowsToDatasetPyApi($%s: ID!, $%s: String!){
-            appendRowsToDataset(data:{datasetId: $%s, jsonFileUrl: $%s}
-            ){ taskId accepted errorMessage } } """ % (dataset_param, url_param,
-                                                       dataset_param, url_param)
-
-        res = self.client.execute(query_str, {
-            dataset_param: self.uid,
-            url_param: descriptor_url
-        })
-        res = res["appendRowsToDataset"]
-        if not res["accepted"]:
-            msg = res['errorMessage']
-            raise InvalidQueryError(
-                f"Server did not accept DataRow creation request. {msg}")
-
-        # Fetch and return the task.
-        task_id = res["taskId"]
-        user = self.client.get_user()
-        task = list(user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(task) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task = task[0]
-        task._user = user
-        return task
+        return self.client.upload_data(data)
 
     def data_rows_for_external_id(self, external_id, limit=10):
         """ Convenience method for getting a single `DataRow` belonging to this
