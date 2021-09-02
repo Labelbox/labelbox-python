@@ -53,8 +53,8 @@ class ModelRun(DbObject):
                 return MEAPredictionImport.create_from_file(
                     path=str(predictions), **kwargs)
             else:
-                return MEAPredictionImport.create_from_url(url=str(predictions),
-                                                           **kwargs)
+                return MEAPredictionImport.create_from_url(
+                    url=str(predictions), **kwargs)
         elif isinstance(predictions, Iterable):
             return MEAPredictionImport.create_from_objects(
                 predictions=predictions, **kwargs)
@@ -82,12 +82,8 @@ class ModelRun(DbObject):
         """
         ids_param = "ids"
         query_str = """mutation DeleteModelRunPyApi($%s: ID!) {
-            deleteModelRuns(where: {ids: [$%s]})}""" % (
-            ids_param, ids_param
-        )
-        self.client.execute(query_str, {
-            ids_param: str(self.uid)
-        })
+            deleteModelRuns(where: {ids: [$%s]})}""" % (ids_param, ids_param)
+        self.client.execute(query_str, {ids_param: str(self.uid)})
 
     def delete_annotation_groups(self, data_row_ids):
         """ Deletes annotation groups by data row ids for a model run.
@@ -101,8 +97,8 @@ class ModelRun(DbObject):
         data_row_ids_param = "dataRowIds"
         query_str = """mutation DeleteModelRunDataRowsPyApi($%s: ID!, $%s: [ID!]!) {
             deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s})}""" % (
-            model_run_id_param, data_row_ids_param, model_run_id_param, data_row_ids_param
-        )
+            model_run_id_param, data_row_ids_param, model_run_id_param,
+            data_row_ids_param)
         self.client.execute(query_str, {
             model_run_id_param: self.uid,
             data_row_ids_param: data_row_ids
@@ -123,4 +119,3 @@ class AnnotationGroup(DbObject):
         app_url = self.client.app_url
         endpoint = f"{app_url}/models/{self.model_id}/{self.model_run_id}/AllDatarowsSlice/{self.uid}?view=carousel"
         return endpoint
-

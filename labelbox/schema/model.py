@@ -43,9 +43,5 @@ class Model(DbObject):
         """
         ids_param = "ids"
         query_str = """mutation DeleteModelPyApi($%s: ID!) {
-            deleteModels(where: {ids: [$%s]})}""" % (
-            ids_param, ids_param
-        )
-        self.client.execute(query_str, {
-            ids_param: str(self.uid)
-        })
+            deleteModels(where: {ids: [$%s]})}""" % (ids_param, ids_param)
+        self.client.execute(query_str, {ids_param: str(self.uid)})
