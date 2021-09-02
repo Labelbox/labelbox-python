@@ -20,56 +20,58 @@ def check_running_state(req, name, url=None):
     assert req.state == AnnotationImportState.RUNNING
 
 
-def test_create_from_url(model_run):
+def test_create_from_url(model_run_annotation_groups):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    annotation_import = model_run.add_predictions(name=name, predictions=url)
-    assert annotation_import.model_run_id == model_run.uid
+    annotation_import = model_run_annotation_groups.add_predictions(
+        name=name, predictions=url)
+    assert annotation_import.model_run_id == model_run_annotation_groups.uid
     check_running_state(annotation_import, name, url)
 
 
-def test_create_from_objects(model_run, object_predictions):
+def test_create_from_objects(model_run_annotation_groups, object_predictions):
     name = str(uuid.uuid4())
 
-    annotation_import = model_run.add_predictions(
+    annotation_import = model_run_annotation_groups.add_predictions(
         name=name, predictions=object_predictions)
 
-    assert annotation_import.model_run_id == model_run.uid
+    assert annotation_import.model_run_id == model_run_annotation_groups.uid
     check_running_state(annotation_import, name)
     assert_file_content(annotation_import.input_file_url, object_predictions)
 
 
-def test_create_from_local_file(tmp_path, model_run, object_predictions):
+def test_create_from_local_file(tmp_path, model_run_annotation_groups,
+                                object_predictions):
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         ndjson.dump(object_predictions, f)
 
-    annotation_import = model_run.add_predictions(name=name,
-                                                  predictions=str(file_path))
+    annotation_import = model_run_annotation_groups.add_predictions(
+        name=name, predictions=str(file_path))
 
-    assert annotation_import.model_run_id == model_run.uid
+    assert annotation_import.model_run_id == model_run_annotation_groups.uid
     check_running_state(annotation_import, name)
     assert_file_content(annotation_import.input_file_url, object_predictions)
 
 
-def test_get(client, model_run):
+def test_get(client, model_run_annotation_groups):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    model_run.add_predictions(name=name, predictions=url)
+    model_run_annotation_groups.add_predictions(name=name, predictions=url)
 
     annotation_import = MEAPredictionImport.from_name(
-        client, model_run_id=model_run.uid, name=name)
+        client, model_run_id=model_run_annotation_groups.uid, name=name)
 
-    assert annotation_import.model_run_id == model_run.uid
+    assert annotation_import.model_run_id == model_run_annotation_groups.uid
     check_running_state(annotation_import, name, url)
 
 
 @pytest.mark.slow
-def test_wait_till_done(model_run_predictions, model_run):
+def test_wait_till_done(model_run_predictions, model_run_annotation_groups):
     name = str(uuid.uuid4())
-    annotation_import = model_run.add_predictions(
+    annotation_import = model_run_annotation_groups.add_predictions(
         name=name, predictions=model_run_predictions)
 
     assert len(annotation_import.inputs) == len(model_run_predictions)
