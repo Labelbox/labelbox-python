@@ -1,12 +1,12 @@
 import pytest
 
 from labelbox.data.annotation_types.metrics.aggregations import MetricAggregation
-from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
 from labelbox.data.annotation_types.collection import LabelList
 from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
 
 
-def test_scalar_metric():
+def test_legacy_scalar_metric():
     value = 10
     metric = ScalarMetric(value=value)
     assert metric.value == value
@@ -46,12 +46,12 @@ def test_scalar_metric():
 def test_custom_scalar_metric(feature_name, subclass_name, aggregation):
     value = 0.5
     kwargs = {'aggregation': aggregation} if aggregation is not None else {}
-    metric = CustomScalarMetric(metric_name="iou",
-                                metric_value=value,
+    metric = ScalarMetric(metric_name="iou",
+                                value=value,
                                 feature_name=feature_name,
                                 subclass_name=subclass_name,
                                 **kwargs)
-    assert metric.metric_value == value
+    assert metric.value == value
 
     label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg"),
                   annotations=[metric])
@@ -65,7 +65,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation):
             'arr': None
         },
         'annotations': [{
-            'metric_value': value,
+            'value': value,
             'metric_name': 'iou',
             'feature_name': feature_name,
             'subclass_name': subclass_name,

@@ -1,5 +1,5 @@
 from itertools import groupby
-from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
+from labelbox.data.annotation_types.classification.classification import Dropdown
 from labelbox.data.annotation_types.metrics import ScalarMetric
 
 from operator import itemgetter
@@ -13,13 +13,13 @@ from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
-from .metric import NDCustomScalarMetric, NDMetricAnnotation, NDMetricType
+from .metric import NDScalarMetric, NDMetricAnnotation
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType
 
 
 class NDLabel(BaseModel):
-    annotations: List[Union[NDObjectType, NDClassificationType, NDMetricType]]
+    annotations: List[Union[NDObjectType, NDClassificationType, NDScalarMetric]]
 
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
@@ -38,7 +38,7 @@ class NDLabel(BaseModel):
     def _generate_annotations(
         self, grouped_annotations: Dict[str, List[Union[NDObjectType,
                                                         NDClassificationType,
-                                                        NDMetricType]]]
+                                                        NDScalarMetric]]]
     ) -> Generator[Label, None, None]:
 
         for data_row_id, annotations in grouped_annotations.items():
@@ -48,8 +48,7 @@ class NDLabel(BaseModel):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
-                elif isinstance(annotation, NDMetricType.__args__):
-
+                elif isinstance(annotation, NDScalarMetric):
                     annots.append(NDMetricAnnotation.to_common(annotation))
                 else:
                     raise TypeError(
@@ -105,10 +104,13 @@ class NDLabel(BaseModel):
         ]
         for annotation in non_video_annotations:
             if isinstance(annotation, ClassificationAnnotation):
+                if isinstance(annotation.value, Dropdown):
+                    raise ValueError("Dropdowns are not supported by the NDJson format."
+                                    " Please filter out Dropdown annotations before converting.")
                 yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation, ObjectAnnotation):
                 yield NDObject.from_common(annotation, label.data)
-            elif isinstance(annotation, (ScalarMetric, CustomScalarMetric)):
+            elif isinstance(annotation, ScalarMetric):
                 yield NDMetricAnnotation.from_common(annotation, label.data)
             else:
                 raise TypeError(
