@@ -103,6 +103,7 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
     assert not len(remaining_ids.intersection(set(upload_ids)))
 
 
+@pytest.mark.skip  
 def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
     """Delete a single from metadata"""
     n_fields = len(datarow.metadata["fields"])
