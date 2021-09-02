@@ -24,7 +24,7 @@ def test_model_delete(client, model):
     before = list(client.get_models())
 
     model = before[0]
-    model.delete_model()
+    model.delete()
 
     after = list(client.get_models())
 

@@ -74,7 +74,7 @@ class ModelRun(DbObject):
             lambda client, res: AnnotationGroup(client, self.model_id, res),
             ['annotationGroups', 'pageInfo', 'endCursor'])
 
-    def delete_model_run(self):
+    def delete(self):
         """ Deletes specified model run.
 
         Returns:
