@@ -6,7 +6,6 @@ from labelbox.data.annotation_types.metrics import ScalarMetric
 from labelbox.data.serialization.ndjson.base import NDJsonBase
 
 
-
 class NDScalarMetric(NDJsonBase):
     metric_name: str
     metric_value: float
@@ -15,24 +14,23 @@ class NDScalarMetric(NDJsonBase):
     aggregation: MetricAggregation
 
     def to_common(self) -> ScalarMetric:
-        return ScalarMetric(
-            value=self.metric_value,
-            metric_name=self.metric_name,
-            feature_name=self.feature_name,
-            subclass_name=self.subclass_name,
-            aggregation=MetricAggregation[self.aggregation],
-            extra={'uuid': self.uuid})
+        return ScalarMetric(value=self.metric_value,
+                            metric_name=self.metric_name,
+                            feature_name=self.feature_name,
+                            subclass_name=self.subclass_name,
+                            aggregation=MetricAggregation[self.aggregation],
+                            extra={'uuid': self.uuid})
 
     @classmethod
     def from_common(cls, metric: ScalarMetric,
                     data: Union[TextData, ImageData]) -> "NDScalarMetric":
         return ScalarMetric(uuid=metric.extra.get('uuid'),
-                                    metric_value=metric.value,
-                                    metric_name=metric.metric_name,
-                                    feature_name=metric.feature_name,
-                                    subclass_name=metric.subclass_name,
-                                    aggregation=metric.aggregation.value,
-                                    data_row={'id': data.uid})
+                            metric_value=metric.value,
+                            metric_name=metric.metric_name,
+                            feature_name=metric.feature_name,
+                            subclass_name=metric.subclass_name,
+                            aggregation=metric.aggregation.value,
+                            data_row={'id': data.uid})
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
@@ -63,8 +61,7 @@ class NDMetricAnnotation:
         return obj.from_common(annotation, data)
 
     @staticmethod
-    def lookup_object(
-            metric: ScalarMetric) -> "NDScalarMetric":
+    def lookup_object(metric: ScalarMetric) -> "NDScalarMetric":
         result = {
             ScalarMetric: NDScalarMetric,
         }.get(type(metric))
@@ -72,4 +69,3 @@ class NDMetricAnnotation:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(metric)}`")
         return result
-

@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class LBV1Converter:
+
     @staticmethod
     def deserialize_video(json_data: Iterable[Dict[str, Any]],
                           client: "labelbox.Client"):
@@ -44,6 +45,7 @@ class LBV1Converter:
         Returns:
             LabelGenerator containing the export data.
         """
+
         def label_generator():
             for example in json_data:
                 if 'frames' in example['Label']:

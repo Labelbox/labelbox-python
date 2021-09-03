@@ -16,5 +16,3 @@ class ScalarMetric(BaseModel):
     subclass_name: Optional[str] = None
     aggregation: MetricAggregation = MetricAggregation.ARITHMETIC_MEAN
     extra: Dict[str, Any] = {}
-
-

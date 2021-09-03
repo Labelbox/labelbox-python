@@ -11,8 +11,6 @@ from ..annotation_types import (Label, ObjectAnnotation,
                                 Line, Checklist, Text, Radio)
 
 from .utils import get_feature_pairs
-
-
 """
 Instead of these functions accepting labels they should accept annotations..
 Then we can add a helper for applying functions across pred and label combinations..
@@ -28,16 +26,22 @@ Everything will have types. That is the MO of the
 Nike - Somehow getting issue with empty masks. idk wtf
 """
 
+
 # TODO: What should we call this?
 # We should be returning these objects..
-def data_row_miou_v2(ground_truth: Label, prediction: Label, include_subclasses = True) -> List[ScalarMetric]:
+def data_row_miou_v2(ground_truth: Label,
+                     prediction: Label,
+                     include_subclasses=True) -> List[ScalarMetric]:
     feature_ious = data_row_miou(ground_truth.annotations,
-                                   prediction.annotations, include_subclasses)
-    return [ScalarMetric(metric_name = "iou", value = feature_ious)]
+                                 prediction.annotations, include_subclasses)
+    return [ScalarMetric(metric_name="iou", value=feature_ious)]
 
-def features_miou(
-    ground_truths : List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]], include_subclasses = True) -> List[ScalarMetric]:
+
+def features_miou(ground_truths: List[Union[ObjectAnnotation,
+                                            ClassificationAnnotation]],
+                  predictions: List[Union[ObjectAnnotation,
+                                          ClassificationAnnotation]],
+                  include_subclasses=True) -> List[ScalarMetric]:
     """
     Groups annotations by feature_schema_id or name (which is available), calculates iou score and returns the mean across all features.
 
@@ -50,15 +54,17 @@ def features_miou(
     """
     # Classifications are supported because we just take a naive approach to them..
     annotation_pairs = get_feature_pairs(predictions, ground_truths)
-    return  [
-        ScalarMetric(
-            metric_name = "iou",
-            value = feature_miou(annotation_pair[0], annotation_pair[1], include_subclasses)
-            ) for annotation_pair in annotation_pairs
+    return [
+        ScalarMetric(metric_name="iou",
+                     value=feature_miou(annotation_pair[0], annotation_pair[1],
+                                        include_subclasses))
+        for annotation_pair in annotation_pairs
     ]
 
 
-def data_row_miou(ground_truth: Label, prediction: Label, include_subclasses = True) -> Optional[float]:
+def data_row_miou(ground_truth: Label,
+                  prediction: Label,
+                  include_subclasses=True) -> Optional[float]:
     """
     Calculate iou for two labels corresponding to the same data row.
 
@@ -70,21 +76,21 @@ def data_row_miou(ground_truth: Label, prediction: Label, include_subclasses = T
         Returns None if there are no annotations in ground_truth or prediction Labels
     """
     feature_ious = features_miou(ground_truth.annotations,
-                                   prediction.annotations, include_subclasses)
-    return average_ious({feature.metric_name: feature.value for feature in feature_ious})
+                                 prediction.annotations, include_subclasses)
+    return average_ious(
+        {feature.metric_name: feature.value for feature in feature_ious})
 
 
-def average_ious(feature_ious : Dict[str, Optional[float]]) -> Optional[float]:
+def average_ious(feature_ious: Dict[str, Optional[float]]) -> Optional[float]:
     ious = [iou for iou in feature_ious.values() if iou is not None]
     return None if not len(ious) else np.mean(ious)
 
 
-
-def feature_miou(
-    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    include_subclasses: bool
-) -> Optional[float]:
+def feature_miou(ground_truths: List[Union[ObjectAnnotation,
+                                           ClassificationAnnotation]],
+                 predictions: List[Union[ObjectAnnotation,
+                                         ClassificationAnnotation]],
+                 include_subclasses: bool) -> Optional[float]:
     """
     Computes iou score for all features with the same feature schema id.
 
@@ -100,10 +106,12 @@ def feature_miou(
     elif not len(ground_truths) and len(predictions):
         # No ground truth annotations but there are predictions means no matches
         return 0.
-    elif not len(ground_truths) and not len(predictions): #TODO: This shouldn't run at all for subclasses. Otherwise it should return 1.
+    elif not len(ground_truths) and not len(
+            predictions
+    ):  #TODO: This shouldn't run at all for subclasses. Otherwise it should return 1.
         # Ignore examples that do not have any annotations or predictions
         # This could maybe be counted as correct but could also skew the stats..
-        return # Undefined (neither wrong nor right. )
+        return  # Undefined (neither wrong nor right. )
     elif isinstance(predictions[0].value, Mask):
         return mask_miou(ground_truths, predictions, include_subclasses)
     elif isinstance(predictions[0].value, Geometry):
@@ -117,7 +125,8 @@ def feature_miou(
 
 def vector_miou(ground_truths: List[ObjectAnnotation],
                 predictions: List[ObjectAnnotation],
-                buffer=70., include_subclasses = True) -> float:
+                buffer=70.,
+                include_subclasses=True) -> float:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -139,10 +148,12 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
                 ground_truth) not in solution_features:
             solution_features.update({id(prediction), id(ground_truth)})
             if include_subclasses:
-                classification_iou = average_ious(get_iou_across_features(
-                    prediction.classifications, ground_truth.classifications))
+                classification_iou = average_ious(
+                    get_iou_across_features(prediction.classifications,
+                                            ground_truth.classifications))
                 classification_iou = classification_iou if classification_iou is not None else agreement
-                solution_agreements.append((agreement + classification_iou) / 2.)
+                solution_agreements.append(
+                    (agreement + classification_iou) / 2.)
             else:
                 solution_agreements.append(agreement)
 
@@ -153,7 +164,8 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
 
 
 def mask_miou(ground_truths: List[ObjectAnnotation],
-              predictions: List[ObjectAnnotation], include_subclasses = True) -> float:
+              predictions: List[ObjectAnnotation],
+              include_subclasses=True) -> float:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -283,6 +295,3 @@ def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
 def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> float:
     """Computes iou between two binary segmentation masks."""
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
-
-
-

@@ -47,10 +47,10 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation):
     value = 0.5
     kwargs = {'aggregation': aggregation} if aggregation is not None else {}
     metric = ScalarMetric(metric_name="iou",
-                                value=value,
-                                feature_name=feature_name,
-                                subclass_name=subclass_name,
-                                **kwargs)
+                          value=value,
+                          feature_name=feature_name,
+                          subclass_name=subclass_name,
+                          **kwargs)
     assert metric.value == value
 
     label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg"),
