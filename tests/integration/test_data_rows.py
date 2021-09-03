@@ -74,7 +74,6 @@ def test_data_row_large_bulk_creation(dataset, image_url):
         task = dataset.create_data_rows([{
             DataRow.row_data: image_url
         }] * n_local + [fp.name] * n_urls)
-    assert task.status == "IN_PROGRESS"
     task.wait_till_done()
     assert task.status == "COMPLETE"
     assert len(list(dataset.data_rows())) == n_local + n_urls
