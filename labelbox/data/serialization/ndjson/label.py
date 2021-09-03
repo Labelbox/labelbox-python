@@ -1,6 +1,4 @@
-import logging
 from itertools import groupby
-from labelbox.data.annotation_types.classification.classification import Dropdown
 from labelbox.data.annotation_types.metrics import ScalarMetric
 
 from operator import itemgetter
@@ -18,7 +16,6 @@ from .metric import NDMetricAnnotation, NDMetricType
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType
 
-logger = logging.getLogger(__name__)
 
 
 class NDLabel(BaseModel):
