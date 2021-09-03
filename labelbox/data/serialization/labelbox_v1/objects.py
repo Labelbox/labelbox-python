@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
@@ -8,21 +8,28 @@ from ...annotation_types.data import MaskData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
-from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text
+from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
 from .feature import LBV1Feature
 
 
 class LBV1ObjectBase(LBV1Feature):
     color: Optional[str] = None
     instanceURI: Optional[str] = None
-    classifications: List[Union[LBV1Radio, LBV1Checklist, LBV1Text]] = []
-
+    classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown, LBV1Checklist]] = []
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
         # This means these are not video frames ..
         if self.instanceURI is None:
             res.pop('instanceURI')
         return res
+
+    @validator('classifications', pre=True)
+    def validate_subclasses(cls, value, field):
+        # Dropdown subclasses create extra unessesary nesting. So we just remove it.
+        if isinstance(value, list) and len(value):
+            if isinstance(value[0], list):
+                return value[0]
+        return value
 
 
 class _Point(BaseModel):
