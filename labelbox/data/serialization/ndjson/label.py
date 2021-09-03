@@ -17,7 +17,6 @@ from .classification import NDChecklistSubclass, NDClassification, NDClassificat
 from .objects import NDObject, NDObjectType
 
 
-
 class NDLabel(BaseModel):
     annotations: List[Union[NDObjectType, NDClassificationType, NDMetricType]]
 
