@@ -308,6 +308,7 @@ def model(client, rand_gen, configured_project):
         # Already was deleted by the test
         pass
 
+
 @pytest.fixture
 def model_run(rand_gen, model):
     name = rand_gen(str)

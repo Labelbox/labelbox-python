@@ -6,8 +6,6 @@ from labelbox.data.annotation_types.metrics import ScalarMetric
 from labelbox.data.serialization.ndjson.base import NDJsonBase
 
 
-
-
 class NDScalarMetric(NDJsonBase):
     metric_value: float
     metric_name: Optional[str]
@@ -27,12 +25,12 @@ class NDScalarMetric(NDJsonBase):
     def from_common(cls, metric: ScalarMetric,
                     data: Union[TextData, ImageData]) -> "NDScalarMetric":
         return cls(uuid=metric.extra.get('uuid'),
-                            metric_value=metric.value,
-                            metric_name=metric.metric_name,
-                            feature_name=metric.feature_name,
-                            subclass_name=metric.subclass_name,
-                            aggregation=metric.aggregation.value,
-                            data_row={'id': data.uid})
+                   metric_value=metric.value,
+                   metric_name=metric.metric_name,
+                   feature_name=metric.feature_name,
+                   subclass_name=metric.subclass_name,
+                   aggregation=metric.aggregation.value,
+                   data_row={'id': data.uid})
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
