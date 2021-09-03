@@ -120,7 +120,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                                                ImageData]) -> "NDChecklist":
         return cls(answer=[
             NDFeature(schema_id=answer.feature_schema_id)
-            for answer in checklist.answers
+            for answer in checklist.answer
         ],
                    data_row={'id': data.uid},
                    schema_id=feature_schema_id,
