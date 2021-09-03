@@ -24,7 +24,7 @@ def test_legacy_scalar_metric():
         },
         'annotations': [{
             'value': 10.0,
-            'extra': {}
+            'extra': {},
         }],
         'extra': {},
         'uid': None
@@ -65,11 +65,17 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation):
             'arr': None
         },
         'annotations': [{
-            'value': value,
-            'metric_name': 'iou',
-            'feature_name': feature_name,
-            'subclass_name': subclass_name,
-            'aggregation': aggregation or MetricAggregation.ARITHMETIC_MEAN,
+            'value':
+                value,
+            'metric_name':
+                'iou',
+            **({
+                'feature_name': feature_name
+            } if feature_name else {}),
+            **({
+                'subclass_name': subclass_name
+            } if subclass_name else {}), 'aggregation':
+                aggregation or MetricAggregation.ARITHMETIC_MEAN,
             'extra': {}
         }],
         'extra': {},
