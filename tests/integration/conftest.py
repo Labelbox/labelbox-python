@@ -311,7 +311,7 @@ def annotation_submit_fn(client):
             })
         features = feature_result['project']['featuresForDataRow']
         feature_ids = [feature['id'] for feature in features]
-        client.execute(
+        res = client.execute(
             """mutation createLabelPyApi ($project_id : ID!,$datarow_id: ID!,$feature_ids: [ID!]!,$time_seconds : Float!) {
                 createLabelFromFeatures(data: {dataRow: { id: $datarow_id },project: { id: $project_id },
                     featureIds: $feature_ids,secondsSpent: $time_seconds}) {id}}""",
@@ -321,6 +321,7 @@ def annotation_submit_fn(client):
                 "feature_ids": feature_ids,
                 "time_seconds": 10
             })
+        return res['createLabelFromFeatures']['id']
 
     return submit
 

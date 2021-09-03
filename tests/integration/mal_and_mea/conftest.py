@@ -320,14 +320,11 @@ def model_run_annotation_groups(client, configured_project,
         client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
         model_run_predictions)
     upload_task.wait_until_done()
-
+    label_ids = []
     for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
-        annotation_submit_fn(configured_project.uid, data_row_id)
-
+        label_ids.append(
+            annotation_submit_fn(configured_project.uid, data_row_id))
+    model_run.upsert_labels(label_ids)
     time.sleep(3)
-    labels = configured_project.export_labels(download=True)
-    model_run.upsert_labels([label['ID'] for label in labels])
-    time.sleep(3)
-
     yield model_run
     # TODO: Delete resources when that is possible ..
