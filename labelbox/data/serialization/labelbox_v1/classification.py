@@ -28,9 +28,7 @@ class LBV1Radio(LBV1Feature):
     @classmethod
     def from_common(cls, radio: Radio, feature_schema_id: Cuid,
                     **extra) -> "LBV1Radio":
-        return cls(
-                schema_id=feature_schema_id,
-                title = radio,
+        return cls(schema_id=feature_schema_id,
                    answer=LBV1ClassificationAnswer(
                        schema_id=radio.answer.feature_schema_id,
                        title=radio.answer.name,
@@ -62,35 +60,7 @@ class LBV1Checklist(LBV1Feature):
                            title=answer.name,
                            value=answer.extra.get('value'),
                            feature_id=answer.extra.get('feature_id'))
-                       for answer in checklist.answers
-                   ],
-                   **extra)
-
-
-class LBV1Dropdown(LBV1Feature):
-    answer: List[LBV1ClassificationAnswer]
-    def to_common(self) -> Dropdown:
-        return Dropdown(
-            answer=[
-            ClassificationAnswer(feature_schema_id=answer.schema_id,
-                                 name=answer.title,
-                                 extra={
-                                     'feature_id': answer.feature_id,
-                                     'value': answer.value
-                                 }) for answer in self.answer
-        ])
-
-    @classmethod
-    def from_common(cls, dropdown: Dropdown, feature_schema_id: Cuid,
-                    **extra) -> "LBV1Dropdown":
-        return cls(schema_id = feature_schema_id,
-                   answers=[
-                       LBV1ClassificationAnswer(
-                           schema_id=answer.feature_schema_id,
-                           title=answer.name,
-                           value=answer.extra.get('value'),
-                           feature_id=answer.extra.get('feature_id'))
-                       for answer in dropdown.answer
+                       for answer in checklist.answer
                    ],
                    **extra)
 
