@@ -1,8 +1,22 @@
 from typing import Any, Dict, List
 
-from pydantic.main import BaseModel
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
 
+from pydantic import BaseModel, validator
 from ..feature import FeatureSchema
+
+
+# TODO: Replace when pydantic adds support for unions that don't coerce types
+class _TempName(BaseModel):
+    name: str
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        res.pop('name')
+        return res
 
 
 class ClassificationAnswer(FeatureSchema):
@@ -19,9 +33,10 @@ class Radio(BaseModel):
     answer: ClassificationAnswer
 
 
-class Checklist(BaseModel):
+class Checklist(_TempName):
     """ A classification with many selected options allowed """
-    answers: List[ClassificationAnswer]
+    name: Literal["checklist"] = "checklist"
+    answer: List[ClassificationAnswer]
 
 
 class Text(BaseModel):
@@ -29,9 +44,10 @@ class Text(BaseModel):
     answer: str
 
 
-class Dropdown(BaseModel):
+class Dropdown(_TempName):
     """
     - A classification with many selected options allowed .
     - This is not currently compatible with MAL.
     """
+    name: Literal["dropdown"] = "dropdown"
     answer: List[ClassificationAnswer]

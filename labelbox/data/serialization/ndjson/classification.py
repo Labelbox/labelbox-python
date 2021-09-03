@@ -165,8 +165,8 @@ class NDSubclassification:
     def lookup_subclassification(
         annotation: ClassificationAnnotation
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
-        if isinstance(annotation, Dropdown):
-            raise TypeError("Dropdowns are not supported for MAL")
+        if isinstance(annotation.value, Dropdown):
+            raise TypeError("Dropdowns are not supported for MAL.")
         return {
             Text: NDTextSubclass,
             Checklist: NDChecklistSubclass,
@@ -213,13 +213,12 @@ class NDClassification:
         annotation: Union[ClassificationAnnotation,
                           VideoClassificationAnnotation]
     ) -> Union[NDText, NDChecklist, NDRadio]:
-        if isinstance(annotation, Dropdown):
-            raise TypeError("Dropdowns are not supported for MAL")
+        if isinstance(annotation.value, Dropdown):
+            raise TypeError("Dropdowns are not supported for MAL.")
         return {
             Text: NDText,
             Checklist: NDChecklist,
-            Radio: NDRadio,
-            Dropdown: NDChecklist,
+            Radio: NDRadio
         }.get(type(annotation.value))
 
 
