@@ -6,12 +6,14 @@ from labelbox.data.annotation_types.metrics import ScalarMetric
 from labelbox.data.serialization.ndjson.base import NDJsonBase
 
 
+
+
 class NDScalarMetric(NDJsonBase):
-    metric_name: str
     metric_value: float
+    metric_name: Optional[str]
     feature_name: Optional[str] = None
     subclass_name: Optional[str] = None
-    aggregation: MetricAggregation
+    aggregation: MetricAggregation = MetricAggregation.ARITHMETIC_MEAN.value
 
     def to_common(self) -> ScalarMetric:
         return ScalarMetric(value=self.metric_value,
@@ -24,7 +26,7 @@ class NDScalarMetric(NDJsonBase):
     @classmethod
     def from_common(cls, metric: ScalarMetric,
                     data: Union[TextData, ImageData]) -> "NDScalarMetric":
-        return ScalarMetric(uuid=metric.extra.get('uuid'),
+        return cls(uuid=metric.extra.get('uuid'),
                             metric_value=metric.value,
                             metric_name=metric.metric_name,
                             feature_name=metric.feature_name,
@@ -39,8 +41,8 @@ class NDScalarMetric(NDJsonBase):
                 res.pop(field)
 
         # For backwards compatibility.
-        if res['metric_name'] is None:
-            res.pop('metric_name')
+        if res['metricName'] is None:
+            res.pop('metricName')
             res.pop('aggregation')
         return res
 
