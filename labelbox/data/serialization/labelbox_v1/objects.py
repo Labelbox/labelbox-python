@@ -15,7 +15,9 @@ from .feature import LBV1Feature
 class LBV1ObjectBase(LBV1Feature):
     color: Optional[str] = None
     instanceURI: Optional[str] = None
-    classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown, LBV1Checklist]] = []
+    classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
+                                LBV1Checklist]] = []
+
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
         # This means these are not video frames ..

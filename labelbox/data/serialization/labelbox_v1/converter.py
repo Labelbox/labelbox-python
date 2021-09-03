@@ -45,6 +45,7 @@ class LBV1Converter:
         Returns:
             LabelGenerator containing the export data.
         """
+
         def label_generator():
             for example in json_data:
                 if 'frames' in example['Label']:
@@ -54,6 +55,7 @@ class LBV1Converter:
                 if example['Label']:
                     # Don't construct empty dict
                     yield LBV1Label(**example).to_common()
+
         return LabelGenerator(data=label_generator())
 
     @staticmethod

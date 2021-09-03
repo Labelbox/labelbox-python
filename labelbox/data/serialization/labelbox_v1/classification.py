@@ -82,7 +82,7 @@ class LBV1Dropdown(LBV1Feature):
     def from_common(cls, dropdown: Dropdown, feature_schema_id: Cuid,
                     **extra) -> "LBV1Dropdown":
         return cls(schema_id=feature_schema_id,
-                   answers=[
+                   answer=[
                        LBV1ClassificationAnswer(
                            schema_id=answer.feature_schema_id,
                            title=answer.name,
