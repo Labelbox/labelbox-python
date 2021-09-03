@@ -299,15 +299,25 @@ def predictions(object_predictions, classification_predictions):
 @pytest.fixture
 def model(client, rand_gen, configured_project):
     ontology = configured_project.ontology()
-
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
-    return client.create_model(data["name"], data["ontology_id"])
-
+    model = client.create_model(data["name"], data["ontology_id"])
+    yield model
+    try:
+        model.delete()
+    except:
+        # Already was deleted by the test
+        pass
 
 @pytest.fixture
 def model_run(rand_gen, model):
     name = rand_gen(str)
-    return model.create_model_run(name)
+    model_run = model.create_model_run(name)
+    yield model_run
+    try:
+        model_run.delete()
+    except:
+        # Already was deleted by the test
+        pass
 
 
 @pytest.fixture
