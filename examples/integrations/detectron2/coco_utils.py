@@ -47,7 +47,7 @@ def partition_coco(coco_instance_data, coco_panoptic_data = None, splits = None)
     return partitions
 
 
-def visualize_coco_examples(coco_examples, metadata_catalog, scale = 1.0, max_images = 5, resize_dims = (512,768)):
+def visualize_coco_examples(coco_examples, metadata_catalog, scale = 1.0, max_images = 5, resize_dims = (768, 512)):
     images = []
     for idx, example in enumerate(coco_examples):
         if idx > max_images:

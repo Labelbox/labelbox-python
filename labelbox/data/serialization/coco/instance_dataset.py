@@ -82,8 +82,8 @@ def segmentations_to_common(class_annotations, class_name):
     return annotations
 
 
-def process_label(label: Label, idx, image_root):
-    annot_idx = idx * 10000
+def process_label(label: Label, idx, image_root, max_annotations_per_image = 10000):
+    annot_idx = idx * max_annotations_per_image
     image_id = get_image_id(label, idx)
     image = get_image(label, image_root, image_id)
     coco_annotations = []
