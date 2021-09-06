@@ -8,8 +8,8 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 import cv2
-
 from detectron2.utils.visualizer import Visualizer
+from panopticapi.utils import rgb2id
 
 
 def get_annotations(images, all_annotations):
