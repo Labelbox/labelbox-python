@@ -1,7 +1,14 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import functools
 import random
+import json
+import os
+
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 import cv2
+
 from detectron2.utils.visualizer import Visualizer
 
 
@@ -47,30 +54,36 @@ def partition_coco(coco_instance_data, coco_panoptic_data = None, splits = None)
     return partitions
 
 
-def visualize_coco_examples(coco_examples, metadata_catalog, scale = 1.0, max_images = 5, resize_dims = (768, 512)):
+def visualize_object_inferences(metadata_catalog, coco_examples, predictor, scale = 1.0, max_images = 5, resize_dims = (768, 512)):
     images = []
     for idx, example in enumerate(coco_examples):
         if idx > max_images:
             break
         im = cv2.imread(example['file_name'])
+        outputs = predictor(im)
         v = Visualizer(im[:, :, ::-1], metadata_catalog, scale=scale)
-        out = v.draw_dataset_dict(example)
-        images.append(cv2.resize(out.get_image(), resize_dims))
+        out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+        images.append(cv2.resize(out.get_image()[:, :, ::-1], resize_dims))
     return Image.fromarray(np.vstack(images))
 
 
- def visualize_object_inferences(coco_examples, metadata_catalog, predictor, scale = 1.0, max_images = 5, resize_dims = (768, 512)):
-     images = []
-     for idx, example in enumerate(coco_examples):
-         if idx > max_images:
-             break
-         im = cv2.imread(example['file_name'])
-         outputs = predictor(im)
-         v = Visualizer(im[:, :, ::-1], metadata_catalog, scale=scale)
-         out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-         images.append(cv2.resize(out.get_image()[:, :, ::-1], resize_dims))
-     return Image.fromarray(np.vstack(images))
+def visualize_coco_examples(metadata_catalog, object_examples, panoptic_examples = None, scale = 1.0, max_images = 5, resize_dims = (768,512)):
+    if panoptic_examples is not None:
+        lookup = {d['file_name'] : d for d in panoptic_examples}
 
+    images = []
+    for idx, example in enumerate(object_examples):
+        if idx > max_images:
+            break
+        im = cv2.imread(example['file_name'])
+        v = Visualizer(im[:, :, ::-1], metadata_catalog, scale=scale)
+        out = v.draw_dataset_dict(example)
+        if panoptic_examples is not None:
+            example_panoptic = lookup.get(example['file_name'])
+            if example_panoptic is not None:
+                out = v.draw_dataset_dict(example_panoptic)
+        images.append(cv2.resize(out.get_image(), resize_dims))
+    return Image.fromarray(np.vstack(images))
 
 
  def _process_panoptic_to_semantic(input_panoptic, output_semantic, segments, id_map):
