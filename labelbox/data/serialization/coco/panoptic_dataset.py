@@ -30,7 +30,7 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
     return SegmentInfo(id=annotation_idx,
                        category_id=category_id,
                        area=shapely.area,
-                       bbox=[xmin, ymin, xmax - xmin, ymax - ymin])
+                       bbox=[xmin, ymin, xmax - xmin, ymax - ymin]), canvas
 
 
 def mask_to_coco_segment_info(canvas: np.ndarray, annotation, annotation_idx: int, category_id):
@@ -69,13 +69,13 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all
                 is_thing[annotation.name] = 0
 
             elif isinstance(annotation.value, (Polygon, Rectangle)):
-                segments.append(
-                    vector_to_coco_segment_info(
+                segment, canvas = vector_to_coco_segment_info(
                         canvas,
                         annotation,
                         annotation_idx=(class_idx if all_stuff else annotation_idx) + 1,
                         image=image,
-                        category_id=categories[annotation.name]))
+                        category_id=categories[annotation.name])
+                segments.append(segment)
                 is_thing[annotation.name] = 1 - int(all_stuff)
 
     mask_file = image.file_name.replace('.jpg', '.png')
