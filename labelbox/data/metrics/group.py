@@ -113,7 +113,7 @@ def get_label_pairs(labels_a: LabelList,
                 )
             else:
                 continue
-        pairs[key].append([a, b])
+        pairs[key].extend([a, b])
     return pairs
 
 
