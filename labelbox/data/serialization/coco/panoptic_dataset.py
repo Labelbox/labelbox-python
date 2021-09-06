@@ -64,7 +64,7 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all
             categories[annotation.name] = hash_category_name(annotation.name)
             if isinstance(annotation.value, Mask):
                 segment, canvas = (mask_to_coco_segment_info(
-                    canvas, annotation, class_idx ,categories[annotation.name]))
+                    canvas, annotation, class_idx + 1 ,categories[annotation.name]))
                 segments.append(segment)
                 is_thing[annotation.name] = 0
 
