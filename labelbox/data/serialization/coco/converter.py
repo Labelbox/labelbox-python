@@ -9,7 +9,7 @@ from labelbox.data.serialization.coco.panoptic_dataset import CocoPanopticDatase
 def create_path_if_not_exists(path: str):
     if not os.path.exists(path):
         os.makedirs(path)
-    elif os.path.listdir(path):
+    elif os.listdir(path):
         raise ValueError(f"Directory `{path}`` must be empty.")
 
 
@@ -45,8 +45,10 @@ class COCOConverter:
         return CocoInstanceDataset.from_common(labels=labels,
                                                image_root=image_root).dict()
 
-    def serialize_panoptic(labels: LabelCollection, image_root: str,
-                           mask_root: str, all_stuff: bool = False) -> Dict[str, Any]:
+    def serialize_panoptic(labels: LabelCollection,
+                           image_root: str,
+                           mask_root: str,
+                           all_stuff: bool = False) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
         This function will only convert masks, polygons, and rectangles.
@@ -66,7 +68,8 @@ class COCOConverter:
         create_path_if_not_exists(mask_root)
         return CocoPanopticDataset.from_common(labels=labels,
                                                image_root=image_root,
-                                               mask_root=mask_root, all_stuff=all_stuff).dict()
+                                               mask_root=mask_root,
+                                               all_stuff=all_stuff).dict()
 
     @classmethod
     def deserialize_panoptic(cls, json_data: Dict[str, Any], image_root: str,

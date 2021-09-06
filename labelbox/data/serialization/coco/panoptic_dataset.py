@@ -33,9 +33,10 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
                        bbox=[xmin, ymin, xmax - xmin, ymax - ymin]), canvas
 
 
-def mask_to_coco_segment_info(canvas: np.ndarray, annotation, annotation_idx: int, category_id):
+def mask_to_coco_segment_info(canvas: np.ndarray, annotation,
+                              annotation_idx: int, category_id):
     color = id_to_rgb(annotation_idx)
-    mask = annotation.value.draw(color = color)
+    mask = annotation.value.draw(color=color)
     shapely = annotation.value.shapely
     xmin, ymin, xmax, ymax = shapely.bounds
     canvas = np.where(canvas == (0, 0, 0), mask, canvas)
@@ -45,7 +46,11 @@ def mask_to_coco_segment_info(canvas: np.ndarray, annotation, annotation_idx: in
                        bbox=[xmin, ymin, xmax - xmin, ymax - ymin]), canvas
 
 
-def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all_stuff = False):
+def process_label(label: Label,
+                  idx: Union[int, str],
+                  image_root,
+                  mask_root,
+                  all_stuff=False):
     """
     Masks become stuff
     Polygon and rectangle become thing
@@ -64,17 +69,19 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all
             categories[annotation.name] = hash_category_name(annotation.name)
             if isinstance(annotation.value, Mask):
                 segment, canvas = (mask_to_coco_segment_info(
-                    canvas, annotation, class_idx + 1 ,categories[annotation.name]))
+                    canvas, annotation, class_idx + 1,
+                    categories[annotation.name]))
                 segments.append(segment)
                 is_thing[annotation.name] = 0
 
             elif isinstance(annotation.value, (Polygon, Rectangle)):
                 segment, canvas = vector_to_coco_segment_info(
-                        canvas,
-                        annotation,
-                        annotation_idx=(class_idx if all_stuff else annotation_idx) + 1,
-                        image=image,
-                        category_id=categories[annotation.name])
+                    canvas,
+                    annotation,
+                    annotation_idx=(class_idx if all_stuff else annotation_idx)
+                    + 1,
+                    image=image,
+                    category_id=categories[annotation.name])
                 segments.append(segment)
                 is_thing[annotation.name] = 1 - int(all_stuff)
 
@@ -94,15 +101,16 @@ class CocoPanopticDataset(BaseModel):
     categories: List[Categories]
 
     @classmethod
-    def from_common(cls, labels: LabelCollection, image_root, mask_root, all_stuff):
+    def from_common(cls, labels: LabelCollection, image_root, mask_root,
+                    all_stuff):
         all_coco_annotations = []
         coco_categories = {}
         coco_things = {}
         images = []
         with ProcessPoolExecutor(max_workers=8) as exc:
             futures = [
-                exc.submit(process_label, label, idx, image_root, mask_root, all_stuff)
-                for idx, label in enumerate(labels)
+                exc.submit(process_label, label, idx, image_root, mask_root,
+                           all_stuff) for idx, label in enumerate(labels)
             ]
             for future in tqdm(as_completed(futures)):
                 image, annotation, categories, things = future.result()
@@ -111,16 +119,17 @@ class CocoPanopticDataset(BaseModel):
                 coco_categories.update(categories)
                 coco_things.update(things)
 
-
-        category_mapping = {category_id : idx + 1 for idx, category_id in enumerate(coco_categories.values())}
-        categories=[
-                                       Categories(id=category_mapping[idx],
-                                                  name=name,
-                                                  supercategory='all',
-                                                  isthing=coco_things.get(
-                                                      name, 1))
-                                       for name, idx in coco_categories.items()
-                                   ]
+        category_mapping = {
+            category_id: idx + 1
+            for idx, category_id in enumerate(coco_categories.values())
+        }
+        categories = [
+            Categories(id=category_mapping[idx],
+                       name=name,
+                       supercategory='all',
+                       isthing=coco_things.get(name, 1))
+            for name, idx in coco_categories.items()
+        ]
 
         for annot in all_coco_annotations:
             for segment in annot.segments_info:
