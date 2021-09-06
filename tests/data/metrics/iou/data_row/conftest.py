@@ -675,5 +675,3 @@ def point_pair():
                          }
                      }],
                      expected=0.879113232477017)
-
-
