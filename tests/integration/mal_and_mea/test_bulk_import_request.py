@@ -147,3 +147,40 @@ def test_wait_till_done(rectangle_inference, configured_project):
 def assert_file_content(url: str, predictions):
     response = requests.get(url)
     assert response.text == ndjson.dumps(predictions)
+
+
+def test_project_bulk_import_requests(client, configured_project, predictions):
+    result = configured_project.bulk_import_requests()
+    assert len(list(result)) == 0
+
+    name = str(uuid.uuid4())
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+
+    name = str(uuid.uuid4())
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+
+    name = str(uuid.uuid4())
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+
+    result = configured_project.bulk_import_requests()
+    assert len(list(result)) == 3
+
+
+def test_delete(client, configured_project, predictions):
+    name = str(uuid.uuid4())
+
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=predictions)
+    bulk_import_request.wait_until_done()
+    all_import_requests = configured_project.bulk_import_requests()
+    assert len(list(all_import_requests)) == 1
+
+    bulk_import_request.delete()
+    all_import_requests = configured_project.bulk_import_requests()
+    assert len(list(all_import_requests)) == 0

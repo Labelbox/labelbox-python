@@ -6,8 +6,6 @@ import time
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import MALPredictionImport
 
-IMG_URL = "https://picsum.photos/200/300"
-
 
 @pytest.fixture
 def ontology():
@@ -103,7 +101,7 @@ def ontology():
 
 
 @pytest.fixture
-def configured_project(client, ontology, rand_gen):
+def configured_project(client, ontology, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str))
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
@@ -112,7 +110,7 @@ def configured_project(client, ontology, rand_gen):
     project.setup(editor, ontology)
     data_row_ids = []
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
-        data_row_ids.append(dataset.create_data_row(row_data=IMG_URL).uid)
+        data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
@@ -299,10 +297,24 @@ def predictions(object_predictions, classification_predictions):
 
 
 @pytest.fixture
-def model_run(client, rand_gen, configured_project, annotation_submit_fn,
-              model_run_predictions):
-    configured_project.enable_model_assisted_labeling()
+def model(client, rand_gen, configured_project):
     ontology = configured_project.ontology()
+
+    data = {"name": rand_gen(str), "ontology_id": ontology.uid}
+    return client.create_model(data["name"], data["ontology_id"])
+
+
+@pytest.fixture
+def model_run(rand_gen, model):
+    name = rand_gen(str)
+    return model.create_model_run(name)
+
+
+@pytest.fixture
+def model_run_annotation_groups(client, configured_project,
+                                annotation_submit_fn, model_run_predictions,
+                                model_run):
+    configured_project.enable_model_assisted_labeling()
 
     upload_task = MALPredictionImport.create_from_objects(
         client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
@@ -312,15 +324,10 @@ def model_run(client, rand_gen, configured_project, annotation_submit_fn,
     for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
         annotation_submit_fn(configured_project.uid, data_row_id)
 
-    data = {"name": rand_gen(str), "ontology_id": ontology.uid}
-    model = client.create_model(data["name"], data["ontology_id"])
-    name = rand_gen(str)
-    model_run_s = model.create_model_run(name)
-
     time.sleep(3)
     labels = configured_project.export_labels(download=True)
-    model_run_s.upsert_labels([label['ID'] for label in labels])
+    model_run.upsert_labels([label['ID'] for label in labels])
     time.sleep(3)
 
-    yield model_run_s
+    yield model_run
     # TODO: Delete resources when that is possible ..

@@ -1,5 +1,6 @@
 from typing import Dict, Iterable, Union
 from pathlib import Path
+import os
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
@@ -48,8 +49,12 @@ class ModelRun(DbObject):
         """
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
-            return MEAPredictionImport.create_from_file(path=predictions,
-                                                        **kwargs)
+            if os.path.exists(predictions):
+                return MEAPredictionImport.create_from_file(
+                    path=str(predictions), **kwargs)
+            else:
+                return MEAPredictionImport.create_from_url(url=str(predictions),
+                                                           **kwargs)
         elif isinstance(predictions, Iterable):
             return MEAPredictionImport.create_from_objects(
                 predictions=predictions, **kwargs)
@@ -68,6 +73,36 @@ class ModelRun(DbObject):
             ['annotationGroups', 'nodes'],
             lambda client, res: AnnotationGroup(client, self.model_id, res),
             ['annotationGroups', 'pageInfo', 'endCursor'])
+
+    def delete(self):
+        """ Deletes specified model run.
+
+        Returns:
+            Query execution success.
+        """
+        ids_param = "ids"
+        query_str = """mutation DeleteModelRunPyApi($%s: ID!) {
+            deleteModelRuns(where: {ids: [$%s]})}""" % (ids_param, ids_param)
+        self.client.execute(query_str, {ids_param: str(self.uid)})
+
+    def delete_annotation_groups(self, data_row_ids):
+        """ Deletes annotation groups by data row ids for a model run.
+
+        Args:
+            data_row_ids (list): List of data row ids to delete annotation groups.
+        Returns:
+            Query execution success.
+        """
+        model_run_id_param = "modelRunId"
+        data_row_ids_param = "dataRowIds"
+        query_str = """mutation DeleteModelRunDataRowsPyApi($%s: ID!, $%s: [ID!]!) {
+            deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s})}""" % (
+            model_run_id_param, data_row_ids_param, model_run_id_param,
+            data_row_ids_param)
+        self.client.execute(query_str, {
+            model_run_id_param: self.uid,
+            data_row_ids_param: data_row_ids
+        })
 
 
 class AnnotationGroup(DbObject):

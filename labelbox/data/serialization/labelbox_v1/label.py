@@ -131,7 +131,7 @@ class LBV1Label(BaseModel):
     seconds_to_label: Optional[float] = Extra('Seconds to Label')
     agreement: Optional[float] = Extra('Agreement')
     benchmark_agreement: Optional[float] = Extra('Benchmark Agreement')
-    benchmark_id: Optional[float] = Extra('Benchmark ID')
+    benchmark_id: Optional[str] = Extra('Benchmark ID')
     dataset_name: Optional[str] = Extra('Dataset Name')
     reviews: Optional[List[Review]] = Extra('Reviews')
     label_url: Optional[str] = Extra('View Label')
