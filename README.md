@@ -35,9 +35,14 @@ If the installation completes with a warning re: pip not being in your path, you
 export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
 ```
 
-Install using Python's Pip manager.
+Install SDK locally, using Python's Pip manager
 ```
-pip install labelbox
+pip3 install -e .
+```
+
+Install dependencies
+```
+pip3 install -r requirements.txt
 ```
 To install dependencies required for data processing modules use:
 ```
@@ -55,29 +60,48 @@ pip install labelbox[data]
 Labelbox uses API keys to validate requests. You can create and manage API keys on [Labelbox](https://app.labelbox.com/account/api-keys). Pass your API key as an environment variable. Then, import and initialize the API Client.
 
 ```
-user@machine:~$ export LABELBOX_API_KEY="<your api key here>"
+user@machine:~$ export LABELBOX_API_KEY="<your local api key here>"
 user@machine:~$ python3
 
 from labelbox import Client
 client = Client()
+```
+* Update api_key and endpoint if not using the production cloud deployment
+```
+# On prem
+client = Client( endpoint = "<local deployment>")
+
+# Local
+client = Client(api_key=os.environ['LABELBOX_TEST_API_KEY_LOCAL'], endpoint="http://localhost:8080/graphql")
+
+# Staging
+client = Client(api_key=os.environ['LABELBOX_TEST_API_KEY_LOCAL'], endpoint="https://staging-api.labelbox.com/graphql")
 ```
 
 ## Contribution
 Please consult `CONTRIB.md`
 
 ## Testing
-1. Update the `Makefile` with your `staging` or `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
-2. To test on `staging`:
+1. Update the `Makefile` with your `local`, `staging`, `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
+2. To test on `local`:
 ```
-make test-staging
-```
-
-3. To test on `prod`:
-```
-make test-prod
+user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
+make test-local  # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_LOCAL=specify_here_or_export_me
 ```
 
-4. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
+3. To test on `staging`:
 ```
-make -B {build|test-staging|test_prod}
+user@machine:~$ export LABELBOX_TEST_API_KEY_STAGING="<your staging api key here>"
+make test-staging # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_STAGING=specify_here_or_export_me
+```
+
+4. To test on `prod`:
+```
+user@machine:~$ export LABELBOX_TEST_API_KEY_PROD="<your prod api key here>"
+make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_PROD=specify_here_or_export_me
+```
+
+5. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
+```
+make -B {build|test-staging|test-prod}
 ```

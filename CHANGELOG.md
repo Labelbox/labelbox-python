@@ -1,5 +1,38 @@
 # Changelog
 
+# Version 3.3.0 (2021-09-02)
+## Added
+* `Dataset.create_data_rows_sync()` for synchronous bulk uploads of data rows
+* `Model.delete()`, `ModelRun.delete()`, and `ModelRun.delete_annotation_groups()` to
+    Clean up models, model runs, and annotation groups.
+
+## Fix
+* Increased timeout for label exports since projects with many segmentation masks weren't finishing quickly enough.
+
+# Version 3.2.1 (2021-08-31)
+## Fix
+* Resolved issue with `create_data_rows()` was not working on amazon linux
+
+# Version 3.2.0 (2021-08-26)
+## Added
+* List `BulkImportRequest`s for a project with `Project.bulk_import_requests()`
+* Improvemens to `Dataset.create_data_rows()`
+    * Add attachments when bulk importing data rows
+    * Provide external ids when creating data rows from local files
+    * Get more informative error messages when the api rejects an import
+
+## Fix
+* Bug causing `project.label_generator()` to fail when projects had benchmarks
+
+# Version 3.1.0 (2021-08-18)
+## Added
+* Support for new HTML attachment type
+* Delete Bulk Import Requests with `BulkImportRequest.delete()`
+
+## Misc
+* Updated MEAPredictionImport class to use latest grapqhql endpoints
+
+
 # Version 3.0.1 (2021-08-12)
 ## Fix
 * Issue with inferring text type from export

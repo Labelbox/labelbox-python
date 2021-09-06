@@ -10,6 +10,7 @@ from string import ascii_letters
 from types import SimpleNamespace
 
 import pytest
+import requests
 
 from labelbox import Client
 from labelbox import LabelingFrontend
@@ -25,11 +26,12 @@ IMG_URL = "https://picsum.photos/200/300"
 
 
 class Environ(Enum):
+    LOCAL = 'local'
     PROD = 'prod'
     STAGING = 'staging'
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def environ() -> Environ:
     """
     Checks environment variables for LABELBOX_ENVIRON to be
@@ -47,13 +49,17 @@ def environ() -> Environ:
 def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
-    return 'https://staging-api.labelbox.com/graphql'
+    elif environ == Environ.STAGING:
+        return 'https://staging-api.labelbox.com/graphql'
+    return 'http://host.docker.internal:8080/graphql'
 
 
 def testing_api_key(environ: str) -> str:
     if environ == Environ.PROD:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-    return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    elif environ == Environ.STAGING:
+        return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
 def cancel_invite(client, invite_id):
@@ -122,9 +128,14 @@ class IntegrationClient(Client):
         return super().execute(query, params, **kwargs)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def client(environ: str):
     return IntegrationClient(environ)
+
+
+@pytest.fixture(scope="session")
+def image_url(client):
+    return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
 @pytest.fixture
@@ -182,10 +193,10 @@ def dataset(client, rand_gen):
 
 
 @pytest.fixture
-def datarow(dataset):
+def datarow(dataset, image_url):
     task = dataset.create_data_rows([
         {
-            "row_data": IMG_URL,
+            "row_data": image_url,
             "external_id": "my-image"
         },
     ])
@@ -199,7 +210,7 @@ LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 
 
 @pytest.fixture
-def label_pack(project, rand_gen):
+def label_pack(project, rand_gen, image_url):
     client = project.client
     dataset = client.create_dataset(name=rand_gen(str))
     project.datasets.connect(dataset)
@@ -273,9 +284,9 @@ def project_pack(client):
 
 
 @pytest.fixture
-def configured_project(project, client, rand_gen):
+def configured_project(project, client, rand_gen, image_url):
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    dataset.create_data_row(row_data=IMG_URL)
+    dataset.create_data_row(row_data=image_url)
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -315,10 +326,11 @@ def annotation_submit_fn(client):
 
 
 @pytest.fixture
-def configured_project_with_label(client, rand_gen, annotation_submit_fn):
+def configured_project_with_label(client, rand_gen, annotation_submit_fn,
+                                  image_url):
     project = client.create_project(name=rand_gen(str))
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=IMG_URL)
+    data_row = dataset.create_data_row(row_data=image_url)
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]

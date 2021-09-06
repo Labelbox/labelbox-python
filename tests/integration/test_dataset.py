@@ -3,8 +3,6 @@ import requests
 from labelbox import Dataset
 from labelbox.exceptions import ResourceNotFoundError
 
-IMG_URL = "https://picsum.photos/200/300"
-
 
 def test_dataset(client, rand_gen):
     before = list(client.get_datasets())
@@ -61,21 +59,26 @@ def test_dataset_filtering(client, rand_gen):
     d2.delete()
 
 
-def test_get_data_row_for_external_id(dataset, rand_gen):
+def test_get_data_row_for_external_id(dataset, rand_gen, image_url):
     external_id = rand_gen(str)
 
     with pytest.raises(ResourceNotFoundError):
         data_row = dataset.data_row_for_external_id(external_id)
 
-    data_row = dataset.create_data_row(row_data=IMG_URL,
+    data_row = dataset.create_data_row(row_data=image_url,
                                        external_id=external_id)
 
     found = dataset.data_row_for_external_id(external_id)
     assert found.uid == data_row.uid
     assert found.external_id == external_id
 
-    dataset.create_data_row(row_data=IMG_URL, external_id=external_id)
+    dataset.create_data_row(row_data=image_url, external_id=external_id)
     assert len(dataset.data_rows_for_external_id(external_id)) == 2
+
+    task = dataset.create_data_rows(
+        [dict(row_data=image_url, external_id=external_id)])
+    task.wait_till_done()
+    assert len(dataset.data_rows_for_external_id(external_id)) == 3
 
 
 def test_upload_video_file(dataset, sample_video: str) -> None:
@@ -98,11 +101,11 @@ def test_upload_video_file(dataset, sample_video: str) -> None:
         assert response.headers['Content-Type'] == 'video/mp4'
 
 
-def test_data_row_export(dataset):
+def test_data_row_export(dataset, image_url):
     n_data_rows = 5
     ids = set()
     for _ in range(n_data_rows):
-        ids.add(dataset.create_data_row(row_data=IMG_URL))
+        ids.add(dataset.create_data_row(row_data=image_url))
     result = list(dataset.export_data_rows())
     assert len(result) == n_data_rows
     assert set(result) == ids
