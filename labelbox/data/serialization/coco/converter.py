@@ -6,10 +6,10 @@ from labelbox.data.serialization.coco.instance_dataset import CocoInstanceDatase
 from labelbox.data.serialization.coco.panoptic_dataset import CocoPanopticDataset
 
 
-def create_path_if_not_exists(path: str):
+def create_path_if_not_exists(path: str, ignore_existing_data=False):
     if not os.path.exists(path):
         os.makedirs(path)
-    elif os.listdir(path):
+    elif not ignore_existing_data and os.listdir(path):
         raise ValueError(f"Directory `{path}`` must be empty.")
 
 
@@ -48,7 +48,8 @@ class COCOConverter:
     def serialize_panoptic(labels: LabelCollection,
                            image_root: str,
                            mask_root: str,
-                           all_stuff: bool = False) -> Dict[str, Any]:
+                           all_stuff: bool = False,
+                           ignore_existing_data=False) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
         This function will only convert masks, polygons, and rectangles.
@@ -61,11 +62,13 @@ class COCOConverter:
             mask_root: Where to save segmentation masks to
             all_stuff: If rectangle or polygon annotations are encountered, they will be treated as instances.
                 To convert them to stuff class set `all_stuff=True`.
+            ignore_existing_data: Whether or not to raise an exception if images already exist.
+                This exists only to support detectons panoptic fpn model which requires two mscoco payloads for the same images.
         Returns:
             A dictionary containing labels in the coco panoptic format.
         """
-        create_path_if_not_exists(image_root)
-        create_path_if_not_exists(mask_root)
+        create_path_if_not_exists(image_root, ignore_existing_data)
+        create_path_if_not_exists(mask_root, ignore_existing_data)
         return CocoPanopticDataset.from_common(labels=labels,
                                                image_root=image_root,
                                                mask_root=mask_root,
