@@ -33,15 +33,13 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
                        bbox=[xmin, ymin, xmax - xmin, ymax - ymin])
 
 
-def mask_to_coco_segment_info(canvas: np.ndarray, annotation, category_id):
-    # Expects a unique color for each class....
-    # Also there is a possible conflict with vector classes being draw. TODO: Use ID instead
-    mask = annotation.value.draw()
+def mask_to_coco_segment_info(canvas: np.ndarray, annotation, annotation_idx: int, category_id):
+    color = id_to_rgb(annotation_idx)
+    mask = annotation.value.draw(color = color)
     shapely = annotation.value.shapely
     xmin, ymin, xmax, ymax = shapely.bounds
     canvas = np.where(canvas == (0, 0, 0), mask, canvas)
-    id = rgb_to_id(*annotation.value.color)
-    return SegmentInfo(id=id,
+    return SegmentInfo(id=annotation_idx,
                        category_id=category_id,
                        area=shapely.area,
                        bbox=[xmin, ymin, xmax - xmin, ymax - ymin]), canvas
@@ -66,7 +64,7 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all
             categories[annotation.name] = hash_category_name(annotation.name)
             if isinstance(annotation.value, Mask):
                 segment, canvas = (mask_to_coco_segment_info(
-                    canvas, annotation, categories[annotation.name]))
+                    canvas, annotation, class_idx ,categories[annotation.name]))
                 segments.append(segment)
                 is_thing[annotation.name] = 0
 
@@ -79,7 +77,6 @@ def process_label(label: Label, idx: Union[int, str], image_root, mask_root, all
                         image=image,
                         category_id=categories[annotation.name]))
                 is_thing[annotation.name] = 1 - int(all_stuff)
-        # TODO: Report on unconverted annotations.
 
     mask_file = image.file_name.replace('.jpg', '.png')
     mask_file = os.path.join(mask_root, mask_file)
