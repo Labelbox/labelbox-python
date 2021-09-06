@@ -82,7 +82,10 @@ def segmentations_to_common(class_annotations, class_name):
     return annotations
 
 
-def process_label(label: Label, idx, image_root, max_annotations_per_image = 10000):
+def process_label(label: Label,
+                  idx,
+                  image_root,
+                  max_annotations_per_image=10000):
     annot_idx = idx * max_annotations_per_image
     image_id = get_image_id(label, idx)
     image = get_image(label, image_root, image_id)
@@ -133,14 +136,16 @@ class CocoInstanceDataset(BaseModel):
                 all_coco_annotations.extend(annotations)
                 coco_categories.update(categories)
 
-        category_mapping = {category_id : idx + 1 for idx, category_id in enumerate(coco_categories.values())}
-        categories=[
-                Categories(id=category_mapping[idx],
-                            name=name,
-                            supercategory='all',
-       isthing=1)
-                                       for name, idx in coco_categories.items()
-                                   ]
+        category_mapping = {
+            category_id: idx + 1
+            for idx, category_id in enumerate(coco_categories.values())
+        }
+        categories = [
+            Categories(id=category_mapping[idx],
+                       name=name,
+                       supercategory='all',
+                       isthing=1) for name, idx in coco_categories.items()
+        ]
         for annot in all_coco_annotations:
             annot.category_id = category_mapping[annot.category_id]
 
@@ -148,7 +153,6 @@ class CocoInstanceDataset(BaseModel):
                                    images=images,
                                    annotations=all_coco_annotations,
                                    categories=categories)
-
 
     def to_common(self, image_root):
         category_lookup = {

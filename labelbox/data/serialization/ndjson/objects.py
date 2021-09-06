@@ -166,7 +166,9 @@ class NDTextEntity(NDBaseObject):
                    uuid=extra.get('uuid'),
                    classifications=classifications)
 
+
 class NDObject:
+
     @staticmethod
     def to_common(annotation: "NDObjectType") -> ObjectAnnotation:
         common_annotation = annotation.to_common()
