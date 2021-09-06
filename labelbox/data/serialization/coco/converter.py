@@ -10,7 +10,9 @@ def create_path_if_not_exists(path: str, ignore_existing_data=False):
     if not os.path.exists(path):
         os.makedirs(path)
     elif not ignore_existing_data and os.listdir(path):
-        raise ValueError(f"Directory `{path}`` must be empty.")
+        raise ValueError(
+            f"Directory `{path}`` must be empty. Or set `ignore_existing_data=True`"
+        )
 
 
 def validate_path(path, name):
@@ -28,7 +30,8 @@ class COCOConverter:
     """
 
     def serialize_instances(labels: LabelCollection,
-                            image_root: str) -> Dict[str, Any]:
+                            image_root: str,
+                            ignore_existing_data=False) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
         This function will only convert masks, polygons, and rectangles.
@@ -38,10 +41,12 @@ class COCOConverter:
         Args:
             labels: A collection of labels to convert
             image_root: Where to save images to
+            ignore_existing_data: Whether or not to raise an exception if images already exist.
+                This exists only to support detectons panoptic fpn model which requires two mscoco payloads for the same images.
         Returns:
             A dictionary containing labels in the coco object format.
         """
-        create_path_if_not_exists(image_root)
+        create_path_if_not_exists(image_root, ignore_existing_data)
         return CocoInstanceDataset.from_common(labels=labels,
                                                image_root=image_root).dict()
 
