@@ -138,7 +138,7 @@ class CocoInstanceDataset(BaseModel):
                 Categories(id=category_mapping[idx],
                             name=name,
                             supercategory='all',
-       isthing=0)
+       isthing=1)
                                        for name, idx in coco_categories.items()
                                    ]
         for annot in all_coco_annotations:
