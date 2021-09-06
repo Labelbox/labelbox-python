@@ -114,20 +114,28 @@ class CocoPanopticDataset(BaseModel):
                 coco_categories.update(categories)
                 coco_things.update(things)
 
+
+        category_mapping = {category_id : idx + 1 for idx, category_id in enumerate(coco_categories.values())}
+        categories=[
+                                       Categories(id=category_mapping[idx],
+                                                  name=name,
+                                                  supercategory='all',
+                                                  isthing=coco_things.get(
+                                                      name, 1))
+                                       for name, idx in coco_categories.items()
+                                   ]
+
+        for annot in all_coco_annotations:
+            for segment in annot.segments_info:
+                segment.category_id = category_mapping[segment.category_id]
+
         return CocoPanopticDataset(info={
             'image_root': image_root,
             'mask_root': mask_root
         },
                                    images=images,
                                    annotations=all_coco_annotations,
-                                   categories=[
-                                       Categories(id=idx,
-                                                  name=name,
-                                                  supercategory='all',
-                                                  isthing=coco_things.get(
-                                                      name, 1))
-                                       for name, idx in coco_categories.items()
-                                   ])
+                                   categories=categories)
 
     def to_common(self, image_root, mask_root):
         category_lookup = {

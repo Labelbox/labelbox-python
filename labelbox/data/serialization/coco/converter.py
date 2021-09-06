@@ -25,6 +25,10 @@ class COCOConverter:
     """
     Note that this class is only compatible with image data.. it will ignore other data types.
     # TODO: Filter out video annotations..
+
+
+    # Note that these functions are not compatible with subclasses currently.
+    # If you have subclasses you will have to manually flatten them before using the converter.
     """
 
     def serialize_instances(labels: LabelCollection,

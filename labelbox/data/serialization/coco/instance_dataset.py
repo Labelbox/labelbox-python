@@ -133,14 +133,17 @@ class CocoInstanceDataset(BaseModel):
                 all_coco_annotations.extend(annotations)
                 coco_categories.update(categories)
 
-
+        category_mapping = {category_id : idx + 1 for idx, category_id in enumerate(coco_categories.values())}
         categories=[
-                Categories(id=idx,
+                Categories(id=category_mapping[idx],
                             name=name,
                             supercategory='all',
        isthing=0)
                                        for name, idx in coco_categories.items()
                                    ]
+        for annot in all_coco_annotations:
+            annot.category_id = category_mapping[annot.category_id]
+
         return CocoInstanceDataset(info={'image_root': image_root},
                                    images=images,
                                    annotations=all_coco_annotations,
