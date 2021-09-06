@@ -86,7 +86,7 @@ def visualize_coco_examples(metadata_catalog, object_examples, panoptic_examples
     return Image.fromarray(np.vstack(images))
 
 
- def _process_panoptic_to_semantic(input_panoptic, output_semantic, segments, id_map):
+def _process_panoptic_to_semantic(input_panoptic, output_semantic, segments, id_map):
     panoptic = np.asarray(Image.open(input_panoptic), dtype=np.uint32)
     panoptic = rgb2id(panoptic)
 
