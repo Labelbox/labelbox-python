@@ -1,3 +1,4 @@
+from labelbox.data.serialization.labelbox_v1.objects import LBV1Mask
 from typing import Any, Dict, Generator, Iterable
 import logging
 
@@ -51,6 +52,7 @@ class LBV1Converter:
                     raise ValueError(
                         "Use `LBV1Converter.deserialize_video` to process video"
                     )
+
                 if example['Label']:
                     # Don't construct empty dict
                     yield LBV1Label(**example).to_common()

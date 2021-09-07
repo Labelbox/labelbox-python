@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Union
 
-from pydantic.main import BaseModel
-
 from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
 from .geometry import Geometry
@@ -16,6 +14,7 @@ class BaseAnnotation(FeatureSchema):
 
 class ClassificationAnnotation(BaseAnnotation):
     """Class representing classification annotations (annotations that don't have a location) """
+
     value: Union[Text, Checklist, Radio, Dropdown]
 
 

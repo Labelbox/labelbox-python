@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.3.0 (2021-09-02)
+## Added
+* `Dataset.create_data_rows_sync()` for synchronous bulk uploads of data rows
+* `Model.delete()`, `ModelRun.delete()`, and `ModelRun.delete_annotation_groups()` to
+    Clean up models, model runs, and annotation groups.
+
+## Fix
+* Increased timeout for label exports since projects with many segmentation masks weren't finishing quickly enough.
+
 # Version 3.2.1 (2021-08-31)
 ## Fix
 * Resolved issue with `create_data_rows()` was not working on amazon linux
