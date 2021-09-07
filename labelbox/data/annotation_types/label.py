@@ -1,5 +1,5 @@
 from collections import defaultdict
-from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
 
 from typing import Any, Callable, Dict, List, Union, Optional
 
@@ -22,7 +22,7 @@ class Label(BaseModel):
     data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
-                            VideoClassificationAnnotation, CustomScalarMetric,
+                            VideoClassificationAnnotation, ScalarMetric,
                             ScalarMetric]] = []
     extra: Dict[str, Any] = {}
 
