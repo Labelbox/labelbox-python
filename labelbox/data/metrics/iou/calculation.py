@@ -1,80 +1,67 @@
-# type: ignore
-from typing import Dict, List, Optional, Tuple, Union
+"""
+All intermediate functions required to create iou scores.
+These can be used in user workflows to create custom metrics.
+"""
+
+from typing import List, Optional, Tuple, Union
 from shapely.geometry import Polygon
 from itertools import product
 import numpy as np
-from collections import defaultdict
+from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
+                                 Mask, Geometry, Point, Line, Checklist, Text,
+                                 Radio)
+from ..group import get_feature_pairs
 
-from ..annotation_types import (Label, ObjectAnnotation,
-                                ClassificationAnnotation, Mask, Geometry, Point,
-                                Line, Checklist, Text, Radio)
 
-
-def data_row_miou(ground_truth: Label, prediction: Label) -> Optional[float]:
+def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+         predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+         include_subclasses: bool) -> Optional[float]:
     """
-    Calculate iou for two labels corresponding to the same data row.
+    Computes miou for an arbitrary set of ground truth and predicted annotations.
+    It first computes the iou for each metric and then takes the average (weighting each class equally)
 
     Args:
         ground_truth : Label containing human annotations or annotations known to be correct
         prediction: Label representing model predictions
-    Returns:
-        float indicating the iou score for this data row.
-        Returns None if there are no annotations in ground_truth or prediction Labels
-    """
-    return get_iou_across_features(ground_truth.annotations,
-                                   prediction.annotations)
-
-
-def get_iou_across_features(
-    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]]
-) -> Optional[float]:
-    """
-    Groups annotations by feature_schema_id or name (which is available), calculates iou score and returns the mean across all features.
-
-    Args:
-        ground_truth : Label containing human annotations or annotations known to be correct
-        prediction: Label representing model predictions
+        include_subclasses (bool): Whether or not to include subclasses in the iou calculation.
+            If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
     Returns:
         float indicating the iou score for all features represented in the annotations passed to this function.
         Returns None if there are no annotations in ground_truth or prediction annotations
     """
-    prediction_annotations = _create_feature_lookup(predictions)
-    ground_truth_annotations = _create_feature_lookup(ground_truths)
-    feature_schemas = set(prediction_annotations.keys()).union(
-        set(ground_truth_annotations.keys()))
+    annotation_pairs = get_feature_pairs(predictions, ground_truths)
     ious = [
-        feature_miou(ground_truth_annotations[feature_schema],
-                     prediction_annotations[feature_schema])
-        for feature_schema in feature_schemas
+        feature_miou(annotation_pair[0], annotation_pair[1], include_subclasses)
+        for annotation_pair in annotation_pairs.values()
     ]
     ious = [iou for iou in ious if iou is not None]
     return None if not len(ious) else np.mean(ious)
 
 
-def feature_miou(
-    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-) -> Optional[float]:
+def feature_miou(ground_truths: List[Union[ObjectAnnotation,
+                                           ClassificationAnnotation]],
+                 predictions: List[Union[ObjectAnnotation,
+                                         ClassificationAnnotation]],
+                 include_subclasses: bool) -> Optional[float]:
     """
     Computes iou score for all features with the same feature schema id.
 
     Args:
         ground_truths: List of ground truth annotations with the same feature schema.
         predictions: List of annotations with the same feature schema.
+        include_subclasses (bool): Whether or not to include subclasses in the iou calculation.
+            If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
     Returns:
         float representing the iou score for the feature type if score can be computed otherwise None.
     """
-    if len(ground_truths) and not len(predictions):
-        # No existing predictions but existing labels means no matches.
+    if _no_matching_annotations(ground_truths, predictions):
         return 0.
-    elif not len(ground_truths) and not len(predictions):
-        # Ignore examples that do not have any labels or predictions
-        return
+    elif _no_annotations(ground_truths, predictions):
+        return None
     elif isinstance(predictions[0].value, Mask):
-        return mask_miou(ground_truths, predictions)
+        return mask_miou(ground_truths, predictions, include_subclasses)
     elif isinstance(predictions[0].value, Geometry):
-        return vector_miou(ground_truths, predictions)
+        return vector_miou(ground_truths, predictions, include_subclasses)
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_miou(ground_truths, predictions)
     else:
@@ -84,7 +71,8 @@ def feature_miou(
 
 def vector_miou(ground_truths: List[ObjectAnnotation],
                 predictions: List[ObjectAnnotation],
-                buffer=70.) -> float:
+                include_subclasses: bool,
+                buffer=70.) -> Optional[float]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -93,8 +81,14 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
         ground_truths: List of ground truth vector annotations
         predictions: List of prediction vector annotations
     Returns:
-        float representing the iou score for the feature type
+        float representing the iou score for the feature type.
+         If there are no matches then this returns none
     """
+    if _no_matching_annotations(ground_truths, predictions):
+        return 0.
+    elif _no_annotations(ground_truths, predictions):
+        return None
+
     pairs = _get_vector_pairs(ground_truths, predictions, buffer=buffer)
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     solution_agreements = []
@@ -105,10 +99,15 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
         if id(prediction) not in solution_features and id(
                 ground_truth) not in solution_features:
             solution_features.update({id(prediction), id(ground_truth)})
-            classification_iou = get_iou_across_features(
-                prediction.classifications, ground_truth.classifications)
-            classification_iou = classification_iou if classification_iou is not None else agreement
-            solution_agreements.append((agreement + classification_iou) / 2.)
+            if include_subclasses:
+                classification_iou = miou(prediction.classifications,
+                                          ground_truth.classifications,
+                                          include_subclasses=False)
+                classification_iou = classification_iou if classification_iou is not None else agreement
+                solution_agreements.append(
+                    (agreement + classification_iou) / 2.)
+            else:
+                solution_agreements.append(agreement)
 
     # Add zeros for unmatched Features
     solution_agreements.extend([0.0] *
@@ -117,7 +116,8 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
 
 
 def mask_miou(ground_truths: List[ObjectAnnotation],
-              predictions: List[ObjectAnnotation]) -> float:
+              predictions: List[ObjectAnnotation],
+              include_subclasses: bool) -> Optional[float]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -128,6 +128,11 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
     Returns:
         float representing the iou score for the masks
     """
+    if _no_matching_annotations(ground_truths, predictions):
+        return 0.
+    elif _no_annotations(ground_truths, predictions):
+        return None
+
     prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
                            axis=0)
     ground_truth_np = np.max(
@@ -138,6 +143,10 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
             "Prediction and mask must have the same shape."
             f" Found {prediction_np.shape}/{ground_truth_np.shape}.")
 
+    agreement = _mask_iou(ground_truth_np, prediction_np)
+    if not include_subclasses:
+        return agreement
+
     prediction_classifications = []
     for prediction in predictions:
         prediction_classifications.extend(prediction.classifications)
@@ -145,10 +154,12 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
     for ground_truth in ground_truths:
         ground_truth_classifications.extend(ground_truth.classifications)
 
-    classification_iou = get_iou_across_features(ground_truth_classifications,
-                                                 prediction_classifications)
-    agreement = _mask_iou(ground_truth_np, prediction_np)
+    classification_iou = miou(ground_truth_classifications,
+                              prediction_classifications,
+                              include_subclasses=False)
+
     classification_iou = classification_iou if classification_iou is not None else agreement
+
     return (agreement + classification_iou) / 2.
 
 
@@ -181,7 +192,7 @@ def classification_miou(ground_truths: List[ClassificationAnnotation],
     elif isinstance(prediction.value, Checklist):
         return checklist_iou(ground_truth.value, prediction.value)
     else:
-        raise ValueError(f"Unexpected subclass. {prediction}")
+        raise ValueError(f"Unsupported subclass. {prediction}.")
 
 
 def radio_iou(ground_truth: Radio, prediction: Radio) -> float:
@@ -212,26 +223,6 @@ def checklist_iou(ground_truth: Checklist, prediction: Checklist) -> float:
         len(schema_ids_label | schema_ids_pred))
 
 
-def _create_feature_lookup(
-    annotations: List[Union[ObjectAnnotation, ClassificationAnnotation]]
-) -> Dict[str, List[Union[ObjectAnnotation, ClassificationAnnotation]]]:
-    """
-    Groups annotation by schema id (if available otherwise name).
-
-    Args:
-        annotations: List of annotations to group
-    Returns:
-        a dict where each key is the feature_schema_id (or name)
-        and the value is a list of annotations that have that feature_schema_id (or name)
-
-    """
-    grouped_annotations = defaultdict(list)
-    for annotation in annotations:
-        grouped_annotations[annotation.feature_schema_id or
-                            annotation.name].append(annotation)
-    return grouped_annotations
-
-
 def _get_vector_pairs(
         ground_truths: List[ObjectAnnotation],
         predictions: List[ObjectAnnotation], buffer: float
@@ -244,6 +235,7 @@ def _get_vector_pairs(
         if isinstance(prediction.value, Geometry) and isinstance(
                 ground_truth.value, Geometry):
             if isinstance(prediction.value, (Line, Point)):
+
                 score = _polygon_iou(prediction.value.shapely.buffer(buffer),
                                      ground_truth.value.shapely.buffer(buffer))
             else:
@@ -263,3 +255,19 @@ def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
 def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> float:
     """Computes iou between two binary segmentation masks."""
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
+
+
+def _no_matching_annotations(ground_truths: List[ObjectAnnotation],
+                             predictions: List[ObjectAnnotation]):
+    if len(ground_truths) and not len(predictions):
+        # No existing predictions but existing ground truths means no matches.
+        return True
+    elif not len(ground_truths) and len(predictions):
+        # No ground truth annotations but there are predictions means no matches
+        return True
+    return False
+
+
+def _no_annotations(ground_truths: List[ObjectAnnotation],
+                    predictions: List[ObjectAnnotation]):
+    return not len(ground_truths) and not len(predictions)

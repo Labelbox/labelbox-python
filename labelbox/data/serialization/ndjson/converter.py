@@ -20,7 +20,8 @@ class NDJsonConverter:
             LabelGenerator containing the ndjson data.
         """
         data = NDLabel(**{'annotations': json_data})
-        return data.to_common()
+        res = data.to_common()
+        return res
 
     @staticmethod
     def serialize(

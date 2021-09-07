@@ -1,2 +1,2 @@
-from .scalar import ScalarMetric, CustomScalarMetric
+from .scalar import ScalarMetric
 from .aggregations import MetricAggregation
