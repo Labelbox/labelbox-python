@@ -116,7 +116,7 @@ class Dataset(DbObject, Updateable, Deletable):
     def create_data_rows(self, items):
         """ Asynchronously bulk upload data rows
 
-        Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 100 data rows.
+        Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
 
         Args:
             items (iterable of (dict or str)): See the docstring for `Dataset._create_descriptor_file` for more information
