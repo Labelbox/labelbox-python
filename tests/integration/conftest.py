@@ -47,25 +47,19 @@ def environ() -> Environ:
 
 
 def graphql_url(environ: str) -> str:
-    return "https://app.replicated-6bd9012.labelbox.dev/api/_gql"
-    """
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
         return 'https://staging-api.labelbox.com/graphql'
     return 'http://host.docker.internal:8080/graphql'
-    """
 
 
 def testing_api_key(environ: str) -> str:
-    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3RhbXFnN2MwMDAxMHljaTAxZDFhaGVqIiwib3JnYW5pemF0aW9uSWQiOiJja3RhbXFnNm4wMDAwMHljaTgwaDI1NXZ3IiwiYXBpS2V5SWQiOiJja3RhbXZmdm4wMDhrMHljaTh1MG40a2hzIiwic2VjcmV0IjoiNzcxOWViMjgyNjUyMWMxODQ5MmJhMjg1NzhmY2FmNDEiLCJpYXQiOjE2MzEwNTMwNDksImV4cCI6MjI2MjIwNTA0OX0.yBLurIRB3xYQkV8MEBm0_LxmdqP9U-8aMj25kASmGLw"
-    """
     if environ == Environ.PROD:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
     elif environ == Environ.STAGING:
         return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
     return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
-    """
 
 
 def cancel_invite(client, invite_id):
@@ -140,11 +134,8 @@ def client(environ: str):
 
 
 @pytest.fixture(scope="session")
-def image_url(client, environ: str):
-    return IMG_URL
-    #if environ == Environ.LOCAL:
-    #    return IMG_URL
-    #return client.upload_data(requests.get(IMG_URL).content, sign=True)
+def image_url(client):
+    return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
 @pytest.fixture
@@ -221,9 +212,16 @@ LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 @pytest.fixture
 def label_pack(project, rand_gen, image_url):
     client = project.client
+<<<<<<< HEAD
+    dataset = client.create_dataset(name=rand_gen(str))
+    project.datasets.connect(dataset)
+    data_row = dataset.create_data_row(row_data=IMG_URL)
+=======
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
     data_row = dataset.create_data_row(row_data=image_url)
+>>>>>>> 6970d60beebc6c969a81c891b4c88db7c57f98df
     label = project.create_label(data_row=data_row, label=rand_gen(str))
+    time.sleep(10)
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
 
@@ -318,7 +316,7 @@ def annotation_submit_fn(client):
             })
         features = feature_result['project']['featuresForDataRow']
         feature_ids = [feature['id'] for feature in features]
-        res = client.execute(
+        client.execute(
             """mutation createLabelPyApi ($project_id : ID!,$datarow_id: ID!,$feature_ids: [ID!]!,$time_seconds : Float!) {
                 createLabelFromFeatures(data: {dataRow: { id: $datarow_id },project: { id: $project_id },
                     featureIds: $feature_ids,secondsSpent: $time_seconds}) {id}}""",
@@ -328,7 +326,6 @@ def annotation_submit_fn(client):
                 "feature_ids": feature_ids,
                 "time_seconds": 10
             })
-        return res['createLabelFromFeatures']['id']
 
     return submit
 
@@ -365,8 +362,9 @@ def configured_project_with_label(client, rand_gen, annotation_submit_fn,
     upload_task = MALPredictionImport.create_from_objects(
         client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
-    labels = annotation_submit_fn(project.uid, data_row.uid)
-    time.sleep(3)
-    yield [project, labels]
+    time.sleep(2)
+    annotation_submit_fn(project.uid, data_row.uid)
+    time.sleep(2)
+    yield project
     dataset.delete()
     project.delete()
