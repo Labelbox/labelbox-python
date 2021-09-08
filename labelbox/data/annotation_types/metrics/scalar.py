@@ -25,7 +25,7 @@ class ScalarMetric(BaseMetric):
     aggregation will be ignored wihtout providing a metric name.
     """
     metric_name: Optional[str] = None
-    value: Union[float, ScalarMetricConfidenceValue]
+    value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
     def dict(self, *args, **kwargs):
