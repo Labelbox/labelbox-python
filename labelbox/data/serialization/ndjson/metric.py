@@ -1,4 +1,4 @@
-from labelbox.data.annotation_types.metrics.aggregations import MetricAggregation
+from labelbox.data.annotation_types.metrics import ScalarMetricAggregation
 from typing import Union, Optional
 
 from labelbox.data.annotation_types.data import ImageData, TextData
@@ -11,15 +11,16 @@ class NDScalarMetric(NDJsonBase):
     metric_name: Optional[str]
     feature_name: Optional[str] = None
     subclass_name: Optional[str] = None
-    aggregation: MetricAggregation = MetricAggregation.ARITHMETIC_MEAN.value
+    aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN.value
 
     def to_common(self) -> ScalarMetric:
-        return ScalarMetric(value=self.metric_value,
-                            metric_name=self.metric_name,
-                            feature_name=self.feature_name,
-                            subclass_name=self.subclass_name,
-                            aggregation=MetricAggregation[self.aggregation],
-                            extra={'uuid': self.uuid})
+        return ScalarMetric(
+            value=self.metric_value,
+            metric_name=self.metric_name,
+            feature_name=self.feature_name,
+            subclass_name=self.subclass_name,
+            aggregation=ScalarMetricAggregation[self.aggregation],
+            extra={'uuid': self.uuid})
 
     @classmethod
     def from_common(cls, metric: ScalarMetric,
