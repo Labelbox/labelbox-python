@@ -1,13 +1,13 @@
-from labelbox.data.annotation_types.metrics.scalar import ScalarMetricValue, ScalarMetricConfidenceValue
 from typing import Optional, Union, Type
-from enum import Enum
 
 from labelbox.data.annotation_types.data import ImageData, TextData
-from labelbox.data.annotation_types.metrics import (ScalarMetric,
-                                                    ScalarMetricAggregation)
-from labelbox.data.annotation_types.metrics.confusion_matrix import \
-    ConfusionMatrixAggregation, ConfusionMatrixMetric, ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue
 from labelbox.data.serialization.ndjson.base import NDJsonBase
+from labelbox.data.annotation_types.metrics.scalar import (
+    ScalarMetric, ScalarMetricAggregation, ScalarMetricValue,
+    ScalarMetricConfidenceValue)
+from labelbox.data.annotation_types.metrics.confusion_matrix import (
+    ConfusionMatrixAggregation, ConfusionMatrixMetric,
+    ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue)
 
 
 class BaseNDMetric(NDJsonBase):
