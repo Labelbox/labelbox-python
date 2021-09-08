@@ -47,19 +47,25 @@ def environ() -> Environ:
 
 
 def graphql_url(environ: str) -> str:
+    return "https://app.replicated-6bd9012.labelbox.dev/api/_gql"
+    """
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
         return 'https://staging-api.labelbox.com/graphql'
     return 'http://host.docker.internal:8080/graphql'
+    """
 
 
 def testing_api_key(environ: str) -> str:
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3RhbXFnN2MwMDAxMHljaTAxZDFhaGVqIiwib3JnYW5pemF0aW9uSWQiOiJja3RhbXFnNm4wMDAwMHljaTgwaDI1NXZ3IiwiYXBpS2V5SWQiOiJja3RhbXZmdm4wMDhrMHljaTh1MG40a2hzIiwic2VjcmV0IjoiNzcxOWViMjgyNjUyMWMxODQ5MmJhMjg1NzhmY2FmNDEiLCJpYXQiOjE2MzEwNTMwNDksImV4cCI6MjI2MjIwNTA0OX0.yBLurIRB3xYQkV8MEBm0_LxmdqP9U-8aMj25kASmGLw"
+    """
     if environ == Environ.PROD:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
     elif environ == Environ.STAGING:
         return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
     return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
+    """
 
 
 def cancel_invite(client, invite_id):
@@ -135,9 +141,10 @@ def client(environ: str):
 
 @pytest.fixture(scope="session")
 def image_url(client, environ: str):
-    if environ == Environ.LOCAL:
-        return IMG_URL
-    return client.upload_data(requests.get(IMG_URL).content, sign=True)
+    return IMG_URL
+    #if environ == Environ.LOCAL:
+    #    return IMG_URL
+    #return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
 @pytest.fixture
