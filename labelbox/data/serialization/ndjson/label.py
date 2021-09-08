@@ -1,8 +1,4 @@
 from itertools import groupby
-from labelbox.data.annotation_types.metrics.confusion_matrix import ConfusionMatrixMetric
-
-from labelbox.data.annotation_types.metrics import ScalarMetric
-
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
@@ -15,6 +11,8 @@ from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.classification import Dropdown
+from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
+
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType
