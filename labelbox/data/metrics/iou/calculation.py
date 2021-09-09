@@ -89,8 +89,10 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
         return 0.
     elif _no_annotations(ground_truths, predictions):
         return None
-
     pairs = _get_vector_pairs(ground_truths, predictions, buffer=buffer)
+    return object_pair_miou(pairs, include_subclasses)
+
+def object_pair_miou(pairs : List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]], include_subclasses) -> ScalarMetricValue:
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     solution_agreements = []
     solution_features = set()
@@ -134,8 +136,12 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
     elif _no_annotations(ground_truths, predictions):
         return None
 
+    if include_subclasses:
+        pairs = _get_mask_pairs(ground_truths, predictions)
+        return object_pair_miou(pairs, include_subclasses=include_subclasses)
+
     prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
-                           axis=0)
+                        axis=0)
     ground_truth_np = np.max(
         [ground_truth.value.draw(color=1) for ground_truth in ground_truths],
         axis=0)
@@ -144,24 +150,8 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
             "Prediction and mask must have the same shape."
             f" Found {prediction_np.shape}/{ground_truth_np.shape}.")
 
-    agreement = _mask_iou(ground_truth_np, prediction_np)
-    if not include_subclasses:
-        return agreement
+    return _mask_iou(ground_truth_np, prediction_np)
 
-    prediction_classifications = []
-    for prediction in predictions:
-        prediction_classifications.extend(prediction.classifications)
-    ground_truth_classifications = []
-    for ground_truth in ground_truths:
-        ground_truth_classifications.extend(ground_truth.classifications)
-
-    classification_iou = miou(ground_truth_classifications,
-                              prediction_classifications,
-                              include_subclasses=False)
-
-    classification_iou = classification_iou if classification_iou is not None else agreement
-
-    return (agreement + classification_iou) / 2.
 
 
 def classification_miou(ground_truths: List[ClassificationAnnotation],
@@ -244,6 +234,22 @@ def _get_vector_pairs(
             else:
                 score = _polygon_iou(prediction.value.shapely,
                                      ground_truth.value.shapely)
+            pairs.append((prediction, ground_truth, score))
+    return pairs
+
+def _get_mask_pairs(
+        ground_truths: List[ObjectAnnotation],
+        predictions: List[ObjectAnnotation]
+) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
+    """
+    # Get iou score for all pairs of ground truths and predictions
+    """
+    pairs = []
+    for prediction, ground_truth in product(predictions, ground_truths):
+        if isinstance(prediction.value, Mask) and isinstance(
+                ground_truth.value, Mask):
+            score = _mask_iou(prediction.value.draw(color = 1),
+                                     ground_truth.value.draw(color = 1))
             pairs.append((prediction, ground_truth, score))
     return pairs
 
