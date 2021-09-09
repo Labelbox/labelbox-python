@@ -526,10 +526,15 @@ class Client:
         if iam_integration is not None:
             if not isinstance(iam_integration, IAMIntegration):
                 raise TypeError(f"iam integration must be a reference an `IAMIntegration` object. Found {iam_integration}")
+
+        if not iam_integration.valid:
+            raise ValueError("Invalid integration is invalid. Please select another integration or remove default.")
+
             try:
                 import time
                 time.sleep(5)
-                print(iam_integration.uid)
+
+
                 res = self.execute("""mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) { setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}} """, {'signerId' : iam_integration.uid, 'datasetId' : dataset.uid})
                 #result = self.execute("""mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){valid checks{name, success}} }""", {'id' : dataset.uid})
                 # TODO: I am not sure what to do with this check...
