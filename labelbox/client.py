@@ -1,6 +1,7 @@
 # type: ignore
 from datetime import datetime, timezone
 import json
+from labelbox.schema.iam_integration import IAMIntegration
 import logging
 import mimetypes
 import os
@@ -519,7 +520,27 @@ class Client:
             InvalidAttributeError: If the Dataset type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Dataset, kwargs)
+        dataset = self._create(Dataset, kwargs)
+        #iam_integration = kwargs.get("iam_integration")
+        iam_integration = kwargs.get('iam_integration') or self.get_organization().get_default_iam_integration()
+        if iam_integration is not None:
+            if not isinstance(iam_integration, IAMIntegration):
+                raise TypeError(f"iam integration must be a reference an `IAMIntegration` object. Found {iam_integration}")
+            try:
+                import time
+                time.sleep(5)
+                print(iam_integration.uid)
+                res = self.execute("""mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) { setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}} """, {'signerId' : iam_integration.uid, 'datasetId' : dataset.uid})
+                #result = self.execute("""mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){valid checks{name, success}} }""", {'id' : dataset.uid})
+                # TODO: I am not sure what to do with this check...
+                #if not result['validateDataset']['valid']:
+                #    raise labelbox.exceptions.LabelboxError(f"Signer was unsuccessfully added to the dataset. {result}")
+            except Exception as e:
+                breakpoint()
+                dataset.delete()
+                raise e
+        return dataset
+
 
     def create_project(self, **kwargs):
         """ Creates a Project object on the server.
@@ -617,3 +638,5 @@ class Client:
             "ontologyId": ontology_id
         })
         return Model(self, result['createModel'])
+
+
