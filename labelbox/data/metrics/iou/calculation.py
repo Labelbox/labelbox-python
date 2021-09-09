@@ -3,6 +3,7 @@ All intermediate functions required to create iou scores.
 These can be used in user workflows to create custom metrics.
 """
 
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetricValue
 from typing import List, Optional, Tuple, Union
 from shapely.geometry import Polygon
 from itertools import product
@@ -10,12 +11,12 @@ import numpy as np
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
                                  Mask, Geometry, Point, Line, Checklist, Text,
                                  Radio)
-from ..group import get_feature_pairs
+from ..group import get_feature_pairs, get_identifying_key
 
 
 def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
          predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-         include_subclasses: bool) -> Optional[float]:
+         include_subclasses: bool) -> Optional[ScalarMetricValue]:
     """
     Computes miou for an arbitrary set of ground truth and predicted annotations.
     It first computes the iou for each metric and then takes the average (weighting each class equally)
@@ -42,7 +43,7 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
                                            ClassificationAnnotation]],
                  predictions: List[Union[ObjectAnnotation,
                                          ClassificationAnnotation]],
-                 include_subclasses: bool) -> Optional[float]:
+                 include_subclasses: bool) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
 
@@ -72,7 +73,7 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
 def vector_miou(ground_truths: List[ObjectAnnotation],
                 predictions: List[ObjectAnnotation],
                 include_subclasses: bool,
-                buffer=70.) -> Optional[float]:
+                buffer=70.) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -117,7 +118,7 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
 
 def mask_miou(ground_truths: List[ObjectAnnotation],
               predictions: List[ObjectAnnotation],
-              include_subclasses: bool) -> Optional[float]:
+              include_subclasses: bool) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -164,7 +165,7 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
 
 
 def classification_miou(ground_truths: List[ClassificationAnnotation],
-                        predictions: List[ClassificationAnnotation]) -> float:
+                        predictions: List[ClassificationAnnotation]) -> ScalarMetricValue:
     """
     Computes iou score for all features with the same feature schema id.
 
@@ -195,28 +196,30 @@ def classification_miou(ground_truths: List[ClassificationAnnotation],
         raise ValueError(f"Unsupported subclass. {prediction}.")
 
 
-def radio_iou(ground_truth: Radio, prediction: Radio) -> float:
+def radio_iou(ground_truth: Radio, prediction: Radio) -> ScalarMetricValue:
     """
     Calculates agreement between ground truth and predicted radio values
     """
-    return float(prediction.answer.feature_schema_id ==
-                 ground_truth.answer.feature_schema_id)
+    key = get_identifying_key([prediction.answer], [ground_truth.answer])
+    return float(getattr(prediction.answer, key) ==
+                 getattr(ground_truth.answer, key))
 
 
-def text_iou(ground_truth: Text, prediction: Text) -> float:
+def text_iou(ground_truth: Text, prediction: Text) -> ScalarMetricValue:
     """
     Calculates agreement between ground truth and predicted text
     """
     return float(prediction.answer == ground_truth.answer)
 
 
-def checklist_iou(ground_truth: Checklist, prediction: Checklist) -> float:
+def checklist_iou(ground_truth: Checklist, prediction: Checklist) -> ScalarMetricValue:
     """
     Calculates agreement between ground truth and predicted checklist items
     """
-    schema_ids_pred = {answer.feature_schema_id for answer in prediction.answer}
+    key = get_identifying_key(prediction.answer, ground_truth.answer)
+    schema_ids_pred = {getattr(answer, key) for answer in prediction.answer}
     schema_ids_label = {
-        answer.feature_schema_id for answer in ground_truth.answer
+        getattr(answer, key) for answer in ground_truth.answer
     }
     return float(
         len(schema_ids_label & schema_ids_pred) /
@@ -226,7 +229,7 @@ def checklist_iou(ground_truth: Checklist, prediction: Checklist) -> float:
 def _get_vector_pairs(
         ground_truths: List[ObjectAnnotation],
         predictions: List[ObjectAnnotation], buffer: float
-) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, float]]:
+) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
     """
     # Get iou score for all pairs of ground truths and predictions
     """
@@ -245,14 +248,14 @@ def _get_vector_pairs(
     return pairs
 
 
-def _polygon_iou(poly1: Polygon, poly2: Polygon) -> float:
+def _polygon_iou(poly1: Polygon, poly2: Polygon) -> ScalarMetricValue:
     """Computes iou between two shapely polygons."""
     if poly1.intersects(poly2):
         return poly1.intersection(poly2).area / poly1.union(poly2).area
     return 0.
 
 
-def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> float:
+def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> ScalarMetricValue:
     """Computes iou between two binary segmentation masks."""
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
 

@@ -2,10 +2,13 @@ from enum import Enum
 from typing import Tuple, Dict, Union
 
 from pydantic import conint, Field
+from pydantic.main import BaseModel
 
 from .base import ConfidenceValue, BaseMetric
 
-Count = conint(ge=0, le=10_000)
+Count = conint(ge=0, le=1e10)
+
+
 ConfusionMatrixMetricValue = Tuple[Count, Count, Count, Count]
 ConfusionMatrixMetricConfidenceValue = Dict[ConfidenceValue,
                                             ConfusionMatrixMetricValue]
