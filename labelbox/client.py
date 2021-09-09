@@ -521,27 +521,27 @@ class Client:
                 any of the attribute names given in kwargs.
         """
         dataset = self._create(Dataset, kwargs)
-        #iam_integration = kwargs.get("iam_integration")
         iam_integration = kwargs.get('iam_integration') or self.get_organization().get_default_iam_integration()
         if iam_integration is not None:
             if not isinstance(iam_integration, IAMIntegration):
-                raise TypeError(f"iam integration must be a reference an `IAMIntegration` object. Found {iam_integration}")
+                raise TypeError(f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}")
 
-        if not iam_integration.valid:
-            raise ValueError("Invalid integration is invalid. Please select another integration or remove default.")
-
+            if not iam_integration.valid:
+                raise ValueError("Invalid integration is invalid. Please select another integration or remove default.")
             try:
-                import time
-                time.sleep(5)
-
-
-                res = self.execute("""mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) { setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}} """, {'signerId' : iam_integration.uid, 'datasetId' : dataset.uid})
-                #result = self.execute("""mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){valid checks{name, success}} }""", {'id' : dataset.uid})
-                # TODO: I am not sure what to do with this check...
-                #if not result['validateDataset']['valid']:
-                #    raise labelbox.exceptions.LabelboxError(f"Signer was unsuccessfully added to the dataset. {result}")
+                self.execute("""
+                    mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
+                        setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
+                    """, {'signerId' : iam_integration.uid, 'datasetId' : dataset.uid})
+                validation_result = self.execute("""
+                    mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){
+                        valid checks{name, success}}}
+                    """, {'id' : dataset.uid})
+                if not validation_result['validateDataset']['checks'][0]['success']:
+                    raise labelbox.exceptions.LabelboxError(
+                        f"IAMIntegration {validation_result['validateDataset']['checks']['name']} was not successfully added added to the project."
+                    )
             except Exception as e:
-                breakpoint()
                 dataset.delete()
                 raise e
         return dataset
