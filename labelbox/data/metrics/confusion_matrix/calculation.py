@@ -1,7 +1,7 @@
 
 
 
-from pydantic.utils import truncate
+from labelbox.data.metrics.iou.calculation import _mask_iou, miou
 
 from labelbox.data.annotation_types.metrics.confusion_matrix import \
     ConfusionMatrixMetricValue
@@ -27,11 +27,12 @@ def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
 
     annotation_pairs = get_feature_pairs(predictions, ground_truths)
     ious = [
-        feature_confusion_matrix(annotation_pair[0], annotation_pair[1], include_subclasses)
+        feature_confusion_matrix(annotation_pair[0], annotation_pair[1], iou, include_subclasses)
         for annotation_pair in annotation_pairs.values()
     ]
     ious = [iou for iou in ious if iou is not None]
-    return None if not len(ious) else np.sum(ious, axis = 0 )
+
+    return None if not len(ious) else np.sum(ious, axis = 0 ).tolist()
 
 
 
@@ -42,13 +43,14 @@ def feature_confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
                                         iou: float,
                  include_subclasses: bool) -> Optional[ConfusionMatrixMetricValue]:
     if _no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return [0,int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
     elif _no_annotations(ground_truths, predictions):
+        # Note that we could return [0,0,0,0] but that will bloat the imports for no reason
         return None
     elif isinstance(predictions[0].value, Mask):
-        return mask_confusion_matrix(ground_truths, predictions, include_subclasses)
+        return mask_confusion_matrix(ground_truths, predictions, iou, include_subclasses)
     elif isinstance(predictions[0].value, Geometry):
-        return vector_confusion_matrix(ground_truths, predictions, include_subclasses)
+        return vector_confusion_matrix(ground_truths, predictions, iou, include_subclasses)
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_confusion_matrix(ground_truths, predictions)
     else:
@@ -57,7 +59,7 @@ def feature_confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
 
 
 def classification_confusion_matrix(ground_truths: List[ClassificationAnnotation],
-                        predictions: List[ClassificationAnnotation]) -> ScalarMetricValue:
+                        predictions: List[ClassificationAnnotation]) -> ConfusionMatrixMetricValue:
     """
     Computes iou score for all features with the same feature schema id.
 
@@ -68,8 +70,11 @@ def classification_confusion_matrix(ground_truths: List[ClassificationAnnotation
         float representing the iou score for the classification
     """
 
-    if len(predictions) != len(ground_truths) != 1:
-        return 0.
+    if _no_matching_annotations(ground_truths, predictions):
+        return [0,int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
+    elif _no_annotations(ground_truths, predictions) or len(predictions) > 1 or len(ground_truths) > 1:
+        # Note that we could return [0,0,0,0] but that will bloat the imports for no reason
+        return None
 
     prediction, ground_truth = predictions[0], ground_truths[0]
 
@@ -87,32 +92,47 @@ def classification_confusion_matrix(ground_truths: List[ClassificationAnnotation
     else:
         raise ValueError(f"Unsupported subclass. {prediction}.")
 
+
+
 def vector_confusion_matrix(ground_truths: List[ObjectAnnotation],
                 predictions: List[ObjectAnnotation],
+                iou,
                 include_subclasses: bool,
                 buffer=70.) -> Optional[ConfusionMatrixMetricValue]:
     if _no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return [0,int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
     elif _no_annotations(ground_truths, predictions):
         return None
 
     pairs = _get_vector_pairs(ground_truths, predictions, buffer=buffer)
-    pairs.sort(key=lambda triplet: triplet[2], reverse=True)
+    return object_pair_confusion_matrix(pairs, iou, include_subclasses)
 
-    prediction_ids = {id(pred) for pred in predictions}
-    ground_truth_ids = {id(gt) for gt in ground_truths}
+
+def object_pair_confusion_matrix(pairs : List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]], iou, include_subclasses) -> ConfusionMatrixMetricValue:
+    pairs.sort(key=lambda triplet: triplet[2], reverse=True)
+    prediction_ids = set()
+    ground_truth_ids = set()
     matched_predictions = set()
     matched_ground_truths = set()
 
     for prediction, ground_truth, agreement in pairs:
-        if id(prediction) not in matched_predictions and id(
-                ground_truth) not in matched_ground_truths:
-            matched_predictions.add(id(prediction))
-            matched_ground_truths.add(id(ground_truth))
+        prediction_id = id(prediction)
+        ground_truth_id = id(ground_truth)
+        prediction_ids.add(prediction_id)
+        ground_truth_ids.add(ground_truth_id)
 
+        if agreement > iou and \
+         prediction_id not in matched_predictions and \
+         ground_truth_id not in matched_ground_truths:
+            if include_subclasses and (ground_truth.classifications or prediction.classifications):
+                if miou(prediction.classifications, ground_truth.classifications) < 1.:
+                    # Incorrect if the subclasses don't 100% agree
+                    continue
+            matched_predictions.add(prediction_id)
+            matched_ground_truths.add(ground_truth_id)
     tps = len(matched_ground_truths)
     fps = len(prediction_ids.difference(matched_predictions))
-    fns = len(ground_truth_ids.difference(matched_predictions))
+    fns = len(ground_truth_ids.difference(matched_ground_truths))
     # Not defined for object detection.
     tns = 0
     return [tps, fps, tns, fns]
@@ -139,13 +159,27 @@ def _get_vector_pairs(
             pairs.append((prediction, ground_truth, score))
     return pairs
 
+def _get_mask_pairs(
+        ground_truths: List[ObjectAnnotation],
+        predictions: List[ObjectAnnotation]
+) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
+    """
+    # Get iou score for all pairs of ground truths and predictions
+    """
+    pairs = []
+    for prediction, ground_truth in product(predictions, ground_truths):
+        if isinstance(prediction.value, Mask) and isinstance(
+                ground_truth.value, Mask):
+            score = _mask_iou(prediction.value.draw(color = 1),
+                                     ground_truth.value.draw(color = 1))
+            pairs.append((prediction, ground_truth, score))
+    return pairs
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> ScalarMetricValue:
     """Computes iou between two shapely polygons."""
     if poly1.intersects(poly2):
         return poly1.intersection(poly2).area / poly1.union(poly2).area
     return 0.
-
 
 
 def radio_confusion_matrix(ground_truth: Radio, prediction: Radio) -> ScalarMetricValue:
@@ -179,10 +213,8 @@ def checklist_confusion_matrix(ground_truth: Checklist, prediction: Checklist) -
         len(schema_ids_label | schema_ids_pred))
 
 
-
-
 def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
-              predictions: List[ObjectAnnotation]) -> Optional[ScalarMetricValue]:
+              predictions: List[ObjectAnnotation], iou, include_subclasses: bool) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -194,9 +226,17 @@ def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
         float representing the iou score for the masks
     """
     if _no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return [0,int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
     elif _no_annotations(ground_truths, predictions):
         return None
+
+    if include_subclasses:
+        # This results in a faily drastically different value.
+        # If we have subclasses set to True, then this is object detection with masks
+        # Otherwise this will flatten the masks.
+        # TODO: Make this more apprent in the configuration.
+        pairs = _get_mask_pairs(ground_truths, predictions)
+        return object_pair_confusion_matrix(pairs, iou, include_subclasses=include_subclasses)
 
     prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
                            axis=0)

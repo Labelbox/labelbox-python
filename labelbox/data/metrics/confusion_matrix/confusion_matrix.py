@@ -1,20 +1,15 @@
 # type: ignore
+from collections import defaultdict
+from labelbox.data.annotation_types import feature
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric
 from typing import List, Optional, Union
 from ...annotation_types import (Label, ObjectAnnotation,
                                  ClassificationAnnotation)
 
 from ..group import get_feature_pairs
-from .calculation import feature_miou
-from .calculation import miou
+from .calculation import confusion_matrix
+from .calculation import feature_confusion_matrix
 import numpy as np
-
-
-# You can include subclasses for each of these.
-# However, subclasses are only considered matching if there is 100% agreement
-# This is most applicable for Radio.
-
-# TODO: Do the top level grouping by all subclasses and support a feature level option..
 
 
 def confusion_matrix_metric(ground_truths: List[Union[ObjectAnnotation,
@@ -38,18 +33,21 @@ def confusion_matrix_metric(ground_truths: List[Union[ObjectAnnotation,
     if not (0. < iou < 1.):
         raise ValueError("iou must be between 0 and 1")
 
-    iou = miou(ground_truths, predictions, include_subclasses)
+    value = confusion_matrix(ground_truths, predictions, iou, include_subclasses)
     # If both gt and preds are empty there is no metric
-    if iou is None:
+    if value is None:
         return []
 
-    return [ConfusionMatrixMetric(metric_name="confusion_matrix_{iou}pct_iou", value=iou)]
+    return [ConfusionMatrixMetric(metric_name=f"confusion_matrix_{int(iou*100)}pct_iou", value=value)]
+
+
 
 
 def feature_confusion_matrix_metric(ground_truths: List[Union[ObjectAnnotation,
                                                   ClassificationAnnotation]],
                         predictions: List[Union[ObjectAnnotation,
                                                 ClassificationAnnotation]],
+                                                iou: float = 0.5,
                         include_subclasses=True) -> List[ConfusionMatrixMetric]:
     """
     Computes the miou for each type of class in the list of annotations.
@@ -67,21 +65,13 @@ def feature_confusion_matrix_metric(ground_truths: List[Union[ObjectAnnotation,
     annotation_pairs = get_feature_pairs(predictions, ground_truths)
     metrics = []
     for key in annotation_pairs:
-
-        value = feature_miou(annotation_pairs[key][0], annotation_pairs[key][1],
-                             include_subclasses)
+        value = feature_confusion_matrix(annotation_pairs[key][0], annotation_pairs[key][1],
+                             iou, include_subclasses)
         if value is None:
             continue
         metrics.append(
-            ConfusionMatrixMetric(metric_name="iou", feature_name=key, value=value))
+            ConfusionMatrixMetric(metric_name=f"confusion_matrix_{int(iou*100)}pct_iou", feature_name=key, value=value))
     return metrics
-
-
-
-def iou_by_tool():
-    #... We want to group by tool type.
-    #... Otherwise the weighted aggregates could be overpowered.
-    #... Since images might be huge, instances will have a few, and classifications will have the fewest.
 
 
 
