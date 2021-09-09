@@ -67,7 +67,7 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
 def get_label_pairs(labels_a: LabelList,
                     labels_b: LabelList,
                     match_on="uid",
-                    filter=False) -> Dict[str, Tuple[Label, Label]]:
+                    filter_mismatch=False) -> Dict[str, Tuple[Label, Label]]:
     """
     This is a function to pairing a list of prediction labels and a list of ground truth labels easier.
     There are a few potentiall problems with this function.
@@ -79,7 +79,7 @@ def get_label_pairs(labels_a: LabelList,
         labels_a (LabelList): A collection of labels to match with labels_b
         labels_b (LabelList): A collection of labels to match with labels_a
         match_on ('uid' or 'external_id'): The data row key to match labels by. Can either be uid or external id.
-        filter (bool): Whether or not to ignore mismatches
+        filter_mismatch (bool): Whether or not to ignore mismatches
 
     Returns:
         A dict containing the union of all either uids or external ids and values as a tuple of the matched labels
@@ -106,14 +106,14 @@ def get_label_pairs(labels_a: LabelList,
     for key in all_keys:
         a, b = label_lookup_a.pop(key, None), label_lookup_b.pop(key, None)
         if a is None or b is None:
-            if not filter:
+            if not filter_mismatch:
                 raise ValueError(
                     f"{match_on} {key} is not available in both LabelLists. "
-                    "Set `filter = True` to filter out these examples, assign the ids manually, or create your own matching function."
+                    "Set `filter_mismatch = True` to filter out these examples, assign the ids manually, or create your own matching function."
                 )
             else:
                 continue
-        pairs[key].append([a, b])
+        pairs[key].extend([a, b])
     return pairs
 
 
