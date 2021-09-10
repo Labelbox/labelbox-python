@@ -1,7 +1,7 @@
 # type: ignore
 from datetime import datetime, timezone
 import json
-from labelbox.schema.iam_integration import IAMIntegration
+
 import logging
 import mimetypes
 import os
@@ -10,8 +10,9 @@ from google.api_core import retry
 import requests
 import requests.exceptions
 
-from labelbox import utils
 import labelbox.exceptions
+from labelbox import utils
+from labelbox import __version__ as SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.pagination import PaginatedCollection
@@ -23,8 +24,8 @@ from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
-from labelbox import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -504,8 +505,9 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self, **kwargs):
+    def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs):
         """ Creates a Dataset object on the server.
+        This will attempt to connect the organization's default IAM integration if it exists
 
         Attribute values are passed as keyword arguments.
 
@@ -513,6 +515,8 @@ class Client:
         >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
 
         Args:
+            iam_integration (IAMIntegration) : Uses the default integration.
+                Optionally specify another integration or set as None to not use delegated access
             **kwargs: Keyword arguments with Dataset attribute values.
         Returns:
             A new Dataset object.
@@ -521,31 +525,41 @@ class Client:
                 any of the attribute names given in kwargs.
         """
         dataset = self._create(Dataset, kwargs)
-        iam_integration = kwargs.get('iam_integration') or self.get_organization().get_default_iam_integration()
-        if iam_integration is not None:
-            if not isinstance(iam_integration, IAMIntegration):
-                raise TypeError(f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}")
 
-            if not iam_integration.valid:
-                raise ValueError("Invalid integration is invalid. Please select another integration or remove default.")
-            try:
-                self.execute("""
-                    mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
-                        setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
-                    """, {'signerId' : iam_integration.uid, 'datasetId' : dataset.uid})
-                validation_result = self.execute("""
-                    mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){
-                        valid checks{name, success}}}
-                    """, {'id' : dataset.uid})
-                if not validation_result['validateDataset']['checks'][0]['success']:
-                    raise labelbox.exceptions.LabelboxError(
-                        f"IAMIntegration {validation_result['validateDataset']['checks']['name']} was not successfully added added to the project."
-                    )
-            except Exception as e:
-                dataset.delete()
-                raise e
+        if iam_integration == IAMIntegration._DEFAULT:
+            iam_integration = self.get_organization(
+            ).get_default_iam_integration()
+
+        if iam_integration is None:
+            return dataset
+
+        if not isinstance(iam_integration, IAMIntegration):
+            raise TypeError(
+                f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
+            )
+
+        if not iam_integration.valid:
+            raise ValueError("Integration is not valid. Please select another.")
+        try:
+            self.execute(
+                """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
+                    setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
+                """, {
+                    'signerId': iam_integration.uid,
+                    'datasetId': dataset.uid
+                })
+            validation_result = self.execute(
+                """mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){
+                    valid checks{name, success}}}
+                """, {'id': dataset.uid})
+            if not validation_result['validateDataset']['checks'][0]['success']:
+                raise labelbox.exceptions.LabelboxError(
+                    f"IAMIntegration {validation_result['validateDataset']['checks']['name']} was not successfully added added to the project."
+                )
+        except Exception as e:
+            dataset.delete()
+            raise e
         return dataset
-
 
     def create_project(self, **kwargs):
         """ Creates a Project object on the server.
@@ -643,5 +657,3 @@ class Client:
             "ontologyId": ontology_id
         })
         return Model(self, result['createModel'])
-
-

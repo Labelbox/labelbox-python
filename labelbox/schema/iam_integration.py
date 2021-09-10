@@ -15,6 +15,7 @@ class IAMIntegration(DbObject):
         is_org_default (boolean)
 
     """
+    _DEFAULT = "DEFAULT"
 
     name = Field.String("name")
     created_at = Field.DateTime("created_at")
