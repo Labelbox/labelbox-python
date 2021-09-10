@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.4.1 (2021-09-10)
+## Fix
+* Iam validation exception message
+
 # Version 3.4.0 (2021-09-10)
 ## Added
 * New `IAMIntegration` entity
