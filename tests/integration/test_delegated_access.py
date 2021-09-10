@@ -2,7 +2,7 @@ import requests
 import pytest
 
 
-#@pytest.mark.skip("Can only be tested in specific organizations.")
+@pytest.mark.skip("Can only be tested in specific organizations.")
 def test_default_integration(client):
     # This tests assumes the following:
     # 1. gcp delegated access is configured to work with utkarsh-da-test-bucket
@@ -17,7 +17,7 @@ def test_default_integration(client):
     ds.delete()
 
 
-#@pytest.mark.skip("Can only be tested in specific organizations.")
+@pytest.mark.skip("Can only be tested in specific organizations.")
 def test_non_default_integration(client):
     # This tests assumes the following:
     # 1. aws delegated access is configured to work with lbox-test-bucket
