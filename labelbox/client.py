@@ -551,7 +551,8 @@ class Client:
                 """mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){
                     valid checks{name, success}}}
                 """, {'id': dataset.uid})
-            if not validation_result['validateDataset']['checks'][0]['success']:
+            breakpoint()
+            if not validation_result['validateDataset']['valid']:
                 raise labelbox.exceptions.LabelboxError(
                     f"IAMIntegration {validation_result['validateDataset']['checks']['name']} was not successfully added added to the project."
                 )

@@ -15,6 +15,11 @@ class IAMIntegration(DbObject):
         is_org_default (boolean)
 
     """
+
+    def __init__(self, client, data):
+        self.settings = data.pop('settings', {})
+        super().__init__(client, data)
+
     _DEFAULT = "DEFAULT"
 
     name = Field.String("name")
