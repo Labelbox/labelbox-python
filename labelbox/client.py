@@ -539,6 +539,7 @@ class Client:
 
         if not iam_integration.valid:
             raise ValueError("Integration is not valid. Please select another.")
+
         try:
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
@@ -554,7 +555,7 @@ class Client:
 
             if not validation_result['validateDataset']['valid']:
                 raise labelbox.exceptions.LabelboxError(
-                    f"IAMIntegration {validation_result['validateDataset']['checks']['name']} was not successfully added added to the project."
+                    f"IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
             dataset.delete()

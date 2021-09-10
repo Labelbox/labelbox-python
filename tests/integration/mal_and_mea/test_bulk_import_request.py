@@ -154,21 +154,27 @@ def test_project_bulk_import_requests(client, configured_project, predictions):
     assert len(list(result)) == 0
 
     name = str(uuid.uuid4())
+    breakpoint()
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=predictions)
+    breakpoint()
     bulk_import_request.wait_until_done()
-
+    breakpoint()
     name = str(uuid.uuid4())
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=predictions)
+    breakpoint()
     bulk_import_request.wait_until_done()
 
     name = str(uuid.uuid4())
+    breakpoint()
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=predictions)
+    breakpoint()
     bulk_import_request.wait_until_done()
-
+    breakpoint()
     result = configured_project.bulk_import_requests()
+    breakpoint()
     assert len(list(result)) == 3
 
 
