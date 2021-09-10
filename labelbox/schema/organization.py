@@ -135,8 +135,15 @@ class Organization(DbObject):
         Returns all IAM Integrations for an organization
         """
         res = self.client.execute(
-            """query getAllIntegrationsPyApi { iamIntegrations {%s} } """ %
-            query.results_query_part(Entity.IAMIntegration))
+            """query getAllIntegrationsPyApi { iamIntegrations {
+                %s
+                settings {
+                __typename
+                ... on AwsIamIntegrationSettings {roleArn}
+                ... on GcpIamIntegrationSettings {serviceAccountEmailId readBucket}
+                }
+
+            } } """ % query.results_query_part(Entity.IAMIntegration))
         return [
             Entity.IAMIntegration(self.client, integration_data)
             for integration_data in res['iamIntegrations']
