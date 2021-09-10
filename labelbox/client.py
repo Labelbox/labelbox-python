@@ -507,7 +507,6 @@ class Client:
 
     def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs):
         """ Creates a Dataset object on the server.
-        This will attempt to connect the organization's default IAM integration if it exists
 
         Attribute values are passed as keyword arguments.
 
