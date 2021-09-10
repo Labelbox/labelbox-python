@@ -1,5 +1,29 @@
+from labelbox.utils import camel_case
+from pydantic import BaseModel
+
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
+
+
+
+
+
+class AwsIamIntegrationSettings(BaseModel):
+    role_arn: str
+
+    class Config:
+        allow_population_by_field_name = True
+        alias_generator = camel_case
+
+
+class GcpIamIntegrationSettings(BaseModel):
+    service_account_email_id: str
+    read_bucket: str
+
+    class Config:
+        allow_population_by_field_name = True
+        alias_generator = camel_case
+
 
 
 class IAMIntegration(DbObject):
@@ -17,7 +41,13 @@ class IAMIntegration(DbObject):
     """
 
     def __init__(self, client, data):
-        self.settings = data.pop('settings', {})
+        settings = data.pop('settings', {})
+        type_name = settings.pop('__typename')
+        if type_name == "GcpIamIntegrationSettings":
+            self.settings = GcpIamIntegrationSettings(**settings)
+        elif type_name == "AwsIamIntegrationSettings":
+            self.settings = AwsIamIntegrationSettings(**settings)
+
         super().__init__(client, data)
 
     _DEFAULT = "DEFAULT"
