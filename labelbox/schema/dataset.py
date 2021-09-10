@@ -1,3 +1,4 @@
+from labelbox.schema import iam_integration
 from labelbox import utils
 import os
 import json
@@ -43,6 +44,8 @@ class Dataset(DbObject, Updateable, Deletable):
     data_rows = Relationship.ToMany("DataRow", False)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
+    iam_integration = Relationship.ToOne("IAMIntegration", False,
+                                         "iam_integration", "signer")
 
     def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
