@@ -130,20 +130,31 @@ class Organization(DbObject):
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
         }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
 
-
     def get_iam_integrations(self):
         """
         Returns all IAM Integrations for an organization
         """
-        res = self.client.execute("""query getAllIntegrationsPyApi { iamIntegrations {%s} } """ % query.results_query_part(Entity.IAMIntegration))
-        return [Entity.IAMIntegration(self.client, integration_data) for integration_data in res['iamIntegrations']]
+        res = self.client.execute(
+            """query getAllIntegrationsPyApi { iamIntegrations {%s} } """ %
+            query.results_query_part(Entity.IAMIntegration))
+        return [
+            Entity.IAMIntegration(self.client, integration_data)
+            for integration_data in res['iamIntegrations']
+        ]
 
     def get_default_iam_integration(self):
         """
-        Returns the default IAM integration for the organization
+        Returns the default IAM integration for the organization.
+        Will return None if there are no default integrations for the org.
         """
         integrations = self.get_iam_integrations()
-        default_integration = [integration for integration in integrations if integration.is_org_default]
+        default_integration = [
+            integration for integration in integrations
+            if integration.is_org_default
+        ]
         if len(default_integration) > 1:
-            raise ValueError("Found more than one default signer. Please contact Labelbox to resolve")
-        return None if not len(default_integration) else default_integration.pop()
+            raise ValueError(
+                "Found more than one default signer. Please contact Labelbox to resolve"
+            )
+        return None if not len(
+            default_integration) else default_integration.pop()

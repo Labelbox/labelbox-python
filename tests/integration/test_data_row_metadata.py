@@ -209,6 +209,7 @@ def test_delete_non_existent_schema_id(datarow, mdo):
 
 
 @pytest.mark.slow
+@pytest.mark.skip("Test is inconsistent.")
 def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
     deletes = []
     n_fields_start = 0

@@ -1,5 +1,13 @@
 # Changelog
 
+# Version 3.4.0 (2021-09-10)
+## Added
+* New `IAMIntegration` entity
+* `iam_integration` parameter to `Client.create_dataset()` to specify the iam integration
+    - `create_dataset` will use the default integration if this param is not set
+* `Organization.get_iam_integrations()` to list all integrations available to your org
+* `Organization.get_default_iam_integration()` to only get the defaault iam integration
+
 # Version 3.3.0 (2021-09-02)
 ## Added
 * `Dataset.create_data_rows_sync()` for synchronous bulk uploads of data rows
