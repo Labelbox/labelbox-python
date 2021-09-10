@@ -83,9 +83,7 @@ def classification_confusion_matrix(ground_truths: List[ClassificationAnnotation
             "Classification features must be the same type to compute agreement. "
             f"Found `{type(prediction)}` and `{type(ground_truth)}`")
 
-    if isinstance(prediction.value, Text):
-        return text_confusion_matrix(ground_truth.value, prediction.value)
-    elif isinstance(prediction.value, Radio):
+    if isinstance(prediction.value, Radio):
         return radio_confusion_matrix(ground_truth.value, prediction.value)
     elif isinstance(prediction.value, Checklist):
         return checklist_confusion_matrix(ground_truth.value, prediction.value)
@@ -185,18 +183,24 @@ def _polygon_iou(poly1: Polygon, poly2: Polygon) -> ScalarMetricValue:
 def radio_confusion_matrix(ground_truth: Radio, prediction: Radio) -> ScalarMetricValue:
     """
     Calculates confusion between ground truth and predicted radio values
+
+    The way we are calculating confusion matrix metrics:
+        - TNs aren't defined because we don't know how many other classes exist ... etc
+
+    We treat each example as 1 vs all
+
     """
     key = get_identifying_key([prediction.answer], [ground_truth.answer])
+    prediction_id = getattr(prediction.answer, key)
+    ground_truth_id = getattr(ground_truth.answer, key)
+
+
+
 
     return float(getattr(prediction.answer, key) ==
                  getattr(ground_truth.answer, key))
 
 
-def text_confusion_matrix(ground_truth: Text, prediction: Text) -> ScalarMetricValue:
-    """
-    Calculates agreement between ground truth and predicted text
-    """
-    return float(prediction.answer == ground_truth.answer)
 
 
 def checklist_confusion_matrix(ground_truth: Checklist, prediction: Checklist) -> ScalarMetricValue:
