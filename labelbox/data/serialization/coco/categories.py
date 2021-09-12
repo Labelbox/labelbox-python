@@ -1,6 +1,6 @@
+import sys
+
 from pydantic import BaseModel
-from typing import Optional
-import hashlib
 
 
 class Categories(BaseModel):
@@ -11,4 +11,4 @@ class Categories(BaseModel):
 
 
 def hash_category_name(name: str) -> int:
-    return int(hashlib.sha256(name.encode('utf-8')).hexdigest(), 16) % 10000
+    return hash(name) + sys.maxsize

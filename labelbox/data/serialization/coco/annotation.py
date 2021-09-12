@@ -1,10 +1,12 @@
-from pydantic import BaseModel
-from collections import defaultdict
 from typing import Tuple, List, Union
+from pathlib import Path
+from collections import defaultdict
+
+from pydantic import BaseModel
 import numpy as np
 
 
-def rle_decoding(rle_arr, w, h):
+def rle_decoding(rle_arr : List[int], w : int, h: int) -> np.ndarray:
     indices = []
     for idx, cnt in zip(rle_arr[0::2], rle_arr[1::2]):
         indices.extend(list(range(idx - 1,
@@ -51,5 +53,5 @@ class COCOObjectAnnotation(BaseModel):
 class PanopticAnnotation(BaseModel):
     # One to one relationship between image and panoptic annotation
     image_id: int
-    file_name: str
+    file_name: Path
     segments_info: List[SegmentInfo]

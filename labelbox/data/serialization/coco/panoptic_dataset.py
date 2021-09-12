@@ -1,19 +1,22 @@
-from labelbox.data.annotation_types.geometry import Polygon, Rectangle
-from labelbox.data.annotation_types import Label
-from labelbox.data.annotation_types.geometry.mask import Mask
-from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.data.raster import MaskData, ImageData
-from labelbox.data.serialization.coco.categories import Categories, hash_category_name
-from labelbox.data.annotation_types.collection import LabelCollection
-from labelbox.data.serialization.coco.image import CocoImage, get_image, get_image_id, id_to_rgb, rgb_to_id
-from labelbox.data.serialization.coco.annotation import PanopticAnnotation, SegmentInfo, get_annotation_lookup
+
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import Dict, Any, List, Union
+from pathlib import Path
+
 from pydantic import BaseModel
 from tqdm import tqdm
-import os
 import numpy as np
 from PIL import Image
-from typing import Dict, Any, List, Union
+
+from ...annotation_types.geometry import Polygon, Rectangle
+from ...annotation_types import Label
+from ...annotation_types.geometry.mask import Mask
+from ...annotation_types.annotation import ObjectAnnotation
+from ...annotation_types.data.raster import MaskData, ImageData
+from ...annotation_types.collection import LabelCollection
+from .categories import Categories, hash_category_name
+from .image import CocoImage, get_image, get_image_id, id_to_rgb
+from .annotation import PanopticAnnotation, SegmentInfo, get_annotation_lookup
 
 
 def vector_to_coco_segment_info(canvas: np.ndarray,
@@ -86,11 +89,11 @@ def process_label(label: Label,
                 is_thing[annotation.name] = 1 - int(all_stuff)
 
     mask_file = image.file_name.replace('.jpg', '.png')
-    mask_file = os.path.join(mask_root, mask_file)
+    mask_file = Path(mask_root, mask_file)
     Image.fromarray(canvas.astype(np.uint8)).save(mask_file)
     return image, PanopticAnnotation(
         image_id=image_id,
-        file_name=mask_file.split(os.sep)[-1],
+        file_name=Path(mask_file.name),
         segments_info=segments), categories, is_thing
 
 
@@ -102,12 +105,12 @@ class CocoPanopticDataset(BaseModel):
 
     @classmethod
     def from_common(cls, labels: LabelCollection, image_root, mask_root,
-                    all_stuff):
+                    all_stuff, max_workers = 8):
         all_coco_annotations = []
         coco_categories = {}
         coco_things = {}
         images = []
-        with ProcessPoolExecutor(max_workers=8) as exc:
+        with ProcessPoolExecutor(max_workers=max_workers) as exc:
             futures = [
                 exc.submit(process_label, label, idx, image_root, mask_root,
                            all_stuff) for idx, label in enumerate(labels)
@@ -143,7 +146,7 @@ class CocoPanopticDataset(BaseModel):
                                    annotations=all_coco_annotations,
                                    categories=categories)
 
-    def to_common(self, image_root, mask_root):
+    def to_common(self, image_root: Path, mask_root: Path):
         category_lookup = {
             category.id: category for category in self.categories
         }
@@ -153,8 +156,9 @@ class CocoPanopticDataset(BaseModel):
         for image in self.images:
             annotations = []
             annotation = annotation_lookup[image.id]
-            im_path = os.path.join(image_root, image.file_name)
-            if not os.path.exists(im_path):
+
+            im_path = Path(image_root, image.file_name)
+            if not im_path.exists():
                 raise ValueError(
                     f"Cannot find file {im_path}. Make sure `image_root` is set properly"
                 )
@@ -164,7 +168,7 @@ class CocoPanopticDataset(BaseModel):
                     f"COCO masks must be stored as png files and their extension must be `.png`. Found {annotation.file_name}"
                 )
             mask = MaskData(
-                file_path=os.path.join(mask_root, annotation.file_name))
+                file_path=Path(mask_root, annotation.file_name))
 
             for segmentation in annotation.segments_info:
                 category = category_lookup[segmentation.category_id]
