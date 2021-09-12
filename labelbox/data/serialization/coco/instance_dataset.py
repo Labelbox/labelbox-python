@@ -1,21 +1,22 @@
 # https://cocodataset.org/#format-data
 
-from labelbox.data.serialization.coco.categories import Categories, hash_category_name
-from labelbox.data.serialization.coco.annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_decoding
-from labelbox.data.serialization.coco.image import CocoImage, get_image, get_image_id
-from typing import Any, Dict, List
-from pydantic import BaseModel
-from ...annotation_types import ImageData, MaskData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
-import numpy as np
-from PIL import Image
-from tqdm import tqdm
-import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import Any, Dict, List, Tuple
+from pathlib import Path
+
+import numpy as np
+from tqdm import tqdm
+from pydantic import BaseModel
+
+from ...annotation_types import ImageData, MaskData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
 from ...annotation_types.collection import LabelCollection
+from .categories import Categories, hash_category_name
+from .annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_decoding
+from .image import CocoImage, get_image, get_image_id
 
 
-def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
-                                   image_id, category_id):
+def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx : int,
+                                   image_id : int, category_id : int) -> COCOObjectAnnotation:
     # This is going to fill any holes into the multipolygon
     # If you need to support holes use the panoptic data format
     shapely = annotation.value.shapely.simplify(1).buffer(0)
@@ -37,8 +38,8 @@ def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
         iscrowd=0)
 
 
-def vector_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
-                                     image_id: int, category_id):
+def vector_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx : int,
+                                     image_id: int, category_id: int) -> COCOObjectAnnotation:
     shapely = annotation.value.shapely
     xmin, ymin, xmax, ymax = shapely.bounds
     segmentation = []
@@ -61,7 +62,7 @@ def vector_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx,
                                 iscrowd=0)
 
 
-def rle_to_common(class_annotations, class_name):
+def rle_to_common(class_annotations : COCOObjectAnnotation, class_name : str) -> ObjectAnnotation:
     mask = rle_decoding(class_annotations.segmentation.counts,
                         *class_annotations.segmentation.size[::-1])
     return ObjectAnnotation(name=class_name,
@@ -69,7 +70,7 @@ def rle_to_common(class_annotations, class_name):
                                        color=[1, 1, 1]))
 
 
-def segmentations_to_common(class_annotations, class_name):
+def segmentations_to_common(class_annotations : COCOObjectAnnotation, class_name: str) -> List[ObjectAnnotation]:
     # Technically it is polygons. But the key in coco is called segmentations..
     annotations = []
     for points in class_annotations.segmentation:
@@ -83,9 +84,9 @@ def segmentations_to_common(class_annotations, class_name):
 
 
 def process_label(label: Label,
-                  idx,
-                  image_root,
-                  max_annotations_per_image=10000):
+                  idx : int,
+                  image_root :str,
+                  max_annotations_per_image=10000) -> Tuple[np.ndarray, List[COCOObjectAnnotation], Dict[str, str]]:
     annot_idx = idx * max_annotations_per_image
     image_id = get_image_id(label, idx)
     image = get_image(label, image_root, image_id)
@@ -118,14 +119,14 @@ class CocoInstanceDataset(BaseModel):
     categories: List[Categories]
 
     @classmethod
-    def from_common(cls, labels: LabelCollection, image_root):
+    def from_common(cls, labels: LabelCollection, image_root : Path, max_workers = 8):
         all_coco_annotations = []
         categories = {}
         images = []
         futures = []
         coco_categories = {}
 
-        with ProcessPoolExecutor(max_workers=8) as exc:
+        with ProcessPoolExecutor(max_workers=max_workers) as exc:
             futures = [
                 exc.submit(process_label, label, idx, image_root)
                 for idx, label in enumerate(labels)
@@ -161,13 +162,13 @@ class CocoInstanceDataset(BaseModel):
         annotation_lookup = get_annotation_lookup(self.annotations)
 
         for image in self.images:
-            im_path = os.path.join(image_root, image.file_name)
-            if not os.path.exists(im_path):
+            im_path = Path(image_root, image.file_name)
+            if not im_path.exists():
                 raise ValueError(
                     f"Cannot find file {im_path}. Make sure `image_root` is set properly"
                 )
 
-            data = ImageData(file_path=im_path)
+            data = ImageData(file_path=str(im_path))
             annotations = []
             for class_annotations in annotation_lookup[image.id]:
                 if isinstance(class_annotations.segmentation, RLE):
