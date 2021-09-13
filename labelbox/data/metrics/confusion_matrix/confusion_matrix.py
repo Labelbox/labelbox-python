@@ -66,7 +66,7 @@ def feature_confusion_matrix_metric(
         There will be one metric for each class in the union of ground truth and prediction classes.
     """
     # Classifications are supported because we just take a naive approach to them..
-    annotation_pairs = get_feature_pairs(predictions, ground_truths)
+    annotation_pairs = get_feature_pairs(ground_truths, predictions)
     metrics = []
     for key in annotation_pairs:
         value = feature_confusion_matrix(annotation_pairs[key][0],
@@ -75,8 +75,7 @@ def feature_confusion_matrix_metric(
         if value is None:
             continue
         metrics.append(
-            ConfusionMatrixMetric(
-                metric_name=f"confusion_matrix_{int(iou*100)}pct_iou",
-                feature_name=key,
-                value=value))
+            ConfusionMatrixMetric(metric_name=f"{int(iou*100)}pct_iou",
+                                  feature_name=key,
+                                  value=value))
     return metrics
