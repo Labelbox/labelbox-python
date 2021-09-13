@@ -31,7 +31,7 @@ def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
         Returns None if there are no annotations in ground_truth or prediction annotations
     """
 
-    annotation_pairs = get_feature_pairs(predictions, ground_truths)
+    annotation_pairs = get_feature_pairs(ground_truths, predictions)
     conf_matrix = [
         feature_confusion_matrix(annotation_pair[0], annotation_pair[1],
                                  include_subclasses, iou)
@@ -166,7 +166,7 @@ def object_pair_confusion_matrix(pairs: List[Tuple[ObjectAnnotation,
     matched_predictions = set()
     matched_ground_truths = set()
 
-    for prediction, ground_truth, agreement in pairs:
+    for ground_truth, prediction, agreement in pairs:
         prediction_id = id(prediction)
         ground_truth_id = id(ground_truth)
         prediction_ids.add(prediction_id)
@@ -177,14 +177,15 @@ def object_pair_confusion_matrix(pairs: List[Tuple[ObjectAnnotation,
          ground_truth_id not in matched_ground_truths:
             if include_subclasses and (ground_truth.classifications or
                                        prediction.classifications):
-                if miou(prediction.classifications,
-                        ground_truth.classifications,
+                if miou(ground_truth.classifications,
+                        prediction.classifications,
                         include_subclasses=False) < 1.:
                     # Incorrect if the subclasses don't 100% agree then there is no match
                     continue
             matched_predictions.add(prediction_id)
             matched_ground_truths.add(ground_truth_id)
     tps = len(matched_ground_truths)
+
     fps = len(prediction_ids.difference(matched_predictions))
     fns = len(ground_truth_ids.difference(matched_ground_truths))
     # Not defined for object detection.
@@ -210,11 +211,7 @@ def radio_confusion_matrix(ground_truth: Radio,
     key = get_identifying_key([prediction.answer], [ground_truth.answer])
     prediction_id = getattr(prediction.answer, key)
     ground_truth_id = getattr(ground_truth.answer, key)
-
-    if prediction_id == ground_truth_id:
-        return [1, 0, 0, 0]
-    else:
-        return [0, 1, 0, 1]
+    return [1, 0, 0, 0] if prediction_id == ground_truth_id else [0, 1, 0, 1]
 
 
 def checklist_confusion_matrix(

@@ -13,8 +13,8 @@ from labelbox.data.metrics.confusion_matrix.confusion_matrix import feature_conf
 ])
 def test_overlapping_objects(tool_examples):
     for example in tool_examples:
-        metrics = feature_confusion_matrix_metric(example.predictions,
-                                                  example.ground_truths)
+        metrics = feature_confusion_matrix_metric(example.ground_truths,
+                                                  example.predictions)
 
         metrics = {r.feature_name: list(r.value) for r in metrics}
         if len(example.expected) == 0:
@@ -30,8 +30,8 @@ def test_overlapping_objects(tool_examples):
 def test_overlapping_classifications(tool_examples):
     for example in tool_examples:
 
-        metrics = feature_confusion_matrix_metric(example.predictions,
-                                                  example.ground_truths)
+        metrics = feature_confusion_matrix_metric(example.ground_truths,
+                                                  example.predictions)
 
         metrics = {r.feature_name: list(r.value) for r in metrics}
         if len(example.expected) == 0:
