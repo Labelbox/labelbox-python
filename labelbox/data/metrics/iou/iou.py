@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 from ...annotation_types import (Label, ObjectAnnotation,
                                  ClassificationAnnotation)
 
-from ..processing import get_feature_pairs
+from ..group import get_feature_pairs
 from .calculation import feature_miou
 from .calculation import miou
 

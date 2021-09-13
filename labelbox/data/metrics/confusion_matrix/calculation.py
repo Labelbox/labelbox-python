@@ -6,8 +6,8 @@ from ..iou.calculation import _get_mask_pairs, _get_vector_pairs, miou
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
                                  Mask, Geometry, Checklist, Radio,
                                  ScalarMetricValue, ConfusionMatrixMetricValue)
-from ..processing import (get_feature_pairs, get_identifying_key,
-                          has_no_annotations, has_no_matching_annotations)
+from ..group import (get_feature_pairs, get_identifying_key, has_no_annotations,
+                     has_no_matching_annotations)
 
 
 def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
