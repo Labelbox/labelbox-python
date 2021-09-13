@@ -11,7 +11,7 @@ import numpy as np
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
                                  Mask, Geometry, Point, Line, Checklist, Text,
                                  Radio)
-from ..group import get_feature_pairs, get_identifying_key
+from ..processing import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
 
 
 def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
@@ -55,9 +55,9 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
     Returns:
         float representing the iou score for the feature type if score can be computed otherwise None.
     """
-    if _no_matching_annotations(ground_truths, predictions):
+    if has_no_matching_annotations(ground_truths, predictions):
         return 0.
-    elif _no_annotations(ground_truths, predictions):
+    elif has_no_annotations(ground_truths, predictions):
         return None
     elif isinstance(predictions[0].value, Mask):
         return mask_miou(ground_truths, predictions, include_subclasses)
@@ -85,14 +85,17 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
         float representing the iou score for the feature type.
          If there are no matches then this returns none
     """
-    if _no_matching_annotations(ground_truths, predictions):
+    if has_no_matching_annotations(ground_truths, predictions):
         return 0.
-    elif _no_annotations(ground_truths, predictions):
+    elif has_no_annotations(ground_truths, predictions):
         return None
     pairs = _get_vector_pairs(ground_truths, predictions, buffer=buffer)
     return object_pair_miou(pairs, include_subclasses)
 
-def object_pair_miou(pairs : List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]], include_subclasses) -> ScalarMetricValue:
+
+def object_pair_miou(pairs: List[Tuple[ObjectAnnotation, ObjectAnnotation,
+                                       ScalarMetricValue]],
+                     include_subclasses) -> ScalarMetricValue:
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     solution_agreements = []
     solution_features = set()
@@ -131,9 +134,9 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
     Returns:
         float representing the iou score for the masks
     """
-    if _no_matching_annotations(ground_truths, predictions):
+    if has_no_matching_annotations(ground_truths, predictions):
         return 0.
-    elif _no_annotations(ground_truths, predictions):
+    elif has_no_annotations(ground_truths, predictions):
         return None
 
     if include_subclasses:
@@ -141,7 +144,7 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
         return object_pair_miou(pairs, include_subclasses=include_subclasses)
 
     prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
-                        axis=0)
+                           axis=0)
     ground_truth_np = np.max(
         [ground_truth.value.draw(color=1) for ground_truth in ground_truths],
         axis=0)
@@ -153,9 +156,9 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
     return _mask_iou(ground_truth_np, prediction_np)
 
 
-
-def classification_miou(ground_truths: List[ClassificationAnnotation],
-                        predictions: List[ClassificationAnnotation]) -> ScalarMetricValue:
+def classification_miou(
+        ground_truths: List[ClassificationAnnotation],
+        predictions: List[ClassificationAnnotation]) -> ScalarMetricValue:
     """
     Computes iou score for all features with the same feature schema id.
 
@@ -191,8 +194,8 @@ def radio_iou(ground_truth: Radio, prediction: Radio) -> ScalarMetricValue:
     Calculates agreement between ground truth and predicted radio values
     """
     key = get_identifying_key([prediction.answer], [ground_truth.answer])
-    return float(getattr(prediction.answer, key) ==
-                 getattr(ground_truth.answer, key))
+    return float(
+        getattr(prediction.answer, key) == getattr(ground_truth.answer, key))
 
 
 def text_iou(ground_truth: Text, prediction: Text) -> ScalarMetricValue:
@@ -202,23 +205,22 @@ def text_iou(ground_truth: Text, prediction: Text) -> ScalarMetricValue:
     return float(prediction.answer == ground_truth.answer)
 
 
-def checklist_iou(ground_truth: Checklist, prediction: Checklist) -> ScalarMetricValue:
+def checklist_iou(ground_truth: Checklist,
+                  prediction: Checklist) -> ScalarMetricValue:
     """
     Calculates agreement between ground truth and predicted checklist items
     """
     key = get_identifying_key(prediction.answer, ground_truth.answer)
     schema_ids_pred = {getattr(answer, key) for answer in prediction.answer}
-    schema_ids_label = {
-        getattr(answer, key) for answer in ground_truth.answer
-    }
+    schema_ids_label = {getattr(answer, key) for answer in ground_truth.answer}
     return float(
         len(schema_ids_label & schema_ids_pred) /
         len(schema_ids_label | schema_ids_pred))
 
 
 def _get_vector_pairs(
-        ground_truths: List[ObjectAnnotation],
-        predictions: List[ObjectAnnotation], buffer: float
+    ground_truths: List[ObjectAnnotation], predictions: List[ObjectAnnotation],
+    buffer: float
 ) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
     """
     # Get iou score for all pairs of ground truths and predictions
@@ -237,9 +239,9 @@ def _get_vector_pairs(
             pairs.append((prediction, ground_truth, score))
     return pairs
 
+
 def _get_mask_pairs(
-        ground_truths: List[ObjectAnnotation],
-        predictions: List[ObjectAnnotation]
+    ground_truths: List[ObjectAnnotation], predictions: List[ObjectAnnotation]
 ) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
     """
     # Get iou score for all pairs of ground truths and predictions
@@ -248,8 +250,8 @@ def _get_mask_pairs(
     for prediction, ground_truth in product(predictions, ground_truths):
         if isinstance(prediction.value, Mask) and isinstance(
                 ground_truth.value, Mask):
-            score = _mask_iou(prediction.value.draw(color = 1),
-                                     ground_truth.value.draw(color = 1))
+            score = _mask_iou(prediction.value.draw(color=1),
+                              ground_truth.value.draw(color=1))
             pairs.append((prediction, ground_truth, score))
     return pairs
 
@@ -264,19 +266,3 @@ def _polygon_iou(poly1: Polygon, poly2: Polygon) -> ScalarMetricValue:
 def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> ScalarMetricValue:
     """Computes iou between two binary segmentation masks."""
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
-
-
-def _no_matching_annotations(ground_truths: List[ObjectAnnotation],
-                             predictions: List[ObjectAnnotation]):
-    if len(ground_truths) and not len(predictions):
-        # No existing predictions but existing ground truths means no matches.
-        return True
-    elif not len(ground_truths) and len(predictions):
-        # No ground truth annotations but there are predictions means no matches
-        return True
-    return False
-
-
-def _no_annotations(ground_truths: List[ObjectAnnotation],
-                    predictions: List[ObjectAnnotation]):
-    return not len(ground_truths) and not len(predictions)
