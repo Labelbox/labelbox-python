@@ -8,7 +8,6 @@ from .base import ConfidenceValue, BaseMetric
 
 Count = conint(ge=0, le=1e10)
 
-
 ConfusionMatrixMetricValue = Tuple[Count, Count, Count, Count]
 ConfusionMatrixMetricConfidenceValue = Dict[ConfidenceValue,
                                             ConfusionMatrixMetricValue]
