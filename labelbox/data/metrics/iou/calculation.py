@@ -1,17 +1,13 @@
-"""
-All intermediate functions required to create iou scores.
-These can be used in user workflows to create custom metrics.
-"""
-
-from labelbox.data.annotation_types.metrics.scalar import ScalarMetricValue
 from typing import List, Optional, Tuple, Union
-from shapely.geometry import Polygon
 from itertools import product
+
+from shapely.geometry import Polygon
 import numpy as np
+
+from ..processing import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
                                  Mask, Geometry, Point, Line, Checklist, Text,
-                                 Radio)
-from ..processing import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
+                                 Radio, ScalarMetricValue)
 
 
 def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
@@ -45,7 +41,7 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
                                          ClassificationAnnotation]],
                  include_subclasses: bool) -> Optional[ScalarMetricValue]:
     """
-    Computes iou score for all features with the same feature schema id.
+    Computes iou score for all features of the same class.
 
     Args:
         ground_truths: List of ground truth annotations with the same feature schema.
