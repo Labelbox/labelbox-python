@@ -1,14 +1,13 @@
-from labelbox.data.metrics.iou.calculation import _get_mask_pairs, _get_vector_pairs, miou
-
-from labelbox.data.annotation_types.metrics.confusion_matrix import \
-    ConfusionMatrixMetricValue
-
-from labelbox.data.annotation_types.metrics.scalar import ScalarMetricValue
 from typing import List, Optional, Tuple, Union
+
 import numpy as np
+
+from ..iou.calculation import _get_mask_pairs, _get_vector_pairs, miou
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
-                                 Mask, Geometry, Checklist, Radio)
-from ..processing import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
+                                 Mask, Geometry, Checklist, Radio,
+                                 ScalarMetricValue, ConfusionMatrixMetricValue)
+from ..processing import (get_feature_pairs, get_identifying_key,
+                          has_no_annotations, has_no_matching_annotations)
 
 
 def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
@@ -17,16 +16,29 @@ def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
                                              ClassificationAnnotation]],
                      include_subclasses: bool,
                      iou: float) -> ConfusionMatrixMetricValue:
+    """
+    Computes the confusion matrix for an arbitrary set of ground truth and predicted annotations.
+    It first computes the confusion matrix for each metric and then sums across all classes
+
+    Args:
+        ground_truth : Label containing human annotations or annotations known to be correct
+        prediction: Label representing model predictions
+        include_subclasses (bool): Whether or not to include subclasses in the calculation.
+            If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
+        iou: minimum overlap between objects for them to count as matching
+    Returns:
+        confusion matrix as a list: [TP,FP,TN,FN]
+        Returns None if there are no annotations in ground_truth or prediction annotations
+    """
 
     annotation_pairs = get_feature_pairs(predictions, ground_truths)
-    ious = [
+    conf_matrix = [
         feature_confusion_matrix(annotation_pair[0], annotation_pair[1],
                                  include_subclasses, iou)
         for annotation_pair in annotation_pairs.values()
     ]
-    ious = [iou for iou in ious if iou is not None]
-
-    return None if not len(ious) else np.sum(ious, axis=0).tolist()
+    matrices = [matrix for matrix in conf_matrix if matrix is not None]
+    return None if not len(matrices) else np.sum(matrices, axis=0).tolist()
 
 
 def feature_confusion_matrix(
@@ -34,17 +46,28 @@ def feature_confusion_matrix(
         predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
         include_subclasses: bool,
         iou: float) -> Optional[ConfusionMatrixMetricValue]:
+    """
+    Computes confusion matrix for all features of the same class.
+
+    Args:
+        ground_truths: List of ground truth annotations belonging to the same class.
+        predictions: List of annotations  belonging to the same class.
+        include_subclasses (bool): Whether or not to include subclasses in the calculation.
+            If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
+    Returns:
+        confusion matrix as a list: [TP,FP,TN,FN]
+        Returns None if there are no annotations in ground_truth or prediction annotations
+    """
     if has_no_matching_annotations(ground_truths, predictions):
         return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
     elif has_no_annotations(ground_truths, predictions):
-        # Note that we could return [0,0,0,0] but that will bloat the imports for no reason
         return None
     elif isinstance(predictions[0].value, Mask):
-        return mask_confusion_matrix(ground_truths, predictions, iou,
-                                     include_subclasses)
+        return mask_confusion_matrix(ground_truths, predictions,
+                                     include_subclasses, iou)
     elif isinstance(predictions[0].value, Geometry):
-        return vector_confusion_matrix(ground_truths, predictions, iou,
-                                       include_subclasses)
+        return vector_confusion_matrix(ground_truths, predictions,
+                                       include_subclasses, iou)
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_confusion_matrix(ground_truths, predictions)
     else:
@@ -63,7 +86,8 @@ def classification_confusion_matrix(
         ground_truths: List of ground truth classification annotations
         predictions: List of prediction classification annotations
     Returns:
-        float representing the iou score for the classification
+        confusion matrix as a list: [TP,FP,TN,FN]
+        Returns None if there are no annotations in ground_truth or prediction annotations
     """
 
     if has_no_matching_annotations(ground_truths, predictions):
@@ -86,27 +110,56 @@ def classification_confusion_matrix(
     elif isinstance(prediction.value, Checklist):
         return checklist_confusion_matrix(ground_truth.value, prediction.value)
     else:
-        raise ValueError(f"Unsupported subclass. {prediction}.")
+        raise ValueError(
+            f"Unsupported subclass. {prediction}. Only Radio and Checklist are supported"
+        )
 
 
 def vector_confusion_matrix(ground_truths: List[ObjectAnnotation],
                             predictions: List[ObjectAnnotation],
-                            iou: float,
                             include_subclasses: bool,
+                            iou: float,
                             buffer=70.) -> Optional[ConfusionMatrixMetricValue]:
+    """
+    Computes confusion matrix for any vector class (point, polygon, line, rectangle).
+    Ground truths and predictions should all belong to the same class.
+
+    Args:
+        ground_truths: List of ground truth vector annotations
+        predictions: List of prediction vector annotations
+        iou: minimum overlap between objects for them to count as matching
+        include_subclasses (bool): Whether or not to include subclasses in the calculation.
+            If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
+        buffer: How much to buffer point and lines (used for determining if overlap meets iou threshold )
+    Returns:
+        confusion matrix as a list: [TP,FP,TN,FN]
+         Returns None if there are no annotations in ground_truth or prediction annotations
+    """
     if has_no_matching_annotations(ground_truths, predictions):
         return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
     elif has_no_annotations(ground_truths, predictions):
         return None
 
     pairs = _get_vector_pairs(ground_truths, predictions, buffer=buffer)
-    return object_pair_confusion_matrix(pairs, iou, include_subclasses)
+    return object_pair_confusion_matrix(pairs, include_subclasses, iou)
 
 
-def object_pair_confusion_matrix(
-        pairs: List[Tuple[ObjectAnnotation, ObjectAnnotation,
-                          ScalarMetricValue]], iou,
-        include_subclasses) -> ConfusionMatrixMetricValue:
+def object_pair_confusion_matrix(pairs: List[Tuple[ObjectAnnotation,
+                                                   ObjectAnnotation,
+                                                   ScalarMetricValue]],
+                                 include_subclasses: bool,
+                                 iou: float) -> ConfusionMatrixMetricValue:
+    """
+    Computes the confusion matrix for a list of object annotation pairs.
+    Performs greedy matching of pairs.
+
+    Args:
+        pairs : A list of object annotation pairs with an iou score.
+            This is used to determine matching priority (or if objects are matching at all) since objects can only be matched once.
+        iou : iou threshold to deterine if objects are matching
+    Returns:
+        confusion matrix as a list: [TP,FP,TN,FN]
+    """
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     prediction_ids = set()
     ground_truth_ids = set()
@@ -144,11 +197,10 @@ def radio_confusion_matrix(ground_truth: Radio,
     """
     Calculates confusion between ground truth and predicted radio values
 
-    The way we are calculating confusion matrix metrics:
-        - TNs aren't defined because we don't know how many other classes exist ... etc
-
-    When P == L, then we get [1,0,0,0]
-    when P != L, we get [0,1,0,1]
+    Calculation:
+        - TNs aren't defined because we don't know how many other classes exist
+        - When P == L, then we get [1,0,0,0]
+        - when P != L, we get [0,1,0,1]
 
     This is because we are aggregating the stats for the entire radio. Not for each class.
     Since we are not tracking TNs (P == L) only adds to TP.
@@ -169,9 +221,16 @@ def checklist_confusion_matrix(
         ground_truth: Checklist,
         prediction: Checklist) -> ConfusionMatrixMetricValue:
     """
-    Calculates agreement between ground truth and predicted checklist items
+    Calculates agreement between ground truth and predicted checklist items:
 
-    Also not tracking TNs
+    Calculation:
+        - When a prediction matches a label that counts as a true postivie.
+        - When a prediction was made and does not have a corresponding label this is counted as a false postivie
+        - When a label does not have a corresponding prediction this is counted as a false negative
+
+    We are also not tracking TNs since we don't know the number of possible classes
+     (and they aren't necessary for precision/recall/f1).
+
     """
     key = get_identifying_key(prediction.answer, ground_truth.answer)
     schema_ids_pred = {getattr(answer, key) for answer in prediction.answer}
@@ -185,19 +244,22 @@ def checklist_confusion_matrix(
     return [tps, fps, 0, fns]
 
 
-def mask_confusion_matrix(
-        ground_truths: List[ObjectAnnotation],
-        predictions: List[ObjectAnnotation], iou,
-        include_subclasses: bool) -> Optional[ScalarMetricValue]:
+def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
+                          predictions: List[ObjectAnnotation],
+                          include_subclasses: bool,
+                          iou: float) -> Optional[ScalarMetricValue]:
     """
-    Computes iou score for all features with the same feature schema id.
-    Calculation includes subclassifications.
+    Computes confusion matrix metric for two masks
+
+    Important:
+        - If including subclasses in the calculation, then the metrics are computed the same as if it were object detection.
+        - Each mask is its own instance. Otherwise this metric is computed as pixel level annotations.
 
     Args:
         ground_truths: List of ground truth mask annotations
         predictions: List of prediction mask annotations
     Returns:
-        float representing the iou score for the masks
+        confusion matrix as a list: [TP,FP,TN,FN]
     """
     if has_no_matching_annotations(ground_truths, predictions):
         return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
@@ -205,13 +267,12 @@ def mask_confusion_matrix(
         return None
 
     if include_subclasses:
-        # This results in a faily drastically different value.
+        # This results in a faily drastically different value than without subclasses.
         # If we have subclasses set to True, then this is object detection with masks
-        # Otherwise this will flatten the masks.
-        # TODO: Make this more apprent in the configuration.
+        # Otherwise this will compute metrics on each pixel.
         pairs = _get_mask_pairs(ground_truths, predictions)
         return object_pair_confusion_matrix(
-            pairs, iou, include_subclasses=include_subclasses)
+            pairs, include_subclasses=include_subclasses, iou=iou)
 
     prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
                            axis=0)

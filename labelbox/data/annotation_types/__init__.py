@@ -32,3 +32,5 @@ from .metrics import ScalarMetric
 from .metrics import ScalarMetricAggregation
 from .metrics import ConfusionMatrixMetric
 from .metrics import ConfusionMatrixAggregation
+from .metrics import ScalarMetricValue
+from .metrics import ConfusionMatrixMetricValue

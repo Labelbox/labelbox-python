@@ -19,17 +19,17 @@ def confusion_matrix_metric(ground_truths: List[Union[
                             include_subclasses=True,
                             iou=0.5) -> List[ConfusionMatrixMetric]:
     """
-    Computes miou between two sets of annotations.
+    Computes confusion matrix metrics between two sets of annotations.
     This will most commonly be used for data row level metrics.
-    Each class in the annotation list is weighted equally in the iou score.
+    On the front end these will be displayed as precision, recall, and f1 scores.
 
     Args:
         ground_truth : Label containing human annotations or annotations known to be correct
         prediction: Label representing model predictions
-        include_subclasses (bool): Whether or not to include subclasses in the iou calculation.
+        include_subclasses (bool): Whether or not to include subclasses in the calculation.
             If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
     Returns:
-        Returns a list of ScalarMetrics. Will be empty if there were no predictions and labels. Otherwise a single metric will be returned.
+        Returns a list of ConfusionMatrixMetrics. Will be empty if there were no predictions and labels. Otherwise a single metric will be returned.
     """
     if not (0. < iou < 1.):
         raise ValueError("iou must be between 0 and 1")
@@ -53,15 +53,16 @@ def feature_confusion_matrix_metric(
     iou: float = 0.5,
 ) -> List[ConfusionMatrixMetric]:
     """
-    Computes the miou for each type of class in the list of annotations.
+    Computes the confusion matrix metrics for each type of class in the list of annotations.
+    On the front end these will be displayed as precision, recall, and f1 scores.
 
     Args:
         ground_truth : Label containing human annotations or annotations known to be correct
         prediction: Label representing model predictions
-        include_subclasses (bool): Whether or not to include subclasses in the iou calculation.
+        include_subclasses (bool): Whether or not to include subclasses in the calculation.
             If set to True, the iou between two overlapping objects of the same type is 0 if the subclasses are not the same.
     Returns:
-        Returns a list of ScalarMetrics.
+        Returns a list of ConfusionMatrixMetrics.
         There will be one metric for each class in the union of ground truth and prediction classes.
     """
     # Classifications are supported because we just take a naive approach to them..
