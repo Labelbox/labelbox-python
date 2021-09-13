@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 from ...annotation_types import (Label, ObjectAnnotation,
                                  ClassificationAnnotation)
 
-from ..processing import get_feature_pairs
+from ..group import get_feature_pairs
 from .calculation import confusion_matrix
 from .calculation import feature_confusion_matrix
 import numpy as np
@@ -41,8 +41,7 @@ def confusion_matrix_metric(ground_truths: List[Union[
         return []
 
     return [
-        ConfusionMatrixMetric(
-            metric_name=f"confusion_matrix_{int(iou*100)}pct_iou", value=value)
+        ConfusionMatrixMetric(metric_name=f"{int(iou*100)}pct_iou", value=value)
     ]
 
 
@@ -75,8 +74,7 @@ def feature_confusion_matrix_metric(
         if value is None:
             continue
         metrics.append(
-            ConfusionMatrixMetric(
-                metric_name=f"confusion_matrix_{int(iou*100)}pct_iou",
-                feature_name=key,
-                value=value))
+            ConfusionMatrixMetric(metric_name=f"{int(iou*100)}pct_iou",
+                                  feature_name=key,
+                                  value=value))
     return metrics
