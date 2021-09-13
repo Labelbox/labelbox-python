@@ -13,8 +13,8 @@ from labelbox.data.metrics.confusion_matrix.confusion_matrix import confusion_ma
 ])
 def test_overlapping_objects(tool_examples):
     for example in tool_examples:
-        score = confusion_matrix_metric(example.predictions,
-                                        example.ground_truths)
+        score = confusion_matrix_metric(example.ground_truths,
+                                        example.predictions)
 
         if len(example.expected) == 0:
             assert len(score) == 0
@@ -33,8 +33,8 @@ def test_overlapping_objects(tool_examples):
      fixture_ref('radio_pairs')])
 def test_overlapping_classifications(tool_examples):
     for example in tool_examples:
-        score = confusion_matrix_metric(example.predictions,
-                                        example.ground_truths)
+        score = confusion_matrix_metric(example.ground_truths,
+                                        example.predictions)
         if len(example.expected) == 0:
             assert len(score) == 0
         else:

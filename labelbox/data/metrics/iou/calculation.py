@@ -222,7 +222,7 @@ def _get_vector_pairs(
     # Get iou score for all pairs of ground truths and predictions
     """
     pairs = []
-    for prediction, ground_truth in product(predictions, ground_truths):
+    for ground_truth, prediction in product(ground_truths, predictions):
         if isinstance(prediction.value, Geometry) and isinstance(
                 ground_truth.value, Geometry):
             if isinstance(prediction.value, (Line, Point)):
@@ -232,7 +232,7 @@ def _get_vector_pairs(
             else:
                 score = _polygon_iou(prediction.value.shapely,
                                      ground_truth.value.shapely)
-            pairs.append((prediction, ground_truth, score))
+            pairs.append((ground_truth, prediction, score))
     return pairs
 
 
@@ -243,12 +243,12 @@ def _get_mask_pairs(
     # Get iou score for all pairs of ground truths and predictions
     """
     pairs = []
-    for prediction, ground_truth in product(predictions, ground_truths):
+    for ground_truth, prediction in product(ground_truths, predictions):
         if isinstance(prediction.value, Mask) and isinstance(
                 ground_truth.value, Mask):
             score = _mask_iou(prediction.value.draw(color=1),
                               ground_truth.value.draw(color=1))
-            pairs.append((prediction, ground_truth, score))
+            pairs.append((ground_truth, prediction, score))
     return pairs
 
 
