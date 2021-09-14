@@ -23,7 +23,7 @@ class ConfusionMatrixMetric(BaseMetric):
     In the editor, this provides precision, recall, and f-scores.
     This should be used over multiple scalar metrics so that aggregations are accurate.
 
-    value should be a tuple representing:
+    Value should be a tuple representing:
       [True Positive Count, False Positive Count, True Negative Count, False Negative Count]
 
     aggregation cannot be adjusted for confusion matrix metrics.

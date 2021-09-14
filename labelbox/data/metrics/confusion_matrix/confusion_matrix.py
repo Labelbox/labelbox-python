@@ -20,7 +20,7 @@ def confusion_matrix_metric(ground_truths: List[Union[
                             iou=0.5) -> List[ConfusionMatrixMetric]:
     """
     Computes confusion matrix metrics between two sets of annotations.
-    This will most commonly be used for data row level metrics.
+    These annotations should relate to the same data (image/video).
     On the front end these will be displayed as precision, recall, and f1 scores.
 
     Args:
@@ -53,6 +53,7 @@ def feature_confusion_matrix_metric(
 ) -> List[ConfusionMatrixMetric]:
     """
     Computes the confusion matrix metrics for each type of class in the list of annotations.
+    These annotations should relate to the same data (image/video).
     On the front end these will be displayed as precision, recall, and f1 scores.
 
     Args:
