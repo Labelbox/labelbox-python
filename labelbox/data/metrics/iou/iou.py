@@ -16,7 +16,7 @@ def miou_metric(ground_truths: List[Union[ObjectAnnotation,
                 include_subclasses=True) -> List[ScalarMetric]:
     """
     Computes miou between two sets of annotations.
-    This will most commonly be used for data row level metrics.
+    These annotations should relate to the same data (image/video).
     Each class in the annotation list is weighted equally in the iou score.
 
     Args:
@@ -41,6 +41,7 @@ def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
                         include_subclasses=True) -> List[ScalarMetric]:
     """
     Computes the miou for each type of class in the list of annotations.
+    These annotations should relate to the same data (image/video).
 
     Args:
         ground_truth : Label containing human annotations or annotations known to be correct

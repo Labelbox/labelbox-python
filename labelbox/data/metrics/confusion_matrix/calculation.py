@@ -81,6 +81,8 @@ def classification_confusion_matrix(
 ) -> ConfusionMatrixMetricValue:
     """
     Computes iou score for all features with the same feature schema id.
+    Because these predictions and ground truths are already sorted by schema id,
+    there can only be one of each (or zero if the classification was not predicted or labeled).
 
     Args:
         ground_truths: List of ground truth classification annotations
