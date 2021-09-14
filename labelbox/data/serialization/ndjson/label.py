@@ -1,7 +1,4 @@
 from itertools import groupby
-
-from labelbox.data.annotation_types.metrics import ScalarMetric
-
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
@@ -14,13 +11,16 @@ from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.classification import Dropdown
-from .metric import NDScalarMetric, NDMetricAnnotation
+from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
+
+from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType
 
 
 class NDLabel(BaseModel):
-    annotations: List[Union[NDObjectType, NDClassificationType, NDScalarMetric]]
+    annotations: List[Union[NDObjectType, NDClassificationType,
+                            NDConfusionMatrixMetric, NDScalarMetric]]
 
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
@@ -39,6 +39,7 @@ class NDLabel(BaseModel):
     def _generate_annotations(
         self, grouped_annotations: Dict[str, List[Union[NDObjectType,
                                                         NDClassificationType,
+                                                        NDConfusionMatrixMetric,
                                                         NDScalarMetric]]]
     ) -> Generator[Label, None, None]:
 
@@ -49,7 +50,8 @@ class NDLabel(BaseModel):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
-                elif isinstance(annotation, NDScalarMetric):
+                elif isinstance(annotation,
+                                (NDScalarMetric, NDConfusionMatrixMetric)):
                     annots.append(NDMetricAnnotation.to_common(annotation))
                 else:
                     raise TypeError(
@@ -113,7 +115,7 @@ class NDLabel(BaseModel):
                 yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation, ObjectAnnotation):
                 yield NDObject.from_common(annotation, label.data)
-            elif isinstance(annotation, ScalarMetric):
+            elif isinstance(annotation, (ScalarMetric, ConfusionMatrixMetric)):
                 yield NDMetricAnnotation.from_common(annotation, label.data)
             else:
                 raise TypeError(
