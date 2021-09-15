@@ -134,9 +134,7 @@ def client(environ: str):
 
 
 @pytest.fixture(scope="session")
-def image_url(client, environ: str):
-    if environ == Environ.LOCAL:
-        return IMG_URL
+def image_url(client):
     return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
@@ -214,9 +212,11 @@ LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 @pytest.fixture
 def label_pack(project, rand_gen, image_url):
     client = project.client
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=image_url)
+    dataset = client.create_dataset(name=rand_gen(str))
+    project.datasets.connect(dataset)
+    data_row = dataset.create_data_row(row_data=IMG_URL)
     label = project.create_label(data_row=data_row, label=rand_gen(str))
+    time.sleep(10)
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
 

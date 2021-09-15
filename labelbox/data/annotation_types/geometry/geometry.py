@@ -27,6 +27,7 @@ class Geometry(BaseModel, ABC):
                 raise ValueError(
                     "Must either provide canvas or height and width")
             canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        canvas = np.ascontiguousarray(canvas)
         return canvas
 
     @property

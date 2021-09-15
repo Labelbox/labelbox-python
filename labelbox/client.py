@@ -146,6 +146,7 @@ class Client:
             }).encode('utf-8')
         elif data is None:
             raise ValueError("query and data cannot both be none")
+
         try:
             request = {
                 'url': self.endpoint,

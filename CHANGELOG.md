@@ -1,4 +1,13 @@
 # Changelog
+# Version 3.5.0 (2021-15-09)
+## Added
+* Diagnostics custom metrics
+    * Metric annotation types
+    * Update ndjson converter to be compatible with metric types
+    * Metric library for computing confusion matrix metrics and iou
+    * Demo notebooks under `examples/diagnostics`
+* COCO Converter
+* Detectron2 example integration notebooks
 
 # Version 3.4.1 (2021-09-10)
 ## Fix
