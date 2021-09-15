@@ -1,2 +1,2 @@
-from .scalar import ScalarMetric, CustomScalarMetric
-from .aggregations import MetricAggregation
+from .scalar import ScalarMetric, ScalarMetricAggregation, ScalarMetricValue
+from .confusion_matrix import ConfusionMatrixMetric, ConfusionMatrixAggregation, ConfusionMatrixMetricValue

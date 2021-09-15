@@ -299,15 +299,26 @@ def predictions(object_predictions, classification_predictions):
 @pytest.fixture
 def model(client, rand_gen, configured_project):
     ontology = configured_project.ontology()
-
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
-    return client.create_model(data["name"], data["ontology_id"])
+    model = client.create_model(data["name"], data["ontology_id"])
+    yield model
+    try:
+        model.delete()
+    except:
+        # Already was deleted by the test
+        pass
 
 
 @pytest.fixture
 def model_run(rand_gen, model):
     name = rand_gen(str)
-    return model.create_model_run(name)
+    model_run = model.create_model_run(name)
+    yield model_run
+    try:
+        model_run.delete()
+    except:
+        # Already was deleted by the test
+        pass
 
 
 @pytest.fixture
@@ -320,14 +331,11 @@ def model_run_annotation_groups(client, configured_project,
         client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
         model_run_predictions)
     upload_task.wait_until_done()
-
+    label_ids = []
     for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
-        annotation_submit_fn(configured_project.uid, data_row_id)
-
+        label_ids.append(
+            annotation_submit_fn(configured_project.uid, data_row_id))
+    model_run.upsert_labels(label_ids)
     time.sleep(3)
-    labels = configured_project.export_labels(download=True)
-    model_run.upsert_labels([label['ID'] for label in labels])
-    time.sleep(3)
-
     yield model_run
     # TODO: Delete resources when that is possible ..

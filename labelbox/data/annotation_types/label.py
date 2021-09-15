@@ -1,5 +1,5 @@
 from collections import defaultdict
-from labelbox.data.annotation_types.metrics.scalar import CustomScalarMetric
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
 
 from typing import Any, Callable, Dict, List, Union, Optional
 
@@ -11,7 +11,7 @@ from ..ontology import get_feature_schema_lookup
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, ImageData
 from .geometry import Mask
-from .metrics import ScalarMetric
+from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
@@ -22,8 +22,8 @@ class Label(BaseModel):
     data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
-                            VideoClassificationAnnotation, CustomScalarMetric,
-                            ScalarMetric]] = []
+                            VideoClassificationAnnotation, ScalarMetric,
+                            ConfusionMatrixMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
