@@ -489,9 +489,9 @@ class LabelImport(AnnotationImport):
             raise ValueError(f"File {path} is not accessible")
 
     @classmethod
-    def create_from_objects(
-            cls, client: "labelbox.Client", project_id: str, name: str,
-            labels: List[Dict[str, Any]]) -> "LabelImport":
+    def create_from_objects(cls, client: "labelbox.Client", project_id: str,
+                            name: str,
+                            labels: List[Dict[str, Any]]) -> "LabelImport":
         """
         Create an label import job from an in memory dictionary
 
@@ -507,8 +507,8 @@ class LabelImport(AnnotationImport):
         if not data_str:
             raise ValueError('labels cannot be empty')
         data = data_str.encode('utf-8')
-        return cls._create_label_import_from_bytes(client, project_id, name, data,
-                                                 len(data))
+        return cls._create_label_import_from_bytes(client, project_id, name,
+                                                   data, len(data))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
@@ -529,13 +529,12 @@ class LabelImport(AnnotationImport):
             query_str = cls._get_url_mutation()
             return cls(
                 client,
-                client.execute(
-                    query_str,
-                    params={
-                        "fileUrl": url,
-                        "projectId": project_id,
-                        'name': name
-                    })["createLabelImport"])
+                client.execute(query_str,
+                               params={
+                                   "fileUrl": url,
+                                   "projectId": project_id,
+                                   'name': name
+                               })["createLabelImport"])
         else:
             raise ValueError(f"Url {url} is not reachable")
 
@@ -566,8 +565,7 @@ class LabelImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                LabelImport, params)
+            raise labelbox.exceptions.ResourceNotFoundError(LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response
@@ -592,9 +590,10 @@ class LabelImport(AnnotationImport):
         }""" % query.results_query_part(cls)
 
     @classmethod
-    def _create_label_import_from_bytes(
-            cls, client: "labelbox.Client", project_id: str, name: str,
-            bytes_data: BinaryIO, content_len: int) -> "LabelImport":
+    def _create_label_import_from_bytes(cls, client: "labelbox.Client",
+                                        project_id: str, name: str,
+                                        bytes_data: BinaryIO,
+                                        content_len: int) -> "LabelImport":
         file_name = f"{project_id}__{name}.ndjson"
         variables = {
             "file": None,
