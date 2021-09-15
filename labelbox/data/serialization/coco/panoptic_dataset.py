@@ -87,7 +87,7 @@ def process_label(label: Label,
                 segments.append(segment)
                 is_thing[annotation.name] = 1 - int(all_stuff)
 
-    mask_file = image.file_name.replace('.jpg', '.png')
+    mask_file = str(image.file_name).replace('.jpg', '.png')
     mask_file = Path(mask_root, mask_file)
     Image.fromarray(canvas.astype(np.uint8)).save(mask_file)
     return image, PanopticAnnotation(
