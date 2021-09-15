@@ -15,8 +15,9 @@ from .annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_de
 from .image import CocoImage, get_image, get_image_id
 
 
-def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx : int,
-                                   image_id : int, category_id : int) -> COCOObjectAnnotation:
+def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx: int,
+                                   image_id: int,
+                                   category_id: int) -> COCOObjectAnnotation:
     # This is going to fill any holes into the multipolygon
     # If you need to support holes use the panoptic data format
     shapely = annotation.value.shapely.simplify(1).buffer(0)
@@ -38,8 +39,9 @@ def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx : int
         iscrowd=0)
 
 
-def vector_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx : int,
-                                     image_id: int, category_id: int) -> COCOObjectAnnotation:
+def vector_to_coco_object_annotation(annotation: ObjectAnnotation,
+                                     annot_idx: int, image_id: int,
+                                     category_id: int) -> COCOObjectAnnotation:
     shapely = annotation.value.shapely
     xmin, ymin, xmax, ymax = shapely.bounds
     segmentation = []
@@ -62,7 +64,8 @@ def vector_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx : i
                                 iscrowd=0)
 
 
-def rle_to_common(class_annotations : COCOObjectAnnotation, class_name : str) -> ObjectAnnotation:
+def rle_to_common(class_annotations: COCOObjectAnnotation,
+                  class_name: str) -> ObjectAnnotation:
     mask = rle_decoding(class_annotations.segmentation.counts,
                         *class_annotations.segmentation.size[::-1])
     return ObjectAnnotation(name=class_name,
@@ -70,7 +73,8 @@ def rle_to_common(class_annotations : COCOObjectAnnotation, class_name : str) ->
                                        color=[1, 1, 1]))
 
 
-def segmentations_to_common(class_annotations : COCOObjectAnnotation, class_name: str) -> List[ObjectAnnotation]:
+def segmentations_to_common(class_annotations: COCOObjectAnnotation,
+                            class_name: str) -> List[ObjectAnnotation]:
     # Technically it is polygons. But the key in coco is called segmentations..
     annotations = []
     for points in class_annotations.segmentation:
@@ -83,10 +87,12 @@ def segmentations_to_common(class_annotations : COCOObjectAnnotation, class_name
     return annotations
 
 
-def process_label(label: Label,
-                  idx : int,
-                  image_root :str,
-                  max_annotations_per_image=10000) -> Tuple[np.ndarray, List[COCOObjectAnnotation], Dict[str, str]]:
+def process_label(
+    label: Label,
+    idx: int,
+    image_root: str,
+    max_annotations_per_image=10000
+) -> Tuple[np.ndarray, List[COCOObjectAnnotation], Dict[str, str]]:
     annot_idx = idx * max_annotations_per_image
     image_id = get_image_id(label, idx)
     image = get_image(label, image_root, image_id)
@@ -119,7 +125,10 @@ class CocoInstanceDataset(BaseModel):
     categories: List[Categories]
 
     @classmethod
-    def from_common(cls, labels: LabelCollection, image_root : Path, max_workers = 8):
+    def from_common(cls,
+                    labels: LabelCollection,
+                    image_root: Path,
+                    max_workers=8):
         all_coco_annotations = []
         categories = {}
         images = []

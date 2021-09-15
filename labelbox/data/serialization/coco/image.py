@@ -26,7 +26,7 @@ def get_image_id(label: Label, idx: int) -> int:
     return idx
 
 
-def get_image(label: Label, image_root : Path, image_id: str) -> CocoImage:
+def get_image(label: Label, image_root: Path, image_id: str) -> CocoImage:
     path = Path(image_root, f"{image_id}.jpg")
     if not path.exists():
         im = Image.fromarray(label.data.value)
@@ -34,10 +34,7 @@ def get_image(label: Label, image_root : Path, image_id: str) -> CocoImage:
         w, h = im.size
     else:
         w, h = imagesize.get(str(path))
-    return CocoImage(id=image_id,
-                     width=w,
-                     height=h,
-                     file_name=Path(path.name))
+    return CocoImage(id=image_id, width=w, height=h, file_name=Path(path.name))
 
 
 def id_to_rgb(id: int) -> Tuple[int, int, int]:
