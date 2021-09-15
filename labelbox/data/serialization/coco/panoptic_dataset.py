@@ -113,17 +113,27 @@ class CocoPanopticDataset(BaseModel):
         coco_categories = {}
         coco_things = {}
         images = []
-        with ProcessPoolExecutor(max_workers=max_workers) as exc:
-            futures = [
-                exc.submit(process_label, label, idx, image_root, mask_root,
-                           all_stuff) for idx, label in enumerate(labels)
+
+        if max_workers:
+            with ProcessPoolExecutor(max_workers=max_workers) as exc:
+                futures = [
+                    exc.submit(process_label, label, idx, image_root, mask_root,
+                               all_stuff) for idx, label in enumerate(labels)
+                ]
+                results = [
+                    future.result() for future in tqdm(as_completed(futures))
+                ]
+        else:
+            results = [
+                process_label(label, idx, image_root, mask_root, all_stuff)
+                for idx, label in enumerate(labels)
             ]
-            for future in tqdm(as_completed(futures)):
-                image, annotation, categories, things = future.result()
-                images.append(image)
-                all_coco_annotations.append(annotation)
-                coco_categories.update(categories)
-                coco_things.update(things)
+
+        for result in results:
+            images.append(result[0])
+            all_coco_annotations.extend(result[1])
+            coco_categories.update(result[2])
+            coco_things.update(result[3])
 
         category_mapping = {
             category_id: idx + 1
