@@ -5,6 +5,8 @@ from collections import defaultdict
 from pydantic import BaseModel
 import numpy as np
 
+from .path import PathSerializerMixin
+
 
 def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
     indices = []
@@ -50,7 +52,7 @@ class COCOObjectAnnotation(BaseModel):
     iscrowd: int = 0
 
 
-class PanopticAnnotation(BaseModel):
+class PanopticAnnotation(PathSerializerMixin):
     # One to one relationship between image and panoptic annotation
     image_id: int
     file_name: Path
