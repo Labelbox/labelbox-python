@@ -311,7 +311,7 @@ def annotation_submit_fn(client):
             })
         features = feature_result['project']['featuresForDataRow']
         feature_ids = [feature['id'] for feature in features]
-        client.execute(
+        res = client.execute(
             """mutation createLabelPyApi ($project_id : ID!,$datarow_id: ID!,$feature_ids: [ID!]!,$time_seconds : Float!) {
                 createLabelFromFeatures(data: {dataRow: { id: $datarow_id },project: { id: $project_id },
                     featureIds: $feature_ids,secondsSpent: $time_seconds}) {id}}""",
@@ -321,6 +321,7 @@ def annotation_submit_fn(client):
                 "feature_ids": feature_ids,
                 "time_seconds": 10
             })
+        return res['createLabelFromFeatures']['id']
 
     return submit
 
@@ -357,9 +358,8 @@ def configured_project_with_label(client, rand_gen, annotation_submit_fn,
     upload_task = MALPredictionImport.create_from_objects(
         client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
-    time.sleep(2)
-    annotation_submit_fn(project.uid, data_row.uid)
-    time.sleep(2)
-    yield project
+    labels = annotation_submit_fn(project.uid, data_row.uid)
+    time.sleep(3)
+    yield [project, labels]
     dataset.delete()
     project.delete()
