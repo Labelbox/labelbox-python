@@ -135,16 +135,25 @@ class CocoInstanceDataset(BaseModel):
         futures = []
         coco_categories = {}
 
-        with ProcessPoolExecutor(max_workers=max_workers) as exc:
-            futures = [
-                exc.submit(process_label, label, idx, image_root)
+        if max_workers:
+            with ProcessPoolExecutor(max_workers=max_workers) as exc:
+                futures = [
+                    exc.submit(process_label, label, idx, image_root)
+                    for idx, label in enumerate(labels)
+                ]
+                results = [
+                    future.result() for future in tqdm(as_completed(futures))
+                ]
+        else:
+            results = [
+                process_label(label, idx, image_root)
                 for idx, label in enumerate(labels)
             ]
-            for future in tqdm(as_completed(futures)):
-                image, annotations, categories = future.result()
-                images.append(image)
-                all_coco_annotations.extend(annotations)
-                coco_categories.update(categories)
+
+        for result in results:
+            images.append(result[0])
+            all_coco_annotations.extend(result[1])
+            coco_categories.update(result[2])
 
         category_mapping = {
             category_id: idx + 1

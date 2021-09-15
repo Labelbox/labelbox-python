@@ -51,7 +51,7 @@ class COCOConverter:
             image_root: Where to save images to
             ignore_existing_data: Whether or not to raise an exception if images already exist.
                 This exists only to support detectons panoptic fpn model which requires two mscoco payloads for the same images.
-            max_workers : Number of workers to process dataset with
+            max_workers : Number of workers to process dataset with. A value of 0 will process all data in the main process
         Returns:
             A dictionary containing labels in the coco object format.
         """
@@ -66,7 +66,7 @@ class COCOConverter:
                            mask_root: Union[Path, str],
                            all_stuff: bool = False,
                            ignore_existing_data=False,
-                           max_workers=8) -> Dict[str, Any]:
+                           max_workers: int = 8) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
         This function will only convert masks, polygons, and rectangles.
@@ -81,7 +81,7 @@ class COCOConverter:
                 To convert them to stuff class set `all_stuff=True`.
             ignore_existing_data: Whether or not to raise an exception if images already exist.
                 This exists only to support detectons panoptic fpn model which requires two mscoco payloads for the same images.
-            max_workers : Number of workers to process dataset with
+            max_workers : Number of workers to process dataset with. A value of 0 will process all data in the main process.
         Returns:
             A dictionary containing labels in the coco panoptic format.
         """
