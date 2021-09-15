@@ -23,6 +23,7 @@ def validate_path(path: Union[Path, str], name: str):
     path = Path(path)
     if not path.exists():
         raise ValueError(f"{name} `{path}` must exist")
+    return path
 
 
 class COCOConverter:
