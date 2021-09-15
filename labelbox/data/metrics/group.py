@@ -8,9 +8,8 @@ try:
 except ImportError:
     from typing_extensions import Literal
 
-from labelbox.data.annotation_types import Label
-from labelbox.data.annotation_types.collection import LabelList
-from labelbox.data.annotation_types.feature import FeatureSchema
+from ..annotation_types.feature import FeatureSchema
+from ..annotation_types import ObjectAnnotation, Label, LabelList
 
 
 def get_identifying_key(
@@ -158,3 +157,19 @@ def _create_feature_lookup(features: List[FeatureSchema],
     for feature in features:
         grouped_features[getattr(feature, key)].append(feature)
     return grouped_features
+
+
+def has_no_matching_annotations(ground_truths: List[ObjectAnnotation],
+                                predictions: List[ObjectAnnotation]):
+    if len(ground_truths) and not len(predictions):
+        # No existing predictions but existing ground truths means no matches.
+        return True
+    elif not len(ground_truths) and len(predictions):
+        # No ground truth annotations but there are predictions means no matches
+        return True
+    return False
+
+
+def has_no_annotations(ground_truths: List[ObjectAnnotation],
+                       predictions: List[ObjectAnnotation]):
+    return not len(ground_truths) and not len(predictions)
