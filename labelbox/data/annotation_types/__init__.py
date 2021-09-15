@@ -29,4 +29,8 @@ from .collection import LabelList
 from .collection import LabelGenerator
 
 from .metrics import ScalarMetric
-from .metrics import MetricAggregation
+from .metrics import ScalarMetricAggregation
+from .metrics import ConfusionMatrixMetric
+from .metrics import ConfusionMatrixAggregation
+from .metrics import ScalarMetricValue
+from .metrics import ConfusionMatrixMetricValue
