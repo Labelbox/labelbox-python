@@ -1,15 +1,10 @@
 from typing import Dict, Any, Union
-from pathlib import Path, PosixPath, WindowsPath
+from pathlib import Path
 import os
-
-import pydantic.json
 
 from labelbox.data.annotation_types.collection import LabelCollection, LabelGenerator
 from labelbox.data.serialization.coco.instance_dataset import CocoInstanceDataset
 from labelbox.data.serialization.coco.panoptic_dataset import CocoPanopticDataset
-
-pydantic.json.ENCODERS_BY_TYPE[PosixPath] = str
-pydantic.json.ENCODERS_BY_TYPE[WindowsPath] = str
 
 
 def create_path_if_not_exists(path: Union[Path, str],

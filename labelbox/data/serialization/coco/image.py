@@ -1,14 +1,14 @@
 from pathlib import Path
 
 from typing import Optional, Tuple
-from pydantic import BaseModel
 from PIL import Image
 import imagesize
 
+from .path import PathSerializerMixin
 from labelbox.data.annotation_types import Label
 
 
-class CocoImage(BaseModel):
+class CocoImage(PathSerializerMixin):
     id: int
     width: int
     height: int
