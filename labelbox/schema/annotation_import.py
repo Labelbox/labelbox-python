@@ -330,7 +330,7 @@ class MALPredictionImport(AnnotationImport):
         """
         if os.path.exists(path):
             with open(path, 'rb') as f:
-                return cls._create_mea_import_from_bytes(
+                return cls._create_mal_import_from_bytes(
                     client, project_id, name, f,
                     os.stat(path).st_size)
         else:
@@ -355,7 +355,7 @@ class MALPredictionImport(AnnotationImport):
         if not data_str:
             raise ValueError('annotations cannot be empty')
         data = data_str.encode('utf-8')
-        return cls._create_mea_import_from_bytes(client, project_id, name, data,
+        return cls._create_mal_import_from_bytes(client, project_id, name, data,
                                                  len(data))
 
     @classmethod
@@ -440,7 +440,7 @@ class MALPredictionImport(AnnotationImport):
         }""" % query.results_query_part(cls)
 
     @classmethod
-    def _create_mea_import_from_bytes(
+    def _create_mal_import_from_bytes(
             cls, client: "labelbox.Client", project_id: str, name: str,
             bytes_data: BinaryIO, content_len: int) -> "MALPredictionImport":
         file_name = f"{project_id}__{name}.ndjson"
@@ -454,3 +454,155 @@ class MALPredictionImport(AnnotationImport):
         res = cls._create_from_bytes(client, variables, query_str, file_name,
                                      bytes_data)
         return cls(client, res["createModelAssistedLabelingPredictionImport"])
+
+
+class LabelImport(AnnotationImport):
+    project = Relationship.ToOne("Project", cache=True)
+
+    @property
+    def parent_id(self) -> str:
+        """
+        Identifier for this import. Used to refresh the status
+        """
+        return self.project().uid
+
+    @classmethod
+    def create_from_file(cls, client: "labelbox.Client", project_id: str,
+                         name: str, path: str) -> "LabelImport":
+        """
+        Create a label import job from a file of annotations
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id: Project to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            path: Path to ndjson file containing annotations
+        Returns:
+            LabelImport
+        """
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                return cls._create_label_import_from_bytes(
+                    client, project_id, name, f,
+                    os.stat(path).st_size)
+        else:
+            raise ValueError(f"File {path} is not accessible")
+
+    @classmethod
+    def create_from_objects(
+            cls, client: "labelbox.Client", project_id: str, name: str,
+            labels: List[Dict[str, Any]]) -> "LabelImport":
+        """
+        Create an label import job from an in memory dictionary
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id: Project to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            labels: List of labels 
+        Returns:
+            LabelImport
+        """
+        data_str = ndjson.dumps(labels)
+        if not data_str:
+            raise ValueError('labels cannot be empty')
+        data = data_str.encode('utf-8')
+        return cls._create_label_import_from_bytes(client, project_id, name, data,
+                                                 len(data))
+
+    @classmethod
+    def create_from_url(cls, client: "labelbox.Client", project_id: str,
+                        name: str, url: str) -> "LabelImport":
+        """
+        Create an label annotation import job from a url
+        The url must point to a file containing label annotations.
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id: Project to import labels into
+            name: Name of the import job. Can be used to reference the task later
+            url: Url pointing to file to upload
+        Returns:
+            LabelImport
+        """
+        if requests.head(url):
+            query_str = cls._get_url_mutation()
+            return cls(
+                client,
+                client.execute(
+                    query_str,
+                    params={
+                        "fileUrl": url,
+                        "projectId": project_id,
+                        'name': name
+                    })["createLabelImport"])
+        else:
+            raise ValueError(f"Url {url} is not reachable")
+
+    @classmethod
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  project_id: str,
+                  name: str,
+                  as_json: bool = False) -> "LabelImport":
+        """
+        Retrieves an label import job.
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id:  ID used for querying import jobs
+            name: Name of the import job.
+        Returns:
+            LabelImport
+        """
+        query_str = """query getLabelImportPyApi($projectId : ID!, $name: String!) {
+            labelImport(
+                where: {projectId: $projectId, name: $name}){
+                    %s
+                }}""" % query.results_query_part(cls)
+        params = {
+            "projectId": project_id,
+            "name": name,
+        }
+        response = client.execute(query_str, params)
+        if response is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                LabelImport, params)
+        response = response["labelImport"]
+        if as_json:
+            return response
+        return cls(client, response)
+
+    @classmethod
+    def _get_url_mutation(cls) -> str:
+        return """mutation createLabelImportPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
+            createLabelImport(data: {
+                projectId: $projectId
+                name: $name
+                fileUrl: $fileUrl
+            }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _get_file_mutation(cls) -> str:
+        return """mutation createLabelImportPyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+            createLabelImport(data: {
+                projectId: $projectId name: $name filePayload: { file: $file, contentLength: $contentLength}
+        }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _create_label_import_from_bytes(
+            cls, client: "labelbox.Client", project_id: str, name: str,
+            bytes_data: BinaryIO, content_len: int) -> "LabelImport":
+        file_name = f"{project_id}__{name}.ndjson"
+        variables = {
+            "file": None,
+            "contentLength": content_len,
+            "projectId": project_id,
+            "name": name
+        }
+        query_str = cls._get_file_mutation()
+        res = cls._create_from_bytes(client, variables, query_str, file_name,
+                                     bytes_data)
+        return cls(client, res["createLabelImport"])
