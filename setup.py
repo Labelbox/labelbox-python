@@ -31,7 +31,7 @@ setuptools.setup(
     extras_require={
         'data': [
             "shapely", "geojson", "numpy", "rasterio", "PILLOW",
-            "opencv-python", "typeguard", "tqdm"
+            "opencv-python", "typeguard", "tqdm", "imagesize"
         ],
     },
     classifiers=[

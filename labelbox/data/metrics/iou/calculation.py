@@ -254,9 +254,16 @@ def _get_mask_pairs(
 
 def _polygon_iou(poly1: Polygon, poly2: Polygon) -> ScalarMetricValue:
     """Computes iou between two shapely polygons."""
+    poly1, poly2 = _ensure_valid_poly(poly1), _ensure_valid_poly(poly2)
     if poly1.intersects(poly2):
         return poly1.intersection(poly2).area / poly1.union(poly2).area
     return 0.
+
+
+def _ensure_valid_poly(poly):
+    if not poly.is_valid:
+        return poly.buffer(0)
+    return poly
 
 
 def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> ScalarMetricValue:
