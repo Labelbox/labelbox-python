@@ -1,5 +1,16 @@
 # Changelog
 
+# Version 3.4.1 (2021-09-10)
+## Fix
+* Iam validation exception message
+
+# Version 3.4.0 (2021-09-10)
+## Added
+* New `IAMIntegration` entity
+* `Client.create_dataset()` compatibility with delegated access
+* `Organization.get_iam_integrations()` to list all integrations available to an org
+* `Organization.get_default_iam_integration()` to only get the defaault iam integration
+
 # Version 3.3.0 (2021-09-02)
 ## Added
 * `Dataset.create_data_rows_sync()` for synchronous bulk uploads of data rows

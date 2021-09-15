@@ -1,3 +1,4 @@
+from labelbox.schema import iam_integration
 from labelbox import utils
 import os
 import json
@@ -43,6 +44,8 @@ class Dataset(DbObject, Updateable, Deletable):
     data_rows = Relationship.ToMany("DataRow", False)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
+    iam_integration = Relationship.ToOne("IAMIntegration", False,
+                                         "iam_integration", "signer")
 
     def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
@@ -116,7 +119,7 @@ class Dataset(DbObject, Updateable, Deletable):
     def create_data_rows(self, items):
         """ Asynchronously bulk upload data rows
 
-        Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 100 data rows.
+        Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
 
         Args:
             items (iterable of (dict or str)): See the docstring for `Dataset._create_descriptor_file` for more information
