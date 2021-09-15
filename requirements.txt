@@ -11,3 +11,4 @@ rasterio
 PILLOW
 opencv-python
 typeguard
+imagesize
