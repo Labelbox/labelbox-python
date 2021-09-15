@@ -1,4 +1,3 @@
-
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, Any, List, Union
 from pathlib import Path
@@ -104,8 +103,12 @@ class CocoPanopticDataset(BaseModel):
     categories: List[Categories]
 
     @classmethod
-    def from_common(cls, labels: LabelCollection, image_root, mask_root,
-                    all_stuff, max_workers = 8):
+    def from_common(cls,
+                    labels: LabelCollection,
+                    image_root,
+                    mask_root,
+                    all_stuff,
+                    max_workers=8):
         all_coco_annotations = []
         coco_categories = {}
         coco_things = {}
@@ -167,8 +170,7 @@ class CocoPanopticDataset(BaseModel):
                 raise ValueError(
                     f"COCO masks must be stored as png files and their extension must be `.png`. Found {annotation.file_name}"
                 )
-            mask = MaskData(
-                file_path=Path(mask_root, annotation.file_name))
+            mask = MaskData(file_path=Path(mask_root, annotation.file_name))
 
             for segmentation in annotation.segments_info:
                 category = category_lookup[segmentation.category_id]

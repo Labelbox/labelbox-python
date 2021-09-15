@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import numpy as np
 
 
-def rle_decoding(rle_arr : List[int], w : int, h: int) -> np.ndarray:
+def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
     indices = []
     for idx, cnt in zip(rle_arr[0::2], rle_arr[1::2]):
         indices.extend(list(range(idx - 1,
