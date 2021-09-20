@@ -266,7 +266,7 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_url_mutation(cls) -> str:
-        return """mutation createMEAPredictionImportPyApi($modelRunId : ID!, $name: String!, $fileUrl: String!) {
+        return """mutation createMEAPredictionImportByUrlPyApi($modelRunId : ID!, $name: String!, $fileUrl: String!) {
             createModelErrorAnalysisPredictionImport(data: {
                 modelRunId: $modelRunId
                 name: $name
@@ -276,7 +276,7 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_file_mutation(cls) -> str:
-        return """mutation createMEAPredictionImportPyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        return """mutation createMEAPredictionImportByFilePyApi($modelRunId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createModelErrorAnalysisPredictionImport(data: {
                 modelRunId: $modelRunId name: $name filePayload: { file: $file, contentLength: $contentLength}
         }) {%s}
@@ -423,7 +423,7 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_url_mutation(cls) -> str:
-        return """mutation createMALPredictionImportPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
+        return """mutation createMALPredictionImportByUrlPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
             createModelAssistedLabelingPredictionImport(data: {
                 projectId: $projectId
                 name: $name
@@ -433,7 +433,7 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_file_mutation(cls) -> str:
-        return """mutation createMALPredictionImportPyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        return """mutation createMALPredictionImportByFilePyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createModelAssistedLabelingPredictionImport(data: {
                 projectId: $projectId name: $name filePayload: { file: $file, contentLength: $contentLength}
         }) {%s}
@@ -493,7 +493,7 @@ class LabelImport(AnnotationImport):
                             name: str,
                             labels: List[Dict[str, Any]]) -> "LabelImport":
         """
-        Create an label import job from an in memory dictionary
+        Create a label import job from an in memory dictionary
 
         Args:
             client: Labelbox Client for executing queries
@@ -514,7 +514,7 @@ class LabelImport(AnnotationImport):
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
                         name: str, url: str) -> "LabelImport":
         """
-        Create an label annotation import job from a url
+        Create a label annotation import job from a url
         The url must point to a file containing label annotations.
 
         Args:
@@ -573,7 +573,7 @@ class LabelImport(AnnotationImport):
 
     @classmethod
     def _get_url_mutation(cls) -> str:
-        return """mutation createLabelImportPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
+        return """mutation createLabelImportByUrlPyApi($projectId : ID!, $name: String!, $fileUrl: String!) {
             createLabelImport(data: {
                 projectId: $projectId
                 name: $name
@@ -583,7 +583,7 @@ class LabelImport(AnnotationImport):
 
     @classmethod
     def _get_file_mutation(cls) -> str:
-        return """mutation createLabelImportPyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
+        return """mutation createLabelImportByFilePyApi($projectId : ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
             createLabelImport(data: {
                 projectId: $projectId name: $name filePayload: { file: $file, contentLength: $contentLength}
         }) {%s}
