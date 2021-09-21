@@ -39,7 +39,8 @@ def test_validate_file(client, configured_project):
         #Schema ids shouldn't match
 
 
-def test_create_from_objects(configured_project, predictions, annotation_import_test_helpers):
+def test_create_from_objects(configured_project, predictions,
+                             annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
     bulk_import_request = configured_project.upload_annotations(
@@ -50,7 +51,8 @@ def test_create_from_objects(configured_project, predictions, annotation_import_
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    annotation_import_test_helpers.assert_file_content(bulk_import_request.input_file_url, predictions)
+    annotation_import_test_helpers.assert_file_content(
+        bulk_import_request.input_file_url, predictions)
 
 
 def test_create_from_local_file(tmp_path, predictions, configured_project):
@@ -68,7 +70,8 @@ def test_create_from_local_file(tmp_path, predictions, configured_project):
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    annotation_import_test_helpers.assert_file_content(bulk_import_request.input_file_url, predictions)
+    annotation_import_test_helpers.assert_file_content(
+        bulk_import_request.input_file_url, predictions)
 
 
 def test_get(client, configured_project):

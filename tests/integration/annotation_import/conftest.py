@@ -7,7 +7,7 @@ import ndjson
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import MALPredictionImport, AnnotationImportState 
+from labelbox.schema.annotation_import import MALPredictionImport, AnnotationImportState
 
 
 @pytest.fixture
@@ -346,13 +346,14 @@ def model_run_annotation_groups(client, configured_project,
 
 
 class AnnotationImportTestHelpers:
+
     @staticmethod
     def assert_file_content(url: str, predictions):
         response = requests.get(url)
         assert response.text == ndjson.dumps(predictions)
 
     @staticmethod
-    def check_running_state(req, name, url=None): 
+    def check_running_state(req, name, url=None):
         assert req.name == name
         if url is not None:
             assert req.input_file_url == url
@@ -364,4 +365,3 @@ class AnnotationImportTestHelpers:
 @pytest.fixture
 def annotation_import_test_helpers() -> Type[AnnotationImportTestHelpers]:
     return AnnotationImportTestHelpers()
-

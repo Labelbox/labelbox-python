@@ -14,18 +14,26 @@ from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 def test_create_from_url(client, project, annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    label_import = LabelImport.create_from_url(client=client, project_id=project.uid, name=name, url=url)
-    assert label_import.parent_id == project.uid 
+    label_import = LabelImport.create_from_url(client=client,
+                                               project_id=project.uid,
+                                               name=name,
+                                               url=url)
+    assert label_import.parent_id == project.uid
     annotation_import_test_helpers.check_running_state(label_import, name, url)
 
 
-def test_create_from_objects(client, project, object_predictions, annotation_import_test_helpers):
+def test_create_from_objects(client, project, object_predictions,
+                             annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
-    label_import = LabelImport.create_from_objects(client=client, project_id=project.uid, name=name, labels=object_predictions)
-    assert label_import.parent_id == project.uid 
+    label_import = LabelImport.create_from_objects(client=client,
+                                                   project_id=project.uid,
+                                                   name=name,
+                                                   labels=object_predictions)
+    assert label_import.parent_id == project.uid
     annotation_import_test_helpers.check_running_state(label_import, name)
-    annotation_import_test_helpers.assert_file_content(label_import.input_file_url, object_predictions)
+    annotation_import_test_helpers.assert_file_content(
+        label_import.input_file_url, object_predictions)
 
 
 #   TODO: add me when we add this ability
@@ -48,7 +56,10 @@ def test_get(client, project, annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
-    label_import = LabelImport.create_from_url(client=client, project_id=project.uid, name=name, url=url)
+    label_import = LabelImport.create_from_url(client=client,
+                                               project_id=project.uid,
+                                               name=name,
+                                               url=url)
 
     assert label_import.parent_id == project.uid
     annotation_import_test_helpers.check_running_state(label_import, name, url)
@@ -57,7 +68,10 @@ def test_get(client, project, annotation_import_test_helpers):
 @pytest.mark.slow
 def test_wait_till_done(client, project, predictions):
     name = str(uuid.uuid4())
-    label_import = LabelImport.create_from_objects(client=client, project_id=project.uid, name=name, labels=predictions)
+    label_import = LabelImport.create_from_objects(client=client,
+                                                   project_id=project.uid,
+                                                   name=name,
+                                                   labels=predictions)
 
     assert len(label_import.inputs) == len(predictions)
     label_import.wait_until_done()
@@ -68,9 +82,7 @@ def test_wait_till_done(client, project, predictions):
     # # Check that the status files are being returned as expected
     # assert len(label_import.errors) == 0
     assert len(label_import.inputs) == len(predictions)
-    input_uuids = [
-        input_annot['uuid'] for input_annot in label_import.inputs
-    ]
+    input_uuids = [input_annot['uuid'] for input_annot in label_import.inputs]
     inference_uuids = [pred['uuid'] for pred in predictions]
     assert set(input_uuids) == set(inference_uuids)
     assert len(label_import.statuses) == len(predictions)
@@ -80,4 +92,3 @@ def test_wait_till_done(client, project, predictions):
         input_annot['uuid'] for input_annot in label_import.statuses
     ]
     assert set(input_uuids) == set(status_uuids)
-
