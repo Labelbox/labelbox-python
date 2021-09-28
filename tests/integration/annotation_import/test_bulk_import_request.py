@@ -55,7 +55,8 @@ def test_create_from_objects(configured_project, predictions,
         bulk_import_request.input_file_url, predictions)
 
 
-def test_create_from_local_file(tmp_path, predictions, configured_project, annotation_import_test_helpers):
+def test_create_from_local_file(tmp_path, predictions, configured_project,
+                                annotation_import_test_helpers):
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
