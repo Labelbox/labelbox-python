@@ -429,8 +429,6 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-
-
     def queue_data_rows(self, data_rows):
         """Add DataRows to the Project queue"""
 
@@ -498,7 +496,6 @@ class Project(DbObject, Updateable, Deletable):
             self._update_queue_mode("DISABLED")
         else:
             raise ValueError("Must provide either `BATCH` or `DATASET` as a mode")
-
 
     def _update_queue_mode(self, status: str):
 
