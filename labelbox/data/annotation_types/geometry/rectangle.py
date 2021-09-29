@@ -51,3 +51,8 @@ class Rectangle(Geometry):
         if thickness == -1:
             return cv2.fillPoly(canvas, pts, color)
         return cv2.polylines(canvas, pts, True, color, thickness)
+
+    @classmethod
+    def from_tlhw(cls, top: float, left: float, height: float, width: float):
+        """Convert from top, left, height, width format"""
+        return Rectangle(start=Point(x=left, y=top), end=Point(x=left + width, y=top + height))

@@ -18,3 +18,5 @@ def test_rectangle():
 
     raster = rectangle.draw(height=32, width=32)
     assert (cv2.imread("tests/data/assets/rectangle.png") == raster).all()
+
+    alt_rectangle = Rectangle.from_tlhw(top=1, left=0, height=)
