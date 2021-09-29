@@ -34,6 +34,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+MAX_BATCH_SIZE = 1000
+
 
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
@@ -427,6 +429,28 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
+
+
+    def queue_data_rows(self, data_rows):
+        """Add DataRows to the Project queue"""
+
+        if not self._is_batch_mode():
+            warnings.warn("Project not in Batch mode, ")
+
+        method = "submitBatchOfDataRows"
+        name = method + 'PyApi'
+        return self._post_batch(name, method, data_rows)
+
+    def dequeue_data_rows(self, data_rows):
+
+        if not self._is_batch_mode():
+            warnings.warn("Project not in Batch mode")
+
+        method = "removeBatchOfDataRows"
+        name = method + 'PyApi'
+
+        return self._post_batch(name, method, data_rows)
+
     def _post_batch(self, name, method, data_rows):
         """Create """
 
@@ -450,7 +474,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(
             query,
             {"projectId": self.uid, "dataRowIds": ids}
-        )["project"]["submitBatchOfDataRows"]["dataRows"]
+        )["project"][method]["dataRows"]
 
         # TODO: figure out error messaging
         if len(data_rows) == len(res):
@@ -460,26 +484,6 @@ class Project(DbObject, Updateable, Deletable):
             warnings.warn("Some Data Rows were not submitted successfully")
 
         return res
-
-    def queue_data_rows(self, data_rows):
-        """Add DataRows to the Project queue"""
-
-        if not self._is_batch_mode():
-            warnings.warn("Project not in Batch mode, ")
-
-        method = "submitBatchOfDataRows"
-        name = method + 'PyApi'
-        return self._post_batch(name, method, data_rows)
-
-    def dequeue_data_rows(self, data_rows):
-
-        if not self._is_batch_mode():
-            warnings.warn("Project not in Batch mode")
-
-        method = "removeBatchOfDataRows"
-        name = method + 'PyApi'
-
-        return self._post_batch(name, method, data_rows)
 
     def change_queue_mode(self, mode: str):
         """Change the queue between Batch and Datasets mode
@@ -494,6 +498,7 @@ class Project(DbObject, Updateable, Deletable):
             self._update_queue_mode("DISABLED")
         else:
             raise ValueError("Must provide either `BATCH` or `DATASET` as a mode")
+
 
     def _update_queue_mode(self, status: str):
 
