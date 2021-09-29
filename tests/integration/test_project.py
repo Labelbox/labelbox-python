@@ -1,7 +1,5 @@
 import json
 
-import requests
-import ndjson
 import pytest
 
 from labelbox import Project, LabelingFrontend
@@ -107,3 +105,10 @@ def test_attach_instructions(client, project):
 def test_queued_data_row_export(configured_project):
     result = configured_project.export_queued_data_rows()
     assert len(result) == 1
+
+
+def test_queue_mode(configured_project: Project):
+    assert configured_project.tag_set_status == 'DISABLED'
+    configured_project.change_queue_mode("BATCH")
+    # TODO: understand why this fails
+    assert configured_project.tag_set_status == 'ENABLED'

@@ -1,27 +1,30 @@
 import json
-import time
 import logging
+import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Union, Iterable
 from urllib.parse import urlparse
-import requests
+
 import ndjson
+import requests
 
 from labelbox import utils
-from labelbox.schema.data_row import DataRow
-from labelbox.orm import query
-from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError, LabelboxError
+from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.data_row import DataRow
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
 except AttributeError:
     from backports.datetime_fromisoformat import MonkeyPatch
+
     MonkeyPatch.patch_fromisoformat()
 
 try:
@@ -65,6 +68,7 @@ class Project(DbObject, Updateable, Deletable):
     last_activity_time = Field.DateTime("last_activity_time")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
+    tag_set_status = Field.String("tag_set_status")
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
@@ -248,8 +252,7 @@ class Project(DbObject, Updateable, Deletable):
             if timeout_seconds <= 0:
                 return None
 
-            logger.debug("Project '%s' label export, waiting for server...",
-                         self.uid)
+            logger.debug("Project '%s' label export, waiting for server...", self.uid)
             time.sleep(sleep_time)
 
     def export_issues(self, status=None):
@@ -423,6 +426,104 @@ class Project(DbObject, Updateable, Deletable):
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
+
+    def _post_batch(self, name, method, data_rows):
+        """Create """
+
+        ids = [dr.uid for dr in data_rows]
+
+        if len(ids) > 1000:
+            raise ValueError("1000 Max DataRows at a time")
+
+        query = """mutation %s($projectId: ID!, $dataRowIds: [ID!]!) {
+              project(where: {id: $projectId}) {
+                %s(data: {dataRowIds: $dataRowIds}) {
+                  dataRows {
+                    dataRowId
+                    error
+                  }
+                }
+              }
+            }         
+        """ % (name, method)
+
+        res = self.client.execute(
+            query,
+            {"projectId": self.uid, "dataRowIds": ids}
+        )["project"]["submitBatchOfDataRows"]["dataRows"]
+
+        # TODO: figure out error messaging
+        if len(data_rows) == len(res):
+            raise ValueError("No dataRows were submitted successfully")
+
+        if len(data_rows) > 0:
+            warnings.warn("Some Data Rows were not submitted successfully")
+
+        return res
+
+    def queue_data_rows(self, data_rows):
+        """Add DataRows to the Project queue"""
+
+        if not self._is_batch_mode():
+            warnings.warn("Project not in Batch mode, ")
+
+        method = "submitBatchOfDataRows"
+        name = method + 'PyApi'
+        return self._post_batch(name, method, data_rows)
+
+    def dequeue_data_rows(self, data_rows):
+
+        if not self._is_batch_mode():
+            warnings.warn("Project not in Batch mode")
+
+        method = "removeBatchOfDataRows"
+        name = method + 'PyApi'
+
+        return self._post_batch(name, method, data_rows)
+
+    def change_queue_mode(self, mode: str):
+        """Change the queue between Batch and Datasets mode
+
+        Args:
+            mode: `BATCH` or `DATASET`
+        """
+        if mode == "BATCH":
+            self._update_queue_mode("ENABLED")
+
+        elif mode == "DATASET":
+            self._update_queue_mode("DISABLED")
+        else:
+            raise ValueError("Must provide either `BATCH` or `DATASET` as a mode")
+
+    def _update_queue_mode(self, status: str):
+
+        query_str = """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
+              project(where: {id: $projectId}) {
+                 setTagSetStatus(input: {tagSetStatus: $status}) {
+                    id
+                    tagSetStatus
+                    __typename
+                }
+                __typename
+            }
+        }       
+        """ % "setTagSetStatusPyApi"
+
+        self.client.execute(query_str, {'projectId': self.uid, 'status': status})
+        self.tag_set_status = status
+
+    def queue_mode(self):
+
+        if self._is_batch_mode():
+            return "BATCH"
+        else:
+            return "DATASET"
+
+    def _is_batch_mode(self):
+        if self.tag_set_status == "ENABLED":
+            return True
+        else:
+            return False
 
     def validate_labeling_parameter_overrides(self, data):
         for idx, row in enumerate(data):
@@ -689,7 +790,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-    "consensus average_benchmark_agreement last_activity_time")
+                          "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
