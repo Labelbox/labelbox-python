@@ -1,7 +1,6 @@
 import uuid
 import ndjson
 import pytest
-import requests
 
 from labelbox.schema.annotation_import import AnnotationImportState, MEAPredictionImport
 """
@@ -11,37 +10,33 @@ from labelbox.schema.annotation_import import AnnotationImportState, MEAPredicti
 """
 
 
-def check_running_state(req, name, url=None):
-    assert req.name == name
-    if url is not None:
-        assert req.input_file_url == url
-    assert req.error_file_url is None
-    assert req.status_file_url is None
-    assert req.state == AnnotationImportState.RUNNING
-
-
-def test_create_from_url(model_run_annotation_groups):
+def test_create_from_url(model_run_annotation_groups,
+                         annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     annotation_import = model_run_annotation_groups.add_predictions(
         name=name, predictions=url)
     assert annotation_import.model_run_id == model_run_annotation_groups.uid
-    check_running_state(annotation_import, name, url)
+    annotation_import_test_helpers.check_running_state(annotation_import, name,
+                                                       url)
 
 
-def test_create_from_objects(model_run_annotation_groups, object_predictions):
+def test_create_from_objects(model_run_annotation_groups, object_predictions,
+                             annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
     annotation_import = model_run_annotation_groups.add_predictions(
         name=name, predictions=object_predictions)
 
     assert annotation_import.model_run_id == model_run_annotation_groups.uid
-    check_running_state(annotation_import, name)
-    assert_file_content(annotation_import.input_file_url, object_predictions)
+    annotation_import_test_helpers.check_running_state(annotation_import, name)
+    annotation_import_test_helpers.assert_file_content(
+        annotation_import.input_file_url, object_predictions)
 
 
 def test_create_from_local_file(tmp_path, model_run_annotation_groups,
-                                object_predictions):
+                                object_predictions,
+                                annotation_import_test_helpers):
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
@@ -52,11 +47,13 @@ def test_create_from_local_file(tmp_path, model_run_annotation_groups,
         name=name, predictions=str(file_path))
 
     assert annotation_import.model_run_id == model_run_annotation_groups.uid
-    check_running_state(annotation_import, name)
-    assert_file_content(annotation_import.input_file_url, object_predictions)
+    annotation_import_test_helpers.check_running_state(annotation_import, name)
+    annotation_import_test_helpers.assert_file_content(
+        annotation_import.input_file_url, object_predictions)
 
 
-def test_get(client, model_run_annotation_groups):
+def test_get(client, model_run_annotation_groups,
+             annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     model_run_annotation_groups.add_predictions(name=name, predictions=url)
@@ -65,7 +62,8 @@ def test_get(client, model_run_annotation_groups):
         client, model_run_id=model_run_annotation_groups.uid, name=name)
 
     assert annotation_import.model_run_id == model_run_annotation_groups.uid
-    check_running_state(annotation_import, name, url)
+    annotation_import_test_helpers.check_running_state(annotation_import, name,
+                                                       url)
 
 
 @pytest.mark.slow
@@ -92,8 +90,3 @@ def test_wait_till_done(model_run_predictions, model_run_annotation_groups):
         input_annot['uuid'] for input_annot in annotation_import.statuses
     ]
     assert set(input_uuids) == set(status_uuids)
-
-
-def assert_file_content(url: str, predictions):
-    response = requests.get(url)
-    assert response.text == ndjson.dumps(predictions)
