@@ -1,29 +1,53 @@
 from collections import defaultdict
-from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
-
 from typing import Any, Callable, Dict, List, Union, Optional
 
 from pydantic import BaseModel, validator
 
-from labelbox.schema import ontology
 from labelbox.orm.model import Entity
-from ..ontology import get_feature_schema_lookup
+from labelbox.schema import ontology
+from .annotation import (
+    ClassificationAnnotation,
+    ObjectAnnotation,
+    VideoClassificationAnnotation,
+    VideoObjectAnnotation
+)
 from .classification import ClassificationAnswer
-from .data import VideoData, TextData, ImageData
+from .data import VideoData, TextData, ImageData, BaseData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
-from .annotation import (ClassificationAnnotation, ObjectAnnotation,
-                         VideoClassificationAnnotation, VideoObjectAnnotation)
+from ..ontology import get_feature_schema_lookup
 
 
 class Label(BaseModel):
+    """Container for holding data and annotations
+
+    >>> Label(
+    >>>    data = ImageData(url = "http://my-img.jpg"),
+    >>>    annotations = [
+    >>>        ObjectAnnotation(
+    >>>            value = Point(x = 10, y = 10),
+    >>>            name = "target"
+    >>>        )
+    >>>     ]
+    >>>  )
+
+    Args:
+        uid: Optional Label Id in Labelbox
+        data: Data of Label, Image, Video, Text
+        annotations: List of Annotations in the label
+        extra: additional context
+    """
     uid: Optional[Cuid] = None
-    data: Union[VideoData, ImageData, TextData]
-    annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
-                            VideoObjectAnnotation,
-                            VideoClassificationAnnotation, ScalarMetric,
-                            ConfusionMatrixMetric]] = []
+    data: Union[BaseData]
+    annotations: List[Union[
+        ClassificationAnnotation,
+        ObjectAnnotation,
+        VideoObjectAnnotation,
+        VideoClassificationAnnotation,
+        ScalarMetric,
+        ConfusionMatrixMetric
+    ]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
@@ -39,13 +63,13 @@ class Label(BaseModel):
         ]
 
     def frame_annotations(
-        self
+            self
     ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
             if isinstance(
                     annotation,
-                (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                    (VideoObjectAnnotation, VideoClassificationAnnotation)):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
 

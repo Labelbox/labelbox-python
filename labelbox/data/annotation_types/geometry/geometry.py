@@ -8,8 +8,7 @@ from pydantic import BaseModel
 
 
 class Geometry(BaseModel, ABC):
-    """
-    Base class for geometry objects.
+    """Abstract base class for geometry objects
     """
     extra: Dict[str, Any] = {}
 

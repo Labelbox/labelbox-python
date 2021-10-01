@@ -1,22 +1,34 @@
 from typing import List, Optional, Union, Tuple
 
-import numpy as np
-import geojson
 import cv2
+import geojson
+import numpy as np
 from pydantic import validator
 
-from .point import Point
 from .geometry import Geometry
+from .point import Point
 
 
 class Polygon(Geometry):
+    """Polygon geometry
+
+    A polygon is created from a collection of points
+
+    >>> Polygon(points=[Point(x=0, y=0), Point(x=1, y=0), Point(x=1, y=1), Point(x=0, y=0)])
+
+    Args:
+        points (List[Point]): List of `Points`, minimum of three points. If you do not
+            close the polygon (the last point and first point are the same) an additional
+            point is added to close it.
+
+    """
     points: List[Point]
 
     @property
-    def geometry(self) -> geojson.MultiPolygon:
+    def geometry(self) -> geojson.Polygon:
         if self.points[0] != self.points[-1]:
             self.points.append(self.points[0])
-        return geojson.Polygon([[[point.x, point.y] for point in self.points]])
+        return geojson.Polygon([[(point.x, point.y) for point in self.points]])
 
     def draw(self,
              height: Optional[int] = None,
@@ -48,4 +60,7 @@ class Polygon(Geometry):
             raise ValueError(
                 f"A polygon must have at least 3 points to be valid. Found {points}"
             )
+        if points[0] != points[-1]:
+            points.append(points[0])
+
         return points

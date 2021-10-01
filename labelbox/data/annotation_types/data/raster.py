@@ -15,19 +15,30 @@ from ..types import TypedArray
 
 
 class RasterData(BaseModel, ABC):
-    """
-    Represents an image or segmentation mask.
+    """Represents an image or segmentation mask.
+
     """
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
 
+
     @classmethod
     def from_2D_arr(cls, arr: TypedArray[Literal['uint8']], **kwargs):
+        """Construct
+
+        Args:
+            arr:
+            **kwargs:
+
+        Returns:
+
+        """
+
         if len(arr.shape) != 2:
             raise ValueError(
-                f"Found array with shape {arr.shape}. Expected two dimensions ([W,H])"
+                f"Found array with shape {arr.shape}. Expected two dimensions [H, W]"
             )
         arr = np.stack((arr,) * 3, axis=-1)
         return cls(arr=arr, **kwargs)
@@ -166,7 +177,26 @@ class RasterData(BaseModel, ABC):
 
 
 class MaskData(RasterData):
-    ...
+    """Used to represent a segmentation Mask
+
+    All segments within a mask must be mutually exclusive. At a
+    single cell, only one class can be present. All Mask data is
+    converted to a [H,W,3] image. Classes are
+
+    >>> # 3x3 mask with two classes and back ground
+    >>> MaskData.from_2D_arr([
+    >>>    [0, 0, 0],
+    >>>    [1, 1, 1],
+    >>>    [2, 2, 2],
+    >>>])
+
+    Args:
+        im_bytes: Optional[bytes] = None
+        file_path: Optional[str] = None
+        url: Optional[str] = None
+        arr: Optional[TypedArray[Literal['uint8']]] = None
+    """
+
 
 
 class ImageData(RasterData, BaseData):
