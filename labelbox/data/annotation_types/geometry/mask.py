@@ -23,10 +23,10 @@ class Mask(Geometry):
     >>> annotations = [
     >>>    ObjectAnnotation(value=Mask(mask=arr, color=1), name="dog"),
     >>>    ObjectAnnotation(value=Mask(mask=arr, color=2), name="cat"),
-    >>> ]
+    >>>]
 
     Args:
-         mask (MaskData): A object containing the actual mask, `MaskData` can
+         mask (MaskData): An object containing the actual mask, `MaskData` can
             be shared across multiple `Masks` to more efficiently store data
             for mutually exclusive segmentations.
          color (Tuple[uint8, uint8, uint8]): RGB color or a single value
