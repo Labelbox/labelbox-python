@@ -9,11 +9,13 @@ from .point import Point
 
 
 class Rectangle(Geometry):
-    """
-    Represents a 2d rectangle. Also known as a bounding box.
+    """Represents a 2d rectangle. Also known as a bounding box
 
-    start: Top left coordinate of the rectangle
-    end: Bottom right coordinate of the rectangle
+    >>> Rectangle(start=Point(x=0, y=0), end=Point(x=1, y=1))
+
+    Args:
+        start (Point): Top left coordinate of the rectangle
+        end (Point): Bottom right coordinate of the rectangle
     """
     start: Point
     end: Point
@@ -51,3 +53,8 @@ class Rectangle(Geometry):
         if thickness == -1:
             return cv2.fillPoly(canvas, pts, color)
         return cv2.polylines(canvas, pts, True, color, thickness)
+
+    @classmethod
+    def from_xyhw(cls, x: float, y: float, h: float, w: float):
+        """Create Rectangle from x,y, height width format"""
+        return cls(start=Point(x=x, y=y), end=Point(x=x + w, y=y + h))
