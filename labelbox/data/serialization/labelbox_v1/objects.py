@@ -1,15 +1,15 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Type
 
 from pydantic import BaseModel, validator
 
+from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
+from .feature import LBV1Feature
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
 from ...annotation_types.data import MaskData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
-from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
-from .feature import LBV1Feature
 
 
 class LBV1ObjectBase(LBV1Feature):
@@ -65,10 +65,10 @@ class LBV1Rectangle(LBV1ObjectBase):
             height=rectangle.end.y - rectangle.start.y,
             width=rectangle.end.x - rectangle.start.x,
         ),
-                   schema_id=feature_schema_id,
-                   title=title,
-                   classifications=classifications,
-                   **extra)
+            schema_id=feature_schema_id,
+            title=title,
+            classifications=classifications,
+            **extra)
 
 
 class LBV1Polygon(LBV1ObjectBase):
@@ -83,11 +83,12 @@ class LBV1Polygon(LBV1ObjectBase):
                     feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Polygon":
         return cls(
-            polygon=[_Point(x=point.x, y=point.y) for point in polygon.points],
+            polygon=[_Point(x=point.x, y=point.y) for point in polygon.points[:-1]],  # drop closing point
             classifications=classifications,
             schema_id=feature_schema_id,
             title=title,
-            **extra)
+            **extra
+        )
 
 
 class LBV1Point(LBV1ObjectBase):
@@ -138,7 +139,6 @@ class LBV1Mask(LBV1ObjectBase):
                     classifications: List[ClassificationAnnotation],
                     feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1Mask":
-
         if mask.mask.url is None:
             raise ValueError(
                 "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelList.add_url_to_masks`, or `Label.add_url_to_masks`."
@@ -175,17 +175,12 @@ class LBV1TextEntity(LBV1ObjectBase):
                     classifications: List[ClassificationAnnotation],
                     feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1TextEntity":
-
-        return cls(data={
-            'location': {
-                'start': text_entity.start,
-                'end': text_entity.end
-            }
-        },
-                   classifications=classifications,
-                   schema_id=feature_schema_id,
-                   title=title,
-                   **extra)
+        return cls(
+            data=_Location(location=_TextPoint(start=text_entity.start, end=text_entity.end)),
+            classifications=classifications,
+            schema_id=feature_schema_id,
+            title=title,
+            **extra)
 
 
 class LBV1Objects(BaseModel):
@@ -222,7 +217,6 @@ class LBV1Objects(BaseModel):
         objects = []
         for annotation in annotations:
             obj = cls.lookup_object(annotation)
-            subclasses = []
             subclasses = LBV1Classifications.from_common(
                 annotation.classifications).classifications
 
@@ -237,9 +231,8 @@ class LBV1Objects(BaseModel):
 
     @staticmethod
     def lookup_object(
-        annotation: ObjectAnnotation
-    ) -> Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1Mask,
-               LBV1TextEntity]:
+            annotation: ObjectAnnotation
+    ) -> Type[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle, LBV1Mask, LBV1TextEntity]]:
         result = {
             Line: LBV1Line,
             Point: LBV1Point,
