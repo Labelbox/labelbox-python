@@ -1,4 +1,6 @@
 from datetime import datetime
+import time
+from attr import field
 
 import pytest
 
@@ -34,6 +36,17 @@ def big_dataset(dataset: Dataset, image_url):
     dataset.delete()
 
 
+def wait_for_embeddings_svc(data_row_ids, mdo):
+    for idx in range(5):
+        if all([
+                len(metadata.fields)
+                for metadata in mdo.bulk_export(data_row_ids)
+        ]):
+            return
+        time.sleep((idx + 1)**2)
+    raise Exception("Embedding svc failed to update metadata.")
+
+
 def make_metadata(dr_id) -> DataRowMetadata:
     embeddings = [0.0] * 128
     msg = "A message"
@@ -59,25 +72,21 @@ def test_get_datarow_metadata_ontology(mdo):
 
 
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
+    wait_for_embeddings_svc([datarow.uid], mdo)
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
     assert len(mdo.bulk_export([datarow.uid]))
-    assert len(mdo.bulk_export([datarow.uid])[0].fields)
-
-
-def test_parse_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
-    metadata = make_metadata(datarow.uid)
-    mdo.bulk_upsert([metadata])
-    assert mdo.bulk_export([datarow.uid])
+    assert len(mdo.bulk_export([datarow.uid])[0].fields) == 5
 
 
 @pytest.mark.slow
 def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     metadata = []
     data_row_ids = []
-    for dr in big_dataset.data_rows():
-        metadata.append(make_metadata(dr.uid))
-        data_row_ids.append(dr.uid)
+    data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
+    wait_for_embeddings_svc(data_row_ids, mdo)
+    for data_row_id in data_row_ids:
+        metadata.append(make_metadata(data_row_id))
     errors = mdo.bulk_upsert(metadata)
     assert len(errors) == 0
 
@@ -120,10 +129,13 @@ def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
 
 
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
+
     metadata = []
-    for dr in big_dataset.data_rows():
+    data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
+    wait_for_embeddings_svc(data_row_ids, mdo)
+    for data_row_id in data_row_ids:
         metadata.append(
-            DataRowMetadata(data_row_id=dr.uid,
+            DataRowMetadata(data_row_id=data_row_id,
                             fields=[
                                 DataRowMetadataField(
                                     schema_id=EMBEDDING_SCHEMA_ID,
@@ -135,25 +147,26 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     assert len(errors) == 0
 
     deletes = []
-    for dr in big_dataset.data_rows():
+    for data_row_id in data_row_ids:
         deletes.append(
             DeleteDataRowMetadata(
-                data_row_id=dr.uid,
+                data_row_id=data_row_id,
                 fields=[
                     EMBEDDING_SCHEMA_ID,  #
                     CAPTURE_DT_SCHEMA_ID
                 ]))
-
     errors = mdo.bulk_delete(deletes)
     assert len(errors) == 0
-    for dr in big_dataset.data_rows():
-        # 1 remaining because only the embeddings id overlaps
-        assert len(mdo.bulk_export([dr.uid])[0].fields) == 1
+    for data_row_id in data_row_ids:
+        # 2 remaining because we delete the user provided embedding but text and labelbox generated embeddings still exist
+        fields = mdo.bulk_export([data_row_id])[0].fields
+        assert len(fields) == 2
+        assert EMBEDDING_SCHEMA_ID not in [field.schema_id for field in fields]
 
 
 def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
     """test bulk deletes for non non fields"""
-    n_fields = len(mdo.bulk_export([datarow.uid])[0].fields)
+    wait_for_embeddings_svc([datarow.uid], mdo)
     metadata = make_metadata(datarow.uid)
     metadata.fields = [
         m for m in metadata.fields if m.schema_id == SPLIT_SCHEMA_ID
@@ -167,7 +180,7 @@ def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
-    assert len(mdo.bulk_export([datarow.uid])[0].fields) == n_fields
+    assert len(mdo.bulk_export([datarow.uid])[0].fields) == 1
 
 
 def test_raise_enum_upsert_schema_error(datarow, mdo):
@@ -200,24 +213,6 @@ def test_delete_non_existent_schema_id(datarow, mdo):
                               fields=[EMBEDDING_SCHEMA_ID])
     ])
     # No message is returned
-
-
-@pytest.mark.slow
-def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
-    deletes = []
-    n_fields_start = 0
-    for idx, dr in enumerate(big_dataset.data_rows()):
-        if idx == 0:
-            n_fields_start = len(mdo.bulk_export([dr.uid])[0].fields)
-        deletes.append(
-            DeleteDataRowMetadata(data_row_id=dr.uid,
-                                  fields=[EMBEDDING_SCHEMA_ID]))
-    errors = mdo.bulk_delete(deletes)
-    assert len(errors) == 0
-
-    for dr in big_dataset.export_data_rows():
-        assert len(mdo.bulk_export([dr.uid])[0].fields) == n_fields_start
-        break
 
 
 def test_parse_raw_metadata(mdo):
