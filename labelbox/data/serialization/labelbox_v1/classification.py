@@ -139,7 +139,7 @@ class LBV1Classifications(BaseModel):
 
     @staticmethod
     def lookup_classification(
-            annotation: ClassificationAnnotation
+        annotation: ClassificationAnnotation
     ) -> Union[LBV1Text, LBV1Checklist, LBV1Radio, LBV1Checklist]:
         return {
             Text: LBV1Text,
