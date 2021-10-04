@@ -346,10 +346,8 @@ class DataRowMetadataOntology:
 
         if not len(data_row_ids):
             raise ValueError("Empty list passed")
-        # TODO: Fix the name here. This should not be deletes!!!!!!!!!!!!!!!!!!!
-        def _bulk_export(
-            deletes: List[_DeleteBatchDataRowMetadata]
-        ) -> List[DataRowMetadata]:
+
+        def _bulk_export(_data_row_ids: List[str]) -> List[DataRowMetadata]:
             query = """query dataRowCustomMetadataPyApi($dataRowIds: [ID!]!) {
                 dataRowCustomMetadata(where: {dataRowIds : $dataRowIds}) {
                     dataRowId
@@ -362,7 +360,8 @@ class DataRowMetadataOntology:
             """
             return self.parse_metadata(
                 self.client.execute(
-                    query, {"dataRowIds": deletes})['dataRowCustomMetadata'])
+                    query,
+                    {"dataRowIds": _data_row_ids})['dataRowCustomMetadata'])
 
         return _batch_operations(_bulk_export,
                                  data_row_ids,
