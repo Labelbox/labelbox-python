@@ -8,8 +8,7 @@ from PIL import Image
 from google.api_core import retry
 from pydantic import BaseModel
 from pydantic import root_validator
-from typing_extensions import Literal
-
+from typing import Union, Literal
 from .base_data import BaseData
 from ..types import TypedArray
 
