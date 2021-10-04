@@ -333,14 +333,15 @@ class DataRowMetadataOntology:
     def bulk_export(self, data_row_ids: List[str]) -> List[DataRowMetadata]:
         """ Exports metadata for a list of data rows
 
-        >>> mdo.batch_delete([data_row.uid for data_row in data_rows])
+        >>> mdo.bulk_export([data_row.uid for data_row in data_rows])
 
         Args:
             data_row_ids: List of data data rows to fetch metadata for
-
         Returns:
-            list of unsuccessful deletions.
-            An empty list means all data rows were successfully deleted.
+            A list of DataRowMetadata.
+            There will be one DataRowMetadata for each data_row_id passed in.
+            This is true even if the data row does not have any meta data.
+            Data rows without metadata will have empty `fields`.
 
         """
 
