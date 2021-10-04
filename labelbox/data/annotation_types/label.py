@@ -55,13 +55,13 @@ class Label(BaseModel):
         ]
 
     def frame_annotations(
-            self
+        self
     ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
             if isinstance(
                     annotation,
-                    (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                (VideoObjectAnnotation, VideoClassificationAnnotation)):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
 
