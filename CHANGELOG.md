@@ -1,4 +1,18 @@
 # Changelog
+# Version 3.6.0 (2021-04-10)
+## Added
+* Bulk export metadata with `DataRowMetadataOntology.bulk_export()`
+* Add docstring examples of annotation types and a few helper methods
+
+## Updated
+* Update metadata notebook under examples/basics to include bulk_export.
+* Allow color to be a single integer when constructing Mask objects
+* Allow users to pass int arrays to RasterData and attempt coercion to uint8
+
+## Removed
+* data_row.metadata was removed in favor of bulk exports.
+
+
 # Version 3.5.0 (2021-15-09)
 ## Added
 * Diagnostics custom metrics
