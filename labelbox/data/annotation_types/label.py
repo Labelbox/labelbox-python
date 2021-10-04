@@ -35,7 +35,7 @@ class Label(BaseModel):
         extra: additional context
     """
     uid: Optional[Cuid] = None
-    data: Union[BaseData]
+    data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
                             VideoClassificationAnnotation, ScalarMetric,
