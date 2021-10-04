@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, List, Union, Optional
 
 from pydantic import BaseModel, validator
 
-from labelbox.orm.model import Entity
 from labelbox.schema import ontology
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
@@ -13,6 +12,7 @@ from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
 from ..ontology import get_feature_schema_lookup
+from ... import Dataset
 
 
 class Label(BaseModel):
@@ -55,13 +55,13 @@ class Label(BaseModel):
         ]
 
     def frame_annotations(
-        self
+            self
     ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
             if isinstance(
                     annotation,
-                (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                    (VideoObjectAnnotation, VideoClassificationAnnotation)):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
 
@@ -103,7 +103,7 @@ class Label(BaseModel):
             mask.create_url(signer)
         return self
 
-    def create_data_row(self, dataset: "Entity.Dataset",
+    def create_data_row(self, dataset: "Dataset",
                         signer: Callable[[bytes], str]) -> "Label":
         """
         Creates a data row and adds to the given dataset.
