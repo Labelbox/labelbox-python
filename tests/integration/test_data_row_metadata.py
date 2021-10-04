@@ -58,36 +58,35 @@ def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.custom_fields) == 0
 
 
-def test_get_datarow_metadata(datarow):
-    """No metadata"""
-    md = datarow.metadata
-    assert len(md)
-
-
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
-    n_fields = len(datarow.metadata["fields"])
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
-    assert len(datarow.metadata["fields"]) > n_fields
+    assert len(mdo.bulk_export([datarow.uid]))
+    assert len(mdo.bulk_export([datarow.uid])[0].fields)
 
 
 def test_parse_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
-    assert mdo.parse_metadata([datarow.metadata])
+    assert mdo.bulk_export([datarow.uid])
 
 
 @pytest.mark.slow
 def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     metadata = []
-    for dr in big_dataset.export_data_rows():
+    data_row_ids = []
+    for dr in big_dataset.data_rows():
         metadata.append(make_metadata(dr.uid))
+        data_row_ids.append(dr.uid)
     errors = mdo.bulk_upsert(metadata)
     assert len(errors) == 0
 
-    for dr in big_dataset.export_data_rows():
-        assert len(dr.metadata["fields"])
-        break
+    metadata_lookup = {
+        metadata.data_row_id: metadata
+        for metadata in mdo.bulk_export(data_row_ids)
+    }
+    for data_row_id in data_row_ids:
+        assert len(metadata_lookup.get(data_row_id).fields)
 
 
 def test_bulk_delete_datarow_metadata(datarow, mdo):
@@ -95,39 +94,34 @@ def test_bulk_delete_datarow_metadata(datarow, mdo):
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
 
-    assert len(datarow.metadata["fields"])
-    upload_ids = [m.schema_id for m in metadata.fields]
+    assert len(mdo.bulk_export([datarow.uid])[0].fields)
+    upload_ids = [m.schema_id for m in metadata.fields[:-2]]
     mdo.bulk_delete(
         [DeleteDataRowMetadata(data_row_id=datarow.uid, fields=upload_ids)])
-    remaining_ids = set([f['schema_id'] for f in datarow.metadata["fields"]])
+    remaining_ids = set(
+        [f.schema_id for f in mdo.bulk_export([datarow.uid])[0].fields])
     assert not len(remaining_ids.intersection(set(upload_ids)))
 
 
-@pytest.mark.skip
 def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
     """Delete a single from metadata"""
-    n_fields = len(datarow.metadata["fields"])
-
+    n_fields = len(mdo.bulk_export([datarow.uid])[0].fields)
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
 
-    assert len(datarow.metadata["fields"]) == (n_fields + 5)
+    assert len(mdo.bulk_export(
+        [datarow.uid])[0].fields) == (n_fields + len(metadata.fields))
 
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[TEXT_SCHEMA_ID])
     ])
+    assert len(mdo.bulk_export(
+        [datarow.uid])[0].fields) == (n_fields + len(metadata.fields) - 1)
 
-    assert len(datarow.metadata["fields"]) == (n_fields + 4)
 
-
-@pytest.mark.skip
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     metadata = []
-    n_fields_start = 0
-    for idx, dr in enumerate(big_dataset.export_data_rows()):
-        if idx == 0:
-            n_fields_start = len(dr.metadata["fields"])
-
+    for dr in big_dataset.data_rows():
         metadata.append(
             DataRowMetadata(data_row_id=dr.uid,
                             fields=[
@@ -153,27 +147,27 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     errors = mdo.bulk_delete(deletes)
     assert len(errors) == 0
     for dr in big_dataset.data_rows():
-        assert len(dr.metadata["fields"]) == n_fields_start
-        break
+        # 1 remaining because only the embeddings id overlaps
+        assert len(mdo.bulk_export([dr.uid])[0].fields) == 1
 
 
-@pytest.mark.skip
 def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
     """test bulk deletes for non non fields"""
-    n_fields = len(datarow.metadata["fields"])
+    n_fields = len(mdo.bulk_export([datarow.uid])[0].fields)
     metadata = make_metadata(datarow.uid)
     metadata.fields = [
         m for m in metadata.fields if m.schema_id == SPLIT_SCHEMA_ID
     ]
     mdo.bulk_upsert([metadata])
-    assert len(datarow.metadata["fields"]) == len(
+
+    assert len(mdo.bulk_export([datarow.uid])[0].fields) == len(
         set([x.schema_id for x in metadata.fields] +
-            [x['schema_id'] for x in datarow.metadata["fields"]]))
+            [x.schema_id for x in mdo.bulk_export([datarow.uid])[0].fields]))
 
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
-    assert len(datarow.metadata["fields"]) == n_fields
+    assert len(mdo.bulk_export([datarow.uid])[0].fields) == n_fields
 
 
 def test_raise_enum_upsert_schema_error(datarow, mdo):
@@ -209,13 +203,12 @@ def test_delete_non_existent_schema_id(datarow, mdo):
 
 
 @pytest.mark.slow
-@pytest.mark.skip("Test is inconsistent.")
 def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
     deletes = []
     n_fields_start = 0
-    for idx, dr in enumerate(big_dataset.export_data_rows()):
+    for idx, dr in enumerate(big_dataset.data_rows()):
         if idx == 0:
-            n_fields_start = len(dr.metadata["fields"])
+            n_fields_start = len(mdo.bulk_export([dr.uid])[0].fields)
         deletes.append(
             DeleteDataRowMetadata(data_row_id=dr.uid,
                                   fields=[EMBEDDING_SCHEMA_ID]))
@@ -223,25 +216,25 @@ def test_large_bulk_delete_non_existent_schema_id(big_dataset, mdo):
     assert len(errors) == 0
 
     for dr in big_dataset.export_data_rows():
-        assert len(dr.metadata["fields"]) == n_fields_start
+        assert len(mdo.bulk_export([dr.uid])[0].fields) == n_fields_start
         break
 
 
 def test_parse_raw_metadata(mdo):
     example = {
-        'data_row_id':
+        'dataRowId':
             'ckr6kkfx801ui0yrtg9fje8xh',
         'fields': [{
-            'schema_id': 'cko8s9r5v0001h2dk9elqdidh',
+            'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
             'value': 'my-new-message'
         }, {
-            'schema_id': 'cko8sbczn0002h2dkdaxb5kal',
+            'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
             'value': {}
         }, {
-            'schema_id': 'cko8sbscr0003h2dk04w86hof',
+            'schemaId': 'cko8sbscr0003h2dk04w86hof',
             'value': {}
         }, {
-            'schema_id': 'cko8sdzv70006h2dk8jg64zvb',
+            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
             'value': '2021-07-20T21:41:14.606710Z'
         }]
     }
@@ -249,5 +242,5 @@ def test_parse_raw_metadata(mdo):
     parsed = mdo.parse_metadata([example])
     assert len(parsed) == 1
     row = parsed[0]
-    assert row.data_row_id == example["data_row_id"]
+    assert row.data_row_id == example["dataRowId"]
     assert len(row.fields) == 3

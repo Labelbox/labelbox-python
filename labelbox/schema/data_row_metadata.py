@@ -64,7 +64,7 @@ class DeleteDataRowMetadata(_CamelCaseMixin):
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
     data_row_id: str
-    error: str
+    error: Optional[str] = None
     fields: List[Union[DataRowMetadataField, SchemaId]]
 
 
@@ -200,7 +200,7 @@ class DataRowMetadataOntology:
         for dr in unparsed:
             fields = []
             for f in dr["fields"]:
-                schema = self.all_fields_id_index[f["schema_id"]]
+                schema = self.all_fields_id_index[f["schemaId"]]
                 if schema.kind == DataRowMetadataKind.enum:
                     continue
                 elif schema.kind == DataRowMetadataKind.option:
@@ -212,7 +212,7 @@ class DataRowMetadataOntology:
 
                 fields.append(field)
             parsed.append(
-                DataRowMetadata(data_row_id=dr["data_row_id"], fields=fields))
+                DataRowMetadata(data_row_id=dr["dataRowId"], fields=fields))
         return parsed
 
     def bulk_upsert(
@@ -328,6 +328,44 @@ class DataRowMetadataOntology:
         items = [self._validate_delete(m) for m in deletes]
         return _batch_operations(_batch_delete,
                                  items,
+                                 batch_size=self._batch_size)
+
+    def bulk_export(self, data_row_ids: List[str]) -> List[DataRowMetadata]:
+        """ Exports metadata for a list of data rows
+
+        >>> mdo.batch_delete([data_row.uid for data_row in data_rows])
+
+        Args:
+            data_row_ids: List of data data rows to fetch metadata for
+
+        Returns:
+            list of unsuccessful deletions.
+            An empty list means all data rows were successfully deleted.
+
+        """
+
+        if not len(data_row_ids):
+            raise ValueError("Empty list passed")
+        # TODO: Fix the name here. This should not be deletes!!!!!!!!!!!!!!!!!!!
+        def _bulk_export(
+            deletes: List[_DeleteBatchDataRowMetadata]
+        ) -> List[DataRowMetadata]:
+            query = """query dataRowCustomMetadataPyApi($dataRowIds: [ID!]!) {
+                dataRowCustomMetadata(where: {dataRowIds : $dataRowIds}) {
+                    dataRowId
+                    fields {
+                        value
+                        schemaId
+                    }
+                }
+            }
+            """
+            return self.parse_metadata(
+                self.client.execute(
+                    query, {"dataRowIds": deletes})['dataRowCustomMetadata'])
+
+        return _batch_operations(_bulk_export,
+                                 data_row_ids,
                                  batch_size=self._batch_size)
 
     def _parse_upsert(
