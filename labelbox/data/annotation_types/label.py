@@ -5,12 +5,8 @@ from pydantic import BaseModel, validator
 
 from labelbox.orm.model import Entity
 from labelbox.schema import ontology
-from .annotation import (
-    ClassificationAnnotation,
-    ObjectAnnotation,
-    VideoClassificationAnnotation,
-    VideoObjectAnnotation
-)
+from .annotation import (ClassificationAnnotation, ObjectAnnotation,
+                         VideoClassificationAnnotation, VideoObjectAnnotation)
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, ImageData, BaseData
 from .geometry import Mask
@@ -40,14 +36,10 @@ class Label(BaseModel):
     """
     uid: Optional[Cuid] = None
     data: Union[BaseData]
-    annotations: List[Union[
-        ClassificationAnnotation,
-        ObjectAnnotation,
-        VideoObjectAnnotation,
-        VideoClassificationAnnotation,
-        ScalarMetric,
-        ConfusionMatrixMetric
-    ]] = []
+    annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
+                            VideoObjectAnnotation,
+                            VideoClassificationAnnotation, ScalarMetric,
+                            ConfusionMatrixMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
@@ -63,13 +55,13 @@ class Label(BaseModel):
         ]
 
     def frame_annotations(
-            self
+        self
     ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
             if isinstance(
                     annotation,
-                    (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                (VideoObjectAnnotation, VideoClassificationAnnotation)):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
 

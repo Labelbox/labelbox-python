@@ -23,7 +23,8 @@ class RasterData(BaseModel, ABC):
     arr: Optional[TypedArray[Literal['uint8']]] = None
 
     @classmethod
-    def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']], TypedArray[Literal['int']]], **kwargs):
+    def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
+                                    TypedArray[Literal['int']]], **kwargs):
         """Construct from a 2D numpy array
 
         Args:
@@ -44,7 +45,9 @@ class RasterData(BaseModel, ABC):
         if np.can_cast(arr, np.uint8):
             arr = arr.astype(np.uint8)
         else:
-            raise ValueError("Could not cast array to uint8, check that values are between 0 and 255")
+            raise ValueError(
+                "Could not cast array to uint8, check that values are between 0 and 255"
+            )
 
         arr = np.stack((arr,) * 3, axis=-1)
         return cls(arr=arr, **kwargs)
