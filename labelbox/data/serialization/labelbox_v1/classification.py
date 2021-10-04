@@ -1,12 +1,11 @@
 from typing import List, Union
 
 from pydantic.main import BaseModel
-from pydantic.schema import schema
 
+from .feature import LBV1Feature
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.classification import Checklist, ClassificationAnswer, Radio, Text, Dropdown
 from ...annotation_types.types import Cuid
-from .feature import LBV1Feature
 
 
 class LBV1ClassificationAnswer(LBV1Feature):
@@ -112,7 +111,6 @@ class LBV1Classifications(BaseModel):
     def to_common(self) -> List[ClassificationAnnotation]:
         classifications = [
             ClassificationAnnotation(value=classification.to_common(),
-                                     classifications=[],
                                      name=classification.title,
                                      feature_schema_id=classification.schema_id,
                                      extra={
@@ -141,7 +139,7 @@ class LBV1Classifications(BaseModel):
 
     @staticmethod
     def lookup_classification(
-        annotation: ClassificationAnnotation
+            annotation: ClassificationAnnotation
     ) -> Union[LBV1Text, LBV1Checklist, LBV1Radio, LBV1Checklist]:
         return {
             Text: LBV1Text,
