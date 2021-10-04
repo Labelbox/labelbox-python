@@ -1,14 +1,14 @@
 from abc import ABC
 from io import BytesIO
-from typing import Callable, Optional
-
+from typing import Callable, Optional, Union
+from typing_extensions import Literal
 import numpy as np
 import requests
 from PIL import Image
 from google.api_core import retry
 from pydantic import BaseModel
 from pydantic import root_validator
-from typing import Union, Literal
+
 from .base_data import BaseData
 from ..types import TypedArray
 
