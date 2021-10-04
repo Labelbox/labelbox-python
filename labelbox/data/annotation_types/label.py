@@ -8,7 +8,7 @@ from labelbox.schema import ontology
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
 from .classification import ClassificationAnswer
-from .data import VideoData, TextData, ImageData, BaseData
+from .data import VideoData, TextData, ImageData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
