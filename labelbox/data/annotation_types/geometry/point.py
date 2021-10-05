@@ -8,12 +8,21 @@ from .geometry import Geometry
 
 
 class Point(Geometry):
+    """Point geometry
+
+    >>> Point(x=0, y=0)
+
+    Args:
+        x (float)
+        y (float)
+
+    """
     x: float
     y: float
 
     @property
     def geometry(self) -> geojson.Point:
-        return geojson.Point([self.x, self.y])
+        return geojson.Point((self.x, self.y))
 
     def draw(self,
              height: Optional[int] = None,
