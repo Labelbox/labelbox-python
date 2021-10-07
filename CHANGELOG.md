@@ -1,4 +1,7 @@
 # Changelog
+# Version 3.6.1 (2021-04-10)
+* Fix import error that appears when exporting labels
+
 # Version 3.6.0 (2021-04-10)
 ## Added
 * Bulk export metadata with `DataRowMetadataOntology.bulk_export()`
