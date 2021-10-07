@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Union, Optional
 
 from pydantic import BaseModel, validator
 
+import labelbox
 from labelbox.schema import ontology
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
@@ -12,7 +13,6 @@ from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
 from ..ontology import get_feature_schema_lookup
-from ... import Dataset
 
 
 class Label(BaseModel):
@@ -103,7 +103,7 @@ class Label(BaseModel):
             mask.create_url(signer)
         return self
 
-    def create_data_row(self, dataset: "Dataset",
+    def create_data_row(self, dataset: "labelbox.Dataset",
                         signer: Callable[[bytes], str]) -> "Label":
         """
         Creates a data row and adds to the given dataset.
