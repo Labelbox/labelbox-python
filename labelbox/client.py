@@ -658,10 +658,3 @@ class Client:
             "ontologyId": ontology_id
         })
         return Model(self, result['createModel'])
-
-    #def get_data_row_ids_for_external_ids():
-    #
-    #    externalIdsToDataRowIds(externalId_in: [String!]!):[ExternalIdsToDataRowIdsResponse!]!
-    # @ Richard for the sake of consistency would it be possible to just return
-    # externalIdsToDataRowIds(externalId_in: [String!]!): [DataRow!]!
-    #So is there no pagination? What if airbnb passes in 1m results?
