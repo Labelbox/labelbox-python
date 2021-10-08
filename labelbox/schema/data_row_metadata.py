@@ -10,6 +10,8 @@ from pydantic import BaseModel, conlist, constr
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import camel_case
 
+_MAX_METADATA_FIELDS = 5
+
 
 class DataRowMetadataKind(Enum):
     number = "CustomMetadataNumber"
@@ -292,6 +294,8 @@ class DataRowMetadataOntology:
 
         items = []
         for m in metadata:
+            if len(m.fields) > _MAX_METADATA_FIELDS:
+                raise ValueError(f"Cannot upload {len(m.fields)}, the max number is {_MAX_METADATA_FIELDS}")
             items.append(
                 _UpsertBatchDataRowMetadata(
                     data_row_id=m.data_row_id,
@@ -415,7 +419,7 @@ class DataRowMetadataOntology:
         elif schema.kind == DataRowMetadataKind.enum:
             parsed = _validate_enum_parse(schema, metadatum)
         elif schema.kind == DataRowMetadataKind.option:
-            raise ValueError("An option id should not be as a schema id")
+            raise ValueError("An Option id should not be set as the Schema id")
         else:
             raise ValueError(f"Unknown type: {schema}")
 
