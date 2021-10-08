@@ -198,7 +198,7 @@ class DataRowMetadataOntology:
                         DataRowMetadataSchema(**{
                             **option,
                             **{
-                                "parent": schema["id"]
+                                "parent": schema["uid"]
                             }
                         }))
             schema["options"] = options
