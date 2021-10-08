@@ -50,6 +50,7 @@ DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId, Number]
 
 
 class _CamelCaseMixin(BaseModel):
+
     class Config:
         allow_population_by_field_name = True
         alias_generator = camel_case
@@ -157,7 +158,7 @@ class DataRowMetadataOntology:
 
     @staticmethod
     def _make_id_index(
-            fields: List[DataRowMetadataSchema]
+        fields: List[DataRowMetadataSchema]
     ) -> Dict[SchemaId, DataRowMetadataSchema]:
         index = {}
         for f in fields:
@@ -194,23 +195,21 @@ class DataRowMetadataOntology:
                 for option in schema["options"]:
                     option["uid"] = option.pop("id")
                     options.append(
-                        DataRowMetadataSchema(
+                        DataRowMetadataSchema(**{
+                            **option,
                             **{
-                                **option,
-                                **{
-                                    "parent": schema["id"]
-                                }
-                            })
-                    )
+                                "parent": schema["id"]
+                            }
+                        }))
             schema["options"] = options
             fields.append(DataRowMetadataSchema(**schema))
 
         return fields
 
     def parse_metadata(
-            self, unparsed: List[Dict[str,
-                                      List[Union[str,
-                                                 Dict]]]]) -> List[DataRowMetadata]:
+        self, unparsed: List[Dict[str,
+                                  List[Union[str,
+                                             Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
         >>> mdo.parse_metadata([metdata])
@@ -271,7 +270,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_upsert(
-                upserts: List[_UpsertBatchDataRowMetadata]
+            upserts: List[_UpsertBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
                 upsertDataRowCustomMetadata(data: $metadata){
@@ -295,20 +294,22 @@ class DataRowMetadataOntology:
         items = []
         for m in metadata:
             if len(m.fields) > _MAX_METADATA_FIELDS:
-                raise ValueError(f"Cannot upload {len(m.fields)}, the max number is {_MAX_METADATA_FIELDS}")
+                raise ValueError(
+                    f"Cannot upload {len(m.fields)}, the max number is {_MAX_METADATA_FIELDS}"
+                )
             items.append(
                 _UpsertBatchDataRowMetadata(
                     data_row_id=m.data_row_id,
                     fields=list(
                         chain.from_iterable(
                             self._parse_upsert(m) for m in m.fields))).dict(
-                    by_alias=True))
+                                by_alias=True))
 
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
     def bulk_delete(
-            self, deletes: List[DeleteDataRowMetadata]
+        self, deletes: List[DeleteDataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """ Delete metadata from a datarow by specifiying the fields you want to remove
 
@@ -335,7 +336,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_delete(
-                deletes: List[_DeleteBatchDataRowMetadata]
+            deletes: List[_DeleteBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowCustomMetadataBatchDeleteInput!]!) {
                 deleteDataRowCustomMetadata(data: $deletes) {
@@ -454,9 +455,9 @@ def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
 
 
 def _batch_operations(
-        batch_function: _BatchFunction,
-        items: List,
-        batch_size: int = 100,
+    batch_function: _BatchFunction,
+    items: List,
+    batch_size: int = 100,
 ):
     response = []
 
