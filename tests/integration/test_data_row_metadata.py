@@ -65,7 +65,7 @@ def make_metadata(dr_id) -> DataRowMetadata:
 
 
 def test_get_datarow_metadata_ontology(mdo):
-    assert len(mdo.all_fields)
+    assert len(mdo.fields)
     assert len(mdo.reserved_fields)
     assert len(mdo.custom_fields) == 0
 
@@ -81,7 +81,6 @@ def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
 @pytest.mark.slow
 def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     metadata = []
-    data_row_ids = []
     data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
     wait_for_embeddings_svc(data_row_ids, mdo)
     for data_row_id in data_row_ids:
