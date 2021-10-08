@@ -11,6 +11,7 @@ from labelbox.utils import camel_case
 
 
 class DataRowMetadataKind(Enum):
+    number = "CustomMetadataNumber"
     datetime = "CustomMetadataDateTime"
     enum = "CustomMetadataEnum"
     string = "CustomMetadataString"
@@ -35,8 +36,9 @@ Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
 DateTime: Type[datetime.datetime] = datetime.datetime  # must be in UTC
 String: Type[str] = constr(max_length=500)
 OptionId: Type[SchemaId] = SchemaId  # enum option
+Number: Type[float]
 
-DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId]
+DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId, Number]
 
 
 class _CamelCaseMixin(BaseModel):
