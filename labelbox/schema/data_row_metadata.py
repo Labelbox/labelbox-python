@@ -84,10 +84,16 @@ class DataRowMetadataBatchResponse(_CamelCaseMixin):
 # Don't want to crowd the name space with internals
 
 
+# Bulk upsert values
+class _UpsertDataRowMetadataInput(_CamelCaseMixin):
+    schema_id: str
+    value: Any
+
+
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
     data_row_id: str
-    fields: List[Dict]
+    fields: List[_UpsertDataRowMetadataInput]
 
 
 class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
@@ -398,7 +404,7 @@ class DataRowMetadataOntology:
 
     def _parse_upsert(
             self, metadatum: DataRowMetadataField
-    ) -> List[Dict]:
+    ) -> List[_UpsertDataRowMetadataInput]:
         """Format for metadata upserts to GQL"""
 
         if metadatum.schema_id not in self.fields_by_id:
@@ -422,7 +428,7 @@ class DataRowMetadataOntology:
         else:
             raise ValueError(f"Unknown type: {schema}")
 
-        return parsed
+        return [_UpsertDataRowMetadataInput(**p) for p in parsed]
 
     def _validate_delete(self, delete: DeleteDataRowMetadata):
         if not len(delete.fields):
