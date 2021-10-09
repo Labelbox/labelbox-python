@@ -8,6 +8,7 @@ from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetad
     DataRowMetadataOntology
 
 FAKE_SCHEMA_ID = "0" * 25
+FAKE_DATAROW_ID = "D" * 25
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TRAIN_SPLIT_ID = "cko8sbscr0003h2dk04w86hof"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
@@ -22,24 +23,11 @@ FAKE_NUMBER_FIELD = {
     "reserved": False
 }
 
-"""
-customMetadataOntology {
-                id
-                name
-                kind
-                reserved
-                options {
-                    id
-                    kind
-                    name
-                    reserved
-                }
-        }}"""
-
 
 @pytest.fixture
 def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
+    mdo._raw_ontology = mdo._get_ontology()
     mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
     mdo._build_ontology()
     yield mdo
@@ -91,7 +79,27 @@ def make_metadata(dr_id) -> DataRowMetadata:
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    assert len(mdo.custom_fields) == 0
+    assert len(mdo.custom_fields) == 1
+
+    split = mdo.reserved_by_name["split"]["train"]
+
+    assert DataRowMetadata(
+        data_row_id=FAKE_DATAROW_ID,
+        fields=[
+            DataRowMetadataField(
+                schema_id=mdo.reserved_by_name["captureDateTime"].uid,
+                value=datetime.utcnow(),
+            ),
+            DataRowMetadataField(
+                schema_id=split.parent,
+                value=split.uid
+            ),
+            DataRowMetadataField(
+                schema_id=mdo.reserved_by_name["tag"].uid,
+                value="hello-world"
+            ),
+        ]
+    )
 
 
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):

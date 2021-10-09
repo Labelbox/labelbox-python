@@ -1,6 +1,7 @@
 # type: ignore
 import datetime
 import warnings
+from copy import deepcopy
 from enum import Enum
 from itertools import chain
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
@@ -150,7 +151,7 @@ class DataRowMetadataOntology:
             if f.options:
                 index[f.name] = {}
                 for o in f.options:
-                    index[o.name] = o
+                    index[f.name][o.name] = o
             else:
                 index[f.name] = f
         return index
@@ -187,13 +188,14 @@ class DataRowMetadataOntology:
     @staticmethod
     def _parse_ontology(raw_ontology) -> List[DataRowMetadataSchema]:
         fields = []
-        for schema in raw_ontology:
-            schema["uid"] = schema.pop("id")
+        copy = deepcopy(raw_ontology)
+        for schema in copy:
+            schema["uid"] = schema["id"]
             options = None
             if schema.get("options"):
                 options = []
                 for option in schema["options"]:
-                    option["uid"] = option.pop("id")
+                    option["uid"] = option["id"]
                     options.append(
                         DataRowMetadataSchema(**{
                             **option,
