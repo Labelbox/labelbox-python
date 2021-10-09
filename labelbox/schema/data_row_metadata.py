@@ -122,6 +122,7 @@ class DataRowMetadataOntology:
         self._batch_size = 50  # used for uploads and deletes
 
         self._raw_ontology = self._get_ontology()
+        self._build_ontology()
 
     def _build_ontology(self):
         # all fields
