@@ -60,7 +60,7 @@ class _CamelCaseMixin(BaseModel):
 # Metadata base class
 class DataRowMetadataField(_CamelCaseMixin):
     schema_id: SchemaId
-    value: DataRowMetadataValue
+    value: Any
 
 
 class DataRowMetadata(_CamelCaseMixin):
