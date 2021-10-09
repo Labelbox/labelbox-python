@@ -50,7 +50,6 @@ DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId, Number]
 
 
 class _CamelCaseMixin(BaseModel):
-
     class Config:
         allow_population_by_field_name = True
         alias_generator = camel_case
@@ -158,7 +157,7 @@ class DataRowMetadataOntology:
 
     @staticmethod
     def _make_id_index(
-        fields: List[DataRowMetadataSchema]
+            fields: List[DataRowMetadataSchema]
     ) -> Dict[SchemaId, DataRowMetadataSchema]:
         index = {}
         for f in fields:
@@ -198,7 +197,7 @@ class DataRowMetadataOntology:
                         DataRowMetadataSchema(**{
                             **option,
                             **{
-                                "parent": schema["id"]
+                                "parent": schema["uid"]
                             }
                         }))
             schema["options"] = options
@@ -207,9 +206,9 @@ class DataRowMetadataOntology:
         return fields
 
     def parse_metadata(
-        self, unparsed: List[Dict[str,
-                                  List[Union[str,
-                                             Dict]]]]) -> List[DataRowMetadata]:
+            self, unparsed: List[Dict[str,
+                                      List[Union[str,
+                                                 Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
         >>> mdo.parse_metadata([metdata])
@@ -270,7 +269,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_upsert(
-            upserts: List[_UpsertBatchDataRowMetadata]
+                upserts: List[_UpsertBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
                 upsertDataRowCustomMetadata(data: $metadata){
@@ -303,13 +302,13 @@ class DataRowMetadataOntology:
                     fields=list(
                         chain.from_iterable(
                             self._parse_upsert(m) for m in m.fields))).dict(
-                                by_alias=True))
+                    by_alias=True))
 
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
     def bulk_delete(
-        self, deletes: List[DeleteDataRowMetadata]
+            self, deletes: List[DeleteDataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """ Delete metadata from a datarow by specifiying the fields you want to remove
 
@@ -336,7 +335,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_delete(
-            deletes: List[_DeleteBatchDataRowMetadata]
+                deletes: List[_DeleteBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowCustomMetadataBatchDeleteInput!]!) {
                 deleteDataRowCustomMetadata(data: $deletes) {
@@ -415,6 +414,8 @@ class DataRowMetadataOntology:
             parsed = _validate_parse_datetime(metadatum)
         elif schema.kind == DataRowMetadataKind.string:
             parsed = _validate_parse_text(metadatum)
+        elif schema.kind == DataRowMetadataKind.number:
+            parsed = _validate_parse_number(metadatum)
         elif schema.kind == DataRowMetadataKind.embedding:
             parsed = _validate_parse_embedding(metadatum)
         elif schema.kind == DataRowMetadataKind.enum:
@@ -455,9 +456,9 @@ def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
 
 
 def _batch_operations(
-    batch_function: _BatchFunction,
-    items: List,
-    batch_size: int = 100,
+        batch_function: _BatchFunction,
+        items: List,
+        batch_size: int = 100,
 ):
     response = []
 
@@ -469,6 +470,12 @@ def _batch_operations(
 def _validate_parse_embedding(
         field: DataRowMetadataField
 ) -> List[Dict[str, Union[SchemaId, Embedding]]]:
+    return [field.dict(by_alias=True)]
+
+
+def _validate_parse_number(
+        field: DataRowMetadataField
+) -> List[Dict[str, Union[SchemaId, Number]]]:
     return [field.dict(by_alias=True)]
 
 

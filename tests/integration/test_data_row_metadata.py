@@ -1,5 +1,5 @@
-from datetime import datetime
 import time
+from datetime import datetime
 
 import pytest
 
@@ -24,11 +24,11 @@ def mdo(client):
 @pytest.fixture
 def big_dataset(dataset: Dataset, image_url):
     task = dataset.create_data_rows([
-        {
-            "row_data": image_url,
-            "external_id": "my-image"
-        },
-    ] * 250)
+                                        {
+                                            "row_data": image_url,
+                                            "external_id": "my-image"
+                                        },
+                                    ] * 250)
     task.wait_till_done()
 
     yield dataset
@@ -38,11 +38,11 @@ def big_dataset(dataset: Dataset, image_url):
 def wait_for_embeddings_svc(data_row_ids, mdo):
     for idx in range(5):
         if all([
-                len(metadata.fields)
-                for metadata in mdo.bulk_export(data_row_ids)
+            len(metadata.fields)
+            for metadata in mdo.bulk_export(data_row_ids)
         ]):
             return
-        time.sleep((idx + 1)**2)
+        time.sleep((idx + 1) ** 2)
     raise Exception("Embedding svc failed to update metadata.")
 
 
@@ -127,7 +127,6 @@ def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
 
 
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
-
     metadata = []
     data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
     wait_for_embeddings_svc(data_row_ids, mdo)
@@ -229,11 +228,19 @@ def test_parse_raw_metadata(mdo):
         }, {
             'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
             'value': '2021-07-20T21:41:14.606710Z'
-        }]
+        }, {
+            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
+            'value': 0.5
+        },
+        ]
     }
 
     parsed = mdo.parse_metadata([example])
     assert len(parsed) == 1
-    row = parsed[0]
-    assert row.data_row_id == example["dataRowId"]
-    assert len(row.fields) == 3
+    for row in parsed:
+        assert row.data_row_id == example["dataRowId"]
+        assert len(row.fields) == 4
+
+    for row in parsed:
+        for field in row.fields:
+            assert mdo._parse_upsert(field)
