@@ -87,7 +87,7 @@ class DataRowMetadataBatchResponse(_CamelCaseMixin):
 # Bulk upsert values
 class _UpsertDataRowMetadataInput(_CamelCaseMixin):
     schema_id: str
-    value: _DataRowMetadataValuePrimitives
+    value: Any
 
 
 # Batch of upsert values for a datarow
