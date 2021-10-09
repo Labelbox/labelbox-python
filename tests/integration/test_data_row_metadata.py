@@ -15,10 +15,34 @@ EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 
+FAKE_NUMBER_FIELD = {
+    "id": FAKE_SCHEMA_ID,
+    "name": "number",
+    "kind": 'CustomMetadataNumber',
+    "reserved": False
+}
+
+"""
+customMetadataOntology {
+                id
+                name
+                kind
+                reserved
+                options {
+                    id
+                    kind
+                    name
+                    reserved
+                }
+        }}"""
+
 
 @pytest.fixture
 def mdo(client):
-    yield client.get_data_row_metadata_ontology()
+    mdo = client.get_data_row_metadata_ontology()
+    mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
+    mdo._build_ontology()
+    yield mdo
 
 
 @pytest.fixture
@@ -229,7 +253,7 @@ def test_parse_raw_metadata(mdo):
             'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
             'value': '2021-07-20T21:41:14.606710Z'
         }, {
-            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
+            'schemaId': FAKE_SCHEMA_ID,
             'value': 0.5
         },
         ]
