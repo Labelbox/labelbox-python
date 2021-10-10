@@ -1,6 +1,7 @@
 # type: ignore
 import datetime
 import warnings
+from copy import deepcopy
 from enum import Enum
 from itertools import chain
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
@@ -46,7 +47,9 @@ String: Type[str] = constr(max_length=500)
 OptionId: Type[SchemaId] = SchemaId  # enum option
 Number: Type[float] = float
 
-DataRowMetadataValue = Union[Embedding, DateTime, String, OptionId, Number]
+DataRowMetadataValue = Union[Embedding, Number, DateTime, String, OptionId]
+# primitives used in uploads
+_DataRowMetadataValuePrimitives = Union[str, List, dict, float]
 
 
 class _CamelCaseMixin(BaseModel):
@@ -59,7 +62,7 @@ class _CamelCaseMixin(BaseModel):
 # Metadata base class
 class DataRowMetadataField(_CamelCaseMixin):
     schema_id: SchemaId
-    value: DataRowMetadataValue
+    value: Any
 
 
 class DataRowMetadata(_CamelCaseMixin):
@@ -85,7 +88,7 @@ class DataRowMetadataBatchResponse(_CamelCaseMixin):
 # Bulk upsert values
 class _UpsertDataRowMetadataInput(_CamelCaseMixin):
     schema_id: str
-    value: Union[str, List, dict]
+    value: Any
 
 
 # Batch of upsert values for a datarow
@@ -121,9 +124,11 @@ class DataRowMetadataOntology:
         self._batch_size = 50  # used for uploads and deletes
 
         self._raw_ontology = self._get_ontology()
+        self._build_ontology()
 
+    def _build_ontology(self):
         # all fields
-        self.fields = self._parse_ontology()
+        self.fields = self._parse_ontology(self._raw_ontology)
         self.fields_by_id = self._make_id_index(self.fields)
 
         # reserved fields
@@ -131,18 +136,18 @@ class DataRowMetadataOntology:
             f for f in self.fields if f.reserved
         ]
         self.reserved_by_id = self._make_id_index(self.reserved_fields)
-        self.reserved_by_name: Dict[str, DataRowMetadataSchema] = {
-            f.name: f for f in self.reserved_fields
-        }
+        self.reserved_by_name: Dict[
+            str,
+            DataRowMetadataSchema] = self._make_name_index(self.reserved_fields)
 
         # custom fields
         self.custom_fields: List[DataRowMetadataSchema] = [
             f for f in self.fields if not f.reserved
         ]
         self.custom_by_id = self._make_id_index(self.custom_fields)
-        self.custom_by_name: Dict[str, DataRowMetadataSchema] = {
-            f.name: f for f in self.custom_fields
-        }
+        self.custom_by_name: Dict[
+            str,
+            DataRowMetadataSchema] = self._make_name_index(self.custom_fields)
 
     @staticmethod
     def _make_name_index(fields: List[DataRowMetadataSchema]):
@@ -151,7 +156,7 @@ class DataRowMetadataOntology:
             if f.options:
                 index[f.name] = {}
                 for o in f.options:
-                    index[o.name] = o
+                    index[f.name][o.name] = o
             else:
                 index[f.name] = f
         return index
@@ -185,15 +190,17 @@ class DataRowMetadataOntology:
         """
         return self._client.execute(query)["customMetadataOntology"]
 
-    def _parse_ontology(self) -> List[DataRowMetadataSchema]:
+    @staticmethod
+    def _parse_ontology(raw_ontology) -> List[DataRowMetadataSchema]:
         fields = []
-        for schema in self._raw_ontology:
-            schema["uid"] = schema.pop("id")
+        copy = deepcopy(raw_ontology)
+        for schema in copy:
+            schema["uid"] = schema["id"]
             options = None
             if schema.get("options"):
                 options = []
                 for option in schema["options"]:
-                    option["uid"] = option.pop("id")
+                    option["uid"] = option["id"]
                     options.append(
                         DataRowMetadataSchema(**{
                             **option,
@@ -415,6 +422,8 @@ class DataRowMetadataOntology:
             parsed = _validate_parse_datetime(metadatum)
         elif schema.kind == DataRowMetadataKind.string:
             parsed = _validate_parse_text(metadatum)
+        elif schema.kind == DataRowMetadataKind.number:
+            parsed = _validate_parse_number(metadatum)
         elif schema.kind == DataRowMetadataKind.embedding:
             parsed = _validate_parse_embedding(metadatum)
         elif schema.kind == DataRowMetadataKind.enum:
@@ -469,6 +478,12 @@ def _batch_operations(
 def _validate_parse_embedding(
         field: DataRowMetadataField
 ) -> List[Dict[str, Union[SchemaId, Embedding]]]:
+    return [field.dict(by_alias=True)]
+
+
+def _validate_parse_number(
+        field: DataRowMetadataField
+) -> List[Dict[str, Union[SchemaId, Number]]]:
     return [field.dict(by_alias=True)]
 
 

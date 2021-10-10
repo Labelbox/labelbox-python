@@ -1,5 +1,5 @@
-from datetime import datetime
 import time
+from datetime import datetime
 
 import pytest
 
@@ -8,6 +8,7 @@ from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetad
     DataRowMetadataOntology
 
 FAKE_SCHEMA_ID = "0" * 25
+FAKE_DATAROW_ID = "D" * 25
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TRAIN_SPLIT_ID = "cko8sbscr0003h2dk04w86hof"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
@@ -15,10 +16,21 @@ EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 
+FAKE_NUMBER_FIELD = {
+    "id": FAKE_SCHEMA_ID,
+    "name": "number",
+    "kind": 'CustomMetadataNumber',
+    "reserved": False
+}
+
 
 @pytest.fixture
 def mdo(client):
-    yield client.get_data_row_metadata_ontology()
+    mdo = client.get_data_row_metadata_ontology()
+    mdo._raw_ontology = mdo._get_ontology()
+    mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
+    mdo._build_ontology()
+    yield mdo
 
 
 @pytest.fixture
@@ -67,7 +79,21 @@ def make_metadata(dr_id) -> DataRowMetadata:
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    assert len(mdo.custom_fields) == 0
+    assert len(mdo.custom_fields) == 1
+
+    split = mdo.reserved_by_name["split"]["train"]
+
+    assert DataRowMetadata(
+        data_row_id=FAKE_DATAROW_ID,
+        fields=[
+            DataRowMetadataField(
+                schema_id=mdo.reserved_by_name["captureDateTime"].uid,
+                value=datetime.utcnow(),
+            ),
+            DataRowMetadataField(schema_id=split.parent, value=split.uid),
+            DataRowMetadataField(schema_id=mdo.reserved_by_name["tag"].uid,
+                                 value="hello-world"),
+        ])
 
 
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
@@ -127,7 +153,6 @@ def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
 
 
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
-
     metadata = []
     data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
     wait_for_embeddings_svc(data_row_ids, mdo)
@@ -217,23 +242,36 @@ def test_parse_raw_metadata(mdo):
     example = {
         'dataRowId':
             'ckr6kkfx801ui0yrtg9fje8xh',
-        'fields': [{
-            'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
-            'value': 'my-new-message'
-        }, {
-            'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
-            'value': {}
-        }, {
-            'schemaId': 'cko8sbscr0003h2dk04w86hof',
-            'value': {}
-        }, {
-            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
-            'value': '2021-07-20T21:41:14.606710Z'
-        }]
+        'fields': [
+            {
+                'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
+                'value': 'my-new-message'
+            },
+            {
+                'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
+                'value': {}
+            },
+            {
+                'schemaId': 'cko8sbscr0003h2dk04w86hof',
+                'value': {}
+            },
+            {
+                'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
+                'value': '2021-07-20T21:41:14.606710Z'
+            },
+            {
+                'schemaId': FAKE_SCHEMA_ID,
+                'value': 0.5
+            },
+        ]
     }
 
     parsed = mdo.parse_metadata([example])
     assert len(parsed) == 1
-    row = parsed[0]
-    assert row.data_row_id == example["dataRowId"]
-    assert len(row.fields) == 3
+    for row in parsed:
+        assert row.data_row_id == example["dataRowId"]
+        assert len(row.fields) == 4
+
+    for row in parsed:
+        for field in row.fields:
+            assert mdo._parse_upsert(field)
