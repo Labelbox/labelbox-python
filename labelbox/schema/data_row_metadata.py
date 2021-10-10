@@ -53,6 +53,7 @@ _DataRowMetadataValuePrimitives = Union[str, List, dict, float]
 
 
 class _CamelCaseMixin(BaseModel):
+
     class Config:
         allow_population_by_field_name = True
         alias_generator = camel_case
@@ -135,14 +136,18 @@ class DataRowMetadataOntology:
             f for f in self.fields if f.reserved
         ]
         self.reserved_by_id = self._make_id_index(self.reserved_fields)
-        self.reserved_by_name: Dict[str, DataRowMetadataSchema] = self._make_name_index(self.reserved_fields)
+        self.reserved_by_name: Dict[
+            str,
+            DataRowMetadataSchema] = self._make_name_index(self.reserved_fields)
 
         # custom fields
         self.custom_fields: List[DataRowMetadataSchema] = [
             f for f in self.fields if not f.reserved
         ]
         self.custom_by_id = self._make_id_index(self.custom_fields)
-        self.custom_by_name: Dict[str, DataRowMetadataSchema] = self._make_name_index(self.custom_fields)
+        self.custom_by_name: Dict[
+            str,
+            DataRowMetadataSchema] = self._make_name_index(self.custom_fields)
 
     @staticmethod
     def _make_name_index(fields: List[DataRowMetadataSchema]):
@@ -158,7 +163,7 @@ class DataRowMetadataOntology:
 
     @staticmethod
     def _make_id_index(
-            fields: List[DataRowMetadataSchema]
+        fields: List[DataRowMetadataSchema]
     ) -> Dict[SchemaId, DataRowMetadataSchema]:
         index = {}
         for f in fields:
@@ -209,9 +214,9 @@ class DataRowMetadataOntology:
         return fields
 
     def parse_metadata(
-            self, unparsed: List[Dict[str,
-                                      List[Union[str,
-                                                 Dict]]]]) -> List[DataRowMetadata]:
+        self, unparsed: List[Dict[str,
+                                  List[Union[str,
+                                             Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
         >>> mdo.parse_metadata([metdata])
@@ -272,7 +277,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_upsert(
-                upserts: List[_UpsertBatchDataRowMetadata]
+            upserts: List[_UpsertBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
                 upsertDataRowCustomMetadata(data: $metadata){
@@ -305,13 +310,13 @@ class DataRowMetadataOntology:
                     fields=list(
                         chain.from_iterable(
                             self._parse_upsert(m) for m in m.fields))).dict(
-                    by_alias=True))
+                                by_alias=True))
 
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
     def bulk_delete(
-            self, deletes: List[DeleteDataRowMetadata]
+        self, deletes: List[DeleteDataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """ Delete metadata from a datarow by specifiying the fields you want to remove
 
@@ -338,7 +343,7 @@ class DataRowMetadataOntology:
             raise ValueError("Empty list passed")
 
         def _batch_delete(
-                deletes: List[_DeleteBatchDataRowMetadata]
+            deletes: List[_DeleteBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowCustomMetadataBatchDeleteInput!]!) {
                 deleteDataRowCustomMetadata(data: $deletes) {
@@ -459,9 +464,9 @@ def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
 
 
 def _batch_operations(
-        batch_function: _BatchFunction,
-        items: List,
-        batch_size: int = 100,
+    batch_function: _BatchFunction,
+    items: List,
+    batch_size: int = 100,
 ):
     response = []
 

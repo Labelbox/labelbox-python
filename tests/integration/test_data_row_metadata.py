@@ -36,11 +36,11 @@ def mdo(client):
 @pytest.fixture
 def big_dataset(dataset: Dataset, image_url):
     task = dataset.create_data_rows([
-                                        {
-                                            "row_data": image_url,
-                                            "external_id": "my-image"
-                                        },
-                                    ] * 250)
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 250)
     task.wait_till_done()
 
     yield dataset
@@ -50,11 +50,11 @@ def big_dataset(dataset: Dataset, image_url):
 def wait_for_embeddings_svc(data_row_ids, mdo):
     for idx in range(5):
         if all([
-            len(metadata.fields)
-            for metadata in mdo.bulk_export(data_row_ids)
+                len(metadata.fields)
+                for metadata in mdo.bulk_export(data_row_ids)
         ]):
             return
-        time.sleep((idx + 1) ** 2)
+        time.sleep((idx + 1)**2)
     raise Exception("Embedding svc failed to update metadata.")
 
 
@@ -90,16 +90,10 @@ def test_get_datarow_metadata_ontology(mdo):
                 schema_id=mdo.reserved_by_name["captureDateTime"].uid,
                 value=datetime.utcnow(),
             ),
-            DataRowMetadataField(
-                schema_id=split.parent,
-                value=split.uid
-            ),
-            DataRowMetadataField(
-                schema_id=mdo.reserved_by_name["tag"].uid,
-                value="hello-world"
-            ),
-        ]
-    )
+            DataRowMetadataField(schema_id=split.parent, value=split.uid),
+            DataRowMetadataField(schema_id=mdo.reserved_by_name["tag"].uid,
+                                 value="hello-world"),
+        ])
 
 
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
@@ -248,22 +242,27 @@ def test_parse_raw_metadata(mdo):
     example = {
         'dataRowId':
             'ckr6kkfx801ui0yrtg9fje8xh',
-        'fields': [{
-            'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
-            'value': 'my-new-message'
-        }, {
-            'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
-            'value': {}
-        }, {
-            'schemaId': 'cko8sbscr0003h2dk04w86hof',
-            'value': {}
-        }, {
-            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
-            'value': '2021-07-20T21:41:14.606710Z'
-        }, {
-            'schemaId': FAKE_SCHEMA_ID,
-            'value': 0.5
-        },
+        'fields': [
+            {
+                'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
+                'value': 'my-new-message'
+            },
+            {
+                'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
+                'value': {}
+            },
+            {
+                'schemaId': 'cko8sbscr0003h2dk04w86hof',
+                'value': {}
+            },
+            {
+                'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
+                'value': '2021-07-20T21:41:14.606710Z'
+            },
+            {
+                'schemaId': FAKE_SCHEMA_ID,
+                'value': 0.5
+            },
         ]
     }
 
