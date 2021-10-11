@@ -669,7 +669,6 @@ class Client:
 
         Args:
             external_ids: List of external ids to fetch data row ids for
-
         Returns:
             A dict of external ids as keys and values as a list of data row ids that correspond to that external id.
         """
@@ -677,12 +676,12 @@ class Client:
             externalIdsToDataRowIds(externalId_in: $externalId_in) { dataRowId externalId }
         }
         """
-        max_n_per_request = 100
+        max_ids_per_request = 100
         result = defaultdict(list)
-        for i in range(0, len(external_ids), max_n_per_request):
+        for i in range(0, len(external_ids), max_ids_per_request):
             for row in self.execute(
                     query_str,
-                {'externalId_in': external_ids[i:i + max_n_per_request]
+                {'externalId_in': external_ids[i:i + max_ids_per_request]
                 })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result

@@ -1,4 +1,20 @@
 # Changelog
+# Version 3.7.0 (2021-11-10)
+## Added
+* Search for data row ids from external ids without specifying a dataset
+    * `client.get_data_row_ids_for_external_ids()`
+* Support for numeric metadata type
+
+## Updated
+* The following `DataRowMetadataOntology` fields were renamed:
+    * `all_fields` -> `fields`
+    * `all_fields_id_index` -> `fields_by_id`
+    * `reserved_id_index` -> `reserved_by_id`
+    * `reserved_name_index` -> `reserved_by_name`
+    * `custom_id_index` -> `custom_by_id`
+    * `custom_name_index` -> `custom_by_name`
+
+
 # Version 3.6.1 (2021-07-10)
 * Fix import error that appears when exporting labels
 
