@@ -1,6 +1,8 @@
 # type: ignore
 from datetime import datetime, timezone
 import json
+from typing import List, Dict
+from collections import defaultdict
 
 import logging
 import mimetypes
@@ -658,3 +660,28 @@ class Client:
             "ontologyId": ontology_id
         })
         return Model(self, result['createModel'])
+
+    def get_data_row_ids_for_external_ids(
+            self, external_ids: List[str]) -> Dict[str, List[str]]:
+        """
+        Returns a list of data row ids for a list of external ids.
+        There is a max of 1500 items returned at a time.
+
+        Args:
+            external_ids: List of external ids to fetch data row ids for
+        Returns:
+            A dict of external ids as keys and values as a list of data row ids that correspond to that external id.
+        """
+        query_str = """query externalIdsToDataRowIdsPyApi($externalId_in: [String!]!){
+            externalIdsToDataRowIds(externalId_in: $externalId_in) { dataRowId externalId }
+        }
+        """
+        max_ids_per_request = 100
+        result = defaultdict(list)
+        for i in range(0, len(external_ids), max_ids_per_request):
+            for row in self.execute(
+                    query_str,
+                {'externalId_in': external_ids[i:i + max_ids_per_request]
+                })['externalIdsToDataRowIds']:
+                result[row['externalId']].append(row['dataRowId'])
+        return result
