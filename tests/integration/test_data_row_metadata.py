@@ -92,7 +92,10 @@ def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
     mdo.bulk_upsert([metadata])
     exported = mdo.bulk_export([datarow.uid])
     assert len(exported)
-    assert len([field for field in exported[0].fields if field.schema_id != PRE_COMPUTED_EMBEDDINGS_ID]) == 4
+    assert len([
+        field for field in exported[0].fields
+        if field.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
+    ]) == 4
 
 
 @pytest.mark.slow
@@ -104,13 +107,15 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     errors = mdo.bulk_upsert(metadata)
     assert len(errors) == 0
 
-
     metadata_lookup = {
         metadata.data_row_id: metadata
         for metadata in mdo.bulk_export(data_row_ids)
     }
     for data_row_id in data_row_ids:
-        assert len([f for f in metadata_lookup.get(data_row_id).fields if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID]), metadata_lookup.get(data_row_id).fields
+        assert len([
+            f for f in metadata_lookup.get(data_row_id).fields
+            if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
+        ]), metadata_lookup.get(data_row_id).fields
 
 
 def test_bulk_delete_datarow_metadata(datarow, mdo):
@@ -170,7 +175,10 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
     errors = mdo.bulk_delete(deletes)
     assert len(errors) == 0
     for data_row_id in data_row_ids:
-        fields = [f for f in mdo.bulk_export([data_row_id])[0].fields if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID]
+        fields = [
+            f for f in mdo.bulk_export([data_row_id])[0].fields
+            if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
+        ]
         assert len(fields) == 1, fields
         assert EMBEDDING_SCHEMA_ID not in [field.schema_id for field in fields]
 
@@ -192,7 +200,8 @@ def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
     exported = mdo.bulk_export([datarow.uid])[0].fields
-    assert len([f for f in exported if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID]) == 0
+    assert len(
+        [f for f in exported if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID]) == 0
 
 
 def test_raise_enum_upsert_schema_error(datarow, mdo):
