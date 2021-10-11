@@ -1,5 +1,5 @@
 # type: ignore
-import datetime
+from datetime import datetime
 import warnings
 from copy import deepcopy
 from enum import Enum
@@ -42,7 +42,7 @@ DataRowMetadataSchema.update_forward_refs()
 
 # Constraints for metadata values
 Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
-DateTime: Type[datetime.datetime] = datetime.datetime  # must be in UTC
+DateTime: Type[datetime] = datetime  # must be in UTC
 String: Type[str] = constr(max_length=500)
 OptionId: Type[SchemaId] = SchemaId  # enum option
 Number: Type[float] = float
@@ -62,7 +62,7 @@ class _CamelCaseMixin(BaseModel):
 # Metadata base class
 class DataRowMetadataField(_CamelCaseMixin):
     schema_id: SchemaId
-    value: Any
+    value: Union[DataRowMetadataValue, _DataRowMetadataValuePrimitives]
 
 
 class DataRowMetadata(_CamelCaseMixin):
@@ -489,7 +489,6 @@ def _validate_parse_number(
 
 def _validate_parse_datetime(
         field: DataRowMetadataField) -> List[Dict[str, Union[SchemaId, str]]]:
-    # TODO: better validate tzinfo
     return [{
         "schemaId": field.schema_id,
         "value": field.value.isoformat() + "Z",  # needs to be UTC
