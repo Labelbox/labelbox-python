@@ -143,8 +143,11 @@ def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[TEXT_SCHEMA_ID])
     ])
-    assert len(mdo.bulk_export(
-        [datarow.uid])[0].fields) == (n_fields + len(metadata.fields) - 1)
+    fields = [
+        f for f in mdo.bulk_export([datarow.uid])[0].fields
+        if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
+    ]
+    assert len(fields) == (len(metadata.fields) - 1)
 
 
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
