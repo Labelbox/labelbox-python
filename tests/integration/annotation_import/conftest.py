@@ -2,9 +2,12 @@ import uuid
 
 import pytest
 import time
+import requests
+import ndjson
 
+from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import MALPredictionImport
+from labelbox.schema.annotation_import import MALPredictionImport, AnnotationImportState
 
 
 @pytest.fixture
@@ -277,6 +280,7 @@ def model_run_predictions(polygon_inference, rectangle_inference,
     return [polygon_inference, rectangle_inference, line_inference]
 
 
+# also used for label imports
 @pytest.fixture
 def object_predictions(polygon_inference, rectangle_inference, line_inference,
                        entity_inference, segmentation_inference):
@@ -339,3 +343,25 @@ def model_run_annotation_groups(client, configured_project,
     time.sleep(3)
     yield model_run
     # TODO: Delete resources when that is possible ..
+
+
+class AnnotationImportTestHelpers:
+
+    @staticmethod
+    def assert_file_content(url: str, predictions):
+        response = requests.get(url)
+        assert response.text == ndjson.dumps(predictions)
+
+    @staticmethod
+    def check_running_state(req, name, url=None):
+        assert req.name == name
+        if url is not None:
+            assert req.input_file_url == url
+        assert req.error_file_url is None
+        assert req.status_file_url is None
+        assert req.state == AnnotationImportState.RUNNING
+
+
+@pytest.fixture
+def annotation_import_test_helpers() -> Type[AnnotationImportTestHelpers]:
+    return AnnotationImportTestHelpers()

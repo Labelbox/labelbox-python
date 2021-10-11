@@ -1,11 +1,11 @@
 name = "labelbox"
-__version__ = "3.5.0"
+__version__ = "3.6.1"
 
 from labelbox.schema.project import Project
 from labelbox.client import Client
 from labelbox.schema.model import Model
 from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport
+from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport, LabelImport
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.label import Label

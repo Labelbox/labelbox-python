@@ -1,47 +1,92 @@
+import abc
 from typing import Any, Dict, List, Union
 
 from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
-from .geometry import Geometry
+from .geometry import Geometry, Rectangle, Point
 from .ner import TextEntity
 
 
-class BaseAnnotation(FeatureSchema):
+class BaseAnnotation(FeatureSchema, abc.ABC):
     """ Base annotation class. Shouldn't be directly instantiated
     """
     extra: Dict[str, Any] = {}
 
 
 class ClassificationAnnotation(BaseAnnotation):
-    """Class representing classification annotations (annotations that don't have a location) """
+    """Classification annotations (non localized)
+
+    >>> ClassificationAnnotation(
+    >>>     value=Text(answer="my caption message"),
+    >>>     feature_schema_id="my-feature-schema-id"
+    >>> )
+
+    Args:
+        name (Optional[str])
+        feature_schema_id (Optional[Cuid])
+        value (Union[Text, Checklist, Radio, Dropdown])
+        extra (Dict[str, Any])
+     """
 
     value: Union[Text, Checklist, Radio, Dropdown]
 
 
 class ObjectAnnotation(BaseAnnotation):
-    """Class representing objects annotations (non classifications or annotations that have a location)
+    """Generic localized annotation (non classifications)
+
+    >>> ObjectAnnotation(
+    >>>     value=Rectangle(
+    >>>        start=Point(x=0, y=0),
+    >>>        end=Point(x=1, y=1)
+    >>>     ),
+    >>>     feature_schema_id="my-feature-schema-id"
+    >>> )
+
+    Args:
+        name (Optional[str])
+        feature_schema_id (Optional[Cuid])
+        value (Union[TextEntity, Geometry]): Localization of the annotation
+        classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
+        extra (Dict[str, Any])
     """
     value: Union[TextEntity, Geometry]
     classifications: List[ClassificationAnnotation] = []
 
 
 class VideoObjectAnnotation(ObjectAnnotation):
-    """
-    Class for video objects annotations
+    """Video object annotation
+
+    >>> VideoObjectAnnotation(
+    >>>     keyframe=True,
+    >>>     frame=10,
+    >>>     value=Rectangle(
+    >>>        start=Point(x=0, y=0),
+    >>>        end=Point(x=1, y=1)
+    >>>     ),
+    >>>     feature_schema_id="my-feature-schema-id"
+    >>>)
 
     Args:
-        frame: The frame index that this annotation corresponds to
-        keyframe: Whether or not this annotation was a human generated or interpolated annotation
+        name (Optional[str])
+        feature_schema_id (Optional[Cuid])
+        value (Geometry)
+        frame (Int): The frame index that this annotation corresponds to
+        keyframe (bool): Whether or not this annotation was a human generated or interpolated annotation
+        classifications (List[ClassificationAnnotation]) = []
+        extra (Dict[str, Any])
     """
     frame: int
     keyframe: bool
 
 
 class VideoClassificationAnnotation(ClassificationAnnotation):
-    """
-    Class for video classification annotations
+    """Video classification
 
     Args:
-        frame: The frame index that this annotation corresponds to
+        name (Optional[str])
+        feature_schema_id (Optional[Cuid])
+        value (Union[Text, Checklist, Radio, Dropdown])
+        frame (int): The frame index that this annotation corresponds to
+        extra (Dict[str, Any])
     """
     frame: int

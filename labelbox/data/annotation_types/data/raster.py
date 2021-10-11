@@ -1,22 +1,20 @@
-from typing import Callable, Optional
-from io import BytesIO
 from abc import ABC
-
-import numpy as np
-from pydantic import BaseModel
-import requests
-from google.api_core import retry
+from io import BytesIO
+from typing import Callable, Optional, Union
 from typing_extensions import Literal
-from pydantic import root_validator
+import numpy as np
+import requests
 from PIL import Image
+from google.api_core import retry
+from pydantic import BaseModel
+from pydantic import root_validator
 
 from .base_data import BaseData
 from ..types import TypedArray
 
 
 class RasterData(BaseModel, ABC):
-    """
-    Represents an image or segmentation mask.
+    """Represents an image or segmentation mask.
     """
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
@@ -24,11 +22,32 @@ class RasterData(BaseModel, ABC):
     arr: Optional[TypedArray[Literal['uint8']]] = None
 
     @classmethod
-    def from_2D_arr(cls, arr: TypedArray[Literal['uint8']], **kwargs):
+    def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
+                                    TypedArray[Literal['int']]], **kwargs):
+        """Construct from a 2D numpy array
+
+        Args:
+            arr: uint8 compatible numpy array
+
+        Returns:
+            RasterData
+        """
+
         if len(arr.shape) != 2:
             raise ValueError(
-                f"Found array with shape {arr.shape}. Expected two dimensions ([W,H])"
+                f"Found array with shape {arr.shape}. Expected two dimensions [H, W]"
             )
+
+        if not np.issubdtype(arr.dtype, np.integer):
+            raise ValueError("Array must be an integer subtype")
+
+        if np.can_cast(arr, np.uint8):
+            arr = arr.astype(np.uint8)
+        else:
+            raise ValueError(
+                "Could not cast array to uint8, check that values are between 0 and 255"
+            )
+
         arr = np.stack((arr,) * 3, axis=-1)
         return cls(arr=arr, **kwargs)
 
@@ -153,10 +172,10 @@ class RasterData(BaseModel, ABC):
 
     def __repr__(self) -> str:
         symbol_or_none = lambda data: '...' if data is not None else None
-        return  f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)}," \
-                f"file_path={self.file_path}," \
-                f"url={self.url}," \
-                f"arr={symbol_or_none(self.arr)})"
+        return f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)}," \
+               f"file_path={self.file_path}," \
+               f"url={self.url}," \
+               f"arr={symbol_or_none(self.arr)})"
 
     class Config:
         # Required for sharing references
@@ -166,7 +185,25 @@ class RasterData(BaseModel, ABC):
 
 
 class MaskData(RasterData):
-    ...
+    """Used to represent a segmentation Mask
+
+    All segments within a mask must be mutually exclusive. At a
+    single cell, only one class can be present. All Mask data is
+    converted to a [H,W,3] image. Classes are
+
+    >>> # 3x3 mask with two classes and back ground
+    >>> MaskData.from_2D_arr([
+    >>>    [0, 0, 0],
+    >>>    [1, 1, 1],
+    >>>    [2, 2, 2],
+    >>>])
+
+    Args:
+        im_bytes: Optional[bytes] = None
+        file_path: Optional[str] = None
+        url: Optional[str] = None
+        arr: Optional[TypedArray[Literal['uint8']]] = None
+    """
 
 
 class ImageData(RasterData, BaseData):
