@@ -1,5 +1,5 @@
 # Changelog
-# Version 3.7.0 (2021-11-10)
+# Version 3.7.0 (2021-10-11)
 ## Added
 * Search for data row ids from external ids without specifying a dataset
     * `client.get_data_row_ids_for_external_ids()`
@@ -15,10 +15,10 @@
     * `custom_name_index` -> `custom_by_name`
 
 
-# Version 3.6.1 (2021-07-10)
+# Version 3.6.1 (2021-10-07)
 * Fix import error that appears when exporting labels
 
-# Version 3.6.0 (2021-04-10)
+# Version 3.6.0 (2021-10-04)
 ## Added
 * Bulk export metadata with `DataRowMetadataOntology.bulk_export()`
 * Add docstring examples of annotation types and a few helper methods
@@ -32,7 +32,7 @@
 * data_row.metadata was removed in favor of bulk exports.
 
 
-# Version 3.5.0 (2021-15-09)
+# Version 3.5.0 (2021-09-15)
 ## Added
 * Diagnostics custom metrics
     * Metric annotation types
