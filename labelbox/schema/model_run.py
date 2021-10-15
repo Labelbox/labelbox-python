@@ -1,6 +1,7 @@
 from typing import Dict, Iterable, Union
 from pathlib import Path
 import os
+import time
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
@@ -15,6 +16,38 @@ class ModelRun(DbObject):
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
+
+    def upsert_labels(self, label_ids, timeout_seconds=600):
+        """ Calls GraphQL API to start the MEA labels registration process
+        Args:
+            label_ids (list): label ids to insert
+            timeout_seconds (float): Max waiting time, in seconds.
+        Returns:
+            ID of newly generated async task
+        """
+
+        sleep_time = 5
+
+        mutation_name = 'createMEAModelRunLabelRegistrationTask'
+        query_str = """mutation createMEAModelRunLabelRegistrationTaskByApi($modelRunId: ID!, $labelIds : [ID!]!) {
+          %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
+          """ (mutation_name)
+
+        while True:
+            res = self.client.execute(query_str, {
+                'modelRunId': self.uid,
+                'labelIds': label_ids
+            })
+
+            res = res[mutation_name]
+            if res:
+                return res
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                return None
+
+            time.sleep(sleep_time)
 
     def upsert_labels(self, label_ids):
 
