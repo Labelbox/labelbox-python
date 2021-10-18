@@ -17,7 +17,7 @@ class ModelRun(DbObject):
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
 
-    def upsert_labels(self, label_ids, timeout_seconds=600):
+    def upsert_labels(self, label_ids, timeout_seconds=60):
         """ Calls GraphQL API to start the MEA labels registration process
         Args:
             label_ids (list): label ids to insert
@@ -32,17 +32,24 @@ class ModelRun(DbObject):
         sleep_time = 5
 
         mutation_name = 'createMEAModelRunLabelRegistrationTask'
-        query_str = """mutation createMEAModelRunLabelRegistrationTaskByApi($modelRunId: ID!, $labelIds : [ID!]!) {
+        create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
           %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
-          """ (mutation_name)
+          """ % (mutation_name)
 
-        while True:
-            res = self.client.execute(query_str, {
+        res = self.client.execute(create_task_query_str, {
                 'modelRunId': self.uid,
                 'labelIds': label_ids
             })
+        task_id = res[mutation_name]
 
-            res = res[mutation_name]
+        status_query_str = """query MEALabelRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
+            MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
+        }
+        """
+
+        while True:
+            res = self.client.execute(status_query_str, {'where': {'id': task_id}})['MEALabelRegistrationTaskStatus']
+            breakpoint()
             if res:
                 return res
 
