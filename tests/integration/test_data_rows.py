@@ -61,10 +61,9 @@ def test_data_row_large_bulk_creation(dataset, image_url):
         task = dataset.create_data_rows([{
             DataRow.row_data: image_url
         }] * 750 + [fp.name] * 250)
-    assert task.status == "IN_PROGRESS"
+    assert task.status in {"IN_PROGRESS", "COMPLETE"}
     task.wait_till_done(timeout_seconds=120)
     assert task.status == "COMPLETE"
-    data_rows = len(list(dataset.data_rows())) == 5003
 
 
 @pytest.mark.xfail(reason="DataRow.dataset() relationship not set")
