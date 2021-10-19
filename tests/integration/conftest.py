@@ -212,9 +212,11 @@ LabelPack = namedtuple("LabelPack", "project dataset data_row label")
 @pytest.fixture
 def label_pack(project, rand_gen, image_url):
     client = project.client
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=image_url)
+    dataset = client.create_dataset(name=rand_gen(str))
+    project.datasets.connect(dataset)
+    data_row = dataset.create_data_row(row_data=IMG_URL)
     label = project.create_label(data_row=data_row, label=rand_gen(str))
+    time.sleep(10)
     yield LabelPack(project, dataset, data_row, label)
     dataset.delete()
 
@@ -309,7 +311,7 @@ def annotation_submit_fn(client):
             })
         features = feature_result['project']['featuresForDataRow']
         feature_ids = [feature['id'] for feature in features]
-        client.execute(
+        res = client.execute(
             """mutation createLabelPyApi ($project_id : ID!,$datarow_id: ID!,$feature_ids: [ID!]!,$time_seconds : Float!) {
                 createLabelFromFeatures(data: {dataRow: { id: $datarow_id },project: { id: $project_id },
                     featureIds: $feature_ids,secondsSpent: $time_seconds}) {id}}""",
@@ -319,6 +321,7 @@ def annotation_submit_fn(client):
                 "feature_ids": feature_ids,
                 "time_seconds": 10
             })
+        return res['createLabelFromFeatures']['id']
 
     return submit
 
@@ -355,9 +358,8 @@ def configured_project_with_label(client, rand_gen, annotation_submit_fn,
     upload_task = MALPredictionImport.create_from_objects(
         client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
-    time.sleep(2)
-    annotation_submit_fn(project.uid, data_row.uid)
-    time.sleep(2)
-    yield project
+    labels = annotation_submit_fn(project.uid, data_row.uid)
+    time.sleep(3)
+    yield [project, labels]
     dataset.delete()
     project.delete()

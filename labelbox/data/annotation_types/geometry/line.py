@@ -9,6 +9,12 @@ from .geometry import Geometry
 
 
 class Line(Geometry):
+    """Line annotation
+
+    Args:
+        points (List[Point]): A list of `Point` geometries
+
+    """
     points: List[Point]
 
     @property

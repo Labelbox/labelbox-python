@@ -11,9 +11,30 @@ from .geometry import Geometry
 
 
 class Mask(Geometry):
-    # Mask data can be shared across multiple masks
+    """Mask used to represent a single class in a larger segmentation mask
+
+    Example of a mutually exclusive class
+
+    >>> arr = MaskData.from_2D_arr([
+    >>>    [0, 0, 0],
+    >>>    [1, 1, 1],
+    >>>    [2, 2, 2],
+    >>>])
+    >>> annotations = [
+    >>>    ObjectAnnotation(value=Mask(mask=arr, color=1), name="dog"),
+    >>>    ObjectAnnotation(value=Mask(mask=arr, color=2), name="cat"),
+    >>>]
+
+    Args:
+         mask (MaskData): An object containing the actual mask, `MaskData` can
+            be shared across multiple `Masks` to more efficiently store data
+            for mutually exclusive segmentations.
+         color (Tuple[uint8, uint8, uint8]): RGB color or a single value
+            indicating the values of the class in the `MaskData`
+    """
+
     mask: MaskData
-    color: Tuple[int, int, int]
+    color: Union[Tuple[int, int, int], int]
 
     @property
     def geometry(self):
@@ -31,8 +52,7 @@ class Mask(Geometry):
              canvas: Optional[np.ndarray] = None,
              color: Optional[Union[int, Tuple[int, int, int]]] = None,
              thickness=None) -> np.ndarray:
-        """
-        Converts the Mask object into a numpy array
+        """Converts the Mask object into a numpy array
 
         Args:
             height (int): Optionally resize mask height before drawing.
@@ -43,6 +63,7 @@ class Mask(Geometry):
                 int will return the mask as a 1d array
                 tuple[int,int,int] will return the mask as a 3d array
             thickness (None): Unused, exists for a consistent interface.
+
         Returns:
             np.ndarray representing only this object
                 as opposed to the mask that this object references which might have multiple objects determined by colors
@@ -79,8 +100,9 @@ class Mask(Geometry):
 
     @validator('color')
     def is_valid_color(cls, color):
-        #Does the dtype matter? Can it be a float?
         if isinstance(color, (tuple, list)):
+            if len(color) == 1:
+                color = [color[0]] * 3
             if len(color) != 3:
                 raise ValueError(
                     "Segmentation colors must be either a (r,g,b) tuple or a single grayscale value"

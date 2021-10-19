@@ -166,7 +166,7 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def video_label_generator(self, timeout_seconds=120):
+    def video_label_generator(self, timeout_seconds=600):
         """
         Download video annotations
 
@@ -190,7 +190,7 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.label_generator() for text and imagery data.")
         return LBV1Converter.deserialize_video(json_data, self.client)
 
-    def label_generator(self, timeout_seconds=60):
+    def label_generator(self, timeout_seconds=600):
         """
         Download text and image annotations
 
@@ -214,7 +214,7 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.video_label_generator() for video data.")
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels(self, download=False, timeout_seconds=60):
+    def export_labels(self, download=False, timeout_seconds=600):
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 

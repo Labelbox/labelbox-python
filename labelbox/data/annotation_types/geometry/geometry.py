@@ -8,8 +8,7 @@ from pydantic import BaseModel
 
 
 class Geometry(BaseModel, ABC):
-    """
-    Base class for geometry objects.
+    """Abstract base class for geometry objects
     """
     extra: Dict[str, Any] = {}
 
@@ -27,6 +26,7 @@ class Geometry(BaseModel, ABC):
                 raise ValueError(
                     "Must either provide canvas or height and width")
             canvas = np.zeros((height, width, 3), dtype=np.uint8)
+        canvas = np.ascontiguousarray(canvas)
         return canvas
 
     @property

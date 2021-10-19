@@ -1,4 +1,81 @@
 # Changelog
+# Version 3.7.0 (2021-10-11)
+## Added
+* Search for data row ids from external ids without specifying a dataset
+    * `client.get_data_row_ids_for_external_ids()`
+* Support for numeric metadata type
+
+## Updated
+* The following `DataRowMetadataOntology` fields were renamed:
+    * `all_fields` -> `fields`
+    * `all_fields_id_index` -> `fields_by_id`
+    * `reserved_id_index` -> `reserved_by_id`
+    * `reserved_name_index` -> `reserved_by_name`
+    * `custom_id_index` -> `custom_by_id`
+    * `custom_name_index` -> `custom_by_name`
+
+
+# Version 3.6.1 (2021-10-07)
+* Fix import error that appears when exporting labels
+
+# Version 3.6.0 (2021-10-04)
+## Added
+* Bulk export metadata with `DataRowMetadataOntology.bulk_export()`
+* Add docstring examples of annotation types and a few helper methods
+
+## Updated
+* Update metadata notebook under examples/basics to include bulk_export.
+* Allow color to be a single integer when constructing Mask objects
+* Allow users to pass int arrays to RasterData and attempt coercion to uint8
+
+## Removed
+* data_row.metadata was removed in favor of bulk exports.
+
+
+# Version 3.5.0 (2021-09-15)
+## Added
+* Diagnostics custom metrics
+    * Metric annotation types
+    * Update ndjson converter to be compatible with metric types
+    * Metric library for computing confusion matrix metrics and iou
+    * Demo notebooks under `examples/diagnostics`
+* COCO Converter
+* Detectron2 example integration notebooks
+
+# Version 3.4.1 (2021-09-10)
+## Fix
+* Iam validation exception message
+
+# Version 3.4.0 (2021-09-10)
+## Added
+* New `IAMIntegration` entity
+* `Client.create_dataset()` compatibility with delegated access
+* `Organization.get_iam_integrations()` to list all integrations available to an org
+* `Organization.get_default_iam_integration()` to only get the defaault iam integration
+
+# Version 3.3.0 (2021-09-02)
+## Added
+* `Dataset.create_data_rows_sync()` for synchronous bulk uploads of data rows
+* `Model.delete()`, `ModelRun.delete()`, and `ModelRun.delete_annotation_groups()` to
+    Clean up models, model runs, and annotation groups.
+
+## Fix
+* Increased timeout for label exports since projects with many segmentation masks weren't finishing quickly enough.
+
+# Version 3.2.1 (2021-08-31)
+## Fix
+* Resolved issue with `create_data_rows()` was not working on amazon linux
+
+# Version 3.2.0 (2021-08-26)
+## Added
+* List `BulkImportRequest`s for a project with `Project.bulk_import_requests()`
+* Improvemens to `Dataset.create_data_rows()`
+    * Add attachments when bulk importing data rows
+    * Provide external ids when creating data rows from local files
+    * Get more informative error messages when the api rejects an import
+
+## Fix
+* Bug causing `project.label_generator()` to fail when projects had benchmarks
 
 # Version 3.1.0 (2021-08-18)
 ## Added

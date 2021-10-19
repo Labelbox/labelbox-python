@@ -20,14 +20,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         updated_at (datetime)
         created_at (datetime)
         media_attributes (dict): generated media attributes for the datarow
-        metadata (dict): uploaded metadata
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
         labels (Relationship): `ToMany` relationship to Label
         attachments (Relationship) `ToMany` relationship with AssetAttachment
-        metadata (Relationship): This Relationship is Deprecated. Please use `DataRow.attachments()` instead
     """
     external_id = Field.String("external_id")
     row_data = Field.String("row_data")
@@ -42,42 +40,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     labels = Relationship.ToMany("Label", True)
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
 
-    supported_meta_types = supported_attachment_types = {
-        attachment_type.value
-        for attachment_type in AssetAttachment.AttachmentType
-    }
+    supported_meta_types = supported_attachment_types = set(
+        AssetAttachment.AttachmentType.__members__)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
-
-    @property
-    def metadata(self) -> Dict[str, Union[str, List[Dict]]]:
-        """Get metadata for datarow
-        """
-
-        query = """query GetDataRowMetadataBetaPyApi($dataRowID: ID!) {
-              dataRow(where: {id: $dataRowID}) {
-                customMetadata {
-                    value
-                    schemaId
-                }
-              }
-            }
-        """
-
-        metadata = self.client.execute(
-            query, {"dataRowID": self.uid})["dataRow"]["customMetadata"]
-
-        return {
-            "data_row_id":
-                self.uid,
-            "fields": [{
-                "schema_id": m["schemaId"],
-                "value": m["value"]
-            } for m in metadata]
-        }
 
     @staticmethod
     def bulk_delete(data_rows):
@@ -103,11 +72,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Raises:
             ValueError: asset_type must be one of the supported types.
         """
-
-        if attachment_type not in self.supported_attachment_types:
-            raise ValueError(
-                f"meta_type must be one of {self.supported_attachment_types}. Found {attachment_type}"
-            )
+        AssetAttachment.validate_attachment_type(attachment_type)
 
         attachment_type_param = "type"
         attachment_value_param = "value"
