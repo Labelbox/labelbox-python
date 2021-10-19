@@ -37,9 +37,9 @@ class ModelRun(DbObject):
           """ % (mutation_name)
 
         res = self.client.execute(create_task_query_str, {
-                'modelRunId': self.uid,
-                'labelIds': label_ids
-            })
+            'modelRunId': self.uid,
+            'labelIds': label_ids
+        })
         task_id = res[mutation_name]
 
         status_query_str = """query MEALabelRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
@@ -48,14 +48,21 @@ class ModelRun(DbObject):
         """
 
         while True:
-            res = self.client.execute(status_query_str, {'where': {'id': task_id}})['MEALabelRegistrationTaskStatus']
-            breakpoint()
-            if res:
+            res = self.client.execute(status_query_str,
+                                      {'where': {
+                                          'id': task_id
+                                      }})['MEALabelRegistrationTaskStatus']
+            if res['status'] == 'COMPLETE':
                 return res
+            elif res['status'] == 'FAILED':
+                raise Exception(
+                    f"MEA Label Import Failed. Details : {res['errorMessage']}")
 
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
-                return None
+                raise TimeoutError(
+                    f"Unable to complete import within {timeout_seconds} seconds."
+                )
 
             time.sleep(sleep_time)
 
