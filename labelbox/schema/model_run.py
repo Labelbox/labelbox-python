@@ -1,6 +1,7 @@
 from typing import Dict, Iterable, Union
 from pathlib import Path
 import os
+import time
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
@@ -16,20 +17,54 @@ class ModelRun(DbObject):
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
 
-    def upsert_labels(self, label_ids):
+    def upsert_labels(self, label_ids, timeout_seconds=60):
+        """ Calls GraphQL API to start the MEA labels registration process
+        Args:
+            label_ids (list): label ids to insert
+            timeout_seconds (float): Max waiting time, in seconds.
+        Returns:
+            ID of newly generated async task
+        """
 
         if len(label_ids) < 1:
             raise ValueError("Must provide at least one label id")
 
-        query_str = """mutation upsertModelRunLabelsPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
-          upsertModelRunLabels(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
-          """
-        res = self.client.execute(query_str, {
+        sleep_time = 5
+
+        mutation_name = 'createMEAModelRunLabelRegistrationTask'
+        create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
+          %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
+          """ % (mutation_name)
+
+        res = self.client.execute(create_task_query_str, {
             'modelRunId': self.uid,
             'labelIds': label_ids
         })
-        # TODO: Return a task
-        return True
+        task_id = res[mutation_name]
+
+        status_query_str = """query MEALabelRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
+            MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
+        }
+        """
+
+        while True:
+            res = self.client.execute(status_query_str,
+                                      {'where': {
+                                          'id': task_id
+                                      }})['MEALabelRegistrationTaskStatus']
+            if res['status'] == 'COMPLETE':
+                return res
+            elif res['status'] == 'FAILED':
+                raise Exception(
+                    f"MEA Label Import Failed. Details : {res['errorMessage']}")
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Unable to complete import within {timeout_seconds} seconds."
+                )
+
+            time.sleep(sleep_time)
 
     def add_predictions(
         self,
