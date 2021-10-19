@@ -16,7 +16,7 @@ def get_feature_schema_lookup(
         for classification in classifications:
             if classification.feature_schema_id is None:
                 raise ValueError(
-                    f"feature_schema_id is None for classification `{classification.name}`."
+                    f"feature_schema_id cannot be None for classification `{classification.name}`."
                 )
             if isinstance(classification, ontology.Classification):
                 classification_lookup[
@@ -34,7 +34,7 @@ def get_feature_schema_lookup(
     for tool in ontology_builder.tools:
         if tool.feature_schema_id is None:
             raise ValueError(
-                f"feature_schema_id is None for tool `{tool.name}`.")
+                f"feature_schema_id cannot be None for tool `{tool.name}`.")
         tool_lookup[tool.name] = tool.feature_schema_id
         flatten_classification(tool.classifications)
     flatten_classification(ontology_builder.classifications)
