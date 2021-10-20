@@ -118,7 +118,6 @@ class IntegrationClient(Client):
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         super().__init__(api_key, api_url, enable_experimental=True)
-
         self.queries = []
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
@@ -223,9 +222,10 @@ def label_pack(project, rand_gen, image_url):
 
 @pytest.fixture
 def iframe_url(environ) -> str:
-    if environ == Environ.PROD:
+    if environ in [Environ.PROD, Environ.LOCAL]:
         return 'https://editor.labelbox.com'
-    return 'https://staging.labelbox.dev/editor'
+    elif environ == Environ.STAGING:
+        return 'https://staging.labelbox.dev/editor'
 
 
 @pytest.fixture

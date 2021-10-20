@@ -80,7 +80,7 @@ class Client:
         self.app_url = app_url
 
         # TODO: Make endpoints non-internal or support them as experimental
-        self.endpoint = endpoint.replace('/graphql', '/_gql')
+        self.endpoint = endpoint  #.replace('/graphql', '/_gql')
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -149,9 +149,11 @@ class Client:
         elif data is None:
             raise ValueError("query and data cannot both be none")
 
+        endpoint = self.endpoint if not experimental else self.endpoint.replace(
+            "/graphql", "/_gql")
         try:
             request = {
-                'url': self.endpoint,
+                'url': endpoint,
                 'data': data,
                 'headers': self.headers,
                 'timeout': timeout
