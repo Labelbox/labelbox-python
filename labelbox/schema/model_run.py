@@ -18,7 +18,7 @@ class ModelRun(DbObject):
     model_id = Field.String("model_id")
 
     def upsert_labels(self, label_ids, timeout_seconds=60):
-        """ Calls GraphQL API to start the MEA labels registration process
+        """ Adds data rows and labels to a model run
         Args:
             label_ids (list): label ids to insert
             timeout_seconds (float): Max waiting time, in seconds.
@@ -28,8 +28,6 @@ class ModelRun(DbObject):
 
         if len(label_ids) < 1:
             raise ValueError("Must provide at least one label id")
-
-        sleep_time = 5
 
         mutation_name = 'createMEAModelRunLabelRegistrationTask'
         create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
@@ -46,18 +44,54 @@ class ModelRun(DbObject):
             MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
+        return self._wait_until_done(lambda: self.client.execute(
+            status_query_str, {'where': {
+                'id': task_id
+            }})['MEALabelRegistrationTaskStatus'],
+                                     timeout_seconds=timeout_seconds)
 
+    def upsert_data_rows(self, data_row_ids, timeout_seconds=60):
+        """ Adds data rows to a model run without any associated labels
+        Args:
+            data_row_ids (list): data row ids to add to mea
+            timeout_seconds (float): Max waiting time, in seconds.
+        Returns:
+            ID of newly generated async task
+        """
+
+        if len(data_row_ids) < 1:
+            raise ValueError("Must provide at least one data row id")
+
+        mutation_name = 'createMEAModelRunDataRowRegistrationTask'
+        create_task_query_str = """mutation createMEAModelRunDataRowRegistrationTaskPyApi($modelRunId: ID!, $dataRowIds : [ID!]!) {
+          %s(where : { id : $modelRunId}, data : {dataRowIds: $dataRowIds})}
+          """ % (mutation_name)
+
+        res = self.client.execute(create_task_query_str, {
+            'modelRunId': self.uid,
+            'dataRowIds': data_row_ids
+        })
+        task_id = res[mutation_name]
+
+        status_query_str = """query MEADataRowRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
+            MEADataRowRegistrationTaskStatus(where: $where) {status errorMessage}
+        }
+        """
+        return self._wait_until_done(lambda: self.client.execute(
+            status_query_str, {'where': {
+                'id': task_id
+            }})['MEADataRowRegistrationTaskStatus'],
+                                     timeout_seconds=timeout_seconds)
+
+    def _wait_until_done(self, status_fn, timeout_seconds=60, sleep_time=5):
+        # Do not use this function outside of the scope of upsert_data_rows or upsert_labels. It could change.
         while True:
-            res = self.client.execute(status_query_str,
-                                      {'where': {
-                                          'id': task_id
-                                      }})['MEALabelRegistrationTaskStatus']
+            res = status_fn()
             if res['status'] == 'COMPLETE':
-                return res
+                return True
             elif res['status'] == 'FAILED':
                 raise Exception(
-                    f"MEA Label Import Failed. Details : {res['errorMessage']}")
-
+                    f"MEA Import Failed. Details : {res['errorMessage']}")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(
