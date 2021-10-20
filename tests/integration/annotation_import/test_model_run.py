@@ -54,3 +54,24 @@ def test_model_run_annotation_groups_delete(client,
     after = list(model_run.annotation_groups())
 
     assert len(before) == len(after) + 1
+
+
+def test_model_run_upsert_data_rows(dataset, model_run):
+    n_annotation_groups = len(list(model_run.annotation_groups()))
+    assert n_annotation_groups == 0
+    data_row = dataset.create_data_row(row_data="test row data")
+    model_run.upsert_data_rows([data_row.uid])
+    n_annotation_groups = len(list(model_run.annotation_groups()))
+    assert n_annotation_groups == 1
+
+
+def test_model_run_upsert_data_rows_with_existing_labels(
+        model_run_annotation_groups):
+    annotation_groups = list(model_run_annotation_groups.annotation_groups())
+    n_annotation_groups = len(annotation_groups)
+    model_run_annotation_groups.upsert_data_rows([
+        annotation_group.data_row().uid
+        for annotation_group in annotation_groups
+    ])
+    assert n_annotation_groups == len(
+        list(model_run_annotation_groups.annotation_groups()))
