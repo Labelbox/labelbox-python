@@ -326,7 +326,7 @@ def model_run(rand_gen, model):
 
 
 @pytest.fixture
-def model_run_annotation_groups(client, configured_project,
+def model_run_with_model_run_data_rows(client, configured_project,
                                 annotation_submit_fn, model_run_predictions,
                                 model_run):
     configured_project.enable_model_assisted_labeling()

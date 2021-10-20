@@ -16,10 +16,10 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     model_run.upsert_labels([label_id])
     time.sleep(3)
 
-    annotation_group = next(model_run.annotation_groups())
-    assert annotation_group.label_id == label_id
-    assert annotation_group.model_run_id == model_run.uid
-    assert annotation_group.data_row().uid == next(
+    model_run_data_row = next(model_run.model_run_data_rows())
+    assert model_run_data_row.label_id == label_id
+    assert model_run_data_row.model_run_id == model_run.uid
+    assert model_run_data_row.data_row().uid == next(
         next(project.datasets()).data_rows()).uid
 
 
@@ -38,40 +38,38 @@ def test_model_run_delete(client, model_run):
     assert len(before) == len(after) + 1
 
 
-def test_model_run_annotation_groups_delete(client,
-                                            model_run_annotation_groups):
+def test_model_run_data_rows_delete(client, model_run_with_model_run_data_rows):
     models = list(client.get_models())
     model = models[0]
     model_runs = list(model.model_runs())
     model_run = model_runs[0]
 
-    before = list(model_run.annotation_groups())
-    annotation_group = before[0]
+    before = list(model_run.model_run_data_rows())
+    annotation_data_row = before[0]
 
-    data_row_id = annotation_group.data_row().uid
-    model_run.delete_annotation_groups(data_row_ids=[data_row_id])
-
-    after = list(model_run.annotation_groups())
-
+    data_row_id = annotation_data_row.data_row().uid
+    model_run.delete_model_run_data_rows(data_row_ids=[data_row_id])
+    after = list(model_run.model_run_data_rows())
     assert len(before) == len(after) + 1
 
 
 def test_model_run_upsert_data_rows(dataset, model_run):
-    n_annotation_groups = len(list(model_run.annotation_groups()))
-    assert n_annotation_groups == 0
+    n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
+    assert n_model_run_data_rows == 0
     data_row = dataset.create_data_row(row_data="test row data")
     model_run.upsert_data_rows([data_row.uid])
-    n_annotation_groups = len(list(model_run.annotation_groups()))
-    assert n_annotation_groups == 1
+    n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
+    assert n_model_run_data_rows == 1
 
 
 def test_model_run_upsert_data_rows_with_existing_labels(
-        model_run_annotation_groups):
-    annotation_groups = list(model_run_annotation_groups.annotation_groups())
-    n_annotation_groups = len(annotation_groups)
-    model_run_annotation_groups.upsert_data_rows([
-        annotation_group.data_row().uid
-        for annotation_group in annotation_groups
+        model_run_with_model_run_data_rows):
+    model_run_data_rows = list(
+        model_run_with_model_run_data_rows.model_run_data_rows())
+    n_data_rows = len(model_run_data_rows)
+    model_run_with_model_run_data_rows.upsert_data_rows([
+        model_run_data_row.data_row().uid
+        for model_run_data_row in model_run_data_rows
     ])
-    assert n_annotation_groups == len(
-        list(model_run_annotation_groups.annotation_groups()))
+    assert n_data_rows == len(
+        list(model_run_with_model_run_data_rows.model_run_data_rows()))

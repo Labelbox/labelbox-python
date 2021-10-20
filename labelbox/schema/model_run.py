@@ -2,6 +2,7 @@ from typing import Dict, Iterable, Union
 from pathlib import Path
 import os
 import time
+import warnings
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import MEAPredictionImport
@@ -131,17 +132,23 @@ class ModelRun(DbObject):
             raise ValueError(
                 f'Invalid predictions given of type: {type(predictions)}')
 
-    def annotation_groups(self):
+    def model_run_data_rows(self):
         query_str = """query modelRunPyApi($modelRunId: ID!, $from : String, $first: Int){
                 annotationGroups(where: {modelRunId: {id: $modelRunId}}, after: $from, first: $first)
                 {nodes{%s},pageInfo{endCursor}}
             }
-        """ % (results_query_part(AnnotationGroup))
+        """ % (results_query_part(ModelRunDataRow))
         return PaginatedCollection(
             self.client, query_str, {'modelRunId': self.uid},
             ['annotationGroups', 'nodes'],
-            lambda client, res: AnnotationGroup(client, self.model_id, res),
+            lambda client, res: ModelRunDataRow(client, self.model_id, res),
             ['annotationGroups', 'pageInfo', 'endCursor'])
+
+    def annotation_groups(self):
+        warnings.warn(
+            "`ModelRun.annotation_groups` is being deprecated in favor of `ModelRun.model_run_data_rows`"
+        )
+        return self.model_run_data_rows()
 
     def delete(self):
         """ Deletes specified model run.
@@ -154,11 +161,11 @@ class ModelRun(DbObject):
             deleteModelRuns(where: {ids: [$%s]})}""" % (ids_param, ids_param)
         self.client.execute(query_str, {ids_param: str(self.uid)})
 
-    def delete_annotation_groups(self, data_row_ids):
-        """ Deletes annotation groups by data row ids for a model run.
+    def delete_model_run_data_rows(self, data_row_ids):
+        """ Deletes data rows from model runs.
 
         Args:
-            data_row_ids (list): List of data row ids to delete annotation groups.
+            data_row_ids (list): List of data row ids to delete from the model run.
         Returns:
             Query execution success.
         """
@@ -173,8 +180,14 @@ class ModelRun(DbObject):
             data_row_ids_param: data_row_ids
         })
 
+    def delete_annotation_groups(self, data_row_ids):
+        warnings.warn(
+            "`ModelRun.delete_annotation_groups` is being deprecated in favor of `ModelRun.delete_model_run_data_rows`"
+        )
+        return self.delete_model_run_data_rows(data_row_ids)
 
-class AnnotationGroup(DbObject):
+
+class ModelRunDataRow(DbObject):
     label_id = Field.String("label_id")
     model_run_id = Field.String("model_run_id")
     data_row = Relationship.ToOne("DataRow", False, cache=True)
