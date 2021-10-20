@@ -78,9 +78,7 @@ class Client:
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.app_url = app_url
-
-        # TODO: Make endpoints non-internal or support them as experimental
-        self.endpoint = endpoint  #.replace('/graphql', '/_gql')
+        self.endpoint = endpoint
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
