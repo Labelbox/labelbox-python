@@ -1,4 +1,32 @@
 # Changelog
+
+## Deprecation Notice
+| Name                                  | Replacement                            | Removed After |
+| ------------------------------------- | -------------------------------------  | ------------- |
+| `ModelRun.delete_annotation_groups()` | `ModelRun.delete_model_run_data_rows()`| 3.9           |
+| `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       | 3.9           |
+| `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
+-----
+
+# Version 3.8.0 (2021-10-21)
+## Added
+* `ModelRun.upsert_data_rows()`
+    * Add data rows to a model run without also attaching labels
+* `OperationNotAllowedException`
+    * raised when users hit resource limits or are not allowed to use a particular operation
+
+## Updated
+* `ModelRun.upsert_labels()`
+    * Blocks until the upsert job is complete. Error messages have been improved
+* `Organization.invite_user()` and `Organization.invite_limit()` are no longer experimental
+* `AnnotationGroup` was renamed to `ModelRunDataRow`
+* `ModelRun.delete_annotation_groups()` was renamed to `ModelRun.delete_model_run_data_rows()`
+* `ModelRun.annotation_groups()` was renamed to `ModelRun.model_run_data_rows()`
+
+## Fix
+* `DataRowMetadataField` no longer relies on pydantic for field validation and coercion
+    * This prevents unintended type coercion from occuring
+
 # Version 3.7.0 (2021-10-11)
 ## Added
 * Search for data row ids from external ids without specifying a dataset
