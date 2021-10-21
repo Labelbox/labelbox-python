@@ -255,6 +255,12 @@ class Client:
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
+        not_allowed_error = check_errors(["OPERATION_NOT_ALLOWED"],
+                                         "extensions", "code")
+        if not_allowed_error is not None:
+            message = not_allowed_error.get("message")
+            raise labelbox.exceptions.OperationNotAllowedException(message)
+
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
             raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
