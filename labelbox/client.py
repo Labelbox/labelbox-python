@@ -201,7 +201,6 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            print(error)
             return error["extensions"]["exception"]["status"]
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
