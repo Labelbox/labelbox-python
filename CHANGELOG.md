@@ -12,18 +12,19 @@
 ## Added
 * `ModelRun.upsert_data_rows()`
     * Add data rows to a model run without also attaching labels
-* `OperationNotAllowedException` is raised when users hit resource limits or are not allowed to use a particular operation.
+* `OperationNotAllowedException`
+    * raised when users hit resource limits or are not allowed to use a particular operation
 
 ## Updated
 * `ModelRun.upsert_labels()`
-    * Blocks until the upsert job is complete. Error messaged have been improved.
+    * Blocks until the upsert job is complete. Errors are messages have been improved
 * `Organization.invite_user()` and `Organization.invite_limit()` are no longer experimental
 * `AnnotationGroup` was renamed to `ModelRunDataRow`
 * `ModelRun.delete_annotation_groups()` was renamed to `ModelRun.delete_model_run_data_rows()`
 * `ModelRun.annotation_groups()` was renamed to `ModelRun.model_run_data_rows()`
 
 ## Fix
-* `DataRowMetadataField` no longer relies on pydantic for validation and coercion
+* `DataRowMetadataField` no longer relies on pydantic for field validation and coercion
     * This prevents unintended type coercion from occuring
 
 # Version 3.7.0 (2021-10-11)
