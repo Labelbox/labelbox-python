@@ -201,6 +201,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
+            print(error)
             return error["extensions"]["exception"]["status"]
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
@@ -254,6 +255,12 @@ class Client:
                 raise labelbox.exceptions.InvalidQueryError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
+
+        not_allowed_error = check_errors(["OPERATION_NOT_ALLOWED"],
+                                         "extensions", "code")
+        if not_allowed_error is not None:
+            message = not_allowed_error.get("message")
+            raise labelbox.exceptions.OperationNotAllowedException(message)
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
