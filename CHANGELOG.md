@@ -17,7 +17,7 @@
 
 ## Updated
 * `ModelRun.upsert_labels()`
-    * Blocks until the upsert job is complete. Errors are messages have been improved
+    * Blocks until the upsert job is complete. Error messages have been improved
 * `Organization.invite_user()` and `Organization.invite_limit()` are no longer experimental
 * `AnnotationGroup` was renamed to `ModelRunDataRow`
 * `ModelRun.delete_annotation_groups()` was renamed to `ModelRun.delete_model_run_data_rows()`
