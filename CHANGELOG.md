@@ -8,7 +8,7 @@
 | `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
 -----
 
-# Version 3.8.0 (2021-10-21)
+# Version 3.8.0 (2021-10-22)
 ## Added
 * `ModelRun.upsert_data_rows()`
     * Add data rows to a model run without also attaching labels
@@ -25,7 +25,7 @@
 
 ## Fix
 * `DataRowMetadataField` no longer relies on pydantic for field validation and coercion
-    * This prevents unintended type coercion from occuring
+    * This prevents unintended type coercions from occurring
 
 # Version 3.7.0 (2021-10-11)
 ## Added
