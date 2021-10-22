@@ -112,4 +112,9 @@ class InconsistentOntologyException(Exception):
 
 class MALValidationError(LabelboxError):
     """Raised when user input is invalid for MAL imports."""
-    ...
+    pass
+
+
+class OperationNotAllowedException(Exception):
+    """Raised when user does not have permissions to a resource or has exceeded usage limit"""
+    pass

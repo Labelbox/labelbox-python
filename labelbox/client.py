@@ -78,9 +78,7 @@ class Client:
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.app_url = app_url
-
-        # TODO: Make endpoints non-internal or support them as experimental
-        self.endpoint = endpoint.replace('/graphql', '/_gql')
+        self.endpoint = endpoint
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -149,9 +147,11 @@ class Client:
         elif data is None:
             raise ValueError("query and data cannot both be none")
 
+        endpoint = self.endpoint if not experimental else self.endpoint.replace(
+            "/graphql", "/_gql")
         try:
             request = {
-                'url': self.endpoint,
+                'url': endpoint,
                 'data': data,
                 'headers': self.headers,
                 'timeout': timeout
@@ -254,6 +254,12 @@ class Client:
                 raise labelbox.exceptions.InvalidQueryError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
+
+        not_allowed_error = check_errors(["OPERATION_NOT_ALLOWED"],
+                                         "extensions", "code")
+        if not_allowed_error is not None:
+            message = not_allowed_error.get("message")
+            raise labelbox.exceptions.OperationNotAllowedException(message)
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)

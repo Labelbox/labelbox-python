@@ -1,5 +1,33 @@
 # Changelog
-# Version 3.7.0 (2021-11-10)
+
+## Deprecation Notice
+| Name                                  | Replacement                            | Removed After |
+| ------------------------------------- | -------------------------------------  | ------------- |
+| `ModelRun.delete_annotation_groups()` | `ModelRun.delete_model_run_data_rows()`| 3.9           |
+| `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       | 3.9           |
+| `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
+-----
+
+# Version 3.8.0 (2021-10-21)
+## Added
+* `ModelRun.upsert_data_rows()`
+    * Add data rows to a model run without also attaching labels
+* `OperationNotAllowedException`
+    * raised when users hit resource limits or are not allowed to use a particular operation
+
+## Updated
+* `ModelRun.upsert_labels()`
+    * Blocks until the upsert job is complete. Error messages have been improved
+* `Organization.invite_user()` and `Organization.invite_limit()` are no longer experimental
+* `AnnotationGroup` was renamed to `ModelRunDataRow`
+* `ModelRun.delete_annotation_groups()` was renamed to `ModelRun.delete_model_run_data_rows()`
+* `ModelRun.annotation_groups()` was renamed to `ModelRun.model_run_data_rows()`
+
+## Fix
+* `DataRowMetadataField` no longer relies on pydantic for field validation and coercion
+    * This prevents unintended type coercion from occuring
+
+# Version 3.7.0 (2021-10-11)
 ## Added
 * Search for data row ids from external ids without specifying a dataset
     * `client.get_data_row_ids_for_external_ids()`
@@ -15,10 +43,10 @@
     * `custom_name_index` -> `custom_by_name`
 
 
-# Version 3.6.1 (2021-07-10)
+# Version 3.6.1 (2021-10-07)
 * Fix import error that appears when exporting labels
 
-# Version 3.6.0 (2021-04-10)
+# Version 3.6.0 (2021-10-04)
 ## Added
 * Bulk export metadata with `DataRowMetadataOntology.bulk_export()`
 * Add docstring examples of annotation types and a few helper methods
@@ -32,7 +60,7 @@
 * data_row.metadata was removed in favor of bulk exports.
 
 
-# Version 3.5.0 (2021-15-09)
+# Version 3.5.0 (2021-09-15)
 ## Added
 * Diagnostics custom metrics
     * Metric annotation types

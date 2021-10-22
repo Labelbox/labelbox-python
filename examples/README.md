@@ -29,7 +29,30 @@
 | Video Annotation Export     | [Github](label_export/video.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/label_export/video.ipynb) | [Reference](https://docs.labelbox.com/reference/label-output) |
 ------
 
+## Model Training
+
+Train a model using data annotated on Labelbox
+
+| Notebook                    | Github                            | Google Colab |
+| --------------------------- | --------------------------------- | ------------ |
+| Object Detection (Detectron2)            | [Github](coco_object.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/detectron2/coco_panoptic.ipynb) |
+| Panoptic Detection (Detectron2)          | [Github](coco_panoptic.ipynb)    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/detectron2/coco_panoptic.ipynb)
+------
+
+## [Annotation Types](annotation_types)
+
+Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/annotation-types-1)
+
+| Notebook                    | Github                            | Google Colab |
+| --------------------------- | --------------------------------- | ------------ |
+| Annotation Type Basics  | [Github](annotation_types/basics.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/basics.ipynb) |
+| Converters                 | [Github](annotation_types/converters.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/converters.ipynb) |
+| Label Containers           | [Github](annotation_types/label_containers.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/label_containers.ipynb) |
+| MAL Using Annotation Types | [Github](annotation_types/mal_using_annotation_types.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/mal_using_annotation_types.ipynb) |
+
+
 ## [Model Assisted Labeling](model_assisted_labeling)
+
 
 | Notebook                    | Github                            | Google Colab | Learn more |
 | --------------------------- | --------------------------------- | ------------ | ---------- |
@@ -39,7 +62,6 @@
 | Debugging MAL                 | [Github](model_assisted_labeling/debugging_mal.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/debugging_mal.ipynb) |
 | MAL with Subclasses           | [Github](model_assisted_labeling/mal_with_subclasses.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/mal_with_subclasses.ipynb) |
 | Tiled Imagery MAL    | [Github](model_assisted_labeling/tiled_imagery_mal.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/tiled_imagery_mal.ipynb) |
-
 ------
 
 ## [Project Configuration](project_configuration)
@@ -51,14 +73,6 @@
 | Webhooks           | [Github](project_configuration/webhooks.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/webhooks.ipynb) | [Docs](https://docs.labelbox.com/docs/webhooks) |
 
 
-## [Annotation Types](annotation_types)
-
-| Notebook                    | Github                            | Google Colab |
-| --------------------------- | --------------------------------- | ------------ |
-| Annotation Type Basics  | [Github](annotation_types/basics.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/basics.ipynb) |
-| Converters                 | [Github](annotation_types/converters.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/converters.ipynb) |
-| Label Containers           | [Github](annotation_types/label_containers.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/label_containers.ipynb) |
-| MAL Using Annotation Types | [Github](annotation_types/mal_using_annotation_types.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/mal_using_annotation_types.ipynb) |
 
 ## [Model Diagnostics](model_diagnostics)
 | Notebook                    | Github                            | Google Colab | Learn more |

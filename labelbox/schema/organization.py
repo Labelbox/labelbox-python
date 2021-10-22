@@ -42,7 +42,6 @@ class Organization(DbObject):
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
 
-    @experimental
     def invite_user(
             self,
             email: str,
@@ -83,22 +82,21 @@ class Organization(DbObject):
             "projectRoleId": project_role.role.uid
         } for project_role in project_roles or []]
 
-        res = self.client.execute(query_str, {
-            data_param: [{
-                "inviterId": self.client.get_user().uid,
-                "inviteeEmail": email,
-                "organizationId": self.uid,
-                "organizationRoleId": role.uid,
-                "projects": projects
-            }]
-        },
-                                  experimental=True)
+        res = self.client.execute(
+            query_str, {
+                data_param: [{
+                    "inviterId": self.client.get_user().uid,
+                    "inviteeEmail": email,
+                    "organizationId": self.uid,
+                    "organizationRoleId": role.uid,
+                    "projects": projects
+                }]
+            })
         invite_response = res['createInvites'][0]['invite']
         if not invite_response:
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Invite(self.client, invite_response)
 
-    @experimental
     def invite_limit(self) -> InviteLimit:
         """ Retrieve invite limits for the org
         This already accounts for users currently in the org
@@ -109,10 +107,10 @@ class Organization(DbObject):
 
         """
         org_id_param = "organizationId"
-        res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
+        res = self.client.execute(
+            """query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
-        }""" % (org_id_param, org_id_param), {org_id_param: self.uid},
-                                  experimental=True)
+        }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
