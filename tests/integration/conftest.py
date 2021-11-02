@@ -21,6 +21,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
 from labelbox import OntologyBuilder, Tool
+from labelbox.schema.annotation_import import LabelImport
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -298,37 +299,7 @@ def configured_project(project, client, rand_gen, image_url):
 
 
 @pytest.fixture
-def annotation_submit_fn(client):
-
-    def submit(project_id, data_row_id):
-        feature_result = client.execute(
-            """query featuresPyApi ($project_id : ID!, $datarow_id: ID!
-            ) {project(where: { id: $project_id }) {
-                    featuresForDataRow(where: {dataRow: { id: $datarow_id }}) {id}}}
-            """, {
-                "project_id": project_id,
-                "datarow_id": data_row_id
-            })
-        features = feature_result['project']['featuresForDataRow']
-        feature_ids = [feature['id'] for feature in features]
-        res = client.execute(
-            """mutation createLabelPyApi ($project_id : ID!,$datarow_id: ID!,$feature_ids: [ID!]!,$time_seconds : Float!) {
-                createLabelFromFeatures(data: {dataRow: { id: $datarow_id },project: { id: $project_id },
-                    featureIds: $feature_ids,secondsSpent: $time_seconds}) {id}}""",
-            {
-                "project_id": project_id,
-                "datarow_id": data_row_id,
-                "feature_ids": feature_ids,
-                "time_seconds": 10
-            })
-        return res['createLabelFromFeatures']['id']
-
-    return submit
-
-
-@pytest.fixture
-def configured_project_with_label(client, rand_gen, annotation_submit_fn,
-                                  image_url):
+def configured_project_with_label(client, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str))
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
     data_row = dataset.create_data_row(row_data=image_url)
@@ -355,10 +326,10 @@ def configured_project_with_label(client, rand_gen, annotation_submit_fn,
             "width": 50
         }
     }]
-    upload_task = MALPredictionImport.create_from_objects(
-        client, project.uid, f'mal-import-{uuid.uuid4()}', predictions)
+    upload_task = LabelImport.create_from_objects(
+        client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
-    labels = annotation_submit_fn(project.uid, data_row.uid)
+    labels = [label.uid for label in project.labels()][0]
     time.sleep(3)
     yield [project, labels]
     dataset.delete()
