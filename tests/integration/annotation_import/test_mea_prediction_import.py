@@ -19,6 +19,7 @@ def test_create_from_url(model_run_with_model_run_data_rows,
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
     annotation_import_test_helpers.check_running_state(annotation_import, name,
                                                        url)
+    annotation_import.wait_until_done()
 
 
 def test_create_from_objects(model_run_with_model_run_data_rows,
@@ -33,6 +34,7 @@ def test_create_from_objects(model_run_with_model_run_data_rows,
     annotation_import_test_helpers.check_running_state(annotation_import, name)
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
+    annotation_import.wait_until_done()
 
 
 def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
@@ -51,6 +53,7 @@ def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
     annotation_import_test_helpers.check_running_state(annotation_import, name)
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
+    annotation_import.wait_until_done()
 
 
 def test_get(client, model_run_with_model_run_data_rows,
@@ -66,6 +69,7 @@ def test_get(client, model_run_with_model_run_data_rows,
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
     annotation_import_test_helpers.check_running_state(annotation_import, name,
                                                        url)
+    annotation_import.wait_until_done()
 
 
 @pytest.mark.slow
