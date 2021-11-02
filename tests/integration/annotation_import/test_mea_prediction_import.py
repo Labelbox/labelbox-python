@@ -10,7 +10,7 @@ from labelbox.schema.annotation_import import AnnotationImportState, MEAPredicti
 """
 
 
-def test_create_from_url(client, model_run_with_model_run_data_rows,
+def test_create_from_url(model_run_with_model_run_data_rows,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
@@ -19,20 +19,10 @@ def test_create_from_url(client, model_run_with_model_run_data_rows,
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
     annotation_import_test_helpers.check_running_state(annotation_import, name,
                                                        url)
-    import_id = client.execute(
-        """query get_mea_importPyApi($model_run_id: ID!) {
-        modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
-            id
-            }}""", {"model_run_id": annotation_import.parent_id
-                   })['modelErrorAnalysisPredictionImports'][0]['id']
-    client.execute(
-        """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
-        deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
-            id
-        }}""", {"import_id": import_id})
+    annotation_import.wait_until_done()
 
 
-def test_create_from_objects(client, model_run_with_model_run_data_rows,
+def test_create_from_objects(model_run_with_model_run_data_rows,
                              object_predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
@@ -44,21 +34,10 @@ def test_create_from_objects(client, model_run_with_model_run_data_rows,
     annotation_import_test_helpers.check_running_state(annotation_import, name)
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
-    import_id = client.execute(
-        """query get_mea_importPyApi($model_run_id: ID!) {
-        modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
-            id
-            }}""", {"model_run_id": annotation_import.parent_id
-                   })['modelErrorAnalysisPredictionImports'][0]['id']
-    client.execute(
-        """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
-        deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
-            id
-        }}""", {"import_id": import_id})
+    annotation_import.wait_until_done()
 
 
-def test_create_from_local_file(client, tmp_path,
-                                model_run_with_model_run_data_rows,
+def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
                                 object_predictions,
                                 annotation_import_test_helpers):
     name = str(uuid.uuid4())
@@ -74,17 +53,7 @@ def test_create_from_local_file(client, tmp_path,
     annotation_import_test_helpers.check_running_state(annotation_import, name)
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
-    import_id = client.execute(
-        """query get_mea_importPyApi($model_run_id: ID!) {
-        modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
-            id
-            }}""", {"model_run_id": annotation_import.parent_id
-                   })['modelErrorAnalysisPredictionImports'][0]['id']
-    client.execute(
-        """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
-        deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
-            id
-        }}""", {"import_id": import_id})
+    annotation_import.wait_until_done()
 
 
 def test_get(client, model_run_with_model_run_data_rows,
@@ -100,17 +69,7 @@ def test_get(client, model_run_with_model_run_data_rows,
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
     annotation_import_test_helpers.check_running_state(annotation_import, name,
                                                        url)
-    import_id = client.execute(
-        """query get_mea_importPyApi($model_run_id: ID!) {
-        modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
-            id
-            }}""", {"model_run_id": annotation_import.parent_id
-                   })['modelErrorAnalysisPredictionImports'][0]['id']
-    client.execute(
-        """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
-        deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
-            id
-        }}""", {"import_id": import_id})
+    annotation_import.wait_until_done()
 
 
 @pytest.mark.slow
