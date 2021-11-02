@@ -24,7 +24,7 @@ def test_create_from_url(client, model_run_with_model_run_data_rows,
         modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
             id
             }}""", {"model_run_id": annotation_import.parent_id
-                    })['modelErrorAnalysisPredictionImports'][0]['id']
+                   })['modelErrorAnalysisPredictionImports'][0]['id']
     client.execute(
         """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
         deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
@@ -49,7 +49,7 @@ def test_create_from_objects(client, model_run_with_model_run_data_rows,
         modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
             id
             }}""", {"model_run_id": annotation_import.parent_id
-                    })['modelErrorAnalysisPredictionImports'][0]['id']
+                   })['modelErrorAnalysisPredictionImports'][0]['id']
     client.execute(
         """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
         deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
@@ -79,7 +79,7 @@ def test_create_from_local_file(client, tmp_path,
         modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
             id
             }}""", {"model_run_id": annotation_import.parent_id
-                    })['modelErrorAnalysisPredictionImports'][0]['id']
+                   })['modelErrorAnalysisPredictionImports'][0]['id']
     client.execute(
         """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
         deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
@@ -105,7 +105,7 @@ def test_get(client, model_run_with_model_run_data_rows,
         modelErrorAnalysisPredictionImports(where: {modelRunId: $model_run_id}) {
             id
             }}""", {"model_run_id": annotation_import.parent_id
-                    })['modelErrorAnalysisPredictionImports'][0]['id']
+                   })['modelErrorAnalysisPredictionImports'][0]['id']
     client.execute(
         """mutation deleteModelErrorAnalysisPredictionImportPyApi($import_id: ID!) {
         deleteModelErrorAnalysisPredictionImport(where: {id: $import_id}) {
