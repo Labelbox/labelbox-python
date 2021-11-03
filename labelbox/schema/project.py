@@ -254,7 +254,8 @@ class Project(DbObject, Updateable, Deletable):
             if timeout_seconds <= 0:
                 return None
 
-            logger.debug("Project '%s' label export, waiting for server...", self.uid)
+            logger.debug("Project '%s' label export, waiting for server...",
+                         self.uid)
             time.sleep(sleep_time)
 
     def export_issues(self, status=None):
@@ -467,10 +468,10 @@ class Project(DbObject, Updateable, Deletable):
             }         
         """ % method
 
-        res = self.client.execute(
-            query,
-            {"projectId": self.uid, "dataRowIds": ids}
-        )["project"][method]["dataRows"]
+        res = self.client.execute(query, {
+            "projectId": self.uid,
+            "dataRowIds": ids
+        })["project"][method]["dataRows"]
 
         # TODO: figure out error messaging
         if len(data_rows) == len(res):
@@ -493,7 +494,8 @@ class Project(DbObject, Updateable, Deletable):
         elif mode == "DATASET":
             self._update_queue_mode("DISABLED")
         else:
-            raise ValueError("Must provide either `BATCH` or `DATASET` as a mode")
+            raise ValueError(
+                "Must provide either `BATCH` or `DATASET` as a mode")
 
     def _update_queue_mode(self, status: str):
 
@@ -509,7 +511,10 @@ class Project(DbObject, Updateable, Deletable):
         }       
         """ % "setTagSetStatusPyApi"
 
-        self.client.execute(query_str, {'projectId': self.uid, 'status': status})
+        self.client.execute(query_str, {
+            'projectId': self.uid,
+            'status': status
+        })
         self.tag_set_status = status
 
     def queue_mode(self):
@@ -790,7 +795,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-                          "consensus average_benchmark_agreement last_activity_time")
+    "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 

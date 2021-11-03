@@ -1,6 +1,5 @@
-from pydantic import ValidationError
 import pytest
-import cv2
+from pydantic import ValidationError
 
 from labelbox.data.annotation_types import Point, Rectangle
 
@@ -16,7 +15,9 @@ def test_rectangle():
     expected['coordinates'] = tuple([tuple([tuple(x) for x in points[0]])])
     assert rectangle.shapely.__geo_interface__ == expected
 
-    raster = rectangle.draw(height=32, width=32)
-    assert (cv2.imread("tests/data/assets/rectangle.png") == raster).all()
+    # raster = rectangle.draw(height=32, width=32)
+    # assert (cv2.imread("tests/data/assets/rectangle.png") == raster).all()
 
-    alt_rectangle = Rectangle.from_tlhw(top=1, left=0, height=)
+    xyhw = Rectangle.from_xyhw(0., 0, 10, 10)
+    assert xyhw.start == Point(x=0, y=0.)
+    assert xyhw.end == Point(x=10, y=10.0)
