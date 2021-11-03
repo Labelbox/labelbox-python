@@ -20,6 +20,12 @@ jobs:
           - python-version: 3.6
             prod-key: LABELBOX_API_KEY
             staging-key: STAGING_LABELBOX_API_KEY
+          - python-version: 3.7
+            prod-key: PROD_LABELBOX_API_KEY_2
+            staging-key: STAGING_LABELBOX_API_KEY_2
+          - python-version: 3.8
+            prod-key: PROD_LABELBOX_API_KEY_3
+            staging-key: STAGING_LABELBOX_API_KEY_3
 
     steps:
       - name: Cancel previous workflow
@@ -79,9 +85,9 @@ jobs:
           # make sure to tell tox to use these environs in tox.ini
           #
           # msokoloff+prod-python@labelbox.com
-          LABELBOX_TEST_API_KEY_PROD: ${{ secrets.[matrix.prod-key] }}
+          LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
 
           # randall+staging-python@labelbox.com
-          LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.[matrix.staging-key] }}
+          LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
         run: |
           tox -e py -- -svvx
