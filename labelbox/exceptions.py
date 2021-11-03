@@ -42,6 +42,11 @@ class ResourceNotFoundError(LabelboxError):
         self.params = params
 
 
+class ResourceConflict(LabelboxError):
+    """Exception raised when a given resource conflicts with another. """
+    pass
+
+
 class ValidationFailedError(LabelboxError):
     """Exception raised for when a GraphQL query fails validation (query cost,
     etc.) E.g. a query that is too expensive, or depth is too deep.

@@ -240,6 +240,12 @@ class Client:
             # as they already know which resource type and ID was requested
             return None
 
+        resource_conflict_error = check_errors(["RESOURCE_CONFLICT"],
+                                               "extensions", "code")
+        if resource_conflict_error is not None:
+            raise labelbox.exceptions.ResourceConflict(
+                resource_conflict_error["message"])
+
         # A lot of different error situations are now labeled serverside
         # as INTERNAL_SERVER_ERROR, when they are actually client errors.
         # TODO: fix this in the server API
@@ -255,8 +261,14 @@ class Client:
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
+            messages = list(
+                map(
+                    lambda x: {
+                        "message": x["message"],
+                        "code": x["extensions"]["code"]
+                    }, errors))
             raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
-                                                    str(errors))
+                                                    str(messages))
 
         # if we do return a proper error code, and didn't catch this above
         # reraise
