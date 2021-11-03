@@ -329,8 +329,7 @@ def configured_project_with_label(client, rand_gen, image_url):
     upload_task = LabelImport.create_from_objects(
         client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
     upload_task.wait_until_done()
-    labels = [label.uid for label in project.labels()][0]
-    time.sleep(3)
-    yield [project, labels]
+    label = next(project.labels()).uid
+    yield [project, label]
     dataset.delete()
     project.delete()
