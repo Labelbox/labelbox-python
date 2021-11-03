@@ -12,10 +12,13 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1
+      max-parallel: 1 ######can we just remove this completely? github docs say that they will maximize the parallel processes
       matrix:
         # TODO: unlock parallel testing by using more API keys
-        python-version: [3.6, 3.7, 3.8]
+        python-test-info: 
+          python-version: [3.6, 3.7, 3.8]
+          python-prod-key: [${{ secrets.LABELBOX_API_KEY}}, ${{ secrets.PROD_LABELBOX_API_KEY_2}},${{ secrets.PROD_LABELBOX_API_KEY_3}}]
+          python-staging-key: [${{ secrets.STAGING_LABELBOX_API_KEY}}, ${{ secrets.STAGING_LABELBOX_API_KEY_2}},${{ secrets.STAGING_LABELBOX_API_KEY_3}}]
 
     steps:
 
@@ -37,10 +40,10 @@ jobs:
         token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
         ref: ${{ github.head_ref }}
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-test-info.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python-test-info.python-version }}
 
     - name: yapf
       id: yapf
@@ -76,9 +79,9 @@ jobs:
         # make sure to tell tox to use these environs in tox.ini
         #
         # msokoloff+prod-python@labelbox.com
-        LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
+        LABELBOX_TEST_API_KEY_PROD: ${{ matrix.python-test-info.python-prod-key}}
 
         # randall+staging-python@labelbox.com
-        LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
+        LABELBOX_TEST_API_KEY_STAGING: ${{ matrix.python-test-info.python-staging-key}}
       run: |
         tox -e py -- -svvx
