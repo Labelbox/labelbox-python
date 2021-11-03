@@ -15,7 +15,6 @@ jobs:
       max-parallel: 1
       matrix:
         # TODO: unlock parallel testing by using more API keys
-        python-version: [3.6, 3.7, 3.8]
         include:
           - python-version: 3.6
             prod-key: LABELBOX_API_KEY
