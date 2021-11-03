@@ -419,7 +419,7 @@ class Project(DbObject, Updateable, Deletable):
         self.labeling_frontend.connect(labeling_frontend)
 
         LFO = Entity.LabelingFrontendOptions
-        labeling_frontend_options = self.client._create(
+        self.client._create(
             LFO, {
                 LFO.project: self,
                 LFO.labeling_frontend: labeling_frontend,
@@ -429,35 +429,33 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def queue_data_rows(self, data_rows):
+    def queue(self, data_rows):
         """Add DataRows to the Project queue"""
 
         if not self._is_batch_mode():
             warnings.warn("Project not in Batch mode, ")
 
         method = "submitBatchOfDataRows"
-        name = method + 'PyApi'
-        return self._post_batch(name, method, data_rows)
+        return self._post_batch(method, data_rows)
 
-    def dequeue_data_rows(self, data_rows):
+    def dequeue(self, data_rows):
 
         if not self._is_batch_mode():
             warnings.warn("Project not in Batch mode")
 
         method = "removeBatchOfDataRows"
-        name = method + 'PyApi'
 
-        return self._post_batch(name, method, data_rows)
+        return self._post_batch(method, data_rows)
 
-    def _post_batch(self, name, method, data_rows):
+    def _post_batch(self, method, data_rows):
         """Create """
 
         ids = [dr.uid for dr in data_rows]
 
-        if len(ids) > 1000:
+        if len(ids) > MAX_BATCH_SIZE:
             raise ValueError("1000 Max DataRows at a time")
 
-        query = """mutation %s($projectId: ID!, $dataRowIds: [ID!]!) {
+        query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
               project(where: {id: $projectId}) {
                 %s(data: {dataRowIds: $dataRowIds}) {
                   dataRows {
@@ -467,7 +465,7 @@ class Project(DbObject, Updateable, Deletable):
                 }
               }
             }         
-        """ % (name, method)
+        """ % method
 
         res = self.client.execute(
             query,
