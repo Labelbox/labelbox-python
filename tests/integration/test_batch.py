@@ -1,6 +1,7 @@
 import pytest
 
 from labelbox import Dataset, Project
+from labelbox.schema.project import QueueMode
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 
@@ -20,7 +21,7 @@ def big_dataset(dataset: Dataset):
 
 
 def test_submit_batch(configured_project: Project, big_dataset):
-    configured_project.change_queue_mode("BATCH")
+    configured_project.update(queue_mode=QueueMode.Batch)
 
     data_rows = list(big_dataset.export_data_rows())
     queue_res = configured_project.queue(data_rows)

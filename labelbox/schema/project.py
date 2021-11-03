@@ -1,3 +1,4 @@
+import enum
 import json
 import logging
 import time
@@ -5,7 +6,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Union, Iterable
+from typing import Dict, Union, Iterable, List, Optional
 from urllib.parse import urlparse
 
 import ndjson
@@ -35,6 +36,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 MAX_BATCH_SIZE = 1000
+
+
+class QueueMode(enum.Enum):
+    Batch = "Batch"
+    Dataset = "Dataset"
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -70,7 +76,6 @@ class Project(DbObject, Updateable, Deletable):
     last_activity_time = Field.DateTime("last_activity_time")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
-    tag_set_status = Field.String("tag_set_status")
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
@@ -84,6 +89,14 @@ class Project(DbObject, Updateable, Deletable):
     webhooks = Relationship.ToMany("Webhook", False)
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
+
+    def update(self, **kwargs):
+
+        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
+        if mode:
+            self._update_queue_mode(mode)
+
+        return super().update(**kwargs)
 
     def members(self):
         """ Fetch all current members for this project
@@ -430,22 +443,21 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def queue(self, data_rows):
+    def queue(self, data_rows: List):
         """Add DataRows to the Project queue"""
 
         if not self._is_batch_mode():
-            warnings.warn("Project not in Batch mode, ")
+            warnings.warn("Project not in Batch mode")
 
         method = "submitBatchOfDataRows"
         return self._post_batch(method, data_rows)
 
-    def dequeue(self, data_rows):
+    def dequeue(self, data_rows: List):
 
         if not self._is_batch_mode():
             warnings.warn("Project not in Batch mode")
 
         method = "removeBatchOfDataRows"
-
         return self._post_batch(method, data_rows)
 
     def _post_batch(self, method, data_rows):
@@ -482,22 +494,16 @@ class Project(DbObject, Updateable, Deletable):
 
         return res
 
-    def change_queue_mode(self, mode: str):
-        """Change the queue between Batch and Datasets mode
+    def _update_queue_mode(self, mode: QueueMode):
 
-        Args:
-            mode: `BATCH` or `DATASET`
-        """
-        if mode == "BATCH":
-            self._update_queue_mode("ENABLED")
-
-        elif mode == "DATASET":
-            self._update_queue_mode("DISABLED")
+        if mode == QueueMode.Batch:
+            status = "ENABLED"
+        elif mode == QueueMode:
+            status = "DISABLED"
         else:
             raise ValueError(
-                "Must provide either `BATCH` or `DATASET` as a mode")
-
-    def _update_queue_mode(self, status: str):
+                "Must provide either `BATCH` or `DATASET` as a mode"
+            )
 
         query_str = """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
               project(where: {id: $projectId}) {
@@ -520,9 +526,9 @@ class Project(DbObject, Updateable, Deletable):
     def queue_mode(self):
 
         if self._is_batch_mode():
-            return "BATCH"
+            return QueueMode.Batch
         else:
-            return "DATASET"
+            return QueueMode.Dataset
 
     def _is_batch_mode(self):
         if self.tag_set_status == "ENABLED":
@@ -795,7 +801,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-    "consensus average_benchmark_agreement last_activity_time")
+                          "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
