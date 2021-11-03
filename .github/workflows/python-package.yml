@@ -40,7 +40,8 @@ jobs:
       - name: Set up Python ${{ matrix.python-test.version }}
         uses: actions/setup-python@v2
         with:
-          python-test.version: ${{ matrix.python-test.version }}
+          python-test:
+            version: ${{ matrix.python-test.version }}
 
       - name: yapf
         id: yapf
