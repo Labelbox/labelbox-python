@@ -6,12 +6,15 @@ The Labelbox Python API offers a simple, user-friendly way to interact with the 
 
 ## Table of Contents
 
-* [Requirements](#requirements)
-* [Installation](#installation)
-* [Documentation](#documentation)
-* [Authentication](#authentication)
-* [Contribution](#contribution)
-* [Testing](#testing)
+- [Labelbox Python SDK](#labelbox-python-sdk)
+  - [Table of Contents](#table-of-contents)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+    - [Note for Windows users](#note-for-windows-users)
+  - [Documentation](#documentation)
+  - [Authentication](#authentication)
+  - [Contribution](#contribution)
+  - [Testing](#testing)
 
 ## Requirements
 
@@ -48,6 +51,37 @@ To install dependencies required for data processing modules use:
 ```
 pip install labelbox[data]
 ```
+### Note for Windows users
+The package `rasterio` installed by `labelbox[data]` relies on GDAL which could be difficult to install on Microsoft Windows.
+
+You may see the following error message:
+
+```
+INFO:root:Building on Windows requires extra options to setup.py to locate needed GDAL files. More information is available in the README. 
+
+ERROR: A GDAL API version must be specified. Provide a path to gdal-config using a GDAL_CONFIG environment variable or use a GDAL_VERSION environment variable. 
+```
+
+As a workaround:
+
+1. Download the binary files for GDAL and rasterio:
+
+    a. From https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal, download `GDAL‑3.3.2‑cp38‑cp38‑win_amd64.wh`
+
+    b. From https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio, download `rasterio‑1.2.9‑cp38‑cp38‑win_amd64.whl`
+
+    Note: You need to download the right files for your Python version. In the files above `cp38` means CPython 3.8.
+
+2. After downloading the files, please run the following commands, in this particular order.  
+
+```
+pip install GDAL‑3.3.2‑cp38‑cp38‑win_amd64.wh
+pip install rasterio‑1.2.9‑cp38‑cp38‑win_amd64.whl
+pip install labelbox[data]
+```
+
+This should resolve the error message.
+
 
 ## Documentation
 

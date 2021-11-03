@@ -137,3 +137,5 @@ docs/build/
 # and source files
 docs/source/_static
 docs/source/_templates
+/.graphqlconfig
+/schema.graphql

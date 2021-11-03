@@ -1,4 +1,6 @@
 from tempfile import NamedTemporaryFile
+import uuid
+import time
 
 import pytest
 import requests
@@ -9,6 +11,36 @@ from labelbox.exceptions import InvalidQueryError
 
 def test_get_data_row(datarow, client):
     assert client.get_data_row(datarow.uid)
+
+
+def test_lookup_data_rows(client, dataset):
+    uid = str(uuid.uuid4())
+    # 1 external id : 1 uid
+    dr = dataset.create_data_row(row_data="123", external_id=uid)
+    lookup = client.get_data_row_ids_for_external_ids([uid])
+    assert len(lookup) == 1
+    assert lookup[uid][0] == dr.uid
+    # 2 external ids : 1 uid
+    uid2 = str(uuid.uuid4())
+    dr2 = dataset.create_data_row(row_data="123", external_id=uid2)
+    lookup = client.get_data_row_ids_for_external_ids([uid, uid2])
+    assert len(lookup) == 2
+    assert all([len(x) == 1 for x in lookup.values()])
+    assert lookup[uid][0] == dr.uid
+    assert lookup[uid2][0] == dr2.uid
+    #1 external id : 2 uid
+    dr3 = dataset.create_data_row(row_data="123", external_id=uid2)
+    lookup = client.get_data_row_ids_for_external_ids([uid2])
+    assert len(lookup) == 1
+    assert len(lookup[uid2]) == 2
+    assert lookup[uid2][0] == dr2.uid
+    assert lookup[uid2][1] == dr3.uid
+    # Empty args
+    lookup = client.get_data_row_ids_for_external_ids([])
+    assert len(lookup) == 0
+    # Non matching
+    lookup = client.get_data_row_ids_for_external_ids([str(uuid.uuid4())])
+    assert len(lookup) == 0
 
 
 def test_data_row_bulk_creation(dataset, rand_gen, image_url):

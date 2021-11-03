@@ -1,23 +1,39 @@
 from collections import defaultdict
-from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
-
 from typing import Any, Callable, Dict, List, Union, Optional
 
 from pydantic import BaseModel, validator
 
+import labelbox
 from labelbox.schema import ontology
-from labelbox.orm.model import Entity
-from ..ontology import get_feature_schema_lookup
+from .annotation import (ClassificationAnnotation, ObjectAnnotation,
+                         VideoClassificationAnnotation, VideoObjectAnnotation)
 from .classification import ClassificationAnswer
 from .data import VideoData, TextData, ImageData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
-from .annotation import (ClassificationAnnotation, ObjectAnnotation,
-                         VideoClassificationAnnotation, VideoObjectAnnotation)
+from ..ontology import get_feature_schema_lookup
 
 
 class Label(BaseModel):
+    """Container for holding data and annotations
+
+    >>> Label(
+    >>>    data = ImageData(url = "http://my-img.jpg"),
+    >>>    annotations = [
+    >>>        ObjectAnnotation(
+    >>>            value = Point(x = 10, y = 10),
+    >>>            name = "target"
+    >>>        )
+    >>>     ]
+    >>>  )
+
+    Args:
+        uid: Optional Label Id in Labelbox
+        data: Data of Label, Image, Video, Text
+        annotations: List of Annotations in the label
+        extra: additional context
+    """
     uid: Optional[Cuid] = None
     data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
@@ -87,7 +103,7 @@ class Label(BaseModel):
             mask.create_url(signer)
         return self
 
-    def create_data_row(self, dataset: "Entity.Dataset",
+    def create_data_row(self, dataset: "labelbox.Dataset",
                         signer: Callable[[bytes], str]) -> "Label":
         """
         Creates a data row and adds to the given dataset.
