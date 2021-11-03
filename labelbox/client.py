@@ -199,7 +199,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"]["exception"]["status"]
+            return error["extensions"]["exception"].get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -245,6 +245,12 @@ class Client:
         if resource_conflict_error is not None:
             raise labelbox.exceptions.ResourceConflict(
                 resource_conflict_error["message"])
+
+        malformed_request_error = check_errors(["MALFORMED_REQUEST"],
+                                               "extensions", "code")
+        if malformed_request_error is not None:
+            raise labelbox.exceptions.MalformedQueryException(
+                malformed_request_error["message"])
 
         # A lot of different error situations are now labeled serverside
         # as INTERNAL_SERVER_ERROR, when they are actually client errors.
