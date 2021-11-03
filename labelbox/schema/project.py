@@ -449,29 +449,27 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def queue(self, data_rows: List):
+    def queue(self, data_row_ids: List[str]):
         """Add DataRows to the Project queue"""
 
-        if not self._is_batch_mode():
-            warnings.warn("Project not in Batch mode")
+        if self.queue_mode() != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
 
         method = "submitBatchOfDataRows"
-        return self._post_batch(method, data_rows)
+        return self._post_batch(method, data_row_ids)
 
-    def dequeue(self, data_rows: List):
+    def dequeue(self, data_row_ids: List[str]):
 
-        if not self._is_batch_mode():
-            warnings.warn("Project not in Batch mode")
+        if self.queue_mode() != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
 
         method = "removeBatchOfDataRows"
-        return self._post_batch(method, data_rows)
+        return self._post_batch(method, data_row_ids)
 
-    def _post_batch(self, method, data_rows):
+    def _post_batch(self, method, data_row_ids):
         """Create """
 
-        ids = [dr.uid for dr in data_rows]
-
-        if len(ids) > MAX_BATCH_SIZE:
+        if len(data_row_ids) > MAX_BATCH_SIZE:
             raise ValueError("1000 Max DataRows at a time")
 
         query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
@@ -488,14 +486,14 @@ class Project(DbObject, Updateable, Deletable):
 
         res = self.client.execute(query, {
             "projectId": self.uid,
-            "dataRowIds": ids
+            "dataRowIds": data_row_ids
         })["project"][method]["dataRows"]
 
         # TODO: figure out error messaging
-        if len(data_rows) == len(res):
+        if len(data_row_ids) == len(res):
             raise ValueError("No dataRows were submitted successfully")
 
-        if len(data_rows) > 0:
+        if len(data_row_ids) > 0:
             warnings.warn("Some Data Rows were not submitted successfully")
 
         return res
@@ -546,7 +544,7 @@ class Project(DbObject, Updateable, Deletable):
         elif status == "DISABLED":
             return QueueMode.Dataset
         else:
-            raise ValueError("this is weird")
+            raise ValueError("Status not known")
 
     def validate_labeling_parameter_overrides(self, data):
         for idx, row in enumerate(data):

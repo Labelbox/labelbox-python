@@ -23,7 +23,7 @@ def big_dataset(dataset: Dataset):
 def test_submit_batch(configured_project: Project, big_dataset):
     configured_project.update(queue_mode=QueueMode.Batch)
 
-    data_rows = list(big_dataset.export_data_rows())
+    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
     queue_res = configured_project.queue(data_rows)
     assert not len(queue_res)
     dequeue_res = configured_project.dequeue(data_rows)
