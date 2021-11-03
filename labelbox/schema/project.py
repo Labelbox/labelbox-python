@@ -466,11 +466,11 @@ class Project(DbObject, Updateable, Deletable):
         method = "removeBatchOfDataRows"
         return self._post_batch(method, data_row_ids)
 
-    def _post_batch(self, method, data_row_ids):
+    def _post_batch(self, method, data_row_ids: List[str]):
         """Create """
 
         if len(data_row_ids) > MAX_BATCH_SIZE:
-            raise ValueError("1000 Max DataRows at a time")
+            raise ValueError(f"Exceed max batch size of {MAX_BATCH_SIZE}")
 
         query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
               project(where: {id: $projectId}) {
@@ -498,7 +498,10 @@ class Project(DbObject, Updateable, Deletable):
 
         return res
 
-    def _update_queue_mode(self, mode: QueueMode):
+    def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
+
+        if self.queue_mode() == mode:
+            return mode
 
         if mode == QueueMode.Batch:
             status = "ENABLED"
@@ -525,6 +528,8 @@ class Project(DbObject, Updateable, Deletable):
             'projectId': self.uid,
             'status': status
         })
+
+        return mode
 
     def queue_mode(self):
 
