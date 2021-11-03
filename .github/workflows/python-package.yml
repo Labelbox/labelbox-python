@@ -15,8 +15,7 @@ jobs:
       max-parallel: 1
       matrix:
         # TODO: unlock parallel testing by using more API keys
-        python-test:
-          version: [3.6, 3.7, 3.8]
+        python-test.version: [3.6, 3.7, 3.8]
 
     steps:
       - name: Cancel previous workflow
