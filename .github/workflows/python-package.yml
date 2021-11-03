@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # TODO: unlock parallel testing by using more API keys
         include:
           - python-version: 3.6
             prod-key: LABELBOX_API_KEY
@@ -81,11 +80,8 @@ jobs:
       - name: Test with tox
         env:
           # make sure to tell tox to use these environs in tox.ini
-          #
-          # msokoloff+prod-python@labelbox.com
           LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
 
-          # randall+staging-python@labelbox.com
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
         run: |
           tox -e py -- -svvx
