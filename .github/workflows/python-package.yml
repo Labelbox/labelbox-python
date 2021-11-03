@@ -15,7 +15,7 @@ jobs:
       max-parallel: 1
       matrix:
         # TODO: unlock parallel testing by using more API keys
-        python-test.happy: [3.6, 3.7, 3.8]
+        python-test.version: [3.6, 3.7, 3.8]
 
     steps:
       - name: Cancel previous workflow
@@ -36,10 +36,10 @@ jobs:
           token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
 
-      - name: Set up Python ${{ matrix.python-test.happy }}
+      - name: Set up Python ${{ matrix.python-test.version }}
         uses: actions/setup-python@v2
         with:
-          python-test.happy: ${{ matrix.python-test.happy }}
+          python-test.version: ${{ matrix.python-test.version }}
 
       - name: yapf
         id: yapf
