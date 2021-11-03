@@ -17,67 +17,67 @@ jobs:
         # TODO: unlock parallel testing by using more API keys
         python-version: [3.6, 3.7, 3.8]
 
-  steps:
-    - name: Cancel previous workflow
-      uses: styfle/cancel-workflow-action@0.4.0
-      with:
-        access_token: ${{ github.token }}
+    steps:
+      - name: Cancel previous workflow
+        uses: styfle/cancel-workflow-action@0.4.0
+        with:
+          access_token: ${{ github.token }}
 
-    - name: set environment for branch
-      run: |
-        if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
-          echo "LABELBOX_TEST_ENVIRON=prod" >> $GITHUB_ENV
-        else
-          echo "LABELBOX_TEST_ENVIRON=staging" >> $GITHUB_ENV
-        fi
+      - name: set environment for branch
+        run: |
+          if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
+            echo "LABELBOX_TEST_ENVIRON=prod" >> $GITHUB_ENV
+          else
+            echo "LABELBOX_TEST_ENVIRON=staging" >> $GITHUB_ENV
+          fi
 
-    - uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-        ref: ${{ github.head_ref }}
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: yapf
-      id: yapf
-      uses: AlexanderMelde/yapf-action@master
-      with:
-        args: --verbose --recursive --parallel --style "google"
-    - name: dependencies
-      run: |
-        sudo apt-get -y update
-        sudo apt install -y libsm6 \
-                          libxext6 \
-                            ffmpeg \
-                    libfontconfig1 \
-                      libxrender1 \
-                  libgl1-mesa-glx
-    - name: install labelbox package
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install .
-    - name: mypy
-      run: |
-        pip install mypy==0.782
-        mypy -p labelbox --pretty --show-error-codes
-    - name: Install package and test dependencies
-      run: |
-        pip install tox==3.18.1
+      - name: yapf
+        id: yapf
+        uses: AlexanderMelde/yapf-action@master
+        with:
+          args: --verbose --recursive --parallel --style "google"
+      - name: dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt install -y libsm6 \
+                           libxext6 \
+                             ffmpeg \
+                     libfontconfig1 \
+                        libxrender1 \
+                    libgl1-mesa-glx
+      - name: install labelbox package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+      - name: mypy
+        run: |
+          pip install mypy==0.782
+          mypy -p labelbox --pretty --show-error-codes
+      - name: Install package and test dependencies
+        run: |
+          pip install tox==3.18.1
 
-    # TODO: replace tox.ini with what the Makefile does
-    # to make sure local testing is
-    # identical to github actions which uses tox.ini
-    - name: Test with tox
-      env:
-        # make sure to tell tox to use these environs in tox.ini
-        #
-        # msokoloff+prod-python@labelbox.com
-        LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
+      # TODO: replace tox.ini with what the Makefile does
+      # to make sure local testing is
+      # identical to github actions which uses tox.ini
+      - name: Test with tox
+        env:
+          # make sure to tell tox to use these environs in tox.ini
+          #
+          # msokoloff+prod-python@labelbox.com
+          LABELBOX_TEST_API_KEY_PROD: ${{ secrets.LABELBOX_API_KEY }}
 
-        # randall+staging-python@labelbox.com
-        LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
-      run: |
-        tox -e py -- -svvx
+          # randall+staging-python@labelbox.com
+          LABELBOX_TEST_API_KEY_STAGING: ${{ secrets.STAGING_LABELBOX_API_KEY }}
+        run: |
+          tox -e py -- -svvx
