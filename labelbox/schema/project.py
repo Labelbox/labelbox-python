@@ -43,6 +43,12 @@ class QueueMode(enum.Enum):
     Dataset = "Dataset"
 
 
+class QueueErrors(enum.Enum):
+    InvalidDataRowType = 'InvalidDataRowType'
+    AlreadyInProject = 'AlreadyInProject'
+    HasAttachedLabel = 'HasAttachedLabel'
+
+
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
@@ -426,7 +432,7 @@ class Project(DbObject, Updateable, Deletable):
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
         """
-        organization = self.client.get_organization()
+
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
 
@@ -498,7 +504,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if mode == QueueMode.Batch:
             status = "ENABLED"
-        elif mode == QueueMode:
+        elif mode == QueueMode.Dataset:
             status = "DISABLED"
         else:
             raise ValueError(
@@ -521,20 +527,26 @@ class Project(DbObject, Updateable, Deletable):
             'projectId': self.uid,
             'status': status
         })
-        self.tag_set_status = status
 
     def queue_mode(self):
 
-        if self._is_batch_mode():
-            return QueueMode.Batch
-        else:
-            return QueueMode.Dataset
+        query_str = """query %s($projectId: ID!, $status: TagSetStatusInput!) {
+              project(where: {id: $projectId}) {
+                 id
+                 tagSetStatus
+                __typename
+            }
+        }       
+        """ % "GetTagSetStatusPyApi"
 
-    def _is_batch_mode(self):
-        if self.tag_set_status == "ENABLED":
-            return True
+        status = self.client.execute(query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
+
+        if status == "ENABLED":
+            return QueueMode.Batch
+        elif status == "DISABLED":
+            return QueueMode.Dataset
         else:
-            return False
+            raise ValueError("this is weird")
 
     def validate_labeling_parameter_overrides(self, data):
         for idx, row in enumerate(data):
