@@ -1,6 +1,5 @@
 from labelbox.schema.labeling_frontend import LabelingFrontend
 import time
-import json
 
 import pytest
 import requests
