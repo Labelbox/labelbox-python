@@ -482,7 +482,7 @@ class Project(DbObject, Updateable, Deletable):
                 }
               }
             }         
-        """ % method
+        """ % (method, method)
 
         res = self.client.execute(query, {
             "projectId": self.uid,
@@ -509,8 +509,7 @@ class Project(DbObject, Updateable, Deletable):
             status = "DISABLED"
         else:
             raise ValueError(
-                "Must provide either `BATCH` or `DATASET` as a mode"
-            )
+                "Must provide either `BATCH` or `DATASET` as a mode")
 
         query_str = """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
               project(where: {id: $projectId}) {
@@ -533,7 +532,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def queue_mode(self):
 
-        query_str = """query %s($projectId: ID!, $status: TagSetStatusInput!) {
+        query_str = """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {
                  id
                  tagSetStatus
@@ -542,7 +541,8 @@ class Project(DbObject, Updateable, Deletable):
         }       
         """ % "GetTagSetStatusPyApi"
 
-        status = self.client.execute(query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
+        status = self.client.execute(
+            query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
 
         if status == "ENABLED":
             return QueueMode.Batch
@@ -816,7 +816,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-                          "consensus average_benchmark_agreement last_activity_time")
+    "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
