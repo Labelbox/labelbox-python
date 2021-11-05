@@ -4,6 +4,7 @@ import pytest
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -108,7 +109,7 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    assert configured_project.tag_set_status == 'DISABLED'
-    configured_project.change_queue_mode("BATCH")
+    assert configured_project.queue_mode() == QueueMode.Dataset
+    configured_project.update(queue_mode=QueueMode.Batch)
     # TODO: understand why this fails
-    assert configured_project.tag_set_status == 'ENABLED'
+    assert configured_project.queue_mode() == QueueMode.Batch
