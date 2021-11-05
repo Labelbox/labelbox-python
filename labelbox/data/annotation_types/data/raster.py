@@ -51,16 +51,6 @@ class RasterData(BaseModel, ABC):
         arr = np.stack((arr,) * 3, axis=-1)
         return cls(arr=arr, **kwargs)
 
-    @classmethod
-    def from_2D_array(cls, arr: TypedArray[Literal['uint8']], **kwargs):
-
-        if len(arr.shape) != 2:
-            raise ValueError(
-                f"Found array with shape {arr.shape}. Expected two dimensions ([W,H])"
-            )
-        arr = np.stack((arr,) * 3, axis=-1)
-        return cls(arr=arr, **kwargs)
-
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
         """
         Converts image bytes to a numpy array
