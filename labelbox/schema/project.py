@@ -450,27 +450,25 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def queue(self, data_row_ids: List[str]):
-        """Add DataRows to the Project queue"""
-
-        if self.queue_mode() != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
+        """Add Data Rows to the Project queue"""
 
         method = "submitBatchOfDataRows"
         return self._post_batch(method, data_row_ids)
 
     def dequeue(self, data_row_ids: List[str]):
-
-        if self.queue_mode() != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
+        """Remove Data Rows from the Project queue"""
 
         method = "removeBatchOfDataRows"
         return self._post_batch(method, data_row_ids)
 
     def _post_batch(self, method, data_row_ids: List[str]):
-        """Create """
+        """Post batch methods"""
+        
+        if self.queue_mode() != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
 
         if len(data_row_ids) > MAX_BATCH_SIZE:
-            raise ValueError(f"Exceed max batch size of {MAX_BATCH_SIZE}")
+            raise ValueError(f"Batch exceeds max size of {MAX_BATCH_SIZE}, consider breaking it into parts")
 
         query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
               project(where: {id: $projectId}) {
