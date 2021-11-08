@@ -463,12 +463,14 @@ class Project(DbObject, Updateable, Deletable):
 
     def _post_batch(self, method, data_row_ids: List[str]):
         """Post batch methods"""
-        
+
         if self.queue_mode() != QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
 
         if len(data_row_ids) > MAX_QUEUE_BATCH_SIZE:
-            raise ValueError(f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts")
+            raise ValueError(
+                f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts"
+            )
 
         query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
               project(where: {id: $projectId}) {

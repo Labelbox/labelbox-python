@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from pydantic import ValidationError
 
@@ -22,11 +24,13 @@ def test_url():
     assert len(text) == 3541
 
 
-def test_file():
-    file_path = "tests/data/assets/sample_text.txt"
-    text_data = TextData(file_path=file_path)
-    text = text_data.value
-    assert len(text) == 3541
+def test_file(tmpdir):
+    content = "foo bar baz"
+    file = "hello.txt"
+    dir = tmpdir.mkdir('data')
+    dir.join(file).write(content)
+    text_data = TextData(file_path=os.path.join(dir.strpath, file))
+    assert len(text_data.value) == len(content)
 
 
 def test_ref():
