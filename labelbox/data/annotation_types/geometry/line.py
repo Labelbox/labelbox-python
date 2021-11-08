@@ -14,13 +14,15 @@ class Line(Geometry):
     Args:
         points (List[Point]): A list of `Point` geometries
 
+    >>> Line(points = [Point(x=3,y=4), Point(x=3,y=5)])
+
     """
     points: List[Point]
 
     @property
     def geometry(self) -> geojson.MultiLineString:
-        return geojson.MultiLineString(
-            [[[point.x, point.y] for point in self.points]])
+        return geojson.MultiLineString([[[point.x, point.y]
+                                         for point in self.points]])
 
     def draw(self,
              height: Optional[int] = None,
@@ -47,3 +49,12 @@ class Line(Geometry):
                              False,
                              color=color,
                              thickness=thickness)
+
+    @validator('points')
+    def is_geom_valid(cls, points):
+        if len(points) < 2:
+            raise ValueError(
+                f"A line must have at least 2 points to be valid. Found {points}"
+            )
+
+        return points
