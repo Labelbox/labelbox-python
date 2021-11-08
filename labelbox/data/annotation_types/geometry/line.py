@@ -3,6 +3,7 @@ from typing import List, Optional, Union, Tuple
 import geojson
 import numpy as np
 import cv2
+from pydantic import validator
 
 from .point import Point
 from .geometry import Geometry
