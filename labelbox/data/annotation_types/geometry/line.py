@@ -21,8 +21,8 @@ class Line(Geometry):
 
     @property
     def geometry(self) -> geojson.MultiLineString:
-        return geojson.MultiLineString([[[point.x, point.y]
-                                         for point in self.points]])
+        return geojson.MultiLineString(
+            [[[point.x, point.y] for point in self.points]])
 
     def draw(self,
              height: Optional[int] = None,
