@@ -7,7 +7,7 @@ import ndjson
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import MALPredictionImport, AnnotationImportState
+from labelbox.schema.annotation_import import LabelImport, MALPredictionImport, AnnotationImportState
 
 
 @pytest.fixture
@@ -327,18 +327,14 @@ def model_run(rand_gen, model):
 
 @pytest.fixture
 def model_run_with_model_run_data_rows(client, configured_project,
-                                       annotation_submit_fn,
                                        model_run_predictions, model_run):
     configured_project.enable_model_assisted_labeling()
 
-    upload_task = MALPredictionImport.create_from_objects(
-        client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
+    upload_task = LabelImport.create_from_objects(
+        client, configured_project.uid, f"label-import-{uuid.uuid4()}",
         model_run_predictions)
     upload_task.wait_until_done()
-    label_ids = []
-    for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
-        label_ids.append(
-            annotation_submit_fn(configured_project.uid, data_row_id))
+    label_ids = [label.uid for label in configured_project.labels()]
     model_run.upsert_labels(label_ids)
     time.sleep(3)
     yield model_run
