@@ -35,7 +35,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-MAX_BATCH_SIZE = 1000
+MAX_QUEUE_BATCH_SIZE = 1000
 
 
 class QueueMode(enum.Enum):
@@ -467,8 +467,8 @@ class Project(DbObject, Updateable, Deletable):
         if self.queue_mode() != QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
 
-        if len(data_row_ids) > MAX_BATCH_SIZE:
-            raise ValueError(f"Batch exceeds max size of {MAX_BATCH_SIZE}, consider breaking it into parts")
+        if len(data_row_ids) > MAX_QUEUE_BATCH_SIZE:
+            raise ValueError(f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts")
 
         query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
               project(where: {id: $projectId}) {
@@ -512,11 +512,8 @@ class Project(DbObject, Updateable, Deletable):
         query_str = """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
               project(where: {id: $projectId}) {
                  setTagSetStatus(input: {tagSetStatus: $status}) {
-                    id
                     tagSetStatus
-                    __typename
                 }
-                __typename
             }
         }       
         """ % "setTagSetStatusPyApi"
@@ -532,9 +529,7 @@ class Project(DbObject, Updateable, Deletable):
 
         query_str = """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {
-                 id
                  tagSetStatus
-                __typename
             }
         }       
         """ % "GetTagSetStatusPyApi"
