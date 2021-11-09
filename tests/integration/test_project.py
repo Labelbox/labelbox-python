@@ -1,11 +1,10 @@
 import json
 
-import requests
-import ndjson
 import pytest
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -107,3 +106,9 @@ def test_attach_instructions(client, project):
 def test_queued_data_row_export(configured_project):
     result = configured_project.export_queued_data_rows()
     assert len(result) == 1
+
+
+def test_queue_mode(configured_project: Project):
+    assert configured_project.queue_mode() == QueueMode.Dataset
+    configured_project.update(queue_mode=QueueMode.Batch)
+    assert configured_project.queue_mode() == QueueMode.Batch

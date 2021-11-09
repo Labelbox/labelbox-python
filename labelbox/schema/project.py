@@ -1,27 +1,31 @@
+import enum
 import json
-import time
 import logging
+import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Union, Iterable
+from typing import Dict, Union, Iterable, List, Optional
 from urllib.parse import urlparse
-import requests
+
 import ndjson
+import requests
 
 from labelbox import utils
-from labelbox.schema.data_row import DataRow
-from labelbox.orm import query
-from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.exceptions import InvalidQueryError, LabelboxError
+from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.bulk_import_request import BulkImportRequest
+from labelbox.schema.data_row import DataRow
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
 except AttributeError:
     from backports.datetime_fromisoformat import MonkeyPatch
+
     MonkeyPatch.patch_fromisoformat()
 
 try:
@@ -30,6 +34,19 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
+
+MAX_QUEUE_BATCH_SIZE = 1000
+
+
+class QueueMode(enum.Enum):
+    Batch = "Batch"
+    Dataset = "Dataset"
+
+
+class QueueErrors(enum.Enum):
+    InvalidDataRowType = 'InvalidDataRowType'
+    AlreadyInProject = 'AlreadyInProject'
+    HasAttachedLabel = 'HasAttachedLabel'
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -78,6 +95,14 @@ class Project(DbObject, Updateable, Deletable):
     webhooks = Relationship.ToMany("Webhook", False)
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
+
+    def update(self, **kwargs):
+
+        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
+        if mode:
+            self._update_queue_mode(mode)
+
+        return super().update(**kwargs)
 
     def members(self):
         """ Fetch all current members for this project
@@ -407,14 +432,14 @@ class Project(DbObject, Updateable, Deletable):
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
         """
-        organization = self.client.get_organization()
+
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
 
         self.labeling_frontend.connect(labeling_frontend)
 
         LFO = Entity.LabelingFrontendOptions
-        labeling_frontend_options = self.client._create(
+        self.client._create(
             LFO, {
                 LFO.project: self,
                 LFO.labeling_frontend: labeling_frontend,
@@ -423,6 +448,103 @@ class Project(DbObject, Updateable, Deletable):
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
+
+    def queue(self, data_row_ids: List[str]):
+        """Add Data Rows to the Project queue"""
+
+        method = "submitBatchOfDataRows"
+        return self._post_batch(method, data_row_ids)
+
+    def dequeue(self, data_row_ids: List[str]):
+        """Remove Data Rows from the Project queue"""
+
+        method = "removeBatchOfDataRows"
+        return self._post_batch(method, data_row_ids)
+
+    def _post_batch(self, method, data_row_ids: List[str]):
+        """Post batch methods"""
+
+        if self.queue_mode() != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
+
+        if len(data_row_ids) > MAX_QUEUE_BATCH_SIZE:
+            raise ValueError(
+                f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts"
+            )
+
+        query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
+              project(where: {id: $projectId}) {
+                %s(data: {dataRowIds: $dataRowIds}) {
+                  dataRows {
+                    dataRowId
+                    error
+                  }
+                }
+              }
+            }         
+        """ % (method, method)
+
+        res = self.client.execute(query, {
+            "projectId": self.uid,
+            "dataRowIds": data_row_ids
+        })["project"][method]["dataRows"]
+
+        # TODO: figure out error messaging
+        if len(data_row_ids) == len(res):
+            raise ValueError("No dataRows were submitted successfully")
+
+        if len(data_row_ids) > 0:
+            warnings.warn("Some Data Rows were not submitted successfully")
+
+        return res
+
+    def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
+
+        if self.queue_mode() == mode:
+            return mode
+
+        if mode == QueueMode.Batch:
+            status = "ENABLED"
+        elif mode == QueueMode.Dataset:
+            status = "DISABLED"
+        else:
+            raise ValueError(
+                "Must provide either `BATCH` or `DATASET` as a mode")
+
+        query_str = """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
+              project(where: {id: $projectId}) {
+                 setTagSetStatus(input: {tagSetStatus: $status}) {
+                    tagSetStatus
+                }
+            }
+        }       
+        """ % "setTagSetStatusPyApi"
+
+        self.client.execute(query_str, {
+            'projectId': self.uid,
+            'status': status
+        })
+
+        return mode
+
+    def queue_mode(self):
+
+        query_str = """query %s($projectId: ID!) {
+              project(where: {id: $projectId}) {
+                 tagSetStatus
+            }
+        }       
+        """ % "GetTagSetStatusPyApi"
+
+        status = self.client.execute(
+            query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
+
+        if status == "ENABLED":
+            return QueueMode.Batch
+        elif status == "DISABLED":
+            return QueueMode.Dataset
+        else:
+            raise ValueError("Status not known")
 
     def validate_labeling_parameter_overrides(self, data):
         for idx, row in enumerate(data):
