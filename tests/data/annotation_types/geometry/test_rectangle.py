@@ -1,3 +1,4 @@
+import cv2
 import pytest
 from pydantic import ValidationError
 
