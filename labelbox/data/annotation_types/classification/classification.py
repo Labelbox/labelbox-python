@@ -29,18 +29,30 @@ class ClassificationAnswer(FeatureSchema):
 
 
 class Radio(BaseModel):
-    """ A classification with only one selected option allowed """
+    """ A classification with only one selected option allowed
+    
+    >>> Radio(answer = ClassificationAnswer(name = "dog"))
+
+    """
     answer: ClassificationAnswer
 
 
 class Checklist(_TempName):
-    """ A classification with many selected options allowed """
+    """ A classification with many selected options allowed
+
+    >>> Checklist(answer = [ClassificationAnswer(name = "cloudy")])
+
+    """
     name: Literal["checklist"] = "checklist"
     answer: List[ClassificationAnswer]
 
 
 class Text(BaseModel):
-    """ Free form text """
+    """ Free form text
+
+    >>> Text(answer = "some text answer") 
+
+    """
     answer: str
 
 
