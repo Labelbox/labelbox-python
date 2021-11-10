@@ -233,6 +233,11 @@ class Tool:
         self.classifications.append(classification)
 
 
+class FeatureSchema(DbObject):
+    ...
+
+
+
 class Ontology(DbObject):
     """An ontology specifies which tools and classifications are available
     to a project. This is read only for now.

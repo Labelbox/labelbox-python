@@ -28,6 +28,7 @@ from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
+from labelbox.orm.model import Entity
 
 logger = logging.getLogger(__name__)
 
@@ -709,3 +710,22 @@ class Client:
                 })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
+
+    def get_ontology(self, ontology_id):
+        return self._get_single(Entity.Ontology, ontology_id)
+
+    def get_ontologies(self, name_contains: str):
+        query_str = """query getOntologiesPyApi($search: String, $filter: OntologyFilter, $from : String, $first: PageSize){
+            ontologies(where: {filter: $filter, search: $search}, after: $from, first: $first){
+                nodes {%s}
+                nextCursor
+            }
+        }
+        """ % query.results_query_part(Entity.Ontology)
+        res = PaginatedCollection(
+            self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['ontologies', 'nodes'],
+            Entity.Ontology, ['ontologies', 'nextCursor'])
+        return res
+
+
+
