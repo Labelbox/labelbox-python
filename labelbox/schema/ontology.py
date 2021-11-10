@@ -34,17 +34,19 @@ class Option:
         options: (list)
     """
     value: Union[str, int]
+    label: Optional[Union[str, int]] = None
     schema_id: Optional[str] = None
     feature_schema_id: Optional[FeatureSchemaId] = None
     options: List["Classification"] = field(default_factory=list)
 
-    @property
-    def label(self):
-        return self.value
+    def __post_init__(self):
+        if self.label is None:
+            self.label = self.value
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(value=dictionary["value"],
+                   label=dictionary["label"],
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
                    options=[
@@ -101,7 +103,6 @@ class Classification:
         schema_id: (str)
         feature_schema_id: (str)
     """
-
     class Type(Enum):
         TEXT = "text"
         CHECKLIST = "checklist"
@@ -123,12 +124,13 @@ class Classification:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
-        return cls(class_type=cls.Type(dictionary["type"]),
-                   instructions=dictionary["instructions"],
-                   required=dictionary.get("required", False),
-                   options=[Option.from_dict(o) for o in dictionary["options"]],
-                   schema_id=dictionary.get("schemaNodeId", None),
-                   feature_schema_id=dictionary.get("featureSchemaId", None))
+        return cls(
+            class_type=cls.Type(dictionary["type"]),
+            instructions=dictionary["instructions"],
+            required=dictionary.get("required", False),
+            options=[Option.from_dict(o) for o in dictionary["options"]],
+            schema_id=dictionary.get("schemaNodeId", None),
+            feature_schema_id=dictionary.get("featureSchemaId", None))
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
@@ -183,7 +185,6 @@ class Tool:
         schema_id: (str)
         feature_schema_id: (str)
     """
-
     class Type(Enum):
         POLYGON = "polygon"
         SEGMENTATION = "superpixel"
@@ -225,8 +226,8 @@ class Tool:
         }
 
     def add_classification(self, classification: Classification):
-        if classification.instructions in (
-                c.instructions for c in self.classifications):
+        if classification.instructions in (c.instructions
+                                           for c in self.classifications):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{classification.instructions}' "
                 f"for tool '{self.name}'")
@@ -347,8 +348,8 @@ class OntologyBuilder:
         self.tools.append(tool)
 
     def add_classification(self, classification: Classification):
-        if classification.instructions in (
-                c.instructions for c in self.classifications):
+        if classification.instructions in (c.instructions
+                                           for c in self.classifications):
             raise InconsistentOntologyException(
                 f"Duplicate classification instructions '{classification.instructions}'. "
             )

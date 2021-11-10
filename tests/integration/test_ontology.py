@@ -22,39 +22,39 @@ _SAMPLE_ONTOLOGY = {
         "classifications": []
     }, {
         "schemaNodeId":
-            None,
+        None,
         "featureSchemaId":
-            None,
+        None,
         "required":
-            False,
+        False,
         "name":
-            "bbox",
+        "bbox",
         "color":
-            "#FF0000",
+        "#FF0000",
         "tool":
-            "rectangle",
+        "rectangle",
         "classifications": [{
             "schemaNodeId":
-                None,
+            None,
             "featureSchemaId":
-                None,
+            None,
             "required":
-                True,
+            True,
             "instructions":
-                "nested classification",
+            "nested classification",
             "name":
-                "nested classification",
+            "nested classification",
             "type":
-                "radio",
+            "radio",
             "options": [{
                 "schemaNodeId":
-                    None,
+                None,
                 "featureSchemaId":
-                    None,
+                None,
                 "label":
-                    "first",
+                "first",
                 "value":
-                    "first",
+                "first",
                 "options": [{
                     "schemaNodeId": None,
                     "featureSchemaId": None,
@@ -107,28 +107,28 @@ _SAMPLE_ONTOLOGY = {
     }],
     "classifications": [{
         "schemaNodeId":
-            None,
+        None,
         "featureSchemaId":
-            None,
+        None,
         "required":
-            True,
+        True,
         "instructions":
-            "This is a question.",
+        "This is a question.",
         "name":
-            "This is a question.",
+        "This is a question.",
         "type":
-            "radio",
+        "radio",
         "options": [{
             "schemaNodeId": None,
             "featureSchemaId": None,
             "label": "yes",
-            "value": "yes",
+            "value": "definitely yes",
             "options": []
         }, {
             "schemaNodeId": None,
             "featureSchemaId": None,
             "label": "no",
-            "value": "no",
+            "value": "definitely not",
             "options": []
         }]
     }]
@@ -149,10 +149,20 @@ def test_create_classification(class_type) -> None:
 
 @pytest.mark.parametrize("value, expected_value, typing",
                          [(3, 3, int), ("string", "string", str)])
-def test_create_option(value, expected_value, typing) -> None:
+def test_create_option_with_value(value, expected_value, typing) -> None:
     o = Option(value=value)
     assert (o.value == expected_value)
     assert (o.value == o.label)
+
+
+@pytest.mark.parametrize("value, label, expected_value, typing",
+                         [(3, 2, 3, int),
+                          ("string", "another string", "string", str)])
+def test_create_option_with_value_and_label(value, label, expected_value,
+                                            typing) -> None:
+    o = Option(value=value, label=label)
+    assert (o.value == expected_value)
+    assert o.value != o.label
 
 
 def test_create_empty_ontology() -> None:
@@ -200,7 +210,8 @@ def test_add_ontology_classification() -> None:
 
 def test_tool_add_classification() -> None:
     t = Tool(tool=Tool.Type.SEGMENTATION, name="segmentation")
-    c = Classification(class_type=Classification.Type.TEXT, instructions="text")
+    c = Classification(class_type=Classification.Type.TEXT,
+                       instructions="text")
     t.add_classification(c)
     assert t.classifications == [c]
 
@@ -223,7 +234,8 @@ def test_classification_add_option() -> None:
 
 def test_option_add_option() -> None:
     o = Option(value="option")
-    c = Classification(class_type=Classification.Type.TEXT, instructions="text")
+    c = Classification(class_type=Classification.Type.TEXT,
+                       instructions="text")
     o.add_option(c)
     assert o.options == [c]
 
