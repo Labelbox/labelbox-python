@@ -17,18 +17,12 @@ from labelbox import utils
 from labelbox import __version__ as SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.project import Project
-from labelbox.schema.dataset import Dataset
-from labelbox.schema.data_row import DataRow
-from labelbox.schema.model import Model
-from labelbox.schema.user import User
-from labelbox.schema.organization import Organization
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
-from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
-from labelbox.orm.model import Entity
+
 
 logger = logging.getLogger(__name__)
 
@@ -430,14 +424,14 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Dataset with the given ID.
         """
-        return self._get_single(Dataset, dataset_id)
+        return self._get_single(Entity.Dataset, dataset_id)
 
     def get_user(self):
         """ Gets the current User database object.
 
             >>> user = client.get_user()
         """
-        return self._get_single(User, None)
+        return self._get_single(Entity.User, None)
 
     def get_organization(self):
         """ Gets the Organization DB object of the current user.
@@ -445,7 +439,7 @@ class Client:
             >>> organization = client.get_organization()
 
         """
-        return self._get_single(Organization, None)
+        return self._get_single(Entity.Organization, None)
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
@@ -478,7 +472,7 @@ class Client:
         Returns:
             An iterable of Projects (typically a PaginatedCollection).
         """
-        return self._get_all(Project, where)
+        return self._get_all(Entity.Project, where)
 
     def get_datasets(self, where=None):
         """ Fetches one or more datasets.
@@ -491,7 +485,7 @@ class Client:
         Returns:
             An iterable of Datasets (typically a PaginatedCollection).
         """
-        return self._get_all(Dataset, where)
+        return self._get_all(Entity.Dataset, where)
 
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
@@ -504,7 +498,7 @@ class Client:
         Returns:
             An iterable of LabelingFrontends (typically a PaginatedCollection).
         """
-        return self._get_all(LabelingFrontend, where)
+        return self._get_all(Entity.LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
         """ Creates an object on the server. Attribute values are
@@ -551,7 +545,7 @@ class Client:
             InvalidAttributeError: If the Dataset type does not contain
                 any of the attribute names given in kwargs.
         """
-        dataset = self._create(Dataset, kwargs)
+        dataset = self._create(Entity.Dataset, kwargs)
 
         if iam_integration == IAMIntegration._DEFAULT:
             iam_integration = self.get_organization(
@@ -560,14 +554,15 @@ class Client:
         if iam_integration is None:
             return dataset
 
-        if not isinstance(iam_integration, IAMIntegration):
-            raise TypeError(
-                f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
-            )
-
-        if not iam_integration.valid:
-            raise ValueError("Integration is not valid. Please select another.")
         try:
+            if not isinstance(iam_integration, IAMIntegration):
+                raise TypeError(
+                    f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
+                )
+
+            if not iam_integration.valid:
+                raise ValueError("Integration is not valid. Please select another.")
+
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
                     setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
@@ -604,7 +599,7 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Project, kwargs)
+        return self._create(Entity.Project, kwargs)
 
     def get_roles(self):
         """
@@ -621,7 +616,7 @@ class Client:
             DataRow: returns a single data row given the data row id
         """
 
-        return self._get_single(DataRow, data_row_id)
+        return self._get_single(Entity.DataRow, data_row_id)
 
     def get_data_row_metadata_ontology(self):
         """
@@ -645,7 +640,7 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Model with the given ID.
         """
-        return self._get_single(Model, model_id)
+        return self._get_single(Entity.Model, model_id)
 
     def get_models(self, where=None):
         """ Fetches all the models the user has access to.
@@ -658,7 +653,7 @@ class Client:
         Returns:
             An iterable of Models (typically a PaginatedCollection).
         """
-        return self._get_all(Model, where, filter_deleted=False)
+        return self._get_all(Entity.Model, where, filter_deleted=False)
 
     def create_model(self, name, ontology_id):
         """ Creates a Model object on the server.
@@ -678,13 +673,13 @@ class Client:
             createModel(data: {name : $name, ontologyId : $ontologyId}){
                     %s
                 }
-            }""" % query.results_query_part(Model)
+            }""" % query.results_query_part(Entity.Model)
 
         result = self.execute(query_str, {
             "name": name,
             "ontologyId": ontology_id
         })
-        return Model(self, result['createModel'])
+        return Entity.Model(self, result['createModel'])
 
     def get_data_row_ids_for_external_ids(
             self, external_ids: List[str]) -> Dict[str, List[str]]:
