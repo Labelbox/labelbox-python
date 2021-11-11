@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from typing import Any, Dict, List, BinaryIO
+from tqdm import tqdm
 
 import backoff
 import ndjson
@@ -77,18 +78,24 @@ class AnnotationImport(DbObject):
         self.wait_until_done()
         return self._fetch_remote_ndjson(self.status_file_url)
 
-    def wait_until_done(self, sleep_time_seconds: int = 10) -> None:
+    def wait_until_done(self, sleep_time_seconds: int = 10, show_progress: bool = True) -> None:
         """Blocks import job until certain conditions are met.
         Blocks until the AnnotationImport.state changes either to
         `AnnotationImportState.FINISHED` or `AnnotationImportState.FAILED`,
         periodically refreshing object's state.
         Args:
-            sleep_time_seconds (str): a time to block between subsequent API calls
+            sleep_time_seconds (int): a time to block between subsequent API calls
+            show_progress (bool): should show progress bar
         """
-        while self.state.value == AnnotationImportState.RUNNING.value:
-            logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
-            time.sleep(sleep_time_seconds)
-            self.__backoff_refresh()
+        with tqdm(total=100) as pbar:
+            while self.state.value == AnnotationImportState.RUNNING.value:
+                logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
+                time.sleep(sleep_time_seconds)
+                self.__backoff_refresh()
+                if self.progress:
+                    pbar.update(self.progress)
+            
+            pbar.update(100)
 
     @backoff.on_exception(
         backoff.expo,
