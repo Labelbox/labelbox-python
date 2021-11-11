@@ -32,6 +32,10 @@ class DataRowMetadataSchema(BaseModel):
 
     @property
     def id(self):
+        """
+        "DataRowMetadataSchema.id is being deprecated after version 3.9 
+            in favor of DataRowMetadataSchema.uid"
+        """
         warnings.warn("`id` is being deprecated in favor of `uid`")
         return self.uid
 
@@ -43,7 +47,6 @@ String: Type[str] = constr(max_length=500)
 
 
 class _CamelCaseMixin(BaseModel):
-
     class Config:
         allow_population_by_field_name = True
         alias_generator = camel_case
@@ -109,7 +112,6 @@ class DataRowMetadataOntology:
     >>> mdo = client.get_data_row_metadata_ontology()
 
     """
-
     def __init__(self, client):
 
         self._client = client
@@ -129,8 +131,8 @@ class DataRowMetadataOntology:
         ]
         self.reserved_by_id = self._make_id_index(self.reserved_fields)
         self.reserved_by_name: Dict[
-            str,
-            DataRowMetadataSchema] = self._make_name_index(self.reserved_fields)
+            str, DataRowMetadataSchema] = self._make_name_index(
+                self.reserved_fields)
 
         # custom fields
         self.custom_fields: List[DataRowMetadataSchema] = [
@@ -206,9 +208,8 @@ class DataRowMetadataOntology:
         return fields
 
     def parse_metadata(
-        self, unparsed: List[Dict[str,
-                                  List[Union[str,
-                                             Dict]]]]) -> List[DataRowMetadata]:
+        self, unparsed: List[Dict[str, List[Union[str, Dict]]]]
+    ) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
         >>> mdo.parse_metadata([metdata])
@@ -301,8 +302,8 @@ class DataRowMetadataOntology:
                     data_row_id=m.data_row_id,
                     fields=list(
                         chain.from_iterable(
-                            self._parse_upsert(m) for m in m.fields))).dict(
-                                by_alias=True))
+                            self._parse_upsert(m)
+                            for m in m.fields))).dict(by_alias=True))
 
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
@@ -468,11 +469,12 @@ def _batch_operations(
 
 
 def _validate_parse_embedding(
-        field: DataRowMetadataField
+    field: DataRowMetadataField
 ) -> List[Dict[str, Union[SchemaId, Embedding]]]:
 
     if isinstance(field.value, list):
-        if not (Embedding.min_items <= len(field.value) <= Embedding.max_items):
+        if not (Embedding.min_items <= len(field.value) <=
+                Embedding.max_items):
             raise ValueError(
                 "Embedding length invalid. "
                 "Must have length within the interval "
