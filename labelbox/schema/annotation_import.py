@@ -87,14 +87,15 @@ class AnnotationImport(DbObject):
             sleep_time_seconds (int): a time to block between subsequent API calls
             show_progress (bool): should show progress bar
         """
-        with tqdm(total=100) as pbar:
-            while self.state.value == AnnotationImportState.RUNNING.value:
-                logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
-                time.sleep(sleep_time_seconds)
-                self.__backoff_refresh()
-                if self.progress:
-                    pbar.update(self.progress)
-            
+        pbar = tqdm(total=100) if show_progress else None
+        while self.state.value == AnnotationImportState.RUNNING.value:
+            logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
+            time.sleep(sleep_time_seconds)
+            self.__backoff_refresh()
+            if self.progress and pbar:
+                pbar.update(self.progress)
+
+        if pbar:    
             pbar.update(100)
 
     @backoff.on_exception(
