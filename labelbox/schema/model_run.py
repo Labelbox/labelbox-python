@@ -146,8 +146,8 @@ class ModelRun(DbObject):
 
     def annotation_groups(self):
         """
-        "ModelRun.annotation_groups is being deprecated after version 3.9 
-            in favor of ModelRun.model_run_data_rows"
+        ModelRun.annotation_groups is being deprecated after version 3.9 
+            in favor of ModelRun.model_run_data_rows
         """
         warnings.warn(
             "`ModelRun.annotation_groups` is being deprecated in favor of `ModelRun.model_run_data_rows`"
@@ -186,8 +186,8 @@ class ModelRun(DbObject):
 
     def delete_annotation_groups(self, data_row_ids):
         """
-        "ModelRun.delete_annotation_groups is being deprecated after version 3.9 
-            in favor of ModelRun.delete_model_run_data_rows"
+        ModelRun.delete_annotation_groups is being deprecated after version 3.9 
+            in favor of ModelRun.delete_model_run_data_rows
         """
         warnings.warn(
             "`ModelRun.delete_annotation_groups` is being deprecated in favor of `ModelRun.delete_model_run_data_rows`"
