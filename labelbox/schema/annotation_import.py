@@ -25,6 +25,7 @@ class AnnotationImport(DbObject):
     input_file_url = Field.String("input_file_url")
     error_file_url = Field.String("error_file_url")
     status_file_url = Field.String("status_file_url")
+    progress = Field.String("progress")
 
     created_by = Relationship.ToOne("User", False, "created_by")
 
