@@ -367,8 +367,8 @@ class MALPredictionImport(AnnotationImport):
         if not data_str:
             raise ValueError('annotations cannot be empty')
         data = data_str.encode('utf-8')
-        return cls._create_mal_import_from_bytes(client, project_id, name,
-                                                 data, len(data))
+        return cls._create_mal_import_from_bytes(client, project_id, name, data,
+                                                 len(data))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
@@ -577,8 +577,7 @@ class LabelImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                LabelImport, params)
+            raise labelbox.exceptions.ResourceNotFoundError(LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response
