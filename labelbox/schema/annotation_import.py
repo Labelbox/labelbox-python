@@ -79,7 +79,7 @@ class AnnotationImport(DbObject):
         return self._fetch_remote_ndjson(self.status_file_url)
 
     def wait_until_done(self,
-                        sleep_time_seconds: int = 10, 
+                        sleep_time_seconds: int = 10,
                         show_progress: bool = True) -> None:
         """Blocks import job until certain conditions are met.
         Blocks until the AnnotationImport.state changes either to
@@ -97,7 +97,7 @@ class AnnotationImport(DbObject):
             if self.progress and pbar:
                 pbar.update(self.progress)
 
-        if pbar:    
+        if pbar:
             pbar.update(100)
             pbar.close()
 
@@ -367,8 +367,8 @@ class MALPredictionImport(AnnotationImport):
         if not data_str:
             raise ValueError('annotations cannot be empty')
         data = data_str.encode('utf-8')
-        return cls._create_mal_import_from_bytes(client, project_id, name, data,
-                                                 len(data))
+        return cls._create_mal_import_from_bytes(client, project_id, name,
+                                                 data, len(data))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
@@ -577,7 +577,8 @@ class LabelImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(LabelImport, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response
