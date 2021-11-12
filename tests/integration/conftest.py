@@ -20,7 +20,7 @@ from labelbox.orm.db_object import Entity, DbObject
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
-from labelbox import OntologyBuilder, Tool
+from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.schema.annotation_import import LabelImport
 
 IMG_URL = "https://picsum.photos/200/300"
@@ -331,5 +331,57 @@ def configured_project_with_label(client, rand_gen, image_url):
     upload_task.wait_until_done()
     label = next(project.labels()).uid
     yield [project, label]
+    dataset.delete()
+    project.delete()
+
+
+@pytest.fixture
+def configured_project_with_complex_ontology(client, rand_gen, image_url):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    data_row = dataset.create_data_row(row_data=image_url)
+    editor = list(
+        project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+
+    ontology = OntologyBuilder()
+    tools = [
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+        Tool(tool=Tool.Type.LINE, name="test-line-class"),
+        Tool(tool=Tool.Type.POINT, name="test-point-class"),
+        Tool(tool=Tool.Type.POLYGON, name="test-polygon-class"),
+        Tool(tool=Tool.Type.NER, name="test-ner-class")
+    ]
+
+    options = [
+        Option(value="first option answer"),
+        Option(value="second option answer"),
+        Option(value="third option answer")
+    ]
+
+    classifications = [
+        Classification(class_type=Classification.Type.TEXT,
+                       instructions="test-text-class"),
+        Classification(class_type=Classification.Type.DROPDOWN,
+                       instructions="test-dropdown-class",
+                       options=options),
+        Classification(class_type=Classification.Type.RADIO,
+                       instructions="test-radio-class",
+                       options=options),
+        Classification(class_type=Classification.Type.CHECKLIST,
+                       instructions="test-checklist-class",
+                       options=options)
+    ]
+
+    for t in tools:
+        for c in classifications:
+            t.add_classification(c)
+        ontology.add_tool(t)
+    for c in classifications:
+        ontology.add_classification(c)
+
+    project.setup(editor, ontology.asdict())
+
+    yield [project, data_row]
     dataset.delete()
     project.delete()
