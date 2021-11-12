@@ -270,7 +270,7 @@ def test_root_schema_node_create_read(client, rand_gen):
                                             queried_root_sceham_node, attr)
 
     time.sleep(3)  # Slight delay for searching
-    queried_root_sceham_nodes = client.get_root_schema_nodes(name)
+    queried_root_sceham_nodes = list(client.get_root_schema_nodes(name))
     assert [
         root_schema_node.name for root_schema_node in queried_root_sceham_nodes
     ] == [name]
@@ -309,7 +309,7 @@ def test_ontology_create_read(client, rand_gen):
                                             queried_ontology, attr)
 
     time.sleep(3)  # Slight delay for searching
-    queried_ontologies = client.get_ontologies(ontology_name)
+    queried_ontologies = list(client.get_ontologies(ontology_name))
     assert [ontology.name for ontology in queried_ontologies] == [ontology_name]
     queried_ontology = queried_ontologies[0]
     for attr in Entity.Ontology.fields():
