@@ -4,7 +4,7 @@ import logging
 import os
 import time
 from typing import Any, Dict, List, BinaryIO
-from tqdm import tqdm
+from tqdm import tqdm # type: ignore
 
 import backoff
 import ndjson
