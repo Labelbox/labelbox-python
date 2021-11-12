@@ -63,7 +63,7 @@ jobs:
     - name: mypy
       run: |
         pip install mypy==0.782
-        mypy -p labelbox --pretty --show-error-codes
+        mypy -p labelbox --pretty --show-error-codes --install-types
     - name: Install package and test dependencies
       run: |
         pip install tox==3.18.1
