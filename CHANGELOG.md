@@ -22,10 +22,6 @@
     * Remove items from the queue with `project.dequeue()`
     * Query for and toggle the queue mode
 
-** Possibly add the status bar...
-
-
-
 # Version 3.8.0 (2021-10-22)
 ## Added
 * `ModelRun.upsert_data_rows()`
