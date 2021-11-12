@@ -333,3 +333,4 @@ def configured_project_with_label(client, rand_gen, image_url):
     yield [project, label]
     dataset.delete()
     project.delete()
+

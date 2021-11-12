@@ -196,6 +196,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
+            print(error)
             return error["extensions"]["exception"].get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
@@ -409,7 +410,7 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Project with the given ID.
         """
-        return self._get_single(Project, project_id)
+        return self._get_single(Entity.Project, project_id)
 
     def get_dataset(self, dataset_id):
         """ Gets a single Dataset with the given ID.
@@ -720,7 +721,62 @@ class Client:
         res = PaginatedCollection(
             self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['ontologies', 'nodes'],
             Entity.Ontology, ['ontologies', 'nextCursor'])
+        # status can be ALL or UNUSED
         return res
+
+    def get_root_schema(self, root_schema_id):
+        return self._get_single(Entity.RootSchemaNode, root_schema_id)
+
+
+    def get_root_schemas(self, name_contains):
+        query_str = """query getRootSchemaNodePyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
+            rootSchemaNodes(where: {filter: $filter, search: $search}, after: $from, first: $first){
+                nodes {%s}
+                nextCursor
+            }
+        }
+        """ % query.results_query_part(Entity.RootSchemaNode)
+        return PaginatedCollection(
+            self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['rootSchemaNodes', 'nodes'],
+            Entity.RootSchema, ['rootSchemaNodes', 'nextCursor'])
+
+        # TODO: Also supports FeatreSchemaKind in the filter
+        # status can be ALL or UNUSED
+
+    def create_ontology(self, name , normalized_ontology = None, root_schema_ids = None):
+        """
+        - If I create an ontology with an empty ontology does it create the root schemas?
+        - If I mix ontology with root schemas it reuses right?
+
+        - should be able to lookup root schema nodes for an ontology. Add relationship..
+        """
+        query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
+            upsertOntology(data: $data){
+             %s
+            }
+        } """ % query.results_query_part(Entity.Ontology)
+        if normalized_ontology is None:
+            if root_schema_ids is None:
+                raise ValueError("Must provide either a normalized ontology or a list of root_schema_ids")
+            return root_schema_ids
+
+        res = self.execute(query_str, {'data' : {'name' : name ,'normalized' : json.dumps(normalized_ontology)}})
+        return Entity.Ontology(self, res['upsertOntology'])
+
+
+    def create_root_schema(self, normalized_ontology):
+        query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertRootSchemaNodeInput!){
+            upsertRootSchemaNode(data: $data){
+             %s
+            }
+        } """ % query.results_query_part(Entity.RootSchema)
+        # TODO: Is this necessary?
+        normalized_ontology = {k:v for k,v in normalized_ontology.items() if v}
+        # Check color. Quick gotcha..
+        if 'color' not in normalized_ontology:
+            raise KeyError("Must provide color.")
+        return Entity.RootSchemaNode(self, self.execute(query_str, {'data' : {'normalized' : json.dumps(normalized_ontology)}})['upsertRootSchemaNode'])
+
 
 
 

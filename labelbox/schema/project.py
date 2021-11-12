@@ -1,5 +1,6 @@
 import enum
 import json
+from labelbox.schema.labeling_frontend import LabelingFrontend
 import logging
 import time
 import warnings
@@ -422,6 +423,16 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
+
+    def setup_editor(self, ontology):
+        fe  = next(self.client.get_labeling_frontends(where = LabelingFrontend.name == "Editor"))
+        self.labeling_frontend.connect(fe)
+        query_str = """mutation ConnectOntology($projectId: ID!, $ontologyId: ID!) {project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
+        self.client.execute(query_str, {'ontologyId' : ontology.uid, 'projectId' :  self.uid})
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.update(setup_complete=timestamp)
+
+
     def setup(self, labeling_frontend, labeling_frontend_options):
         """ Finalizes the Project setup.
 
@@ -481,7 +492,7 @@ class Project(DbObject, Updateable, Deletable):
                   }
                 }
               }
-            }         
+            }
         """ % (method, method)
 
         res = self.client.execute(query, {
@@ -517,7 +528,7 @@ class Project(DbObject, Updateable, Deletable):
                     tagSetStatus
                 }
             }
-        }       
+        }
         """ % "setTagSetStatusPyApi"
 
         self.client.execute(query_str, {
@@ -533,7 +544,7 @@ class Project(DbObject, Updateable, Deletable):
               project(where: {id: $projectId}) {
                  tagSetStatus
             }
-        }       
+        }
         """ % "GetTagSetStatusPyApi"
 
         status = self.client.execute(

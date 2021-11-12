@@ -240,3 +240,9 @@ def test_ontology_asdict(project) -> None:
 def test_from_project_ontology(client, project) -> None:
     o = OntologyBuilder.from_project(project)
     assert o.asdict() == project.ontology().normalized
+
+
+
+def test_create_ontology(client, rand_gen):
+    client.create_ontology(name = f"test-ontology-{rand_gen(str)}")
+

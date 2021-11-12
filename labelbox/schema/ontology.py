@@ -16,6 +16,14 @@ FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
 SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
+
+class RootSchemaNode(DbObject):
+    name = Field.String("name")
+    color = Field.String("name")
+    definition = Field.Json("definition")
+    normalized = Field.Json("normalized")
+
+
 @dataclass
 class Option:
     """
@@ -51,6 +59,10 @@ class Option:
                        Classification.from_dict(o)
                        for o in dictionary.get("options", [])
                    ])
+
+    @classmethod
+    def from_root_schema(cls, root_schema: RootSchemaNode):
+        return cls.from_dict(root_schema.normalized)
 
     def asdict(self) -> Dict[str, Any]:
         return {
@@ -129,6 +141,10 @@ class Classification:
                    options=[Option.from_dict(o) for o in dictionary["options"]],
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None))
+
+    @classmethod
+    def from_root_schema(cls, root_schema: RootSchemaNode):
+        return cls.from_dict(root_schema.normalized)
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
@@ -231,11 +247,6 @@ class Tool:
                 f"Duplicate nested classification '{classification.instructions}' "
                 f"for tool '{self.name}'")
         self.classifications.append(classification)
-
-
-class FeatureSchema(DbObject):
-    ...
-
 
 
 class Ontology(DbObject):
@@ -345,6 +356,11 @@ class OntologyBuilder:
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
 
+    @classmethod
+    def from_ontology(cls, ontology: Ontology):
+        return cls.from_dict(ontology.normalized)
+
+
     def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):
             raise InconsistentOntologyException(
@@ -358,3 +374,6 @@ class OntologyBuilder:
                 f"Duplicate classification instructions '{classification.instructions}'. "
             )
         self.classifications.append(classification)
+
+
+
