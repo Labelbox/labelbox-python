@@ -196,7 +196,6 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            print(error)
             return error["extensions"]["exception"].get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
@@ -804,19 +803,28 @@ class Client:
         tools, classifications = [], []
         for feature_schema_id in feature_schema_ids:
             feature_schema = self.get_feature_schema(feature_schema_id)
-            tool = feature_schema.normalized['tool']
-            try:
-                Tool.Type(tool)
-                tools.append(feature_schema.normalized)
-            except ValueError:
+            tool = ['tool']
+            if 'tool' in feature_schema.normalized:
+                tool = feature_schema.normalized['tool']
                 try:
-                    Classification.Type(tool)
+                    Tool.Type(tool)
+                    tools.append(feature_schema.normalized)
+                except ValueError:
+                    raise ValueError(
+                        f"Tool `{tool}` not in list of supported tools.")
+            elif 'type' in feature_schema.normalized:
+                classification = feature_schema.normalized['type']
+                try:
+                    Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
                 except ValueError:
                     raise ValueError(
-                        f"Tool `{tool}` not in list of supported tools or classifications."
+                        f"Classification `{classification}` not in list of supported classifications."
                     )
-
+            else:
+                raise ValueError(
+                    "Neither `tool` or `classification` found in the normalized feature schema"
+                )
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized)
 
@@ -882,11 +890,6 @@ class Client:
                         upsertRootSchemaNode(data: $data){ %s }
         } """ % query.results_query_part(Entity.FeatureSchema)
         normalized = {k: v for k, v in normalized.items() if v}
-
-        # The OntologyBuilder automatically assigns colors when calling asdict() but Tools and Classifications do not.
-        # So we check here to prevent getting 500 erros
-        if 'color' not in normalized:
-            raise KeyError("Must provide color.")
         params = {'data': {'normalized': json.dumps(normalized)}}
         res = self.execute(query_str, params)['upsertRootSchemaNode']
         # Technically we are querying for a Schema Node.
