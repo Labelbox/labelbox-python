@@ -18,9 +18,9 @@ def test_export_annotations_nested_checklist(
 
     data = [{
         "uuid":
-        str(uuid.uuid4()),
+            str(uuid.uuid4()),
         "schemaId":
-        tool['featureSchemaId'],
+            tool['featureSchemaId'],
         "dataRow": {
             "id": data_row.uid
         },
@@ -32,7 +32,7 @@ def test_export_annotations_nested_checklist(
         },
         "classifications": [{
             "schemaId":
-            nested_check["featureSchemaId"],
+                nested_check["featureSchemaId"],
             "answers": [
                 {
                     "schemaId": nested_check["options"][0]["featureSchemaId"]
@@ -45,8 +45,7 @@ def test_export_annotations_nested_checklist(
     }]
 
     task = LabelImport.create_from_objects(client, project.uid,
-                                           f'label-import-{uuid.uuid4()}',
-                                           data)
+                                           f'label-import-{uuid.uuid4()}', data)
     task.wait_until_done()
     labels = project.label_generator().as_list()
     object_annotation = [
