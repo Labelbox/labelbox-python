@@ -736,10 +736,9 @@ class Client:
         }
         """ % query.results_query_part(Entity.Ontology)
         params = {'search': name_contains, 'filter': {'status': 'ALL'}}
-        res = PaginatedCollection(self, query_str, params,
-                                  ['ontologies', 'nodes'], Entity.Ontology,
-                                  ['ontologies', 'nextCursor'])
-        return res
+        return PaginatedCollection(self, query_str, params,
+                                   ['ontologies', 'nodes'], Entity.Ontology,
+                                   ['ontologies', 'nextCursor'])
 
     def get_root_schema_node(self, root_schema_id):
         """
@@ -803,7 +802,6 @@ class Client:
                     )
 
         normalized = {'tools': tools, 'classifications': classifications}
-        print(normalized)
         return self.create_ontology(name, normalized)
 
     def create_ontology(self, name, normalized):
