@@ -80,7 +80,7 @@ class AnnotationImport(DbObject):
 
     def wait_until_done(self,
                         sleep_time_seconds: int = 10,
-                        show_progress: bool = True) -> None:
+                        show_progress: bool = False) -> None:
         """Blocks import job until certain conditions are met.
         Blocks until the AnnotationImport.state changes either to
         `AnnotationImportState.FINISHED` or `AnnotationImportState.FAILED`,
