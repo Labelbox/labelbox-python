@@ -753,7 +753,11 @@ class Client:
         query_str = """query rootSchemaNodePyApi($rootSchemaNodeWhere: RootSchemaNodeWhere!){
               rootSchemaNode(where: $rootSchemaNodeWhere){%s}
         }""" % query.results_query_part(Entity.FeatureSchema)
-        res = self.execute(query_str, {'rootSchemaNodeWhere': {'featureSchemaId' : feature_schema_id}})['rootSchemaNode']
+        res = self.execute(
+            query_str,
+            {'rootSchemaNodeWhere': {
+                'featureSchemaId': feature_schema_id
+            }})['rootSchemaNode']
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
 
@@ -774,6 +778,7 @@ class Client:
         }
         """ % query.results_query_part(Entity.FeatureSchema)
         params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+
         def rootSchemaPayloadToFeatureSchema(client, payload):
             # Technically we are querying for a Schema Node.
             # But the features are the same so we just grab the feature schema id
@@ -785,8 +790,7 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self, name,
-                                               feature_schema_ids):
+    def create_ontology_from_feature_schemas(self, name, feature_schema_ids):
         """
         Creates an ontology from a list of feature schema ids
 
@@ -889,4 +893,3 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
-

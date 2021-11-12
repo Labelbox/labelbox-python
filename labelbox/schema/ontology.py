@@ -136,7 +136,6 @@ class Classification:
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None))
 
-
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
                 and len(self.options) < 1:
