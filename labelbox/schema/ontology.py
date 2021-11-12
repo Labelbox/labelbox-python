@@ -16,7 +16,6 @@ FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
 SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
-
 class RootSchemaNode(DbObject):
     name = Field.String("name")
     color = Field.String("name")
@@ -360,7 +359,6 @@ class OntologyBuilder:
     def from_ontology(cls, ontology: Ontology):
         return cls.from_dict(ontology.normalized)
 
-
     def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):
             raise InconsistentOntologyException(
@@ -374,6 +372,3 @@ class OntologyBuilder:
                 f"Duplicate classification instructions '{classification.instructions}'. "
             )
         self.classifications.append(classification)
-
-
-

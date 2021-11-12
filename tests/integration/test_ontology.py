@@ -2,6 +2,9 @@ import pytest
 
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox import Tool, Classification, Option, OntologyBuilder
+from labelbox.orm.model import Entity
+import json
+import time
 
 _SAMPLE_ONTOLOGY = {
     "tools": [{
@@ -242,10 +245,74 @@ def test_from_project_ontology(client, project) -> None:
     assert o.asdict() == project.ontology().normalized
 
 
+def _get_attr_stringify_json(obj, attr):
+    value = getattr(obj, attr.name)
+    if attr.field_type.name.lower() == "json":
+        return json.dumps(value, sort_keys=True)
+    return value
 
-def test_create_ontology(client, rand_gen):
-    name = f"test-ontology-{rand_gen(str)}"
-    normalized = {}
-    ontology = client.create_ontology(name = name)
-    assert
 
+def test_root_schema_node_create_read(client, rand_gen):
+    name = f"test-root-schema-{rand_gen(str)}"
+    root_schema_node_cat_normalized_json = {
+        'tool': 'polygon',
+        'name': name,
+        'color': 'black',
+        'classifications': [],
+    }
+    created_root_schema_node = client.create_root_schema_node(
+        root_schema_node_cat_normalized_json)
+    queried_root_sceham_node = client.get_root_schema_node(
+        created_root_schema_node.uid)
+    for attr in Entity.RootSchemaNode.fields():
+        assert _get_attr_stringify_json(created_root_schema_node,
+                                        attr) == _get_attr_stringify_json(
+                                            queried_root_sceham_node, attr)
+
+    time.sleep(3)  # Slight delay for searching
+    queried_root_sceham_nodes = client.get_root_schema_nodes(name)
+    assert [
+        root_schema_node.name for root_schema_node in queried_root_sceham_nodes
+    ] == [name]
+    queried_root_sceham_nodes = queried_root_sceham_nodes[0]
+
+    for attr in Entity.RootSchemaNode.fields():
+        assert _get_attr_stringify_json(created_root_schema_node,
+                                        attr) == _get_attr_stringify_json(
+                                            queried_root_sceham_node, attr)
+
+
+def test_ontology_create_read(client, rand_gen):
+    ontology_name = f"test-ontology-{rand_gen(str)}"
+    tool_name = f"test-ontology-tool-{rand_gen(str)}"
+    root_schema_node_cat_normalized_json = {
+        'tool': 'polygon',
+        'name': tool_name,
+        'color': 'black',
+        'classifications': [],
+    }
+    root_schema_node = client.create_root_schema_node(
+        root_schema_node_cat_normalized_json)
+    created_ontology = client.create_ontology_from_root_schema_nodes(
+        name=ontology_name, root_schema_node_ids=[root_schema_node.uid])
+    tool_normalized = created_ontology.normalized['tools'][0]
+    for k, v in root_schema_node_cat_normalized_json.items():
+        assert tool_normalized[k] == v
+    assert tool_normalized['schemaNodeId'] == root_schema_node.uid
+    assert tool_normalized['featureSchemaId'] is not None
+
+    queried_ontology = client.get_ontology(created_ontology.uid)
+
+    for attr in Entity.Ontology.fields():
+        assert _get_attr_stringify_json(created_ontology,
+                                        attr) == _get_attr_stringify_json(
+                                            queried_ontology, attr)
+
+    time.sleep(3)  # Slight delay for searching
+    queried_ontologies = client.get_ontologies(ontology_name)
+    assert [ontology.name for ontology in queried_ontologies] == [ontology_name]
+    queried_ontology = queried_ontologies[0]
+    for attr in Entity.Ontology.fields():
+        assert _get_attr_stringify_json(created_ontology,
+                                        attr) == _get_attr_stringify_json(
+                                            queried_ontology, attr)

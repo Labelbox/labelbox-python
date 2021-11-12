@@ -29,6 +29,3 @@ def test_model_delete(client, model):
     after = list(client.get_models())
 
     assert len(before) == len(after) + 1
-
-
-

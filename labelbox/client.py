@@ -24,7 +24,6 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
 from labelbox.schema.ontology import Tool, Classification
 
-
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
@@ -563,7 +562,8 @@ class Client:
                 )
 
             if not iam_integration.valid:
-                raise ValueError("Integration is not valid. Please select another.")
+                raise ValueError(
+                    "Integration is not valid. Please select another.")
 
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
@@ -709,9 +709,25 @@ class Client:
         return result
 
     def get_ontology(self, ontology_id):
+        """
+        Fetches an Ontology by id.
+
+        Args:
+            ontology_id (str): The id of the ontology to query for
+        Returns:
+            Ontology
+        """
         return self._get_single(Entity.Ontology, ontology_id)
 
-    def get_ontologies(self, name_contains: str):
+    def get_ontologies(self, name_contains):
+        """
+        Fetches all ontologies with names that match the name_contains string.
+
+        Args:
+            name_contains (str): the string to search ontology names by
+        Returns:
+            PaginatedCollection of Ontologies with names that match `name_contains`
+        """
         query_str = """query getOntologiesPyApi($search: String, $filter: OntologyFilter, $from : String, $first: PageSize){
             ontologies(where: {filter: $filter, search: $search}, after: $from, first: $first){
                 nodes {%s}
@@ -719,16 +735,32 @@ class Client:
             }
         }
         """ % query.results_query_part(Entity.Ontology)
-        res = PaginatedCollection(
-            self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['ontologies', 'nodes'],
-            Entity.Ontology, ['ontologies', 'nextCursor'])
+        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+        res = PaginatedCollection(self, query_str, params,
+                                  ['ontologies', 'nodes'], Entity.Ontology,
+                                  ['ontologies', 'nextCursor'])
         return res
 
     def get_root_schema_node(self, root_schema_id):
+        """
+        Fetches a root schema nodes by id
+
+        Args:
+            root_schema_id (str): The id of the root schema node to query for
+        Returns:
+            RootSchemaNode
+        """
         return self._get_single(Entity.RootSchemaNode, root_schema_id)
 
-
     def get_root_schema_nodes(self, name_contains):
+        """
+        Fetches root schema nodes with names that match the name_contains string
+
+        Args:
+            name_contains (str): the string to search root schema node names by
+        Returns:
+            PaginatedCollection of RootSchemaNodes with names that match `name_contains`
+        """
         query_str = """query getRootSchemaNodePyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
             rootSchemaNodes(where: {filter: $filter, search: $search}, after: $from, first: $first){
                 nodes {%s}
@@ -736,19 +768,27 @@ class Client:
             }
         }
         """ % query.results_query_part(Entity.RootSchemaNode)
-        return PaginatedCollection(
-            self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['rootSchemaNodes', 'nodes'],
-            Entity.RootSchemaNode, ['rootSchemaNodes', 'nextCursor'])
+        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+        return PaginatedCollection(self, query_str, params,
+                                   ['rootSchemaNodes', 'nodes'],
+                                   Entity.RootSchemaNode,
+                                   ['rootSchemaNodes', 'nextCursor'])
 
-
-    def create_ontology_from_root_schema_nodes(self, name, schema_node_ids):
+    def create_ontology_from_root_schema_nodes(self, name,
+                                               root_schema_node_ids):
         """
-        Convenient way to create feature schema nodes.
-        If you want to mix new and old, you have to create w/ ontology builder and use create ontology..
+        Creates an ontology from a list of root schema node ids
+        This will reuse the schema nodes instead of making a copy
+
+        Args:
+            name (str): Name of the ontology
+            root_schema_node_ids (List[str]): List of root schema node ids include in the ontology
+        Returns:
+            The created Ontology
         """
         tools, classifications = [], []
-        for schema_node_id in schema_node_ids:
-            schema_node = self.get_root_schema_node(schema_node_id)
+        for schema_node_id in root_schema_node_ids:
+            schema_node = self.get_root_schema_node(root_schema_node_ids)
             tool = schema_node.normalized['tool']
             try:
                 Tool.Type(tool)
@@ -758,46 +798,67 @@ class Client:
                     Classification.Type(tool)
                     classifications.append(schema_node.normalized)
                 except ValueError:
-                    raise ValueError(f"Tool `{tool}` not in list of supported tools or classifications.")
-        return self.create_ontology(name, {'tools' : tools, 'classifications' : classifications})
+                    raise ValueError(
+                        f"Tool `{tool}` not in list of supported tools or classifications."
+                    )
+        normalized = {'tools': tools, 'classifications': classifications}
+        return self.create_ontology(name, normalized)
 
-
-    def create_ontology(self, name , normalized_json):
+    def create_ontology(self, name, normalized):
         """
-        Creates an ontology from normalized json.
+        Creates an ontology from normalized data
+            >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
+            >>> ontology = client.create_ontology("ontology-name", normalized)
 
-        Use the OntologyBuilder to easily build normalized json
+        Or use the ontology builder. It is especially useful for complex ontologies
+            >>> normalized = OntologyBuilder(tools=[Tool(tool=Tool.Type.BBOX, name="cat", color = 'black')]).asdict()
+            >>> ontology = client.create_ontology("ontology-name", normalized)
 
-        >>> Ontology
+        To reuse existing root schema nodes, use `create_ontology_from_root_schema_nodes()`
+        More details can be found here:
+            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
 
-
-        You can also add reuse existing feature schema nodes
-
-
+        Args:
+            name (str): Name of the ontology
+            normalized (dict): A normalized ontology payload. See above for details.
+        Returns:
+            The created Ontology
         """
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
-            upsertOntology(data: $data){
-             %s
-            }
+                           upsertOntology(data: $data){ %s }
         } """ % query.results_query_part(Entity.Ontology)
-        if normalized_json is None:
-            if root_schema_ids is None:
-                raise ValueError("Must provide either a normalized ontology or a list of root_schema_ids")
-            return root_schema_ids
-
-        res = self.execute(query_str, {'data' : {'name' : name ,'normalized' : json.dumps(normalized_json)}})
+        params = {'data': {'name': name, 'normalized': json.dumps(normalized)}}
+        res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
+    def create_root_schema_node(self, normalized):
+        """
+        Creates a root schema node from normalized data.
+            >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
+            >>> root_schema_node = client.create_root_schema_node(normalized)
 
-    def create_root_schema_node(self, normalized_json):
+        Or use the Tool or Classification objects. It is especially useful for complex tools.
+            >>> normalized = Tool(tool=Tool.Type.BBOX, name="cat", color = 'black').asdict()
+            >>> root_schema_node = client.create_root_schema_node(normalized)
+
+        More details can be found here:
+            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+
+        Args:
+            normalized (dict): A normalized tool or classification payload. See above for details
+        Returns:
+            The created RootSchemaNode.
+        """
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertRootSchemaNodeInput!){
-            upsertRootSchemaNode(data: $data){
-             %s
-            }
+                        upsertRootSchemaNode(data: $data){ %s }
         } """ % query.results_query_part(Entity.RootSchemaNode)
-        # TODO: Is this necessary?
-        normalized_json = {k:v for k,v in normalized_json.items() if v}
-        # Check color. Quick gotcha..
+        normalized = {k: v for k, v in normalized.items() if v}
+
+        # The OntologyBuilder automatically assigns colors when calling asdict() but Tools and Classifications do not.
+        # So we check here to prevent getting 500 erros
+
         if 'color' not in normalized_json:
             raise KeyError("Must provide color.")
-        return Entity.RootSchemaNode(self, self.execute(query_str, {'data' : {'normalized' : json.dumps(normalized_json)}})['upsertRootSchemaNode'])
+        params = {'data': {'normalized': json.dumps(normalized_json)}}
+        res = self.execute(query_str, params)
+        return Entity.RootSchemaNode(self, res['upsertRootSchemaNode'])
