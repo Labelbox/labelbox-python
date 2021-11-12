@@ -244,5 +244,8 @@ def test_from_project_ontology(client, project) -> None:
 
 
 def test_create_ontology(client, rand_gen):
-    client.create_ontology(name = f"test-ontology-{rand_gen(str)}")
+    name = f"test-ontology-{rand_gen(str)}"
+    normalized = {}
+    ontology = client.create_ontology(name = name)
+    assert
 

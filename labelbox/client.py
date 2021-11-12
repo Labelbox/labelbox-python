@@ -22,6 +22,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
+from labelbox.schema.ontology import Tool, Classification
 
 
 logger = logging.getLogger(__name__)
@@ -721,14 +722,13 @@ class Client:
         res = PaginatedCollection(
             self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['ontologies', 'nodes'],
             Entity.Ontology, ['ontologies', 'nextCursor'])
-        # status can be ALL or UNUSED
         return res
 
-    def get_root_schema(self, root_schema_id):
+    def get_root_schema_node(self, root_schema_id):
         return self._get_single(Entity.RootSchemaNode, root_schema_id)
 
 
-    def get_root_schemas(self, name_contains):
+    def get_root_schema_nodes(self, name_contains):
         query_str = """query getRootSchemaNodePyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
             rootSchemaNodes(where: {filter: $filter, search: $search}, after: $from, first: $first){
                 nodes {%s}
@@ -738,45 +738,66 @@ class Client:
         """ % query.results_query_part(Entity.RootSchemaNode)
         return PaginatedCollection(
             self, query_str, {'search' : name_contains, 'filter' :{'status' : 'ALL'}}, ['rootSchemaNodes', 'nodes'],
-            Entity.RootSchema, ['rootSchemaNodes', 'nextCursor'])
+            Entity.RootSchemaNode, ['rootSchemaNodes', 'nextCursor'])
 
-        # TODO: Also supports FeatreSchemaKind in the filter
-        # status can be ALL or UNUSED
 
-    def create_ontology(self, name , normalized_ontology = None, root_schema_ids = None):
+    def create_ontology_from_root_schema_nodes(self, name, schema_node_ids):
         """
-        - If I create an ontology with an empty ontology does it create the root schemas?
-        - If I mix ontology with root schemas it reuses right?
+        Convenient way to create feature schema nodes.
+        If you want to mix new and old, you have to create w/ ontology builder and use create ontology..
+        """
+        tools, classifications = [], []
+        for schema_node_id in schema_node_ids:
+            schema_node = self.get_root_schema_node(schema_node_id)
+            tool = schema_node.normalized['tool']
+            try:
+                Tool.Type(tool)
+                tools.append(schema_node.normalized)
+            except ValueError:
+                try:
+                    Classification.Type(tool)
+                    classifications.append(schema_node.normalized)
+                except ValueError:
+                    raise ValueError(f"Tool `{tool}` not in list of supported tools or classifications.")
+        return self.create_ontology(name, {'tools' : tools, 'classifications' : classifications})
 
-        - should be able to lookup root schema nodes for an ontology. Add relationship..
+
+    def create_ontology(self, name , normalized_json):
+        """
+        Creates an ontology from normalized json.
+
+        Use the OntologyBuilder to easily build normalized json
+
+        >>> Ontology
+
+
+        You can also add reuse existing feature schema nodes
+
+
         """
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
             upsertOntology(data: $data){
              %s
             }
         } """ % query.results_query_part(Entity.Ontology)
-        if normalized_ontology is None:
+        if normalized_json is None:
             if root_schema_ids is None:
                 raise ValueError("Must provide either a normalized ontology or a list of root_schema_ids")
             return root_schema_ids
 
-        res = self.execute(query_str, {'data' : {'name' : name ,'normalized' : json.dumps(normalized_ontology)}})
+        res = self.execute(query_str, {'data' : {'name' : name ,'normalized' : json.dumps(normalized_json)}})
         return Entity.Ontology(self, res['upsertOntology'])
 
 
-    def create_root_schema(self, normalized_ontology):
+    def create_root_schema_node(self, normalized_json):
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertRootSchemaNodeInput!){
             upsertRootSchemaNode(data: $data){
              %s
             }
-        } """ % query.results_query_part(Entity.RootSchema)
+        } """ % query.results_query_part(Entity.RootSchemaNode)
         # TODO: Is this necessary?
-        normalized_ontology = {k:v for k,v in normalized_ontology.items() if v}
+        normalized_json = {k:v for k,v in normalized_json.items() if v}
         # Check color. Quick gotcha..
-        if 'color' not in normalized_ontology:
+        if 'color' not in normalized_json:
             raise KeyError("Must provide color.")
-        return Entity.RootSchemaNode(self, self.execute(query_str, {'data' : {'normalized' : json.dumps(normalized_ontology)}})['upsertRootSchemaNode'])
-
-
-
-
+        return Entity.RootSchemaNode(self, self.execute(query_str, {'data' : {'normalized' : json.dumps(normalized_json)}})['upsertRootSchemaNode'])
