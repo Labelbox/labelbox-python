@@ -16,6 +16,12 @@ FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
 SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
+class FeatureSchema(DbObject):
+    name = Field.String("name")
+    color = Field.String("name")
+    normalized = Field.Json("normalized")
+
+
 @dataclass
 class Option:
     """
@@ -339,6 +345,10 @@ class OntologyBuilder:
     def from_project(cls, project: "project.Project"):
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
+
+    @classmethod
+    def from_ontology(cls, ontology: Ontology):
+        return cls.from_dict(ontology.normalized)
 
     def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):
