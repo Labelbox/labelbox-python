@@ -788,7 +788,7 @@ class Client:
         """
         tools, classifications = [], []
         for schema_node_id in root_schema_node_ids:
-            schema_node = self.get_root_schema_node(root_schema_node_ids)
+            schema_node = self.get_root_schema_node(schema_node_id)
             tool = schema_node.normalized['tool']
             try:
                 Tool.Type(tool)
@@ -801,7 +801,9 @@ class Client:
                     raise ValueError(
                         f"Tool `{tool}` not in list of supported tools or classifications."
                     )
+
         normalized = {'tools': tools, 'classifications': classifications}
+        print(normalized)
         return self.create_ontology(name, normalized)
 
     def create_ontology(self, name, normalized):
@@ -857,8 +859,8 @@ class Client:
         # The OntologyBuilder automatically assigns colors when calling asdict() but Tools and Classifications do not.
         # So we check here to prevent getting 500 erros
 
-        if 'color' not in normalized_json:
+        if 'color' not in normalized:
             raise KeyError("Must provide color.")
-        params = {'data': {'normalized': json.dumps(normalized_json)}}
+        params = {'data': {'normalized': json.dumps(normalized)}}
         res = self.execute(query_str, params)
         return Entity.RootSchemaNode(self, res['upsertRootSchemaNode'])

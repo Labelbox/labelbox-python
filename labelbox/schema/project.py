@@ -429,10 +429,25 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
-        labeling_front_end = next(
+        labeling_frontend = next(
             self.client.get_labeling_frontends(
                 where=Entity.LabelingFrontend.name == "Editor"))
-        self.labeling_frontend.connect(labeling_front_end)
+        self.labeling_frontend.connect(labeling_frontend)
+
+        LFO = Entity.LabelingFrontendOptions
+        self.client._create(
+            LFO, {
+                LFO.project:
+                    self,
+                LFO.labeling_frontend:
+                    labeling_frontend,
+                LFO.customization_options:
+                    json.dumps({
+                        "tools": [],
+                        "classifications": []
+                    })
+            })
+
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
         self.client.execute(query_str, {
