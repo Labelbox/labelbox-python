@@ -740,62 +740,74 @@ class Client:
                                    ['ontologies', 'nodes'], Entity.Ontology,
                                    ['ontologies', 'nextCursor'])
 
-    def get_root_schema_node(self, root_schema_id):
+    def get_feature_schema(self, feature_schema_id):
         """
-        Fetches a root schema nodes by id
+        Fetches a feature schema. Only supports top level feature schemas.
 
         Args:
-            root_schema_id (str): The id of the root schema node to query for
+            feature_schema_id (str): The id of the feature schema to query for
         Returns:
-            RootSchemaNode
+            FeatureSchema
         """
-        return self._get_single(Entity.RootSchemaNode, root_schema_id)
 
-    def get_root_schema_nodes(self, name_contains):
+        query_str = """query rootSchemaNodePyApi($rootSchemaNodeWhere: RootSchemaNodeWhere!){
+              rootSchemaNode(where: $rootSchemaNodeWhere){%s}
+        }""" % query.results_query_part(Entity.FeatureSchema)
+        res = self.execute(query_str, {'rootSchemaNodeWhere': {'featureSchemaId' : feature_schema_id}})['rootSchemaNode']
+        res['id'] = res['normalized']['featureSchemaId']
+        return Entity.FeatureSchema(self, res)
+
+    def get_feature_schemas(self, name_contains):
         """
-        Fetches root schema nodes with names that match the name_contains string
+        Fetches top level feature schemas with names that match the `name_contains` string
 
         Args:
-            name_contains (str): the string to search root schema node names by
+            name_contains (str): the string to search top level feature schema names by
         Returns:
-            PaginatedCollection of RootSchemaNodes with names that match `name_contains`
+            PaginatedCollection of FeatureSchemas with names that match `name_contains`
         """
-        query_str = """query getRootSchemaNodePyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
+        query_str = """query rootSchemaNodesPyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
             rootSchemaNodes(where: {filter: $filter, search: $search}, after: $from, first: $first){
                 nodes {%s}
                 nextCursor
             }
         }
-        """ % query.results_query_part(Entity.RootSchemaNode)
+        """ % query.results_query_part(Entity.FeatureSchema)
         params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+        def rootSchemaPayloadToFeatureSchema(client, payload):
+            # Technically we are querying for a Schema Node.
+            # But the features are the same so we just grab the feature schema id
+            payload['id'] = payload['normalized']['featureSchemaId']
+            return Entity.FeatureSchema(client, payload)
+
         return PaginatedCollection(self, query_str, params,
                                    ['rootSchemaNodes', 'nodes'],
-                                   Entity.RootSchemaNode,
+                                   rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_root_schema_nodes(self, name,
-                                               root_schema_node_ids):
+    def create_ontology_from_feature_schemas(self, name,
+                                               feature_schema_ids):
         """
-        Creates an ontology from a list of root schema node ids
-        This will reuse the schema nodes instead of making a copy
+        Creates an ontology from a list of feature schema ids
 
         Args:
             name (str): Name of the ontology
-            root_schema_node_ids (List[str]): List of root schema node ids include in the ontology
+            feature_schema_ids (List[str]): List of feature schema ids corresponding to
+                top level tools and classifications to include in the ontology
         Returns:
             The created Ontology
         """
         tools, classifications = [], []
-        for schema_node_id in root_schema_node_ids:
-            schema_node = self.get_root_schema_node(schema_node_id)
-            tool = schema_node.normalized['tool']
+        for feature_schema_id in feature_schema_ids:
+            feature_schema = self.get_feature_schema(feature_schema_id)
+            tool = feature_schema.normalized['tool']
             try:
                 Tool.Type(tool)
-                tools.append(schema_node.normalized)
+                tools.append(feature_schema.normalized)
             except ValueError:
                 try:
                     Classification.Type(tool)
-                    classifications.append(schema_node.normalized)
+                    classifications.append(feature_schema.normalized)
                 except ValueError:
                     raise ValueError(
                         f"Tool `{tool}` not in list of supported tools or classifications."
@@ -814,7 +826,7 @@ class Client:
             >>> normalized = OntologyBuilder(tools=[Tool(tool=Tool.Type.BBOX, name="cat", color = 'black')]).asdict()
             >>> ontology = client.create_ontology("ontology-name", normalized)
 
-        To reuse existing root schema nodes, use `create_ontology_from_root_schema_nodes()`
+        To reuse existing feature schemas, use `create_ontology_from_feature_schemas()`
         More details can be found here:
             https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
 
@@ -831,15 +843,28 @@ class Client:
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
-    def create_root_schema_node(self, normalized):
+    def create_feature_schema(self, normalized):
         """
-        Creates a root schema node from normalized data.
+        Creates a feature schema from normalized data.
             >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
-            >>> root_schema_node = client.create_root_schema_node(normalized)
+            >>> feature_schema = client.create_feature_schema(normalized)
 
         Or use the Tool or Classification objects. It is especially useful for complex tools.
             >>> normalized = Tool(tool=Tool.Type.BBOX, name="cat", color = 'black').asdict()
-            >>> root_schema_node = client.create_root_schema_node(normalized)
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        Subclasses are also supported
+            >>> normalized =  Tool(
+                    tool=Tool.Type.SEGMENTATION,
+                    name="cat",
+                    classifications=[
+                        Classification(
+                            class_type=Classification.Type.TEXT,
+                            instructions="name"
+                        )
+                    ]
+                )
+            >>> feature_schema = client.create_feature_schema(normalized)
 
         More details can be found here:
             https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
@@ -847,18 +872,21 @@ class Client:
         Args:
             normalized (dict): A normalized tool or classification payload. See above for details
         Returns:
-            The created RootSchemaNode.
+            The created FeatureSchema.
         """
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertRootSchemaNodeInput!){
                         upsertRootSchemaNode(data: $data){ %s }
-        } """ % query.results_query_part(Entity.RootSchemaNode)
+        } """ % query.results_query_part(Entity.FeatureSchema)
         normalized = {k: v for k, v in normalized.items() if v}
 
         # The OntologyBuilder automatically assigns colors when calling asdict() but Tools and Classifications do not.
         # So we check here to prevent getting 500 erros
-
         if 'color' not in normalized:
             raise KeyError("Must provide color.")
         params = {'data': {'normalized': json.dumps(normalized)}}
-        res = self.execute(query_str, params)
-        return Entity.RootSchemaNode(self, res['upsertRootSchemaNode'])
+        res = self.execute(query_str, params)['upsertRootSchemaNode']
+        # Technically we are querying for a Schema Node.
+        # But the features are the same so we just grab the feature schema id
+        res['id'] = res['normalized']['featureSchemaId']
+        return Entity.FeatureSchema(self, res)
+

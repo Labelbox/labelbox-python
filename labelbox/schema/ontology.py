@@ -16,10 +16,9 @@ FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
 SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
-class RootSchemaNode(DbObject):
+class FeatureSchema(DbObject):
     name = Field.String("name")
     color = Field.String("name")
-    definition = Field.Json("definition")
     normalized = Field.Json("normalized")
 
 
@@ -58,10 +57,6 @@ class Option:
                        Classification.from_dict(o)
                        for o in dictionary.get("options", [])
                    ])
-
-    @classmethod
-    def from_root_schema(cls, root_schema: RootSchemaNode):
-        return cls.from_dict(root_schema.normalized)
 
     def asdict(self) -> Dict[str, Any]:
         return {
@@ -141,9 +136,6 @@ class Classification:
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None))
 
-    @classmethod
-    def from_root_schema(cls, root_schema: RootSchemaNode):
-        return cls.from_dict(root_schema.normalized)
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \

@@ -252,54 +252,54 @@ def _get_attr_stringify_json(obj, attr):
     return value
 
 
-def test_root_schema_node_create_read(client, rand_gen):
+def test_feature_schema_create_read(client, rand_gen):
     name = f"test-root-schema-{rand_gen(str)}"
-    root_schema_node_cat_normalized_json = {
+    feature_schema_cat_normalized = {
         'tool': 'polygon',
         'name': name,
         'color': 'black',
         'classifications': [],
     }
-    created_root_schema_node = client.create_root_schema_node(
-        root_schema_node_cat_normalized_json)
-    queried_root_sceham_node = client.get_root_schema_node(
-        created_root_schema_node.uid)
-    for attr in Entity.RootSchemaNode.fields():
-        assert _get_attr_stringify_json(created_root_schema_node,
+    created_feature_schema = client.create_feature_schema(
+        feature_schema_cat_normalized)
+    queried_feature_schema = client.get_feature_schema(
+        created_feature_schema.uid)
+    for attr in Entity.FeatureSchema.fields():
+        assert _get_attr_stringify_json(created_feature_schema,
                                         attr) == _get_attr_stringify_json(
-                                            queried_root_sceham_node, attr)
+                                            queried_feature_schema, attr)
 
     time.sleep(3)  # Slight delay for searching
-    queried_root_sceham_nodes = list(client.get_root_schema_nodes(name))
+    queried_feature_schemas = list(client.get_feature_schemas(name))
     assert [
-        root_schema_node.name for root_schema_node in queried_root_sceham_nodes
+        feature_schema.name for feature_schema in queried_feature_schemas
     ] == [name]
-    queried_root_sceham_nodes = queried_root_sceham_nodes[0]
+    queried_feature_schema = queried_feature_schemas[0]
 
-    for attr in Entity.RootSchemaNode.fields():
-        assert _get_attr_stringify_json(created_root_schema_node,
+    for attr in Entity.FeatureSchema.fields():
+        assert _get_attr_stringify_json(created_feature_schema,
                                         attr) == _get_attr_stringify_json(
-                                            queried_root_sceham_node, attr)
+                                            queried_feature_schema, attr)
 
 
 def test_ontology_create_read(client, rand_gen):
     ontology_name = f"test-ontology-{rand_gen(str)}"
     tool_name = f"test-ontology-tool-{rand_gen(str)}"
-    root_schema_node_cat_normalized_json = {
+    feature_schema_cat_normalized = {
         'tool': 'polygon',
         'name': tool_name,
         'color': 'black',
         'classifications': [],
     }
-    root_schema_node = client.create_root_schema_node(
-        root_schema_node_cat_normalized_json)
-    created_ontology = client.create_ontology_from_root_schema_nodes(
-        name=ontology_name, root_schema_node_ids=[root_schema_node.uid])
+    feature_schema = client.create_feature_schema(
+        feature_schema_cat_normalized)
+    created_ontology = client.create_ontology_from_feature_schemas(
+        name=ontology_name, feature_schema_ids=[feature_schema.uid])
     tool_normalized = created_ontology.normalized['tools'][0]
-    for k, v in root_schema_node_cat_normalized_json.items():
+    for k, v in feature_schema_cat_normalized.items():
         assert tool_normalized[k] == v
-    assert tool_normalized['schemaNodeId'] == root_schema_node.uid
-    assert tool_normalized['featureSchemaId'] is not None
+    assert tool_normalized['schemaNodeId'] is not None
+    assert tool_normalized['featureSchemaId'] == feature_schema.uid
 
     queried_ontology = client.get_ontology(created_ontology.uid)
 
