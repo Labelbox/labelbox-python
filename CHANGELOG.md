@@ -7,8 +7,22 @@
 | `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       | 3.9           |
 | `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
 -----
+# Version 3.9.0 (2021-11-12)
+## Added
+* New ontology management features
+    * Query for ontologies by name with `client.get_ontologies()` or by id using `client.get_ontology()`
+    * Query for feature schemas by name with `client.get_feature_schemas()` or id using `client.get_feature_schema()`
+    * Create feature schemas with `client.create_feature_schemas()`
+    * Create ontologies from normalized ontology data with `client.create_ontology()`
+    * Create ontologies from feature schemas with `client.create_ontology_from_feature_schemas()`
+    * Set up a project from an existing ontology with `project.setup_edior()`
+    * Added new `FeatureSchema` entity
+* Add support for new queue modes
+    * Send batches of data direction to a project with `project.queue()`
+    * Remove items from the queue with `project.dequeue()`
+    * Query for and toggle the queue mode
 
-# Version 3.8.0 (2021-10-21)
+# Version 3.8.0 (2021-10-22)
 ## Added
 * `ModelRun.upsert_data_rows()`
     * Add data rows to a model run without also attaching labels
@@ -25,7 +39,7 @@
 
 ## Fix
 * `DataRowMetadataField` no longer relies on pydantic for field validation and coercion
-    * This prevents unintended type coercion from occuring
+    * This prevents unintended type coercions from occurring
 
 # Version 3.7.0 (2021-10-11)
 ## Added

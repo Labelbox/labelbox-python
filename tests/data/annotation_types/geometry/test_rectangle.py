@@ -1,6 +1,6 @@
-from pydantic import ValidationError
-import pytest
 import cv2
+import pytest
+from pydantic import ValidationError
 
 from labelbox.data.annotation_types import Point, Rectangle
 
@@ -18,3 +18,7 @@ def test_rectangle():
 
     raster = rectangle.draw(height=32, width=32)
     assert (cv2.imread("tests/data/assets/rectangle.png") == raster).all()
+
+    xyhw = Rectangle.from_xyhw(0., 0, 10, 10)
+    assert xyhw.start == Point(x=0, y=0.)
+    assert xyhw.end == Point(x=10, y=10.0)

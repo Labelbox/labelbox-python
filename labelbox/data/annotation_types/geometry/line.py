@@ -3,6 +3,7 @@ from typing import List, Optional, Union, Tuple
 import geojson
 import numpy as np
 import cv2
+from pydantic import validator
 
 from .point import Point
 from .geometry import Geometry
@@ -13,6 +14,8 @@ class Line(Geometry):
 
     Args:
         points (List[Point]): A list of `Point` geometries
+
+    >>> Line(points = [Point(x=3,y=4), Point(x=3,y=5)])
 
     """
     points: List[Point]
@@ -47,3 +50,12 @@ class Line(Geometry):
                              False,
                              color=color,
                              thickness=thickness)
+
+    @validator('points')
+    def is_geom_valid(cls, points):
+        if len(points) < 2:
+            raise ValueError(
+                f"A line must have at least 2 points to be valid. Found {points}"
+            )
+
+        return points
