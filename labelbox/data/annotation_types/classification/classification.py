@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 try:
     from typing import Literal
@@ -28,15 +28,24 @@ class ClassificationAnswer(FeatureSchema):
     extra: Dict[str, Any] = {}
 
 
+class VideoClassificationAnswer(ClassificationAnswer):
+    """
+    Each answer can have a key frame indepdent of the others.
+    So unlike object annotations, classification annotations
+      track key frames at a classification answer level.
+    """
+    keyframe: bool
+
+
 class Radio(BaseModel):
     """ A classification with only one selected option allowed """
-    answer: ClassificationAnswer
+    answer: Union[VideoClassificationAnswer, ClassificationAnswer]
 
 
 class Checklist(_TempName):
     """ A classification with many selected options allowed """
     name: Literal["checklist"] = "checklist"
-    answer: List[ClassificationAnswer]
+    answer: Union[VideoClassificationAnswer, ClassificationAnswer]
 
 
 class Text(BaseModel):
@@ -50,4 +59,4 @@ class Dropdown(_TempName):
     - This is not currently compatible with MAL.
     """
     name: Literal["dropdown"] = "dropdown"
-    answer: List[ClassificationAnswer]
+    answer: List[Union[VideoClassificationAnswer, ClassificationAnswer]]

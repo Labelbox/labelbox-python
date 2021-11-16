@@ -1,3 +1,4 @@
+from labelbox.data.annotation_types.classification.classification import VideoClassificationAnswer
 from typing import List, Union
 
 from pydantic.main import BaseModel
@@ -12,27 +13,44 @@ class LBV1ClassificationAnswer(LBV1Feature):
     ...
 
 
+def get_classification_answer(
+    answer: LBV1ClassificationAnswer
+) -> Union[ClassificationAnswer, VideoClassificationAnswer]:
+    kwargs = dict(feature_schema_id=answer.schema_id,
+                  name=answer.title,
+                  extra={
+                      'feature_id': answer.feature_id,
+                      'value': answer.value
+                  })
+    if answer.keyframe is not None:
+        return VideoClassificationAnswer(keyframe=answer.keyframe, **kwargs)
+    else:
+        return ClassificationAnswer(**kwargs)
+
+
+def get_lbv1_classification_answer(answer: Union[ClassificationAnswer,
+                                                 VideoClassificationAnswer]):
+    return LBV1ClassificationAnswer(
+        schema_id=answer.feature_schema_id,
+        title=answer.name,
+        value=answer.extra.get('value'),
+        feature_id=answer.extra.get('feature_id'),
+        keyframe=getattr(answer, 'keyframe',
+                         None)  # Only applies to video clasifications
+    )
+
+
 class LBV1Radio(LBV1Feature):
     answer: LBV1ClassificationAnswer
 
     def to_common(self) -> Radio:
-        return Radio(answer=ClassificationAnswer(
-            feature_schema_id=self.answer.schema_id,
-            name=self.answer.title,
-            extra={
-                'feature_id': self.answer.feature_id,
-                'value': self.answer.value
-            }))
+        return Radio(answer=get_classification_answer(self.answer))
 
     @classmethod
     def from_common(cls, radio: Radio, feature_schema_id: Cuid,
                     **extra) -> "LBV1Radio":
         return cls(schema_id=feature_schema_id,
-                   answer=LBV1ClassificationAnswer(
-                       schema_id=radio.answer.feature_schema_id,
-                       title=radio.answer.name,
-                       value=radio.answer.extra.get('value'),
-                       feature_id=radio.answer.extra.get('feature_id')),
+                   answer=get_lbv1_classification_answer(radio.answer),
                    **extra)
 
 
@@ -41,12 +59,7 @@ class LBV1Checklist(LBV1Feature):
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[
-            ClassificationAnswer(feature_schema_id=answer.schema_id,
-                                 name=answer.title,
-                                 extra={
-                                     'feature_id': answer.feature_id,
-                                     'value': answer.value
-                                 }) for answer in self.answers
+            get_classification_answer(answer) for answer in self.answers
         ])
 
     @classmethod
@@ -54,11 +67,7 @@ class LBV1Checklist(LBV1Feature):
                     **extra) -> "LBV1Checklist":
         return cls(schema_id=feature_schema_id,
                    answers=[
-                       LBV1ClassificationAnswer(
-                           schema_id=answer.feature_schema_id,
-                           title=answer.name,
-                           value=answer.extra.get('value'),
-                           feature_id=answer.extra.get('feature_id'))
+                       get_lbv1_classification_answer(answer)
                        for answer in checklist.answer
                    ],
                    **extra)
@@ -69,12 +78,7 @@ class LBV1Dropdown(LBV1Feature):
 
     def to_common(self) -> Dropdown:
         return Dropdown(answer=[
-            ClassificationAnswer(feature_schema_id=answer.schema_id,
-                                 name=answer.title,
-                                 extra={
-                                     'feature_id': answer.feature_id,
-                                     'value': answer.value
-                                 }) for answer in self.answer
+            get_classification_answer(answer) for answer in self.answer
         ])
 
     @classmethod
@@ -82,11 +86,7 @@ class LBV1Dropdown(LBV1Feature):
                     **extra) -> "LBV1Dropdown":
         return cls(schema_id=feature_schema_id,
                    answer=[
-                       LBV1ClassificationAnswer(
-                           schema_id=answer.feature_schema_id,
-                           title=answer.name,
-                           value=answer.extra.get('value'),
-                           feature_id=answer.extra.get('feature_id'))
+                       get_lbv1_classification_answer(answer)
                        for answer in dropdown.answer
                    ],
                    **extra)
