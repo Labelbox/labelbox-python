@@ -56,7 +56,7 @@ class Checklist(_TempName):
 
     """
     name: Literal["checklist"] = "checklist"
-    answer: ClassificationAnswer
+    answer: List[ClassificationAnswer]
 
 
 class Text(BaseModel):

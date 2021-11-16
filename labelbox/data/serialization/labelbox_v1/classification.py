@@ -9,13 +9,13 @@ from ...annotation_types.types import Cuid
 
 
 class LBV1ClassificationAnswer(LBV1Feature):
-    def to_common(self, answer: "LBV1ClassificationAnswer") -> ClassificationAnswer:
-        return ClassificationAnswer(feature_schema_id=answer.schema_id,
-                  name=answer.title,
-                  keyframe = answer.keyframe,
+    def to_common(self) -> ClassificationAnswer:
+        return ClassificationAnswer(feature_schema_id=self.schema_id,
+                  name=self.title,
+                  keyframe = self.keyframe,
                   extra={
-                      'feature_id': answer.feature_id,
-                      'value': answer.value
+                      'feature_id': self.feature_id,
+                      'value': self.value
                   })
 
     @classmethod

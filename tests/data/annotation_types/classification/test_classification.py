@@ -125,7 +125,6 @@ def test_checklist():
 
     with pytest.raises(ValidationError):
         classification = Checklist(answer=answer)
-    breakpoint()
 
     classification = Checklist(answer=[answer])
     assert classification.dict() == {
