@@ -18,8 +18,8 @@
     * Set up a project from an existing ontology with `project.setup_edior()`
     * Added new `FeatureSchema` entity
 * Add support for new queue modes
-    * Send batches of data direction to a project with `project.queue()`
-    * Remove items from the queue with `project.dequeue()`
+    * Send batches of data directly to a project queue with `project.queue()`
+    * Remove items from a project queue with `project.dequeue()`
     * Query for and toggle the queue mode
 
 # Version 3.8.0 (2021-10-22)
