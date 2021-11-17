@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import json
 import time
+import time
 
 import pytest
 
@@ -34,6 +35,7 @@ def test_project_setup(project, iframe_url) -> None:
 
     time.sleep(3)
     now = datetime.now().astimezone(timezone.utc)
+
     project.setup(labeling_frontend, simple_ontology())
     assert now - project.setup_complete <= timedelta(seconds=3)
     assert now - project.last_activity_time <= timedelta(seconds=3)
@@ -50,3 +52,20 @@ def test_project_setup(project, iframe_url) -> None:
     assert options.customization_options == json.dumps(simple_ontology())
     assert project.organization() == client.get_organization()
     assert project.created_by() == client.get_user()
+
+
+def test_project_editor_setup(client, project, rand_gen):
+    ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
+    ontology = client.create_ontology(ontology_name, simple_ontology())
+    now = datetime.now().astimezone(timezone.utc)
+    project.setup_editor(ontology)
+    assert now - project.setup_complete <= timedelta(seconds=3)
+    assert now - project.last_activity_time <= timedelta(seconds=3)
+    assert project.labeling_frontend().name == "Editor"
+    assert project.organization() == client.get_organization()
+    assert project.created_by() == client.get_user()
+    assert project.ontology().name == ontology_name
+    # Make sure that setup only creates one ontology
+    time.sleep(3)  # Search takes a second
+    assert [ontology.name for ontology in client.get_ontologies(ontology_name)
+           ] == [ontology_name]
