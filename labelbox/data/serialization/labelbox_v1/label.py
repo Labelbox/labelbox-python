@@ -137,20 +137,17 @@ class LBV1Label(BaseModel):
     label_url: Optional[str] = Extra('View Label')
     has_open_issues: Optional[float] = Extra('Has Open Issues')
     skipped: Optional[bool] = Extra('Skipped')
+    media_type: Optional[str] = Extra('media_type')
 
     def to_common(self) -> Label:
         if isinstance(self.label, list):
             annotations = []
             for lbl in self.label:
                 annotations.extend(lbl.to_common())
-            data = VideoData(url=self.row_data,
-                             external_id=self.external_id,
-                             uid=self.data_row_id)
         else:
             annotations = self.label.to_common()
-            data = self._infer_media_type()
 
-        return Label(data=data,
+        return Label(data=self._data_row_to_common(),
                      uid=self.id,
                      annotations=annotations,
                      extra={
@@ -174,44 +171,49 @@ class LBV1Label(BaseModel):
                          external_id=label.data.external_id,
                          **label.extra)
 
-    def _infer_media_type(self):
-        # Video annotations are formatted differently from text and images
-        # So we only need to differentiate those two
+    def _data_row_to_common(self) -> Union[ImageData, TextData, VideoData]:
+        # Use data row information to construct the appropriate annotatin type
         data_row_info = {
+            'url' if self._is_url() else 'text': self.row_data,
             'external_id': self.external_id,
             'uid': self.data_row_id
         }
 
+        self.media_type = self.media_type or self._infer_media_type()
+        media_mapping = {
+            'text': TextData,
+            'image': ImageData,
+            'video': VideoData
+        }
+        if self.media_type not in media_mapping:
+            raise ValueError(
+                f"Annotation types are only supported for {list(media_mapping)} media types."
+                f" Found {self.media_type}.")
+        return media_mapping[self.media_type](**data_row_info)
+
+    def _infer_media_type(self) -> str:
+        # Determines the data row type based on the label content
+        if isinstance(self.label, list):
+            return 'video'
         if self._has_text_annotations():
-            # If it has text annotations then it must be text
-            if self._is_url():
-                return TextData(url=self.row_data, **data_row_info)
-            else:
-                return TextData(text=self.row_data, **data_row_info)
+            return 'text'
         elif self._has_object_annotations():
-            # If it has object annotations and none are text annotations then it must be an image
-            if self._is_url():
-                return ImageData(url=self.row_data, **data_row_info)
-            else:
-                return ImageData(text=self.row_data, **data_row_info)
+            return 'image'
         else:
-            # no annotations to infer data type from.
-            # Use information from the row_data format if possible.
             if self._row_contains((".jpg", ".png", ".jpeg")) and self._is_url():
-                return ImageData(url=self.row_data, **data_row_info)
-            elif self._row_contains(
-                (".txt", ".text", ".html")) and self._is_url():
-                return TextData(url=self.row_data, **data_row_info)
-            elif not self._is_url():
-                return TextData(text=self.row_data, **data_row_info)
+                return 'image'
+            elif (self._row_contains((".txt", ".text", ".html")) and
+                  self._is_url()) or not self._is_url():
+                return 'text'
             else:
-                # This is going to be urls that do not contain any file extensions
-                # This will only occur on skipped images.
-                # To use this converter on data with this url format
-                #   filter out empty examples from the payload before deserializing.
+                #  This condition will occur when a data row url does not contain a file extension
+                #  and the label does not contain object annotations that indicate the media type.
+                #  As a temporary workaround you can explicitly set the media_type
+                #  in each label json payload before converting.
+                #  We will eventually provide the media type in the export.
                 raise TypeError(
-                    "Can't infer data type from row data. Remove empty examples before trying again. "
-                    f"row_data: {self.row_data[:200]}")
+                    "Can't infer data type from row data. row_data: {self.row_data[:200]}"
+                )
 
     def _has_object_annotations(self):
         return len(self.label.objects) > 0

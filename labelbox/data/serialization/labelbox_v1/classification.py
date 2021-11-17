@@ -9,24 +9,25 @@ from ...annotation_types.types import Cuid
 
 
 class LBV1ClassificationAnswer(LBV1Feature):
+
     def to_common(self) -> ClassificationAnswer:
         return ClassificationAnswer(feature_schema_id=self.schema_id,
-                  name=self.title,
-                  keyframe = self.keyframe,
-                  extra={
-                      'feature_id': self.feature_id,
-                      'value': self.value
-                  })
+                                    name=self.title,
+                                    keyframe=self.keyframe,
+                                    extra={
+                                        'feature_id': self.feature_id,
+                                        'value': self.value
+                                    })
 
     @classmethod
-    def from_common(cls, answer: ClassificationAnnotation) -> "LBV1ClassificationAnswer":
-        return cls(
-        schema_id=answer.feature_schema_id,
-        title=answer.name,
-        value=answer.extra.get('value'),
-        feature_id=answer.extra.get('feature_id'),
-        keyframe=answer.keyframe
-    )
+    def from_common(
+            cls,
+            answer: ClassificationAnnotation) -> "LBV1ClassificationAnswer":
+        return cls(schema_id=answer.feature_schema_id,
+                   title=answer.name,
+                   value=answer.extra.get('value'),
+                   feature_id=answer.extra.get('feature_id'),
+                   keyframe=answer.keyframe)
 
 
 class LBV1Radio(LBV1Feature):
@@ -47,9 +48,7 @@ class LBV1Checklist(LBV1Feature):
     answers: List[LBV1ClassificationAnswer]
 
     def to_common(self) -> Checklist:
-        return Checklist(answer=[
-            answer.to_common() for answer in self.answers
-        ])
+        return Checklist(answer=[answer.to_common() for answer in self.answers])
 
     @classmethod
     def from_common(cls, checklist: Checklist, feature_schema_id: Cuid,
@@ -66,9 +65,7 @@ class LBV1Dropdown(LBV1Feature):
     answer: List[LBV1ClassificationAnswer]
 
     def to_common(self) -> Dropdown:
-        return Dropdown(answer=[
-            answer.to_common() for answer in self.answer
-        ])
+        return Dropdown(answer=[answer.to_common() for answer in self.answer])
 
     @classmethod
     def from_common(cls, dropdown: Dropdown, feature_schema_id: Cuid,
