@@ -212,7 +212,7 @@ class LBV1Label(BaseModel):
                 #  in each label json payload before converting.
                 #  We will eventually provide the media type in the export.
                 raise TypeError(
-                    "Can't infer data type from row data. row_data: {self.row_data[:200]}"
+                    f"Can't infer data type from row data. row_data: {self.row_data[:200]}"
                 )
 
     def _has_object_annotations(self):
