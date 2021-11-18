@@ -57,9 +57,9 @@ The package `rasterio` installed by `labelbox[data]` relies on GDAL which could 
 You may see the following error message:
 
 ```
-INFO:root:Building on Windows requires extra options to setup.py to locate needed GDAL files. More information is available in the README. 
+INFO:root:Building on Windows requires extra options to setup.py to locate needed GDAL files. More information is available in the README.
 
-ERROR: A GDAL API version must be specified. Provide a path to gdal-config using a GDAL_CONFIG environment variable or use a GDAL_VERSION environment variable. 
+ERROR: A GDAL API version must be specified. Provide a path to gdal-config using a GDAL_CONFIG environment variable or use a GDAL_VERSION environment variable.
 ```
 
 As a workaround:
@@ -72,7 +72,7 @@ As a workaround:
 
     Note: You need to download the right files for your Python version. In the files above `cp38` means CPython 3.8.
 
-2. After downloading the files, please run the following commands, in this particular order.  
+2. After downloading the files, please run the following commands, in this particular order.
 
 ```
 pip install GDAL‑3.3.2‑cp38‑cp38‑win_amd64.wh
