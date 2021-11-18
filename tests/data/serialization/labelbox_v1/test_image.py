@@ -20,7 +20,11 @@ def test_image(file_path):
     collection = LBV1Converter.deserialize([payload])
     serialized = next(LBV1Converter.serialize(collection))
 
+    # We are storing the media types now.
+    payload['media_type'] = 'image'
+
     assert serialized.keys() == payload.keys()
+
     for key in serialized:
         if key != 'Label':
             assert serialized[key] == payload[key]
