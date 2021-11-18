@@ -27,11 +27,12 @@ setuptools.setup(
         "requests>=2.22.0",
         "google-api-core>=1.22.1",
         "pydantic>=1.8,<2.0",
+        "tqdm",
     ],
     extras_require={
         'data': [
             "shapely", "geojson", "numpy", "rasterio", "PILLOW",
-            "opencv-python", "typeguard", "tqdm", "imagesize"
+            "opencv-python", "typeguard", "imagesize"
         ],
     },
     classifiers=[
