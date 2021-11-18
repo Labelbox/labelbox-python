@@ -511,7 +511,7 @@ class LabelImport(AnnotationImport):
             client: Labelbox Client for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
-            labels: List of labels 
+            labels: List of labels
         Returns:
             LabelImport
         """
