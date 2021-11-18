@@ -79,7 +79,7 @@ class AnnotationImport(DbObject):
         return self._fetch_remote_ndjson(self.status_file_url)
 
     def wait_until_done(self,
-                        sleep_time_seconds: int = 10.,
+                        sleep_time_seconds: int = 10,
                         show_progress: bool = False) -> None:
         """Blocks import job until certain conditions are met.
         Blocks until the AnnotationImport.state changes either to
