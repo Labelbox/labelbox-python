@@ -7,6 +7,20 @@
 | `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       | 3.9           |
 | `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
 -----
+# Version 3.9.0 (2021-11-12)
+## Added
+* New ontology management features
+    * Query for ontologies by name with `client.get_ontologies()` or by id using `client.get_ontology()`
+    * Query for feature schemas by name with `client.get_feature_schemas()` or id using `client.get_feature_schema()`
+    * Create feature schemas with `client.create_feature_schemas()`
+    * Create ontologies from normalized ontology data with `client.create_ontology()`
+    * Create ontologies from feature schemas with `client.create_ontology_from_feature_schemas()`
+    * Set up a project from an existing ontology with `project.setup_edior()`
+    * Added new `FeatureSchema` entity
+* Add support for new queue modes
+    * Send batches of data directly to a project queue with `project.queue()`
+    * Remove items from a project queue with `project.dequeue()`
+    * Query for and toggle the queue mode
 
 # Version 3.8.0 (2021-10-22)
 ## Added

@@ -16,6 +16,12 @@ FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
 SchemaId: Type[str] = constr(min_length=25, max_length=25)
 
 
+class FeatureSchema(DbObject):
+    name = Field.String("name")
+    color = Field.String("name")
+    normalized = Field.Json("normalized")
+
+
 @dataclass
 class Option:
     """
@@ -34,17 +40,19 @@ class Option:
         options: (list)
     """
     value: Union[str, int]
+    label: Optional[Union[str, int]] = None
     schema_id: Optional[str] = None
     feature_schema_id: Optional[FeatureSchemaId] = None
     options: List["Classification"] = field(default_factory=list)
 
-    @property
-    def label(self):
-        return self.value
+    def __post_init__(self):
+        if self.label is None:
+            self.label = self.value
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(value=dictionary["value"],
+                   label=dictionary["label"],
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
                    options=[
@@ -339,6 +347,10 @@ class OntologyBuilder:
     def from_project(cls, project: "project.Project"):
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
+
+    @classmethod
+    def from_ontology(cls, ontology: Ontology):
+        return cls.from_dict(ontology.normalized)
 
     def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):

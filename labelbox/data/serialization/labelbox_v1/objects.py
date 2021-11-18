@@ -27,10 +27,18 @@ class LBV1ObjectBase(LBV1Feature):
 
     @validator('classifications', pre=True)
     def validate_subclasses(cls, value, field):
-        # Dropdown subclasses create extra unessesary nesting. So we just remove it.
+        # checklist subclasses create extra unessesary nesting. So we just remove it.
         if isinstance(value, list) and len(value):
-            if isinstance(value[0], list):
-                return value[0]
+            subclasses = []
+            for v in value:
+                # this is due to Checklists providing extra brackets []. We grab every item
+                # in the brackets if this is the case
+                if isinstance(v, list):
+                    for inner_v in v:
+                        subclasses.append(inner_v)
+                else:
+                    subclasses.append(v)
+            return subclasses
         return value
 
 
