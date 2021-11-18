@@ -3,10 +3,25 @@
 ## Deprecation Notice
 | Name                                  | Replacement                            | Removed After |
 | ------------------------------------- | -------------------------------------  | ------------- |
-| `ModelRun.delete_annotation_groups()` | `ModelRun.delete_model_run_data_rows()`| 3.9           |
-| `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       | 3.9           |
-| `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
+| `ModelRun.delete_annotation_groups()` | `ModelRun.delete_model_run_data_rows()`|  2021-12-06   |
+| `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       |  2021-12-06   |
+| `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            |  2021-12-06   |
 -----
+
+# Version 3.10.0 (2021-11-18)
+## Added
+* `AnnotationImport.wait_until_done()` accepts a `show_progress` param. This is set to `False` by default.
+    * If enabled, a tqdm progress bar will indicate the import progress.
+    * This works for all classes that inherit from AnnotationImport: `LabelImport`, `MALPredictionImport`, `MEAPredictionImport`
+    * This is not support for `BulkImportRequest` (which will eventually be replaced by `MALPredictionImport`)
+* `Option.label` and `Option.value` can now be set independently
+* `ClassificationAnswer`s now support a new `keyframe` field for videos
+* New `LBV1Label.media_type field. This is a placeholder for future backend changes.
+
+## Fix
+* Nested checklists can have extra brackets. This would cause the annotation type converter to break.
+
+
 # Version 3.9.0 (2021-11-12)
 ## Added
 * New ontology management features
