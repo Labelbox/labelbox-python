@@ -17,17 +17,12 @@ from labelbox import utils
 from labelbox import __version__ as SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.project import Project
-from labelbox.schema.dataset import Dataset
-from labelbox.schema.data_row import DataRow
-from labelbox.schema.model import Model
-from labelbox.schema.user import User
-from labelbox.schema.organization import Organization
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
-from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
+from labelbox.schema.ontology import Tool, Classification
 
 logger = logging.getLogger(__name__)
 
@@ -414,7 +409,7 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Project with the given ID.
         """
-        return self._get_single(Project, project_id)
+        return self._get_single(Entity.Project, project_id)
 
     def get_dataset(self, dataset_id):
         """ Gets a single Dataset with the given ID.
@@ -429,14 +424,14 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Dataset with the given ID.
         """
-        return self._get_single(Dataset, dataset_id)
+        return self._get_single(Entity.Dataset, dataset_id)
 
     def get_user(self):
         """ Gets the current User database object.
 
             >>> user = client.get_user()
         """
-        return self._get_single(User, None)
+        return self._get_single(Entity.User, None)
 
     def get_organization(self):
         """ Gets the Organization DB object of the current user.
@@ -444,7 +439,7 @@ class Client:
             >>> organization = client.get_organization()
 
         """
-        return self._get_single(Organization, None)
+        return self._get_single(Entity.Organization, None)
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
@@ -477,7 +472,7 @@ class Client:
         Returns:
             An iterable of Projects (typically a PaginatedCollection).
         """
-        return self._get_all(Project, where)
+        return self._get_all(Entity.Project, where)
 
     def get_datasets(self, where=None):
         """ Fetches one or more datasets.
@@ -490,7 +485,7 @@ class Client:
         Returns:
             An iterable of Datasets (typically a PaginatedCollection).
         """
-        return self._get_all(Dataset, where)
+        return self._get_all(Entity.Dataset, where)
 
     def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
@@ -503,7 +498,7 @@ class Client:
         Returns:
             An iterable of LabelingFrontends (typically a PaginatedCollection).
         """
-        return self._get_all(LabelingFrontend, where)
+        return self._get_all(Entity.LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
         """ Creates an object on the server. Attribute values are
@@ -550,7 +545,7 @@ class Client:
             InvalidAttributeError: If the Dataset type does not contain
                 any of the attribute names given in kwargs.
         """
-        dataset = self._create(Dataset, kwargs)
+        dataset = self._create(Entity.Dataset, kwargs)
 
         if iam_integration == IAMIntegration._DEFAULT:
             iam_integration = self.get_organization(
@@ -559,14 +554,16 @@ class Client:
         if iam_integration is None:
             return dataset
 
-        if not isinstance(iam_integration, IAMIntegration):
-            raise TypeError(
-                f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
-            )
-
-        if not iam_integration.valid:
-            raise ValueError("Integration is not valid. Please select another.")
         try:
+            if not isinstance(iam_integration, IAMIntegration):
+                raise TypeError(
+                    f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
+                )
+
+            if not iam_integration.valid:
+                raise ValueError(
+                    "Integration is not valid. Please select another.")
+
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
                     setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
@@ -603,7 +600,7 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Project, kwargs)
+        return self._create(Entity.Project, kwargs)
 
     def get_roles(self):
         """
@@ -620,7 +617,7 @@ class Client:
             DataRow: returns a single data row given the data row id
         """
 
-        return self._get_single(DataRow, data_row_id)
+        return self._get_single(Entity.DataRow, data_row_id)
 
     def get_data_row_metadata_ontology(self):
         """
@@ -644,7 +641,7 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Model with the given ID.
         """
-        return self._get_single(Model, model_id)
+        return self._get_single(Entity.Model, model_id)
 
     def get_models(self, where=None):
         """ Fetches all the models the user has access to.
@@ -657,7 +654,7 @@ class Client:
         Returns:
             An iterable of Models (typically a PaginatedCollection).
         """
-        return self._get_all(Model, where, filter_deleted=False)
+        return self._get_all(Entity.Model, where, filter_deleted=False)
 
     def create_model(self, name, ontology_id):
         """ Creates a Model object on the server.
@@ -677,13 +674,13 @@ class Client:
             createModel(data: {name : $name, ontologyId : $ontologyId}){
                     %s
                 }
-            }""" % query.results_query_part(Model)
+            }""" % query.results_query_part(Entity.Model)
 
         result = self.execute(query_str, {
             "name": name,
             "ontologyId": ontology_id
         })
-        return Model(self, result['createModel'])
+        return Entity.Model(self, result['createModel'])
 
     def get_data_row_ids_for_external_ids(
             self, external_ids: List[str]) -> Dict[str, List[str]]:
@@ -709,3 +706,193 @@ class Client:
                 })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
+
+    def get_ontology(self, ontology_id):
+        """
+        Fetches an Ontology by id.
+
+        Args:
+            ontology_id (str): The id of the ontology to query for
+        Returns:
+            Ontology
+        """
+        return self._get_single(Entity.Ontology, ontology_id)
+
+    def get_ontologies(self, name_contains):
+        """
+        Fetches all ontologies with names that match the name_contains string.
+
+        Args:
+            name_contains (str): the string to search ontology names by
+        Returns:
+            PaginatedCollection of Ontologies with names that match `name_contains`
+        """
+        query_str = """query getOntologiesPyApi($search: String, $filter: OntologyFilter, $from : String, $first: PageSize){
+            ontologies(where: {filter: $filter, search: $search}, after: $from, first: $first){
+                nodes {%s}
+                nextCursor
+            }
+        }
+        """ % query.results_query_part(Entity.Ontology)
+        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+        return PaginatedCollection(self, query_str, params,
+                                   ['ontologies', 'nodes'], Entity.Ontology,
+                                   ['ontologies', 'nextCursor'])
+
+    def get_feature_schema(self, feature_schema_id):
+        """
+        Fetches a feature schema. Only supports top level feature schemas.
+
+        Args:
+            feature_schema_id (str): The id of the feature schema to query for
+        Returns:
+            FeatureSchema
+        """
+
+        query_str = """query rootSchemaNodePyApi($rootSchemaNodeWhere: RootSchemaNodeWhere!){
+              rootSchemaNode(where: $rootSchemaNodeWhere){%s}
+        }""" % query.results_query_part(Entity.FeatureSchema)
+        res = self.execute(
+            query_str,
+            {'rootSchemaNodeWhere': {
+                'featureSchemaId': feature_schema_id
+            }})['rootSchemaNode']
+        res['id'] = res['normalized']['featureSchemaId']
+        return Entity.FeatureSchema(self, res)
+
+    def get_feature_schemas(self, name_contains):
+        """
+        Fetches top level feature schemas with names that match the `name_contains` string
+
+        Args:
+            name_contains (str): the string to search top level feature schema names by
+        Returns:
+            PaginatedCollection of FeatureSchemas with names that match `name_contains`
+        """
+        query_str = """query rootSchemaNodesPyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
+            rootSchemaNodes(where: {filter: $filter, search: $search}, after: $from, first: $first){
+                nodes {%s}
+                nextCursor
+            }
+        }
+        """ % query.results_query_part(Entity.FeatureSchema)
+        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+
+        def rootSchemaPayloadToFeatureSchema(client, payload):
+            # Technically we are querying for a Schema Node.
+            # But the features are the same so we just grab the feature schema id
+            payload['id'] = payload['normalized']['featureSchemaId']
+            return Entity.FeatureSchema(client, payload)
+
+        return PaginatedCollection(self, query_str, params,
+                                   ['rootSchemaNodes', 'nodes'],
+                                   rootSchemaPayloadToFeatureSchema,
+                                   ['rootSchemaNodes', 'nextCursor'])
+
+    def create_ontology_from_feature_schemas(self, name, feature_schema_ids):
+        """
+        Creates an ontology from a list of feature schema ids
+
+        Args:
+            name (str): Name of the ontology
+            feature_schema_ids (List[str]): List of feature schema ids corresponding to
+                top level tools and classifications to include in the ontology
+        Returns:
+            The created Ontology
+        """
+        tools, classifications = [], []
+        for feature_schema_id in feature_schema_ids:
+            feature_schema = self.get_feature_schema(feature_schema_id)
+            tool = ['tool']
+            if 'tool' in feature_schema.normalized:
+                tool = feature_schema.normalized['tool']
+                try:
+                    Tool.Type(tool)
+                    tools.append(feature_schema.normalized)
+                except ValueError:
+                    raise ValueError(
+                        f"Tool `{tool}` not in list of supported tools.")
+            elif 'type' in feature_schema.normalized:
+                classification = feature_schema.normalized['type']
+                try:
+                    Classification.Type(classification)
+                    classifications.append(feature_schema.normalized)
+                except ValueError:
+                    raise ValueError(
+                        f"Classification `{classification}` not in list of supported classifications."
+                    )
+            else:
+                raise ValueError(
+                    "Neither `tool` or `classification` found in the normalized feature schema"
+                )
+        normalized = {'tools': tools, 'classifications': classifications}
+        return self.create_ontology(name, normalized)
+
+    def create_ontology(self, name, normalized):
+        """
+        Creates an ontology from normalized data
+            >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
+            >>> ontology = client.create_ontology("ontology-name", normalized)
+
+        Or use the ontology builder. It is especially useful for complex ontologies
+            >>> normalized = OntologyBuilder(tools=[Tool(tool=Tool.Type.BBOX, name="cat", color = 'black')]).asdict()
+            >>> ontology = client.create_ontology("ontology-name", normalized)
+
+        To reuse existing feature schemas, use `create_ontology_from_feature_schemas()`
+        More details can be found here:
+            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+
+        Args:
+            name (str): Name of the ontology
+            normalized (dict): A normalized ontology payload. See above for details.
+        Returns:
+            The created Ontology
+        """
+        query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
+                           upsertOntology(data: $data){ %s }
+        } """ % query.results_query_part(Entity.Ontology)
+        params = {'data': {'name': name, 'normalized': json.dumps(normalized)}}
+        res = self.execute(query_str, params)
+        return Entity.Ontology(self, res['upsertOntology'])
+
+    def create_feature_schema(self, normalized):
+        """
+        Creates a feature schema from normalized data.
+            >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        Or use the Tool or Classification objects. It is especially useful for complex tools.
+            >>> normalized = Tool(tool=Tool.Type.BBOX, name="cat", color = 'black').asdict()
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        Subclasses are also supported
+            >>> normalized =  Tool(
+                    tool=Tool.Type.SEGMENTATION,
+                    name="cat",
+                    classifications=[
+                        Classification(
+                            class_type=Classification.Type.TEXT,
+                            instructions="name"
+                        )
+                    ]
+                )
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        More details can be found here:
+            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+
+        Args:
+            normalized (dict): A normalized tool or classification payload. See above for details
+        Returns:
+            The created FeatureSchema.
+        """
+        query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertRootSchemaNodeInput!){
+                        upsertRootSchemaNode(data: $data){ %s }
+        } """ % query.results_query_part(Entity.FeatureSchema)
+        normalized = {k: v for k, v in normalized.items() if v}
+        params = {'data': {'normalized': json.dumps(normalized)}}
+        res = self.execute(query_str, params)['upsertRootSchemaNode']
+        # Technically we are querying for a Schema Node.
+        # But the features are the same so we just grab the feature schema id
+        res['id'] = res['normalized']['featureSchemaId']
+        return Entity.FeatureSchema(self, res)

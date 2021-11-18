@@ -360,12 +360,12 @@ class Dataset(DbObject, Updateable, Deletable):
         return data_rows[0]
 
     def export_data_rows(self, timeout_seconds=120):
-        """ Returns a generator that produces all data rows that are currently 
+        """ Returns a generator that produces all data rows that are currently
         attached to this dataset.
-            
-        Note: For efficiency, the data are cached for 30 minutes. Newly created data rows will not appear 
+
+        Note: For efficiency, the data are cached for 30 minutes. Newly created data rows will not appear
         until the end of the cache period.
-            
+
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
