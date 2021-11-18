@@ -25,10 +25,10 @@ class ClassificationAnswer(FeatureSchema):
     - Because it inherits from FeatureSchema
         the option can be represented with either the name or feature_schema_id
 
-    - The key frame arg only applies to video classifications.
-      Each answer can have a key frame indepdent of the others.
+    - The keyframe arg only applies to video classifications.
+      Each answer can have a keyframe independent of the others.
         So unlike object annotations, classification annotations
-          track key frames at a classification answer level.
+          track keyframes at a classification answer level.
     """
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
