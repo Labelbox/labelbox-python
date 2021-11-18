@@ -150,8 +150,7 @@ class ModelRun(DbObject):
         """
         warnings.warn(
             "`ModelRun.annotation_groups` will be removed after 2021-12-06 use "
-            "`ModelRun.model_run_data_rows` instead"
-        )
+            "`ModelRun.model_run_data_rows` instead")
         return self.model_run_data_rows()
 
     def delete(self):
@@ -190,8 +189,7 @@ class ModelRun(DbObject):
         """
         warnings.warn(
             "`ModelRun.delete_annotation_groups` will be removed after 2021-12-06 use "
-            "`ModelRun.delete_model_run_data_rows` instead"
-        )
+            "`ModelRun.delete_model_run_data_rows` instead")
         return self.delete_model_run_data_rows(data_row_ids)
 
 

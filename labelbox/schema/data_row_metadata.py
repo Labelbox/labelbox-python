@@ -35,8 +35,9 @@ class DataRowMetadataSchema(BaseModel):
         """ DataRowMetadataSchema.id will be removed after 2021-12-06
             use DataRowMetadataSchema.uid instead
         """
-        warnings.warn("DataRowMetadataSchema.id will be removed after 2021-12-06 "
-                      "use DataRowMetadataSchema.uid instead")
+        warnings.warn(
+            "DataRowMetadataSchema.id will be removed after 2021-12-06 "
+            "use DataRowMetadataSchema.uid instead")
         return self.uid
 
 
