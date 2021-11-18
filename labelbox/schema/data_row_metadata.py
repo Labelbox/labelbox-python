@@ -32,7 +32,12 @@ class DataRowMetadataSchema(BaseModel):
 
     @property
     def id(self):
-        warnings.warn("`id` is being deprecated in favor of `uid`")
+        """ DataRowMetadataSchema.id will be removed after 2021-12-06
+            use DataRowMetadataSchema.uid instead
+        """
+        warnings.warn(
+            "DataRowMetadataSchema.id will be removed after 2021-12-06 "
+            "use DataRowMetadataSchema.uid instead")
         return self.uid
 
 

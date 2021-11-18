@@ -3,8 +3,6 @@ import time
 import pytest
 
 
-@pytest.mark.skip(
-    "Cannot query for labeler performance for labels created with create_label")
 def test_labeler_performance(label_pack):
     project, dataset, data_row, label = label_pack
     # Sleep a bit as it seems labeler performance isn't updated immediately.
