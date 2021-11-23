@@ -124,6 +124,9 @@ class Project(DbObject, Updateable, Deletable):
         """ Custom relationship expansion method to support limited filtering.
 
         Args:
+
+
+
             datasets (iterable of Dataset): Optional collection of Datasets
                 whose Labels are sought. If not provided, all Labels in
                 this Project are returned.
@@ -429,6 +432,9 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
+        if self.setup_complete is not None:
+            raise ValueError("Project is already setup")
+
         labeling_frontend = next(
             self.client.get_labeling_frontends(
                 where=Entity.LabelingFrontend.name == "Editor"))
@@ -467,6 +473,8 @@ class Project(DbObject, Updateable, Deletable):
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
         """
+        if self.setup_complete is not None:
+            raise ValueError("Project is already setup")
 
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
