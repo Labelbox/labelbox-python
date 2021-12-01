@@ -9,6 +9,7 @@ import time
 import ndjson
 from io import StringIO
 import requests
+from collections.abc import Iterable
 
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -297,6 +298,11 @@ class Dataset(DbObject, Updateable, Deletable):
                 "data" if key == "row_data" else utils.camel_case(key): value
                 for key, value in item.items()
             }
+
+        if not isinstance(items, Iterable):
+            raise ValueError(
+                f"Must pass an iterable to create_data_rows. Found {type(items)}"
+            )
 
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [executor.submit(convert_item, item) for item in items]
