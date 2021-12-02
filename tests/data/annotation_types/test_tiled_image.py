@@ -1,8 +1,8 @@
 import pytest
-from labelbox.data.annotation_types import tiled_image
+from labelbox.data.annotation_types.data import tiled_image
 from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.tiled_image import (EPSG, TiledBounds,
-                                                        TileLayer)
+from labelbox.data.annotation_types.data.tiled_image import (EPSG, TiledBounds,
+                                                             TileLayer)
 from pydantic import ValidationError
 
 
