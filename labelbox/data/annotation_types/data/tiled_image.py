@@ -73,7 +73,7 @@ class TiledImageData(BaseData):
     If specified version is 2, converts bounds from [lng,lat] to [lat,lng]
     """
     tile_layer: TileLayer
-    alternative_layers: list[TileLayer]
+    alternative_layers: List[TileLayer]
     tile_bounds: TiledBounds
     zoom_levels: List[int]
     max_native_zoom: int = zoom_levels[1]
