@@ -22,18 +22,27 @@ class EPSG(Enum):
 class TiledBounds(BaseModel):
     """ Bounds for a tiled image asset related to the relevant epsg. 
 
-    Each bound is a list of Point objects.
+    Bounds should be Point objects
 
     If version of asset is 2, these should be [[lat,lng],[lat,lng]]
     If version of asset is 1, these should be [[lng,lat]],[lng,lat]]
 
     >>> bounds = TiledBounds(
-        epsg=EPSG.4326, 
-        bounds=[[0,0],[100,100]]
+        epsg=EPSG.4326,
+        bounds=[Point(x=0, y=0),Point(x=100, y=100)]
         )
     """
     epsg: EPSG
-    bounds: List[List[Point]]
+    bounds: List[Point]
+
+    @validator('bounds')
+    def validate_bounds(cls, bounds):
+        first_bound = bounds[0]
+        second_bound = bounds[1]
+
+        if first_bound == second_bound:
+            raise AssertionError(f"Bounds cannot be equal, contains {bounds}")
+        return bounds
 
 
 class TileLayer(BaseModel):
@@ -42,22 +51,16 @@ class TileLayer(BaseModel):
     https://c.tile.openstreetmap.org/{z}/{x}/{y}.png
 
     >>> layer = TileLayer(
-        url=https://c.tile.openstreetmap.org/{z}/{x}/{y}.png,
+        url="https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
         name="slippy map tile"
         )
     """
     url: str
     name: Optional[str] = "default"
 
-    def from_dict():
-        pass
-
-    def to_dict():
-        pass
-
     @validator('url')
     def validate_url(cls, url):
         xyz_format = "/{z}/{x}/{y}"
         if xyz_format not in url:
-            raise AssertionError(f"{self.url} needs to contain {xyz_format}")
+            raise AssertionError(f"{url} needs to contain {xyz_format}")
         return url
