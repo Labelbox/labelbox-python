@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Optional, List, Any, Dict
+from typing import Optional, List
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, conlist
 import numpy as np
-from pyproj import Transformer, transform
+from pyproj import Transformer
 
 from ..geometry import Point
 from .base_data import BaseData
@@ -88,14 +88,10 @@ class TiledImageData(BaseData):
     tile_layer: TileLayer
     tile_bounds: TiledBounds
     alternative_layers: List[TileLayer] = None
-    zoom_levels: List[int]
+    zoom_levels: conlist(item_type=int, min_items=2, max_items=2)
     max_native_zoom: int = None
     tile_size: Optional[int]
     version: int = 2
-
-    def __post_init__(self):
-        if self.max_native_zoom is None:
-            self.max_native_zoom = zoom_levels[1]
 
     #TODO: look further into Matt's code and how to reference the monorepo ?
     def _as_raster(zoom):
@@ -105,58 +101,45 @@ class TiledImageData(BaseData):
         image_as_np = None
         return RasterData(arr=image_as_np)
 
-    @property  #TODO
+    #TODO
+    @property
     def value(self) -> np.ndarray:
         return self._as_raster(self.min_zoom).value()
-
-    #TODO: maybe not necessary, can remove
-    # @property
-    # def tile_layer_url(self) -> str:
-    #     return self.tile_layer.url
-
-    #TODO: maybe not necessary, can remove
-    # @property
-    # def bounds(self) -> List[Point]:
-    #     return self.tile_bounds.bounds
-
-    #TODO: wondering to keep this or not since epsg may be something of interest
-    # and they dont want to go through TiledImageData.tile_bounds.epsg?
-    # then can call TiledimageData.epsg
-    @property
-    def epsg(self) -> EPSG:
-        return self.tile_bounds.epsg
-
-    @validator('zoom_levels')
-    def validate_zooms(cls, zoom_levels):
-        if len(zoom_levels) != 2:
-            raise AssertionError(
-                f"zoom_levels should contain 2 values [min,max], found {len(zoom_levels)}"
-            )
 
 
 #TODO: we will need to update the [data] package to also require pyproj
 class EPSGTransformer(BaseModel):
-    """Transformer class between different EPSG's. Useful when wanting to project 
+    """Transformer class between different EPSG's. Useful when wanting to project
     in different formats.
 
     Requires as input a Point object.
     """
-    class Config:
-        arbitrary_types_allowed = True
+    class ProjectionTransformer():
+        """Custom class to help represent a Transformer that will play
+        nicely with Pydantic.
+        """
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
 
-    transform_function: Transformer = None
+        @classmethod
+        def validate(cls, v):
+            return v
 
-    def is_simple(self, epsg: EPSG) -> bool:
+    transform_function: Optional[ProjectionTransformer] = None
+
+    def _is_simple(self, epsg: EPSG) -> bool:
         return epsg == EPSG.SIMPLEPIXEL
 
     def geo_and_geo(self, src_epsg: EPSG, tgt_epsg: EPSG) -> None:
-        if self.is_simple(src_epsg) or self.is_simple(tgt_epsg):
+        if self._is_simple(src_epsg) or self._is_simple(tgt_epsg):
             raise Exception(
                 f"Cannot be used for Simple transformations. Found {src_epsg} and {tgt_epsg}"
             )
         self.transform_function = Transformer.from_crs(src_epsg.value,
                                                        tgt_epsg.value)
 
+    #TODO
     def geo_and_pixel(self, src_epsg, geojson):
         pass
 
