@@ -151,8 +151,9 @@ class Project(DbObject, Updateable, Deletable):
             id_param, id_param, where, order_by_str,
             query.results_query_part(Label))
 
-        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
-                                   ["project", "labels"], Label)
+        return PaginatedCollection(self.client, query_str,
+                                   {id_param: self.uid}, ["project", "labels"],
+                                   Label)
 
     def export_queued_data_rows(self, timeout_seconds=120):
         """ Returns all data rows that are currently enqueued for this project.
@@ -346,7 +347,7 @@ class Project(DbObject, Updateable, Deletable):
 
         lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
-        customization_options = json.loads(lfo.customization_options)
+        customization_options = self.ontology().normalized
         customization_options['projectInstructions'] = instructions_url
         option_id = lfo.uid
 
@@ -393,11 +394,13 @@ class Project(DbObject, Updateable, Deletable):
             # python isoformat doesn't accept Z as utc timezone
             result["lastActivityTime"] = datetime.fromisoformat(
                 result["lastActivityTime"].replace('Z', '+00:00'))
-            return LabelerPerformance(
-                **
-                {utils.snake_case(key): value for key, value in result.items()})
+            return LabelerPerformance(**{
+                utils.snake_case(key): value
+                for key, value in result.items()
+            })
 
-        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
+        return PaginatedCollection(self.client, query_str,
+                                   {id_param: self.uid},
                                    ["project", "labelerPerformance"],
                                    create_labeler_performance)
 
@@ -409,7 +412,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             int, aggregation count of reviews for given `net_score`.
         """
-        if net_score not in (None,) + tuple(Entity.Review.NetScore):
+        if net_score not in (None, ) + tuple(Entity.Review.NetScore):
             raise InvalidQueryError(
                 "Review metrics net score must be either None "
                 "or one of Review.NetScore values")
@@ -421,41 +424,6 @@ class Project(DbObject, Updateable, Deletable):
         }""" % (id_param, id_param, net_score_literal)
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
-
-    def setup_editor(self, ontology):
-        """
-        Sets up the project using the Pictor editor.
-
-        Args:
-            ontology (Ontology): The ontology to attach to the project
-        """
-        labeling_frontend = next(
-            self.client.get_labeling_frontends(
-                where=Entity.LabelingFrontend.name == "Editor"))
-        self.labeling_frontend.connect(labeling_frontend)
-
-        LFO = Entity.LabelingFrontendOptions
-        self.client._create(
-            LFO, {
-                LFO.project:
-                    self,
-                LFO.labeling_frontend:
-                    labeling_frontend,
-                LFO.customization_options:
-                    json.dumps({
-                        "tools": [],
-                        "classifications": []
-                    })
-            })
-
-        query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
-            project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
-        self.client.execute(query_str, {
-            'ontologyId': ontology.uid,
-            'projectId': self.uid
-        })
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.update(setup_complete=timestamp)
 
     def setup(self, labeling_frontend, labeling_frontend_options):
         """ Finalizes the Project setup.
@@ -516,7 +484,7 @@ class Project(DbObject, Updateable, Deletable):
                   }
                 }
               }
-            }
+            }         
         """ % (method, method)
 
         res = self.client.execute(query, {
@@ -552,7 +520,7 @@ class Project(DbObject, Updateable, Deletable):
                     tagSetStatus
                 }
             }
-        }
+        }       
         """ % "setTagSetStatusPyApi"
 
         self.client.execute(query_str, {
@@ -568,7 +536,7 @@ class Project(DbObject, Updateable, Deletable):
               project(where: {id: $projectId}) {
                  tagSetStatus
             }
-        }
+        }       
         """ % "GetTagSetStatusPyApi"
 
         status = self.client.execute(
@@ -666,8 +634,8 @@ class Project(DbObject, Updateable, Deletable):
         query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s}) {
             unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            id_param, id_param, ",\n".join(
-                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
+            id_param, id_param, ",\n".join("{dataRowId: \"%s\"}" % row.uid
+                                           for row in data_rows))
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
