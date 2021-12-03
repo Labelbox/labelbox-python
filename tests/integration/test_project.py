@@ -103,6 +103,19 @@ def test_attach_instructions(client, project):
     assert "instructions_file must end with one of" in str(exc_info.value)
 
 
+def test_same_ontology_after_instructions(
+        client, configured_project_with_complex_ontology):
+    project, _ = configured_project_with_complex_ontology
+    initial_ontology = project.ontology().normalized
+    project.upsert_instructions('tests/data/assets/loremipsum.pdf')
+    updated_ontology = project.ontology().normalized
+
+    instructions = updated_ontology.pop('projectInstructions')
+
+    assert initial_ontology == updated_ontology
+    assert instructions is not None
+
+
 def test_queued_data_row_export(configured_project):
     result = configured_project.export_queued_data_rows()
     assert len(result) == 1

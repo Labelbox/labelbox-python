@@ -346,7 +346,7 @@ class Project(DbObject, Updateable, Deletable):
 
         lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
-        customization_options = json.loads(lfo.customization_options)
+        customization_options = self.ontology().normalized
         customization_options['projectInstructions'] = instructions_url
         option_id = lfo.uid
 
