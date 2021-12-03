@@ -114,9 +114,11 @@ class EPSGTransformer(BaseModel):
 
     Requires as input a Point object.
     """
-    class ProjectionTransformer():
+    class ProjectionTransformer(Transformer):
         """Custom class to help represent a Transformer that will play
         nicely with Pydantic.
+
+        Accepts a PyProj Transformer object.
         """
         @classmethod
         def __get_validators__(cls):
@@ -124,6 +126,8 @@ class EPSGTransformer(BaseModel):
 
         @classmethod
         def validate(cls, v):
+            if not isinstance(v, Transformer):
+                raise Exception("Needs to be a Transformer class")
             return v
 
     transform_function: Optional[ProjectionTransformer] = None
