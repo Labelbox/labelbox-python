@@ -516,7 +516,7 @@ class Project(DbObject, Updateable, Deletable):
                   }
                 }
               }
-            }         
+            }
         """ % (method, method)
 
         res = self.client.execute(query, {
@@ -552,7 +552,7 @@ class Project(DbObject, Updateable, Deletable):
                     tagSetStatus
                 }
             }
-        }       
+        }
         """ % "setTagSetStatusPyApi"
 
         self.client.execute(query_str, {
@@ -568,7 +568,7 @@ class Project(DbObject, Updateable, Deletable):
               project(where: {id: $projectId}) {
                  tagSetStatus
             }
-        }       
+        }
         """ % "GetTagSetStatusPyApi"
 
         status = self.client.execute(
