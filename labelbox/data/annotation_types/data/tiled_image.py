@@ -1,13 +1,33 @@
+import math
+import logging
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Tuple
+from concurrent.futures import ThreadPoolExecutor
 
-from pydantic import BaseModel, validator, conlist
+import requests
 import numpy as np
+import tensorflow as tf
+from retry import retry
 from pyproj import Transformer
+from pydantic import BaseModel, validator, conlist
+from pydantic.class_validators import root_validator
 
 from ..geometry import Point
 from .base_data import BaseData
 from .raster import RasterData
+"""TODO: consider how to swap lat,lng to lng,lt when version = 2...
+should the bounds validator be inside the TiledImageData class then, 
+since we need to check on Version?
+"""
+
+VALID_LAT_RANGE = range(-90, 90)
+VALID_LNG_RANGE = range(-180, 180)
+TMS_TILE_SIZE = 256
+MAX_TILES = 300  #TODO: thinking of how to choose an appropriate max tiles number. 18 seems too small, but over 1000 likely seems too large
+TILE_DOWNLOAD_CONCURRENCY = 4
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class EPSG(Enum):
@@ -26,7 +46,7 @@ class EPSG(Enum):
 class TiledBounds(BaseModel):
     """ Bounds for a tiled image asset related to the relevant epsg. 
 
-    Bounds should be Point objects
+    Bounds should be Point objects. Currently, we support bounds in EPSG 4326.
 
     If version of asset is 2, these should be [[lat,lng],[lat,lng]]
     If version of asset is 1, these should be [[lng,lat]],[lng,lat]]
@@ -40,13 +60,30 @@ class TiledBounds(BaseModel):
     bounds: List[Point]
 
     @validator('bounds')
-    def validate_bounds(cls, bounds):
+    def validate_bounds_not_equal(cls, bounds):
         first_bound = bounds[0]
         second_bound = bounds[1]
 
         if first_bound == second_bound:
             raise AssertionError(f"Bounds cannot be equal, contains {bounds}")
         return bounds
+
+    #bounds are assumed to be in EPSG 4326 as that is what leaflet assumes
+    @root_validator
+    def validate_bounds_lat_lng(cls, values):
+        epsg = values.get('epsg')
+        bounds = values.get('bounds')
+        #TODO: look into messaging that we only support 4326 right now. raise exception, not implemented
+
+        if epsg != EPSG.SIMPLEPIXEL:
+            for bound in bounds:
+                lat, lng = bound.y, bound.x
+                if int(lng) not in VALID_LNG_RANGE or int(
+                        lat) not in VALID_LAT_RANGE:
+                    raise ValueError(f"Invalid lat/lng bounds. Found {bounds}. "
+                                     "lat must be in {VALID_LAT_RANGE}. "
+                                     "lng must be in {VALID_LNG_RANGE}.")
+        return values
 
 
 class TileLayer(BaseModel):
@@ -83,28 +120,198 @@ class TiledImageData(BaseData):
         max_native_zoom: int = None
         tile_size: Optional[int]
         version: int = 2
-        alternative_layers: List[TileLayer]        
+        alternative_layers: List[TileLayer]     
+
+    >>> tiled_image_data = TiledImageData(tile_layer=TileLayer,
+                                  tile_bounds=TiledBounds,
+                                  zoom_levels=[1, 12])
     """
     tile_layer: TileLayer
     tile_bounds: TiledBounds
     alternative_layers: List[TileLayer] = None
     zoom_levels: conlist(item_type=int, min_items=2, max_items=2)
     max_native_zoom: int = None
-    tile_size: Optional[int]
+    tile_size: Optional[int] = TMS_TILE_SIZE
     version: int = 2
 
-    #TODO: look further into Matt's code and how to reference the monorepo ?
-    def _as_raster(zoom):
-        # stitched together tiles as a RasterData object
-        # TileData.get_image(target_hw) ← we will be using this from Matt's precomputed embeddings
-        # more info found here: https://github.com/Labelbox/python-monorepo/blob/baac09cb89e083209644c9bdf1bc3d7cb218f147/services/precomputed_embeddings/precomputed_embeddings/tiled.py
-        image_as_np = None
-        return RasterData(arr=image_as_np)
+    def _as_raster(self, zoom=0) -> RasterData:
+        """Converts the tiled image asset into a RasterData object containing an
+        np.ndarray.
 
-    #TODO
+        Uses the minimum zoom provided to render the image.
+        """
+        if self.tile_bounds.epsg == EPSG.SIMPLEPIXEL:
+            xstart, ystart, xend, yend = self._get_simple_image_params(zoom)
+
+        # Currently our editor doesn't support anything other than 3857.
+        # Since the user provided projection is ignored by the editor
+        #    we will ignore it here and assume that the projection is 3857.
+        else:
+            if self.tile_bounds.epsg != EPSG.EPSG3857:
+                logger.info(
+                    f"User provided EPSG is being ignored {self.tile_bounds.epsg}."
+                )
+            xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
+
+        total_n_tiles = (yend - ystart + 1) * (xend - xstart + 1)
+        if total_n_tiles > MAX_TILES:
+            logger.info(
+                f"Too many tiles requested. Total tiles attempted {total_n_tiles}."
+            )
+            return None
+
+        rounded_tiles, pixel_offsets = list(
+            zip(*[
+                self._tile_to_pixel(pt) for pt in [xstart, ystart, xend, yend]
+            ]))
+
+        image = self._fetch_image_for_bounds(*rounded_tiles, zoom)
+        arr = self._crop_to_bounds(image, *pixel_offsets)
+        return RasterData(arr=arr)
+
     @property
     def value(self) -> np.ndarray:
-        return self._as_raster(self.min_zoom).value()
+        """Returns the value of a generated RasterData object.
+        """
+        return self._as_raster(self.zoom_levels[0]).value
+
+    def _get_simple_image_params(self,
+                                 zoom) -> Tuple[float, float, float, float]:
+        """Computes the x and y tile bounds for fetching an image that
+        captures the entire labeling region (TiledData.bounds) given a specific zoom
+
+        Simple has different order of x / y than lat / lng because of how leaflet behaves
+        leaflet reports all points as pixel locations at a zoom of 0
+        """
+        xend, xstart, yend, ystart = (
+            self.tile_bounds.bounds[1].x,
+            self.tile_bounds.bounds[0].x,
+            self.tile_bounds.bounds[1].y,
+            self.tile_bounds.bounds[0].y,
+        )
+        return (*[
+            x * (2**(zoom)) / self.tile_size
+            for x in [xstart, ystart, xend, yend]
+        ],)
+
+    def _get_3857_image_params(self, zoom) -> Tuple[float, float, float, float]:
+        """Computes the x and y tile bounds for fetching an image that
+        captures the entire labeling region (TiledData.bounds) given a specific zoom
+        """
+        lat_start, lat_end = self.tile_bounds.bounds[
+            1].y, self.tile_bounds.bounds[0].y
+        lng_start, lng_end = self.tile_bounds.bounds[
+            1].x, self.tile_bounds.bounds[0].x
+
+        # Convert to zoom 0 tile coordinates
+        xstart, ystart = self._latlng_to_tile(lat_start, lng_start, zoom)
+        xend, yend = self._latlng_to_tile(lat_end, lng_end, zoom)
+
+        # Make sure that the tiles are increasing in order
+        xstart, xend = min(xstart, xend), max(xstart, xend)
+        ystart, yend = min(ystart, yend), max(ystart, yend)
+        return (*[pt * 2.0**zoom for pt in [xstart, ystart, xend, yend]],)
+
+    def _latlng_to_tile(self,
+                        lat: float,
+                        lng: float,
+                        zoom=0) -> Tuple[float, float]:
+        """Converts lat/lng to 3857 tile coordinates
+        Formula found here:
+        https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#lon.2Flat_to_tile_numbers_2
+        """
+        scale = 2**zoom
+        lat_rad = math.radians(lat)
+        x = (lng + 180.0) / 360.0 * scale
+        y = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * scale
+        return x, y
+
+    def _tile_to_pixel(self, tile: float) -> Tuple[int, int]:
+        """Rounds a tile coordinate and reports the remainder in pixels
+        """
+        rounded_tile = int(tile)
+        remainder = tile - rounded_tile
+        pixel_offset = int(self.tile_size * remainder)
+        return rounded_tile, pixel_offset
+
+    def _fetch_image_for_bounds(
+        self,
+        x_tile_start: int,
+        y_tile_start: int,
+        x_tile_end: int,
+        y_tile_end: int,
+        zoom: int,
+    ) -> np.ndarray:
+        """Fetches the tiles and combines them into a single image
+        """
+        tiles = {}
+        with ThreadPoolExecutor(max_workers=TILE_DOWNLOAD_CONCURRENCY) as exc:
+            for x in range(x_tile_start, x_tile_end + 1):
+                for y in range(y_tile_start, y_tile_end + 1):
+                    tiles[(x, y)] = exc.submit(self._fetch_tile, x, y, zoom)
+
+        rows = []
+        for y in range(y_tile_start, y_tile_end + 1):
+            rows.append(
+                np.hstack([
+                    tiles[(x, y)].result()
+                    for x in range(x_tile_start, x_tile_end + 1)
+                ]))
+
+        return np.vstack(rows)
+
+    @retry(delay=1, tries=6, backoff=2, max_delay=16)
+    def _fetch_tile(self, x: int, y: int, z: int) -> np.ndarray:
+        """
+        Fetches the image and returns an np array. If the image cannot be fetched, 
+        a padding of expected tile size is instead added.
+        """
+        try:
+            data = requests.get(self.tile_layer.url.format(x=x, y=y, z=z))
+            data.raise_for_status()
+            decoded = tf.image.decode_image(data.content, channels=3).numpy()
+            if decoded.shape[:2] != (self.tile_size, self.tile_size):
+                logger.warning(
+                    f"Unexpected tile size {decoded.shape}. Results aren't guarenteed to be correct."
+                )
+        except:
+            logger.warning(
+                f"Unable to successfully find tile. for z,x,y: {z},{x},{y} "
+                "Padding is being added as a result.")
+            decoded = np.zeros(shape=(self.tile_size, self.tile_size, 3),
+                               dtype=np.uint8)
+        return decoded
+
+    def _crop_to_bounds(
+        self,
+        image: np.ndarray,
+        x_px_start: int,
+        y_px_start: int,
+        x_px_end: int,
+        y_px_end: int,
+    ) -> np.ndarray:
+        """This function slices off the excess pixels that are outside of the bounds.
+        This occurs because only full tiles can be downloaded at a time.
+        """
+
+        def invert_point(pt):
+            # Must have at least 1 pixel for stability.
+            pt = max(pt, 1)
+            # All pixel points are relative to a single tile
+            # So subtracting the tile size inverts the axis
+            pt = pt - self.tile_size
+            return pt if pt != 0 else None
+
+        x_px_end, y_px_end = invert_point(x_px_end), invert_point(y_px_end)
+        return image[y_px_start:y_px_end, x_px_start:x_px_end, :]
+
+    @validator('zoom_levels')
+    def validate_zoom_levels(cls, zoom_levels):
+        if zoom_levels[0] > zoom_levels[1]:
+            raise ValueError(
+                f"Order of zoom levels should be min, max. Received {zoom_levels}"
+            )
+        return zoom_levels
 
 
 #TODO: we will need to update the [data] package to also require pyproj
@@ -114,12 +321,14 @@ class EPSGTransformer(BaseModel):
 
     Requires as input a Point object.
     """
+
     class ProjectionTransformer(Transformer):
         """Custom class to help represent a Transformer that will play
         nicely with Pydantic.
 
         Accepts a PyProj Transformer object.
         """
+
         @classmethod
         def __get_validators__(cls):
             yield cls.validate
