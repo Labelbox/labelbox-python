@@ -10,5 +10,5 @@ repos:
     rev: v0.31.0
     hooks:
       - id: yapf
-        # name: "yapf (for labelbox-python repo)"
-        # args: ['--verbose --recursive --parallel --style "google" ']
+        name: "yapf (for labelbox-python repo)"
+        args: ['--verbose --recursive --parallel --style "google" ']
