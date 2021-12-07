@@ -1,0 +1,40 @@
+repos:
+  # configure shared hooks that you want to run on all repositories here
+  - repo: https://github.com/pre-commit/pre-commit-hooks.git
+    sha: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+  - repo: https://github.com/google/yapf
+    rev: v0.31.0
+    hooks:
+      id: yapf
+      name: "yapf (for labelbox-python repo)"
+      args: ["-i --verbose --recursive --parallel --style 'google'"]
+      language_version: python3.8
+  # For hooks that only apply to specific repositories, list them below
+
+  # - repo: https://github.com/ambv/black
+  #   rev: stable
+  #   hooks:
+  #     - id: black
+  #       name: "black (for services/precomputed_embeddings)"
+  #       args: ["--config=services/precomputed_embeddings/pyproject.toml"]
+  #       language_version: python3.8
+  #       files: '^services/precomputed_embeddings/.*\.py'
+  #     - id: black
+  #       name: "black (for services/pictor_agreement_calculator)"
+  #       args: ["--config=services/pictor_agreement_calculator/pyproject.toml"]
+  #       language_version: python3.8
+  #       files: '^services/pictor_agreement_calculator/.*\.py'
+  # - repo: https://github.com/pycqa/flake8
+  #   rev: 3.9.2
+  #   hooks:
+  #     - id: flake8
+  #       name: "flake8 (for services/prediction_import)"
+  #       args: ["--config=services/prediction_import/.flake8"]
+  #       files: '^services/prediction_import/.*\.py'
+  #     - id: flake8
+  #       name: "flake8 (for services/precomputed_embeddings)"
+  #       args: ["--config=services/precomputed_embeddings/.flake8"]
+  #       files: '^services/precomputed_embeddings/.*\.py'
