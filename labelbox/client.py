@@ -30,7 +30,7 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Client:
-    """ A Labelbox client.   
+    """ A Labelbox client.
 
     Contains info necessary for connecting to a Labelbox server (URL,
     authentication key). Provides functions for querying and creating
