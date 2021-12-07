@@ -7,10 +7,12 @@ from collections import defaultdict
 import logging
 import mimetypes
 import os
+import time
 
 from google.api_core import retry
 import requests
 import requests.exceptions
+from requests.models import HTTPBasicAuth
 
 import labelbox.exceptions
 from labelbox import utils
@@ -22,7 +24,10 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
+from labelbox.schema.label import Label
 from labelbox.schema.ontology import Tool, Classification
+from labelbox.schema.labelbox_event import LabelboxEvent
+from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +85,8 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
+        #new client attr for handling events
+        self.last_requested_event_id = None
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -896,3 +903,51 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
+
+    def poll_events(self, interval: int = 5):
+        """Makes a request to check for any new events in specific intervals
+
+        Args:
+            interval (int): the time in between each request
+        """
+
+        while True:
+            #TODO: here would be the url we will request from. unsure if it will have an api key
+            #demand, so left it assuming that for now
+            response = requests.get("the link i will be requesting from,",
+                                    auth=HTTPBasicAuth('username',
+                                                       self.api_key)).json()
+
+            latest_event_id = response['_links']['latest_event_id']
+
+            #if there are new events pulls information from
+            #each dictionary and returns a LabelboxEvent object
+            #stores it into a list of events
+            if not _events_up_to_date(self.last_requested_event_id,
+                                      latest_event_id):
+                events = []
+                for event in response['data']:
+                    events.append(_handle_event(
+                        event))  #TODO: unsure what to do with the events
+
+            self.last_requested_event_id = latest_event_id
+            time.sleep(interval)
+
+            def _handle_event(event: str) -> LabelboxEvent:
+                return LabelboxEvent.from_event({
+                    "id":
+                        event['_id'],
+                    "created_at":
+                        event['createdAt'],
+                    "type":
+                        event['type'],
+                    "resource":
+                        self._get_single(User, event['data']['resource']['id']),
+                    "actor":
+                        self._get_single(User, event['data']['actor']['id'])
+                })
+
+            def _events_up_to_date(last_requested_event_id: str,
+                                   latest_event_id: str) -> bool:
+                """checks if the latest event is the same as when we last polled"""
+                return self.last_requested_event_id == latest_event_id
