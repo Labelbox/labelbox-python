@@ -12,7 +12,6 @@ from google.api_core import retry
 import requests
 import requests.exceptions
 
-
 import labelbox.exceptions
 from labelbox import utils
 from labelbox import __version__ as SDK_VERSION
