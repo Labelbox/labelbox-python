@@ -1,23 +1,33 @@
-from typing import Union
+from typing import Union, Dict, Any
 
-from pydantic import BaseModel
 from labelbox.schema.project import Project
 from labelbox.schema.user import User
 
 
 class LabelboxEvent:
 
-    def __init__(self):
-        self.id: int = 0
-        self.created_at: str
-        self.type: str
-        self.resource: Union[Project, User]
-        self.actor: User
+    def __init__(self, id, created_at, type, resource, actor):
+        self.id: int = id
+        self.created_at: str = created_at
+        self.type: str = type
+        self.resource: Union[Project, User] = resource
+        self.actor: User = actor
 
     @classmethod
-    def from_event(cls, dictionary: dict) -> 'LabelboxEvent':
+    def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(id=dictionary['id'],
-                   created_at=dictionary['created_At'],
+                   created_at=dictionary['created_at'],
                    type=dictionary['type'],
                    resource=dictionary['resource'],
                    actor=dictionary['actor'])
+
+    # @classmethod
+    # def from_dict(cls, dictionary: Dict[str, Any]):
+    #     return cls(value=dictionary["value"],
+    #                label=dictionary["label"],
+    #                schema_id=dictionary.get("schemaNodeId", None),
+    #                feature_schema_id=dictionary.get("featureSchemaId", None),
+    #                options=[
+    #                    Classification.from_dict(o)
+    #                    for o in dictionary.get("options", [])
+    #                ])
