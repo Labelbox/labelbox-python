@@ -5,10 +5,11 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
+
   - repo: https://github.com/google/yapf
     rev: v0.31.0
     hooks:
-      id: yapf
-      name: "yapf (for labelbox-python repo)"
-      args: ['-i --verbose --recursive --parallel --style "google" ']
-      language_version: python3.8
+      - id: yapf
+        name: "yapf (for labelbox-python repo)"
+        args: ['-i --verbose --recursive --parallel --style "google" ']
+        language_version: python3.8
