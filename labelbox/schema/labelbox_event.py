@@ -20,14 +20,3 @@ class LabelboxEvent:
                    type=dictionary['type'],
                    resource=dictionary['resource'],
                    actor=dictionary['actor'])
-
-    # @classmethod
-    # def from_dict(cls, dictionary: Dict[str, Any]):
-    #     return cls(value=dictionary["value"],
-    #                label=dictionary["label"],
-    #                schema_id=dictionary.get("schemaNodeId", None),
-    #                feature_schema_id=dictionary.get("featureSchemaId", None),
-    #                options=[
-    #                    Classification.from_dict(o)
-    #                    for o in dictionary.get("options", [])
-    #                ])
