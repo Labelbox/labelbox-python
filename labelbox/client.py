@@ -29,18 +29,10 @@ logger = logging.getLogger(__name__)
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
-
-
-
-
-
-
-
 class Client:
     """ A Labelbox client.
 
-    Contains info necessary for connecting to a Labelbox server (URL,
-    authentication key). Provides functions for querying and creating
+    Contains info necessary for connecting to a Labelbox server (URL, authentication key). Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
 
