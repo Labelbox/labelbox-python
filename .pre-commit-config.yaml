@@ -12,4 +12,3 @@ repos:
       - id: yapf
         name: "yapf (for labelbox-python repo)"
         args: ['--verbose --recursive --parallel --style "google" ']
-        language_version: python3.8
