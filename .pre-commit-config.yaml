@@ -12,5 +12,5 @@ repos:
       - id: yapf
         name: "yapf (for labelbox-python repo)"
         # args: [--verbose --style=google]
-        args: ["--style=.style.yapf"]
+        # args: ["--style=.style.yapf"]
         # args: [--recursive --parallel --style google ]
