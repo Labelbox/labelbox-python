@@ -3,11 +3,14 @@ import logging
 from enum import Enum
 from typing import Optional, List, Tuple
 from concurrent.futures import ThreadPoolExecutor
+from io import BytesIO
 
 import requests
 import numpy as np
-import tensorflow as tf
+
 from retry import retry
+import tensorflow as f
+from PIL import Image
 from pyproj import Transformer
 from pydantic import BaseModel, validator, conlist
 from pydantic.class_validators import root_validator
@@ -15,15 +18,10 @@ from pydantic.class_validators import root_validator
 from ..geometry import Point
 from .base_data import BaseData
 from .raster import RasterData
-"""TODO: consider how to swap lat,lng to lng,lt when version = 2...
-should the bounds validator be inside the TiledImageData class then, 
-since we need to check on Version?
-"""
 
 VALID_LAT_RANGE = range(-90, 90)
 VALID_LNG_RANGE = range(-180, 180)
-TMS_TILE_SIZE = 256
-MAX_TILES = 300  #TODO: thinking of how to choose an appropriate max tiles number. 18 seems too small, but over 1000 likely seems too large
+DEFAULT_TMS_TILE_SIZE = 256
 TILE_DOWNLOAD_CONCURRENCY = 4
 
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +38,6 @@ class EPSG(Enum):
     SIMPLEPIXEL = 1
     EPSG4326 = 4326
     EPSG3857 = 3857
-    EPSG3395 = 3395
 
 
 class TiledBounds(BaseModel):
@@ -73,7 +70,6 @@ class TiledBounds(BaseModel):
     def validate_bounds_lat_lng(cls, values):
         epsg = values.get('epsg')
         bounds = values.get('bounds')
-        #TODO: look into messaging that we only support 4326 right now. raise exception, not implemented
 
         if epsg != EPSG.SIMPLEPIXEL:
             for bound in bounds:
@@ -81,8 +77,8 @@ class TiledBounds(BaseModel):
                 if int(lng) not in VALID_LNG_RANGE or int(
                         lat) not in VALID_LAT_RANGE:
                     raise ValueError(f"Invalid lat/lng bounds. Found {bounds}. "
-                                     "lat must be in {VALID_LAT_RANGE}. "
-                                     "lng must be in {VALID_LNG_RANGE}.")
+                                     f"lat must be in {VALID_LAT_RANGE}. "
+                                     f"lng must be in {VALID_LNG_RANGE}.")
         return values
 
 
@@ -103,7 +99,7 @@ class TileLayer(BaseModel):
     def validate_url(cls, url):
         xyz_format = "/{z}/{x}/{y}"
         if xyz_format not in url:
-            raise AssertionError(f"{url} needs to contain {xyz_format}")
+            raise ValueError(f"{url} needs to contain {xyz_format}")
         return url
 
 
@@ -129,12 +125,16 @@ class TiledImageData(BaseData):
     tile_layer: TileLayer
     tile_bounds: TiledBounds
     alternative_layers: List[TileLayer] = None
-    zoom_levels: conlist(item_type=int, min_items=2, max_items=2)
-    max_native_zoom: int = None
-    tile_size: Optional[int] = TMS_TILE_SIZE
-    version: int = 2
+    zoom_levels: Tuple[int, int]
+    max_native_zoom: Optional[int] = None
+    tile_size: Optional[int] = DEFAULT_TMS_TILE_SIZE
+    version: Optional[int] = 2
+    multithread: bool = True
 
-    def _as_raster(self, zoom=0) -> RasterData:
+    def as_raster_data(self,
+                       zoom: int = 0,
+                       max_tiles: int = 32,
+                       multithread=True) -> RasterData:
         """Converts the tiled image asset into a RasterData object containing an
         np.ndarray.
 
@@ -146,26 +146,20 @@ class TiledImageData(BaseData):
         # Currently our editor doesn't support anything other than 3857.
         # Since the user provided projection is ignored by the editor
         #    we will ignore it here and assume that the projection is 3857.
-        else:
-            if self.tile_bounds.epsg != EPSG.EPSG3857:
-                logger.info(
-                    f"User provided EPSG is being ignored {self.tile_bounds.epsg}."
-                )
+        elif self.tile_bounds.epsg == EPSG.EPSG3857:
             xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
+        else:
+            raise ValueError(
+                f"Unsupported epsg found...{self.tile_bounds.epsg}")
 
-        total_n_tiles = (yend - ystart + 1) * (xend - xstart + 1)
-        if total_n_tiles > MAX_TILES:
-            logger.info(
-                f"Too many tiles requested. Total tiles attempted {total_n_tiles}."
-            )
-            return None
+        self._validate_num_tiles(xstart, ystart, xend, yend, max_tiles)
 
         rounded_tiles, pixel_offsets = list(
             zip(*[
                 self._tile_to_pixel(pt) for pt in [xstart, ystart, xend, yend]
             ]))
 
-        image = self._fetch_image_for_bounds(*rounded_tiles, zoom)
+        image = self._fetch_image_for_bounds(*rounded_tiles, zoom, multithread)
         arr = self._crop_to_bounds(image, *pixel_offsets)
         return RasterData(arr=arr)
 
@@ -173,7 +167,8 @@ class TiledImageData(BaseData):
     def value(self) -> np.ndarray:
         """Returns the value of a generated RasterData object.
         """
-        return self._as_raster(self.zoom_levels[0]).value
+        return self.as_raster_data(self.zoom_levels[0],
+                                   multithread=self.multithread).value
 
     def _get_simple_image_params(self,
                                  zoom) -> Tuple[float, float, float, float]:
@@ -234,29 +229,43 @@ class TiledImageData(BaseData):
         pixel_offset = int(self.tile_size * remainder)
         return rounded_tile, pixel_offset
 
-    def _fetch_image_for_bounds(
-        self,
-        x_tile_start: int,
-        y_tile_start: int,
-        x_tile_end: int,
-        y_tile_end: int,
-        zoom: int,
-    ) -> np.ndarray:
+    def _fetch_image_for_bounds(self,
+                                x_tile_start: int,
+                                y_tile_start: int,
+                                x_tile_end: int,
+                                y_tile_end: int,
+                                zoom: int,
+                                multithread=True) -> np.ndarray:
         """Fetches the tiles and combines them into a single image
         """
         tiles = {}
-        with ThreadPoolExecutor(max_workers=TILE_DOWNLOAD_CONCURRENCY) as exc:
+        if multithread:
+            with ThreadPoolExecutor(
+                    max_workers=TILE_DOWNLOAD_CONCURRENCY) as exc:
+                for x in range(x_tile_start, x_tile_end + 1):
+                    for y in range(y_tile_start, y_tile_end + 1):
+                        tiles[(x, y)] = exc.submit(self._fetch_tile, x, y, zoom)
+
+            rows = []
+            for y in range(y_tile_start, y_tile_end + 1):
+                rows.append(
+                    np.hstack([
+                        tiles[(x, y)].result()
+                        for x in range(x_tile_start, x_tile_end + 1)
+                    ]))
+        #no multithreading
+        else:
             for x in range(x_tile_start, x_tile_end + 1):
                 for y in range(y_tile_start, y_tile_end + 1):
-                    tiles[(x, y)] = exc.submit(self._fetch_tile, x, y, zoom)
+                    tiles[(x, y)] = self._fetch_tile(x, y, zoom)
 
-        rows = []
-        for y in range(y_tile_start, y_tile_end + 1):
-            rows.append(
-                np.hstack([
-                    tiles[(x, y)].result()
-                    for x in range(x_tile_start, x_tile_end + 1)
-                ]))
+            rows = []
+            for y in range(y_tile_start, y_tile_end + 1):
+                rows.append(
+                    np.hstack([
+                        tiles[(x, y)]
+                        for x in range(x_tile_start, x_tile_end + 1)
+                    ]))
 
         return np.vstack(rows)
 
@@ -269,7 +278,7 @@ class TiledImageData(BaseData):
         try:
             data = requests.get(self.tile_layer.url.format(x=x, y=y, z=z))
             data.raise_for_status()
-            decoded = tf.image.decode_image(data.content, channels=3).numpy()
+            decoded = np.array(Image.open(BytesIO(data.content)))[..., :3]
             if decoded.shape[:2] != (self.tile_size, self.tile_size):
                 logger.warning(
                     f"Unexpected tile size {decoded.shape}. Results aren't guarenteed to be correct."
@@ -304,6 +313,17 @@ class TiledImageData(BaseData):
 
         x_px_end, y_px_end = invert_point(x_px_end), invert_point(y_px_end)
         return image[y_px_start:y_px_end, x_px_start:x_px_end, :]
+
+    def _validate_num_tiles(self, xstart: float, ystart: float, xend: float,
+                            yend: float, max_tiles: int):
+        """Calculates the number of expected tiles we would fetch.
+
+        If this is greater than the number of max tiles, raise an error.
+        """
+        total_n_tiles = (yend - ystart + 1) * (xend - xstart + 1)
+        if total_n_tiles > max_tiles:
+            raise ValueError(f"Requested zoom results in {total_n_tiles} tiles."
+                             f"Max allowed tiles are {max_tiles}")
 
     @validator('zoom_levels')
     def validate_zoom_levels(cls, zoom_levels):
