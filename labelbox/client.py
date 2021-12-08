@@ -11,6 +11,7 @@ import time
 
 from google.api_core import retry
 import requests
+from requests.api import head
 import requests.exceptions
 from requests.models import HTTPBasicAuth
 
@@ -85,8 +86,6 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
-        #new client attr for handling events
-        self.last_requested_event_id = None
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -904,50 +903,71 @@ class Client:
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
 
-    def poll_events(self, interval: int = 5):
+    def subscribe(self, event_handle_fn, interval: int = 5):
         """Makes a request to check for any new events in specific intervals
 
         Args:
+            event_handle_fn: callable function to handle the event
             interval (int): the time in between each request
         """
 
         while True:
-            #TODO: here would be the url we will request from. unsure if it will have an api key
-            #demand, so left it assuming that for now
-            response = requests.get("the link i will be requesting from,",
-                                    auth=HTTPBasicAuth('username',
-                                                       self.api_key)).json()
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            response = requests.get("the link i will be requesting from,", headers=headers)
 
-            latest_event_id = response['_links']['latest_event_id']
+            has_new_events = response['_links']['next']            
 
-            #if there are new events pulls information from
-            #each dictionary and returns a LabelboxEvent object
-            #stores it into a list of events
-            if not _events_up_to_date(self.last_requested_event_id,
-                                      latest_event_id):
-                events = []
-                for event in response['data']:
-                    events.append(_handle_event(
-                        event))  #TODO: unsure what to do with the events
+            #go thorugh the pages until ['next'] is null
+            while has_new_events: 
+                #the order of received events is 321, so we go backwards for 123
+                for event in response['data'][:-1]:
+                    handle_event(event_handle_fn, event)
+                
+                has_new_events = requests.get(has_new_events, headers=headers)['_links']['next']
 
-            self.last_requested_event_id = latest_event_id
             time.sleep(interval)
 
-            def _handle_event(event: str) -> LabelboxEvent:
-                return LabelboxEvent.from_event({
-                    "id":
-                        event['_id'],
-                    "created_at":
-                        event['createdAt'],
-                    "type":
-                        event['type'],
-                    "resource":
-                        self._get_single(User, event['data']['resource']['id']),
-                    "actor":
-                        self._get_single(User, event['data']['actor']['id'])
+            def handle_event(event_handle_fn, event: str):
+            """
+            Creates a LabelboxEvent class. Uses this class and the client's 
+            event_handle_fn to handle the event
+            """
+
+                class EventType(Enum):
+                    project = Project
+                    user = User
+
+                resource = event['data']['resource']['type']
+
+                event = LabelboxEvent.from_dict({
+                    "id": event['_id'],
+                    "created_at": event['createdAt'],
+                    "type": event['type'],
+                    "resource": client._get_single(EventType[resource].value, event['data']['resource']['id']),
+                    "actor": client._get_single(User, event['data']['actor']['id'])
                 })
 
-            def _events_up_to_date(last_requested_event_id: str,
-                                   latest_event_id: str) -> bool:
-                """checks if the latest event is the same as when we last polled"""
-                return self.last_requested_event_id == latest_event_id
+                event_handle_fn(event)
+
+            #examle event_handle_fn which allows me to invite a user
+            def invite_user_to_organization(labelbox_event: LabelboxEvent):
+                """
+                handle event function to invite a user to an org if a project is created
+                """
+                # if event['type'] == "project.created":
+                if labelbox_event.type == "project.created":
+                    roles = client.get_roles()
+                    organization = client.get_organization()
+                    invite = organization.invite_user("jtso+32@labelbox.com", roles["LABELER"])
+                    print("user has been invited to this organization.")
+
+            #example event_handle_fn, needs a User id line968 of your own org to change role
+            def add_labeler_to_project(labelbox_event: LabelboxEvent):
+                """
+                handle event function to add a user as a labeler if a project is created
+                """
+                if labelbox_event.type == "project.created":
+                    roles = client.get_roles()
+                    user = client._get_single(User, "ckl8nlorgvc470760q039c9v0")
+                    user.upsert_project_role(labelbox_event.resource, roles["LABELER"])
+                    print("user has been added to the new project.")
