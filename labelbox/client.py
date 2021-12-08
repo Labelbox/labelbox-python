@@ -547,8 +547,7 @@ class Client:
         """
         dataset = self._create(Entity.Dataset, kwargs)
 
-        if iam_integration == IAMIntegration._DEFAULT:iam_integration = self.get_organization(
-            ).get_default_iam_integration()
+        if iam_integration == IAMIntegration._DEFAULT:iam_integration = self.get_organization().get_default_iam_integration()
 
         if iam_integration is None:
             return dataset
