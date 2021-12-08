@@ -36,6 +36,7 @@ class Client:
     authentication key). Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
+
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
@@ -132,8 +133,7 @@ class Client:
         if query is not None:
             if params is not None:
                 params = {
-                    key: convert_value(value)
-                    for key, value in params.items()
+                    key: convert_value(value) for key, value in params.items()
                 }
             data = json.dumps({
                 'query': query,
@@ -334,18 +334,18 @@ class Client:
 
         request_data = {
             "operations":
-            json.dumps({
-                "variables": {
-                    "file": None,
-                    "contentLength": len(content),
-                    "sign": sign
-                },
-                "query":
-                """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                json.dumps({
+                    "variables": {
+                        "file": None,
+                        "contentLength": len(content),
+                        "sign": sign
+                    },
+                    "query":
+                        """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,
-            }),
+                }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
         response = requests.post(
@@ -354,7 +354,7 @@ class Client:
             data=request_data,
             files={
                 "1": (filename, content, content_type) if
-                (filename and content_type) else content
+                     (filename and content_type) else content
             })
 
         if response.status_code == 502:
@@ -527,9 +527,7 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self,
-                       iam_integration=IAMIntegration._DEFAULT,
-                       **kwargs):
+    def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs):
         """ Creates a Dataset object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -549,7 +547,8 @@ class Client:
         """
         dataset = self._create(Entity.Dataset, kwargs)
 
-        if iam_integration == IAMIntegration._DEFAULT: iam_integration = self.get_organization().get_default_iam_integration()
+        if iam_integration == IAMIntegration._DEFAULT:iam_integration = self.get_organization(
+            ).get_default_iam_integration()
 
         if iam_integration is None:
             return dataset
@@ -703,7 +702,7 @@ class Client:
             for row in self.execute(
                     query_str,
                 {'externalId_in': external_ids[i:i + max_ids_per_request]
-                 })['externalIdsToDataRowIds']:
+                })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
 
