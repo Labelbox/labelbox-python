@@ -8,7 +8,7 @@ from io import BytesIO
 import requests
 import numpy as np
 
-from retry import retry
+from retry import retry  #TODO not part of the package atm. need to add in?
 import tensorflow as f
 from PIL import Image
 from pyproj import Transformer
