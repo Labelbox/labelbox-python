@@ -913,7 +913,8 @@ class Client:
 
         while True:
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get("the link i will be requesting from,", headers=headers)
+            url_link = "the link i will be requesting from"
+            response = requests.get(url, headers=headers)
 
             has_new_events = response['_links']['next']            
 
@@ -923,8 +924,10 @@ class Client:
                 for event in response['data'][:-1]:
                     handle_event(event_handle_fn, event)
                 
-                has_new_events = requests.get(has_new_events, headers=headers)['_links']['next']
+                url = has_new_events
+                has_new_events = requests.get(url, headers=headers)['_links']['next']
 
+            url = has_new_events
             time.sleep(interval)
 
             def handle_event(event_handle_fn, event: str):
