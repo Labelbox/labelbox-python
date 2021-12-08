@@ -910,31 +910,29 @@ class Client:
             event_handle_fn: callable function to handle the event
             interval (int): the time in between each request
         """
-
+        cursor = None
         while True:
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            url_link = "the link i will be requesting from"
-            response = requests.get(url, headers=headers)
-
-            has_new_events = response['_links']['next']            
+            url_link = cursor or "http://host.docker.internal:8080/v1/events"
+            response = requests.get(url_link).json()
+            has_new_events = response['_links']['next']   
+            if not has_new_events:
+                time.sleep(interval)
+                continue      
 
             #go thorugh the pages until ['next'] is null
-            while has_new_events: 
+            if cursor != response['_links']['next']:
                 #the order of received events is 321, so we go backwards for 123
-                for event in response['data'][:-1]:
-                    handle_event(event_handle_fn, event)
-                
-                url = has_new_events
-                has_new_events = requests.get(url, headers=headers)['_links']['next']
+                for event in response['data']:
+                    event_handle_fn(event)
+                cursor = response['_links']['next']
 
-            url = has_new_events
+                # url = has_new_events
+                # has_new_events = requests.get(url).json()['_links']['next']
+
             time.sleep(interval)
 
             def handle_event(event_handle_fn, event: str):
-            """
-            Creates a LabelboxEvent class. Uses this class and the client's 
-            event_handle_fn to handle the event
-            """
 
                 class EventType(Enum):
                     project = Project
