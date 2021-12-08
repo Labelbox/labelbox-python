@@ -549,8 +549,7 @@ class Client:
 
         if iam_integration == IAMIntegration._DEFAULT:iam_integration = self.get_organization().get_default_iam_integration()
 
-        if iam_integration is None:
-            return dataset
+        if iam_integration is None: return dataset
 
         try:
             if not isinstance(iam_integration, IAMIntegration):
