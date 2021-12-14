@@ -8,11 +8,11 @@ from io import BytesIO
 import requests
 import numpy as np
 
-from retry import retry  #TODO not part of the package atm. need to add in?
-import tensorflow as f
+from retry import retry
 from PIL import Image
 from pyproj import Transformer
-from pydantic import BaseModel, validator, conlist
+from pygeotile.point import Point as PygeoPoint
+from pydantic import BaseModel, validator
 from pydantic.class_validators import root_validator
 
 from ..geometry import Point
@@ -26,6 +26,8 @@ TILE_DOWNLOAD_CONCURRENCY = 4
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+#TODO: need to add pyproj, pygeotile, retry to dependencies
 
 
 class EPSG(Enum):
@@ -61,8 +63,10 @@ class TiledBounds(BaseModel):
         first_bound = bounds[0]
         second_bound = bounds[1]
 
-        if first_bound == second_bound:
-            raise AssertionError(f"Bounds cannot be equal, contains {bounds}")
+        if first_bound.x == second_bound.x or \
+            first_bound.y == second_bound.y:
+            raise ValueError(
+                f"Bounds on either axes cannot be equal, currently {bounds}")
         return bounds
 
     #bounds are assumed to be in EPSG 4326 as that is what leaflet assumes
@@ -236,7 +240,9 @@ class TiledImageData(BaseData):
                                 y_tile_end: int,
                                 zoom: int,
                                 multithread=True) -> np.ndarray:
-        """Fetches the tiles and combines them into a single image
+        """Fetches the tiles and combines them into a single image. 
+        
+        If a tile cannot be fetched, a padding of expected tile size is instead added.
         """
         tiles = {}
         if multithread:
@@ -248,16 +254,25 @@ class TiledImageData(BaseData):
 
             rows = []
             for y in range(y_tile_start, y_tile_end + 1):
-                rows.append(
-                    np.hstack([
-                        tiles[(x, y)].result()
-                        for x in range(x_tile_start, x_tile_end + 1)
-                    ]))
+                row = []
+                for x in range(x_tile_start, x_tile_end + 1):
+                    try:
+                        row.append(tiles[(x, y)].result())
+                    except:
+                        row.append(
+                            np.zeros(shape=(self.tile_size, self.tile_size, 3),
+                                     dtype=np.uint8))
+                rows.append(np.hstack(row))
         #no multithreading
         else:
             for x in range(x_tile_start, x_tile_end + 1):
                 for y in range(y_tile_start, y_tile_end + 1):
-                    tiles[(x, y)] = self._fetch_tile(x, y, zoom)
+                    try:
+                        tiles[(x, y)] = self._fetch_tile(x, y, zoom)
+                    except:
+                        tiles[(x, y)] = np.zeros(shape=(self.tile_size,
+                                                        self.tile_size, 3),
+                                                 dtype=np.uint8)
 
             rows = []
             for y in range(y_tile_start, y_tile_end + 1):
@@ -269,26 +284,18 @@ class TiledImageData(BaseData):
 
         return np.vstack(rows)
 
-    @retry(delay=1, tries=6, backoff=2, max_delay=16)
+    @retry(delay=1, tries=5, backoff=2, max_delay=8)
     def _fetch_tile(self, x: int, y: int, z: int) -> np.ndarray:
         """
-        Fetches the image and returns an np array. If the image cannot be fetched, 
-        a padding of expected tile size is instead added.
+        Fetches the image and returns an np array.
         """
-        try:
-            data = requests.get(self.tile_layer.url.format(x=x, y=y, z=z))
-            data.raise_for_status()
-            decoded = np.array(Image.open(BytesIO(data.content)))[..., :3]
-            if decoded.shape[:2] != (self.tile_size, self.tile_size):
-                logger.warning(
-                    f"Unexpected tile size {decoded.shape}. Results aren't guarenteed to be correct."
-                )
-        except:
+        data = requests.get(self.tile_layer.url.format(x=x, y=y, z=z))
+        data.raise_for_status()
+        decoded = np.array(Image.open(BytesIO(data.content)))[..., :3]
+        if decoded.shape[:2] != (self.tile_size, self.tile_size):
             logger.warning(
-                f"Unable to successfully find tile. for z,x,y: {z},{x},{y} "
-                "Padding is being added as a result.")
-            decoded = np.zeros(shape=(self.tile_size, self.tile_size, 3),
-                               dtype=np.uint8)
+                f"Unexpected tile size {decoded.shape}. Results aren't guarenteed to be correct."
+            )
         return decoded
 
     def _crop_to_bounds(
@@ -334,7 +341,6 @@ class TiledImageData(BaseData):
         return zoom_levels
 
 
-#TODO: we will need to update the [data] package to also require pyproj
 class EPSGTransformer(BaseModel):
     """Transformer class between different EPSG's. Useful when wanting to project
     in different formats.
@@ -370,15 +376,52 @@ class EPSGTransformer(BaseModel):
                 f"Cannot be used for Simple transformations. Found {src_epsg} and {tgt_epsg}"
             )
         self.transform_function = Transformer.from_crs(src_epsg.value,
-                                                       tgt_epsg.value)
+                                                       tgt_epsg.value).transform
 
-    #TODO
-    def geo_and_pixel(self, src_epsg, geojson):
-        pass
+    def _get_ranges(self, bounds: np.ndarray):
+        """helper function to get the range between bounds.
+        
+        returns a tuple (x_range, y_range)"""
+        x_range = np.max(bounds[:, 0]) - np.min(bounds[:, 0])
+        y_range = np.max(bounds[:, 1]) - np.min(bounds[:, 1])
+        return (x_range, y_range)
+
+    def geo_and_pixel(self,
+                      src_epsg,
+                      pixel_bounds: TiledBounds,
+                      geo_bounds: TiledBounds,
+                      zoom=0):
+        #TODO: pixel to geo
+        if src_epsg == EPSG.SIMPLEPIXEL:
+            pass
+
+        #geo to pixel - converts a point in geo coords to pixel coords
+        else:
+            pixel_bounds = pixel_bounds.bounds
+            geo_bounds = geo_bounds.bounds
+
+            local_bounds = np.array(
+                [(point.x, point.y) for point in pixel_bounds], dtype=np.int)
+            #convert geo bounds to pixel bounds. assumes geo bounds are in wgs84/EPS4326 per leaflet
+            global_bounds = np.array([
+                PygeoPoint.from_latitude_longitude(
+                    latitude=point.y, longitude=point.x).pixels(zoom)
+                for point in geo_bounds
+            ])
+
+            #get the range of pixels for both sets of bounds to use as a multiplification factor
+            global_x_range, global_y_range = self._get_ranges(global_bounds)
+            local_x_range, local_y_range = self._get_ranges(local_bounds)
+
+            def transform(x: int, y: int):
+                return (x * (local_x_range) / (global_x_range),
+                        y * (local_y_range) / (global_y_range))
+
+            self.transform_function = transform
 
     def __call__(self, point: Point):
         if self.transform_function is not None:
-            res = self.transform_function.transform(point.x, point.y)
+            res = self.transform_function(point.x, point.y)
             return Point(x=res[0], y=res[1])
         else:
             raise Exception("No transformation has been set.")
