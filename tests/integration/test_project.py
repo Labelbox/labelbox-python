@@ -79,7 +79,7 @@ def test_extend_reservations(project):
 
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
-        project.upsert_instructions('/tmp/instructions.txt')
+        project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
     assert str(
         execinfo.value
     ) == "Cannot attach instructions to a project that has not been set up."
@@ -90,10 +90,7 @@ def test_attach_instructions(client, project):
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
 
-    with open('/tmp/instructions.txt', 'w') as file:
-        file.write("some instructions...")
-
-    project.upsert_instructions('/tmp/instructions.txt')
+    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
     assert json.loads(
         list(project.labeling_frontend_options())
         [-1].customization_options).get('projectInstructions') is not None
