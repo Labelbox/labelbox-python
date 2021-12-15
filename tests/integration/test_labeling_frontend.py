@@ -12,6 +12,8 @@ def test_get_labeling_frontends(client):
         where=LabelingFrontend.iframe_url_path ==
         target_frontend.iframe_url_path)
     for frontend in filtered_frontends:
+        if frontend.name != 'Editor':
+            continue
         assert target_frontend == frontend
 
 
