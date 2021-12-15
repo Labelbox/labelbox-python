@@ -97,7 +97,7 @@ def test_attach_instructions(client, project):
 
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
-    assert "instructions_file must end with one of" in str(exc_info.value)
+    assert "instructions_file must be a pdf. Found" in str(exc_info.value)
 
 
 def test_same_ontology_after_instructions(

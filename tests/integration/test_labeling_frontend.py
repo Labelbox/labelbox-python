@@ -2,17 +2,9 @@ from labelbox import LabelingFrontend
 
 
 def test_get_labeling_frontends(client):
-    frontends = list(client.get_labeling_frontends())
-    assert len(frontends) >= 1, (
-        'Projects should have at least one frontend by default.')
-
-    # Test filtering
-    target_frontend = frontends[0]
-    filtered_frontends = client.get_labeling_frontends(
-        where=LabelingFrontend.iframe_url_path ==
-        target_frontend.iframe_url_path)
-    for frontend in filtered_frontends:
-        assert target_frontend == frontend
+    filtered_frontends = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == 'Editor'))
+    assert len(filtered_frontends)
 
 
 def test_labeling_frontend_connecting_to_project(project):
