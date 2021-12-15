@@ -2,8 +2,8 @@ from labelbox import LabelingFrontend
 
 
 def test_get_labeling_frontends(client):
-    filtered_frontends = list(client.get_labeling_frontends(
-        where=LabelingFrontend.name == 'Editor'))
+    filtered_frontends = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == 'Editor'))
     assert len(filtered_frontends)
 
 
