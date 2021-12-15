@@ -370,14 +370,6 @@ class EPSGTransformer(BaseModel):
     def _is_simple(self, epsg: EPSG) -> bool:
         return epsg == EPSG.SIMPLEPIXEL
 
-    def geo_and_geo(self, src_epsg: EPSG, tgt_epsg: EPSG) -> None:
-        if self._is_simple(src_epsg) or self._is_simple(tgt_epsg):
-            raise Exception(
-                f"Cannot be used for Simple transformations. Found {src_epsg} and {tgt_epsg}"
-            )
-        self.transform_function = Transformer.from_crs(src_epsg.value,
-                                                       tgt_epsg.value).transform
-
     def _get_ranges(self, bounds: np.ndarray):
         """helper function to get the range between bounds.
         
@@ -386,34 +378,97 @@ class EPSGTransformer(BaseModel):
         y_range = np.max(bounds[:, 1]) - np.min(bounds[:, 1])
         return (x_range, y_range)
 
+    def _min_max_x_y(self, bounds: np.ndarray):
+        """returns the min x, max x, min y, max y of a numpy array
+        """
+        return np.min(bounds[:, 0]), np.max(bounds[:, 0]), np.min(
+            bounds[:, 1]), np.max(bounds[:, 1])
+
+    def geo_and_geo(self, src_epsg: EPSG, tgt_epsg: EPSG) -> None:
+        """method to change from one projection to another projection. 
+
+        supports EPSG transformations not Simple.
+        """
+        if self._is_simple(src_epsg) or self._is_simple(tgt_epsg):
+            raise Exception(
+                f"Cannot be used for Simple transformations. Found {src_epsg} and {tgt_epsg}"
+            )
+        self.transform_function = Transformer.from_crs(src_epsg.value,
+                                                       tgt_epsg.value,
+                                                       always_xy=True).transform
+
     def geo_and_pixel(self,
                       src_epsg,
                       pixel_bounds: TiledBounds,
                       geo_bounds: TiledBounds,
                       zoom=0):
-        #TODO: pixel to geo
+        """method to change from one projection to simple projection"""
+
+        pixel_bounds = pixel_bounds.bounds
+        geo_bounds_epsg = geo_bounds.epsg
+        geo_bounds = geo_bounds.bounds
+
+        #TODO: think about renaming local/global?
+        #local = pixel
+        #global = geo
+        local_bounds = np.array([(point.x, point.y) for point in pixel_bounds],
+                                dtype=np.int)
+        #convert geo bounds to pixel bounds. assumes geo bounds are in wgs84/EPS4326 per leaflet
+        global_bounds = np.array([
+            PygeoPoint.from_latitude_longitude(latitude=point.y,
+                                               longitude=point.x).pixels(zoom)
+            for point in geo_bounds
+        ])
+
+        #get the range of pixels for both sets of bounds to use as a multiplification factor
+        local_x_range, local_y_range = self._get_ranges(local_bounds)
+        global_x_range, global_y_range = self._get_ranges(global_bounds)
+
         if src_epsg == EPSG.SIMPLEPIXEL:
-            pass
-
-        #geo to pixel - converts a point in geo coords to pixel coords
-        else:
-            pixel_bounds = pixel_bounds.bounds
-            geo_bounds = geo_bounds.bounds
-
-            local_bounds = np.array(
-                [(point.x, point.y) for point in pixel_bounds], dtype=np.int)
-            #convert geo bounds to pixel bounds. assumes geo bounds are in wgs84/EPS4326 per leaflet
-            global_bounds = np.array([
-                PygeoPoint.from_latitude_longitude(
-                    latitude=point.y, longitude=point.x).pixels(zoom)
-                for point in geo_bounds
-            ])
-
-            #get the range of pixels for both sets of bounds to use as a multiplification factor
-            global_x_range, global_y_range = self._get_ranges(global_bounds)
-            local_x_range, local_y_range = self._get_ranges(local_bounds)
 
             def transform(x: int, y: int):
+                scaled_xy = (x * (global_x_range) / (local_x_range),
+                             y * (global_y_range) / (local_y_range))
+
+                minx, _, miny, _ = self._min_max_x_y(global_bounds)
+                x, y = map(lambda i, j: i + j, scaled_xy, (minx, miny))
+
+                point = PygeoPoint.from_pixel(pixel_x=x, pixel_y=y,
+                                              zoom=zoom).latitude_longitude
+                #convert to the desired epsg
+                return Transformer.from_crs(EPSG.EPSG4326.value,
+                                            geo_bounds_epsg.value,
+                                            always_xy=True).transform(
+                                                point[1], point[0])
+
+            self.transform_function = transform
+
+        #geo to pixel - converts a point in geo coords to pixel coords
+        #handles 4326 from lat,lng
+        elif src_epsg == EPSG.EPSG4326:
+
+            def transform(x: int, y: int):
+                point_in_px = PygeoPoint.from_latitude_longitude(
+                    latitude=y, longitude=x).pixels(zoom)
+
+                minx, _, miny, _ = self._min_max_x_y(global_bounds)
+                x, y = map(lambda i, j: i - j, point_in_px, (minx, miny))
+
+                return (x * (local_x_range) / (global_x_range),
+                        y * (local_y_range) / (global_y_range))
+
+            self.transform_function = transform
+
+        #handles 3857 from meters
+        elif src_epsg == EPSG.EPSG3857:
+
+            def transform(x: int, y: int):
+                point_in_px = PygeoPoint.from_meters(meter_y=y,
+                                                     meter_x=x).pixels(zoom)
+
+                minx, _, miny, _ = self._min_max_x_y(global_bounds)
+                x, y = map(lambda i, j: i - j, point_in_px, (minx, miny))
+
                 return (x * (local_x_range) / (global_x_range),
                         y * (local_y_range) / (global_y_range))
 
