@@ -317,12 +317,12 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             instructions_file (str): Path to a local file.
-                * Must be either a pdf, text, or html file.
+                * Must be a pdf file
 
         Raises:
             ValueError:
                 * project must be setup
-                * instructions file must end with one of ".text", ".txt", ".pdf", ".html"
+                * instructions file must have a ".pdf" extension
         """
 
         if self.setup_complete is None:
@@ -338,11 +338,10 @@ class Project(DbObject, Updateable, Deletable):
                 f"This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name)
 
-        supported_instruction_formats = (".text", ".txt", ".pdf", ".html")
+        supported_instruction_formats = (".pdf")
         if not instructions_file.endswith(supported_instruction_formats):
             raise ValueError(
-                f"instructions_file must end with one of {supported_instruction_formats}. Found {instructions_file}"
-            )
+                f"instructions_file must be a pdf. Found {instructions_file}")
 
         lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
