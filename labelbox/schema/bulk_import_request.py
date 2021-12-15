@@ -788,23 +788,26 @@ class RLEMaskFeatures(BaseModel):
     @validator('counts')
     def validate_counts(cls, counts):
         if not all([count >= 0 for count in counts]):
-            raise ValueError("Found negative value for counts. They should all be zero or positive")
+            raise ValueError(
+                "Found negative value for counts. They should all be zero or positive"
+            )
         return counts
 
     @validator('size')
     def validate_size(cls, size):
         if len(size) != 2:
-            raise ValueError(f"Mask `size` should have two ints representing height and with. Found : {size}")
+            raise ValueError(
+                f"Mask `size` should have two ints representing height and with. Found : {size}"
+            )
         if not all([count > 0 for count in size]):
-            raise ValueError(f"Mask `size` should be a postitive int. Found : {size}" )
+            raise ValueError(
+                f"Mask `size` should be a postitive int. Found : {size}")
         return size
-
 
 
 class PNGMaskFeatures(BaseModel):
     # base64 encoded png bytes
     png: str
-
 
 
 class URIMaskFeatures(BaseModel):
@@ -816,7 +819,8 @@ class URIMaskFeatures(BaseModel):
         #Does the dtype matter? Can it be a float?
         if not isinstance(colorRGB, (tuple, list)):
             raise ValueError(
-                f"Received color that is not a list or tuple. Found : {colorRGB}")
+                f"Received color that is not a list or tuple. Found : {colorRGB}"
+            )
         elif len(colorRGB) != 3:
             raise ValueError(
                 f"Must provide RGB values for segmentation colors. Found : {colorRGB}"
@@ -827,12 +831,10 @@ class URIMaskFeatures(BaseModel):
         return colorRGB
 
 
-
-
 class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
-    mask: Union[URIMaskFeatures, PNGMaskFeatures, RLEMaskFeatures] = pydantic.Field(determinant=True)
-
+    mask: Union[URIMaskFeatures, PNGMaskFeatures,
+                RLEMaskFeatures] = pydantic.Field(determinant=True)
 
 
 #A union with custom construction logic to improve error messages

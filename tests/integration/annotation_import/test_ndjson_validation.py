@@ -133,11 +133,11 @@ def test_incorrect_mask(segmentation_inference, configured_project):
     with pytest.raises(MALValidationError):
         _validate_ndjson([seg], configured_project)
 
-    seg['mask'] = {'counts' : [0], 'size' : [0,1]}
+    seg['mask'] = {'counts': [0], 'size': [0, 1]}
     with pytest.raises(MALValidationError):
         _validate_ndjson([seg], configured_project)
 
-    seg['mask'] = {'counts' : [-1], 'size' : [1,1]}
+    seg['mask'] = {'counts': [-1], 'size': [1, 1]}
     with pytest.raises(MALValidationError):
         _validate_ndjson([seg], configured_project)
 
