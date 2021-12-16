@@ -84,11 +84,6 @@ class LBV1TIRectangle(BaseModel):
             return Rectangle(start=LBV1TIPoint(point=start).to_common(),
                              end=LBV1TIPoint(point=end).to_common())
 
-        for inner_list in self.polygon:
-            return Polygon(points=[
-                LBV1TIPoint(point=point).to_common() for point in inner_list
-            ])
-
 
 class _Point(BaseModel):
     x: float
