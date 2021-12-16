@@ -1,5 +1,4 @@
 repos:
-  # configure shared hooks that you want to run on all repositories here
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
     sha: v4.0.1
     hooks:
