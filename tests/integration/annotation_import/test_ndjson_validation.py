@@ -28,7 +28,9 @@ def test_subclassification_construction(rectangle_inference):
                           (fixture_ref('rectangle_inference'), NDRectangle),
                           (fixture_ref('line_inference'), NDPolyline),
                           (fixture_ref('entity_inference'), NDTextEntity),
-                          (fixture_ref('segmentation_inference'), NDMask)])
+                          (fixture_ref('segmentation_inference'), NDMask),
+                          (fixture_ref('segmentation_inference_rle'), NDMask),
+                          (fixture_ref('segmentation_inference_png'), NDMask)])
 def test_tool_construction(inference, expected_type):
     assert isinstance(NDTool.build(inference), expected_type)
 
@@ -128,6 +130,14 @@ def test_incorrect_mask(segmentation_inference, configured_project):
         _validate_ndjson([seg], configured_project)
 
     seg['mask']['colorRGB'] = [0, 0]
+    with pytest.raises(MALValidationError):
+        _validate_ndjson([seg], configured_project)
+
+    seg['mask'] = {'counts': [0], 'size': [0, 1]}
+    with pytest.raises(MALValidationError):
+        _validate_ndjson([seg], configured_project)
+
+    seg['mask'] = {'counts': [-1], 'size': [1, 1]}
     with pytest.raises(MALValidationError):
         _validate_ndjson([seg], configured_project)
 
