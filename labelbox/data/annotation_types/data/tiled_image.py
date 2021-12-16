@@ -8,7 +8,7 @@ from io import BytesIO
 import requests
 import numpy as np
 
-from retry import retry
+from google.api_core import retry
 from PIL import Image
 from pyproj import Transformer
 from pygeotile.point import Point as PygeoPoint
@@ -26,8 +26,6 @@ TILE_DOWNLOAD_CONCURRENCY = 4
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-#TODO: need to add pyproj, pygeotile, retry to dependencies
 
 
 class EPSG(Enum):
@@ -147,14 +145,10 @@ class TiledImageData(BaseData):
         if self.tile_bounds.epsg == EPSG.SIMPLEPIXEL:
             xstart, ystart, xend, yend = self._get_simple_image_params(zoom)
 
-        # Currently our editor doesn't support anything other than 3857.
-        # Since the user provided projection is ignored by the editor
-        #    we will ignore it here and assume that the projection is 3857.
         elif self.tile_bounds.epsg == EPSG.EPSG3857:
             xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
         else:
-            raise ValueError(
-                f"Unsupported epsg found...{self.tile_bounds.epsg}")
+            raise ValueError(f"Unsupported epsg found: {self.tile_bounds.epsg}")
 
         self._validate_num_tiles(xstart, ystart, xend, yend, max_tiles)
 
@@ -244,47 +238,33 @@ class TiledImageData(BaseData):
         
         If a tile cannot be fetched, a padding of expected tile size is instead added.
         """
-        tiles = {}
+
         if multithread:
+            tiles = {}
             with ThreadPoolExecutor(
                     max_workers=TILE_DOWNLOAD_CONCURRENCY) as exc:
                 for x in range(x_tile_start, x_tile_end + 1):
                     for y in range(y_tile_start, y_tile_end + 1):
                         tiles[(x, y)] = exc.submit(self._fetch_tile, x, y, zoom)
 
-            rows = []
-            for y in range(y_tile_start, y_tile_end + 1):
-                row = []
-                for x in range(x_tile_start, x_tile_end + 1):
-                    try:
-                        row.append(tiles[(x, y)].result())
-                    except:
-                        row.append(
-                            np.zeros(shape=(self.tile_size, self.tile_size, 3),
-                                     dtype=np.uint8))
-                rows.append(np.hstack(row))
-        #no multithreading
-        else:
+        rows = []
+        for y in range(y_tile_start, y_tile_end + 1):
+            row = []
             for x in range(x_tile_start, x_tile_end + 1):
-                for y in range(y_tile_start, y_tile_end + 1):
-                    try:
-                        tiles[(x, y)] = self._fetch_tile(x, y, zoom)
-                    except:
-                        tiles[(x, y)] = np.zeros(shape=(self.tile_size,
-                                                        self.tile_size, 3),
-                                                 dtype=np.uint8)
-
-            rows = []
-            for y in range(y_tile_start, y_tile_end + 1):
-                rows.append(
-                    np.hstack([
-                        tiles[(x, y)]
-                        for x in range(x_tile_start, x_tile_end + 1)
-                    ]))
+                try:
+                    if multithread:
+                        row.append(tiles[(x, y)].result())
+                    else:
+                        row.append(self._fetch_tile(x, y, zoom))
+                except:
+                    row.append(
+                        np.zeros(shape=(self.tile_size, self.tile_size, 3),
+                                 dtype=np.uint8))
+            rows.append(np.hstack(row))
 
         return np.vstack(rows)
 
-    @retry(delay=1, tries=5, backoff=2, max_delay=8)
+    @retry.Retry(initial=1, maximum=16, multiplier=2)
     def _fetch_tile(self, x: int, y: int, z: int) -> np.ndarray:
         """
         Fetches the image and returns an np array.
@@ -293,9 +273,7 @@ class TiledImageData(BaseData):
         data.raise_for_status()
         decoded = np.array(Image.open(BytesIO(data.content)))[..., :3]
         if decoded.shape[:2] != (self.tile_size, self.tile_size):
-            logger.warning(
-                f"Unexpected tile size {decoded.shape}. Results aren't guarenteed to be correct."
-            )
+            logger.warning(f"Unexpected tile size {decoded.shape}.")
         return decoded
 
     def _crop_to_bounds(
