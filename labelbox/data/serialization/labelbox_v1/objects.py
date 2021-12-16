@@ -42,6 +42,54 @@ class LBV1ObjectBase(LBV1Feature):
         return value
 
 
+class _TIPoint(BaseModel):
+    coordinates: List[float]
+
+
+class LBV1TIPoint(BaseModel):
+    point: _TIPoint
+
+    def to_common(self) -> Point:
+        lng, lat = self.point.coordinates
+        return Point(x=lng, y=lat)
+
+
+class LBV1TILine(BaseModel):
+    line: List[_TIPoint]
+
+    def to_common(self) -> Line:
+        return Line(points=[
+            LBV1TIPoint(point=point).to_common() for point in self.line
+        ])
+
+
+class LBV1TIPolygon(BaseModel):
+    polygon: List[List[_TIPoint]]
+
+    def to_common(self) -> Polygon:
+        for inner_list in self.polygon:
+            return Polygon(points=[
+                LBV1TIPoint(point=point).to_common() for point in inner_list
+            ])
+
+
+class LBV1TIRectangle(BaseModel):
+    bbox: List[List[_TIPoint]]
+
+    def to_common(self) -> Rectangle:
+        inner_list = self.bbox[0]
+        start = inner_list[0]
+        end = inner_list[2]
+        for inner_list in self.bbox:
+            return Rectangle(start=LBV1TIPoint(point=start).to_common(),
+                             end=LBV1TIPoint(point=end).to_common())
+
+        for inner_list in self.polygon:
+            return Polygon(points=[
+                LBV1TIPoint(point=point).to_common() for point in inner_list
+            ])
+
+
 class _Point(BaseModel):
     x: float
     y: float
@@ -194,7 +242,8 @@ class LBV1TextEntity(LBV1ObjectBase):
 
 class LBV1Objects(BaseModel):
     objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
-                        LBV1TextEntity, LBV1Mask]]
+                        LBV1TextEntity, LBV1Mask, LBV1TIPoint, LBV1TILine,
+                        LBV1TIPolygon, LBV1TIRectangle]]
 
     def to_common(self) -> List[ObjectAnnotation]:
         objects = [
