@@ -1,6 +1,11 @@
+from ast import Bytes
+from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union
+import base64
+import numpy as np
 
 from pydantic import BaseModel
+from PIL import Image
 
 from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import TextEntity
@@ -113,28 +118,48 @@ class NDRectangle(NDBaseObject):
                    classifications=classifications)
 
 
-class _Mask(BaseModel):
+class _URIMask(BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
 
 
+class _PNGMask(BaseModel):
+    png: str
+
+
 class NDMask(NDBaseObject):
-    mask: _Mask
+    mask: Union[_URIMask, _PNGMask]
 
     def to_common(self) -> Mask:
-        return Mask(mask=MaskData(url=self.mask.instanceURI),
-                    color=self.mask.colorRGB)
+        if isinstance(self.mask, _URIMask):
+            return Mask(mask=MaskData(url=self.mask.instanceURI),
+                        color=self.mask.colorRGB)
+        else:
+            encoded_image_bytes = self.mask.png.encode('utf-8')
+            image_bytes = base64.b64decode(encoded_image_bytes)
+            image = np.array(Image.open(BytesIO(image_bytes)))
+            if np.max(image) > 1:
+                raise ValueError(
+                    f"Expected binary mask. Found max value of {np.max(image)}")
+            # Color is 1,1,1 because it is a binary array and we are just stacking it into 3 channels
+            return Mask(mask=MaskData.from_2D_arr(image), color=(1, 1, 1))
 
     @classmethod
     def from_common(cls, mask: Mask,
                     classifications: List[ClassificationAnnotation],
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDMask":
-        if mask.mask.url is None:
-            raise ValueError(
-                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelList.add_url_to_masks`, or `Label.add_url_to_masks`."
-            )
-        return cls(mask=_Mask(instanceURI=mask.mask.url, colorRGB=mask.color),
+
+        if mask.mask.url is not None:
+            lbv1_mask = _URIMask(instanceURI=mask.mask.url, colorRGB=mask.color)
+        else:
+            binary = np.all(mask.mask.value == mask.color, axis=-1)
+            im_bytes = BytesIO()
+            Image.fromarray(binary, 'L').save(im_bytes, format="PNG")
+            lbv1_mask = _PNGMask(
+                png=base64.b64encode(im_bytes.getvalue()).decode('utf-8'))
+
+        return cls(mask=lbv1_mask,
                    dataRow=DataRow(id=data.uid),
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
