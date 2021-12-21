@@ -18,10 +18,8 @@ class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
 
     def to_common(
             self) -> List[Union[ObjectAnnotation, ClassificationAnnotation]]:
-        # print("\nHELLO WORLD BEFORE TO COMMON\n")
         classifications = LBV1Classifications.to_common(self)
         objects = LBV1Objects.to_common(self)
-        # print(f"here...\n{len(objects)} \n")
         return [*objects, *classifications]
 
     @classmethod
