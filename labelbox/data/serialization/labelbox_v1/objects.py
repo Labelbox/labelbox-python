@@ -1,6 +1,10 @@
 from typing import Any, Dict, List, Optional, Union, Type
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
 from .feature import LBV1Feature
@@ -42,47 +46,50 @@ class LBV1ObjectBase(LBV1Feature):
         return value
 
 
-class _TIPoint(BaseModel):
-    coordinates: List[float]
+class _Coordinates(BaseModel):
+    """Union of the possible coordinate lists in tiled imagery exports"""
+    coordinates: Union[List[float], List[List[float]], List[List[List[float]]]]
 
 
-class LBV1TIPoint(BaseModel):
-    point: _TIPoint
+class LBV1TIPoint(LBV1ObjectBase):
+    object_type: Literal['point'] = Field(..., alias='type')
+    geometry: _Coordinates
 
     def to_common(self) -> Point:
-        lng, lat = self.point.coordinates
+        lng, lat = self.geometry.coordinates
         return Point(x=lng, y=lat)
 
 
-class LBV1TILine(BaseModel):
-    line: List[_TIPoint]
+class LBV1TILine(LBV1ObjectBase):
+    object_type: Literal['polyline'] = Field(..., alias='type')
+    geometry: _Coordinates
 
     def to_common(self) -> Line:
         return Line(points=[
-            LBV1TIPoint(point=point).to_common() for point in self.line
+            Point(x=coord[0], y=coord[1]) for coord in self.geometry.coordinates
         ])
 
 
-class LBV1TIPolygon(BaseModel):
-    polygon: List[List[_TIPoint]]
+class LBV1TIPolygon(LBV1ObjectBase):
+    object_type: Literal['polygon'] = Field(..., alias='type')
+    geometry: _Coordinates
 
     def to_common(self) -> Polygon:
-        for inner_list in self.polygon:
-            return Polygon(points=[
-                LBV1TIPoint(point=point).to_common() for point in inner_list
-            ])
+        for coord_list in self.geometry.coordinates:
+            return Polygon(
+                points=[Point(x=coord[0], y=coord[1]) for coord in coord_list])
 
 
-class LBV1TIRectangle(BaseModel):
-    bbox: List[List[_TIPoint]]
+class LBV1TIRectangle(LBV1ObjectBase):
+    object_type: Literal['rectangle'] = Field(..., alias='type')
+    geometry: _Coordinates
 
     def to_common(self) -> Rectangle:
-        inner_list = self.bbox[0]
-        start = inner_list[0]
-        end = inner_list[2]
-        for inner_list in self.bbox:
-            return Rectangle(start=LBV1TIPoint(point=start).to_common(),
-                             end=LBV1TIPoint(point=end).to_common())
+        coord_list = self.geometry.coordinates[0]
+        start = coord_list[0]
+        end = coord_list[2]
+        return Rectangle(start=Point(x=start[0], y=start[1]),
+                         end=Point(x=end[0], y=end[1]))
 
 
 class _Point(BaseModel):

@@ -54,7 +54,6 @@ class LBV1Converter:
                     )
 
                 if example['Label']:
-                    # Don't construct empty dict
                     yield LBV1Label(**example).to_common()
 
         return LabelGenerator(data=label_generator())
