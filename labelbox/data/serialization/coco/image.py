@@ -1,11 +1,17 @@
+import io
 from pathlib import Path
-
 from typing import Optional, Tuple
+
+from loguru import logger
 from PIL import Image
 import imagesize
 
 from .path import PathSerializerMixin
 from labelbox.data.annotation_types import Label
+from labelbox.data.cloud.blobstorage import (
+    create_blobstorage_client,
+    get_connection_string,
+)
 
 
 class CocoImage(PathSerializerMixin):
@@ -26,15 +32,43 @@ def get_image_id(label: Label, idx: int) -> int:
     return idx
 
 
-def get_image(label: Label, image_root: Path, image_id: str) -> CocoImage:
-    path = Path(image_root, f"{image_id}.jpg")
-    if not path.exists():
-        im = Image.fromarray(label.data.value)
-        im.save(path)
-        w, h = im.size
-    else:
-        w, h = imagesize.get(str(path))
-    return CocoImage(id=image_id, width=w, height=h, file_name=Path(path.name))
+def get_image(
+    label: Label,
+    image_path: Path,
+    image_id: str,
+    cloud_provider=None,
+    azure_storage_container=None,
+) -> CocoImage:
+    """
+    Extracts dimensions from an image provided by 'image_path'. The path may be
+    local or a path in a cloud storage service. In that case,
+    'image_path' should be used together with 'cloud_provider'.
+    Currently, possible values for 'cloud_provider' are:
+        - azure
+    """
+
+    if not cloud_provider:
+        path = Path(image_path, f"{image_id}.jpg")
+        if not path.exists():
+            im = Image.fromarray(label.data.value)
+            im.save(path)
+            w, h = im.size
+        else:
+            w, h = imagesize.get(str(path))
+        return CocoImage(
+            id=image_id, width=w, height=h, file_name=Path(label.data.url).name
+        )
+
+    elif cloud_provider == "azure":
+        conn = get_connection_string()
+        client = create_blobstorage_client(conn, azure_storage_container)
+        logger.info(f"Downloading {image_path} from blobstorage")
+        image = client.download_blob(image_path).readall()
+        h = Image.open(io.BytesIO(image)).height
+        w = Image.open(io.BytesIO(image)).width
+        return CocoImage(
+            id=image_id, width=w, height=h, file_name=Path(label.data.url).name
+        )
 
 
 def id_to_rgb(id: int) -> Tuple[int, int, int]:
