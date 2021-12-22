@@ -1,5 +1,6 @@
 from abc import ABC
 from io import BytesIO
+from logging import root
 from typing import Callable, Optional, Union
 from typing_extensions import Literal
 import numpy as np
@@ -207,4 +208,12 @@ class MaskData(RasterData):
 
 
 class ImageData(RasterData, BaseData):
-    ...
+
+    @root_validator
+    def must_set_one(cls, values):
+
+        image_fields = ['im_bytes', 'file_path', 'url', 'arr']
+        for field in image_fields:
+            if values[field]:
+                return values
+        raise ValueError(f"Must set one of: {image_fields}")
