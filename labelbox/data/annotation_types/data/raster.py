@@ -213,6 +213,6 @@ class ImageData(RasterData, BaseData):
 
         image_fields = ['im_bytes', 'file_path', 'url', 'arr']
         for field in image_fields:
-            if values[field]:
+            if values[field] is not None:
                 return values
         raise ValueError(f"Must set one of: {image_fields}")
