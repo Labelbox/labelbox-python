@@ -207,6 +207,7 @@ class MaskData(RasterData):
 
 
 class ImageData(RasterData, BaseData):
+    ...
 
     @root_validator
     def must_set_one(cls, values):

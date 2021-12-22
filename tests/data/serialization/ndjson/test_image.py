@@ -70,7 +70,7 @@ def test_mask_from_arr():
                          value=Mask(mask=MaskData.from_2D_arr(arr=mask_arr),
                                     color=(1, 1, 1)))
     ],
-                  data=ImageData(uid="0" * 25))
+                  data=ImageData(uid="0" * 25, url=""))
     res = next(NDJsonConverter.serialize([label]))
     res.pop('uuid')
     assert res == {

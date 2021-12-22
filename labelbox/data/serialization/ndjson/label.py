@@ -56,7 +56,12 @@ class NDLabel(BaseModel):
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
 
-            data = self._infer_media_type(annotations)(uid=data_row_id)
+            # data = self._infer_media_type(annotations)(uid=data_row_id)
+            media_type = self._infer_media_type(annotations)
+            if media_type == ImageData:
+                data = media_type(uid=data_row_id, url="")
+            else:
+                data = media_type(uid=data_row_id)
             yield Label(annotations=annots, data=data)
 
     def _infer_media_type(

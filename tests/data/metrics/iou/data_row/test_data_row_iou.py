@@ -11,9 +11,10 @@ from labelbox.data.annotation_types import Label, ImageData, Mask
 
 
 def check_iou(pair, mask=None):
-    default = Label(data=ImageData(uid="ckppihxc10005aeyjen11h7jh"))
+    default = Label(data=ImageData(uid="ckppihxc10005aeyjen11h7jh", url=''))
     prediction = next(NDJsonConverter.deserialize(pair.predictions), default)
-    label = next(LBV1Converter.deserialize([pair.labels]))
+    label = next(LBV1Converter.deserialize(
+        [pair.labels]))  #we are messing up the prediction here somehow
     if mask:
         for annotation in [*prediction.annotations, *label.annotations]:
             if isinstance(annotation.value, Mask):
