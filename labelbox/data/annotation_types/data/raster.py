@@ -1,6 +1,5 @@
 from abc import ABC
 from io import BytesIO
-from logging import root
 from typing import Callable, Optional, Union
 from typing_extensions import Literal
 import numpy as np
