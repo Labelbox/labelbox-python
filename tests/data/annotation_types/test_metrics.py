@@ -12,8 +12,7 @@ def test_legacy_scalar_metric():
     metric = ScalarMetric(value=value)
     assert metric.value == value
 
-    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg",
-                                 url="google.com"),
+    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg", url=""),
                   annotations=[metric])
     expected = {
         'data': {
@@ -21,7 +20,7 @@ def test_legacy_scalar_metric():
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
             'im_bytes': None,
             'file_path': None,
-            'url': 'google.com',
+            'url': '',
             'arr': None
         },
         'annotations': [{
@@ -62,8 +61,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
                           **kwargs)
     assert metric.value == value
 
-    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg",
-                                 url="google.com"),
+    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg", url=""),
                   annotations=[metric])
     expected = {
         'data': {
@@ -71,7 +69,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
             'im_bytes': None,
             'file_path': None,
-            'url': 'google.com',
+            'url': '',
             'arr': None
         },
         'annotations': [{
@@ -118,8 +116,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
                                    **kwargs)
     assert metric.value == value
 
-    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg",
-                                 url="google.com"),
+    label = Label(data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg", url=""),
                   annotations=[metric])
     expected = {
         'data': {
@@ -127,7 +124,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
             'im_bytes': None,
             'file_path': None,
-            'url': 'google.com',
+            'url': '',
             'arr': None
         },
         'annotations': [{
