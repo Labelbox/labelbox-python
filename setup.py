@@ -29,7 +29,8 @@ setuptools.setup(
     extras_require={
         'data': [
             "shapely", "geojson", "numpy", "rasterio", "PILLOW",
-            "opencv-python", "typeguard", "imagesize", "pyproj", "pygeotile"
+            "opencv-python", "typeguard", "imagesize", "pyproj", "pygeotile",
+            "typing-extensions"
         ],
     },
     classifiers=[
