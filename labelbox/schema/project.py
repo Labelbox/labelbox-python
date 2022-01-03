@@ -854,5 +854,5 @@ def _check_converter_import():
     if 'LBV1Converter' not in globals():
         raise ImportError(
             "Missing dependencies to import converter. "
-            "Use `pip install labelbox[data]` to add missing dependencies. "
+            "Use `pip install labelbox[data] --upgrade` to add missing dependencies. "
             "or download raw json with project.export_labels()")
