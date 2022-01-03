@@ -5,6 +5,7 @@ except:
     from typing_extensions import Literal
 
 from pydantic import BaseModel, validator, Field
+import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
 from .feature import LBV1Feature
@@ -46,14 +47,25 @@ class LBV1ObjectBase(LBV1Feature):
         return value
 
 
-class _Coordinates(BaseModel):
-    """Union of the possible coordinate lists in tiled imagery exports"""
-    coordinates: Union[List[float], List[List[float]], List[List[List[float]]]]
+class TIPointCoordinate(BaseModel):
+    coordinates: List[float]
+
+
+class TILineCoordinate(BaseModel):
+    coordinates: List[List[float]]
+
+
+class TIPolygonCoordinate(BaseModel):
+    coordinates: List[List[List[float]]]
+
+
+class TIRectangleoordinate(BaseModel):
+    coordinates: List[List[List[float]]]
 
 
 class LBV1TIPoint(LBV1ObjectBase):
     object_type: Literal['point'] = Field(..., alias='type')
-    geometry: _Coordinates
+    geometry: TIPointCoordinate
 
     def to_common(self) -> Point:
         lng, lat = self.geometry.coordinates
@@ -62,7 +74,7 @@ class LBV1TIPoint(LBV1ObjectBase):
 
 class LBV1TILine(LBV1ObjectBase):
     object_type: Literal['polyline'] = Field(..., alias='type')
-    geometry: _Coordinates
+    geometry: TILineCoordinate
 
     def to_common(self) -> Line:
         return Line(points=[
@@ -72,7 +84,7 @@ class LBV1TILine(LBV1ObjectBase):
 
 class LBV1TIPolygon(LBV1ObjectBase):
     object_type: Literal['polygon'] = Field(..., alias='type')
-    geometry: _Coordinates
+    geometry: TIPolygonCoordinate
 
     def to_common(self) -> Polygon:
         for coord_list in self.geometry.coordinates:
@@ -82,12 +94,17 @@ class LBV1TIPolygon(LBV1ObjectBase):
 
 class LBV1TIRectangle(LBV1ObjectBase):
     object_type: Literal['rectangle'] = Field(..., alias='type')
-    geometry: _Coordinates
+    geometry: TIRectangleoordinate
 
     def to_common(self) -> Rectangle:
-        coord_list = self.geometry.coordinates[0]
-        start = coord_list[0]
-        end = coord_list[2]
+        coord_list = np.array(self.geometry.coordinates[0])
+
+        min_x, max_x = np.min(coord_list[:, 0]), np.max(coord_list[:, 0])
+        min_y, max_y = np.min(coord_list[:, 1]), np.max(coord_list[:, 1])
+
+        start = [min_x, min_y]
+        end = [max_x, max_y]
+
         return Rectangle(start=Point(x=start[0], y=start[1]),
                          end=Point(x=end[0], y=end[1]))
 
