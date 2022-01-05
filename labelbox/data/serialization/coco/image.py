@@ -63,7 +63,7 @@ def get_image(
     elif cloud_provider == "azure":
         conn = get_connection_string()
         client = create_blobstorage_client(conn, azure_storage_container)
-        file_path = extract_file_path(label.data.url, azure_storage_container)
+        file_path = extract_file_path(label.data.url)
         logger.info(f"Downloading {file_path} from blobstorage")
         image = client.download_blob(file_path).readall()
         img = Image.open(io.BytesIO(image))
