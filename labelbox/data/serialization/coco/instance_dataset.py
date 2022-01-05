@@ -88,33 +88,37 @@ def segmentations_to_common(class_annotations: COCOObjectAnnotation,
 
 
 def process_label(
-    label: Label,
-    idx: int,
-    image_root: str,
-    max_annotations_per_image=10000
+        label: Label,
+        idx: int,
+        image_root: str,
+        cloud_provider=None,
+        azure_storage_container=None,
+        max_annotations_per_image=10000
 ) -> Tuple[np.ndarray, List[COCOObjectAnnotation], Dict[str, str]]:
     annot_idx = idx * max_annotations_per_image
     image_id = get_image_id(label, idx)
-    image = get_image(label, image_root, image_id)
+    image = get_image(label, image_root, image_id, cloud_provider, azure_storage_container)
     coco_annotations = []
     annotation_lookup = get_annotation_lookup(label.annotations)
     categories = {}
-    for class_name in annotation_lookup:
-        for annotation in annotation_lookup[class_name]:
-            if annotation.name not in categories:
-                categories[annotation.name] = hash_category_name(
-                    annotation.name)
+
+    for class_name, annotations in annotation_lookup.items():
+        for annot_idx, annotation in enumerate(annotations):
+            # Hash category name and store
+            hash_cat = hash_category_name(annotation.name)
+            categories[hash_cat] = annotation.name
+
+            # Select the conversion function for the annotation type
             if isinstance(annotation.value, Mask):
-                coco_annotations.append(
-                    mask_to_coco_object_annotation(annotation, annot_idx,
-                                                   image_id,
-                                                   categories[annotation.name]))
+                conv_func = mask_to_coco_object_annotation
             elif isinstance(annotation.value, (Polygon, Rectangle)):
-                coco_annotations.append(
-                    vector_to_coco_object_annotation(
-                        annotation, annot_idx, image_id,
-                        categories[annotation.name]))
-            annot_idx += 1
+                conv_func = vector_to_coco_object_annotation
+            else:
+                continue
+
+            # Convert the annotation and append to the list
+            coco_annotations.append(conv_func(annotation, annot_idx, image_id, hash_cat))
+
     return image, coco_annotations, categories
 
 
@@ -128,7 +132,9 @@ class CocoInstanceDataset(BaseModel):
     def from_common(cls,
                     labels: LabelCollection,
                     image_root: Path,
-                    max_workers=8):
+                    max_workers=8,
+                    cloud_provider=None,
+                    azure_storage_container=None):
         all_coco_annotations = []
         categories = {}
         images = []
@@ -138,7 +144,7 @@ class CocoInstanceDataset(BaseModel):
         if max_workers:
             with ProcessPoolExecutor(max_workers=max_workers) as exc:
                 futures = [
-                    exc.submit(process_label, label, idx, image_root)
+                    exc.submit(process_label, label, idx, image_root, cloud_provider, azure_storage_container)
                     for idx, label in enumerate(labels)
                 ]
                 results = [
@@ -146,27 +152,26 @@ class CocoInstanceDataset(BaseModel):
                 ]
         else:
             results = [
-                process_label(label, idx, image_root)
+                process_label(label, idx, image_root, cloud_provider, azure_storage_container)
                 for idx, label in enumerate(labels)
             ]
-
         for result in results:
             images.append(result[0])
             all_coco_annotations.extend(result[1])
             coco_categories.update(result[2])
-
         category_mapping = {
             category_id: idx + 1
-            for idx, category_id in enumerate(coco_categories.values())
+            for idx, category_id in enumerate(set(coco_categories.values()))
         }
         categories = [
-            Categories(id=category_mapping[idx],
+            Categories(id=idx,
                        name=name,
                        supercategory='all',
-                       isthing=1) for name, idx in coco_categories.items()
+                       isthing=1) for name, idx in category_mapping.items()
         ]
         for annot in all_coco_annotations:
-            annot.category_id = category_mapping[annot.category_id]
+            coco_cat_name = coco_categories[annot.category_id]
+            annot.category_id = category_mapping[coco_cat_name]
 
         return CocoInstanceDataset(info={'image_root': image_root},
                                    images=images,

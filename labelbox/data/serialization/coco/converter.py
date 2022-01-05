@@ -37,8 +37,10 @@ class COCOConverter:
 
     @staticmethod
     def serialize_instances(labels: LabelCollection,
-                            image_root: Union[Path, str],
+                            image_root: Union[Path, str] = None,
                             ignore_existing_data=False,
+                            cloud_provider=None,
+                            azure_storage_container=None,
                             max_workers=8) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
@@ -51,14 +53,19 @@ class COCOConverter:
             image_root: Where to save images to
             ignore_existing_data: Whether or not to raise an exception if images already exist.
                 This exists only to support detectons panoptic fpn model which requires two mscoco payloads for the same images.
+            cloud_provider: To use only if source images are in the cloud. The current supported value is 'azure'.
+            azure_storage_container: azure blobstorage container name if cloud_provider = 'azure'
             max_workers : Number of workers to process dataset with. A value of 0 will process all data in the main process
         Returns:
             A dictionary containing labels in the coco object format.
         """
-        image_root = create_path_if_not_exists(image_root, ignore_existing_data)
+        if not cloud_provider:
+            image_root = create_path_if_not_exists(image_root, ignore_existing_data)
         return CocoInstanceDataset.from_common(labels=labels,
                                                image_root=image_root,
-                                               max_workers=max_workers).dict()
+                                               max_workers=max_workers,
+                                               cloud_provider=cloud_provider,
+                                               azure_storage_container=azure_storage_container).dict()
 
     @staticmethod
     def serialize_panoptic(labels: LabelCollection,

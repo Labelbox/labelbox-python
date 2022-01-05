@@ -12,3 +12,5 @@ PILLOW
 opencv-python
 typeguard
 imagesize
+azure-storage-blob
+loguru
