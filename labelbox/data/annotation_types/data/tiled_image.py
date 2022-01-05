@@ -102,6 +102,9 @@ class TileLayer(BaseModel):
     url: str
     name: Optional[str] = "default"
 
+    def asdict(self):
+        return {"tileLayerUrl": self.url, "name": self.name}
+
     @validator('url')
     def validate_url(cls, url):
         xyz_format = "/{z}/{x}/{y}"
@@ -131,12 +134,33 @@ class TiledImageData(BaseData):
     """
     tile_layer: TileLayer
     tile_bounds: TiledBounds
-    alternative_layers: List[TileLayer] = None
+    alternative_layers: List[TileLayer] = []
     zoom_levels: Tuple[int, int]
     max_native_zoom: Optional[int] = None
     tile_size: Optional[int] = DEFAULT_TMS_TILE_SIZE
     version: Optional[int] = 2
     multithread: bool = True
+
+    def __post_init__(self):
+        if self.max_native_zoom is None:
+            self.max_native_zoom = self.zoom_levels[0]
+
+    def asdict(self):
+        return {
+            "tileLayerUrl": self.tile_layer.url,
+            "bounds": [[
+                self.tile_bounds.bounds[0].x, self.tile_bounds.bounds[0].y
+            ], [self.tile_bounds.bounds[1].x, self.tile_bounds.bounds[1].y]],
+            "minZoom": self.zoom_levels[0],
+            "maxZoom": self.zoom_levels[1],
+            "maxNativeZoom": self.max_native_zoom,
+            "epsg": self.tile_bounds.epsg.name,
+            "tileSize": self.tile_size,
+            "alternativeLayers": [
+                layer.asdict() for layer in self.alternative_layers
+            ],
+            "version": self.version
+        }
 
     def as_raster_data(self,
                        zoom: int = 0,
@@ -149,9 +173,24 @@ class TiledImageData(BaseData):
         """
         if self.tile_bounds.epsg == EPSG.SIMPLEPIXEL:
             xstart, ystart, xend, yend = self._get_simple_image_params(zoom)
-
-        elif self.tile_bounds.epsg == EPSG.EPSG3857:
+        elif self.tile_bounds.epsg == EPSG.EPSG4326:
             xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
+        elif self.tile_bounds.epsg == EPSG.EPSG3857:
+            #transform to 4326
+            transformer = EPSGTransformer.create_geo_to_geo_transformer(
+                EPSG.EPSG3857, EPSG.EPSG4326)
+            self.tile_bounds.bounds = [
+                transformer(self.tile_bounds.bounds[0]),
+                transformer(self.tile_bounds.bounds[1])
+            ]
+            xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
+            #transform back to 3857
+            transformer = EPSGTransformer.create_geo_to_geo_transformer(
+                EPSG.EPSG4326, EPSG.EPSG3857)
+            self.tile_bounds.bounds = [
+                transformer(self.tile_bounds.bounds[0]),
+                transformer(self.tile_bounds.bounds[1])
+            ]
         else:
             raise ValueError(f"Unsupported epsg found: {self.tile_bounds.epsg}")
 
@@ -202,8 +241,8 @@ class TiledImageData(BaseData):
             1].x, self.tile_bounds.bounds[0].x
 
         # Convert to zoom 0 tile coordinates
-        xstart, ystart = self._latlng_to_tile(lat_start, lng_start, zoom)
-        xend, yend = self._latlng_to_tile(lat_end, lng_end, zoom)
+        xstart, ystart = self._latlng_to_tile(lat_start, lng_start)
+        xend, yend = self._latlng_to_tile(lat_end, lng_end)
 
         # Make sure that the tiles are increasing in order
         xstart, xend = min(xstart, xend), max(xstart, xend)
