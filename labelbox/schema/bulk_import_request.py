@@ -66,10 +66,6 @@ def _send_create_file_command(
 
     response = client.execute(data=request_data, files={file_name: file_data})
 
-    if response is None:
-        raise labelbox.exceptions.LabelboxError(
-            "Failed to upload, message: %s" % response.get("errors", None))
-
     if not response.get("createBulkImportRequest", None):
         raise labelbox.exceptions.LabelboxError(
             "Failed to create BulkImportRequest, message: %s" %
