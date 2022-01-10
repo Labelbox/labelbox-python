@@ -1,5 +1,4 @@
 import sys
-import logging
 from typing import Generic, TypeVar
 from typing_extensions import Annotated
 
@@ -8,13 +7,13 @@ from pydantic.fields import ModelField
 import numpy as np
 
 Cuid = Annotated[str, Field(min_length=25, max_length=25)]
-
 DType = TypeVar('DType')
 
-logger = logging.getLogger(__name__)
 
+class TypedArray(Generic[DType]):
 
-class TypedArray(np.ndarray, Generic[DType]):
+    def __new__(cls, *args, **kwargs):
+        return np.ndarray(*args, **kwargs)
 
     @classmethod
     def __get_validators__(cls):
