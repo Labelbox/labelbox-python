@@ -681,7 +681,7 @@ class Project(DbObject, Updateable, Deletable):
                 to reinitiate. Between 0 and 1.
         """
 
-        if not 0. < quota_factor < 1.:
+        if not 0. <= quota_factor <= 1.:
             raise ValueError("Quota factor must be in the range of [0,1]")
 
         id_param = "projectId"
