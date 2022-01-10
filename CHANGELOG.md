@@ -1,4 +1,7 @@
 # Changelog
+# Version 3.11.1 (2022-01-10)
+## Fix
+* Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
 
 # Version 3.11.0 (2021-12-15)
 
