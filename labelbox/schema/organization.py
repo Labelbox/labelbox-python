@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
-from labelbox.orm.db_object import DbObject, experimental, query, Entity
+from labelbox.orm.db_object import DbObject, query, Entity
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import Invite, InviteLimit, ProjectRole
 from labelbox.schema.user import User
@@ -59,12 +59,9 @@ class Organization(DbObject):
             Invite for the user
 
         Notes:
-            This function is currently experimental and has a few limitations that will be resolved in future releases
-            1. If you try to add an unsupported you will get an error referring to invalid foreign keys
-                - In this case `role.get_roles` is likely not getting the right ids
-            2. Multiple invites can be sent for the same email. This can only be resolved in the UI for now.
+            1. Multiple invites can be sent for the same email. This can only be resolved in the UI for now.
                 - Future releases of the SDK will support the ability to query and revoke invites to solve this problem (and/or checking on the backend)
-            3. Some server side response are unclear (e.g. if the user invites themself `None` is returned which the SDK raises as a `LabelboxError` )
+            2. Some server side response are unclear (e.g. if the user invites themself `None` is returned which the SDK raises as a `LabelboxError` )
         """
 
         if project_roles and role.name != "NONE":
