@@ -46,17 +46,15 @@ class EPSG(Enum):
 
 
 class TiledBounds(BaseModel):
-    """ Bounds for a tiled image asset related to the relevant epsg. 
+    """ Bounds for a tiled image asset related to the relevant epsg.
 
-    Bounds should be Point objects. Currently, we support bounds in EPSG 4326.
+    Bounds should be Point objects.
 
-    If version of asset is 2, these should be [[lat,lng],[lat,lng]]
-    If version of asset is 1, these should be [[lng,lat]],[lng,lat]]
-
-    >>> bounds = TiledBounds(
-        epsg=EPSG.4326,
-        bounds=[Point(x=0, y=0),Point(x=100, y=100)]
-        )
+    >>> bounds = TiledBounds(epsg=EPSG.EPSG4326,
+            bounds=[
+                Point(x=-99.21052827588443, y=19.405662413477728),
+                Point(x=-99.20534818927473, y=19.400498983095076)
+            ])
     """
     epsg: EPSG
     bounds: List[Point]
@@ -72,13 +70,13 @@ class TiledBounds(BaseModel):
                 f"Bounds on either axes cannot be equal, currently {bounds}")
         return bounds
 
-    #bounds are assumed to be in EPSG 4326 as that is what leaflet assumes
+    #validate bounds are within lat,lng range if they are EPSG4326
     @root_validator
     def validate_bounds_lat_lng(cls, values):
         epsg = values.get('epsg')
         bounds = values.get('bounds')
 
-        if epsg != EPSG.SIMPLEPIXEL:
+        if epsg == EPSG.EPSG4326:
             for bound in bounds:
                 lat, lng = bound.y, bound.x
                 if int(lng) not in VALID_LNG_RANGE or int(
