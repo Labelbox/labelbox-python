@@ -49,12 +49,12 @@ class TiledBounds(BaseModel):
     """ Bounds for a tiled image asset related to the relevant epsg.
 
     Bounds should be Point objects.
-    Currently, we support bounds in EPSG 4326. These should be [[lat,lng],[lat,lng]]
 
-    >>> bounds = TiledBounds(
-        epsg=EPSG.4326,
-        bounds=[Point(x=0, y=0),Point(x=30, y=30)]
-        )
+    >>> bounds = TiledBounds(epsg=EPSG.EPSG4326,
+            bounds=[
+                Point(x=-99.21052827588443, y=19.405662413477728),
+                Point(x=-99.20534818927473, y=19.400498983095076)
+            ])
     """
     epsg: EPSG
     bounds: List[Point]
