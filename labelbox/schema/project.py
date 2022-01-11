@@ -317,12 +317,12 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             instructions_file (str): Path to a local file.
-                * Must be a pdf file
+                * Must be a pdf or html file
 
         Raises:
             ValueError:
                 * project must be setup
-                * instructions file must have a ".pdf" extension
+                * instructions file must have a ".pdf" or ".html" extension
         """
 
         if self.setup_complete is None:
