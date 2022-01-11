@@ -233,6 +233,33 @@ def segmentation_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def segmentation_inference_rle(prediction_id_mapping):
+    segmentation = prediction_id_mapping['superpixel'].copy()
+    segmentation.update({
+        'uuid': str(uuid.uuid4()),
+        'mask': {
+            'size': [10, 10],
+            'counts': [1, 0, 10, 100]
+        }
+    })
+    del segmentation['tool']
+    return segmentation
+
+
+@pytest.fixture
+def segmentation_inference_png(prediction_id_mapping):
+    segmentation = prediction_id_mapping['superpixel'].copy()
+    segmentation.update({
+        'uuid': str(uuid.uuid4()),
+        'mask': {
+            'png': "somedata",
+        }
+    })
+    del segmentation['tool']
+    return segmentation
+
+
+@pytest.fixture
 def checklist_inference(prediction_id_mapping):
     checklist = prediction_id_mapping['checklist'].copy()
     checklist.update({
@@ -283,10 +310,12 @@ def model_run_predictions(polygon_inference, rectangle_inference,
 # also used for label imports
 @pytest.fixture
 def object_predictions(polygon_inference, rectangle_inference, line_inference,
-                       entity_inference, segmentation_inference):
+                       entity_inference, segmentation_inference,
+                       segmentation_inference_rle, segmentation_inference_png):
     return [
         polygon_inference, rectangle_inference, line_inference,
-        entity_inference, segmentation_inference
+        entity_inference, segmentation_inference, segmentation_inference_rle,
+        segmentation_inference_png
     ]
 
 
