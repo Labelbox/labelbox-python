@@ -3,6 +3,7 @@
 ## Fix
 * Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
 * `project.upsert_review_queue` quotas can now be in the inclusive range [0,1]
+* Restore support for upserting html instructions to a project
 
 # Version 3.11.0 (2021-12-15)
 

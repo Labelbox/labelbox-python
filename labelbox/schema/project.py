@@ -338,10 +338,11 @@ class Project(DbObject, Updateable, Deletable):
                 f"This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name)
 
-        supported_instruction_formats = (".pdf")
+        supported_instruction_formats = (".pdf", ".html")
         if not instructions_file.endswith(supported_instruction_formats):
             raise ValueError(
-                f"instructions_file must be a pdf. Found {instructions_file}")
+                f"instructions_file must be a pdf or html file. Found {instructions_file}"
+            )
 
         lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
