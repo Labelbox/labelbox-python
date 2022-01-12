@@ -1,12 +1,22 @@
 # Changelog
+# Version 3.11.1 (2022-01-10)
+## Fix
+* Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
+* `project.upsert_review_queue` quotas can now be in the inclusive range [0,1]
+* Restore support for upserting html instructions to a project
 
-## Deprecation Notice
-| Name                                  | Replacement                            | Removed After |
-| ------------------------------------- | -------------------------------------  | ------------- |
-| `ModelRun.delete_annotation_groups()` | `ModelRun.delete_model_run_data_rows()`|  2021-12-06   |
-| `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       |  2021-12-06   |
-| `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            |  2021-12-06   |
------
+# Version 3.11.0 (2021-12-15)
+
+## Fix
+* `Dataset.create_data_rows()` now accepts an iterable of data row information instead of a list
+* `project.upsert_instructions()`
+    * now only supports pdfs since that is what the editor requires
+    * There was a bug that could cause this to modify the project ontology
+
+## Removed
+* `DataRowMetadataSchema.id` use `DataRowMetadataSchema.uid` instead
+* `ModelRun.delete_annotation_groups()` use `ModelRun.delete_model_run_data_rows()` instead
+* `ModelRun.annotation_groups()` use `ModelRun.model_run_data_rows()` instead
 
 # Version 3.10.0 (2021-11-18)
 ## Added
