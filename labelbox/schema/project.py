@@ -317,12 +317,12 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             instructions_file (str): Path to a local file.
-                * Must be either a pdf, text, or html file.
+                * Must be a pdf or html file
 
         Raises:
             ValueError:
                 * project must be setup
-                * instructions file must end with one of ".text", ".txt", ".pdf", ".html"
+                * instructions file must have a ".pdf" or ".html" extension
         """
 
         if self.setup_complete is None:
@@ -338,15 +338,15 @@ class Project(DbObject, Updateable, Deletable):
                 f"This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name)
 
-        supported_instruction_formats = (".text", ".txt", ".pdf", ".html")
+        supported_instruction_formats = (".pdf", ".html")
         if not instructions_file.endswith(supported_instruction_formats):
             raise ValueError(
-                f"instructions_file must end with one of {supported_instruction_formats}. Found {instructions_file}"
+                f"instructions_file must be a pdf or html file. Found {instructions_file}"
             )
 
         lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
-        customization_options = json.loads(lfo.customization_options)
+        customization_options = self.ontology().normalized
         customization_options['projectInstructions'] = instructions_url
         option_id = lfo.uid
 
@@ -682,7 +682,7 @@ class Project(DbObject, Updateable, Deletable):
                 to reinitiate. Between 0 and 1.
         """
 
-        if not 0. < quota_factor < 1.:
+        if not 0. <= quota_factor <= 1.:
             raise ValueError("Quota factor must be in the range of [0,1]")
 
         id_param = "projectId"
@@ -855,5 +855,5 @@ def _check_converter_import():
     if 'LBV1Converter' not in globals():
         raise ImportError(
             "Missing dependencies to import converter. "
-            "Use `pip install labelbox[data]` to add missing dependencies. "
+            "Use `pip install labelbox[data] --upgrade` to add missing dependencies. "
             "or download raw json with project.export_labels()")

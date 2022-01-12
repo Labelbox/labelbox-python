@@ -42,7 +42,6 @@ class NDLabel(BaseModel):
                                                         NDConfusionMatrixMetric,
                                                         NDScalarMetric]]]
     ) -> Generator[Label, None, None]:
-
         for data_row_id, annotations in grouped_annotations.items():
             annots = []
             for annotation in annotations:
