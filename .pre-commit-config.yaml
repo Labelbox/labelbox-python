@@ -1,13 +1,7 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks.git
-    sha: v4.0.1
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-
   - repo: https://github.com/google/yapf
     rev: v0.31.0
     hooks:
       - id: yapf
         name: "yapf"
-        args: [--style, google]
+        args: [-i, --style, google]
