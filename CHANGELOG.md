@@ -1,4 +1,12 @@
 # Changelog
+# Version 3.12.0 (2022-01-13)
+## Added
+* Tiled Imagery annotation type
+- A set of classes that support Tiled Image assets
+- `TiledImageData.asdict()` to help importing to Labelbox
+* Support transformations from one EPSG to another with EPSGTransformer class
+- Supports EPSG to Pixel space transformations
+
 # Version 3.11.1 (2022-01-10)
 ## Fix
 * Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
