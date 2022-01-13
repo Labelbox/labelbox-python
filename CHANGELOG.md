@@ -1,4 +1,13 @@
 # Changelog
+# Version 3.12.0 (2022-01-13)
+## Added
+* Tiled Imagery annotation type
+- A set of classes that support Tiled Image assets
+- New demo notebook can be found here: examples/annotation_types/tiled_imagery_basics.ipynb
+- Updated tiled image mal can be found here: examples/model_assisted_labeling/tiled_imagery_mal.ipynb
+* Support transformations from one EPSG to another with `EPSGTransformer` class
+- Supports EPSG to Pixel space transformations
+
 # Version 3.11.1 (2022-01-10)
 ## Fix
 * Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
