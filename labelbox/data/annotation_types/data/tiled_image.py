@@ -1,13 +1,13 @@
+from functools import lru_cache
 import math
 import logging
 from enum import Enum
-from typing import Optional, List, Tuple, Any, Union
+from typing import Optional, List, Tuple, Any, Union, Dict, Callable
 from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 
 import requests
 import numpy as np
-
 from google.api_core import retry
 from PIL import Image
 from pyproj import Transformer
@@ -19,7 +19,6 @@ from labelbox.data.annotation_types.geometry.polygon import Polygon
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-
 from ..geometry import Point
 from .base_data import BaseData
 from .raster import RasterData
@@ -100,7 +99,7 @@ class TileLayer(BaseModel):
     url: str
     name: Optional[str] = "default"
 
-    def asdict(self):
+    def asdict(self) -> Dict:
         return {"tileLayerUrl": self.url, "name": self.name}
 
     @validator('url')
@@ -139,11 +138,11 @@ class TiledImageData(BaseData):
     version: Optional[int] = 2
     multithread: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.max_native_zoom is None:
             self.max_native_zoom = self.zoom_levels[0]
 
-    def asdict(self):
+    def asdict(self) -> Dict:
         return {
             "tileLayerUrl": self.tile_layer.url,
             "bounds": [[
@@ -160,10 +159,10 @@ class TiledImageData(BaseData):
             "version": self.version
         }
 
-    def as_raster_data(self,
-                       zoom: int = 0,
-                       max_tiles: int = 32,
-                       multithread=True) -> RasterData:
+    def raster_data(self,
+                    zoom: int = 0,
+                    max_tiles: int = 32,
+                    multithread=True) -> RasterData:
         """Converts the tiled image asset into a RasterData object containing an
         np.ndarray.
 
@@ -172,23 +171,18 @@ class TiledImageData(BaseData):
         if self.tile_bounds.epsg == EPSG.SIMPLEPIXEL:
             xstart, ystart, xend, yend = self._get_simple_image_params(zoom)
         elif self.tile_bounds.epsg == EPSG.EPSG4326:
-            xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
+            xstart, ystart, xend, yend = self._get_3857_image_params(
+                zoom, self.tile_bounds)
         elif self.tile_bounds.epsg == EPSG.EPSG3857:
             #transform to 4326
             transformer = EPSGTransformer.create_geo_to_geo_transformer(
                 EPSG.EPSG3857, EPSG.EPSG4326)
-            self.tile_bounds.bounds = [
+            transforming_bounds = [
                 transformer(self.tile_bounds.bounds[0]),
                 transformer(self.tile_bounds.bounds[1])
             ]
-            xstart, ystart, xend, yend = self._get_3857_image_params(zoom)
-            #transform back to 3857
-            transformer = EPSGTransformer.create_geo_to_geo_transformer(
-                EPSG.EPSG4326, EPSG.EPSG3857)
-            self.tile_bounds.bounds = [
-                transformer(self.tile_bounds.bounds[0]),
-                transformer(self.tile_bounds.bounds[1])
-            ]
+            xstart, ystart, xend, yend = self._get_3857_image_params(
+                zoom, transforming_bounds)
         else:
             raise ValueError(f"Unsupported epsg found: {self.tile_bounds.epsg}")
 
@@ -207,8 +201,8 @@ class TiledImageData(BaseData):
     def value(self) -> np.ndarray:
         """Returns the value of a generated RasterData object.
         """
-        return self.as_raster_data(self.zoom_levels[0],
-                                   multithread=self.multithread).value
+        return self.raster_data(self.zoom_levels[0],
+                                multithread=self.multithread).value
 
     def _get_simple_image_params(self,
                                  zoom) -> Tuple[float, float, float, float]:
@@ -229,14 +223,14 @@ class TiledImageData(BaseData):
             for x in [xstart, ystart, xend, yend]
         ],)
 
-    def _get_3857_image_params(self, zoom) -> Tuple[float, float, float, float]:
+    def _get_3857_image_params(
+            self, zoom: int,
+            bounds: TiledBounds) -> Tuple[float, float, float, float]:
         """Computes the x and y tile bounds for fetching an image that
         captures the entire labeling region (TiledData.bounds) given a specific zoom
         """
-        lat_start, lat_end = self.tile_bounds.bounds[
-            1].y, self.tile_bounds.bounds[0].y
-        lng_start, lng_end = self.tile_bounds.bounds[
-            1].x, self.tile_bounds.bounds[0].x
+        lat_start, lat_end = bounds.bounds[1].y, bounds.bounds[0].y
+        lng_start, lng_end = bounds.bounds[1].x, bounds.bounds[0].x
 
         # Convert to zoom 0 tile coordinates
         xstart, ystart = self._latlng_to_tile(lat_start, lng_start)
@@ -350,7 +344,8 @@ class TiledImageData(BaseData):
         total_n_tiles = (yend - ystart + 1) * (xend - xstart + 1)
         if total_n_tiles > max_tiles:
             raise ValueError(f"Requested zoom results in {total_n_tiles} tiles."
-                             f"Max allowed tiles are {max_tiles}")
+                             f"Max allowed tiles are {max_tiles}"
+                             f"Increase max tiles or reduce zoom level.")
 
     @validator('zoom_levels')
     def validate_zoom_levels(cls, zoom_levels):
@@ -378,7 +373,7 @@ class EPSGTransformer(BaseModel):
         return epsg == EPSG.SIMPLEPIXEL
 
     @staticmethod
-    def _get_ranges(bounds: np.ndarray):
+    def _get_ranges(bounds: np.ndarray) -> Tuple[int, int]:
         """helper function to get the range between bounds.
         
         returns a tuple (x_range, y_range)"""
@@ -387,7 +382,7 @@ class EPSGTransformer(BaseModel):
         return (x_range, y_range)
 
     @staticmethod
-    def _min_max_x_y(bounds: np.ndarray):
+    def _min_max_x_y(bounds: np.ndarray) -> Tuple[int, int, int, int]:
         """returns the min x, max x, min y, max y of a numpy array
         """
         return np.min(bounds[:, 0]), np.max(bounds[:, 0]), np.min(
@@ -398,7 +393,7 @@ class EPSGTransformer(BaseModel):
                       src_epsg,
                       pixel_bounds: TiledBounds,
                       geo_bounds: TiledBounds,
-                      zoom=0):
+                      zoom=0) -> Callable:
         """method to change from one projection to simple projection"""
 
         pixel_bounds = pixel_bounds.bounds
@@ -420,7 +415,7 @@ class EPSGTransformer(BaseModel):
 
         if src_epsg == EPSG.SIMPLEPIXEL:
 
-            def transform(x: int, y: int):
+            def transform(x: int, y: int) -> Callable:
                 scaled_xy = (x * (global_x_range) / (local_x_range),
                              y * (global_y_range) / (local_y_range))
 
@@ -440,7 +435,7 @@ class EPSGTransformer(BaseModel):
         #handles 4326 from lat,lng
         elif src_epsg == EPSG.EPSG4326:
 
-            def transform(x: int, y: int):
+            def transform(x: int, y: int) -> Callable:
                 point_in_px = PygeoPoint.from_latitude_longitude(
                     latitude=y, longitude=x).pixels(zoom)
 
@@ -455,7 +450,7 @@ class EPSGTransformer(BaseModel):
         #handles 3857 from meters
         elif src_epsg == EPSG.EPSG3857:
 
-            def transform(x: int, y: int):
+            def transform(x: int, y: int) -> Callable:
                 point_in_px = PygeoPoint.from_meters(meter_y=y,
                                                      meter_x=x).pixels(zoom)
 
@@ -469,7 +464,7 @@ class EPSGTransformer(BaseModel):
 
     @classmethod
     def create_geo_to_geo_transformer(cls, src_epsg: EPSG,
-                                      tgt_epsg: EPSG) -> None:
+                                      tgt_epsg: EPSG) -> Callable:
         """method to change from one projection to another projection. 
 
         supports EPSG transformations not Simple.
@@ -487,7 +482,7 @@ class EPSGTransformer(BaseModel):
                                         src_epsg,
                                         pixel_bounds: TiledBounds,
                                         geo_bounds: TiledBounds,
-                                        zoom=0):
+                                        zoom=0) -> Callable:
         """method to change from a geo projection to Simple"""
 
         transform_function = cls.geo_and_pixel(src_epsg=src_epsg,
@@ -501,7 +496,7 @@ class EPSGTransformer(BaseModel):
                                         src_epsg,
                                         pixel_bounds: TiledBounds,
                                         geo_bounds: TiledBounds,
-                                        zoom=0):
+                                        zoom=0) -> Callable:
         """method to change from a geo projection to Simple"""
         transform_function = cls.geo_and_pixel(src_epsg=src_epsg,
                                                pixel_bounds=pixel_bounds,
@@ -513,7 +508,9 @@ class EPSGTransformer(BaseModel):
         point = self.transformer(point.x, point.y)
         return Point(x=point[0], y=point[1])
 
-    def __call__(self, shape: Union[Point, Line, Rectangle, Polygon]):
+    def __call__(
+        self, shape: Union[Point, Line, Rectangle, Polygon]
+    ) -> Union[Point, Line, Rectangle, Polygon]:
         if isinstance(shape, Point):
             return self._get_point_obj(shape)
         if isinstance(shape, Line) or isinstance(shape, Polygon):
