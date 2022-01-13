@@ -3,7 +3,7 @@
 ## Added
 * Tiled Imagery annotation type
 - A set of classes that support Tiled Image assets
-- New demote notebook can be found here: examples/annotation_types/tiled_imagery_basics.ipynb
+- New demo notebook can be found here: examples/annotation_types/tiled_imagery_basics.ipynb
 - `TiledImageData.asdict()` to help importing to Labelbox
 * Support transformations from one EPSG to another with `EPSGTransformer` class
 - Supports EPSG to Pixel space transformations
