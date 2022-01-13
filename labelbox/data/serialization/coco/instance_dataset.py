@@ -1,6 +1,8 @@
 # https://cocodataset.org/#format-data
 
+from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from distutils.util import strtobool
 from typing import Any, Dict, List, Tuple
 from pathlib import Path
 
@@ -27,6 +29,14 @@ def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx: int,
     if shapely.type == 'Polygon':
         shapely = [shapely]
 
+    # Serialisers for named custom attributes
+    value_serialisers = defaultdict(
+        lambda: lambda s: s,
+        is_pickable=lambda s: bool(strtobool(s)),
+    )
+    classifications = {
+        c.name: value_serialisers[c.name](c.value.answer.name) for c in annotation.classifications
+    }
     return COCOObjectAnnotation(
         id=annot_idx,
         image_id=image_id,
@@ -36,7 +46,8 @@ def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx: int,
         ],
         area=area,
         bbox=[xmin, ymin, xmax - xmin, ymax - ymin],
-        iscrowd=0)
+        iscrowd=0,
+        attributes=classifications)
 
 
 def vector_to_coco_object_annotation(annotation: ObjectAnnotation,
@@ -55,13 +66,23 @@ def vector_to_coco_object_annotation(annotation: ObjectAnnotation,
             box.end.y, box.start.x, box.end.y
         ])
 
+    # Serialisers for named custom attributes
+    value_serialisers = defaultdict(
+        lambda: lambda s: s,
+        is_pickable=lambda s: bool(strtobool(s)),
+    )
+    classifications = {
+        c.name: value_serialisers[c.name](c.value.answer.name) for c in annotation.classifications
+    }
+
     return COCOObjectAnnotation(id=annot_idx,
                                 image_id=image_id,
                                 category_id=category_id,
                                 segmentation=[segmentation],
                                 area=shapely.area,
                                 bbox=[xmin, ymin, xmax - xmin, ymax - ymin],
-                                iscrowd=0)
+                                iscrowd=0,
+                                attributes=classifications)
 
 
 def rle_to_common(class_annotations: COCOObjectAnnotation,

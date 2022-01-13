@@ -50,6 +50,7 @@ class COCOObjectAnnotation(BaseModel):
     area: float
     bbox: Tuple[float, float, float, float]  #[x,y,w,h],
     iscrowd: int = 0
+    attributes: dict
 
 
 class PanopticAnnotation(PathSerializerMixin):
