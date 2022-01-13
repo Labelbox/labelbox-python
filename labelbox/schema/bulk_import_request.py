@@ -60,34 +60,18 @@ def _make_request_data(project_id: str, name: str, content_length: int,
     }
 
 
-# TODO(gszpak): move it to client.py
 def _send_create_file_command(
         client, request_data: dict, file_name: str,
         file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
-    response = requests.post(
-        client.endpoint,
-        headers={"authorization": "Bearer %s" % client.api_key},
-        data=request_data,
-        files={file_name: file_data})
 
-    try:
-        response_json = response.json()
-    except ValueError:
-        raise labelbox.exceptions.LabelboxError(
-            "Failed to parse response as JSON: %s" % response.text)
+    response = client.execute(data=request_data, files={file_name: file_data})
 
-    response_data = response_json.get("data", None)
-    if response_data is None:
-        raise labelbox.exceptions.LabelboxError(
-            "Failed to upload, message: %s" % response_json.get("errors", None))
-
-    if not response_data.get("createBulkImportRequest", None):
+    if not response.get("createBulkImportRequest", None):
         raise labelbox.exceptions.LabelboxError(
             "Failed to create BulkImportRequest, message: %s" %
-            response_json.get("errors", None) or
-            response_data.get("error", None))
+            response.get("errors", None) or response.get("error", None))
 
-    return response_data
+    return response
 
 
 class BulkImportRequest(DbObject):

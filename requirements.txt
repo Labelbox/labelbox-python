@@ -12,3 +12,6 @@ PILLOW
 opencv-python
 typeguard
 imagesize
+pyproj
+pygeotile
+typing-extensions
