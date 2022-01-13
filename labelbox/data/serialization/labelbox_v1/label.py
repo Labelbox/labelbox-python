@@ -1,3 +1,4 @@
+from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
 from typing import List, Optional, Union
 
@@ -171,8 +172,9 @@ class LBV1Label(BaseModel):
                          external_id=label.data.external_id,
                          **label.extra)
 
-    def _data_row_to_common(self) -> Union[ImageData, TextData, VideoData]:
-        # Use data row information to construct the appropriate annotatin type
+    def _data_row_to_common(
+            self) -> Union[ImageData, TextData, VideoData, TiledImageData]:
+        # Use data row information to construct the appropriate annotation type
         data_row_info = {
             'url' if self._is_url() else 'text': self.row_data,
             'external_id': self.external_id,
@@ -228,7 +230,8 @@ class LBV1Label(BaseModel):
         return any([substr in self.row_data for substr in substrs])
 
     def _is_url(self):
-        return self.row_data.startswith(("http://", "https://"))
+        return self.row_data.startswith(
+            ("http://", "https://")) or "tileLayerUrl" in self.row_data
 
     class Config:
         allow_population_by_field_name = True
