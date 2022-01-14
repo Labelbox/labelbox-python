@@ -31,7 +31,7 @@ class Line(Geometry):
     def from_shapely(cls, shapely_obj: SLineString) -> Line:
         """Transforms a shapely object."""
         if not isinstance(shapely_obj, SLineString):
-            raise ValueError(
+            raise TypeError(
                 f"Expected Shapely Line. Got {shapely_obj.geom_type}")
 
         obj_coords = shapely_obj.__geo_interface__['coordinates']

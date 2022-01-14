@@ -30,7 +30,7 @@ class Point(Geometry):
     def from_shapely(cls, shapely_obj: SPoint) -> Point:
         """Transforms a shapely object."""
         if not isinstance(shapely_obj, SPoint):
-            raise ValueError(
+            raise TypeError(
                 f"Expected Shapely Point. Got {shapely_obj.geom_type}")
 
         obj_coords = shapely_obj.__geo_interface__['coordinates']

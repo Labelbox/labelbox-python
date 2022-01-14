@@ -36,10 +36,10 @@ class Polygon(Geometry):
     def from_shapely(cls, shapely_obj: SPolygon) -> Polygon:
         """Transforms a shapely object."""
         #we only consider 0th index because we only allow for filled polygons
-        obj_coords = shapely_obj.__geo_interface__['coordinates'][0]
         if not isinstance(shapely_obj, SPolygon):
-            raise ValueError(
+            raise TypeError(
                 f"Expected Shapely Polygon. Got {shapely_obj.geom_type}")
+        obj_coords = shapely_obj.__geo_interface__['coordinates'][0]
         return Polygon(
             points=[Point(x=coords[0], y=coords[1]) for coords in obj_coords])
 
