@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Optional, Tuple, Union
 
 import geojson
@@ -27,7 +26,7 @@ class Point(Geometry):
         return geojson.Point((self.x, self.y))
 
     @classmethod
-    def from_shapely(cls, shapely_obj: SPoint) -> Point:
+    def from_shapely(cls, shapely_obj: SPoint) -> "Point":
         """Transforms a shapely object."""
         if not isinstance(shapely_obj, SPoint):
             raise TypeError(

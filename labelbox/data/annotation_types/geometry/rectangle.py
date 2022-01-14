@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Optional, Type, Union, Tuple
 
 import cv2
@@ -33,7 +32,7 @@ class Rectangle(Geometry):
         ]])
 
     @classmethod
-    def from_shapely(cls, shapely_obj: SPolygon) -> Rectangle:
+    def from_shapely(cls, shapely_obj: SPolygon) -> "Rectangle":
         """Transforms a shapely object.
         
         If the provided shape is a non-rectangular polygon, a rectangle will be

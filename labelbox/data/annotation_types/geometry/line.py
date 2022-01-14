@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import List, Optional, Union, Tuple
 
 import geojson
@@ -28,7 +27,7 @@ class Line(Geometry):
             [[[point.x, point.y] for point in self.points]])
 
     @classmethod
-    def from_shapely(cls, shapely_obj: SLineString) -> Line:
+    def from_shapely(cls, shapely_obj: SLineString) -> "Line":
         """Transforms a shapely object."""
         if not isinstance(shapely_obj, SLineString):
             raise TypeError(

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import List, Optional, Union, Tuple
 
 import cv2
@@ -33,7 +32,7 @@ class Polygon(Geometry):
         return geojson.Polygon([[(point.x, point.y) for point in self.points]])
 
     @classmethod
-    def from_shapely(cls, shapely_obj: SPolygon) -> Polygon:
+    def from_shapely(cls, shapely_obj: SPolygon) -> "Polygon":
         """Transforms a shapely object."""
         #we only consider 0th index because we only allow for filled polygons
         if not isinstance(shapely_obj, SPolygon):
