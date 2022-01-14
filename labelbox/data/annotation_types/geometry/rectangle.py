@@ -1,8 +1,10 @@
+from __future__ import annotations
 from typing import Optional, Union, Tuple
 
 import cv2
 import geojson
 import numpy as np
+from shapely.geometry import Polygon as SPolygon
 
 from .geometry import Geometry
 from .point import Point
@@ -29,6 +31,28 @@ class Rectangle(Geometry):
             [self.end.x, self.start.y],
             [self.start.x, self.start.y],
         ]])
+
+    @classmethod
+    def from_shapely(cls, shapely_obj: SPolygon) -> Rectangle:
+        """Transforms a shapely object.
+        
+        If the provided shape is a non-rectangular polygon, a rectangle will be
+        returned based on the min and max x,y values."""
+        if not isinstance(shapely_obj, SPolygon):
+            raise ValueError(
+                f"Expected Shapely Polygon. Got {shapely_obj.geom_type}")
+
+        #we only consider 0th index because we only allow for filled polygons
+        obj_coords = np.array(shapely_obj.__geo_interface__['coordinates'][0])
+
+        min_x, max_x = np.min(obj_coords[:, 0]), np.max(obj_coords[:, 0])
+        min_y, max_y = np.min(obj_coords[:, 1]), np.max(obj_coords[:, 1])
+
+        start = [min_x, min_y]
+        end = [max_x, max_y]
+
+        return Rectangle(start=Point(x=start[0], y=start[1]),
+                         end=Point(x=end[0], y=end[1]))
 
     def draw(self,
              height: Optional[int] = None,

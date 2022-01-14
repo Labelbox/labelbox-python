@@ -1,9 +1,11 @@
+from __future__ import annotations
 from typing import List, Optional, Union, Tuple
 
 import cv2
 import geojson
 import numpy as np
 from pydantic import validator
+from shapely.geometry import Polygon as SPolygon
 
 from .geometry import Geometry
 from .point import Point
@@ -29,6 +31,17 @@ class Polygon(Geometry):
         if self.points[0] != self.points[-1]:
             self.points.append(self.points[0])
         return geojson.Polygon([[(point.x, point.y) for point in self.points]])
+
+    @classmethod
+    def from_shapely(cls, shapely_obj: SPolygon) -> Polygon:
+        """Transforms a shapely object."""
+        #we only consider 0th index because we only allow for filled polygons
+        obj_coords = shapely_obj.__geo_interface__['coordinates'][0]
+        if not isinstance(shapely_obj, SPolygon):
+            raise ValueError(
+                f"Expected Shapely Polygon. Got {shapely_obj.geom_type}")
+        return Polygon(
+            points=[Point(x=coords[0], y=coords[1]) for coords in obj_coords])
 
     def draw(self,
              height: Optional[int] = None,
