@@ -30,7 +30,7 @@ setuptools.setup(
         'data': [
             "shapely", "geojson", "numpy", "rasterio", "PILLOW",
             "opencv-python", "typeguard", "imagesize", "pyproj", "pygeotile",
-            "typing-extensions"
+            "typing-extensions", "packaging"
         ],
     },
     classifiers=[
