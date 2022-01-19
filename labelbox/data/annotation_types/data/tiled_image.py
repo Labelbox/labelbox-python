@@ -99,7 +99,7 @@ class TileLayer(BaseModel):
     url: str
     name: Optional[str] = "default"
 
-    def asdict(self) -> Dict:
+    def asdict(self) -> Dict[str, str]:
         return {"tileLayerUrl": self.url, "name": self.name}
 
     @validator('url')
@@ -142,7 +142,7 @@ class TiledImageData(BaseData):
         if self.max_native_zoom is None:
             self.max_native_zoom = self.zoom_levels[0]
 
-    def asdict(self) -> Dict:
+    def asdict(self) -> Dict[str, str]:
         return {
             "tileLayerUrl": self.tile_layer.url,
             "bounds": [[
@@ -415,7 +415,7 @@ class EPSGTransformer(BaseModel):
 
         if src_epsg == EPSG.SIMPLEPIXEL:
 
-            def transform(x: int, y: int) -> Callable:
+            def transform(x: int, y: int) -> Callable[[int, int], Transformer]:
                 scaled_xy = (x * (global_x_range) / (local_x_range),
                              y * (global_y_range) / (local_y_range))
 
@@ -435,7 +435,7 @@ class EPSGTransformer(BaseModel):
         #handles 4326 from lat,lng
         elif src_epsg == EPSG.EPSG4326:
 
-            def transform(x: int, y: int) -> Callable:
+            def transform(x: int, y: int) -> Callable[[int, int], Transformer]:
                 point_in_px = PygeoPoint.from_latitude_longitude(
                     latitude=y, longitude=x).pixels(zoom)
 
@@ -450,7 +450,7 @@ class EPSGTransformer(BaseModel):
         #handles 3857 from meters
         elif src_epsg == EPSG.EPSG3857:
 
-            def transform(x: int, y: int) -> Callable:
+            def transform(x: int, y: int) -> Callable[[int, int], Transformer]:
                 point_in_px = PygeoPoint.from_meters(meter_y=y,
                                                      meter_x=x).pixels(zoom)
 
@@ -463,8 +463,9 @@ class EPSGTransformer(BaseModel):
             return transform
 
     @classmethod
-    def create_geo_to_geo_transformer(cls, src_epsg: EPSG,
-                                      tgt_epsg: EPSG) -> Callable:
+    def create_geo_to_geo_transformer(
+            cls, src_epsg: EPSG,
+            tgt_epsg: EPSG) -> Callable[[int, int], Transformer]:
         """method to change from one projection to another projection. 
 
         supports EPSG transformations not Simple.
@@ -478,11 +479,12 @@ class EPSGTransformer(BaseModel):
             src_epsg.value, tgt_epsg.value, always_xy=True).transform)
 
     @classmethod
-    def create_geo_to_pixel_transformer(cls,
-                                        src_epsg,
-                                        pixel_bounds: TiledBounds,
-                                        geo_bounds: TiledBounds,
-                                        zoom=0) -> Callable:
+    def create_geo_to_pixel_transformer(
+            cls,
+            src_epsg,
+            pixel_bounds: TiledBounds,
+            geo_bounds: TiledBounds,
+            zoom=0) -> Callable[[int, int], Transformer]:
         """method to change from a geo projection to Simple"""
 
         transform_function = cls.geo_and_pixel(src_epsg=src_epsg,
@@ -492,11 +494,12 @@ class EPSGTransformer(BaseModel):
         return EPSGTransformer(transformer=transform_function)
 
     @classmethod
-    def create_pixel_to_geo_transformer(cls,
-                                        src_epsg,
-                                        pixel_bounds: TiledBounds,
-                                        geo_bounds: TiledBounds,
-                                        zoom=0) -> Callable:
+    def create_pixel_to_geo_transformer(
+            cls,
+            src_epsg,
+            pixel_bounds: TiledBounds,
+            geo_bounds: TiledBounds,
+            zoom=0) -> Callable[[int, int], Transformer]:
         """method to change from a geo projection to Simple"""
         transform_function = cls.geo_and_pixel(src_epsg=src_epsg,
                                                pixel_bounds=pixel_bounds,

@@ -20,7 +20,7 @@ class LBV1Converter:
 
     @staticmethod
     def deserialize_video(json_data: Iterable[Dict[str, Any]],
-                          client: "labelbox.Client"):
+                          client: "labelbox.Client") -> LabelGenerator:
         """
         Converts a labelbox video export into the common labelbox format.
 

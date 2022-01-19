@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union, Dict
 
 import numpy as np
 from pydantic.class_validators import validator
@@ -37,7 +37,7 @@ class Mask(Geometry):
     color: Union[Tuple[int, int, int], int]
 
     @property
-    def geometry(self):
+    def geometry(self) -> Dict[str, Tuple[int, int, int]]:
         mask = self.draw(color=1)
         polygons = (
             shape(shp)

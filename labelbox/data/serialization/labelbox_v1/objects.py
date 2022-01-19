@@ -23,7 +23,7 @@ class LBV1ObjectBase(LBV1Feature):
     classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
                                 LBV1Checklist]] = []
 
-    def dict(self, *args, **kwargs):
+    def dict(self, *args, **kwargs) -> Dict[str, str]:
         res = super().dict(*args, **kwargs)
         # This means these are not video frames ..
         if self.instanceURI is None:
@@ -59,7 +59,7 @@ class TIPolygonCoordinate(BaseModel):
     coordinates: List[List[List[float]]]
 
 
-class TIRectangleoordinate(BaseModel):
+class TIRectangleCoordinate(BaseModel):
     coordinates: List[List[List[float]]]
 
 
@@ -94,7 +94,7 @@ class LBV1TIPolygon(LBV1ObjectBase):
 
 class LBV1TIRectangle(LBV1ObjectBase):
     object_type: Literal['rectangle'] = Field(..., alias='type')
-    geometry: TIRectangleoordinate
+    geometry: TIRectangleCoordinate
 
     def to_common(self) -> Rectangle:
         coord_list = np.array(self.geometry.coordinates[0])
