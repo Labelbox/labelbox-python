@@ -533,7 +533,9 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs) -> Dataset:
+    def create_dataset(self,
+                       iam_integration=IAMIntegration._DEFAULT,
+                       **kwargs) -> Dataset:
         """ Creates a Dataset object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -724,7 +726,7 @@ class Client:
         """
         return self._get_single(Entity.Ontology, ontology_id)
 
-    def get_ontologies(self, name_contains) -> PaginatedCollection]:
+    def get_ontologies(self, name_contains) -> PaginatedCollection:
         """
         Fetches all ontologies with names that match the name_contains string.
 
@@ -795,7 +797,8 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self, name, feature_schema_ids) -> Ontology:
+    def create_ontology_from_feature_schemas(self, name,
+                                             feature_schema_ids) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
