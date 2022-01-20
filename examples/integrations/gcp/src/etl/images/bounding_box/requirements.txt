@@ -1,3 +1,2 @@
-fastapi[all]
-docker
 google-cloud-storage
+labelbox[data]

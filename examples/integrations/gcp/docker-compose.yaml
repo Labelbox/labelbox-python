@@ -1,0 +1,23 @@
+version: '3.7'
+services:
+  coordinator:
+    build:
+      context: ./src/coordinator/
+      dockerfile: Dockerfile
+    volumes:
+      - ~/.config/gcloud:/root/.config/gcloud
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8000:8000
+    environment:
+      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
+      WEBHOOK_SECRET: "${WEBHOOK_SECRET}"
+      GCLOUD_CONFIG_DIR: "${HOME}/.config/gcloud"
+      GCS_BUCKET: lb-matt-test
+
+  bounding_box_etl:
+    build:
+      context: ./src/etl/images/bounding_box/
+      dockerfile: Dockerfile
+    environment:
+      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
