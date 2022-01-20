@@ -55,7 +55,7 @@ class Webhook(DbObject, Updateable):
     project = Relationship.ToOne("Project")
 
     @staticmethod
-    def create(client, topics, url, secret, project):
+    def create(client, topics, url, secret, project) -> "Webhook":
         """ Creates a Webhook.
 
         Args:
@@ -92,7 +92,7 @@ class Webhook(DbObject, Updateable):
         return Webhook(client, client.execute(query_str)["createWebhook"])
 
     @staticmethod
-    def validate_topics(topics):
+    def validate_topics(topics) -> None:
         if isinstance(topics, str) or not isinstance(topics, Iterable):
             raise TypeError(
                 f"Topics must be List[Webhook.Topic]. Found `{topics}`")
@@ -101,20 +101,20 @@ class Webhook(DbObject, Updateable):
             Webhook.validate_value(topic, Webhook.Topic)
 
     @staticmethod
-    def validate_value(value, enum):
+    def validate_value(value, enum) -> None:
         supported_values = {item.value for item in enum}
         if value not in supported_values:
             raise ValueError(
                 f"Value `{value}` does not exist in supported values. Expected one of {supported_values}"
             )
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Deletes the webhook
         """
         self.update(status=self.Status.INACTIVE.value)
 
-    def update(self, topics=None, url=None, status=None):
+    def update(self, topics=None, url=None, status=None) -> None:
         """ Updates the Webhook.
 
         Args:

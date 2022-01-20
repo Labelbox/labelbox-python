@@ -32,7 +32,7 @@ class Task(DbObject):
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
 
-    def refresh(self):
+    def refresh(self) -> None:
         """ Refreshes Task data from the server. """
         tasks = list(self._user.created_tasks(where=Task.uid == self.uid))
         if len(tasks) != 1:
@@ -40,7 +40,7 @@ class Task(DbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=300):
+    def wait_till_done(self, timeout_seconds=300) -> None:
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
 

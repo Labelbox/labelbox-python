@@ -1,6 +1,8 @@
+from labelbox.data.serialization.labelbox_v1.label import Review
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.schema.benchmark import Benchmark
 """ Client-side object type definitions. """
 
 
@@ -40,7 +42,7 @@ class Label(DbObject, Updateable, BulkDeletable):
     created_by = Relationship.ToOne("User", False, "created_by")
 
     @staticmethod
-    def bulk_delete(labels):
+    def bulk_delete(labels) -> None:
         """ Deletes all the given Labels.
 
         Args:
@@ -48,7 +50,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         """
         BulkDeletable._bulk_delete(labels, False)
 
-    def create_review(self, **kwargs):
+    def create_review(self, **kwargs) -> Review:
         """ Creates a Review for this label.
 
         Args:
@@ -58,7 +60,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         kwargs[Entity.Review.project.name] = self.project()
         return self.client._create(Entity.Review, kwargs)
 
-    def create_benchmark(self):
+    def create_benchmark(self) -> Benchmark:
         """ Creates a Benchmark for this Label.
 
         Returns:

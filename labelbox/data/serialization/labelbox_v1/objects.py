@@ -23,7 +23,7 @@ class LBV1ObjectBase(LBV1Feature):
     classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
                                 LBV1Checklist]] = []
 
-    def dict(self, *args, **kwargs) -> Dict[str, str]:
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
         # This means these are not video frames ..
         if self.instanceURI is None:

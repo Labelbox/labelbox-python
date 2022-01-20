@@ -13,6 +13,7 @@ import ndjson
 import requests
 
 from labelbox import utils
+from labelbox.data.annotation_types.collection import LabelGenerator
 from labelbox.exceptions import InvalidQueryError, LabelboxError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -104,7 +105,7 @@ class Project(DbObject, Updateable, Deletable):
 
         return super().update(**kwargs)
 
-    def members(self):
+    def members(self) -> PaginatedCollection:
         """ Fetch all current members for this project
 
         Returns:
@@ -120,7 +121,7 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
 
-    def labels(self, datasets=None, order_by=None):
+    def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
 
         Args:
@@ -154,7 +155,8 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
-    def export_queued_data_rows(self, timeout_seconds=120):
+    def export_queued_data_rows(self,
+                                timeout_seconds=120) -> List[Dict[str, str]]:
         """ Returns all data rows that are currently enqueued for this project.
 
         Args:
@@ -191,7 +193,7 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def video_label_generator(self, timeout_seconds=600):
+    def video_label_generator(self, timeout_seconds=600) -> LabelGenerator:
         """
         Download video annotations
 
@@ -215,7 +217,7 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.label_generator() for text and imagery data.")
         return LBV1Converter.deserialize_video(json_data, self.client)
 
-    def label_generator(self, timeout_seconds=600):
+    def label_generator(self, timeout_seconds=600) -> LabelGenerator:
         """
         Download text and image annotations
 
@@ -239,7 +241,7 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.video_label_generator() for video data.")
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels(self, download=False, timeout_seconds=600):
+    def export_labels(self, download=False, timeout_seconds=600) -> str:
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
@@ -277,7 +279,7 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def export_issues(self, status=None):
+    def export_issues(self, status=None) -> str:
         """ Calls the server-side Issues exporting that
         returns the URL to that payload.
 
@@ -311,7 +313,7 @@ class Project(DbObject, Updateable, Deletable):
 
         return res.get('issueExportUrl')
 
-    def upsert_instructions(self, instructions_file: str):
+    def upsert_instructions(self, instructions_file: str) -> None:
         """
         * Uploads instructions to the UI. Running more than once will replace the instructions
 
@@ -374,7 +376,7 @@ class Project(DbObject, Updateable, Deletable):
                 "customizationOptions": json.dumps(customization_options)
             })
 
-    def labeler_performance(self):
+    def labeler_performance(self) -> PaginatedCollection:
         """ Returns the labeler performances for this Project.
 
         Returns:
@@ -401,7 +403,7 @@ class Project(DbObject, Updateable, Deletable):
                                    ["project", "labelerPerformance"],
                                    create_labeler_performance)
 
-    def review_metrics(self, net_score):
+    def review_metrics(self, net_score) -> int:
         """ Returns this Project's review metrics.
 
         Args:
@@ -422,7 +424,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
-    def setup_editor(self, ontology):
+    def setup_editor(self, ontology) -> None:
         """
         Sets up the project using the Pictor editor.
 
@@ -457,7 +459,7 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def setup(self, labeling_frontend, labeling_frontend_options):
+    def setup(self, labeling_frontend, labeling_frontend_options) -> None:
         """ Finalizes the Project setup.
 
         Args:
@@ -562,7 +564,8 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self):
+    def queue_mode(self) -> str:
+        """Provides the status of if queue mode is enabled in the project."""
 
         query_str = """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {
@@ -581,7 +584,7 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError("Status not known")
 
-    def validate_labeling_parameter_overrides(self, data):
+    def validate_labeling_parameter_overrides(self, data) -> None:
         for idx, row in enumerate(data):
             if len(row) != 3:
                 raise TypeError(
@@ -604,7 +607,7 @@ class Project(DbObject, Updateable, Deletable):
                         f"{name} must be greater than 0 for data_row {data_row}. Index: {idx}"
                     )
 
-    def set_labeling_parameter_overrides(self, data):
+    def set_labeling_parameter_overrides(self, data) -> bool:
         """ Adds labeling parameter overrides to this project.
 
         See information on priority here:
@@ -652,7 +655,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    def unset_labeling_parameter_overrides(self, data_rows):
+    def unset_labeling_parameter_overrides(self, data_rows) -> bool:
         """ Removes labeling parameter overrides to this project.
 
         * This will remove unlabeled duplicates in the queue.
@@ -671,7 +674,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
-    def upsert_review_queue(self, quota_factor):
+    def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
 
         More information can be found here:
@@ -696,7 +699,7 @@ class Project(DbObject, Updateable, Deletable):
             quota_param: quota_factor
         })
 
-    def extend_reservations(self, queue_type):
+    def extend_reservations(self, queue_type) -> int:
         """ Extends all the current reservations for the current user on the given
         queue type.
         Args:
@@ -739,7 +742,7 @@ class Project(DbObject, Updateable, Deletable):
         return res["project"]["showPredictionsToLabelers"][
             "showingPredictionsToLabelers"]
 
-    def bulk_import_requests(self):
+    def bulk_import_requests(self) -> PaginatedCollection:
         """ Returns bulk import request objects which are used in model-assisted labeling.
         These are returned with the oldest first, and most recent last.
         """

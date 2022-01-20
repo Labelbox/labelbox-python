@@ -40,7 +40,7 @@ class User(DbObject):
     projects = Relationship.ToMany("Project", False)
     org_role = Relationship.ToOne("OrgRole", False)
 
-    def update_org_role(self, role: Role):
+    def update_org_role(self, role: Role) -> None:
         """ Updated the `User`s organization role.
 
         See client.get_roles() to get all valid roles
@@ -61,7 +61,7 @@ class User(DbObject):
             role_id_param: role.uid
         })
 
-    def remove_from_project(self, project: "Project"):
+    def remove_from_project(self, project: "Project") -> None:
         """ Removes a User from a project. Only used for project based users.
         Project based user means their org role is "NONE"
 
@@ -71,7 +71,7 @@ class User(DbObject):
         """
         self.upsert_project_role(project, self.client.get_roles()['NONE'])
 
-    def upsert_project_role(self, project: "Project", role: Role):
+    def upsert_project_role(self, project: "Project", role: Role) -> None:
         """ Updates or replaces a User's role in a project.
 
         Args:

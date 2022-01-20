@@ -4,6 +4,7 @@ from labelbox.exceptions import LabelboxError
 from labelbox import utils
 from labelbox.orm.db_object import DbObject, query, Entity
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.invite import Invite, InviteLimit, ProjectRole
 from labelbox.schema.user import User
 from labelbox.schema.role import Role
@@ -111,7 +112,7 @@ class Organization(DbObject):
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
-    def remove_user(self, user: User):
+    def remove_user(self, user: User) -> None:
         """
         Deletes a user from the organization. This cannot be undone without sending another invite.
 
@@ -125,7 +126,7 @@ class Organization(DbObject):
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
         }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
 
-    def get_iam_integrations(self):
+    def get_iam_integrations(self) -> List[IAMIntegration]:
         """
         Returns all IAM Integrations for an organization
         """
@@ -144,7 +145,7 @@ class Organization(DbObject):
             for integration_data in res['iamIntegrations']
         ]
 
-    def get_default_iam_integration(self):
+    def get_default_iam_integration(self) -> IAMIntegration:
         """
         Returns the default IAM integration for the organization.
         Will return None if there are no default integrations for the org.

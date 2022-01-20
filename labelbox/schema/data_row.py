@@ -49,7 +49,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.attachments.supports_sorting = False
 
     @staticmethod
-    def bulk_delete(data_rows):
+    def bulk_delete(data_rows) -> None:
         """ Deletes all the given DataRows.
 
         Args:
@@ -57,7 +57,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         """
         BulkDeletable._bulk_delete(data_rows, True)
 
-    def create_attachment(self, attachment_type, attachment_value):
+    def create_attachment(self, attachment_type,
+                          attachment_value) -> AssetAttachment:
         """ Adds an AssetAttachment to a DataRow.
             Labelers can view these attachments while labeling.
 
