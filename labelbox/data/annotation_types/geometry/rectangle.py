@@ -1,4 +1,4 @@
-from typing import Optional, Type, Union, Tuple
+from typing import Optional, Union, Tuple
 
 import cv2
 import geojson
