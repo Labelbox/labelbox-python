@@ -145,7 +145,7 @@ class Organization(DbObject):
             for integration_data in res['iamIntegrations']
         ]
 
-    def get_default_iam_integration(self) -> IAMIntegration:
+    def get_default_iam_integration(self) -> Optional[IAMIntegration]:
         """
         Returns the default IAM integration for the organization.
         Will return None if there are no default integrations for the org.
