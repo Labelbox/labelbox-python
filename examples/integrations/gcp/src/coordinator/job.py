@@ -1,19 +1,34 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from abc import ABC, abstractmethod
 
 import docker
 import logging
 from enum import Enum
 
+from dataclasses import dataclass, field
+
 logger = logging.getLogger("uvicorn")
 
+DOCKER_CLIENT = docker.from_env()
 
-class JobStatus(Enum):
+
+class JobState(Enum):
     SUCCESS = 'SUCCESS'
     FAILED = 'FAILED'
 
 
+@dataclass
+class JobStatus:
+    state: JobState
+    result: Dict[str, Any] = field(default_factory=dict)
+    errors: Optional[str] = None
+
+
 class Job(ABC):
+
+    @abstractmethod
+    def parse_args(self, json_data: Dict[str, Any]):
+        ...
 
     @abstractmethod
     def run_local(self, *args, **kwargs):
@@ -35,15 +50,18 @@ class CustomJob(Job):
         self.container_name = container_name
         self.max_run_time = max_run_time
 
-    def run_local(
+    @abstractmethod
+    def run_local(self, json_data: Dict[str, Any]) -> JobStatus:
+        ...
+
+    def _run_local(
             self,
-            docker_client: docker.DockerClient,
             cmd: Optional[List[str]] = None,
             env_vars: Optional[List[str]] = None,
             volumes: Optional[Dict[str, Dict[str, str]]] = None) -> JobStatus:
 
         logger.info("Starting gcp_bounding_box_etl container locally")
-        container = docker_client.containers.run(self.container_name,
+        container = DOCKER_CLIENT.containers.run(self.container_name,
                                                  cmd or [],
                                                  detach=True,
                                                  stream=True,
@@ -56,15 +74,15 @@ class CustomJob(Job):
         # TODO: Maybe we just raise an exception if the job failed?
         logger.info("STATUS: %s", str(res))
         if res['StatusCode'] == 0:
-            return JobStatus.SUCCESS
+            return JobStatus(state=JobState.SUCCESS)
         else:
             logger.error("[%s]: Job Failed")
+            errors = ""
             for log in container.logs(stderr=True, stdout=False, stream=True):
-                logger.error("[%s]: %s" %
-                             (self.name, log.decode('utf-8').strip()))
-
-            # We might want to return the errors
-            return JobStatus.FAILED
+                error = log.decode('utf-8').strip()
+                errors += error + "\n"
+                logger.error("[%s]: %s" % (self.name, error))
+            return JobStatus(state=JobState.FAILED, errors=errors)
 
     def run_remote(self):
         # Vertex requires a lot of one time config.

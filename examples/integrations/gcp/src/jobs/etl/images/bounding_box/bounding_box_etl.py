@@ -12,33 +12,32 @@ from google.cloud import storage
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-supported_extensions = ('JPEG', 'PNG', 'GIF', 'BMP', 'ICO')
-#max_file_size = 30MB
-
-
-def validate_annotations():
-    #For each label you must have at least 10 images, each with at least one annotation (bounding box and the label).
-    #At least 0.01 * length of a side of an image. For example, a 1000 * 900 pixel image would require bounding boxes of at least 10 * 9 pixels.
-    #Bound box minium size: 8 pixels by 8 pixels.
-
-    # If your data is not compatible with these requirements, then the job will fail.
-    # A custom workflow will be needed.
-    ...
-
-
-def validate_ontology(ontology):
-    # Can only have a single ontology
-    ...
+VERTEX_MIN_BBOX_DIM = 8
+VERTEX_MAX_EXAMPLES_PER_IMAGE = 500
+# Technically this is 10. But I don't want this to block dev
+VERTEX_MIN_TRAINING_EXAMPLES = 1
 
 
 def bounding_box_etl(project: Project) -> str:
-    ontology = project.ontology()
-    validate_ontology(ontology)
+    """
+    Creates a jsonl file that is used for input into a vertex ai training job
+
+    This code barely validates the requirements as listed in the vertex documentation.
+    Read more about the restrictions here:
+        - https://cloud.google.com/vertex-ai/docs/datasets/prepare-image#object-detection
+
+    """
+
     training_data = []
     for label in project.label_generator():
         bounding_box_annotations = []
         for annotation in label.annotations:
             if isinstance(annotation.value, Rectangle):
+                bbox = annotation.value
+                if (bbox.end.x - bbox.start.x) < VERTEX_MIN_BBOX_DIM or (
+                        bbox.end.y - bbox.start.y) < VERTEX_MIN_BBOX_DIM:
+                    continue
+
                 bounding_box_annotations.append({
                     "displayName": annotation.name,
                     "xMin": annotation.value.start.x,
@@ -46,11 +45,13 @@ def bounding_box_etl(project: Project) -> str:
                     "xMax": annotation.value.end.x,
                     "yMax": annotation.value.end.y,
                 })
-        # Note that the gcs uri will require us to re-upload each time..
+        # TODO: This will not work with vertex unless label.data.url is a gcs_uri
         training_data.append(
             json.dumps({
-                'imageGcsUri': label.data.url,
-                'boundingBoxAnnotations': bounding_box_annotations,
+                'imageGcsUri':
+                    label.data.url,
+                'boundingBoxAnnotations':
+                    bounding_box_annotations[:VERTEX_MAX_EXAMPLES_PER_IMAGE],
                 # TODO: Replace with the split from the export in the future.
                 'dataItemResourceLabels': {
                     "aiplatform.googleapis.com/ml_use": [
@@ -58,6 +59,11 @@ def bounding_box_etl(project: Project) -> str:
                     ][random.randint(0, 2)]
                 }
             }))
+    # The requirement seems to only apply to training data.
+    # This should be changed to check by split
+    if len(training_data) < VERTEX_MIN_TRAINING_EXAMPLES:
+        raise Exception("Not enought training examples provided")
+
     # jsonl
     return "\n".join(training_data)
 
@@ -76,7 +82,6 @@ def main(project_id, gcs_bucket, gcs_key):
 
 
 if __name__ == '__main__':
-    # TODO: We will want to share these for all etl..
     parser = argparse.ArgumentParser(description='Vertex AI ETL Runner')
     parser.add_argument('--gcs_bucket', type=str, required=True)
     parser.add_argument('--project_id', type=str, required=True)
