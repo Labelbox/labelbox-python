@@ -1,15 +1,18 @@
 import os
 from typing import Dict, Any
 import time
+import uuid
 
 from job import CustomJob, JobStatus
 
 
 class BoundingBoxETL(CustomJob):
 
-    def __init__(self, gcs_bucket: str, labelbox_api_key: str):
+    def __init__(self, gcs_bucket: str, labelbox_api_key: str,
+                 gc_cred_path: str):
         self.gcs_bucket = gcs_bucket
         self.labelbox_api_key = labelbox_api_key
+        self.gc_cred_path = gc_cred_path
         # TODO: When we add vertex we will want to use gcr uris instead of local names
         super().__init__(name="bounding_box_etl",
                          container_name="gcp_bounding_box_etl")
@@ -29,7 +32,7 @@ class BoundingBoxETL(CustomJob):
                 f"--gcs_key={gcs_key}"
             ],
             env_vars=[
-                "GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/development-sa-creds.json",
+                f"GOOGLE_APPLICATION_CREDENTIALS={self.gc_cred_path}",
                 f"LABELBOX_API_KEY={self.labelbox_api_key}"
             ],
             volumes={
@@ -41,4 +44,8 @@ class BoundingBoxETL(CustomJob):
         job_status.result = {
             'training_file_uri': f'gs://{self.gcs_bucket}/{gcs_key}'
         }
+
+        # TODO: how to version image datasets (and training)... We don't want to re-create the same data every time..
+        # Answer: For both of these, the webhook should post the name of the run... That way we can always have a new name
+        # and it is
         return job_status

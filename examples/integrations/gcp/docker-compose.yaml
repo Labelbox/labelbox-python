@@ -14,11 +14,17 @@ services:
       WEBHOOK_SECRET: "${WEBHOOK_SECRET}"
       GCLOUD_CONFIG_DIR: "${HOME}/.config/gcloud"
       GCS_BUCKET: "${GCS_BUCKET}"
+      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
 
   bounding_box_etl:
     build:
       context: ./src/jobs/etl/images/bounding_box/
       dockerfile: Dockerfile
+    volumes:
+        - ~/.config/gcloud:/root/.config/gcloud
     environment:
       LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
+      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+
+
 

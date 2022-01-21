@@ -1,5 +1,8 @@
 import os
 from typing import TypedDict, Union, Literal
+import json
+
+from google.cloud import aiplatform
 
 from etl.images.bounding_box_etl import BoundingBoxETL
 from training.images.bounding_box_training_placeholder import BoundingBoxTraining
@@ -7,6 +10,12 @@ from job import Job
 
 labelbox_api_key = os.environ['LABELBOX_API_KEY']
 gcs_bucket = os.environ['GCS_BUCKET']
+gc_cred_path = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+
+with open(gc_cred_path, 'r') as file:
+    project_id = json.load(file)['project_id']
+
+aiplatform.init(project=project_id, staging_bucket=f"gs://{gcs_bucket}")
 
 
 class Pipeline(TypedDict):
@@ -20,7 +29,7 @@ class Pipelines(TypedDict):
 
 pipelines: Pipelines = {
     'bounding_box': {
-        'etl': BoundingBoxETL(gcs_bucket, labelbox_api_key),
+        'etl': BoundingBoxETL(gcs_bucket, labelbox_api_key, gc_cred_path),
         'train': BoundingBoxTraining()
     }
 }
