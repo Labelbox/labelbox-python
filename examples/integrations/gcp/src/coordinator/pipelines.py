@@ -1,8 +1,8 @@
 import os
+from typing import TypedDict, Union, Literal
+
 from etl.images.bounding_box_etl import BoundingBoxETL
 from training.images.bounding_box_training_placeholder import BoundingBoxTraining
-
-from typing import TypedDict, Union, Literal
 from job import Job
 
 labelbox_api_key = os.environ['LABELBOX_API_KEY']

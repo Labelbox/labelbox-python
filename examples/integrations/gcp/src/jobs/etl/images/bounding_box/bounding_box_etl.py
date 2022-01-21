@@ -1,13 +1,14 @@
-from labelbox import Project
-from labelbox.data.annotation_types import Rectangle
 import random
 import json
-from google.cloud.storage.blob import Blob
 import argparse
 import time
 import logging
-from labelbox import Client
+
 from google.cloud import storage
+
+from labelbox import Client
+from labelbox import Project
+from labelbox.data.annotation_types import Rectangle
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

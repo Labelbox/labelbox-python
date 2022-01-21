@@ -1,11 +1,10 @@
 from typing import List, Optional, Dict, Any
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
+from enum import Enum
 
 import docker
 import logging
-from enum import Enum
-
-from dataclasses import dataclass, field
 
 logger = logging.getLogger("uvicorn")
 

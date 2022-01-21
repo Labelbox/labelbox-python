@@ -1,11 +1,8 @@
 import os
-import logging
 from typing import Dict, Any
 import time
 
-from job import CustomJob, JobState, JobStatus
-
-logger = logging.getLogger(__name__)
+from job import CustomJob, JobStatus
 
 
 class BoundingBoxETL(CustomJob):

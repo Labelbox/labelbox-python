@@ -1,18 +1,17 @@
+from typing import Dict, Any, Callable
 import hashlib
 import hmac
 import os
 import json
 import logging
 import argparse
-import docker
-from typing import Dict, Any, Callable
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.logger import logger
 import uvicorn
+
 from pipelines import pipelines, PipelineName
-import time
 from job import JobState, JobStatus
 
 secret = os.environ['WEBHOOK_SECRET']
