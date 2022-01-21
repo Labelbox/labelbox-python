@@ -45,7 +45,9 @@ To add a new job and integrate into a new or existing pipeline please follow the
     * Should live in a directory that mirriors the job directory
     * E.g. `coordinator/<etl/training>/<data type>/<job name>.py`
 3. Add the job to a pipeline in `coordinator/pipeline.py`
-4. Update `docker-compose.yaml` to include the new pipeline
+    * Update `pipelines` to include the new workflow
+    * Add the new pipeline name `PipelineName` type as a Literal
+4. Update `docker-compose.yaml` to include the new job
 5. Add tests
 
 

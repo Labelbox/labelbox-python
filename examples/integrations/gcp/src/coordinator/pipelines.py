@@ -3,14 +3,14 @@ from etl.images.bounding_box_etl import BoundingBoxETL
 from training.images.bounding_box_training_placeholder import BoundingBoxTraining
 
 from typing import TypedDict, Union, Literal
-from job import CustomJob, Job
+from job import Job
 
 labelbox_api_key = os.environ['LABELBOX_API_KEY']
 gcs_bucket = os.environ['GCS_BUCKET']
 
 
 class Pipeline(TypedDict):
-    etl: CustomJob
+    etl: Job
     train: Job
 
 
@@ -24,4 +24,8 @@ pipelines: Pipelines = {
         'train': BoundingBoxTraining()
     }
 }
-pipeline_name = Union[Literal['bounding_box']]
+PipelineName = Union[Literal['bounding_box']]
+
+if set(PipelineName.__args__) != set(pipelines.keys()):
+    raise ValueError(
+        "The keys in `pipelines` must match all names in PipelineName")

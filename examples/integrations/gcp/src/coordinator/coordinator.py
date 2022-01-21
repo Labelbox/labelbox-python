@@ -11,7 +11,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.logger import logger
 import uvicorn
-from pipelines import pipelines, pipeline_name
+from pipelines import pipelines, PipelineName
 import time
 from job import JobState, JobStatus
 
@@ -34,7 +34,7 @@ async def run_job(fn: Callable[[Dict[str, Any]], JobStatus]) -> JobStatus:
     return status
 
 
-async def run_local(json_data: Dict[str, Any], pipeline: pipeline_name):
+async def run_local(json_data: Dict[str, Any], pipeline: PipelineName):
     logger.info("Starting ETL.")
     status = await run_job(
         lambda: pipelines[pipeline]['etl'].run_local(json_data))

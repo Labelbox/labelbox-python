@@ -31,7 +31,7 @@ class Job(ABC):
         ...
 
     @abstractmethod
-    def run_local(self, *args, **kwargs):
+    def run_local(self, json_data: Dict[str, Any]) -> JobStatus:
         ...
 
     @abstractmethod
@@ -49,10 +49,6 @@ class CustomJob(Job):
         self.name = name
         self.container_name = container_name
         self.max_run_time = max_run_time
-
-    @abstractmethod
-    def run_local(self, json_data: Dict[str, Any]) -> JobStatus:
-        ...
 
     def _run_local(
             self,

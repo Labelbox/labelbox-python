@@ -22,7 +22,7 @@ class BoundingBoxETL(CustomJob):
         project_id = json_data['project_id']
         return project_id
 
-    def run_local(self, json_data) -> JobStatus:
+    def run_local(self, json_data: Dict[str, Any]) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
         gcs_key = f'etl/bounding-box/{nowgmt}.jsonl'
         project_id = self.parse_args(json_data)
