@@ -15,11 +15,7 @@ from pygeotile.point import Point as PygeoPoint
 from pydantic import BaseModel, validator
 from pydantic.class_validators import root_validator
 
-from labelbox.data.annotation_types.geometry.polygon import Polygon
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.line import Line
-from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from ..geometry import Point
+from labelbox.data.annotation_types import Rectangle, Point, Line, Polygon
 from .base_data import BaseData
 from .raster import RasterData
 
