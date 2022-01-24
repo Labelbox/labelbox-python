@@ -29,6 +29,9 @@ from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
 from labelbox.schema.ontology import Ontology, Tool, Classification
 from labelbox.schema.organization import Organization
+from labelbox.schema.user import User
+from labelbox.schema.project import Project
+from labelbox.schema.role import Role
 
 logger = logging.getLogger(__name__)
 

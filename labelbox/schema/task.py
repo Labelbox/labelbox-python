@@ -1,9 +1,11 @@
 import logging
 import time
+from typing import Optional
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ class Task(DbObject):
     name = Field.String("name")
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
+    _user: Optional[User] = None
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -34,6 +37,7 @@ class Task(DbObject):
 
     def refresh(self) -> None:
         """ Refreshes Task data from the server. """
+        assert self._user is not None
         tasks = list(self._user.created_tasks(where=Task.uid == self.uid))
         if len(tasks) != 1:
             raise ResourceNotFoundError(Task, self.uid)

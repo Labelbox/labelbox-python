@@ -1,5 +1,5 @@
 from labelbox.data.serialization.labelbox_v1.objects import LBV1Mask
-from typing import Any, Dict, Generator, Iterable
+from typing import Any, Dict, Generator, Iterable, Union
 import logging
 
 import ndjson
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class LBV1Converter:
 
     @staticmethod
-    def deserialize_video(json_data: Iterable[Dict[str, Any]],
+    def deserialize_video(json_data: Union[str, Iterable[Dict[str, Any]]],
                           client: "labelbox.Client") -> LabelGenerator:
         """
         Converts a labelbox video export into the common labelbox format.
@@ -36,7 +36,8 @@ class LBV1Converter:
         return LabelGenerator(data=label_generator)
 
     @staticmethod
-    def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelGenerator:
+    def deserialize(
+            json_data: Union[str, Iterable[Dict[str, Any]]]) -> LabelGenerator:
         """
         Converts a labelbox export (non-video) into the common labelbox format.
 

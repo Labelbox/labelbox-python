@@ -1,4 +1,4 @@
-from typing import Generator, List
+from typing import Generator, List, Union, Any
 import os
 import json
 import logging
@@ -10,6 +10,7 @@ from itertools import islice
 from labelbox.data.serialization.ndjson.base import DataRow
 from labelbox.schema import iam_integration
 from labelbox.schema.task import Task
+from labelbox.schema.user import User
 from labelbox import utils
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
@@ -121,7 +122,7 @@ class Dataset(DbObject, Updateable, Deletable):
             url_param: descriptor_url
         })
 
-    def create_data_rows(self, items) -> Task:
+    def create_data_rows(self, items) -> Union[Task, List[Any]]:
         """ Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
@@ -164,14 +165,15 @@ class Dataset(DbObject, Updateable, Deletable):
 
         # Fetch and return the task.
         task_id = res["taskId"]
-        user = self.client.get_user()
-        task = list(user.created_tasks(where=Entity.Task.uid == task_id))
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
         # Cache user in a private variable as the relationship can't be
         # resolved due to server-side limitations (see Task.created_by)
         # for more info.
-        if len(task) != 1:
+        if len(tasks) != 1:
             raise ResourceNotFoundError(Entity.Task, task_id)
-        task = task[0]
+        task: Task = tasks[0]
         task._user = user
         return task
 

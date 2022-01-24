@@ -6,7 +6,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Union, Iterable, List, Optional
+from typing import Dict, Union, Iterable, List, Optional, Any
 from urllib.parse import urlparse
 
 import ndjson
@@ -203,6 +203,10 @@ class Project(DbObject, Updateable, Deletable):
         _check_converter_import()
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds)
+        # assert that the instance this would fail is only if timeout runs out
+        assert isinstance(
+            json_data,
+            List), "Unable to successfully get labels. Please try again"
         if json_data is None:
             raise TimeoutError(
                 f"Unable to download labels in {timeout_seconds} seconds."
@@ -227,6 +231,10 @@ class Project(DbObject, Updateable, Deletable):
         _check_converter_import()
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds)
+        # assert that the instance this would fail is only if timeout runs out
+        assert isinstance(
+            json_data,
+            List), "Unable to successfully get labels. Please try again"
         if json_data is None:
             raise TimeoutError(
                 f"Unable to download labels in {timeout_seconds} seconds."
@@ -241,7 +249,10 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.video_label_generator() for video data.")
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels(self, download=False, timeout_seconds=600) -> str:
+    def export_labels(
+            self,
+            download=False,
+            timeout_seconds=600) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
@@ -564,7 +575,7 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self) -> str:
+    def queue_mode(self) -> QueueMode:
         """Provides the status of if queue mode is enabled in the project."""
 
         query_str = """query %s($projectId: ID!) {
