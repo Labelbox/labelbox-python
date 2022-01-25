@@ -4,8 +4,6 @@ from typing import Dict, List, Union
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError
 from labelbox.orm.comparison import Comparison
-import labelbox
-import typing
 """ Defines Field, Relationship and Entity. These classes are building
 blocks for defining the Labelbox schema, DB object operations and
 queries. """
@@ -317,8 +315,6 @@ class EntityMeta(type):
 class Entity(metaclass=EntityMeta):
     """ An entity that contains fields and relationships. Base class
     for DbObject (which is base class for concrete schema classes). """
-    if typing.TYPE_CHECKING:
-        DataRow: labelbox.DataRow
     # Every Entity has an "id" and a "deleted" field
     # Name the "id" field "uid" in Python to avoid conflict with keyword.
     uid = Field.ID("uid", "id")
