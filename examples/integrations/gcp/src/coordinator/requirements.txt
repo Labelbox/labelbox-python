@@ -1,0 +1,3 @@
+fastapi[all]
+docker
+google-cloud-storage
