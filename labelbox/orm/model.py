@@ -315,6 +315,7 @@ class EntityMeta(type):
 class Entity(metaclass=EntityMeta):
     """ An entity that contains fields and relationships. Base class
     for DbObject (which is base class for concrete schema classes). """
+    
     # Every Entity has an "id" and a "deleted" field
     # Name the "id" field "uid" in Python to avoid conflict with keyword.
     uid = Field.ID("uid", "id")
