@@ -1,7 +1,7 @@
 from typing import Any, Dict
 import logging
 
-from job import Job, JobStatus
+from job import Job, JobStatus, JobState
 from google.cloud import aiplatform
 from uuid import uuid4
 
@@ -26,18 +26,19 @@ class BoundingBoxTraining(Job):
         job = aiplatform.AutoMLImageTrainingJob(
             display_name="matt-test-train-automl",
             prediction_type="object_detection",
-            model_type=
-            "MOBILE_TF_LOW_LATENCY_1"  # lower accuracy but should train quicker while we build this out
-        )
-
+            model_type="MOBILE_TF_LOW_LATENCY_1")
         model = job.run(
             dataset=dataset,
             # Every 1,000 is 1 node-hour. This is close to the minimum (20k).
             # Increase / parameterize this before deploying
-            budget_milli_node_hours=30_000,
-        )
-
-        logging.info("model uri %s" % model.uri)
+            budget_milli_node_hours=1000,
+            training_filter_split=
+            "labels.aiplatform.googleapis.com/ml_use=training",
+            validation_filter_split=
+            "labels.aiplatform.googleapis.com/ml_use=validation",
+            test_filter_split="labels.aiplatform.googleapis.com/ml_use=test")
+        logger.info("model id: %s" % model.name)
+        return JobStatus(JobState.SUCCESS, result={'model_id': model.name})
 
     def run_remote(self, training_data_uri):
         ...
