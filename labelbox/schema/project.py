@@ -588,7 +588,7 @@ class Project(DbObject, Updateable, Deletable):
                     f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items. Index: {idx}"
                 )
             data_row, priority, num_labels = row
-            if not isinstance(data_row, Entity.DataRow):
+            if not isinstance(data_row, DataRow):
                 raise TypeError(
                     f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
                 )
