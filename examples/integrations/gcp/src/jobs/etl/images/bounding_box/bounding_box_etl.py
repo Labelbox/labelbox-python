@@ -5,16 +5,14 @@ import time
 import logging
 from typing import Tuple
 from io import BytesIO
-from labelbox.data.annotation_types import Label
+
 import requests
 from PIL.Image import Image, open as load_image
-
+from google.cloud.storage.bucket import Bucket
 from google.cloud import storage
 
-from labelbox import Client
-from labelbox import Project
-from labelbox.data.annotation_types import Rectangle
-from google.cloud.storage.bucket import Bucket
+from labelbox.data.annotation_types import Label, Rectangle
+from labelbox import Client, Project
 
 from concurrent.futures import ThreadPoolExecutor
 
