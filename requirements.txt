@@ -7,7 +7,6 @@ shapely
 tqdm
 geojson
 numpy
-rasterio
 PILLOW
 opencv-python
 typeguard
