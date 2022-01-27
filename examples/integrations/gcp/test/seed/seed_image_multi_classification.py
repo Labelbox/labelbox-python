@@ -56,33 +56,43 @@ def setup_project(client, class_names):
     return project, dataset, feature_schema_lookup
 
 
-annotations = []
-max_examples = 350
+labels = {}
+data_row_args = []
 ds = loadmat('/tmp/miml/miml data.mat')
 class_names = [x[0][0] for x in ds['class_name']]
 project, dataset, feature_schema_lookup = setup_project(client, class_names)
-for example_idx in tqdm(range(20)):
-    labels = [
+for example_idx in tqdm(range(ds['targets'].shape[-1])):
+    classes = [
         descriptions[i]
         for i in range(len(class_names))
         if ds['targets'][i, example_idx] > 0
     ]
     image_path = f"/tmp/miml/images/{1 + example_idx}.jpg"
-    data_row = dataset.create_data_row(row_data=image_path)
-    annotations.append({
+    external_id = str(uuid.uuid4())
+    data_row_args.append({'external_id': external_id, 'row_data': image_path})
+    labels[external_id] = {
         "uuid":
             str(uuid.uuid4()),
         "schemaId":
             feature_schema_lookup['classification'],
         "dataRow": {
-            "id": data_row.uid
+            "id": external_id
         },
         "answers": [{
             "schemaId": feature_schema_lookup['options'][class_name]
-        } for class_name in labels]
-    })
-# Q are there any with None? If so we will handle in the ETL
+        } for class_name in classes]
+    }
 
+task = dataset.create_data_rows(data_row_args)
+task.wait_till_done()
+
+for external_id, data_row_ids in tqdm(
+        client.get_data_row_ids_for_external_ids(list(labels.keys())).items()):
+    data = labels[external_id]
+    data_row_id = data_row_ids[0]
+    labels[external_id]['dataRow'] = {'id': data_row_id}
+
+annotations = list(labels.values())
 print(f"Uploading {len(annotations)} annotations.")
 job = LabelImport.create_from_objects(client, project.uid, str(uuid.uuid4()),
                                       annotations)

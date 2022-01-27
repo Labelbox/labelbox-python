@@ -8,6 +8,7 @@ from etl.images.bounding_box_etl import BoundingBoxETL
 from etl.text.ner_etl import NERETL
 from training.images.bounding_box_training import BoundingBoxTraining
 from training.text.ner_training import NERTraining
+from etl.images.classification_etl import ImageSingleClassification, ImageMultiClassification
 from job import Job
 
 labelbox_api_key = os.environ['LABELBOX_API_KEY']
@@ -38,6 +39,20 @@ pipelines: Pipelines = {
     'ner': {
         'etl': NERETL(gcs_bucket, labelbox_api_key, gc_cred_path),
         'train': NERTraining()
+    },
+    'image-single-classification': {
+        'etl':
+            ImageSingleClassification(gcs_bucket, labelbox_api_key,
+                                      gc_cred_path),
+        'train':
+            lambda x: x
+    },
+    'image-multi-classification': {
+        'etl':
+            ImageMultiClassification(gcs_bucket, labelbox_api_key,
+                                     gc_cred_path),
+        'train':
+            lambda x: x
     }
 }
 PipelineName = Union[Literal['bounding_box', 'ner']]

@@ -1,3 +1,4 @@
+from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.ontology import Classification, OntologyBuilder, Option
@@ -43,9 +44,11 @@ project, dataset, feature_schema_lookup = setup_project(client)
 for idx, example in tqdm(enumerate(ds.as_numpy_iterator())):
     if idx > max_examples:
         break
+
     im_bytes = BytesIO()
     Image.fromarray(example['image']).save(im_bytes, format="jpeg")
-    uri = client.upload_data(content=im_bytes.getvalue())
+    uri = client.upload_data(content=im_bytes.getvalue(),
+                             filename=f"{uuid.uuid4()}.jpg")
     data_row = dataset.create_data_row(row_data=uri)
     annotations.append({
         "uuid": str(uuid.uuid4()),
