@@ -98,7 +98,8 @@ class Mask(Geometry):
 
     def _extract_polygons_from_contours(self, contours: List) -> MultiPolygon:
         contours = map(np.squeeze, contours)
-        polygons = map(Polygon, contours)
+        filtered_contours = filter(lambda contour: len(contour) > 2, contours)
+        polygons = map(Polygon, filtered_contours)
         return MultiPolygon(polygons)
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
