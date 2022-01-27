@@ -26,5 +26,15 @@ services:
       LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
       GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
 
+  ner_etl:
+    build:
+      context: ./src/jobs/etl/text/ner/
+      dockerfile: Dockerfile
+    volumes:
+        - ~/.config/gcloud:/root/.config/gcloud
+    environment:
+      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
+      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+
 
 

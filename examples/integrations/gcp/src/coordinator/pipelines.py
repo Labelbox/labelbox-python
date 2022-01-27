@@ -5,7 +5,9 @@ import json
 from google.cloud import aiplatform
 
 from etl.images.bounding_box_etl import BoundingBoxETL
-from training.images.bounding_box_training_placeholder import BoundingBoxTraining
+from etl.text.ner_etl import NERETL
+from training.images.bounding_box_training import BoundingBoxTraining
+from training.text.ner_training import NERTraining
 from job import Job
 
 labelbox_api_key = os.environ['LABELBOX_API_KEY']
@@ -25,15 +27,20 @@ class Pipeline(TypedDict):
 
 class Pipelines(TypedDict):
     bounding_box: Pipeline
+    ner: Pipeline
 
 
 pipelines: Pipelines = {
     'bounding_box': {
         'etl': BoundingBoxETL(gcs_bucket, labelbox_api_key, gc_cred_path),
         'train': BoundingBoxTraining()
+    },
+    'ner': {
+        'etl': NERETL(gcs_bucket, labelbox_api_key, gc_cred_path),
+        'train': NERTraining()
     }
 }
-PipelineName = Union[Literal['bounding_box']]
+PipelineName = Union[Literal['bounding_box', 'ner']]
 
 if set(PipelineName.__args__) != set(pipelines.keys()):
     raise ValueError(
