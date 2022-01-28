@@ -6,7 +6,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Union, Iterable, List, Optional, Any
+from typing import TYPE_CHECKING, Dict, Union, Iterable, List, Optional, Any
 from urllib.parse import urlparse
 
 import ndjson
@@ -19,8 +19,9 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.schema.data_row import DataRow
+
+if TYPE_CHECKING:
+    from labelbox import BulkImportRequest
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
@@ -602,7 +603,7 @@ class Project(DbObject, Updateable, Deletable):
                     f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items. Index: {idx}"
                 )
             data_row, priority, num_labels = row
-            if not isinstance(data_row, DataRow):
+            if not isinstance(data_row, Entity.DataRow):
                 raise TypeError(
                     f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
                 )
@@ -771,7 +772,8 @@ class Project(DbObject, Updateable, Deletable):
                 query.results_query_part(Entity.BulkImportRequest))
         return PaginatedCollection(self.client, query_str,
                                    {id_param: str(self.uid)},
-                                   ["bulkImportRequests"], BulkImportRequest)
+                                   ["bulkImportRequests"],
+                                   Entity.BulkImportRequest)
 
     def upload_annotations(
             self,
@@ -810,18 +812,19 @@ class Project(DbObject, Updateable, Deletable):
                 return bool(parsed.scheme) and bool(parsed.netloc)
 
             if _is_url_valid(annotations):
-                return BulkImportRequest.create_from_url(client=self.client,
-                                                         project_id=self.uid,
-                                                         name=name,
-                                                         url=str(annotations),
-                                                         validate=validate)
+                return Entity.BulkImportRequest.create_from_url(
+                    client=self.client,
+                    project_id=self.uid,
+                    name=name,
+                    url=str(annotations),
+                    validate=validate)
             else:
                 path = Path(annotations)
                 if not path.exists():
                     raise FileNotFoundError(
                         f'{annotations} is not a valid url nor existing local file'
                     )
-                return BulkImportRequest.create_from_local_file(
+                return Entity.BulkImportRequest.create_from_local_file(
                     client=self.client,
                     project_id=self.uid,
                     name=name,
@@ -829,7 +832,7 @@ class Project(DbObject, Updateable, Deletable):
                     validate_file=validate,
                 )
         elif isinstance(annotations, Iterable):
-            return BulkImportRequest.create_from_objects(
+            return Entity.BulkImportRequest.create_from_objects(
                 client=self.client,
                 project_id=self.uid,
                 name=name,

@@ -1,4 +1,4 @@
-from typing import Generator, List, Union, Any
+from typing import Generator, List, Union, Any, TYPE_CHECKING
 import os
 import json
 import logging
@@ -7,18 +7,17 @@ import time
 import ndjson
 from itertools import islice
 
-from labelbox.data.serialization.ndjson.base import DataRow
-from labelbox.schema import iam_integration
-from labelbox.schema.task import Task
-from labelbox.schema.user import User
-from labelbox import utils
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
+from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
+
+if TYPE_CHECKING:
+    from labelbox import Task, User, DataRow
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +52,7 @@ class Dataset(DbObject, Updateable, Deletable):
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-    def create_data_row(self, **kwargs) -> DataRow:
+    def create_data_row(self, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
 
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
@@ -122,7 +121,7 @@ class Dataset(DbObject, Updateable, Deletable):
             url_param: descriptor_url
         })
 
-    def create_data_rows(self, items) -> Union[Task, List[Any]]:
+    def create_data_rows(self, items) -> Union["Task", List[Any]]:
         """ Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
@@ -317,7 +316,9 @@ class Dataset(DbObject, Updateable, Deletable):
         data = json.dumps(items)
         return self.client.upload_data(data)
 
-    def data_rows_for_external_id(self, external_id, limit=10) -> List[DataRow]:
+    def data_rows_for_external_id(self,
+                                  external_id,
+                                  limit=10) -> List["DataRow"]:
         """ Convenience method for getting a multiple `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
@@ -344,7 +345,7 @@ class Dataset(DbObject, Updateable, Deletable):
             raise ResourceNotFoundError(DataRow, where)
         return data_rows
 
-    def data_row_for_external_id(self, external_id) -> DataRow:
+    def data_row_for_external_id(self, external_id) -> "DataRow":
         """ Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 

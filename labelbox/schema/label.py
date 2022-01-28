@@ -1,8 +1,11 @@
-from labelbox.data.serialization.labelbox_v1.label import Review
+from typing import TYPE_CHECKING
+
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.benchmark import Benchmark
+
+if TYPE_CHECKING:
+    from labelbox import Benchmark, Review
 """ Client-side object type definitions. """
 
 
@@ -50,7 +53,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         """
         BulkDeletable._bulk_delete(labels, False)
 
-    def create_review(self, **kwargs) -> Review:
+    def create_review(self, **kwargs) -> "Review":
         """ Creates a Review for this label.
 
         Args:
@@ -60,7 +63,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         kwargs[Entity.Review.project.name] = self.project()
         return self.client._create(Entity.Review, kwargs)
 
-    def create_benchmark(self) -> Benchmark:
+    def create_benchmark(self) -> "Benchmark":
         """ Creates a Benchmark for this Label.
 
         Returns:

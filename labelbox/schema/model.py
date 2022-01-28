@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.model_run import ModelRun
+
+if TYPE_CHECKING:
+    from labelbox import ModelRun
 
 
 class Model(DbObject):
@@ -15,7 +18,7 @@ class Model(DbObject):
     name = Field.String("name")
     model_runs = Relationship.ToMany("ModelRun", False)
 
-    def create_model_run(self, name) -> ModelRun:
+    def create_model_run(self, name) -> "ModelRun":
         """ Creates a model run belonging to this model.
 
         Args:

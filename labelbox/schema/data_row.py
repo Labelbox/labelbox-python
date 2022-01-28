@@ -1,11 +1,13 @@
 import logging
 from datetime import datetime
-from typing import List, Dict, Union
+from typing import List, Dict, Union, TYPE_CHECKING
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.asset_attachment import AssetAttachment
+
+if TYPE_CHECKING:
+    from labelbox import AssetAttachment
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
 
     supported_meta_types = supported_attachment_types = set(
-        AssetAttachment.AttachmentType.__members__)
+        Entity.AssetAttachment.AttachmentType.__members__)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,7 +60,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         BulkDeletable._bulk_delete(data_rows, True)
 
     def create_attachment(self, attachment_type,
-                          attachment_value) -> AssetAttachment:
+                          attachment_value) -> "AssetAttachment":
         """ Adds an AssetAttachment to a DataRow.
             Labelers can view these attachments while labeling.
 
@@ -73,7 +75,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Raises:
             ValueError: asset_type must be one of the supported types.
         """
-        AssetAttachment.validate_attachment_type(attachment_type)
+        Entity.AssetAttachment.validate_attachment_type(attachment_type)
 
         attachment_type_param = "type"
         attachment_value_param = "value"

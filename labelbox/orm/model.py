@@ -343,6 +343,10 @@ class Entity(metaclass=EntityMeta):
         IAMIntegration: Type[labelbox.IAMIntegration]
         LabelingFrontendOptions: Type[labelbox.LabelingFrontendOptions]
         Label: Type[labelbox.Label]
+        MEAPredictionImport: Type[labelbox.MEAPredictionImport]
+        Invite: Type[labelbox.Invite]
+        InviteLimit: Type[labelbox.InviteLimit]
+        ProjectRole: Type[labelbox.ProjectRole]
 
     @classmethod
     def _attributes_of_type(cls, attr_type):

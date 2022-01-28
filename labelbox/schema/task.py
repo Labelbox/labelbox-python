@@ -1,11 +1,13 @@
 import logging
 import time
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship, Entity
-from labelbox.schema.user import User
+from labelbox.orm.model import Field, Relationship
+
+if TYPE_CHECKING:
+    from labelbox import User
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ class Task(DbObject):
     name = Field.String("name")
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
-    _user: Optional[User] = None
+    _user: Optional["User"] = None
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
