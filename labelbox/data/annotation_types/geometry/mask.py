@@ -1,9 +1,8 @@
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union, List
 
 import numpy as np
 from pydantic.class_validators import validator
-from rasterio.features import shapes
-from shapely.geometry import MultiPolygon, shape
+from shapely.geometry import MultiPolygon, Polygon
 import cv2
 
 from ..data import MaskData
@@ -39,12 +38,23 @@ class Mask(Geometry):
     @property
     def geometry(self):
         mask = self.draw(color=1)
-        polygons = (
-            shape(shp)
-            for shp, val in shapes(mask, mask=None)
-            # ignore if shape is area of smaller than 1 pixel
-            if val >= 1)
-        return MultiPolygon(polygons).__geo_interface__
+        contours, hierarchy = cv2.findContours(image=mask,
+                                               mode=cv2.RETR_TREE,
+                                               method=cv2.CHAIN_APPROX_NONE)
+
+        holes = []
+        external_contours = []
+        for i in range(len(contours)):
+            if hierarchy[0, i, 3] != -1:
+                #determined to be a hole based on contour hierarchy
+                holes.append(contours[i])
+            else:
+                external_contours.append(contours[i])
+
+        external_polygons = self._extract_polygons_from_contours(
+            external_contours)
+        holes = self._extract_polygons_from_contours(holes)
+        return external_polygons.difference(holes).__geo_interface__
 
     def draw(self,
              height: Optional[int] = None,
@@ -85,6 +95,12 @@ class Mask(Geometry):
                                                             dtype=np.uint8)
         canvas[mask.astype(np.bool)] = color
         return canvas
+
+    def _extract_polygons_from_contours(self, contours: List) -> MultiPolygon:
+        contours = map(np.squeeze, contours)
+        filtered_contours = filter(lambda contour: len(contour) > 2, contours)
+        polygons = map(Polygon, filtered_contours)
+        return MultiPolygon(polygons)
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
