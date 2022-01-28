@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Tuple, Union, List
+from typing import Callable, Optional, Tuple, Union, Dict
 
 import numpy as np
 from pydantic.class_validators import validator
