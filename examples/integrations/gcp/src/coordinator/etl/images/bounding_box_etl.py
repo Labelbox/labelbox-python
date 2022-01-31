@@ -43,6 +43,4 @@ class BoundingBoxETL(CustomJob):
         job_status.result = {
             'training_file_uri': f'gs://{self.gcs_bucket}/{gcs_key}'
         }
-        # TODO: how to version image datasets (and training)... We don't want to re-create the same data every time..
-        # Answer: For both of these, the webhook should post the name of the run... That way we can always have a new name
         return job_status

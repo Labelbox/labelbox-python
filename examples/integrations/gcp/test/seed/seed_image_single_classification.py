@@ -1,13 +1,14 @@
-from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
+import uuid
+from io import BytesIO
+
+from PIL import Image
+from tqdm import tqdm
+import tensorflow_datasets as tfds
+
+from labelbox import Client
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.ontology import Classification, OntologyBuilder, Option
-import tensorflow_datasets as tfds
-from PIL import Image
-from io import BytesIO
-from labelbox import Client
-from tqdm import tqdm
-import uuid
 
 client = Client()
 
@@ -15,8 +16,8 @@ CLASS_MAPPINGS = {0: 'cat', 1: 'dog'}
 
 
 def setup_project(client):
-    project = client.create_project(name="classification_image_project")
-    dataset = client.create_dataset(name="classification_image_dataset")
+    project = client.create_project(name="image_single_classification_project")
+    dataset = client.create_dataset(name="image_single_classification_dataset")
     ontology_builder = OntologyBuilder(classifications=[
         Classification(Classification.Type.RADIO,
                        "dog or cat",
@@ -37,9 +38,9 @@ def setup_project(client):
     return project, dataset, feature_schema_lookup
 
 
-max_examples = 350
 ds = tfds.load('cats_vs_dogs', split='train')
 annotations = []
+max_examples = 350
 project, dataset, feature_schema_lookup = setup_project(client)
 for idx, example in tqdm(enumerate(ds.as_numpy_iterator())):
     if idx > max_examples:

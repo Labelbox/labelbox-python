@@ -1,21 +1,14 @@
+import os
+import shutil
+import uuid
+
+from tqdm import tqdm
+from scipy.io import loadmat
+
+from labelbox import Client
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.ontology import Classification, OntologyBuilder, Option
-import tensorflow_datasets as tfds
-from PIL import Image
-from io import BytesIO
-from labelbox import Client
-from tqdm import tqdm
-import uuid
-from scipy.io import loadmat
-import os
-import shutil
-"""
-# For final testing.
-# Set this up to be N radio options
-# Or N dropdowns. It doesn't really matter...
-# We will just flatten it. Make sure both conditions work.
-"""
 
 if not os.path.exists('/tmp/miml'):
     if not shutil.which('7z'):
@@ -28,14 +21,10 @@ if not os.path.exists('/tmp/miml'):
     os.system('7z e /tmp/miml/original.rar -o/tmp/miml/images')
     os.system('7z e /tmp/miml/processed.rar -o/tmp/miml/')
 
-descriptions = ['desert', 'mountains', 'sea', 'sunset', 'trees']
-
-client = Client()
-
 
 def setup_project(client, class_names):
-    project = client.create_project(name="multi_classification_image_project")
-    dataset = client.create_dataset(name="multi_classification_image_dataset")
+    project = client.create_project(name="image_multi_classification_project")
+    dataset = client.create_dataset(name="image_multi_classification_dataset")
     ontology_builder = OntologyBuilder(classifications=[
         Classification(Classification.Type.CHECKLIST,
                        "description",
@@ -55,6 +44,9 @@ def setup_project(client, class_names):
     }
     return project, dataset, feature_schema_lookup
 
+
+descriptions = ['desert', 'mountains', 'sea', 'sunset', 'trees']
+client = Client()
 
 labels = {}
 data_row_args = []

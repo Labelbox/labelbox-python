@@ -45,3 +45,13 @@ services:
     environment:
       LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
       GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+
+  text_classification:
+    build:
+      context: ./src/jobs/etl/text/classification/
+      dockerfile: Dockerfile
+    volumes:
+      - ~/.config/gcloud:/root/.config/gcloud
+    environment:
+      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
+      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json

@@ -7,6 +7,7 @@ from io import BytesIO
 from labelbox import Client
 from tqdm import tqdm
 import uuid
+from uuid import uuid4
 
 client = Client()
 
@@ -14,8 +15,8 @@ CLASS_MAPPINGS = {0: 'negative', 1: 'positive'}
 
 
 def setup_project(client):
-    project = client.create_project(name="classification_text_project")
-    dataset = client.create_dataset(name="classification_text_dataset")
+    project = client.create_project(name="text_single_classification_project")
+    dataset = client.create_dataset(name="text_single_classification_dataset")
     ontology_builder = OntologyBuilder(classifications=[
         Classification(Classification.Type.RADIO,
                        "positive or negative",
@@ -37,30 +38,44 @@ def setup_project(client):
     return project, dataset, feature_schema_lookup
 
 
-max_examples = 10
 ds = tfds.load('imdb_reviews', split='train')
-annotations = []
+labels = {}
+data_row_args = []
 project, dataset, feature_schema_lookup = setup_project(client)
 for idx, example in tqdm(enumerate(ds.as_numpy_iterator())):
-    if idx > max_examples:
-        break
 
-    data_row = dataset.create_data_row(row_data=example['text'].decode('utf8'))
-    annotations.append({
+    external_id = str(uuid4())
+    data_row_args.append({
+        'row_data': example['text'].decode('utf8'),
+        'external_id': external_id
+    })
+    labels[external_id] = {
         "uuid": str(uuid.uuid4()),
         "schemaId": feature_schema_lookup['classification'],
         "dataRow": {
-            "id": data_row.uid
+            "id": None
         },
         "answer": {
             "schemaId":
                 feature_schema_lookup['options']
                 [CLASS_MAPPINGS[example['label']]]
         }
-    })
+    }
+
+task = dataset.create_data_rows(data_row_args)
+task.wait_till_done()
+
+for external_id, data_row_ids in tqdm(
+        client.get_data_row_ids_for_external_ids(list(labels.keys())).items()):
+    data = labels[external_id]
+    data_row_id = data_row_ids[0]
+    labels[external_id]['dataRow'] = {'id': data_row_id}
+
+annotations = list(labels.values())
 
 print(f"Uploading {len(annotations)} annotations.")
 job = LabelImport.create_from_objects(client, project.uid, str(uuid.uuid4()),
                                       annotations)
 job.wait_until_done()
 print("Upload Errors:", job.errors)
+print(project.uid)

@@ -10,12 +10,6 @@ from tqdm import tqdm
 import uuid
 
 client = Client()
-"""
-# For final testing.
-# Set this up to be N radio options
-# Or N dropdowns. It doesn't really matter...
-# We will just flatten it. Make sure both conditions work.
-"""
 
 CLASS_MAPPINGS_COURSE = ["DESC", "ENTY", "ABBR", "HUM", "NUM", "LOC"]
 CLASS_MAPPINGS_FINE = [
@@ -70,8 +64,8 @@ CLASS_MAPPINGS_FINE = [
 
 
 def setup_project(client):
-    project = client.create_project(name="multi_classification_text_project")
-    dataset = client.create_dataset(name="multi_classification_text_dataset")
+    project = client.create_project(name="text_multi_classification_project")
+    dataset = client.create_dataset(name="text_multi_classification_dataset")
     ontology_builder = OntologyBuilder(classifications=[
         Classification(Classification.Type.RADIO,
                        "fine",
@@ -101,14 +95,11 @@ def setup_project(client):
     return project, dataset, feature_schema_lookup
 
 
-max_examples = 10
 ds = tfds.load('trec', split='train')
 labels = defaultdict(list)
 project, dataset, feature_schema_lookup = setup_project(client)
 data_row_data = []
 for idx, example in tqdm(enumerate(ds.as_numpy_iterator())):
-    if idx > max_examples:
-        break
     fine_class_name, course_class_name = example['label-fine'], example[
         'label-coarse']
     external_id = str(uuid.uuid4())
