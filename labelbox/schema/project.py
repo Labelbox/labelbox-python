@@ -282,10 +282,10 @@ class Project(DbObject, Updateable, Deletable):
         filter_param = ""
         filter_param_dict = {}
 
-        if "start" in kwarg or "end" in kwarg:
+        if "start" in kwargs or "end" in kwargs:
             created_at_dict = {
-                "start": kwarg.get("start", ""),
-                "end": kwarg.get("end", "")
+                "start": kwargs.get("start", ""),
+                "end": kwargs.get("end", "")
             }
             [_validate_datetime(date) for date in created_at_dict.values()]
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
