@@ -275,7 +275,8 @@ class Project(DbObject, Updateable, Deletable):
                 try:
                     datetime.fromisoformat(string_date)
                 except:
-                    raise ValueError("Format of date must be \"YYYY-MM-DD\"")
+                    raise ValueError(f"""Incorrect format for: {string_date}. 
+                    Format must be \"YYYY-MM-DD\"""")
 
         sleep_time = 2
         id_param = "projectId"
@@ -292,7 +293,6 @@ class Project(DbObject, Updateable, Deletable):
                 created_at_dict, value_with_quotes=True)
 
         if filter_param_dict:
-
             filter_param = """, filters: {%s }""" % (_string_from_dict(
                 filter_param_dict, value_with_quotes=False))
 
