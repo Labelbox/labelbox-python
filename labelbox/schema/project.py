@@ -276,7 +276,7 @@ class Project(DbObject, Updateable, Deletable):
             """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
             if string_date:
                 try:
-                    datetime.fromisoformat(
+                    datetime.fromisoformat(  # type: ignore[attr-defined]
                         string_date)  # type: ignore[attr-defined]
                 except:
                     raise ValueError(f"""Incorrect format for: {string_date}. 
