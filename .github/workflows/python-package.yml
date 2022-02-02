@@ -69,7 +69,7 @@ jobs:
       - name: mypy
         run: |
           pip install mypy==0.931
-          mypy --install-types requirements.txt
+          mypy --install-types --non-interactive src/
           mypy -p labelbox --pretty --show-error-codes
       - name: Install package and test dependencies
         run: |
