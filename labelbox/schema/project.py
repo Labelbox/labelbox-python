@@ -2,6 +2,7 @@ import enum
 import json
 import logging
 import time
+from tkinter import E
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
@@ -278,13 +279,11 @@ class Project(DbObject, Updateable, Deletable):
             
             The string will be formatted as {key}: 'value' for each key. Value will be inclusive of
             quotations while key will not. This can be toggled with `value_with_quotes`"""
-            if value_with_quotes:
-                return ",".join([
-                    f"""{c}: "{dictionary.get(c)}\"""" for c in dictionary
-                    if dictionary.get(c)
-                ])
+
+            quote = "\"" if value_with_quotes else ""
             return ",".join([
-                f"""{c}: {dictionary.get(c)}""" for c in dictionary
+                f"""{c}: {quote}{dictionary.get(c)}{quote}"""
+                for c in dictionary
                 if dictionary.get(c)
             ])
 
@@ -293,7 +292,7 @@ class Project(DbObject, Updateable, Deletable):
             if string_date:
                 try:
                     datetime.strptime(string_date, "%Y-%m-%d")
-                except:
+                except ValueError:
                     raise ValueError(f"""Incorrect format for: {string_date}. 
                     Format must be \"YYYY-MM-DD\"""")
             return True
