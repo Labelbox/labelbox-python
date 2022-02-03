@@ -57,9 +57,6 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
         },
     ])
     assert task in client.get_user().created_tasks()
-    # TODO make Tasks expandable
-    with pytest.raises(InvalidQueryError):
-        assert task.created_by() == client.get_user()
     task.wait_till_done()
     assert task.status == "COMPLETE"
 

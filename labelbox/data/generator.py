@@ -1,6 +1,10 @@
+import logging
 import threading
 from queue import Queue
 from typing import Any, Iterable
+import threading
+
+logger = logging.getLogger(__name__)
 
 
 class ThreadSafeGen:
@@ -48,8 +52,9 @@ class PrefetchGenerator:
         self.completed_threads = 0
         # Can only iterate over once it the queue.get hangs forever.
         self.done = False
+        self.multithread = multithread
 
-        if multithread:
+        if self.multithread:
             self.num_executors = num_executors
             self.threads = [
                 threading.Thread(target=self.fill_queue)
@@ -71,20 +76,23 @@ class PrefetchGenerator:
                 if value is None:
                     raise ValueError("Unexpected None")
                 self.queue.put(value)
-        except:
+        except Exception as e:
             self.queue.put(
-                ValueError("Unexpected exception while filling queue."))
+                ValueError("Unexpected exception while filling queue. %r", e))
 
     def __iter__(self):
         return self
 
     def __next__(self) -> Any:
-        if self.done:
+        if self.done or self.queue.empty():
             raise StopIteration
-        value = self.queue.get(block=False)
+        value = self.queue.get()
         if isinstance(value, ValueError):
             raise value
         while value is None:
+            if not self.multithread:
+                value = self.queue.get()
+                continue
             self.completed_threads += 1
             if self.completed_threads == self.num_executors:
                 self.done = True
