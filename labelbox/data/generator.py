@@ -80,7 +80,6 @@ class PrefetchGenerator:
         for thread in self.threads:
             thread.daemon = True
             thread.start()
-        for thread in self.threads:
             thread.join()
 
     def _process(self, value) -> Any:
