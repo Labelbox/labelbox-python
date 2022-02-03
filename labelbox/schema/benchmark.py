@@ -27,7 +27,7 @@ class Benchmark(DbObject):
 
     reference_label = Relationship.ToOne("Label", False, "reference_label")
 
-    def delete(self):
+    def delete(self) -> None:
         label_param = "labelId"
         query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
             deleteBenchmark(where: {labelId: $%s}) {id}} """ % (label_param,
