@@ -2,7 +2,6 @@ import enum
 import json
 import logging
 import time
-from tkinter import E
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
