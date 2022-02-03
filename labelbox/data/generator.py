@@ -56,7 +56,6 @@ class PrefetchGenerator:
     #instead of self.get qeue in next, itll return just self._data.next
     #kwarg on export for multithread, and all other things that use prefetch
 
-    # def __init__(self, data: Iterable[Any], prefetch_limit=20, num_executors=4):
     def __init__(self,
                  data: Iterable[Any],
                  prefetch_limit=20,
