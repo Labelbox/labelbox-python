@@ -131,7 +131,7 @@ class CocoPanopticDataset(BaseModel):
 
         for result in results:
             images.append(result[0])
-            all_coco_annotations.extend(result[1])
+            all_coco_annotations.append(result[1])
             coco_categories.update(result[2])
             coco_things.update(result[3])
 
