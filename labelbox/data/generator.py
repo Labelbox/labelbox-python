@@ -1,10 +1,8 @@
-import logging
 import threading
 from queue import Queue
 from typing import Any, Iterable
-import threading
 
-logger = logging.getLogger(__name__)
+from labelbox.exceptions import ThreadException
 
 
 class ThreadSafeGen:
@@ -27,13 +25,43 @@ class ThreadSafeGen:
             return next(self.iterable)
 
 
+class PrefetchThread(threading.Thread):
+    """Class to override the Thread class. Helps raise 
+    exceptions to the main caller thread
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.exc = None
+
+    def run(self):
+        try:
+            super().run()
+        except BaseException as e:
+            self.exc = e
+
+    def join(self, timeout=None):
+        threading.Thread.join(self)
+        if self.exc:
+            raise self.exc
+
+
 class PrefetchGenerator:
     """
     Applys functions asynchronously to the output of a generator.
     Useful for modifying the generator results based on data from a network
     """
 
-    def __init__(self, data: Iterable[Any], prefetch_limit=20, num_executors=4):
+    #maybe change num exec to just 1, and if 1, make sync
+    #instead of self.get qeue in next, itll return just self._data.next
+    #kwarg on export for multithread, and all other things that use prefetch
+
+    # def __init__(self, data: Iterable[Any], prefetch_limit=20, num_executors=4):
+    def __init__(self,
+                 data: Iterable[Any],
+                 prefetch_limit=20,
+                 num_executors=1,
+                 multithread: bool = False):
         if isinstance(data, (list, tuple)):
             self._data = (r for r in data)
         else:
@@ -44,14 +72,17 @@ class PrefetchGenerator:
         self.completed_threads = 0
         # Can only iterate over once it the queue.get hangs forever.
         self.done = False
+        if multithread:
+            num_executors = 4
         self.num_executors = num_executors
         self.threads = [
-            threading.Thread(target=self.fill_queue)
-            for _ in range(num_executors)
+            PrefetchThread(target=self.fill_queue) for _ in range(num_executors)
         ]
         for thread in self.threads:
             thread.daemon = True
             thread.start()
+        for thread in self.threads:
+            thread.join()
 
     def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
@@ -63,11 +94,9 @@ class PrefetchGenerator:
                 if value is None:
                     raise ValueError("Unexpected None")
                 self.queue.put(value)
-        except Exception as e:
-            logger.warning("Unexpected exception while filling the queue. %r",
-                           e)
-        finally:
-            self.queue.put(None)
+        except:
+            raise ThreadException(
+                "Unexpected exception while filling the queue.")
 
     def __iter__(self):
         return self

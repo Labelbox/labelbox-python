@@ -123,3 +123,8 @@ class MALValidationError(LabelboxError):
 class OperationNotAllowedException(Exception):
     """Raised when user does not have permissions to a resource or has exceeded usage limit"""
     pass
+
+
+class ThreadException(Exception):
+    """Raised when there is an issue with a thread, typically in Prefetch generator"""
+    pass

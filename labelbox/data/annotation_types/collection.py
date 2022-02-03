@@ -172,7 +172,11 @@ class LabelGenerator(PrefetchGenerator):
     than the LabelList but will be much more memory efficient.
     """
 
-    def __init__(self, data: Generator[Label, None, None], *args, **kwargs):
+    def __init__(self,
+                 data: Generator[Label, None, None],
+                 multithread: bool = False,
+                 *args,
+                 **kwargs):
         self._fns = {}
         super().__init__(data, *args, **kwargs)
 
