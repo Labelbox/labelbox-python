@@ -38,7 +38,9 @@ class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
 class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
     frame_number: int = Field(..., alias='frameNumber')
 
-    def to_common(self):
+    def to_common(
+        self
+    ) -> List[Union[VideoClassificationAnnotation, VideoObjectAnnotation]]:
         classifications = [
             VideoClassificationAnnotation(
                 value=classification.to_common(),
@@ -217,19 +219,19 @@ class LBV1Label(BaseModel):
                     f"Can't infer data type from row data. row_data: {self.row_data[:200]}"
                 )
 
-    def _has_object_annotations(self):
+    def _has_object_annotations(self) -> bool:
         return len(self.label.objects) > 0
 
-    def _has_text_annotations(self):
+    def _has_text_annotations(self) -> bool:
         return len([
             annotation for annotation in self.label.objects
             if isinstance(annotation, LBV1TextEntity)
         ]) > 0
 
-    def _row_contains(self, substrs):
+    def _row_contains(self, substrs) -> bool:
         return any([substr in self.row_data for substr in substrs])
 
-    def _is_url(self):
+    def _is_url(self) -> bool:
         return self.row_data.startswith(
             ("http://", "https://")) or "tileLayerUrl" in self.row_data
 

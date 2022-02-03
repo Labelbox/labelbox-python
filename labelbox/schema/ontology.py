@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union, Type
 
 from pydantic import constr
 
-from labelbox.schema import project
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
@@ -50,7 +49,10 @@ class Option:
             self.label = self.value
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]):
+    def from_dict(
+            cls,
+            dictionary: Dict[str,
+                             Any]) -> Dict[Union[str, int], Union[str, int]]:
         return cls(value=dictionary["value"],
                    label=dictionary["label"],
                    schema_id=dictionary.get("schemaNodeId", None),
@@ -69,7 +71,7 @@ class Option:
             "options": [o.asdict() for o in self.options]
         }
 
-    def add_option(self, option: 'Classification'):
+    def add_option(self, option: 'Classification') -> None:
         if option.instructions in (o.instructions for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{option.instructions}' "
@@ -126,11 +128,11 @@ class Classification:
     feature_schema_id: Optional[str] = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.instructions
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]):
+    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(class_type=cls.Type(dictionary["type"]),
                    instructions=dictionary["instructions"],
                    required=dictionary.get("required", False),
@@ -153,7 +155,7 @@ class Classification:
             "featureSchemaId": self.feature_schema_id
         }
 
-    def add_option(self, option: Option):
+    def add_option(self, option: Option) -> None:
         if option.value in (o.value for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate option '{option.value}' "
@@ -209,7 +211,7 @@ class Tool:
     feature_schema_id: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]):
+    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(name=dictionary['name'],
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
@@ -232,7 +234,7 @@ class Tool:
             "featureSchemaId": self.feature_schema_id
         }
 
-    def add_classification(self, classification: Classification):
+    def add_classification(self, classification: Classification) -> None:
         if classification.instructions in (
                 c.instructions for c in self.classifications):
             raise InconsistentOntologyException(
@@ -319,14 +321,14 @@ class OntologyBuilder:
     classifications: List[Classification] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]):
+    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(tools=[Tool.from_dict(t) for t in dictionary["tools"]],
                    classifications=[
                        Classification.from_dict(c)
                        for c in dictionary["classifications"]
                    ])
 
-    def asdict(self):
+    def asdict(self) -> Dict[str, Any]:
         self._update_colors()
         return {
             "tools": [t.asdict() for t in self.tools],
@@ -344,21 +346,21 @@ class OntologyBuilder:
                 self.tools[index].color = '#%02x%02x%02x' % rgb_color
 
     @classmethod
-    def from_project(cls, project: "project.Project"):
+    def from_project(cls, project: "project.Project") -> "OntologyBuilder":
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
 
     @classmethod
-    def from_ontology(cls, ontology: Ontology):
+    def from_ontology(cls, ontology: Ontology) -> "OntologyBuilder":
         return cls.from_dict(ontology.normalized)
 
-    def add_tool(self, tool: Tool):
+    def add_tool(self, tool: Tool) -> None:
         if tool.name in (t.name for t in self.tools):
             raise InconsistentOntologyException(
                 f"Duplicate tool name '{tool.name}'. ")
         self.tools.append(tool)
 
-    def add_classification(self, classification: Classification):
+    def add_classification(self, classification: Classification) -> None:
         if classification.instructions in (
                 c.instructions for c in self.classifications):
             raise InconsistentOntologyException(

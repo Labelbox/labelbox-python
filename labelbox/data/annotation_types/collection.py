@@ -133,7 +133,7 @@ class LabelList:
                     )
             external_ids.add(label.data.external_id)
 
-    def append(self, label: Label):
+    def append(self, label: Label) -> None:
         self._data.append(label)
 
     def __iter__(self) -> "LabelList":
