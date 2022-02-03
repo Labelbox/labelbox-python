@@ -288,7 +288,7 @@ class Project(DbObject, Updateable, Deletable):
                 if dictionary.get(c)
             ])
 
-        def _validate_datetime(string_date: str) -> None:
+        def _validate_datetime(string_date: str) -> bool:
             """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
             if string_date:
                 try:
@@ -296,6 +296,7 @@ class Project(DbObject, Updateable, Deletable):
                 except:
                     raise ValueError(f"""Incorrect format for: {string_date}. 
                     Format must be \"YYYY-MM-DD\"""")
+            return True
 
         sleep_time = 2
         id_param = "projectId"
