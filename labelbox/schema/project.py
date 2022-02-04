@@ -194,7 +194,9 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def video_label_generator(self, timeout_seconds=600) -> LabelGenerator:
+    def video_label_generator(self,
+                              timeout_seconds=600,
+                              **kwargs) -> LabelGenerator:
         """
         Download video annotations
 
@@ -203,7 +205,8 @@ class Project(DbObject, Updateable, Deletable):
         """
         _check_converter_import()
         json_data = self.export_labels(download=True,
-                                       timeout_seconds=timeout_seconds)
+                                       timeout_seconds=timeout_seconds,
+                                       **kwargs)
         # assert that the instance this would fail is only if timeout runs out
         assert isinstance(
             json_data,
@@ -222,7 +225,7 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.label_generator() for text and imagery data.")
         return LBV1Converter.deserialize_video(json_data, self.client)
 
-    def label_generator(self, timeout_seconds=600) -> LabelGenerator:
+    def label_generator(self, timeout_seconds=600, **kwargs) -> LabelGenerator:
         """
         Download text and image annotations
 
@@ -231,7 +234,8 @@ class Project(DbObject, Updateable, Deletable):
         """
         _check_converter_import()
         json_data = self.export_labels(download=True,
-                                       timeout_seconds=timeout_seconds)
+                                       timeout_seconds=timeout_seconds,
+                                       **kwargs)
         # assert that the instance this would fail is only if timeout runs out
         assert isinstance(
             json_data,
@@ -250,26 +254,69 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.video_label_generator() for video data.")
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels(
-            self,
-            download=False,
-            timeout_seconds=600) -> Optional[Union[str, List[Dict[Any, Any]]]]:
+    def export_labels(self,
+                      download=False,
+                      timeout_seconds=600,
+                      **kwargs) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
         Will only generate a new URL at a max frequency of 30 min.
 
         Args:
+            download (bool): Returns the url if False
             timeout_seconds (float): Max waiting time, in seconds.
+            start (str): Earliest date for labels, formatted "YYYY-MM-DD"
+            end (str): Latest date for labels, formatted "YYYY-MM-DD"
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
+
+        def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
+            """Returns a concatenated string of the dictionary's keys and values
+            
+            The string will be formatted as {key}: 'value' for each key. Value will be inclusive of
+            quotations while key will not. This can be toggled with `value_with_quotes`"""
+
+            quote = "\"" if value_with_quotes else ""
+            return ",".join([
+                f"""{c}: {quote}{dictionary.get(c)}{quote}"""
+                for c in dictionary
+                if dictionary.get(c)
+            ])
+
+        def _validate_datetime(string_date: str) -> bool:
+            """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
+            if string_date:
+                try:
+                    datetime.strptime(string_date, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError(f"""Incorrect format for: {string_date}. 
+                    Format must be \"YYYY-MM-DD\"""")
+            return True
+
         sleep_time = 2
         id_param = "projectId"
+        filter_param = ""
+        filter_param_dict = {}
+
+        if "start" in kwargs or "end" in kwargs:
+            created_at_dict = {
+                "start": kwargs.get("start", ""),
+                "end": kwargs.get("end", "")
+            }
+            [_validate_datetime(date) for date in created_at_dict.values()]
+            filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
+                created_at_dict, value_with_quotes=True)
+
+        if filter_param_dict:
+            filter_param = """, filters: {%s }""" % (_string_from_dict(
+                filter_param_dict, value_with_quotes=False))
+
         query_str = """mutation GetLabelExportUrlPyApi($%s: ID!)
-            {exportLabels(data:{projectId: $%s }) {downloadUrl createdAt shouldPoll} }
-        """ % (id_param, id_param)
+            {exportLabels(data:{projectId: $%s%s}) {downloadUrl createdAt shouldPoll} }
+        """ % (id_param, id_param, filter_param)
 
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})

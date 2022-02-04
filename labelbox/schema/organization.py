@@ -4,6 +4,7 @@ from labelbox.exceptions import LabelboxError
 from labelbox import utils
 from labelbox.orm.db_object import DbObject, query, Entity
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.invite import InviteLimit
 
 if TYPE_CHECKING:
     from labelbox import Role, User, ProjectRole, Invite, InviteLimit, IAMIntegration
@@ -94,7 +95,7 @@ class Organization(DbObject):
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Entity.Invite(self.client, invite_response)
 
-    def invite_limit(self) -> "InviteLimit":
+    def invite_limit(self) -> InviteLimit:
         """ Retrieve invite limits for the org
         This already accounts for users currently in the org
         Meaining that  `used = users + invites, remaining = limit - (users + invites)`
@@ -108,7 +109,7 @@ class Organization(DbObject):
             """query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
         }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
-        return Entity.InviteLimit(
+        return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
     def remove_user(self, user: "User") -> None:
