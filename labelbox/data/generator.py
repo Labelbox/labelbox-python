@@ -40,13 +40,13 @@ class PrefetchGenerator:
             self._data = data
 
         self.queue = Queue(prefetch_limit)
-        self._data = ThreadSafeGen(self._data)
         self.completed_threads = 0
         # Can only iterate over once it the queue.get hangs forever.
-        self.multithread = False if num_executors == 1 else True
+        self.multithread = num_executors > 1
         self.done = False
 
         if self.multithread:
+            self._data = ThreadSafeGen(self._data)
             self.num_executors = num_executors
             self.threads = [
                 threading.Thread(target=self.fill_queue)
