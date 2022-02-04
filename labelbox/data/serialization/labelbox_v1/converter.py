@@ -82,7 +82,7 @@ class LBV1VideoIterator(PrefetchGenerator):
     Generator that fetches video annotations in the background to be faster.
     """
 
-    def __init__(self, examples, client, multithread: bool = False):
+    def __init__(self, examples, client):
         self.client = client
         super().__init__(examples)
 

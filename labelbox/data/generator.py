@@ -33,15 +33,7 @@ class PrefetchGenerator:
     Useful for modifying the generator results based on data from a network
     """
 
-    #maybe change num exec to just 1, and if 1, make sync
-    #instead of self.get qeue in next, itll return just self._data.next
-    #kwarg on export for multithread, and all other things that use prefetch
-
-    def __init__(self,
-                 data: Iterable[Any],
-                 prefetch_limit=20,
-                 num_executors=4,
-                 multithread: bool = False):
+    def __init__(self, data: Iterable[Any], prefetch_limit=20, num_executors=1):
         if isinstance(data, (list, tuple)):
             self._data = (r for r in data)
         else:
@@ -51,8 +43,8 @@ class PrefetchGenerator:
         self._data = ThreadSafeGen(self._data)
         self.completed_threads = 0
         # Can only iterate over once it the queue.get hangs forever.
+        self.multithread = False if num_executors == 1 else True
         self.done = False
-        self.multithread = multithread
 
         if self.multithread:
             self.num_executors = num_executors
@@ -64,7 +56,7 @@ class PrefetchGenerator:
                 thread.daemon = True
                 thread.start()
         else:
-            self.fill_queue()
+            self._data = iter(self._data)
 
     def _process(self, value) -> Any:
         raise NotImplementedError("Abstract method needs to be implemented")
@@ -79,25 +71,29 @@ class PrefetchGenerator:
         except Exception as e:
             self.queue.put(
                 ValueError("Unexpected exception while filling queue. %r", e))
+        finally:
+            self.queue.put(None)
 
     def __iter__(self):
         return self
 
     def __next__(self) -> Any:
-        if self.done or self.queue.empty():
+        if self.done:
             raise StopIteration
-        value = self.queue.get()
-        if isinstance(value, ValueError):
-            raise value
-        while value is None:
-            if not self.multithread:
-                value = self.queue.get()
-                continue
-            self.completed_threads += 1
-            if self.completed_threads == self.num_executors:
-                self.done = True
-                for thread in self.threads:
-                    thread.join()
-                raise StopIteration
+
+        if self.multithread:
             value = self.queue.get()
+            if isinstance(value, Exception):
+                raise value
+
+            while value is None:
+                self.completed_threads += 1
+                if self.completed_threads == self.num_executors:
+                    self.done = True
+                    for thread in self.threads:
+                        thread.join()
+                    raise StopIteration
+                value = self.queue.get()
+        else:
+            value = self._process(next(self._data))
         return value
