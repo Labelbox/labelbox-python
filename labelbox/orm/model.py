@@ -1,6 +1,7 @@
 from enum import Enum, auto
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any, Type, TYPE_CHECKING
 
+import labelbox
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError
 from labelbox.orm.comparison import Comparison
@@ -245,6 +246,9 @@ class EntityMeta(type):
     # Maps Entity name to Relationships for all currently defined Entities
     relationship_mappings: Dict[str, List[Relationship]] = {}
 
+    def __setattr__(self, key: Any, value: Any):
+        super().__setattr__(key, value)
+
     def __init__(cls, clsname, superclasses, attributedict):
         super().__init__(clsname, superclasses, attributedict)
         cls.validate_cached_relationships()
@@ -324,6 +328,25 @@ class Entity(metaclass=EntityMeta):
     # It's declared in Entity so it can be filtered out in class methods
     # suchs as `fields()`.
     deleted = Field.Boolean("deleted")
+
+    if TYPE_CHECKING:
+        DataRow: Type[labelbox.DataRow]
+        Webhook: Type[labelbox.Webhook]
+        Task: Type[labelbox.Task]
+        AssetAttachment: Type[labelbox.AssetAttachment]
+        ModelRun: Type[labelbox.ModelRun]
+        Review: Type[labelbox.Review]
+        User: Type[labelbox.User]
+        LabelingFrontend: Type[labelbox.LabelingFrontend]
+        BulkImportRequest: Type[labelbox.BulkImportRequest]
+        Benchmark: Type[labelbox.Benchmark]
+        IAMIntegration: Type[labelbox.IAMIntegration]
+        LabelingFrontendOptions: Type[labelbox.LabelingFrontendOptions]
+        Label: Type[labelbox.Label]
+        MEAPredictionImport: Type[labelbox.MEAPredictionImport]
+        Invite: Type[labelbox.Invite]
+        InviteLimit: Type[labelbox.InviteLimit]
+        ProjectRole: Type[labelbox.ProjectRole]
 
     @classmethod
     def _attributes_of_type(cls, attr_type):

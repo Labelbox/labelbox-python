@@ -74,6 +74,6 @@ class Rectangle(Geometry):
         return cv2.polylines(canvas, pts, True, color, thickness)
 
     @classmethod
-    def from_xyhw(cls, x: float, y: float, h: float, w: float):
+    def from_xyhw(cls, x: float, y: float, h: float, w: float) -> "Rectangle":
         """Create Rectangle from x,y, height width format"""
         return cls(start=Point(x=x, y=y), end=Point(x=x + w, y=y + h))

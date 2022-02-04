@@ -1,26 +1,37 @@
+# type: ignore
+from datetime import datetime, timezone
 import json
+from typing import List, Dict
+from collections import defaultdict
+
 import logging
 import mimetypes
 import os
-from collections import defaultdict
-from datetime import datetime, timezone
-from typing import List, Dict
 
+from google.api_core import retry
 import requests
 import requests.exceptions
-from google.api_core import retry
+from labelbox.data.annotation_types.feature import FeatureSchema
+from labelbox.data.serialization.ndjson.base import DataRow
 
 import labelbox.exceptions
-from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
+from labelbox import __version__ as SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema import role
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
+from labelbox.schema.dataset import Dataset
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.ontology import Tool, Classification
+from labelbox.schema import role
+from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.model import Model
+from labelbox.schema.ontology import Ontology, Tool, Classification
+from labelbox.schema.organization import Organization
+from labelbox.schema.user import User
+from labelbox.schema.project import Project
+from labelbox.schema.role import Role
 
 logger = logging.getLogger(__name__)
 
@@ -352,7 +363,7 @@ class Client:
             data=request_data,
             files={
                 "1": (filename, content, content_type) if
-                (filename and content_type) else content
+                     (filename and content_type) else content
             })
 
         if response.status_code == 502:
@@ -409,7 +420,7 @@ class Client:
         """
         return self._get_single(Entity.Project, project_id)
 
-    def get_dataset(self, dataset_id):
+    def get_dataset(self, dataset_id) -> Dataset:
         """ Gets a single Dataset with the given ID.
 
             >>> dataset = client.get_dataset("<dataset_id>")
@@ -424,14 +435,14 @@ class Client:
         """
         return self._get_single(Entity.Dataset, dataset_id)
 
-    def get_user(self):
+    def get_user(self) -> User:
         """ Gets the current User database object.
 
             >>> user = client.get_user()
         """
         return self._get_single(Entity.User, None)
 
-    def get_organization(self):
+    def get_organization(self) -> Organization:
         """ Gets the Organization DB object of the current user.
 
             >>> organization = client.get_organization()
@@ -459,7 +470,7 @@ class Client:
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
 
-    def get_projects(self, where=None):
+    def get_projects(self, where=None) -> List[Project]:
         """ Fetches all the projects the user has access to.
 
             >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
@@ -472,7 +483,7 @@ class Client:
         """
         return self._get_all(Entity.Project, where)
 
-    def get_datasets(self, where=None):
+    def get_datasets(self, where=None) -> List[Dataset]:
         """ Fetches one or more datasets.
 
             >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
@@ -485,7 +496,7 @@ class Client:
         """
         return self._get_all(Entity.Dataset, where)
 
-    def get_labeling_frontends(self, where=None):
+    def get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
         """ Fetches all the labeling frontends.
 
             >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
@@ -516,7 +527,7 @@ class Client:
         # Also convert Labelbox object values to their UIDs.
         data = {
             db_object_type.attribute(attr) if isinstance(attr, str) else attr:
-                value.uid if isinstance(value, DbObject) else value
+            value.uid if isinstance(value, DbObject) else value
             for attr, value in data.items()
         }
 
@@ -525,7 +536,9 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs):
+    def create_dataset(self,
+                       iam_integration=IAMIntegration._DEFAULT,
+                       **kwargs) -> Dataset:
         """ Creates a Dataset object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -583,7 +596,7 @@ class Client:
             raise e
         return dataset
 
-    def create_project(self, **kwargs):
+    def create_project(self, **kwargs) -> Project:
         """ Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -600,7 +613,7 @@ class Client:
         """
         return self._create(Entity.Project, kwargs)
 
-    def get_roles(self):
+    def get_roles(self) -> List[Role]:
         """
         Returns:
             Roles: Provides information on available roles within an organization.
@@ -608,7 +621,7 @@ class Client:
         """
         return role.get_roles(self)
 
-    def get_data_row(self, data_row_id):
+    def get_data_row(self, data_row_id) -> DataRow:
         """
 
         Returns:
@@ -617,7 +630,7 @@ class Client:
 
         return self._get_single(Entity.DataRow, data_row_id)
 
-    def get_data_row_metadata_ontology(self):
+    def get_data_row_metadata_ontology(self) -> DataRowMetadataOntology:
         """
 
         Returns:
@@ -626,7 +639,7 @@ class Client:
         """
         return DataRowMetadataOntology(self)
 
-    def get_model(self, model_id):
+    def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.
 
             >>> model = client.get_model("<model_id>")
@@ -641,7 +654,7 @@ class Client:
         """
         return self._get_single(Entity.Model, model_id)
 
-    def get_models(self, where=None):
+    def get_models(self, where=None) -> List[Model]:
         """ Fetches all the models the user has access to.
 
             >>> models = client.get_models(where=(Model.name == "<model_name>"))
@@ -654,7 +667,7 @@ class Client:
         """
         return self._get_all(Entity.Model, where, filter_deleted=False)
 
-    def create_model(self, name, ontology_id):
+    def create_model(self, name, ontology_id) -> Model:
         """ Creates a Model object on the server.
 
         >>> model = client.create_model(<model_name>, <ontology_id>)
@@ -700,12 +713,12 @@ class Client:
         for i in range(0, len(external_ids), max_ids_per_request):
             for row in self.execute(
                     query_str,
-                    {'externalId_in': external_ids[i:i + max_ids_per_request]
-                     })['externalIdsToDataRowIds']:
+                {'externalId_in': external_ids[i:i + max_ids_per_request]
+                })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
 
-    def get_ontology(self, ontology_id):
+    def get_ontology(self, ontology_id) -> Ontology:
         """
         Fetches an Ontology by id.
 
@@ -716,7 +729,7 @@ class Client:
         """
         return self._get_single(Entity.Ontology, ontology_id)
 
-    def get_ontologies(self, name_contains):
+    def get_ontologies(self, name_contains) -> PaginatedCollection:
         """
         Fetches all ontologies with names that match the name_contains string.
 
@@ -737,7 +750,7 @@ class Client:
                                    ['ontologies', 'nodes'], Entity.Ontology,
                                    ['ontologies', 'nextCursor'])
 
-    def get_feature_schema(self, feature_schema_id):
+    def get_feature_schema(self, feature_schema_id) -> FeatureSchema:
         """
         Fetches a feature schema. Only supports top level feature schemas.
 
@@ -758,7 +771,7 @@ class Client:
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
 
-    def get_feature_schemas(self, name_contains):
+    def get_feature_schemas(self, name_contains) -> PaginatedCollection:
         """
         Fetches top level feature schemas with names that match the `name_contains` string
 
@@ -787,7 +800,8 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self, name, feature_schema_ids):
+    def create_ontology_from_feature_schemas(self, name,
+                                             feature_schema_ids) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -826,7 +840,7 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized)
 
-    def create_ontology(self, name, normalized):
+    def create_ontology(self, name, normalized) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -853,7 +867,7 @@ class Client:
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
-    def create_feature_schema(self, normalized):
+    def create_feature_schema(self, normalized) -> FeatureSchema:
         """
         Creates a feature schema from normalized data.
             >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
@@ -894,57 +908,3 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
-
-    def get_batch(self, batch_id: str):
-        """Gets a single Batch using its ID
-
-        Args:
-            batch_id: Id of the batch
-
-        Returns:
-            The sought Batch
-        """
-
-        return self._get_single(Entity.Batch, batch_id)
-
-    def create_batch(self, name: str, project, data_rows: List[str], priority: int):
-        """Create a batch of data rows to send to a project
-
-        >>> data_rows = ['<data-row-id>', ...]
-        >>> project = client.get("<project-id>")
-        >>> client.create_batch(name="low-confidence-images", project=project, data_rows=data_rows)
-
-        Args:
-            name: Descriptive name for the batch, must be unique per project
-            project: The project to send the batch to
-            data_rows: A list of data rows ids
-            priority: the default priority for the datarows, lowest priority by default
-
-        Returns:
-            The created batch
-        """
-
-        if isinstance(project, Entity.Project):
-            project_id = project.uid
-        elif isinstance(project, str):
-            project_id = project
-        else:
-            raise ValueError("You must pass a project id or a Project")
-
-        data_row_ids = []
-        for dr in data_rows:
-            pass
-
-        query_str = """mutation createBatchPyApi($name: String!, $dataRowIds: [ID!]!, $priority: Int!){
-            createBatch(){
-                    %s
-                }
-            }"""
-
-        result = self.execute(query_str, {
-            "name": name,
-            "projectId": project_id,
-            "dataRowIds": data_row_ids,
-            "priority": priority
-        })
-        return Entity.Batch(self, result['createModel'])
