@@ -7,7 +7,7 @@ import ndjson
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import MALPredictionImport, AnnotationImportState
+from labelbox.schema.annotation_import import LabelImport, MALPredictionImport, AnnotationImportState
 
 
 @pytest.fixture
@@ -233,6 +233,33 @@ def segmentation_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def segmentation_inference_rle(prediction_id_mapping):
+    segmentation = prediction_id_mapping['superpixel'].copy()
+    segmentation.update({
+        'uuid': str(uuid.uuid4()),
+        'mask': {
+            'size': [10, 10],
+            'counts': [1, 0, 10, 100]
+        }
+    })
+    del segmentation['tool']
+    return segmentation
+
+
+@pytest.fixture
+def segmentation_inference_png(prediction_id_mapping):
+    segmentation = prediction_id_mapping['superpixel'].copy()
+    segmentation.update({
+        'uuid': str(uuid.uuid4()),
+        'mask': {
+            'png': "somedata",
+        }
+    })
+    del segmentation['tool']
+    return segmentation
+
+
+@pytest.fixture
 def checklist_inference(prediction_id_mapping):
     checklist = prediction_id_mapping['checklist'].copy()
     checklist.update({
@@ -283,10 +310,12 @@ def model_run_predictions(polygon_inference, rectangle_inference,
 # also used for label imports
 @pytest.fixture
 def object_predictions(polygon_inference, rectangle_inference, line_inference,
-                       entity_inference, segmentation_inference):
+                       entity_inference, segmentation_inference,
+                       segmentation_inference_rle, segmentation_inference_png):
     return [
         polygon_inference, rectangle_inference, line_inference,
-        entity_inference, segmentation_inference
+        entity_inference, segmentation_inference, segmentation_inference_rle,
+        segmentation_inference_png
     ]
 
 
@@ -326,19 +355,15 @@ def model_run(rand_gen, model):
 
 
 @pytest.fixture
-def model_run_annotation_groups(client, configured_project,
-                                annotation_submit_fn, model_run_predictions,
-                                model_run):
+def model_run_with_model_run_data_rows(client, configured_project,
+                                       model_run_predictions, model_run):
     configured_project.enable_model_assisted_labeling()
 
-    upload_task = MALPredictionImport.create_from_objects(
-        client, configured_project.uid, f'mal-import-{uuid.uuid4()}',
+    upload_task = LabelImport.create_from_objects(
+        client, configured_project.uid, f"label-import-{uuid.uuid4()}",
         model_run_predictions)
     upload_task.wait_until_done()
-    label_ids = []
-    for data_row_id in {x['dataRow']['id'] for x in model_run_predictions}:
-        label_ids.append(
-            annotation_submit_fn(configured_project.uid, data_row_id))
+    label_ids = [label.uid for label in configured_project.labels()]
     model_run.upsert_labels(label_ids)
     time.sleep(3)
     yield model_run

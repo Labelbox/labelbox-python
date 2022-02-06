@@ -1,6 +1,11 @@
 from typing import Any, Dict, List, Optional, Union, Type
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
+import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
 from .feature import LBV1Feature
@@ -18,7 +23,7 @@ class LBV1ObjectBase(LBV1Feature):
     classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
                                 LBV1Checklist]] = []
 
-    def dict(self, *args, **kwargs):
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
         # This means these are not video frames ..
         if self.instanceURI is None:
@@ -27,11 +32,81 @@ class LBV1ObjectBase(LBV1Feature):
 
     @validator('classifications', pre=True)
     def validate_subclasses(cls, value, field):
-        # Dropdown subclasses create extra unessesary nesting. So we just remove it.
+        # checklist subclasses create extra unessesary nesting. So we just remove it.
         if isinstance(value, list) and len(value):
-            if isinstance(value[0], list):
-                return value[0]
+            subclasses = []
+            for v in value:
+                # this is due to Checklists providing extra brackets []. We grab every item
+                # in the brackets if this is the case
+                if isinstance(v, list):
+                    for inner_v in v:
+                        subclasses.append(inner_v)
+                else:
+                    subclasses.append(v)
+            return subclasses
         return value
+
+
+class TIPointCoordinate(BaseModel):
+    coordinates: List[float]
+
+
+class TILineCoordinate(BaseModel):
+    coordinates: List[List[float]]
+
+
+class TIPolygonCoordinate(BaseModel):
+    coordinates: List[List[List[float]]]
+
+
+class TIRectangleCoordinate(BaseModel):
+    coordinates: List[List[List[float]]]
+
+
+class LBV1TIPoint(LBV1ObjectBase):
+    object_type: Literal['point'] = Field(..., alias='type')
+    geometry: TIPointCoordinate
+
+    def to_common(self) -> Point:
+        lng, lat = self.geometry.coordinates
+        return Point(x=lng, y=lat)
+
+
+class LBV1TILine(LBV1ObjectBase):
+    object_type: Literal['polyline'] = Field(..., alias='type')
+    geometry: TILineCoordinate
+
+    def to_common(self) -> Line:
+        return Line(points=[
+            Point(x=coord[0], y=coord[1]) for coord in self.geometry.coordinates
+        ])
+
+
+class LBV1TIPolygon(LBV1ObjectBase):
+    object_type: Literal['polygon'] = Field(..., alias='type')
+    geometry: TIPolygonCoordinate
+
+    def to_common(self) -> Polygon:
+        for coord_list in self.geometry.coordinates:
+            return Polygon(
+                points=[Point(x=coord[0], y=coord[1]) for coord in coord_list])
+
+
+class LBV1TIRectangle(LBV1ObjectBase):
+    object_type: Literal['rectangle'] = Field(..., alias='type')
+    geometry: TIRectangleCoordinate
+
+    def to_common(self) -> Rectangle:
+        coord_list = np.array(self.geometry.coordinates[0])
+
+        min_x, max_x = np.min(coord_list[:, 0]), np.max(coord_list[:, 0])
+        min_y, max_y = np.min(coord_list[:, 1]), np.max(coord_list[:, 1])
+
+        start = [min_x, min_y]
+        end = [max_x, max_y]
+
+        return Rectangle(start=Point(x=start[0], y=start[1]),
+                         end=Point(x=end[0], y=end[1]))
 
 
 class _Point(BaseModel):
@@ -186,7 +261,8 @@ class LBV1TextEntity(LBV1ObjectBase):
 
 class LBV1Objects(BaseModel):
     objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
-                        LBV1TextEntity, LBV1Mask]]
+                        LBV1TextEntity, LBV1Mask, LBV1TIPoint, LBV1TILine,
+                        LBV1TIPolygon, LBV1TIRectangle]]
 
     def to_common(self) -> List[ObjectAnnotation]:
         objects = [

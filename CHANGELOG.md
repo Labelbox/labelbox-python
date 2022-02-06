@@ -1,8 +1,101 @@
 # Changelog
-# Version 3.6.1 (2021-07-10)
+# Version 3.12.0 (2022-01-19)
+## Added
+* Tiled Imagery annotation type
+- A set of classes that support Tiled Image assets
+- New demo notebook can be found here: examples/annotation_types/tiled_imagery_basics.ipynb
+- Updated tiled image mal can be found here: examples/model_assisted_labeling/tiled_imagery_mal.ipynb
+* Support transformations from one EPSG to another with `EPSGTransformer` class
+- Supports EPSG to Pixel space transformations
+
+
+# Version 3.11.1 (2022-01-10)
+## Fix
+* Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
+* `project.upsert_review_queue` quotas can now be in the inclusive range [0,1]
+* Restore support for upserting html instructions to a project
+
+# Version 3.11.0 (2021-12-15)
+
+## Fix
+* `Dataset.create_data_rows()` now accepts an iterable of data row information instead of a list
+* `project.upsert_instructions()`
+    * now only supports pdfs since that is what the editor requires
+    * There was a bug that could cause this to modify the project ontology
+
+## Removed
+* `DataRowMetadataSchema.id` use `DataRowMetadataSchema.uid` instead
+* `ModelRun.delete_annotation_groups()` use `ModelRun.delete_model_run_data_rows()` instead
+* `ModelRun.annotation_groups()` use `ModelRun.model_run_data_rows()` instead
+
+# Version 3.10.0 (2021-11-18)
+## Added
+* `AnnotationImport.wait_until_done()` accepts a `show_progress` param. This is set to `False` by default.
+    * If enabled, a tqdm progress bar will indicate the import progress.
+    * This works for all classes that inherit from AnnotationImport: `LabelImport`, `MALPredictionImport`, `MEAPredictionImport`
+    * This is not support for `BulkImportRequest` (which will eventually be replaced by `MALPredictionImport`)
+* `Option.label` and `Option.value` can now be set independently
+* `ClassificationAnswer`s now support a new `keyframe` field for videos
+* New `LBV1Label.media_type field. This is a placeholder for future backend changes.
+
+## Fix
+* Nested checklists can have extra brackets. This would cause the annotation type converter to break.
+
+
+# Version 3.9.0 (2021-11-12)
+## Added
+* New ontology management features
+    * Query for ontologies by name with `client.get_ontologies()` or by id using `client.get_ontology()`
+    * Query for feature schemas by name with `client.get_feature_schemas()` or id using `client.get_feature_schema()`
+    * Create feature schemas with `client.create_feature_schemas()`
+    * Create ontologies from normalized ontology data with `client.create_ontology()`
+    * Create ontologies from feature schemas with `client.create_ontology_from_feature_schemas()`
+    * Set up a project from an existing ontology with `project.setup_edior()`
+    * Added new `FeatureSchema` entity
+* Add support for new queue modes
+    * Send batches of data directly to a project queue with `project.queue()`
+    * Remove items from a project queue with `project.dequeue()`
+    * Query for and toggle the queue mode
+
+# Version 3.8.0 (2021-10-22)
+## Added
+* `ModelRun.upsert_data_rows()`
+    * Add data rows to a model run without also attaching labels
+* `OperationNotAllowedException`
+    * raised when users hit resource limits or are not allowed to use a particular operation
+
+## Updated
+* `ModelRun.upsert_labels()`
+    * Blocks until the upsert job is complete. Error messages have been improved
+* `Organization.invite_user()` and `Organization.invite_limit()` are no longer experimental
+* `AnnotationGroup` was renamed to `ModelRunDataRow`
+* `ModelRun.delete_annotation_groups()` was renamed to `ModelRun.delete_model_run_data_rows()`
+* `ModelRun.annotation_groups()` was renamed to `ModelRun.model_run_data_rows()`
+
+## Fix
+* `DataRowMetadataField` no longer relies on pydantic for field validation and coercion
+    * This prevents unintended type coercions from occurring
+
+# Version 3.7.0 (2021-10-11)
+## Added
+* Search for data row ids from external ids without specifying a dataset
+    * `client.get_data_row_ids_for_external_ids()`
+* Support for numeric metadata type
+
+## Updated
+* The following `DataRowMetadataOntology` fields were renamed:
+    * `all_fields` -> `fields`
+    * `all_fields_id_index` -> `fields_by_id`
+    * `reserved_id_index` -> `reserved_by_id`
+    * `reserved_name_index` -> `reserved_by_name`
+    * `custom_id_index` -> `custom_by_id`
+    * `custom_name_index` -> `custom_by_name`
+
+
+# Version 3.6.1 (2021-10-07)
 * Fix import error that appears when exporting labels
 
-# Version 3.6.0 (2021-04-10)
+# Version 3.6.0 (2021-10-04)
 ## Added
 * Bulk export metadata with `DataRowMetadataOntology.bulk_export()`
 * Add docstring examples of annotation types and a few helper methods
@@ -16,7 +109,7 @@
 * data_row.metadata was removed in favor of bulk exports.
 
 
-# Version 3.5.0 (2021-15-09)
+# Version 3.5.0 (2021-09-15)
 ## Added
 * Diagnostics custom metrics
     * Metric annotation types

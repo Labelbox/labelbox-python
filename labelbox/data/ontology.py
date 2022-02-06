@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from labelbox.schema import ontology
 from .annotation_types import (Text, Dropdown, Checklist, Radio,
@@ -14,6 +14,10 @@ def get_feature_schema_lookup(
 
     def flatten_classification(classifications):
         for classification in classifications:
+            if classification.feature_schema_id is None:
+                raise ValueError(
+                    f"feature_schema_id cannot be None for classification `{classification.name}`."
+                )
             if isinstance(classification, ontology.Classification):
                 classification_lookup[
                     classification.
@@ -28,6 +32,9 @@ def get_feature_schema_lookup(
             flatten_classification(classification.options)
 
     for tool in ontology_builder.tools:
+        if tool.feature_schema_id is None:
+            raise ValueError(
+                f"feature_schema_id cannot be None for tool `{tool.name}`.")
         tool_lookup[tool.name] = tool.feature_schema_id
         flatten_classification(tool.classifications)
     flatten_classification(ontology_builder.classifications)
@@ -77,8 +84,9 @@ def get_classifications(
     return list(existing_classifications.values())
 
 
-def get_tools(annotations: List[ObjectAnnotation],
-              existing_tools: List[ontology.Classification]):
+def get_tools(
+        annotations: List[ObjectAnnotation],
+        existing_tools: List[ontology.Classification]) -> List[ontology.Tool]:
     existing_tools = {tool.name: tool for tool in existing_tools}
     for annotation in annotations:
         if annotation.name in existing_tools:
@@ -96,7 +104,8 @@ def get_tools(annotations: List[ObjectAnnotation],
     return list(existing_tools.values())
 
 
-def tool_mapping(annotation):
+def tool_mapping(
+        annotation) -> Union[Mask, Polygon, Point, Rectangle, Line, TextEntity]:
     tool_types = ontology.Tool.Type
     mapping = {
         Mask: tool_types.SEGMENTATION,
@@ -114,7 +123,8 @@ def tool_mapping(annotation):
     return result
 
 
-def classification_mapping(annotation):
+def classification_mapping(
+        annotation) -> Union[Text, Checklist, Radio, Dropdown]:
     classification_types = ontology.Classification.Type
     mapping = {
         Text: classification_types.TEXT,

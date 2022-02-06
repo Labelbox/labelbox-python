@@ -83,6 +83,9 @@ ipython_config.py
 # pyenv
 .python-version
 
+# vscode
+.vscode
+
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
@@ -137,3 +140,5 @@ docs/build/
 # and source files
 docs/source/_static
 docs/source/_templates
+/.graphqlconfig
+/schema.graphql

@@ -9,7 +9,14 @@ from .base_data import BaseData
 
 class TextData(BaseData):
     """
-    Represents text data
+    Represents text data. Requires arg file_path, text, or url
+
+    >>> TextData(text="")
+
+    Args:
+        file_path (str)
+        text (str)
+        url (str)
     """
     file_path: Optional[str] = None
     text: Optional[str] = None

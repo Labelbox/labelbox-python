@@ -17,7 +17,7 @@ def test_video():
         open('tests/data/assets/labelbox_v1/video_export.json', 'r'))
     collection = LBV1Converter.deserialize([payload])
     serialized = next(LBV1Converter.serialize(collection))
-
+    payload['media_type'] = 'video'
     assert serialized.keys() == payload.keys()
     for key in serialized:
         if key != 'Label':

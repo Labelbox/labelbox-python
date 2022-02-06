@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union, Optional
 
 try:
     from typing import Literal
@@ -24,23 +24,47 @@ class ClassificationAnswer(FeatureSchema):
     - Represents a classification option.
     - Because it inherits from FeatureSchema
         the option can be represented with either the name or feature_schema_id
+
+    - The keyframe arg only applies to video classifications.
+      Each answer can have a keyframe independent of the others.
+        So unlike object annotations, classification annotations
+          track keyframes at a classification answer level.
     """
     extra: Dict[str, Any] = {}
+    keyframe: Optional[bool] = None
+
+    def dict(self, *args, **kwargs) -> Dict[str, str]:
+        res = super().dict(*args, **kwargs)
+        if res['keyframe'] is None:
+            res.pop('keyframe')
+        return res
 
 
 class Radio(BaseModel):
-    """ A classification with only one selected option allowed """
+    """ A classification with only one selected option allowed
+
+    >>> Radio(answer = ClassificationAnswer(name = "dog"))
+
+    """
     answer: ClassificationAnswer
 
 
 class Checklist(_TempName):
-    """ A classification with many selected options allowed """
+    """ A classification with many selected options allowed
+
+    >>> Checklist(answer = [ClassificationAnswer(name = "cloudy")])
+
+    """
     name: Literal["checklist"] = "checklist"
     answer: List[ClassificationAnswer]
 
 
 class Text(BaseModel):
-    """ Free form text """
+    """ Free form text
+
+    >>> Text(answer = "some text answer")
+
+    """
     answer: str
 
 

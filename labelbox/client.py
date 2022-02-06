@@ -1,6 +1,8 @@
 # type: ignore
 from datetime import datetime, timezone
 import json
+from typing import List, Dict
+from collections import defaultdict
 
 import logging
 import mimetypes
@@ -9,23 +11,27 @@ import os
 from google.api_core import retry
 import requests
 import requests.exceptions
+from labelbox.data.annotation_types.feature import FeatureSchema
+from labelbox.data.serialization.ndjson.base import DataRow
 
 import labelbox.exceptions
 from labelbox import utils
 from labelbox import __version__ as SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.project import Project
-from labelbox.schema.dataset import Dataset
-from labelbox.schema.data_row import DataRow
-from labelbox.schema.model import Model
-from labelbox.schema.user import User
-from labelbox.schema.organization import Organization
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
-from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.dataset import Dataset
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
+from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.model import Model
+from labelbox.schema.ontology import Ontology, Tool, Classification
+from labelbox.schema.organization import Organization
+from labelbox.schema.user import User
+from labelbox.schema.project import Project
+from labelbox.schema.role import Role
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +82,7 @@ class Client:
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.app_url = app_url
-
-        # TODO: Make endpoints non-internal or support them as experimental
-        self.endpoint = endpoint.replace('/graphql', '/_gql')
+        self.endpoint = endpoint
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -147,9 +151,11 @@ class Client:
         elif data is None:
             raise ValueError("query and data cannot both be none")
 
+        endpoint = self.endpoint if not experimental else self.endpoint.replace(
+            "/graphql", "/_gql")
         try:
             request = {
-                'url': self.endpoint,
+                'url': endpoint,
                 'data': data,
                 'headers': self.headers,
                 'timeout': timeout
@@ -199,7 +205,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"]["exception"]["status"]
+            return error["extensions"]["exception"].get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -240,6 +246,18 @@ class Client:
             # as they already know which resource type and ID was requested
             return None
 
+        resource_conflict_error = check_errors(["RESOURCE_CONFLICT"],
+                                               "extensions", "code")
+        if resource_conflict_error is not None:
+            raise labelbox.exceptions.ResourceConflict(
+                resource_conflict_error["message"])
+
+        malformed_request_error = check_errors(["MALFORMED_REQUEST"],
+                                               "extensions", "code")
+        if malformed_request_error is not None:
+            raise labelbox.exceptions.MalformedQueryException(
+                malformed_request_error["message"])
+
         # A lot of different error situations are now labeled serverside
         # as INTERNAL_SERVER_ERROR, when they are actually client errors.
         # TODO: fix this in the server API
@@ -253,10 +271,22 @@ class Client:
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
+        not_allowed_error = check_errors(["OPERATION_NOT_ALLOWED"],
+                                         "extensions", "code")
+        if not_allowed_error is not None:
+            message = not_allowed_error.get("message")
+            raise labelbox.exceptions.OperationNotAllowedException(message)
+
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
+            messages = list(
+                map(
+                    lambda x: {
+                        "message": x["message"],
+                        "code": x["extensions"]["code"]
+                    }, errors))
             raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
-                                                    str(errors))
+                                                    str(messages))
 
         # if we do return a proper error code, and didn't catch this above
         # reraise
@@ -388,9 +418,9 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Project with the given ID.
         """
-        return self._get_single(Project, project_id)
+        return self._get_single(Entity.Project, project_id)
 
-    def get_dataset(self, dataset_id):
+    def get_dataset(self, dataset_id) -> Dataset:
         """ Gets a single Dataset with the given ID.
 
             >>> dataset = client.get_dataset("<dataset_id>")
@@ -403,22 +433,22 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Dataset with the given ID.
         """
-        return self._get_single(Dataset, dataset_id)
+        return self._get_single(Entity.Dataset, dataset_id)
 
-    def get_user(self):
+    def get_user(self) -> User:
         """ Gets the current User database object.
 
             >>> user = client.get_user()
         """
-        return self._get_single(User, None)
+        return self._get_single(Entity.User, None)
 
-    def get_organization(self):
+    def get_organization(self) -> Organization:
         """ Gets the Organization DB object of the current user.
 
             >>> organization = client.get_organization()
 
         """
-        return self._get_single(Organization, None)
+        return self._get_single(Entity.Organization, None)
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
@@ -440,7 +470,7 @@ class Client:
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
 
-    def get_projects(self, where=None):
+    def get_projects(self, where=None) -> List[Project]:
         """ Fetches all the projects the user has access to.
 
             >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
@@ -451,9 +481,9 @@ class Client:
         Returns:
             An iterable of Projects (typically a PaginatedCollection).
         """
-        return self._get_all(Project, where)
+        return self._get_all(Entity.Project, where)
 
-    def get_datasets(self, where=None):
+    def get_datasets(self, where=None) -> List[Dataset]:
         """ Fetches one or more datasets.
 
             >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
@@ -464,9 +494,9 @@ class Client:
         Returns:
             An iterable of Datasets (typically a PaginatedCollection).
         """
-        return self._get_all(Dataset, where)
+        return self._get_all(Entity.Dataset, where)
 
-    def get_labeling_frontends(self, where=None):
+    def get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
         """ Fetches all the labeling frontends.
 
             >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
@@ -477,7 +507,7 @@ class Client:
         Returns:
             An iterable of LabelingFrontends (typically a PaginatedCollection).
         """
-        return self._get_all(LabelingFrontend, where)
+        return self._get_all(Entity.LabelingFrontend, where)
 
     def _create(self, db_object_type, data):
         """ Creates an object on the server. Attribute values are
@@ -506,7 +536,9 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs):
+    def create_dataset(self,
+                       iam_integration=IAMIntegration._DEFAULT,
+                       **kwargs) -> Dataset:
         """ Creates a Dataset object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -524,7 +556,7 @@ class Client:
             InvalidAttributeError: If the Dataset type does not contain
                 any of the attribute names given in kwargs.
         """
-        dataset = self._create(Dataset, kwargs)
+        dataset = self._create(Entity.Dataset, kwargs)
 
         if iam_integration == IAMIntegration._DEFAULT:
             iam_integration = self.get_organization(
@@ -533,14 +565,16 @@ class Client:
         if iam_integration is None:
             return dataset
 
-        if not isinstance(iam_integration, IAMIntegration):
-            raise TypeError(
-                f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
-            )
-
-        if not iam_integration.valid:
-            raise ValueError("Integration is not valid. Please select another.")
         try:
+            if not isinstance(iam_integration, IAMIntegration):
+                raise TypeError(
+                    f"iam integration must be a reference an `IAMIntegration` object. Found {type(iam_integration)}"
+                )
+
+            if not iam_integration.valid:
+                raise ValueError(
+                    "Integration is not valid. Please select another.")
+
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
                     setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
@@ -562,7 +596,7 @@ class Client:
             raise e
         return dataset
 
-    def create_project(self, **kwargs):
+    def create_project(self, **kwargs) -> Project:
         """ Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -577,9 +611,9 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
-        return self._create(Project, kwargs)
+        return self._create(Entity.Project, kwargs)
 
-    def get_roles(self):
+    def get_roles(self) -> List[Role]:
         """
         Returns:
             Roles: Provides information on available roles within an organization.
@@ -587,16 +621,16 @@ class Client:
         """
         return role.get_roles(self)
 
-    def get_data_row(self, data_row_id):
+    def get_data_row(self, data_row_id) -> DataRow:
         """
 
         Returns:
             DataRow: returns a single data row given the data row id
         """
 
-        return self._get_single(DataRow, data_row_id)
+        return self._get_single(Entity.DataRow, data_row_id)
 
-    def get_data_row_metadata_ontology(self):
+    def get_data_row_metadata_ontology(self) -> DataRowMetadataOntology:
         """
 
         Returns:
@@ -605,7 +639,7 @@ class Client:
         """
         return DataRowMetadataOntology(self)
 
-    def get_model(self, model_id):
+    def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.
 
             >>> model = client.get_model("<model_id>")
@@ -618,9 +652,9 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no
                 Model with the given ID.
         """
-        return self._get_single(Model, model_id)
+        return self._get_single(Entity.Model, model_id)
 
-    def get_models(self, where=None):
+    def get_models(self, where=None) -> List[Model]:
         """ Fetches all the models the user has access to.
 
             >>> models = client.get_models(where=(Model.name == "<model_name>"))
@@ -631,9 +665,9 @@ class Client:
         Returns:
             An iterable of Models (typically a PaginatedCollection).
         """
-        return self._get_all(Model, where, filter_deleted=False)
+        return self._get_all(Entity.Model, where, filter_deleted=False)
 
-    def create_model(self, name, ontology_id):
+    def create_model(self, name, ontology_id) -> Model:
         """ Creates a Model object on the server.
 
         >>> model = client.create_model(<model_name>, <ontology_id>)
@@ -651,10 +685,226 @@ class Client:
             createModel(data: {name : $name, ontologyId : $ontologyId}){
                     %s
                 }
-            }""" % query.results_query_part(Model)
+            }""" % query.results_query_part(Entity.Model)
 
         result = self.execute(query_str, {
             "name": name,
             "ontologyId": ontology_id
         })
-        return Model(self, result['createModel'])
+        return Entity.Model(self, result['createModel'])
+
+    def get_data_row_ids_for_external_ids(
+            self, external_ids: List[str]) -> Dict[str, List[str]]:
+        """
+        Returns a list of data row ids for a list of external ids.
+        There is a max of 1500 items returned at a time.
+
+        Args:
+            external_ids: List of external ids to fetch data row ids for
+        Returns:
+            A dict of external ids as keys and values as a list of data row ids that correspond to that external id.
+        """
+        query_str = """query externalIdsToDataRowIdsPyApi($externalId_in: [String!]!){
+            externalIdsToDataRowIds(externalId_in: $externalId_in) { dataRowId externalId }
+        }
+        """
+        max_ids_per_request = 100
+        result = defaultdict(list)
+        for i in range(0, len(external_ids), max_ids_per_request):
+            for row in self.execute(
+                    query_str,
+                {'externalId_in': external_ids[i:i + max_ids_per_request]
+                })['externalIdsToDataRowIds']:
+                result[row['externalId']].append(row['dataRowId'])
+        return result
+
+    def get_ontology(self, ontology_id) -> Ontology:
+        """
+        Fetches an Ontology by id.
+
+        Args:
+            ontology_id (str): The id of the ontology to query for
+        Returns:
+            Ontology
+        """
+        return self._get_single(Entity.Ontology, ontology_id)
+
+    def get_ontologies(self, name_contains) -> PaginatedCollection:
+        """
+        Fetches all ontologies with names that match the name_contains string.
+
+        Args:
+            name_contains (str): the string to search ontology names by
+        Returns:
+            PaginatedCollection of Ontologies with names that match `name_contains`
+        """
+        query_str = """query getOntologiesPyApi($search: String, $filter: OntologyFilter, $from : String, $first: PageSize){
+            ontologies(where: {filter: $filter, search: $search}, after: $from, first: $first){
+                nodes {%s}
+                nextCursor
+            }
+        }
+        """ % query.results_query_part(Entity.Ontology)
+        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+        return PaginatedCollection(self, query_str, params,
+                                   ['ontologies', 'nodes'], Entity.Ontology,
+                                   ['ontologies', 'nextCursor'])
+
+    def get_feature_schema(self, feature_schema_id) -> FeatureSchema:
+        """
+        Fetches a feature schema. Only supports top level feature schemas.
+
+        Args:
+            feature_schema_id (str): The id of the feature schema to query for
+        Returns:
+            FeatureSchema
+        """
+
+        query_str = """query rootSchemaNodePyApi($rootSchemaNodeWhere: RootSchemaNodeWhere!){
+              rootSchemaNode(where: $rootSchemaNodeWhere){%s}
+        }""" % query.results_query_part(Entity.FeatureSchema)
+        res = self.execute(
+            query_str,
+            {'rootSchemaNodeWhere': {
+                'featureSchemaId': feature_schema_id
+            }})['rootSchemaNode']
+        res['id'] = res['normalized']['featureSchemaId']
+        return Entity.FeatureSchema(self, res)
+
+    def get_feature_schemas(self, name_contains) -> PaginatedCollection:
+        """
+        Fetches top level feature schemas with names that match the `name_contains` string
+
+        Args:
+            name_contains (str): the string to search top level feature schema names by
+        Returns:
+            PaginatedCollection of FeatureSchemas with names that match `name_contains`
+        """
+        query_str = """query rootSchemaNodesPyApi($search: String, $filter: RootSchemaNodeFilter, $from : String, $first: PageSize){
+            rootSchemaNodes(where: {filter: $filter, search: $search}, after: $from, first: $first){
+                nodes {%s}
+                nextCursor
+            }
+        }
+        """ % query.results_query_part(Entity.FeatureSchema)
+        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+
+        def rootSchemaPayloadToFeatureSchema(client, payload):
+            # Technically we are querying for a Schema Node.
+            # But the features are the same so we just grab the feature schema id
+            payload['id'] = payload['normalized']['featureSchemaId']
+            return Entity.FeatureSchema(client, payload)
+
+        return PaginatedCollection(self, query_str, params,
+                                   ['rootSchemaNodes', 'nodes'],
+                                   rootSchemaPayloadToFeatureSchema,
+                                   ['rootSchemaNodes', 'nextCursor'])
+
+    def create_ontology_from_feature_schemas(self, name,
+                                             feature_schema_ids) -> Ontology:
+        """
+        Creates an ontology from a list of feature schema ids
+
+        Args:
+            name (str): Name of the ontology
+            feature_schema_ids (List[str]): List of feature schema ids corresponding to
+                top level tools and classifications to include in the ontology
+        Returns:
+            The created Ontology
+        """
+        tools, classifications = [], []
+        for feature_schema_id in feature_schema_ids:
+            feature_schema = self.get_feature_schema(feature_schema_id)
+            tool = ['tool']
+            if 'tool' in feature_schema.normalized:
+                tool = feature_schema.normalized['tool']
+                try:
+                    Tool.Type(tool)
+                    tools.append(feature_schema.normalized)
+                except ValueError:
+                    raise ValueError(
+                        f"Tool `{tool}` not in list of supported tools.")
+            elif 'type' in feature_schema.normalized:
+                classification = feature_schema.normalized['type']
+                try:
+                    Classification.Type(classification)
+                    classifications.append(feature_schema.normalized)
+                except ValueError:
+                    raise ValueError(
+                        f"Classification `{classification}` not in list of supported classifications."
+                    )
+            else:
+                raise ValueError(
+                    "Neither `tool` or `classification` found in the normalized feature schema"
+                )
+        normalized = {'tools': tools, 'classifications': classifications}
+        return self.create_ontology(name, normalized)
+
+    def create_ontology(self, name, normalized) -> Ontology:
+        """
+        Creates an ontology from normalized data
+            >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
+            >>> ontology = client.create_ontology("ontology-name", normalized)
+
+        Or use the ontology builder. It is especially useful for complex ontologies
+            >>> normalized = OntologyBuilder(tools=[Tool(tool=Tool.Type.BBOX, name="cat", color = 'black')]).asdict()
+            >>> ontology = client.create_ontology("ontology-name", normalized)
+
+        To reuse existing feature schemas, use `create_ontology_from_feature_schemas()`
+        More details can be found here:
+            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+
+        Args:
+            name (str): Name of the ontology
+            normalized (dict): A normalized ontology payload. See above for details.
+        Returns:
+            The created Ontology
+        """
+        query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
+                           upsertOntology(data: $data){ %s }
+        } """ % query.results_query_part(Entity.Ontology)
+        params = {'data': {'name': name, 'normalized': json.dumps(normalized)}}
+        res = self.execute(query_str, params)
+        return Entity.Ontology(self, res['upsertOntology'])
+
+    def create_feature_schema(self, normalized) -> FeatureSchema:
+        """
+        Creates a feature schema from normalized data.
+            >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        Or use the Tool or Classification objects. It is especially useful for complex tools.
+            >>> normalized = Tool(tool=Tool.Type.BBOX, name="cat", color = 'black').asdict()
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        Subclasses are also supported
+            >>> normalized =  Tool(
+                    tool=Tool.Type.SEGMENTATION,
+                    name="cat",
+                    classifications=[
+                        Classification(
+                            class_type=Classification.Type.TEXT,
+                            instructions="name"
+                        )
+                    ]
+                )
+            >>> feature_schema = client.create_feature_schema(normalized)
+
+        More details can be found here:
+            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+
+        Args:
+            normalized (dict): A normalized tool or classification payload. See above for details
+        Returns:
+            The created FeatureSchema.
+        """
+        query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertRootSchemaNodeInput!){
+                        upsertRootSchemaNode(data: $data){ %s }
+        } """ % query.results_query_part(Entity.FeatureSchema)
+        normalized = {k: v for k, v in normalized.items() if v}
+        params = {'data': {'normalized': json.dumps(normalized)}}
+        res = self.execute(query_str, params)['upsertRootSchemaNode']
+        # Technically we are querying for a Schema Node.
+        # But the features are the same so we just grab the feature schema id
+        res['id'] = res['normalized']['featureSchemaId']
+        return Entity.FeatureSchema(self, res)

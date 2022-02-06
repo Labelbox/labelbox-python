@@ -1,12 +1,13 @@
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
-from labelbox.orm.db_object import DbObject, experimental, query, Entity
+from labelbox.orm.db_object import DbObject, query, Entity
 from labelbox.orm.model import Field, Relationship
-from labelbox.schema.invite import Invite, InviteLimit, ProjectRole
-from labelbox.schema.user import User
-from labelbox.schema.role import Role
+from labelbox.schema.invite import InviteLimit
+
+if TYPE_CHECKING:
+    from labelbox import Role, User, ProjectRole, Invite, InviteLimit, IAMIntegration
 
 
 class Organization(DbObject):
@@ -42,12 +43,11 @@ class Organization(DbObject):
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
 
-    @experimental
     def invite_user(
             self,
             email: str,
-            role: Role,
-            project_roles: Optional[List[ProjectRole]] = None) -> Invite:
+            role: "Role",
+            project_roles: Optional[List["ProjectRole"]] = None) -> "Invite":
         """
         Invite a new member to the org. This will send the user an email invite
 
@@ -60,12 +60,9 @@ class Organization(DbObject):
             Invite for the user
 
         Notes:
-            This function is currently experimental and has a few limitations that will be resolved in future releases
-            1. If you try to add an unsupported you will get an error referring to invalid foreign keys
-                - In this case `role.get_roles` is likely not getting the right ids
-            2. Multiple invites can be sent for the same email. This can only be resolved in the UI for now.
+            1. Multiple invites can be sent for the same email. This can only be resolved in the UI for now.
                 - Future releases of the SDK will support the ability to query and revoke invites to solve this problem (and/or checking on the backend)
-            3. Some server side response are unclear (e.g. if the user invites themself `None` is returned which the SDK raises as a `LabelboxError` )
+            2. Some server side response are unclear (e.g. if the user invites themself `None` is returned which the SDK raises as a `LabelboxError` )
         """
 
         if project_roles and role.name != "NONE":
@@ -76,29 +73,28 @@ class Organization(DbObject):
         data_param = "data"
         query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
                     createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail inviter { %s } }}}""" % (
-            data_param, data_param, query.results_query_part(User))
+            data_param, data_param, query.results_query_part(Entity.User))
 
         projects = [{
             "projectId": project_role.project.uid,
             "projectRoleId": project_role.role.uid
         } for project_role in project_roles or []]
 
-        res = self.client.execute(query_str, {
-            data_param: [{
-                "inviterId": self.client.get_user().uid,
-                "inviteeEmail": email,
-                "organizationId": self.uid,
-                "organizationRoleId": role.uid,
-                "projects": projects
-            }]
-        },
-                                  experimental=True)
+        res = self.client.execute(
+            query_str, {
+                data_param: [{
+                    "inviterId": self.client.get_user().uid,
+                    "inviteeEmail": email,
+                    "organizationId": self.uid,
+                    "organizationRoleId": role.uid,
+                    "projects": projects
+                }]
+            })
         invite_response = res['createInvites'][0]['invite']
         if not invite_response:
             raise LabelboxError(f"Unable to send invite for email {email}")
-        return Invite(self.client, invite_response)
+        return Entity.Invite(self.client, invite_response)
 
-    @experimental
     def invite_limit(self) -> InviteLimit:
         """ Retrieve invite limits for the org
         This already accounts for users currently in the org
@@ -109,14 +105,14 @@ class Organization(DbObject):
 
         """
         org_id_param = "organizationId"
-        res = self.client.execute("""query InvitesLimitPyApi($%s: ID!) {
+        res = self.client.execute(
+            """query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
-        }""" % (org_id_param, org_id_param), {org_id_param: self.uid},
-                                  experimental=True)
+        }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
         return InviteLimit(
             **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
 
-    def remove_user(self, user: User):
+    def remove_user(self, user: "User") -> None:
         """
         Deletes a user from the organization. This cannot be undone without sending another invite.
 
@@ -130,7 +126,7 @@ class Organization(DbObject):
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
         }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
 
-    def get_iam_integrations(self):
+    def get_iam_integrations(self) -> List["IAMIntegration"]:
         """
         Returns all IAM Integrations for an organization
         """
@@ -149,7 +145,7 @@ class Organization(DbObject):
             for integration_data in res['iamIntegrations']
         ]
 
-    def get_default_iam_integration(self):
+    def get_default_iam_integration(self) -> Optional["IAMIntegration"]:
         """
         Returns the default IAM integration for the organization.
         Will return None if there are no default integrations for the org.

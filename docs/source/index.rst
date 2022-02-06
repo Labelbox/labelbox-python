@@ -154,3 +154,30 @@ Enums
    :members:
    :show-inheritance:
 
+ModelRun
+----------------------------
+
+.. automodule:: labelbox.schema.model_run
+   :members:
+   :show-inheritance:
+
+Model
+----------------------------
+
+.. automodule:: labelbox.schema.model
+   :members:
+   :show-inheritance:
+
+DataRowMetadata
+----------------------------
+
+.. automodule:: labelbox.schema.data_row_metadata
+   :members:
+   :show-inheritance:   
+
+AnnotationImport
+----------------------------
+
+.. automodule:: labelbox.schema.annotation_import
+   :members:
+   :show-inheritance:      

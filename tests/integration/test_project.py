@@ -1,11 +1,11 @@
 import json
 
-import requests
-import ndjson
 import pytest
+import requests
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -80,7 +80,7 @@ def test_extend_reservations(project):
 
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
-        project.upsert_instructions('/tmp/instructions.txt')
+        project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
     assert str(
         execinfo.value
     ) == "Cannot attach instructions to a project that has not been set up."
@@ -91,19 +91,50 @@ def test_attach_instructions(client, project):
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
 
-    with open('/tmp/instructions.txt', 'w') as file:
-        file.write("some instructions...")
-
-    project.upsert_instructions('/tmp/instructions.txt')
+    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
     assert json.loads(
         list(project.labeling_frontend_options())
         [-1].customization_options).get('projectInstructions') is not None
 
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
-    assert "instructions_file must end with one of" in str(exc_info.value)
+    assert "instructions_file must be a pdf or html file. Found" in str(
+        exc_info.value)
+
+
+def test_html_instructions(configured_project):
+    html_file_path = '/tmp/instructions.html'
+    sample_html_str = "<html></html>"
+
+    with open(html_file_path, 'w') as file:
+        file.write(sample_html_str)
+
+    configured_project.upsert_instructions(html_file_path)
+    updated_ontology = configured_project.ontology().normalized
+
+    instructions = updated_ontology.pop('projectInstructions')
+    assert requests.get(instructions).text == sample_html_str
+
+
+def test_same_ontology_after_instructions(
+        client, configured_project_with_complex_ontology):
+    project, _ = configured_project_with_complex_ontology
+    initial_ontology = project.ontology().normalized
+    project.upsert_instructions('tests/data/assets/loremipsum.pdf')
+    updated_ontology = project.ontology().normalized
+
+    instructions = updated_ontology.pop('projectInstructions')
+
+    assert initial_ontology == updated_ontology
+    assert instructions is not None
 
 
 def test_queued_data_row_export(configured_project):
     result = configured_project.export_queued_data_rows()
     assert len(result) == 1
+
+
+def test_queue_mode(configured_project: Project):
+    assert configured_project.queue_mode() == QueueMode.Dataset
+    configured_project.update(queue_mode=QueueMode.Batch)
+    assert configured_project.queue_mode() == QueueMode.Batch

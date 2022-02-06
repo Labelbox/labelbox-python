@@ -1,0 +1,7 @@
+repos:
+  - repo: https://github.com/google/yapf
+    rev: v0.31.0
+    hooks:
+      - id: yapf
+        name: "yapf"
+        args: [-i, --style, google]

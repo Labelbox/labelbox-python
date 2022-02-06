@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import json
 import time
+import time
 
 import pytest
 
@@ -23,17 +24,16 @@ def simple_ontology():
     return {"tools": [], "classifications": classifications}
 
 
-def test_project_setup(project, iframe_url) -> None:
+def test_project_setup(project) -> None:
     client = project.client
     labeling_frontends = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.iframe_url_path == iframe_url))
-    assert len(labeling_frontends) == 1, (
-        f'Checking for {iframe_url} and received {labeling_frontends}')
+        client.get_labeling_frontends(where=LabelingFrontend.name == 'Editor'))
+    assert len(labeling_frontends)
     labeling_frontend = labeling_frontends[0]
 
     time.sleep(3)
     now = datetime.now().astimezone(timezone.utc)
+
     project.setup(labeling_frontend, simple_ontology())
     assert now - project.setup_complete <= timedelta(seconds=3)
     assert now - project.last_activity_time <= timedelta(seconds=3)
@@ -50,3 +50,20 @@ def test_project_setup(project, iframe_url) -> None:
     assert options.customization_options == json.dumps(simple_ontology())
     assert project.organization() == client.get_organization()
     assert project.created_by() == client.get_user()
+
+
+def test_project_editor_setup(client, project, rand_gen):
+    ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
+    ontology = client.create_ontology(ontology_name, simple_ontology())
+    now = datetime.now().astimezone(timezone.utc)
+    project.setup_editor(ontology)
+    assert now - project.setup_complete <= timedelta(seconds=3)
+    assert now - project.last_activity_time <= timedelta(seconds=3)
+    assert project.labeling_frontend().name == "Editor"
+    assert project.organization() == client.get_organization()
+    assert project.created_by() == client.get_user()
+    assert project.ontology().name == ontology_name
+    # Make sure that setup only creates one ontology
+    time.sleep(3)  # Search takes a second
+    assert [ontology.name for ontology in client.get_ontologies(ontology_name)
+           ] == [ontology_name]

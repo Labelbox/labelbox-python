@@ -7,7 +7,6 @@ import requests
 from labelbox import Label
 
 
-@pytest.mark.skip("Cannot query for labels created with create_label")
 def test_labels(label_pack):
     project, dataset, data_row, label = label_pack
 
@@ -30,20 +29,14 @@ def test_labels(label_pack):
     assert list(data_row.labels()) == []
 
 
-def test_label_export(client, label_pack):
-    project, dataset, data_row, label = label_pack
-    #Project has to be setup for export to be possible
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
-    project.create_label(data_row=data_row, label="export_label")
+def test_label_export(client, configured_project_with_label):
+    project, label_id = configured_project_with_label
+
     exported_labels_url = project.export_labels()
     assert exported_labels_url is not None
     exported_labels = requests.get(exported_labels_url)
-    labels = [example['Label'] for example in exported_labels.json()]
-    #assert 'export_label' in labels
+    labels = [example['ID'] for example in exported_labels.json()]
+    assert labels[0] == label_id
     # TODO: Add test for bulk export back.
     # The new exporter doesn't work with the create_label mutation
 
@@ -54,7 +47,6 @@ def test_label_update(label_pack):
     assert label.label == "something else"
 
 
-@pytest.mark.skip("Cannot query for labels created with create_label")
 def test_label_filter_order(client, project, rand_gen, image_url):
     dataset_1 = client.create_dataset(name=rand_gen(str), projects=project)
     dataset_2 = client.create_dataset(name=rand_gen(str), projects=project)
@@ -83,7 +75,6 @@ def test_label_filter_order(client, project, rand_gen, image_url):
     project.delete()
 
 
-@pytest.mark.skip("Cannot query for labels created with create_label")
 def test_label_bulk_deletion(project, rand_gen, image_url):
     dataset = project.client.create_dataset(name=rand_gen(str),
                                             projects=project)

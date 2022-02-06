@@ -9,6 +9,8 @@ def test_text():
     collection = LBV1Converter.deserialize([payload])
     serialized = next(LBV1Converter.serialize(collection))
 
+    payload['media_type'] = 'text'
+
     assert serialized.keys() == payload.keys()
     for key in serialized:
         if key != 'Label':
