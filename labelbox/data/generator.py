@@ -83,8 +83,6 @@ class PrefetchGenerator:
 
         if self.multithread:
             value = self.queue.get()
-            if isinstance(value, Exception):
-                raise value
 
             while value is None:
                 self.completed_threads += 1
@@ -94,6 +92,8 @@ class PrefetchGenerator:
                         thread.join()
                     raise StopIteration
                 value = self.queue.get()
+        if isinstance(value, Exception):
+            raise value
         else:
             value = self._process(next(self._data))
         return value
