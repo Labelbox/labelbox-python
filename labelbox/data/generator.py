@@ -70,7 +70,7 @@ class PrefetchGenerator:
                 self.queue.put(value)
         except Exception as e:
             self.queue.put(
-                ValueError("Unexpected exception while filling queue. %r", e))
+                ValueError(f"Unexpected exception while filling queue: {e}"))
         finally:
             self.queue.put(None)
 
@@ -92,8 +92,8 @@ class PrefetchGenerator:
                         thread.join()
                     raise StopIteration
                 value = self.queue.get()
-        if isinstance(value, Exception):
-            raise value
+            if isinstance(value, Exception):
+                raise value
         else:
             value = self._process(next(self._data))
         return value
