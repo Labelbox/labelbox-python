@@ -1,13 +1,15 @@
-from typing import Dict, Iterable, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Union
 from pathlib import Path
 import os
 import time
 
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.annotation_import import MEAPredictionImport
 from labelbox.orm.query import results_query_part
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject
+
+if TYPE_CHECKING:
+    from labelbox import MEAPredictionImport
 
 
 class ModelRun(DbObject):
@@ -119,13 +121,13 @@ class ModelRun(DbObject):
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
             if os.path.exists(predictions):
-                return MEAPredictionImport.create_from_file(
+                return Entity.MEAPredictionImport.create_from_file(
                     path=str(predictions), **kwargs)
             else:
-                return MEAPredictionImport.create_from_url(url=str(predictions),
-                                                           **kwargs)
+                return Entity.MEAPredictionImport.create_from_url(
+                    url=str(predictions), **kwargs)
         elif isinstance(predictions, Iterable):
-            return MEAPredictionImport.create_from_objects(
+            return Entity.MEAPredictionImport.create_from_objects(
                 predictions=predictions, **kwargs)
         else:
             raise ValueError(

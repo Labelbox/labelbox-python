@@ -35,7 +35,7 @@ Train a model using data annotated on Labelbox
 
 | Notebook                    | Github                            | Google Colab |
 | --------------------------- | --------------------------------- | ------------ |
-| Object Detection (Detectron2)            | [Github](coco_object.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/detectron2/coco_panoptic.ipynb) |
+| Object Detection (Detectron2)            | [Github](coco_object.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/detectron2/coco_object.ipynb) |
 | Panoptic Detection (Detectron2)          | [Github](coco_panoptic.ipynb)    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/detectron2/coco_panoptic.ipynb)
 ------
 

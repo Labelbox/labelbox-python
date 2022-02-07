@@ -33,7 +33,7 @@ class ClassificationAnswer(FeatureSchema):
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
 
-    def dict(self, *args, **kwargs):
+    def dict(self, *args, **kwargs) -> Dict[str, str]:
         res = super().dict(*args, **kwargs)
         if res['keyframe'] is None:
             res.pop('keyframe')
