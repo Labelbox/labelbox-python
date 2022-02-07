@@ -5,8 +5,10 @@ from copy import deepcopy
 from yapf.yapflib.yapf_api import FormatCode
 
 BANNER_CELL = {
-    "cell_type": "markdown",
-    "id": "db768cda",
+    "cell_type":
+        "markdown",
+    "id":
+        "db768cda",
     "metadata": {},
     "source": [
         "<td>\n",
@@ -16,16 +18,15 @@ BANNER_CELL = {
 }
 
 LINK_CELL = {
-    "cell_type": "markdown",
-    "id": "cb5611d0",
+    "cell_type":
+        "markdown",
+    "id":
+        "cb5611d0",
     "metadata": {},
     "source": [
-        "<td>\n",
-        "<a href=\"{colab}\" target=\"_blank\"><img\n",
+        "<td>\n", "<a href=\"{colab}\" target=\"_blank\"><img\n",
         "src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"></a>\n",
-        "</td>\n",
-        "\n",
-        "<td>\n",
+        "</td>\n", "\n", "<td>\n",
         "<a href=\"{github}\" target=\"_blank\"><img\n",
         "src=\"https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white\" alt=\"GitHub\"></a>\n",
         "</td>"
