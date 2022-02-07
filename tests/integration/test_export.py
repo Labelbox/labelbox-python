@@ -1,9 +1,6 @@
-from turtle import st
 import uuid
 
-from numpy import empty
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
-
 from labelbox.schema.annotation_import import LabelImport
 
 
