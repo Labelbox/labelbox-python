@@ -75,7 +75,9 @@ async def model_run(request: Request,
 def validate_payload(data: Dict[str, str]):
     # Check that the pipeline to run
     assert 'pipeline' in data
-    assert data['pipeline'] in list(pipelines.keys())
+    assert data['pipeline'] in list(
+        pipelines.keys()
+    ), f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {list(pipelines.keys())}"
 
 
 @app.get("/ping")

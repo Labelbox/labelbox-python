@@ -1,19 +1,26 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union, Literal
 import time
 import os
 
 from job import CustomJob, JobStatus
+import logging
+
+TextClassificationType = Union[Literal['single'], Literal['multi']]
+
+logger = logging.getLogger("uvicorn")
 
 
-class NERETL(CustomJob):
+class TextClassificationETL(CustomJob):
 
-    def __init__(self, gcs_bucket: str, labelbox_api_key: str,
-                 gc_cred_path: str):
+    def __init__(self, classification_type: TextClassificationType,
+                 gcs_bucket: str, labelbox_api_key: str, gc_cred_path: str):
+        self.classification_type = classification_type
         self.gcs_bucket = gcs_bucket
         self.labelbox_api_key = labelbox_api_key
         self.gc_cred_path = gc_cred_path
         # TODO: When we add vertex we will want to use gcr uris instead of local names
-        super().__init__(name="ner_etl", container_name="gcp_ner_etl")
+        super().__init__(name="text_classification",
+                         container_name="gcp_text_classification")
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -22,12 +29,13 @@ class NERETL(CustomJob):
 
     def run_local(self, json_data: Dict[str, Any]) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
-        gcs_key = f'etl/ner/{nowgmt}.jsonl'
+        gcs_key = f'etl/text-{self.classification_type}-classification/{nowgmt}.jsonl'
         project_id = self.parse_args(json_data)
         job_status = self._run_local(
             cmd=[
                 f"--gcs_bucket={self.gcs_bucket}", f"--project_id={project_id}",
-                f"--gcs_key={gcs_key}"
+                f"--gcs_key={gcs_key}",
+                f"--classification_type={self.classification_type}"
             ],
             env_vars=[
                 f"GOOGLE_APPLICATION_CREDENTIALS={self.gc_cred_path}",
@@ -43,3 +51,17 @@ class NERETL(CustomJob):
             'training_file_uri': f'gs://{self.gcs_bucket}/{gcs_key}'
         }
         return job_status
+
+
+class TextSingleClassification(TextClassificationETL):
+
+    def __init__(self, gcs_bucket: str, labelbox_api_key: str,
+                 gc_cred_path: str):
+        super().__init__('single', gcs_bucket, labelbox_api_key, gc_cred_path)
+
+
+class TextMultiClassification(TextClassificationETL):
+
+    def __init__(self, gcs_bucket: str, labelbox_api_key: str,
+                 gc_cred_path: str):
+        super().__init__('multi', gcs_bucket, labelbox_api_key, gc_cred_path)
