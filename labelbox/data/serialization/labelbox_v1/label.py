@@ -233,7 +233,8 @@ class LBV1Label(BaseModel):
 
     def _is_url(self) -> bool:
         return self.row_data.startswith(
-            ("http://", "https://")) or "tileLayerUrl" in self.row_data
+            ("http://", "https://", "gs://",
+             "s3://")) or "tileLayerUrl" in self.row_data
 
     class Config:
         allow_population_by_field_name = True
