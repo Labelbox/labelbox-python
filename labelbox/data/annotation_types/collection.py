@@ -22,7 +22,12 @@ class LabelList:
     """
 
     def __init__(self, data: Optional[Iterable[Label]] = None):
-        self._data = [] if data is None else data
+        if data is None:
+            self._data = []
+        elif isinstance(data, Label):
+            self._data = [data]
+        else:
+            self._data = data
         self._index = 0
 
     def assign_feature_schema_ids(
