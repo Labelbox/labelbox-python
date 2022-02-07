@@ -175,12 +175,12 @@ class CocoPanopticDataset(BaseModel):
                 raise ValueError(
                     f"Cannot find file {im_path}. Make sure `image_root` is set properly"
                 )
-
-            if not annotation.file_name.endswith('.png'):
+            if not str(annotation.file_name).endswith('.png'):
                 raise ValueError(
                     f"COCO masks must be stored as png files and their extension must be `.png`. Found {annotation.file_name}"
                 )
-            mask = MaskData(file_path=Path(mask_root, annotation.file_name))
+            mask = MaskData(
+                file_path=str(Path(mask_root, annotation.file_name)))
 
             for segmentation in annotation.segments_info:
                 category = category_lookup[segmentation.category_id]
@@ -189,6 +189,6 @@ class CocoPanopticDataset(BaseModel):
                                      value=Mask(mask=mask,
                                                 color=id_to_rgb(
                                                     segmentation.id))))
-            data = ImageData(file_path=im_path)
+            data = ImageData(file_path=str(im_path))
             yield Label(data=data, annotations=annotations)
             del annotation_lookup[image.id]
