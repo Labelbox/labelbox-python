@@ -1,5 +1,5 @@
 # Changelog
-# Version 3.12.1 (2022-02-07)
+# Version 3.13.0 (2022-02-07) 
 ## Added
 * Added `from_shapely` method to create annotation types from Shapely objects
 * Added `start` and `end` filter on the following methods
