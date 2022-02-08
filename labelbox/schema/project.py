@@ -13,7 +13,6 @@ import ndjson
 import requests
 
 from labelbox import utils
-from labelbox.data.annotation_types.collection import LabelGenerator
 from labelbox.exceptions import InvalidQueryError, LabelboxError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -196,7 +195,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def video_label_generator(self,
                               timeout_seconds=600,
-                              **kwargs) -> LabelGenerator:
+                              **kwargs):
         """
         Download video annotations
 
@@ -225,7 +224,7 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.label_generator() for text and imagery data.")
         return LBV1Converter.deserialize_video(json_data, self.client)
 
-    def label_generator(self, timeout_seconds=600, **kwargs) -> LabelGenerator:
+    def label_generator(self, timeout_seconds=600, **kwargs):
         """
         Download text and image annotations
 
