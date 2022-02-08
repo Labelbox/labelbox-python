@@ -193,9 +193,7 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def video_label_generator(self,
-                              timeout_seconds=600,
-                              **kwargs):
+    def video_label_generator(self, timeout_seconds=600, **kwargs):
         """
         Download video annotations
 
