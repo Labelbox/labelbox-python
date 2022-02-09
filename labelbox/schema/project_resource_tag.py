@@ -11,5 +11,5 @@ class ProjectResourceTag(DbObject, Updateable):
         resource_tag (Relationship): `ToOne` relationship to ResourceTag
     """
 
-    resourceTagId = Field.ID("resourceTagId")
-    projectId = Field.ID("projectId")
+    resource_tag_id = Field.ID("resource_tag_id")
+    project_id = Field.ID("project_id")

@@ -142,7 +142,6 @@ class Organization(DbObject):
                 }
             }""")
 
-        # print(json.dumps(res['organization']['resourceTag'], indent=2, sort_keys=True))
         return res['organization']['resourceTag']
 
     def get_iam_integrations(self) -> List["IAMIntegration"]:

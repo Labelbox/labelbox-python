@@ -121,10 +121,13 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
 
-    def create_project_resource_tags(self, tagIdsParam) -> List["ProjectResourceTag"]:
-        """ Creates a project resource tag
+    def create_project_resource_tags(self, resource_tag_ids: List[str]) -> List[str]:
+        """ Creates project resource tags
 
-        TODO
+        Args:
+            resource_tag_ids
+        Returns:
+            a list of ResourceTag ids that was created.
         """
         project_id_param = "projectId"
         tag_ids_param = "resourceTagIds"
@@ -139,11 +142,10 @@ class Project(DbObject, Updateable, Deletable):
             tag_ids_param
         )
 
-        print('tagIdsParam', tagIdsParam)
         res = self.client.execute(
             query_str, {
                 project_id_param: self.uid,
-                tag_ids_param: tagIdsParam
+                tag_ids_param: resource_tag_ids
             })
 
         return res["project"]["updateProjectResourceTags"]
