@@ -4,7 +4,8 @@ Tools for grouping features and labels so that we can compute metrics on the ind
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation, Checklist, Radio
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation, Checklist, Radio, Text
+from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
 try:
     from typing import Literal
 except ImportError:
@@ -60,7 +61,13 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
     for feature in features:
         if isinstance(feature, ClassificationAnnotation):
             if isinstance(feature.value, Checklist):
-                all_names, all_schemas = all_have_key(feature.value.answer)
+                all_schemas, all_names = all_have_key(feature.value.answer)
+            #this code should be able to be refactored better
+            elif isinstance(feature.value, Text):
+                if feature.name is None:
+                    all_names = False
+                if feature.feature_schema_id is None:
+                    all_schemas = False
             else:
                 if feature.value.answer.name is None:
                     all_names = False
@@ -169,8 +176,17 @@ def _create_feature_lookup(features: List[FeatureSchema],
             #checklists
             if isinstance(feature.value, Checklist):
                 for answer in feature.value.answer:
-                    new_feature = Radio(answer=answer)
-                    grouped_features[getattr(answer, key)] = new_feature
+                    new_answer = Radio(answer=answer)
+                    new_annotation = ClassificationAnnotation(
+                        value=new_answer,
+                        name=answer.name,
+                        feature_schema_id=answer.feature_schema_id)
+
+                    grouped_features[getattr(answer,
+                                             key)].append(new_annotation)
+            #likely can be refactored
+            elif isinstance(feature.value, Text):
+                grouped_features[getattr(feature, key)].append(feature)
             else:
                 grouped_features[getattr(feature.value.answer,
                                          key)].append(feature)

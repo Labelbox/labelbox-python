@@ -183,24 +183,27 @@ def radio_pairs():
     return [
         NameSpace(predictions=[get_radio("is_animal", answer_name="yes")],
                   ground_truths=[get_radio("is_animal", answer_name="yes")],
-                  expected={'is_animal': [1, 0, 0, 0]}),
+                  expected={'yes': [1, 0, 0, 0]}),
         NameSpace(predictions=[get_radio("is_animal", answer_name="yes")],
                   ground_truths=[get_radio("is_animal", answer_name="no")],
-                  expected={'is_animal': [0, 1, 0, 1]}),
+                  expected={
+                      'no': [0, 0, 0, 1],
+                      'yes': [0, 1, 0, 0]
+                  }),
         NameSpace(predictions=[get_radio("is_animal", answer_name="yes")],
                   ground_truths=[],
-                  expected={'is_animal': [0, 1, 0, 0]}),
+                  expected={'yes': [0, 1, 0, 0]}),
         NameSpace(predictions=[],
                   ground_truths=[get_radio("is_animal", answer_name="yes")],
-                  expected={'is_animal': [0, 0, 0, 1]}),
+                  expected={'yes': [0, 0, 0, 1]}),
         NameSpace(predictions=[
             get_radio("is_animal", answer_name="yes"),
             get_radio("is_short", answer_name="no")
         ],
                   ground_truths=[get_radio("is_animal", answer_name="yes")],
                   expected={
-                      'is_animal': [1, 0, 0, 0],
-                      'is_short': [0, 1, 0, 0]
+                      'no': [0, 1, 0, 0],
+                      'yes': [1, 0, 0, 0]
                   }),
         #Not supported yet:
         # NameSpace(
@@ -221,18 +224,18 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped"])
                   ],
-                  expected={'animal_attributes': [1, 0, 0, 0]}),
+                  expected={'striped': [1, 0, 0, 0]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes", answer_names=["striped"])
         ],
                   ground_truths=[],
-                  expected={'animal_attributes': [0, 1, 0, 0]}),
+                  expected={'striped': [0, 1, 0, 0]}),
         NameSpace(predictions=[],
                   ground_truths=[
                       get_checklist("animal_attributes",
                                     answer_names=["striped"])
                   ],
-                  expected={'animal_attributes': [0, 0, 0, 1]}),
+                  expected={'striped': [0, 0, 0, 1]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes",
                           answer_names=["striped", "short"])
@@ -241,7 +244,10 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped"])
                   ],
-                  expected={'animal_attributes': [1, 1, 0, 0]}),
+                  expected={
+                      'short': [0, 1, 0, 0],
+                      'striped': [1, 0, 0, 0]
+                  }),
         NameSpace(predictions=[
             get_checklist("animal_attributes", answer_names=["striped"])
         ],
@@ -249,7 +255,10 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped", "short"])
                   ],
-                  expected={'animal_attributes': [1, 0, 0, 1]}),
+                  expected={
+                      'short': [0, 0, 0, 1],
+                      'striped': [1, 0, 0, 0]
+                  }),
         NameSpace(predictions=[
             get_checklist("animal_attributes",
                           answer_names=["striped", "short", "black"])
@@ -258,7 +267,11 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped", "short"])
                   ],
-                  expected={'animal_attributes': [2, 1, 0, 0]}),
+                  expected={
+                      'black': [0, 1, 0, 0],
+                      'short': [1, 0, 0, 0],
+                      'striped': [1, 0, 0, 0]
+                  }),
         NameSpace(predictions=[
             get_checklist("animal_attributes",
                           answer_names=["striped", "short", "black"]),
@@ -270,8 +283,11 @@ def checklist_pairs():
                       get_checklist("animal_name", answer_names=["pup"])
                   ],
                   expected={
-                      'animal_attributes': [2, 1, 0, 0],
-                      'animal_name': [1, 1, 0, 0]
+                      'black': [0, 1, 0, 0],
+                      'doggy': [0, 1, 0, 0],
+                      'pup': [1, 0, 0, 0],
+                      'short': [1, 0, 0, 0],
+                      'striped': [1, 0, 0, 0]
                   })
 
         #Not supported yet:
