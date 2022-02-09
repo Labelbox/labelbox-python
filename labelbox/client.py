@@ -11,8 +11,6 @@ import os
 from google.api_core import retry
 import requests
 import requests.exceptions
-from labelbox.data.annotation_types.feature import FeatureSchema
-from labelbox.data.serialization.ndjson.base import DataRow
 
 import labelbox.exceptions
 from labelbox import utils
@@ -621,7 +619,7 @@ class Client:
         """
         return role.get_roles(self)
 
-    def get_data_row(self, data_row_id) -> DataRow:
+    def get_data_row(self, data_row_id):
         """
 
         Returns:
@@ -750,7 +748,7 @@ class Client:
                                    ['ontologies', 'nodes'], Entity.Ontology,
                                    ['ontologies', 'nextCursor'])
 
-    def get_feature_schema(self, feature_schema_id) -> FeatureSchema:
+    def get_feature_schema(self, feature_schema_id):
         """
         Fetches a feature schema. Only supports top level feature schemas.
 
@@ -867,7 +865,7 @@ class Client:
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
-    def create_feature_schema(self, normalized) -> FeatureSchema:
+    def create_feature_schema(self, normalized):
         """
         Creates a feature schema from normalized data.
             >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
