@@ -121,6 +121,33 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
 
+    def create_project_resource_tags(self, tagIdsParam) -> List["ProjectResourceTag"]:
+        """ Creates a project resource tag
+
+        TODO
+        """
+        project_id_param = "projectId"
+        tag_ids_param = "resourceTagIds"
+
+        query_str = """mutation AttatchProjectResourceTags($%s: ID!, $%s: [String!]) {
+            project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){id}}
+        }""" % (
+            project_id_param,
+            tag_ids_param,
+            project_id_param,
+            tag_ids_param,
+            tag_ids_param
+        )
+
+        print('tagIdsParam', tagIdsParam)
+        res = self.client.execute(
+            query_str, {
+                project_id_param: self.uid,
+                tag_ids_param: tagIdsParam
+            })
+
+        return res["project"]["updateProjectResourceTags"]
+
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
 

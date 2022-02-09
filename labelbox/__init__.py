@@ -23,3 +23,5 @@ from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.benchmark import Benchmark
 from labelbox.schema.iam_integration import IAMIntegration
+from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.project_resource_tag import ProjectResourceTag

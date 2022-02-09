@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING, List, Optional
 
 from labelbox.exceptions import LabelboxError
@@ -125,6 +126,24 @@ class Organization(DbObject):
             """mutation DeleteMemberPyApi($%s: ID!) {
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
         }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
+
+    def get_resource_tags(self) -> List["ResourceTag"]:
+        """
+        Returns all resource tags for an organization
+        """
+        res = self.client.execute(
+            """query {
+                organization {
+                    resourceTag {
+                        id,
+                        text,
+                        color
+                    }
+                }
+            }""")
+
+        # print(json.dumps(res['organization']['resourceTag'], indent=2, sort_keys=True))
+        return res['organization']['resourceTag']
 
     def get_iam_integrations(self) -> List["IAMIntegration"]:
         """
