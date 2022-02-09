@@ -9,7 +9,7 @@ except ImportError:
     from typing_extensions import Literal
 
 from ..annotation_types.feature import FeatureSchema
-from ..annotation_types import ObjectAnnotation, Label, LabelList
+from ..annotation_types import ObjectAnnotation, Label, LabelList, ClassificationAnnotation
 
 
 def get_identifying_key(
@@ -63,6 +63,18 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
     return all_schemas, all_names
 
 
+def update_classification_answers(label: Label):
+    """
+    This function is to update classifications' names to the answers. This prevents
+    metrics from being calculated only at the description of the classification, and 
+    instead at the answer level.
+    """
+    for annotation in label.annotations:
+        if isinstance(annotation, ClassificationAnnotation):
+            annotation.name = annotation.value.answer.name
+    return label
+
+
 def get_label_pairs(labels_a: LabelList,
                     labels_b: LabelList,
                     match_on="uid",
@@ -112,6 +124,8 @@ def get_label_pairs(labels_a: LabelList,
                 )
             else:
                 continue
+        a, b = update_classification_answers(a), update_classification_answers(
+            b)
         pairs[key].extend([a, b])
     return pairs
 
