@@ -42,8 +42,6 @@ def check_iou_checklist(pair, mask=None):
                 annotation.value.mask.arr = np.frombuffer(
                     base64.b64decode(annotation.value.mask.url.encode('utf-8')),
                     dtype=np.uint8).reshape((32, 32, 3))
-    # print("drowmiou\n\n", data_row_miou(label, prediction),
-    #   pair.data_row_expected, "\n")
     assert math.isclose(data_row_miou(label, prediction),
                         pair.data_row_expected)
     assert math.isclose(
@@ -51,11 +49,8 @@ def check_iou_checklist(pair, mask=None):
         pair.data_row_expected)
     feature_ious = feature_miou_metric(label.annotations,
                                        prediction.annotations)
-    b = [feature.value for feature in feature_ious]
-    # print("fiou\n\n", b, pair.expected, "\n")
     mapping = {}
     for iou in feature_ious:
-        print(iou)
         if not mapping.get(iou.value, None):
             mapping[iou.value] = 0
         mapping[iou.value] += 1
