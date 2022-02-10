@@ -10,10 +10,9 @@ from google.cloud import storage
 from google.cloud import secretmanager
 from labelbox import Client
 
-def main(output_dir, output_name):
+def main(output_dir, output_name, secret_name):
 
     secret_client = secretmanager.SecretManagerServiceClient()
-    secret_name = f'projects/564464872598/secrets/jbuhler-apikey/versions/1'
 
     secret = secret_client.access_secret_version(request={"name": secret_name})
     API_KEY = secret.payload.data.decode("utf-8")
@@ -43,5 +42,8 @@ if __name__ == '__main__':
                         type=str,
                         default='custom-test',
                         help='What to name the saved file')
+    parser.add_argument('--secret-name',
+                        type=str,
+                        help='Name of the secret in GCS Secret Manager')
     args = parser.parse_args()
     main(**vars(args))

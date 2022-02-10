@@ -12,5 +12,7 @@ export IMAGE_TAG=test1
 export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
 
 docker build -f Dockerfile -t $IMAGE_URI ./
-docker run $IMAGE_URI --output-dir $BUCKET_NAME
+docker run $IMAGE_URI --output-dir $BUCKET_NAME --secret-name XXXX
+
+(note you need the name of the secret as stored in gcs secret manager)
 
