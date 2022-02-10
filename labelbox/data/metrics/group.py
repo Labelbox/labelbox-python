@@ -62,7 +62,6 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
         if isinstance(feature, ClassificationAnnotation):
             if isinstance(feature.value, Checklist):
                 all_schemas, all_names = all_have_key(feature.value.answer)
-            #this code should be able to be refactored better
             elif isinstance(feature.value, Text):
                 if feature.name is None:
                     all_names = False
@@ -184,7 +183,6 @@ def _create_feature_lookup(features: List[FeatureSchema],
 
                     grouped_features[getattr(answer,
                                              key)].append(new_annotation)
-            #likely can be refactored
             elif isinstance(feature.value, Text):
                 grouped_features[getattr(feature, key)].append(feature)
             else:
