@@ -1,7 +1,7 @@
 # Changelog
 # Version 3.14.0 (2022-02-10) 
 ## Added 
-* Updated metrics for classifications to be per-answer
+* Updated metrics for classifications to be per-answer 
 
 # Version 3.13.0 (2022-02-07) 
 ## Added
