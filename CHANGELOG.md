@@ -1,4 +1,18 @@
 # Changelog
+# Version 3.14.0 (2022-02-10) 
+## Added 
+* Updated metrics for classifications to be per-answer
+
+# Version 3.13.0 (2022-02-07) 
+## Added
+* Added `from_shapely` method to create annotation types from Shapely objects
+* Added `start` and `end` filter on the following methods
+- `Project.export_labels()`
+- `Project.label_generator()`
+- `Project.video_label_generator()`
+* Improved type hinting 
+
+
 # Version 3.12.0 (2022-01-19)
 ## Added
 * Tiled Imagery annotation type
