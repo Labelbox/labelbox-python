@@ -28,6 +28,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class AllVectorTools():
+    """Used for the purpose of type hinting"""
+    value: Union[Point, Line, Rectangle, Polygon] = None
+
+
 class EPSG(Enum):
     """ Provides the EPSG for tiled image assets that are currently supported.
     
@@ -355,8 +360,6 @@ class TiledImageData(BaseData):
 class EPSGTransformer(BaseModel):
     """Transformer class between different EPSG's. Useful when wanting to project
     in different formats.
-
-    Requires as input a Point object.
     """
 
     class Config:
@@ -509,11 +512,16 @@ class EPSGTransformer(BaseModel):
 
     def __call__(
         self, shape: Union[Point, Line, Rectangle, Polygon]
-    ) -> Union[Point, Line, Rectangle, Polygon]:
+    ) -> Union[AllVectorTools, List[AllVectorTools]]:
+        if isinstance(shape, list):
+            return [self(geom) for geom in shape]
         if isinstance(shape, Point):
             return self._get_point_obj(shape)
-        if isinstance(shape, Line) or isinstance(shape, Polygon):
+        if isinstance(shape, Line):
             return Line(points=[self._get_point_obj(p) for p in shape.points])
+        if isinstance(shape, Polygon):
+            return Polygon(
+                points=[self._get_point_obj(p) for p in shape.points])
         if isinstance(shape, Rectangle):
             return Rectangle(start=self._get_point_obj(shape.start),
                              end=self._get_point_obj(shape.end))
