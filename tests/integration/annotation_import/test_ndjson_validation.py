@@ -208,11 +208,13 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
         ndjson.dump(repeat_uuid, f)
 
     with pytest.raises(MALValidationError):
-        configured_project.upload_annotations(name="name", validate=True
+        configured_project.upload_annotations(name="name",
+                                              validate=True,
                                               annotations=str(file_path))
 
     with pytest.raises(MALValidationError):
-        configured_project.upload_annotations(name="name", validate=True
+        configured_project.upload_annotations(name="name",
+                                              validate=True,
                                               annotations=repeat_uuid)
 
 
