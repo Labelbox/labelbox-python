@@ -21,8 +21,7 @@ def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
 def get_annotation_lookup(annotations):
     annotation_lookup = defaultdict(list)
     for annotation in annotations:
-        annotation_lookup[getattr(annotation, 'image_id', None) or
-                          getattr(annotation, 'name')].append(annotation)
+        annotation_lookup[getattr(annotation, 'image_id', None)].append(annotation)
     return annotation_lookup
 
 
@@ -46,9 +45,9 @@ class COCOObjectAnnotation(BaseModel):
     id: int
     image_id: int
     category_id: int
-    segmentation: Union[RLE, List[List[float]]]  # [[x1,y1,x2,y2,x3,y3...]]
+    segmentation: Union[RLE, List[List[float]]]  # [[x1,y1,x2,y2,x3,y3...]] -
     area: float
-    bbox: Tuple[float, float, float, float]  #[x,y,w,h],
+    bbox: Tuple[float, float, float, float]  #[x,y,w,h], -
     iscrowd: int = 0
     attributes: dict
 
