@@ -45,9 +45,9 @@ class COCOObjectAnnotation(BaseModel):
     id: int
     image_id: int
     category_id: int
-    segmentation: Union[RLE, List[List[float]]]  # [[x1,y1,x2,y2,x3,y3...]] -
+    segmentation: Union[RLE, List[List[float]]]  # [[x1,y1,x2,y2,x3,y3...]]
     area: float
-    bbox: Tuple[float, float, float, float]  #[x,y,w,h], -
+    bbox: Tuple[float, float, float, float]  #[x,y,w,h],
     iscrowd: int = 0
     attributes: dict
 
