@@ -131,16 +131,7 @@ class Organization(DbObject):
         """
         Returns all resource tags for an organization
         """
-        res = self.client.execute(
-            """query {
-                organization {
-                    resourceTag {
-                        id,
-                        text,
-                        color
-                    }
-                }
-            }""")
+        res = self.client.execute("""query GetOrganizationResourceTagsPyApi{organization{resourceTag{id,text,color}}}""")
 
         return res['organization']['resourceTag']
 

@@ -42,9 +42,47 @@ def test_project(client, rand_gen):
     assert project not in final
     assert set(final) == set(before)
 
-    # TODO this should raise ResourceNotFoundError, but it doesn't
-    project = client.get_project(project.uid)
+def test_create_project_resource_tags(client, rand_gen):
+    before = list(client.get_projects())
+    for o in before:
+        assert isinstance(o, Project)
 
+    colorA = "#ffffff"
+    textA = rand_gen(str)
+    tag = {"text": textA, "color": colorA}
+
+    colorB = colorA
+    textB = rand_gen(str)
+    tagB = {"text": textB, "color": colorB}
+
+    project_name = rand_gen(str)
+
+    tagA = client.create_resource_tag(tag)
+    assert tagA.text == textA
+    assert '#' + tagA.color == colorA
+    assert tagA.uid is not None
+
+    org = client.get_organization()
+    tags = org.get_resource_tags()
+    lenA = len(tags)
+    assert lenA > 0
+
+    tagB = client.create_resource_tag(tagB)
+    assert tagB.text == textB
+    assert '#' + tagB.color == colorB
+    assert tagB.uid is not None
+
+    tags = org.get_resource_tags()
+    lenB = len(tags)
+    assert lenB > 0
+    assert lenB > lenA
+
+    p1 = client.create_project(name=project_name)
+    assert p1.uid is not None
+
+    project_resource_tag = p1.create_project_resource_tags([tagA.uid])
+    assert len(project_resource_tag) == 1
+    assert project_resource_tag[0].get("id") == tagA.uid
 
 def test_project_filtering(client, rand_gen):
     name_1 = rand_gen(str)

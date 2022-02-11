@@ -132,9 +132,8 @@ class Project(DbObject, Updateable, Deletable):
         project_id_param = "projectId"
         tag_ids_param = "resourceTagIds"
 
-        query_str = """mutation AttatchProjectResourceTags($%s: ID!, $%s: [String!]) {
-            project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){id}}
-        }""" % (
+        query_str = """mutation AttatchProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
+            project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){id}}}""" % (
             project_id_param,
             tag_ids_param,
             project_id_param,

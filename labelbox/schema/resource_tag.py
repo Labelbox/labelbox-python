@@ -1,7 +1,7 @@
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, Updateable
 from labelbox.orm.model import Field, Relationship
 
-class ResourceTag(DbObject):
+class ResourceTag(DbObject, Updateable):
     """ Resource tag to label and identify your labelbox resources easier.
 
     Attributes:
