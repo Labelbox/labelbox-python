@@ -27,10 +27,7 @@ TILE_DOWNLOAD_CONCURRENCY = 4
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-class AllVectorTools():
-    """Used for the purpose of type hinting"""
-    value: Union[Point, Line, Rectangle, Polygon] = None
+VectorTool = Union[Point, Line, Rectangle, Polygon]
 
 
 class EPSG(Enum):
@@ -512,7 +509,7 @@ class EPSGTransformer(BaseModel):
 
     def __call__(
         self, shape: Union[Point, Line, Rectangle, Polygon]
-    ) -> Union[AllVectorTools, List[AllVectorTools]]:
+    ) -> Union[VectorTool, List[VectorTool]]:
         if isinstance(shape, list):
             return [self(geom) for geom in shape]
         if isinstance(shape, Point):
