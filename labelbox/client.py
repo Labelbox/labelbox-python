@@ -906,27 +906,3 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
-
-    def create_resource_tag(self, tag=None):
-        """
-        Creates a resource tag.
-            >>> tag = {'text': 'tag-1',  'color': 'ffffff'}
-
-        Args:
-            tag (dict): A resource tag {'text': 'tag-1', 'color': 'fffff'}
-        Returns:
-            The created resource tag.
-        """
-        tag_text_param = "text"
-        tag_color_param = "color"
-
-        query_str = """mutation CreateResourceTagPyApi($text:String!,$color:String!) {
-                createResourceTag(input:{text:$%s,color:$%s}) {id,text,color}}
-        """ % (tag_text_param, tag_color_param)
-
-        params = {
-            tag_text_param: tag.get("text", ""),
-            tag_color_param: tag.get("color", "")
-        }
-        res = self.execute(query_str, params)
-        return Entity.ResourceTag(self, res['createResourceTag'])

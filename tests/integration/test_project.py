@@ -42,10 +42,18 @@ def test_project(client, rand_gen):
     assert project not in final
     assert set(final) == set(before)
 
-def test_create_project_resource_tags(client, rand_gen):
+
+def test_update_project_resource_tags(client, rand_gen):
     before = list(client.get_projects())
     for o in before:
         assert isinstance(o, Project)
+
+    org = client.get_organization()
+    assert org.uid is not None
+
+    project_name = rand_gen(str)
+    p1 = client.create_project(name=project_name)
+    assert p1.uid is not None
 
     colorA = "#ffffff"
     textA = rand_gen(str)
@@ -55,34 +63,30 @@ def test_create_project_resource_tags(client, rand_gen):
     textB = rand_gen(str)
     tagB = {"text": textB, "color": colorB}
 
-    project_name = rand_gen(str)
-
-    tagA = client.create_resource_tag(tag)
+    tagA = client.get_organization().create_resource_tag(tag)
     assert tagA.text == textA
     assert '#' + tagA.color == colorA
     assert tagA.uid is not None
 
-    org = client.get_organization()
     tags = org.get_resource_tags()
     lenA = len(tags)
     assert lenA > 0
 
-    tagB = client.create_resource_tag(tagB)
+    tagB = client.get_organization().create_resource_tag(tagB)
     assert tagB.text == textB
     assert '#' + tagB.color == colorB
     assert tagB.uid is not None
 
-    tags = org.get_resource_tags()
+    tags = client.get_organization().get_resource_tags()
     lenB = len(tags)
     assert lenB > 0
     assert lenB > lenA
 
-    p1 = client.create_project(name=project_name)
-    assert p1.uid is not None
-
-    project_resource_tag = p1.create_project_resource_tags([tagA.uid])
+    project_resource_tag = client.get_project(
+        p1.uid).update_project_resource_tags([str(tagA.uid)])
     assert len(project_resource_tag) == 1
     assert project_resource_tag[0].get("id") == tagA.uid
+
 
 def test_project_filtering(client, rand_gen):
     name_1 = rand_gen(str)

@@ -6,6 +6,7 @@ from labelbox import utils
 from labelbox.orm.db_object import DbObject, query, Entity
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import InviteLimit
+from labelbox.schema.resource_tag import ResourceTag
 
 if TYPE_CHECKING:
     from labelbox import Role, User, ProjectRole, Invite, InviteLimit, IAMIntegration
@@ -43,6 +44,7 @@ class Organization(DbObject):
     users = Relationship.ToMany("User", False)
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
+    resourceTags = Relationship.ToMany("ResourceTag", False)
 
     def invite_user(
             self,
@@ -127,13 +129,42 @@ class Organization(DbObject):
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
         }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
 
-    def get_resource_tags(self) -> List["ResourceTag"]:
+    def create_resource_tag(self, tag=None) -> ResourceTag:
+        """
+        Creates a resource tag.
+            >>> tag = {'text': 'tag-1',  'color': 'ffffff'}
+
+        Args:
+            tag (dict): A resource tag {'text': 'tag-1', 'color': 'fffff'}
+        Returns:
+            The created resource tag.
+        """
+        tag_text_param = "text"
+        tag_color_param = "color"
+
+        query_str = """mutation CreateResourceTagPyApi($text:String!,$color:String!) {
+                createResourceTag(input:{text:$%s,color:$%s}) {%s}}
+        """ % (tag_text_param, tag_color_param,
+               query.results_query_part(ResourceTag))
+
+        params = {
+            tag_text_param: tag.get("text", ""),
+            tag_color_param: tag.get("color", "")
+        }
+        res = self.client.execute(query_str, params)
+        return ResourceTag(self.client, res['createResourceTag'])
+
+    def get_resource_tags(self) -> List[ResourceTag]:
         """
         Returns all resource tags for an organization
         """
-        res = self.client.execute("""query GetOrganizationResourceTagsPyApi{organization{resourceTag{id,text,color}}}""")
+        query_str = """query GetOrganizationResourceTagsPyApi{organization{resourceTag{%s}}}""" % (
+            query.results_query_part(ResourceTag))
 
-        return res['organization']['resourceTag']
+        return [
+            ResourceTag(self.client, resourceTag)
+            for resourceTag in res['createResourceTag']
+        ]
 
     def get_iam_integrations(self) -> List["IAMIntegration"]:
         """

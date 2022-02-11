@@ -18,6 +18,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.resource_tag import ResourceTag
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -121,7 +122,8 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
 
-    def create_project_resource_tags(self, resource_tag_ids: List[str]) -> List[str]:
+    def update_project_resource_tags(
+            self, resource_tag_ids: List[str]) -> List[ResourceTag]:
         """ Creates project resource tags
 
         Args:
@@ -132,20 +134,15 @@ class Project(DbObject, Updateable, Deletable):
         project_id_param = "projectId"
         tag_ids_param = "resourceTagIds"
 
-        query_str = """mutation AttatchProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
-            project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){id}}}""" % (
-            project_id_param,
-            tag_ids_param,
-            project_id_param,
-            tag_ids_param,
-            tag_ids_param
-        )
+        query_str = """mutation CreateProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
+            project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){%s}}}""" % (
+            project_id_param, tag_ids_param, project_id_param, tag_ids_param,
+            tag_ids_param, query.results_query_part(ResourceTag))
 
-        res = self.client.execute(
-            query_str, {
-                project_id_param: self.uid,
-                tag_ids_param: resource_tag_ids
-            })
+        res = self.client.execute(query_str, {
+            project_id_param: self.uid,
+            tag_ids_param: resource_tag_ids
+        })
 
         return res["project"]["updateProjectResourceTags"]
 
