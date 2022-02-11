@@ -823,7 +823,7 @@ class Project(DbObject, Updateable, Deletable):
             self,
             name: str,
             annotations: Union[str, Path, Iterable[Dict]],
-            validate: bool = True) -> 'BulkImportRequest':  # type: ignore
+            validate: bool = False) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
