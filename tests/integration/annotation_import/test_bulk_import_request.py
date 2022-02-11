@@ -101,6 +101,7 @@ def test_validate_ndjson(tmp_path, configured_project):
 
     with pytest.raises(ValueError):
         configured_project.upload_annotations(name="name",
+                                              validate=True,
                                               annotations=str(file_path))
 
 
