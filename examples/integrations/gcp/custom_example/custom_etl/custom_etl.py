@@ -10,6 +10,8 @@ from google.cloud import storage
 from google.cloud import secretmanager
 from labelbox import Client
 import google.auth
+
+
 def main(output_dir, output_name, secret_name):
 
     credentials, project_id = google.auth.default()
@@ -30,8 +32,7 @@ def main(output_dir, output_name, secret_name):
 
     bucket = storage.Client().bucket(output_dir)
     blob = bucket.blob('{}/{}'.format(
-        datetime.datetime.now().strftime('custom_%Y%m%d_%H%M%S'),
-        output_name))
+        datetime.datetime.now().strftime('custom_%Y%m%d_%H%M%S'), output_name))
     blob.upload_from_filename(output_name)
 
 
@@ -39,7 +40,8 @@ if __name__ == '__main__':
     secret_name = os.environ.get('LB_API_SECRET_NAME')
     output_dir = os.environ.get('BUCKET')
 
-    parser = argparse.ArgumentParser(description='Vertex AI Custom Container Test')
+    parser = argparse.ArgumentParser(
+        description='Vertex AI Custom Container Test')
     parser.add_argument('--output-dir',
                         type=str,
                         default=output_dir,
