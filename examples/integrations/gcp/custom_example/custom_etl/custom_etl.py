@@ -9,8 +9,10 @@ import datetime
 from google.cloud import storage
 from google.cloud import secretmanager
 from labelbox import Client
-
+import google.auth
 def main(output_dir, output_name, secret_name):
+
+    credentials, project_id = google.auth.default()
 
     secret_client = secretmanager.SecretManagerServiceClient()
 
@@ -34,9 +36,13 @@ def main(output_dir, output_name, secret_name):
 
 
 if __name__ == '__main__':
+    secret_name = os.environ.get('LB_API_SECRET_NAME')
+    output_dir = os.environ.get('BUCKET')
+
     parser = argparse.ArgumentParser(description='Vertex AI Custom Container Test')
     parser.add_argument('--output-dir',
                         type=str,
+                        default=output_dir,
                         help='Where to save the output')
     parser.add_argument('--output-name',
                         type=str,
@@ -44,6 +50,7 @@ if __name__ == '__main__':
                         help='What to name the saved file')
     parser.add_argument('--secret-name',
                         type=str,
+                        default=secret_name,
                         help='Name of the secret in GCS Secret Manager')
     args = parser.parse_args()
     main(**vars(args))

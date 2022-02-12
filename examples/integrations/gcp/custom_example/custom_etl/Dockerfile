@@ -19,11 +19,11 @@ RUN wget -nv \
 ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
 COPY custom_etl.py ./custom_etl.py
-COPY sandbox-5500-5b0da876b370.json .
+RUN pip install -r requirements.txt
+#COPY sandbox-5500-5b0da876b370.json .
 
-ENV GOOGLE_APPLICATION_CREDENTIALS sandbox-5500-5b0da876b370.json
+#ENV GOOGLE_APPLICATION_CREDENTIALS sandbox-5500-5b0da876b370.json
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
