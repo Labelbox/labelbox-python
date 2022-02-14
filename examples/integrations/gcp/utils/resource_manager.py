@@ -91,7 +91,7 @@ def main():
         'CustomPythonPackageTrainingJob', 'CustomTrainingJob',
         'HyperparameterTuningJob', 'PipelineJob'
     ]
-    job_attrs = ['name', 'display_name', 'state.name', 'has_failed']
+    job_attrs = ['name', 'display_name', 'state.name']
 
     endpoint_types = ['Endpoint']
     endpoint_attrs = ['name', 'display_name']
