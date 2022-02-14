@@ -56,6 +56,7 @@ class BoundingBoxTraining(Job):
             gcs_source=[training_file_uri],
             import_schema_uri=aiplatform.schema.dataset.ioformat.image.
             bounding_box)
+
         job = aiplatform.AutoMLImageTrainingJob(
             display_name=job_name,
             prediction_type="object_detection",
@@ -93,6 +94,7 @@ class BoundingBoxPipeline(Pipeline):
 
     def run_local(self, json_data):
         project_id, job_name = self.parse_args(json_data)
+
         etl_status = self.etl_job.run_local(project_id)
         # Report state and training data uri to labelbox
         logger.info(f"ETL Status: {etl_status}")
