@@ -22,7 +22,7 @@ Run ETL jobs, train models, deploy models, and track model performance all from 
     * GCP Credentials
         - All jobs require a GCP service account and permissions to read / write to a GCS bucket, cloud run deployments, read / write to GCR, and access to vertex ai. Credentials must be here: `~/.config/gcloud/development-sa-creds.json`.
 2. Run `./build.sh` to build the container
-2. Making a request to the service (find an example in `test/test_local.py`) in another shell
+2. Making a request to the service in another shell.  You can use `test/seed/seed_image_single_classification.py` to seed the project and then `test/coordinator/test_image_classification.py` to kick off the pipeline.
 
 ### Design
 
