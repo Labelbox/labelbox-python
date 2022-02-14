@@ -1,8 +1,8 @@
 ## ETl / Train / Deploy / Analyze using GCP and Labelbox
 
-#### Overview
+### Overview
 
-Run ETL jobs, train and deploy models, and track the performance using this code. The code deploys a service called the `coordinator`. It exposes a rest api for launching various pipelines. The coordinator only has to be deployed once and then will be controllable via the labelbox web app (WIP). This project is designed to be easily extended for custom workflows. However, we will support the following models with no additional configuration required:
+Run ETL jobs, train models, deploy models, and track model performance all from a single service. The code deploys a service called the `coordinator`. It exposes a rest api for launching various pipelines. The coordinator only has to be deployed once and then will be controllable via the labelbox web app (WIP). This project is designed to be easily extended for custom workflows. However, we will support the following models with no additional configuration required:
 
 1. Image Radio Classification
 2. Image Checklist / Dropdown Classification
@@ -12,7 +12,7 @@ Run ETL jobs, train and deploy models, and track the performance using this code
 6. Text Named Entity Recognition
 
 
-#### Usage / Requirements
+### Usage / Requirements
 
 1. Configure Environment:
     * Env Vars:
@@ -24,38 +24,42 @@ Run ETL jobs, train and deploy models, and track the performance using this code
 2. Run `./build.sh` to build the container
 2. Making a request to the service (find an example in `test/test_local.py`) in another shell
 
-#### Design
+### Design
 
-The coordinator is an api for managing etl/training/deployment pipelines. The coordinator doesn't do any data processing. Instead it executes stages in the pipeline by running containers in vertex ai. The code is organizationed such that all logic for coordinating the workflows are under `src/coordinator` and any standalone job is defined under `src/jobs`.
-
-... WIP sorry :)
+The coordinator is an api for managing etl/training/deployment jobs. The coordinator doesn't do any data processing. Instead it runs various pipelines by running containers in vertex ai. The code is organizationed such that all logic for coordinating the workflows are under `src/coordinator` and any custom jobs are defined under `src/jobs`.
 
 
-#### Custom Workflows / Extending
+Key terms:
+* `Job`:
+    - A job is a single task such as etl, training, deployment, or model evaluation.
+* `Pipeline`:
+    - A pipeline contains the logic for running a series of jobs.
+    - It exposes three functions.
+        1. parse_args: Used to validate the dict payload that contains the pipeline parameters
+        2. run_local: A function that defines the behavior of the pipeline when run from the local machine
+        3. run_remote: A function that defines the behavior of the pipeline when run from a gcp deployment
 
-To add a new job and integrate into a new or existing pipeline please follow the following steps:
 
-1. Define the job
-    * Create a new directory under `jobs/<etl/training>/<data type>/<job name>.py`
-    * Write the logic for the job. Include a cli to pass in any arguments.
-    * Add a Dockerfile
-    * Test to make sure this works as a stand alone script
-2. Define a new job in the coordinator.
-    * This should inherit from the base JobClass
-    * Should live in a directory that mirriors the job directory
-    * E.g. `coordinator/<etl/training>/<data type>/<job name>.py`
-3. Add the job to a pipeline in `coordinator/pipeline.py`
+### Custom Pipelines / Extending
+
+#### Creating Custom Jobs
+* A custom job can be used to run any arbitrary job on gcp. This is not necessary if you already have a container on gcs that defines the job or the job can be run from a remote client (in this case run from the pipeline). To create the custom job do the following:
+1. Create a new directory under the `jobs` directory.
+2. Write the logic for the job. Include a cli to pass in any arguments.
+3. Add a Dockerfile
+5. Add to the docker compose
+6. Add tests
+
+#### Extending a Pipeline
+1. Find the pipeline you want to extend under `coordinator/pipelines/...`
+2. Create a new class that inherits from the base job class. Define an implementation for `run_remote` and `run_local`.
+3. Add the new job to the pipeline and update the pipeline's `run_remote` and `run_local` functions
+
+
+#### Creating a New Pipeline
+1. Copy a pipeline found under `coordinator/pipelines/...`
+2. Update the logic for your new job
+3. Add the job to a pipeline in `coordinator/config.py`
     * Update `pipelines` to include the new workflow
     * Add the new pipeline name `PipelineName` type as a Literal
-4. Update `docker-compose.yaml` to include the new job
-5. Add tests
-
-
-
-Restrictions:
-1. Currently we only support training and ETL pipelines
-2. All pipelines must have an ETL and training phase defined (although defining a job that doesn't do anything is valid)
-3. Data is only passed 1 way (from coordinator to task)
-
-
 

@@ -26,11 +26,7 @@ class JobStatus:
 class Job(ABC):
 
     @abstractmethod
-    def parse_args(self, json_data: Dict[str, Any]):
-        ...
-
-    @abstractmethod
-    def run_local(self, json_data: Dict[str, Any]) -> JobStatus:
+    def run_local(self, json_data: Dict[str, Any]):
         ...
 
     @abstractmethod
@@ -38,15 +34,21 @@ class Job(ABC):
         ...
 
 
+class Pipeline(Job):
+
+    @abstractmethod
+    def parse_args(self, json_data: Dict[str, Any]):
+        ...
+
+
 class CustomJob(Job):
     """
     Base class for coordinator jobs
-
     """
 
-    def __init__(self, name, container_name, max_run_time=600):
+    def __init__(self, name, local_container_name: str, max_run_time=600):
         self.name = name
-        self.container_name = container_name
+        self.local_container_name = local_container_name
         self.max_run_time = max_run_time
 
     def _run_local(
@@ -55,8 +57,8 @@ class CustomJob(Job):
             env_vars: Optional[List[str]] = None,
             volumes: Optional[Dict[str, Dict[str, str]]] = None) -> JobStatus:
 
-        logger.info("Starting gcp_bounding_box_etl container locally")
-        container = DOCKER_CLIENT.containers.run(self.container_name,
+        logger.info(f"Running container: `{self.local_container_name}`")
+        container = DOCKER_CLIENT.containers.run(self.local_container_name,
                                                  cmd or [],
                                                  detach=True,
                                                  stream=True,
@@ -66,7 +68,6 @@ class CustomJob(Job):
         for log in container.logs(stream=True):
             logger.info("[%s]: %s" % (self.name, log.decode('utf-8')))
         res = container.wait()
-        # TODO: Maybe we just raise an exception if the job failed?
         logger.info("STATUS: %s", str(res))
         if res['StatusCode'] == 0:
             return JobStatus(state=JobState.SUCCESS)
