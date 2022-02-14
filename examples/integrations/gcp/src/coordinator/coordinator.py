@@ -19,11 +19,11 @@ app = FastAPI()
 
 
 async def run_local(json_data: Dict[str, Any], pipeline: PipelineName):
-    try:
-        await run_in_threadpool(pipelines[pipeline].run_local, json_data)
-    except Exception as e:
-        # TODO: Notify labelbox
-        logger.info(f"Job failed. Error: {e}")
+    #try:
+    await run_in_threadpool(pipelines[pipeline].run_local, json_data)
+    #except Exception as e:
+    #    # TODO: Notify labelbox
+    #    logger.info(f"Job failed. Error: {e}")
 
 
 async def run_remote(*args, **kwargs):
