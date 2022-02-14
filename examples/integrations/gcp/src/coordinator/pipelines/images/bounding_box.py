@@ -4,6 +4,7 @@ import logging
 from uuid import uuid4
 
 from google.cloud import aiplatform
+from google.cloud.aiplatform.models import Model
 
 from pipelines.types import Pipeline, CustomJob, JobStatus, JobState, Job
 
@@ -46,20 +47,16 @@ class BoundingBoxETL(CustomJob):
 
 class BoundingBoxTraining(Job):
 
-    def parse_args(self, json_data: Dict[str, Any]) -> str:
-        if 'training_file_uri' not in json_data:
-            raise ValueError("Expected param training_file_uri")
-        return json_data['training_file_uri']
-
-    def run_local(self, training_file_uri: str) -> JobStatus:
-        dataset_display_name = f"bounding_box_{uuid4()}"
+    def run_local(self, training_file_uri: str, job_name: str) -> JobStatus:
+        job_display_name = f"bounding_box_{job_name}"
         dataset = aiplatform.ImageDataset.create(
-            display_name=dataset_display_name,
+            display_name=job_display_name,
             gcs_source=[training_file_uri],
             import_schema_uri=aiplatform.schema.dataset.ioformat.image.
             bounding_box)
         job = aiplatform.AutoMLImageTrainingJob(
-            display_name="matt-test-train-automl",
+            # TODO: Parameterize this
+            display_name=job_display_name,
             prediction_type="object_detection",
             model_type="MOBILE_TF_LOW_LATENCY_1")
         model = job.run(
@@ -73,11 +70,31 @@ class BoundingBoxTraining(Job):
             "labels.aiplatform.googleapis.com/ml_use=validation",
             test_filter_split="labels.aiplatform.googleapis.com/ml_use=test")
         logger.info("model id: %s" % model.name)
-
-        return JobStatus(JobState.SUCCESS, result={'model_id': model.name})
+        return JobStatus(JobState.SUCCESS,
+                         result={
+                             'model_id': model.name,
+                             'model': model
+                         })
 
     def run_remote(self, training_data_uri):
         ...
+
+
+class BoundingBoxDeployment(Job):
+    # TODO: These aren't compatible with all models...
+    def _run(self, model: Model) -> JobStatus:
+        endpoint = model.deploy(min_replica_count=1,
+                                max_replica_count=5,
+                                machine_type='n1-standard-4',
+                                accelerator_type='NVIDIA_TESLA_K80')
+        # All we need is the endpoint id
+        return JobStatus({'result': {'endpoint_id': endpoint.name}})
+
+    def run_local(self, model: Model) -> JobStatus:
+        return self._run(model)
+
+    def run_remote(self, model: Model) -> JobStatus:
+        return self._run(model)
 
 
 class BoundingBoxPipeline(Pipeline):

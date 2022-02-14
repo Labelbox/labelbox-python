@@ -4,6 +4,7 @@ import hmac
 import json
 import logging
 import argparse
+import datetime
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Header, Request
 from fastapi.concurrency import run_in_threadpool
@@ -65,6 +66,8 @@ def validate_payload(data: Dict[str, str]):
             f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {valid_pipelines}"
         )
     pipelines[data['pipeline']].parse_args(data)
+    if 'job_name' not in data:
+        data['job_name'] = str(datetime.datetime.now()).replace(" ", "_")
 
 
 @app.get("/ping")
