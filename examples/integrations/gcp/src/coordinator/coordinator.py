@@ -65,13 +65,10 @@ def validate_payload(data: Dict[str, str]):
         raise ValueError(
             f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {valid_pipelines}"
         )
-    pipelines[data['pipeline']].parse_args(data)
-    if 'job_name' not in data:
-        data['job_name'] = str(datetime.datetime.now()).replace(" ", "_")
-
     if 'job_name' not in data:
         data[
             'job_name'] = f'{data["pipeline"]}_{str(datetime.datetime.now()).replace(" ", "_")}'
+    pipelines[data['pipeline']].parse_args(data)
 
 
 @app.get("/ping")

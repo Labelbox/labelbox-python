@@ -79,20 +79,20 @@ class BoundingBoxTraining(Job):
 
 
 class BoundingBoxDeployment(Job):
-    # TODO: These aren't compatible with all models...
-    def _run(self, model: Model) -> JobStatus:
-        endpoint = model.deploy(min_replica_count=1,
-                                max_replica_count=5,
-                                machine_type='n1-standard-4',
-                                accelerator_type='NVIDIA_TESLA_K80')
-        # All we need is the endpoint id
-        return JobStatus({'result': {'endpoint_id': endpoint.name}})
 
-    def run_local(self, model: Model) -> JobStatus:
-        return self._run(model)
+    def _run(self, model: Model, job_name: str) -> JobStatus:
+        endpoint = model.deploy(deployed_model_display_name=job_name,
+                                min_replica_count=1,
+                                max_replica_count=5)
+        # All we need is the endpoint id (aka name)
+        return JobStatus(JobState.SUCCESS,
+                         result={'endpoint_id': endpoint.name})
 
-    def run_remote(self, model: Model) -> JobStatus:
-        return self._run(model)
+    def run_local(self, model: Model, job_name: str) -> JobStatus:
+        return self._run(model, job_name)
+
+    def run_remote(self, model: Model, job_name: str) -> JobStatus:
+        return self._run(model, job_name)
 
 
 class BoundingBoxPipeline(Pipeline):
@@ -102,6 +102,7 @@ class BoundingBoxPipeline(Pipeline):
         self.etl_job = BoundingBoxETL(gcs_bucket, labelbox_api_key,
                                       gc_cred_path, gc_config_dir)
         self.training_job = BoundingBoxTraining()
+        self.deployment = BoundingBoxDeployment()
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -126,6 +127,14 @@ class BoundingBoxPipeline(Pipeline):
         if training_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
+
+        deployment_status = self.deployment.run_local(
+            etl_status.result['model'], job_name)
+        if deployment_status.state == JobState.FAILED:
+            logger.info(f"Job failed. Exiting.")
+            return
+
+        logger.info(f"Deployment status: {deployment_status}")
 
     def run_remote(self, *args, **kwargs):
         raise NotImplementedError("")

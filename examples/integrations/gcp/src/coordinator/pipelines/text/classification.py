@@ -3,10 +3,9 @@ import time
 import logging
 
 from google.cloud import aiplatform
+from google.cloud.aiplatform import Model
 
 from pipelines.types import Pipeline, CustomJob, JobStatus, JobState, Job
-
-from google.cloud import aiplatform
 
 logger = logging.getLogger("uvicorn")
 
@@ -87,6 +86,23 @@ class TextClassificationTraining(Job):
         ...
 
 
+class TextClassificationDeployment(Job):
+
+    def _run(self, model: Model, job_name: str) -> JobStatus:
+        endpoint = model.deploy(deployed_model_display_name=job_name,
+                                min_replica_count=1,
+                                max_replica_count=5)
+        # All we need is the endpoint id (aka name)
+        return JobStatus(JobState.SUCCESS,
+                         result={'endpoint_id': endpoint.name})
+
+    def run_local(self, model: Model, job_name: str) -> JobStatus:
+        return self._run(model, job_name)
+
+    def run_remote(self, model: Model, job_name: str) -> JobStatus:
+        return self._run(model, job_name)
+
+
 class TextClassificationPipeline(Pipeline):
 
     def __init__(self, text_classification_type: TextClassificationType,
@@ -96,6 +112,7 @@ class TextClassificationPipeline(Pipeline):
                                              gcs_bucket, labelbox_api_key,
                                              gc_cred_path, gc_config_dir)
         self.training_job = TextClassificationTraining(text_classification_type)
+        self.deployment = TextClassificationDeployment()
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -114,6 +131,13 @@ class TextClassificationPipeline(Pipeline):
 
         training_status = self.training_job.run_local(etl_status.result,
                                                       job_name)
+        # Report state and model id to labelbox
+        logger.info(f"Training Status: {training_status}")
+        if training_status.state == JobState.FAILED:
+            logger.info(f"Job failed. Exiting.")
+            return
+
+        training_status = self.deployment.run_local(etl_status.result, job_name)
         # Report state and model id to labelbox
         logger.info(f"Training Status: {training_status}")
         if training_status.state == JobState.FAILED:
