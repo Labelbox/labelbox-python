@@ -1,7 +1,6 @@
 from typing import Dict, Any
 import time
 import logging
-from uuid import uuid4
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform.models import Model
@@ -48,15 +47,14 @@ class BoundingBoxETL(CustomJob):
 class BoundingBoxTraining(Job):
 
     def run_local(self, training_file_uri: str, job_name: str) -> JobStatus:
-        job_display_name = f"bounding_box_{job_name}"
         dataset = aiplatform.ImageDataset.create(
-            display_name=job_display_name,
+            display_name=job_name,
             gcs_source=[training_file_uri],
             import_schema_uri=aiplatform.schema.dataset.ioformat.image.
             bounding_box)
+
         job = aiplatform.AutoMLImageTrainingJob(
-            # TODO: Parameterize this
-            display_name=job_display_name,
+            display_name=job_name,
             prediction_type="object_detection",
             model_type="MOBILE_TF_LOW_LATENCY_1")
         model = job.run(
@@ -108,10 +106,12 @@ class BoundingBoxPipeline(Pipeline):
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
         project_id = json_data['project_id']
-        return project_id
+        job_name = json_data['job_name']
+        return project_id, job_name
 
     def run_local(self, json_data):
-        project_id = self.parse_args(json_data)
+        project_id, job_name = self.parse_args(json_data)
+
         etl_status = self.etl_job.run_local(project_id)
         # Report state and training data uri to labelbox
         logger.info(f"ETL Status: {etl_status}")
@@ -119,7 +119,8 @@ class BoundingBoxPipeline(Pipeline):
             logger.info(f"Job failed. Exiting.")
             return
 
-        training_status = self.training_job.run_local(etl_status.result)
+        training_status = self.training_job.run_local(etl_status.result,
+                                                      job_name)
         # Report state and model id to labelbox
         logger.info(f"Training Status: {training_status}")
         if training_status.state == JobState.FAILED:

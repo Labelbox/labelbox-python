@@ -69,6 +69,10 @@ def validate_payload(data: Dict[str, str]):
     if 'job_name' not in data:
         data['job_name'] = str(datetime.datetime.now()).replace(" ", "_")
 
+    if 'job_name' not in data:
+        data[
+            'job_name'] = f'{data["pipeline"]}_{str(datetime.datetime.now()).replace(" ", "_")}'
+
 
 @app.get("/ping")
 def health_check():
