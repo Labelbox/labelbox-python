@@ -1,7 +1,6 @@
 from typing import Dict, Any
 import time
 import logging
-from uuid import uuid4
 
 from google.cloud import aiplatform
 
@@ -51,15 +50,14 @@ class BoundingBoxTraining(Job):
             raise ValueError("Expected param training_file_uri")
         return json_data['training_file_uri']
 
-    def run_local(self, training_file_uri: str) -> JobStatus:
-        dataset_display_name = f"bounding_box_{uuid4()}"
+    def run_local(self, training_file_uri: str, job_name: str) -> JobStatus:
         dataset = aiplatform.ImageDataset.create(
-            display_name=dataset_display_name,
+            display_name=job_name,
             gcs_source=[training_file_uri],
             import_schema_uri=aiplatform.schema.dataset.ioformat.image.
             bounding_box)
         job = aiplatform.AutoMLImageTrainingJob(
-            display_name="matt-test-train-automl",
+            display_name=job_name,
             prediction_type="object_detection",
             model_type="MOBILE_TF_LOW_LATENCY_1")
         model = job.run(
@@ -73,7 +71,6 @@ class BoundingBoxTraining(Job):
             "labels.aiplatform.googleapis.com/ml_use=validation",
             test_filter_split="labels.aiplatform.googleapis.com/ml_use=test")
         logger.info("model id: %s" % model.name)
-
         return JobStatus(JobState.SUCCESS, result={'model_id': model.name})
 
     def run_remote(self, training_data_uri):
@@ -91,10 +88,11 @@ class BoundingBoxPipeline(Pipeline):
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
         project_id = json_data['project_id']
-        return project_id
+        job_name = json_data['job_name']
+        return project_id, job_name
 
     def run_local(self, json_data):
-        project_id = self.parse_args(json_data)
+        project_id, job_name = self.parse_args(json_data)
         etl_status = self.etl_job.run_local(project_id)
         # Report state and training data uri to labelbox
         logger.info(f"ETL Status: {etl_status}")
@@ -102,7 +100,8 @@ class BoundingBoxPipeline(Pipeline):
             logger.info(f"Job failed. Exiting.")
             return
 
-        training_status = self.training_job.run_local(etl_status.result)
+        training_status = self.training_job.run_local(etl_status.result,
+                                                      job_name)
         # Report state and model id to labelbox
         logger.info(f"Training Status: {training_status}")
         if training_status.state == JobState.FAILED:
