@@ -80,9 +80,7 @@ class BoundingBoxTraining(Job):
 class BoundingBoxDeployment(Job):
 
     def _run(self, model: Model, job_name: str) -> JobStatus:
-        endpoint = model.deploy(deployed_model_display_name=job_name,
-                                min_replica_count=1,
-                                max_replica_count=5)
+        endpoint = model.deploy(deployed_model_display_name=job_name)
         # All we need is the endpoint id (aka name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
@@ -128,7 +126,7 @@ class BoundingBoxPipeline(Pipeline):
             return
 
         deployment_status = self.deployment.run_local(
-            etl_status.result['model'], job_name)
+            training_status.result['model'], job_name)
         if deployment_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return

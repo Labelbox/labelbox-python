@@ -89,10 +89,7 @@ class TextClassificationTraining(Job):
 class TextClassificationDeployment(Job):
 
     def _run(self, model: Model, job_name: str) -> JobStatus:
-        endpoint = model.deploy(deployed_model_display_name=job_name,
-                                min_replica_count=1,
-                                max_replica_count=5)
-        # All we need is the endpoint id (aka name)
+        endpoint = model.deploy(deployed_model_display_name=job_name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
 
@@ -137,10 +134,11 @@ class TextClassificationPipeline(Pipeline):
             logger.info(f"Job failed. Exiting.")
             return
 
-        training_status = self.deployment.run_local(etl_status.result, job_name)
+        deployment_status = self.deployment.run_local(
+            training_status.result['model'], job_name)
         # Report state and model id to labelbox
-        logger.info(f"Training Status: {training_status}")
-        if training_status.state == JobState.FAILED:
+        logger.info(f"Deployment Status: {deployment_status}")
+        if deployment_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
 
