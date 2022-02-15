@@ -52,7 +52,6 @@ class BoundingBoxTraining(Job):
             gcs_source=[training_file_uri],
             import_schema_uri=aiplatform.schema.dataset.ioformat.image.
             bounding_box)
-
         job = aiplatform.AutoMLImageTrainingJob(
             display_name=job_name,
             prediction_type="object_detection",
