@@ -19,11 +19,11 @@ app = FastAPI()
 
 
 async def run_local(json_data: Dict[str, Any], pipeline: PipelineName):
-    try:
-        await run_in_threadpool(pipelines[pipeline].run_local, json_data)
-    except Exception as e:
-        # TODO: Notify labelbox
-        logger.info(f"Job failed. Error: {e}")
+    #try:
+    await run_in_threadpool(pipelines[pipeline].run_local, json_data)
+    #except Exception as e:
+    #    # TODO: Notify labelbox
+    #    logger.info(f"Job failed. Error: {e}")
 
 
 async def run_remote(*args, **kwargs):
@@ -65,11 +65,10 @@ def validate_payload(data: Dict[str, str]):
         raise ValueError(
             f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {valid_pipelines}"
         )
-    pipelines[data['pipeline']].parse_args(data)
-
     if 'job_name' not in data:
         data[
             'job_name'] = f'{data["pipeline"]}_{str(datetime.datetime.now()).replace(" ", "_")}'
+    pipelines[data['pipeline']].parse_args(data)
 
 
 @app.get("/ping")

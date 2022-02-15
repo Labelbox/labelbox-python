@@ -45,18 +45,12 @@ class BoundingBoxETL(CustomJob):
 
 class BoundingBoxTraining(Job):
 
-    def parse_args(self, json_data: Dict[str, Any]) -> str:
-        if 'training_file_uri' not in json_data:
-            raise ValueError("Expected param training_file_uri")
-        return json_data['training_file_uri']
-
     def run_local(self, training_file_uri: str, job_name: str) -> JobStatus:
         dataset = aiplatform.ImageDataset.create(
             display_name=job_name,
             gcs_source=[training_file_uri],
             import_schema_uri=aiplatform.schema.dataset.ioformat.image.
             bounding_box)
-
         job = aiplatform.AutoMLImageTrainingJob(
             display_name=job_name,
             prediction_type="object_detection",

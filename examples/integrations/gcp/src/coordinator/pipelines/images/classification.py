@@ -45,9 +45,7 @@ class ImageClassificationETL(CustomJob):
                     'mode': 'ro'
                 }
             })
-        job_status.result = {
-            'training_file_uri': f'gs://{self.gcs_bucket}/{gcs_key}'
-        }
+        job_status.result = f'gs://{self.gcs_bucket}/{gcs_key}'
         return job_status
 
 
