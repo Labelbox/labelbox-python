@@ -80,7 +80,11 @@ class TextClassificationTraining(Job):
             "labels.aiplatform.googleapis.com/ml_use=validation",
             test_filter_split="labels.aiplatform.googleapis.com/ml_use=test")
         logger.info("model id: %s" % model.name)
-        return JobStatus(JobState.SUCCESS, result={'model_id': model.name})
+        return JobStatus(JobState.SUCCESS,
+                         result={
+                             'model_id': model.name,
+                             'model': model
+                         })
 
     def run_remote(self, training_data_uri):
         ...
