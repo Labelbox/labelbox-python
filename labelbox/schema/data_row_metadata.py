@@ -213,7 +213,6 @@ class DataRowMetadataOntology:
 
         Returns:
             metadata: List of `DataRowMetadata`
-
         """
         parsed = []
         if isinstance(unparsed, dict):
