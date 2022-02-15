@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 VERTEX_MIN_TRAINING_EXAMPLES, VERTEX_MAX_TRAINING_EXAMPLES = 50, 100_000
-MIN_ANNOTATIONS, MAX_ANNOTATIONS = 1, 10
+MIN_ANNOTATIONS, MAX_ANNOTATIONS = 1, 20
 MIN_ANNOTATION_NAME_LENGTH, MAX_ANNOTATION_NAME_LENGTH = 2, 30
 
 
@@ -43,8 +43,7 @@ def process_label(label: Label) -> str:
 
     # TODO: You can use a label to annotate between 1 and 10 words.
     # Verify ^^ is what we are checking for
-    if len(text_annotations) >= MIN_ANNOTATIONS or len(
-            text_annotations) < MAX_ANNOTATIONS:
+    if not (MIN_ANNOTATIONS <= len(text_annotations) <= MAX_ANNOTATIONS):
         logger.info("Skipping label. Number of annotations is not in range: "
                     f"{MIN_ANNOTATIONS}<=num annotations<={MAX_ANNOTATIONS}")
         return
