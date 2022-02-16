@@ -1,46 +1,29 @@
-from typing import Dict, Any, Callable
+from typing import Dict, Any
 import hashlib
 import hmac
-import os
 import json
 import logging
 import argparse
+import datetime
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.logger import logger
 import uvicorn
 
-from pipelines import pipelines, PipelineName
-from job import JobState, JobStatus
-
-secret = os.environ['WEBHOOK_SECRET']
+from config import pipelines, PipelineName, WEBHOOK_SECRET
 
 logger = logging.getLogger("uvicorn")
 logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
 
-async def run_job(fn: Callable[[Dict[str, Any]], JobStatus]) -> JobStatus:
-    try:
-        status = await run_in_threadpool(fn)
-    except Exception as e:
-        status = JobStatus(JobState.FAILED, errors=str(e))
-
-    if status.state != JobState.SUCCESS:
-        # In the future we will notify labelbox
-        raise Exception(f"Job failed: {status.errors}")
-    return status
-
-
 async def run_local(json_data: Dict[str, Any], pipeline: PipelineName):
-    logger.info("Starting ETL.")
-    status = await run_job(
-        lambda: pipelines[pipeline]['etl'].run_local(json_data))
-    logger.info("Starting Training.")
-    await run_job(lambda: pipelines[pipeline]['train'].run_local(status.result))
-    logger.info("Pipeline Ran Successfully!")
-    # TODO: Notify labelbox
+    try:
+        await run_in_threadpool(pipelines[pipeline].run_local, json_data)
+    except Exception as e:
+        # TODO: Notify labelbox
+        logger.info(f"Job failed. Error: {e}")
 
 
 async def run_remote(*args, **kwargs):
@@ -57,7 +40,7 @@ async def model_run(request: Request,
                     background_tasks: BackgroundTasks,
                     X_Hub_Signature: str = Header(None)):
     req = await request.body()
-    computed_signature = hmac.new(secret.encode(),
+    computed_signature = hmac.new(WEBHOOK_SECRET.encode(),
                                   msg=req,
                                   digestmod=hashlib.sha1).hexdigest()
     if X_Hub_Signature != "sha1=" + computed_signature:
@@ -73,11 +56,19 @@ async def model_run(request: Request,
 
 
 def validate_payload(data: Dict[str, str]):
-    # Check that the pipeline to run
-    assert 'pipeline' in data
-    assert data['pipeline'] in list(
-        pipelines.keys()
-    ), f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {list(pipelines.keys())}"
+    valid_pipelines = list(pipelines.keys())
+    if 'pipeline' not in data:
+        raise KeyError(
+            "Must provide `pipeline` key indicating which pipeline to run. "
+            f"Should be one of: {valid_pipelines}")
+    if not (data['pipeline'] in list(pipelines.keys())):
+        raise ValueError(
+            f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {valid_pipelines}"
+        )
+    if 'job_name' not in data:
+        data[
+            'job_name'] = f'{data["pipeline"]}_{str(datetime.datetime.now()).replace(" ", "_")}'
+    pipelines[data['pipeline']].parse_args(data)
 
 
 @app.get("/ping")
@@ -87,7 +78,6 @@ def health_check():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Server for handling jobs')
-    # TODO: Optionally support directly running a pipeline.
     parser.add_argument('--deploy',
                         default=False,
                         required=False,
