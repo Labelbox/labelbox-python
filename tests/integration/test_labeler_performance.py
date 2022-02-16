@@ -1,12 +1,9 @@
 from datetime import datetime, timezone, timedelta
-import time
 import pytest
 
 
-def test_labeler_performance(label_pack):
-    project, dataset, data_row, label = label_pack
-    # Sleep a bit as it seems labeler performance isn't updated immediately.
-    time.sleep(10)
+def test_labeler_performance(configured_project_with_label):
+    project, _, _, _ = configured_project_with_label
 
     labeler_performance = list(project.labeler_performance())
     assert len(labeler_performance) == 1

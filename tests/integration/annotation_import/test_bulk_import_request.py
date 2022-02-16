@@ -29,7 +29,7 @@ def test_create_from_url(configured_project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_validate_file(client, configured_project):
+def test_validate_file(configured_project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     with pytest.raises(MALValidationError):
@@ -151,7 +151,7 @@ def test_wait_till_done(rectangle_inference, configured_project):
         'uuid']
 
 
-def test_project_bulk_import_requests(client, configured_project, predictions):
+def test_project_bulk_import_requests(configured_project, predictions):
     result = configured_project.bulk_import_requests()
     assert len(list(result)) == 0
 
@@ -174,7 +174,7 @@ def test_project_bulk_import_requests(client, configured_project, predictions):
     assert len(list(result)) == 3
 
 
-def test_delete(client, configured_project, predictions):
+def test_delete(configured_project, predictions):
     name = str(uuid.uuid4())
 
     bulk_import_request = configured_project.upload_annotations(

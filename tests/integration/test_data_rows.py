@@ -158,9 +158,13 @@ def test_data_row_filtering_sorting(dataset, image_url):
     # Test filtering
     row1 = list(dataset.data_rows(where=DataRow.external_id == "row1"))
     assert len(row1) == 1
+    row1 = dataset.data_rows_for_external_id("row1")
+    assert len(row1) == 1
     row1 = row1[0]
     assert row1.external_id == "row1"
     row2 = list(dataset.data_rows(where=DataRow.external_id == "row2"))
+    assert len(row2) == 1
+    row2 = dataset.data_rows_for_external_id("row2")
     assert len(row2) == 1
     row2 = row2[0]
     assert row2.external_id == "row2"

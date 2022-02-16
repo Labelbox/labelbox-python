@@ -4,15 +4,15 @@ from labelbox import Review
 from labelbox.exceptions import InvalidQueryError
 
 
-def test_reviews(label_pack):
-    project, _, _, label = label_pack
+def test_reviews(configured_project_with_label):
+    _, _, _, label = configured_project_with_label
 
     assert set(label.reviews()) == set()
 
     r1 = label.create_review(score=-1.0)
     # They work on data that was created in the editor but not with project.create_label
-    #assert r1.project() == project
-    #assert r1.label() == label
+    # assert r1.project() == project
+    # assert r1.label() == label
     assert r1.score == -1.0
     assert set(label.reviews()) == {r1}
 
@@ -31,8 +31,8 @@ def test_reviews(label_pack):
     assert set(label.reviews()) == {r2}
 
 
-def test_review_metrics(label_pack):
-    project, _, data_row, _ = label_pack
+def test_review_metrics(configured_project_with_label):
+    project, _, _, _ = configured_project_with_label
 
     assert project.review_metrics(None) == 1
     assert project.review_metrics(Review.NetScore.Negative) == 0
@@ -41,8 +41,8 @@ def test_review_metrics(label_pack):
 
     for count, score in ((4, 0), (2, 1), (3, -1)):
         for _ in range(count):
-            l = project.create_label(data_row=data_row, label="l")
-            l.create_review(score=score)
+            project.create_label()
+            next(project.labels()).create_review(score=score)
 
     assert project.review_metrics(None) == 1
     assert project.review_metrics(Review.NetScore.Negative) == 3
