@@ -161,10 +161,7 @@ class Organization(DbObject):
         query_str = """query GetOrganizationResourceTagsPyApi{organization{resourceTag{%s}}}""" % (
             query.results_query_part(ResourceTag))
 
-        return [
-            ResourceTag(self.client, resourceTag)
-            for resourceTag in res['createResourceTag']
-        ]
+        return self.client.execute(query_str)['organization']['resourceTag']
 
     def get_iam_integrations(self) -> List["IAMIntegration"]:
         """
