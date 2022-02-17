@@ -14,8 +14,6 @@ import requests
 from labelbox import Client
 from labelbox import LabelingFrontend
 from labelbox.orm import query
-from labelbox.schema.annotation_import import MALPredictionImport
-from labelbox.orm.db_object import Entity, DbObject
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
