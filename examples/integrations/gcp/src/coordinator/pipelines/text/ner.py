@@ -77,7 +77,6 @@ class TextNERDeployment(Job):
 
     def _run(self, model: Model, job_name: str) -> JobStatus:
         endpoint = model.deploy(deployed_model_display_name=job_name)
-        # All we need is the endpoint id (aka name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
 
