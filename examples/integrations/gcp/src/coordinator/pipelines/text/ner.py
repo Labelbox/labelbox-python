@@ -3,6 +3,7 @@ import time
 import logging
 
 from google.cloud import aiplatform
+from google.cloud.aiplatform import Model
 
 from pipelines.types import Pipeline, CustomJob, JobStatus, JobState, Job
 
@@ -62,10 +63,29 @@ class NERTraining(Job):
             "labels.aiplatform.googleapis.com/ml_use=validation",
             test_filter_split="labels.aiplatform.googleapis.com/ml_use=test")
         logger.info("model id: %s" % model.name)
-        return JobStatus(JobState.SUCCESS, result={'model_id': model.name})
+        return JobStatus(JobState.SUCCESS,
+                         result={
+                             'model_id': model.name,
+                             'model': model
+                         })
 
     def run_remote(self, training_data_uri):
         ...
+
+
+class TextNERDeployment(Job):
+
+    def _run(self, model: Model, job_name: str) -> JobStatus:
+        endpoint = model.deploy(deployed_model_display_name=job_name)
+        # All we need is the endpoint id (aka name)
+        return JobStatus(JobState.SUCCESS,
+                         result={'endpoint_id': endpoint.name})
+
+    def run_local(self, model: Model, job_name: str) -> JobStatus:
+        return self._run(model, job_name)
+
+    def run_remote(self, model: Model, job_name: str) -> JobStatus:
+        return self._run(model, job_name)
 
 
 class NERPipeline(Pipeline):
@@ -75,6 +95,7 @@ class NERPipeline(Pipeline):
         self.etl_job = NERETL(gcs_bucket, labelbox_api_key, gc_cred_path,
                               gc_config_dir)
         self.training_job = NERTraining()
+        self.deployment = TextNERDeployment()
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -96,6 +117,14 @@ class NERPipeline(Pipeline):
         # Report state and model id to labelbox
         logger.info(f"Training Status: {training_status}")
         if training_status.state == JobState.FAILED:
+            logger.info(f"Job failed. Exiting.")
+            return
+
+        deployment_status = self.deployment.run_local(
+            training_status.result['model'], job_name)
+        # Report state and model id to labelbox
+        logger.info(f"Deployment Status: {deployment_status}")
+        if deployment_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
 
