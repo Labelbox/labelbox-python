@@ -44,7 +44,7 @@ class Organization(DbObject):
     users = Relationship.ToMany("User", False)
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
-    resourceTags = Relationship.ToMany("ResourceTag", False)
+    resourceTags = Relationship.ToMany("resource_tags", False)
 
     def invite_user(
             self,
@@ -161,7 +161,10 @@ class Organization(DbObject):
         query_str = """query GetOrganizationResourceTagsPyApi{organization{resourceTag{%s}}}""" % (
             query.results_query_part(ResourceTag))
 
-        return self.client.execute(query_str)['organization']['resourceTag']
+        return [
+            ResourceTag(self.client, tag) for tag in self.client.execute(
+                query_str)['organization']['resourceTag']
+        ]
 
     def get_iam_integrations(self) -> List["IAMIntegration"]:
         """

@@ -134,7 +134,7 @@ class Project(DbObject, Updateable, Deletable):
         project_id_param = "projectId"
         tag_ids_param = "resourceTagIds"
 
-        query_str = """mutation CreateProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
+        query_str = """mutation UpdateProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
             project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){%s}}}""" % (
             project_id_param, tag_ids_param, project_id_param, tag_ids_param,
             tag_ids_param, query.results_query_part(ResourceTag))
@@ -144,7 +144,10 @@ class Project(DbObject, Updateable, Deletable):
             tag_ids_param: resource_tag_ids
         })
 
-        return res["project"]["updateProjectResourceTags"]
+        return [
+            ResourceTag(self.client, tag)
+            for tag in res["project"]["updateProjectResourceTags"]
+        ]
 
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
