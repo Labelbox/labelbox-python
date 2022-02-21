@@ -85,7 +85,7 @@ def test_update_project_resource_tags(client, rand_gen):
     project_resource_tag = client.get_project(
         p1.uid).update_project_resource_tags([str(tagA.uid)])
     assert len(project_resource_tag) == 1
-    assert project_resource_tag[0].get("id") == tagA.uid
+    assert project_resource_tag[0].uid == tagA.uid
 
 
 def test_project_filtering(client, rand_gen):
