@@ -22,18 +22,13 @@ class JobStatus:
 
 
 class Job(ABC):
-    ...
 
-    #def run_local(self, json_data: Dict[str, Any]):
-    #    ...
-
-    #def run_remote(self, *args, **kwargs):
-    #    ...
+    def run(self, json_data: Dict[str, Any]):
+        ...
 
 
 class Pipeline(Job):
-    ...
 
-    #@abstractmethod
-    #def parse_args(self, json_data: Dict[str, Any]):
-    #    ...
+    @abstractmethod
+    def parse_args(self, json_data: Dict[str, Any]):
+        ...

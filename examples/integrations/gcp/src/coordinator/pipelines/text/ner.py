@@ -89,7 +89,7 @@ class NERPipeline(Pipeline):
         job_name = json_data['job_name']
         return project_id, job_name
 
-    def run_local(self, json_data):
+    def run(self, json_data):
         project_id, job_name = self.parse_args(json_data)
         etl_status = self.etl_job.run(project_id, job_name)
         # Report state and training data uri to labelbox
@@ -112,6 +112,3 @@ class NERPipeline(Pipeline):
         if deployment_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
-
-    def run_remote(self, *args, **kwargs):
-        raise NotImplementedError("")

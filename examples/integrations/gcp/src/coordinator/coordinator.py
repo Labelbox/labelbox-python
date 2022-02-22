@@ -19,7 +19,7 @@ app = FastAPI()
 
 async def run(json_data: Dict[str, Any], pipeline: PipelineName):
     try:
-        await run_in_threadpool(pipelines[pipeline].run_local, json_data)
+        await run_in_threadpool(pipelines[pipeline].run, json_data)
     except Exception as e:
         # TODO: Notify labelbox
         logger.info(f"Job failed. Error: {e}")

@@ -91,7 +91,7 @@ class BoundingBoxPipeline(Pipeline):
         job_name = json_data['job_name']
         return project_id, job_name
 
-    def run_local(self, json_data):
+    def run(self, json_data):
         project_id, job_name = self.parse_args(json_data)
 
         etl_status = self.etl_job.run(project_id, job_name)
