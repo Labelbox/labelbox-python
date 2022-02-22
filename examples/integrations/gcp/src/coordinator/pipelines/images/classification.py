@@ -15,7 +15,6 @@ logger = logging.getLogger("uvicorn")
 
 
 class ImageClassificationETL(Job):
-    container_name = "gcr.io/sandbox-5500/training-repo/image_classification_etl"
 
     def __init__(self, classification_type: ImageClassificationType,
                  gcs_bucket: str, service_account_email: str,
@@ -24,6 +23,7 @@ class ImageClassificationETL(Job):
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
         self.google_cloud_project = google_cloud_project
+        self.container_name = f"gcr.io/{google_cloud_project}/training-repo/image_classification_etl"
 
     def run(self, project_id: str, job_name: str) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
@@ -39,7 +39,7 @@ class ImageClassificationETL(Job):
         job.run(
             args=CMDARGS,
             service_account=self.service_account_email,
-            environment_variables={'GCLOUD_PROJECT': self.google_cloud_project})
+            environment_variables={'GOOGLE_PROJECT': self.google_cloud_project})
         return JobStatus(JobState.SUCCESS,
                          result=f'gs://{self.gcs_bucket}/{gcs_key}')
 

@@ -11,13 +11,13 @@ logger = logging.getLogger("uvicorn")
 
 
 class BoundingBoxETL(Job):
-    container_name = "gcr.io/sandbox-5500/training-repo/bounding_box_etl"
 
     def __init__(self, gcs_bucket: str, service_account_email: str,
                  google_cloud_project: str):
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
         self.google_cloud_project = google_cloud_project
+        self.container_name = f"gcr.io/{google_cloud_project}/training-repo/bounding_box_etl"
 
     def run(self, project_id: str, job_name: str) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())

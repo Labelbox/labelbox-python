@@ -13,7 +13,6 @@ TextClassificationType = Union[Literal['single'], Literal['multi']]
 
 
 class TextClassificationETL(Job):
-    container_name = "gcr.io/sandbox-5500/training-repo/text_classification_etl"
 
     def __init__(self, classification_type: TextClassificationType,
                  gcs_bucket: str, service_account_email: str,
@@ -22,6 +21,7 @@ class TextClassificationETL(Job):
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
         self.google_cloud_project = google_cloud_project
+        self.container_name = f"gcr.io/{google_cloud_project}/training-repo/text_classification_etl"
 
     def run(self, project_id: str, job_name) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
