@@ -1,10 +1,10 @@
 
 
-gcloud compute firewall-rules create default-allow-http-80 \
-    --allow tcp:80 \
+gcloud compute firewall-rules create default-allow-http-8000 \
+    --allow tcp:8000 \
     --source-ranges 0.0.0.0/0 \
     --target-tags http-server \
-    --description "Allow port 8080 access to http-server"
+    --description "Allow port 8000 access to http-server"
 
 
 
