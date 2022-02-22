@@ -4,8 +4,10 @@ import argparse
 import time
 import logging
 from concurrent.futures import ThreadPoolExecutor
+import os
 
 from google.cloud import storage
+from google.cloud import secretmanager
 
 from labelbox import Client
 from labelbox import Project
@@ -18,6 +20,15 @@ logger = logging.getLogger(__name__)
 VERTEX_MIN_TRAINING_EXAMPLES, VERTEX_MAX_TRAINING_EXAMPLES = 50, 100_000
 MIN_ANNOTATIONS, MAX_ANNOTATIONS = 1, 20
 MIN_ANNOTATION_NAME_LENGTH, MAX_ANNOTATION_NAME_LENGTH = 2, 30
+
+# Optionally set env var for testing
+_labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
+if _labelbox_api_key is None:
+    client = secretmanager.SecretManagerServiceClient()
+    secret_id = "labelbox_api_key"
+    name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/1"
+    response = client.access_secret_version(request={"name": name})
+    _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 
 def process_label(label: Label) -> str:
@@ -94,8 +105,8 @@ def ner_etl(project: Project) -> str:
 
 
 def main(project_id: str, gcs_bucket: str, gcs_key: str):
-    gcs_client = storage.Client()
-    lb_client = Client()
+    gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'])
+    lb_client = Client(api_key=_labelbox_api_key)
     bucket = gcs_client.bucket(gcs_bucket)
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/ner/{nowgmt}.jsonl'

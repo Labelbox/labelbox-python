@@ -1,4 +1,5 @@
 google-cloud-storage
+google-cloud-secret-manager
 # Headless version so we don't need rendering libs
 opencv-python-headless
 labelbox[data]

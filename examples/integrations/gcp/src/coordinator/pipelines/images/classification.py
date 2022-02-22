@@ -5,7 +5,7 @@ import logging
 from google.cloud import aiplatform
 from google.cloud.aiplatform import Model
 
-from pipelines.types import Pipeline, CustomJob, JobStatus, JobState, Job
+from pipelines.types import Pipeline, JobStatus, JobState, Job
 
 logger = logging.getLogger("uvicorn")
 
@@ -14,40 +14,34 @@ ImageClassificationType = Union[Literal['single'], Literal['multi']]
 logger = logging.getLogger("uvicorn")
 
 
-class ImageClassificationETL(CustomJob):
+class ImageClassificationETL(Job):
+    container_name = "gcr.io/sandbox-5500/training-repo/image_classification_etl"
 
     def __init__(self, classification_type: ImageClassificationType,
-                 gcs_bucket: str, labelbox_api_key: str, gc_cred_path: str,
-                 gc_config_dir: str):
+                 gcs_bucket: str, service_account_email: str,
+                 google_cloud_project: str):
         self.classification_type = classification_type
         self.gcs_bucket = gcs_bucket
-        self.labelbox_api_key = labelbox_api_key
-        self.gc_cred_path = gc_cred_path
-        self.gc_config_dir = gc_config_dir
-        super().__init__(name="image_classification",
-                         local_container_name="gcp_image_classification")
+        self.service_account_email = service_account_email
+        self.google_cloud_project = google_cloud_project
 
-    def run_local(self, project_id: str) -> JobStatus:
+    def run(self, project_id: str, job_name: str) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
         gcs_key = f'etl/image-{self.classification_type}-classification/{nowgmt}.jsonl'
-        job_status = self._run_local(
-            cmd=[
-                f"--gcs_bucket={self.gcs_bucket}", f"--project_id={project_id}",
-                f"--gcs_key={gcs_key}",
-                f"--classification_type={self.classification_type}"
-            ],
-            env_vars=[
-                f"GOOGLE_APPLICATION_CREDENTIALS={self.gc_cred_path}",
-                f"LABELBOX_API_KEY={self.labelbox_api_key}"
-            ],
-            volumes={
-                self.gc_config_dir: {
-                    'bind': '/root/.config/gcloud',
-                    'mode': 'ro'
-                }
-            })
-        job_status.result = f'gs://{self.gcs_bucket}/{gcs_key}'
-        return job_status
+        CMDARGS = [
+            f"--gcs_bucket={self.gcs_bucket}", f"--project_id={project_id}",
+            f"--gcs_key={gcs_key}"
+        ]
+        job = aiplatform.CustomContainerTrainingJob(
+            display_name=job_name,
+            container_uri=self.container_name,
+        )
+        job.run(
+            args=CMDARGS,
+            service_account=self.service_account_email,
+            environment_variables={'GCLOUD_PROJECT': self.google_cloud_project})
+        return JobStatus(JobState.SUCCESS,
+                         result=f'gs://{self.gcs_bucket}/{gcs_key}')
 
 
 class ClassificationTraining(Job):
@@ -64,7 +58,7 @@ class ClassificationTraining(Job):
             raise ValueError(
                 f"Unexpected classification type: `{classification_type}`")
 
-    def run_local(self, training_file_uri: str, job_name: str) -> JobStatus:
+    def run(self, training_file_uri: str, job_name: str) -> JobStatus:
         dataset = aiplatform.ImageDataset.create(
             display_name=job_name,
             gcs_source=[training_file_uri],
@@ -89,32 +83,23 @@ class ClassificationTraining(Job):
                              'model': model
                          })
 
-    def run_remote(self, training_data_uri):
-        ...
-
 
 class ImageClassificationDeployment(Job):
 
-    def _run(self, model: Model, job_name: str) -> JobStatus:
+    def run(self, model: Model, job_name: str) -> JobStatus:
         endpoint = model.deploy(deployed_model_display_name=job_name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
-
-    def run_local(self, model: Model, job_name: str) -> JobStatus:
-        return self._run(model, job_name)
-
-    def run_remote(self, model: Model, job_name: str) -> JobStatus:
-        return self._run(model, job_name)
 
 
 class ImageClassificationPipeline(Pipeline):
 
     def __init__(self, image_classification_type: ImageClassificationType,
-                 gcs_bucket: str, labelbox_api_key: str, gc_cred_path: str,
-                 gc_config_dir: str):
+                 gcs_bucket: str, service_account_email: str,
+                 google_cloud_project: str):
         self.etl_job = ImageClassificationETL(image_classification_type,
-                                              gcs_bucket, labelbox_api_key,
-                                              gc_cred_path, gc_config_dir)
+                                              gcs_bucket, service_account_email,
+                                              google_cloud_project)
         self.training_job = ClassificationTraining(image_classification_type)
         self.deployment = ImageClassificationDeployment()
 
@@ -124,46 +109,42 @@ class ImageClassificationPipeline(Pipeline):
         job_name = json_data['job_name']
         return project_id, job_name
 
-    def run_local(self, json_data):
+    def run(self, json_data):
         project_id, job_name = self.parse_args(json_data)
-        etl_status = self.etl_job.run_local(project_id)
+        etl_status = self.etl_job.run(project_id, job_name)
         # Report state and training data uri to labelbox
         logger.info(f"ETL Status: {etl_status}")
         if etl_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
 
-        training_status = self.training_job.run_local(etl_status.result,
-                                                      job_name)
+        training_status = self.training_job.run(etl_status.result, job_name)
         # Report state and model id to labelbox
         logger.info(f"Training Status: {training_status}")
         if training_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
 
-        deployment_status = self.deployment.run_local(
-            training_status.result['model'], job_name)
+        deployment_status = self.deployment.run(training_status.result['model'],
+                                                job_name)
         # Report state and model id to labelbox
         logger.info(f"Deployment Status: {deployment_status}")
         if deployment_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
 
-    def run_remote(self, *args, **kwargs):
-        raise NotImplementedError("")
-
 
 class ImageSingleClassificationPipeline(ImageClassificationPipeline):
 
-    def __init__(self, gcs_bucket: str, labelbox_api_key: str,
-                 gc_cred_path: str, gc_config_dir: str):
-        super().__init__('single', gcs_bucket, labelbox_api_key, gc_cred_path,
-                         gc_config_dir)
+    def __init__(self, gcs_bucket: str, service_account_email: str,
+                 google_cloud_project: str):
+        super().__init__('single', gcs_bucket, service_account_email,
+                         google_cloud_project)
 
 
 class ImageMultiClassificationPipeline(ImageClassificationPipeline):
 
-    def __init__(self, gcs_bucket: str, labelbox_api_key: str,
-                 gc_cred_path: str, gc_config_dir: str):
-        super().__init__('multi', gcs_bucket, labelbox_api_key, gc_cred_path,
-                         gc_config_dir)
+    def __init__(self, gcs_bucket: str, service_account_email: str,
+                 google_cloud_project: str):
+        super().__init__('multi', gcs_bucket, service_account_email,
+                         google_cloud_project)
