@@ -24,8 +24,15 @@ def setup_project(client):
     project.setup(editor, ontology.asdict())
     project.datasets.connect(dataset)
 
+    #fetch from gcs bucket the assets
+    os.system("cd ../assets")
+    os.system("ls")
+    os.system("gsutil cp -r -m gs://vertex-matt-test/bbox_seed_datarows .")
+
     datarows = []
-    assets_directory = "../assets/bbox_data_rows"
+    assets_directory = "../assets/bbox_seed_datarows"
+
+    print("Assets acquired from gcs. Now creating datarows...")
 
     for fp in os.listdir(assets_directory):
         full_path = os.path.join(assets_directory, fp)
