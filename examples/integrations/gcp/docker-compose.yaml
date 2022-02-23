@@ -1,57 +1,46 @@
+#https://cloud.google.com/compute/docs/containers/deploying-containers
 version: '3.7'
 services:
   coordinator:
     build:
       context: ./src/coordinator/
       dockerfile: Dockerfile
+      args:
+          GCS_BUCKET: ${GCS_BUCKET}
+          GOOGLE_PROJECT: ${GOOGLE_PROJECT}
+          GOOGLE_SERVICE_ACCOUNT: ${GOOGLE_SERVICE_ACCOUNT}
+    image: gcr.io/${GOOGLE_PROJECT}/training-repo/coordinator
+    # The rest is only needed for local deployments.
+    # Otherwise google runs with all ports mapped to the host
+    # and application credentials are inherited
     volumes:
       - ~/.config/gcloud:/root/.config/gcloud
-      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 8000:8000
     environment:
-      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
-      WEBHOOK_SECRET: "${WEBHOOK_SECRET}"
-      GCLOUD_CONFIG_DIR: "${HOME}/.config/gcloud"
-      GCS_BUCKET: "${GCS_BUCKET}"
       GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+    # Application credentials only required locally.
 
   bounding_box_etl:
     build:
       context: ./src/jobs/etl/images/bounding_box/
       dockerfile: Dockerfile
-    volumes:
-        - ~/.config/gcloud:/root/.config/gcloud
-    environment:
-      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+    image: gcr.io/${GOOGLE_PROJECT}/training-repo/bounding_box_etl
 
   ner_etl:
     build:
       context: ./src/jobs/etl/text/ner/
       dockerfile: Dockerfile
-    volumes:
-        - ~/.config/gcloud:/root/.config/gcloud
-    environment:
-      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+    image: gcr.io/${GOOGLE_PROJECT}/training-repo/ner_etl
 
-  image_classification:
+  image_classification_etl:
     build:
       context: ./src/jobs/etl/images/classification/
       dockerfile: Dockerfile
-    volumes:
-      - ~/.config/gcloud:/root/.config/gcloud
-    environment:
-      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+    image: gcr.io/${GOOGLE_PROJECT}/training-repo/image_classification_etl
 
-  text_classification:
+  text_classification_etl:
     build:
       context: ./src/jobs/etl/text/classification/
       dockerfile: Dockerfile
-    volumes:
-      - ~/.config/gcloud:/root/.config/gcloud
-    environment:
-      LABELBOX_API_KEY: "${LABELBOX_API_KEY}"
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
+    image: gcr.io/${GOOGLE_PROJECT}/training-repo/text_classification_etl

@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import json
 import logging
-import argparse
 import datetime
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Header, Request
@@ -18,16 +17,12 @@ logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
 
-async def run_local(json_data: Dict[str, Any], pipeline: PipelineName):
+async def run(json_data: Dict[str, Any], pipeline: PipelineName):
     try:
-        await run_in_threadpool(pipelines[pipeline].run_local, json_data)
+        await run_in_threadpool(pipelines[pipeline].run, json_data)
     except Exception as e:
         # TODO: Notify labelbox
         logger.info(f"Job failed. Error: {e}")
-
-
-async def run_remote(*args, **kwargs):
-    raise NotImplementedError("")
 
 
 @app.get("/models")
@@ -51,8 +46,7 @@ async def model_run(request: Request,
         )
     data = json.loads(req.decode("utf8"))
     validate_payload(data)
-    background_tasks.add_task(run_remote if args.deploy else run_local, data,
-                              data['pipeline'])
+    background_tasks.add_task(run, data, data['pipeline'])
 
 
 def validate_payload(data: Dict[str, str]):
@@ -77,16 +71,4 @@ def health_check():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Server for handling jobs')
-    parser.add_argument('--deploy',
-                        default=False,
-                        required=False,
-                        type=bool,
-                        help='Run the server on google cloud')
-    # Add command for rebuild / push
-    args = parser.parse_args()
-
-    if args.deploy:
-        raise ValueError("Only local mode supported for now")
-
     uvicorn.run(app, host='0.0.0.0', port=8000)

@@ -1,4 +1,4 @@
-from labelbox.schema.annotation_import import LabelImport
+from labelbox.schema.annotation_import import LabelImport, MEAPredictionImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.ontology import Classification, OntologyBuilder, Option
 import tensorflow_datasets as tfds

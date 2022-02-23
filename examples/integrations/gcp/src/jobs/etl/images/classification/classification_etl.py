@@ -6,10 +6,12 @@ import logging
 from typing import Union, Literal
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
+import os
 
 import requests
 from google.cloud.storage.bucket import Bucket
 from google.cloud import storage
+from google.cloud import secretmanager
 
 from labelbox.data.annotation_types import Label, Checklist, Radio
 from labelbox.data.serialization import LBV1Converter
@@ -19,6 +21,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 VERTEX_MIN_TRAINING_EXAMPLES = 1
+
+# Optionally set env var for testing
+_labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
+if _labelbox_api_key is None:
+    client = secretmanager.SecretManagerServiceClient()
+    secret_id = "labelbox_api_key"
+    name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/1"
+    response = client.access_secret_version(request={"name": name})
+    _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 
 def upload_to_gcs(image_url: str, data_row_uid: str, bucket: Bucket) -> str:
@@ -119,8 +130,8 @@ def image_classification_etl(project: Project, bucket: Bucket,
 
 def main(project_id: str, gcs_bucket: str, gcs_key: str,
          classification_type: Union[Literal['single'], Literal['multi']]):
-    gcs_client = storage.Client()
-    lb_client = Client()
+    gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'])
+    lb_client = Client(api_key=_labelbox_api_key)
     bucket = gcs_client.bucket(gcs_bucket)
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/{classification_type}-classification/{nowgmt}.jsonl'

@@ -21,8 +21,11 @@ Run ETL jobs, train models, deploy models, and track model performance all from 
         - `GCS_BUCKET`
     * GCP Credentials
         - All jobs require a GCP service account and permissions to read / write to a GCS bucket, cloud run deployments, read / write to GCR, and access to vertex ai. Credentials must be here: `~/.config/gcloud/development-sa-creds.json`.
-2. Run `./run.sh` to build the container
-2. Making a request to the service in another shell.  You can use `test/seed/seed_image_single_classification.py` to seed the project and then `test/test_image_classification.py` to kick off the pipeline.
+2. Run `./run.sh` to build the container. This also pushes the containers to gcr.
+    - Note that you can optionally deploy to gcp by running `./deployment/deploy.sh`. Make sure have `GOOGLE_PROJECT` and `GOOGLE_SERVICE_ACCOUNT` env vars set before running this. There are a few more requirements that are not automated at this time (such as setting secrets).
+3. Making a request to the service in another shell.  You can use `test/seed/seed_image_single_classification.py` to seed the project and then `test/test_image_classification.py` to kick off the pipeline.
+
+
 
 ### Design
 
@@ -32,12 +35,15 @@ The coordinator is an api for managing etl/training/deployment jobs. The coordin
 Key terms:
 * `Job`:
     - A job is a single task such as etl, training, deployment, or model evaluation.
+    - It exposes a run method that executes the job.
 * `Pipeline`:
     - A pipeline contains the logic for running a series of jobs.
     - It exposes three functions.
         1. parse_args: Used to validate the dict payload that contains the pipeline parameters
-        2. run_local: A function that defines the behavior of the pipeline when run from the local machine
-        3. run_remote: A function that defines the behavior of the pipeline when run from a gcp deployment
+        2. run: A function that defines the behavior of the pipeline when run from the local machine
+
+
+The whole system is designed to be deployed
 
 
 ### Custom Pipelines / Extending
@@ -52,8 +58,8 @@ Key terms:
 
 #### Extending a Pipeline
 1. Find the pipeline you want to extend under `coordinator/pipelines/...`
-2. Create a new class that inherits from the base job class. Define an implementation for `run_remote` and `run_local`.
-3. Add the new job to the pipeline and update the pipeline's `run_remote` and `run_local` functions
+2. Create a new class that inherits from the base job class. Define an implementation for `run`.
+3. Add the new job to the pipeline and update the pipeline's `run` function
 
 
 #### Creating a New Pipeline

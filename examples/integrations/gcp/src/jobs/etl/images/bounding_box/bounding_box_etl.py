@@ -5,11 +5,13 @@ import time
 import logging
 from typing import Tuple
 from io import BytesIO
+import os
 
 import requests
 from PIL.Image import Image, open as load_image
 from google.cloud.storage.bucket import Bucket
 from google.cloud import storage
+from google.cloud import secretmanager
 
 from labelbox.data.annotation_types import Label, Rectangle
 from labelbox import Client, Project
@@ -18,6 +20,15 @@ from concurrent.futures import ThreadPoolExecutor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Optionally set env var for testing
+_labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
+if _labelbox_api_key is None:
+    client = secretmanager.SecretManagerServiceClient()
+    secret_id = "labelbox_api_key"
+    name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/1"
+    response = client.access_secret_version(request={"name": name})
+    _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 VERTEX_MIN_BBOX_DIM = 8
 VERTEX_MAX_EXAMPLES_PER_IMAGE = 500
@@ -116,8 +127,8 @@ def bounding_box_etl(project: Project, bucket) -> str:
 
 
 def main(project_id: str, gcs_bucket: str, gcs_key: str):
-    gcs_client = storage.Client()
-    lb_client = Client()
+    gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'])
+    lb_client = Client(api_key=_labelbox_api_key)
     bucket = gcs_client.bucket(gcs_bucket)
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/bounding-box/{nowgmt}.jsonl'
