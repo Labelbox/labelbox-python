@@ -1,4 +1,5 @@
 import random
+import ndjson
 import json
 import argparse
 import time
@@ -14,6 +15,7 @@ from google.cloud import storage
 from google.cloud import secretmanager
 
 from labelbox.data.annotation_types import Label, Rectangle
+from labelbox.data.serialization import LBV1Converter
 from labelbox import Client, Project
 
 from concurrent.futures import ThreadPoolExecutor
@@ -88,7 +90,6 @@ def process_label(label: Label, bucket: Bucket) -> str:
                 "xMax": round(bbox.end.x / w, 2),
                 "yMax": round(bbox.end.y / h, 2),
             })
-
     return json.dumps({
         'imageGcsUri':
             gcs_uri,
@@ -102,7 +103,7 @@ def process_label(label: Label, bucket: Bucket) -> str:
     })
 
 
-def bounding_box_etl(project: Project, bucket) -> str:
+def bounding_box_etl(lb_client: Client, model_run_id: str, bucket) -> str:
     """
     Creates a jsonl file that is used for input into a vertex ai training job
 
@@ -110,12 +111,38 @@ def bounding_box_etl(project: Project, bucket) -> str:
     Read more about the restrictions here:
         - https://cloud.google.com/vertex-ai/docs/datasets/prepare-image#object-detection
     """
+    query_str = """
+        mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
+            exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
+                downloadUrl createdAt status
+            }
+        }
+        """
+    url = lb_client.execute(query_str,
+                            {'modelRunId': model_run_id
+                            })['exportModelRunAnnotations']['downloadUrl']
+    counter = 1
+    while url is None:
+        logger.info(f"Number of times tried: {counter}")
+        counter += 1
+        if counter > 10:
+            raise Exception(
+                f"Unsuccessfully got downloadUrl after {counter} attempts.")
+        time.sleep(10)
+        url = lb_client.execute(query_str,
+                                {'modelRunId': model_run_id
+                                })['exportModelRunAnnotations']['downloadUrl']
+
+    response = requests.get(url)
+    response.raise_for_status()
+    contents = ndjson.loads(response.content)
+
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
             exc.submit(process_label, label, bucket)
-            for label in project.label_generator()
+            for label in LBV1Converter().deserialize(contents)
         ]
-        training_data = [future.result() for future in training_data_futures]
+    training_data = [future.result() for future in training_data_futures]
 
     # The requirement seems to only apply to training data.
     # This should be changed to check by split
@@ -126,15 +153,15 @@ def bounding_box_etl(project: Project, bucket) -> str:
     return "\n".join(training_data)
 
 
-def main(project_id: str, gcs_bucket: str, gcs_key: str):
+def main(model_run_id: str, gcs_bucket: str, gcs_key: str):
     gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'])
-    lb_client = Client(api_key=_labelbox_api_key)
+    lb_client = Client(api_key=_labelbox_api_key,
+                       endpoint='https://api.labelbox.com/_gql')
     bucket = gcs_client.bucket(gcs_bucket)
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/bounding-box/{nowgmt}.jsonl'
     blob = bucket.blob(gcs_key)
-    project = lb_client.get_project(project_id)
-    json_data = bounding_box_etl(project, bucket)
+    json_data = bounding_box_etl(lb_client, model_run_id, bucket)
     blob.upload_from_string(json_data)
     logger.info("ETL Complete. URI: %s", f"gs://{bucket.name}/{blob.name}")
 
@@ -142,7 +169,7 @@ def main(project_id: str, gcs_bucket: str, gcs_key: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Vertex AI ETL Runner')
     parser.add_argument('--gcs_bucket', type=str, required=True)
-    parser.add_argument('--project_id', type=str, required=True)
+    parser.add_argument('--model_run_id', type=str, required=True)
     parser.add_argument('--gcs_key', type=str, required=False, default=None)
     args = parser.parse_args()
     main(**vars(args))
