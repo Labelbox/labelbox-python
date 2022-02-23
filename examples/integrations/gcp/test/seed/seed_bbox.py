@@ -1,13 +1,14 @@
 import uuid
 import json
 import os
+import time
 
 from labelbox import Client, LabelingFrontend, DataRow
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.ontology import OntologyBuilder, Tool
 from labelbox.data.serialization import NDJsonConverter, LBV1Converter
 
-client = Client()
+client = Client(os.environ.get('LABELBOX_API_KEY'))
 
 
 def setup_project(client):
@@ -25,9 +26,8 @@ def setup_project(client):
     project.datasets.connect(dataset)
 
     #fetch from gcs bucket the assets
-    os.system("cd ../assets")
-    os.system("ls")
-    os.system("gsutil cp -r -m gs://vertex-matt-test/bbox_seed_datarows .")
+    os.system(
+        "gsutil cp -r -m gs://vertex-matt-test/bbox_seed_datarows ../assets")
 
     datarows = []
     assets_directory = "../assets/bbox_seed_datarows"
@@ -46,6 +46,7 @@ def setup_project(client):
 
 
 project, dataset = setup_project(client)
+time.sleep(30)  #adding sleep so ensure datarows are created
 
 with open("../assets/proj_ckq778m4g0edr0yao004l41l7_export.json") as f:
     labels = json.load(f)
