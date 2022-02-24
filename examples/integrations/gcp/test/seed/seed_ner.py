@@ -129,6 +129,8 @@ def main():
             labels = []
             current_label_count = 1
 
+    lb_model_run.upsert_labels(labels)  #remaining labels
+
     print("Successfully created Model and ModelRun")
 
 
