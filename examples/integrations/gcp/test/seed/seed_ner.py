@@ -113,6 +113,19 @@ def main():
     annotations = flatten_labels(labels)
     upload_to_labelbox(client, project, annotations)
 
+    lb_model = client.create_model(name=f"{project.name}-model",
+                                   ontology_id=project.ontology().uid)
+    lb_model_run = lb_model.create_model_run("0.0.0")
+    max_labels = 2000
+
+    lb_model_run.upsert_labels([
+        label.uid
+        for idx, label in enumerate(project.label_generator())
+        if idx < max_labels
+    ])
+
+    print("Successfully created Model and ModelRun")
+
 
 if __name__ == '__main__':
     main()
