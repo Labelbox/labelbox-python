@@ -82,3 +82,9 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 | Model Diagnostics Demo  | [Github](model_diagnostics/model_diagnostics_demo.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_diagnostics/model_diagnostics_demo.ipynb) |
 | Custom Metrics Basics  | [Github](model_diagnostics/custom_metrics_basics.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_diagnostics/custom_metrics_basics.ipynb) | [Docs](https://docs.labelbox.com/docs/model-diagnostics) |
 | Custom Metrics Demo  | [Github](model_diagnostics/custom_metrics_demo.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_diagnostics/custom_metrics_demo.ipynb) |
+
+
+## [Extras](extras)
+| Notebook                        | Github                                         | Google Colab | Learn more |
+|---------------------------------|------------------------------------------------| ------------ | ---------- |
+| Classification Confusion Matrix | [Github](extras/classification-confusion-matrix.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/extras/classification-confusion-matrix.ipynb) | |
