@@ -115,20 +115,28 @@ def main():
 
     lb_model = client.create_model(name=f"{project.name}-model",
                                    ontology_id=project.ontology().uid)
-    lb_model_run = lb_model.create_model_run("0.0.0")
 
     #iterate over every 2k labels to upload
     max_labels = 2000
-    current_label_count = 1
+    current_label_count = 0
+    model_run_iterator = 0
+    lbv1_labels = project.label_generator()
     labels = []
-    while label := next(project.label_generator(), None):
-        labels.append(label)
+
+    while label := next(lbv1_labels, None):
+        labels.append(label.uid)
         current_label_count += 1
         if current_label_count == max_labels:
+            lb_model_run = lb_model.create_model_run(
+                f"0.0.{model_run_iterator}")
+            print(f"Upload of {current_label_count} commencing.")
             lb_model_run.upsert_labels(labels)
             labels = []
             current_label_count = 1
+            model_run_iterator += 1
 
+    model_run_iterator += 1
+    lb_model_run = lb_model.create_model_run(f"0.0.{model_run_iterator}")
     lb_model_run.upsert_labels(labels)  #remaining labels
 
     print("Successfully created Model and ModelRun")
