@@ -85,6 +85,6 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 
 
 ## [Extras](extras)
-| Notebook                       | Github                                         | Google Colab | Learn more |
-|--------------------------------|------------------------------------------------| ------------ | ---------- |
-| Classificatin Confusion Matrix | [Github](extras/classification-confusion-matrix.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/extras/classification-confusion-matrix.ipynb) | |
+| Notebook                        | Github                                         | Google Colab | Learn more |
+|---------------------------------|------------------------------------------------| ------------ | ---------- |
+| Classification Confusion Matrix | [Github](extras/classification-confusion-matrix.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/extras/classification-confusion-matrix.ipynb) | |
