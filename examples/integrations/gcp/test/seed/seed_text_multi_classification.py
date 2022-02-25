@@ -163,7 +163,7 @@ lb_model = client.create_model(name=f"{project.name}-model",
 #iterate over every 2k labels to upload
 max_labels = 2000
 current_label_count = 0
-model_run_iterator = 1
+model_run_iterator = 0
 lbv1_labels = project.label_generator()
 labels = []
 

@@ -82,6 +82,7 @@ model_run_iterator = 0
 labels = []
 
 json_labels = project.export_labels(download=True)
+#slightly diff than other seeds bc needs to infer media type
 for row in json_labels:
     row['media_type'] = 'image'
 
