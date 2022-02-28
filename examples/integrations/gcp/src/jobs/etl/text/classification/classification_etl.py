@@ -149,7 +149,6 @@ def main(model_run_id: str, gcs_bucket: str, gcs_key: str,
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/{classification_type}-classification/{nowgmt}.jsonl'
     blob = bucket.blob(gcs_key)
-    # project = lb_client.get_project(project_id)
     json_data = text_classification_etl(lb_client, model_run_id,
                                         classification_type == 'multi')
     blob.upload_from_string(json_data)

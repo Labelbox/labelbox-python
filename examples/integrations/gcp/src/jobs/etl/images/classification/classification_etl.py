@@ -107,7 +107,6 @@ def image_classification_etl(lb_client: Client, model_run_id: str,
         - Multi: https://cloud.google.com/vertex-ai/docs/datasets/prepare-image#multi-label-classification
         - Single: https://cloud.google.com/vertex-ai/docs/datasets/prepare-image#single-label-classification
     """
-    # json_labels = project.export_labels(download=True)
     query_str = """
         mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
             exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
@@ -164,7 +163,6 @@ def main(model_run_id: str, gcs_bucket: str, gcs_key: str,
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/{classification_type}-classification/{nowgmt}.jsonl'
     blob = bucket.blob(gcs_key)
-    # project = lb_client.get_project(project_id)
     json_data = image_classification_etl(lb_client, model_run_id, bucket,
                                          classification_type == 'multi')
     blob.upload_from_string(json_data)

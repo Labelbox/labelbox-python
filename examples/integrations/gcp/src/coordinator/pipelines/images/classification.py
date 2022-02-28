@@ -25,12 +25,13 @@ class ImageClassificationETL(Job):
         self.google_cloud_project = google_cloud_project
         self.container_name = f"gcr.io/{google_cloud_project}/training-repo/image_classification_etl"
 
-    def run(self, project_id: str, job_name: str) -> JobStatus:
+    def run(self, model_run_id: str, job_name: str) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
         gcs_key = f'etl/image-{self.classification_type}-classification/{nowgmt}.jsonl'
         CMDARGS = [
-            f"--gcs_bucket={self.gcs_bucket}", f"--project_id={project_id}",
-            f"--gcs_key={gcs_key}"
+            f"--gcs_bucket={self.gcs_bucket}", f"--model_run_id={model_run_id}",
+            f"--gcs_key={gcs_key}",
+            f"--classification_type={self.classification_type}"
         ]
         job = aiplatform.CustomContainerTrainingJob(
             display_name=job_name,
