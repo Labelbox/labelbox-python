@@ -12,10 +12,6 @@ from pipelines.types import Pipeline
 from pipelines.text.ner import NERPipeline
 from pipelines.text.classification import TextSingleClassificationPipeline, TextMultiClassificationPipeline
 
-# Any env vars should be declared here so that we can check if they are set on startup
-
-#credentials, _ = google.auth.default()
-
 service_account = os.environ["GOOGLE_SERVICE_ACCOUNT"]
 google_cloud_project = os.environ['GOOGLE_PROJECT']
 client = secretmanager.SecretManagerServiceClient()
