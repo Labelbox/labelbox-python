@@ -6,14 +6,14 @@ import json
 This script simulates a webhook event.
 
 # Make sure that the LABELBOX_API_KEY cooresponds to the org that belongs to this project.
-# If you want any real data to be produced, there should be some bounding boes in the project.
+# If you want any real data to be produced, there should be some text in the project.
 """
-project_id = "ckyuns0370vp20z9f49s5c461"
+model_run_id = "9da87028-0f77-046e-6fd9-5cac14c07eae"
 secret = b'test_secret'
 
-payload = json.dumps({'project_id': project_id, 'pipeline': 'ner'})
+payload = json.dumps({'model_run_id': model_run_id, 'pipeline': 'ner'})
 signature = "sha1=" + hmac.new(
     secret, msg=payload.encode(), digestmod=hashlib.sha1).hexdigest()
-res = requests.post("http://localhost:8000/project",
+res = requests.post("http://localhost:8000/model_run",
                     data=payload,
                     headers={'X-Hub-Signature': signature})

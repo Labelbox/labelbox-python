@@ -9,6 +9,7 @@ from labelbox import Client
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.ontology import Classification, OntologyBuilder, Option
+from labelbox.data.serialization import LBV1Converter
 
 client = Client()
 
@@ -69,3 +70,37 @@ job = LabelImport.create_from_objects(client, project.uid, str(uuid.uuid4()),
                                       annotations)
 job.wait_until_done()
 print("Upload Errors:", job.errors)
+
+lb_model = client.create_model(name=f"{project.name}-model",
+                               ontology_id=project.ontology().uid)
+lb_model_run = lb_model.create_model_run("0.0.0")
+
+#iterate over every 2k labels to upload
+max_labels = 2000
+current_label_count = 0
+model_run_iterator = 0
+labels = []
+
+json_labels = project.export_labels(download=True)
+#slightly diff than other seeds bc needs to infer media type
+for row in json_labels:
+    row['media_type'] = 'image'
+
+lbv1_labels = LBV1Converter.deserialize(json_labels)
+
+while label := next(lbv1_labels, None):
+    labels.append(label.uid)
+    current_label_count += 1
+    if current_label_count == max_labels:
+        lb_model_run = lb_model.create_model_run(f"0.0.{model_run_iterator}")
+        print(f"Upload of {current_label_count} commencing.")
+        lb_model_run.upsert_labels(labels)
+        labels = []
+        current_label_count = 1
+        model_run_iterator += 1
+
+model_run_iterator += 1
+lb_model_run = lb_model.create_model_run(f"0.0.{model_run_iterator}")
+lb_model_run.upsert_labels(labels)  #remaining labels
+
+print("Successfully created Model and ModelRun")
