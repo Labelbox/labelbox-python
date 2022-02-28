@@ -105,13 +105,13 @@ class ImageClassificationPipeline(Pipeline):
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
-        project_id = json_data['project_id']
+        model_run_id = json_data['model_run_id']
         job_name = json_data['job_name']
-        return project_id, job_name
+        return model_run_id, job_name
 
     def run(self, json_data):
-        project_id, job_name = self.parse_args(json_data)
-        etl_status = self.etl_job.run(project_id, job_name)
+        model_run_id, job_name = self.parse_args(json_data)
+        etl_status = self.etl_job.run(model_run_id, job_name)
         # Report state and training data uri to labelbox
         logger.info(f"ETL Status: {etl_status}")
         if etl_status.state == JobState.FAILED:

@@ -6,7 +6,7 @@ import json
 This script simulates a webhook event.
 
 # Make sure that the LABELBOX_API_KEY cooresponds to the org that belongs to this project.
-# If you want any real data to be produced, there should be some bounding boes in the project.
+# If you want any real data to be produced, there should be some bounding boxes in the project.
 """
 model_run_id = "9da6c7e2-bc0d-0679-1e2e-a6a4e28475c8"
 secret = b'test_secret'

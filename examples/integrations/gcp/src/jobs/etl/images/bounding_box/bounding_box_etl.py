@@ -16,7 +16,7 @@ from google.cloud import secretmanager
 
 from labelbox.data.annotation_types import Label, Rectangle
 from labelbox.data.serialization import LBV1Converter
-from labelbox import Client, Project
+from labelbox import Client
 
 from concurrent.futures import ThreadPoolExecutor
 
