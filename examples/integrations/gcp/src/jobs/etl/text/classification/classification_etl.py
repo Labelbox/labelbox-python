@@ -94,7 +94,6 @@ def text_classification_etl(lb_client: Client, model_run_id: str,
         - Single: https://cloud.google.com/vertex-ai/docs/datasets/prepare-text#single-label-classification
     """
 
-    # json_labels = project.export_labels(download=True)
     query_str = """
         mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
             exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
