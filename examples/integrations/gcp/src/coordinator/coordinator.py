@@ -30,7 +30,7 @@ async def models():
     return list(pipelines.keys())
 
 
-@app.post("/project")
+@app.post("/model_run")
 async def model_run(request: Request,
                     background_tasks: BackgroundTasks,
                     X_Hub_Signature: str = Header(None)):

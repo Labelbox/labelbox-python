@@ -1,4 +1,5 @@
 import random
+import ndjson
 import json
 import argparse
 import time
@@ -6,12 +7,13 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 import os
 
+import requests
 from google.cloud import storage
 from google.cloud import secretmanager
 
 from labelbox import Client
-from labelbox import Project
 from labelbox.data.annotation_types import TextEntity
+from labelbox.data.serialization import LBV1Converter
 from labelbox.data.annotation_types import Label
 
 logging.basicConfig(level=logging.INFO)
@@ -73,7 +75,7 @@ def process_label(label: Label) -> str:
 #http://www.lamda.nju.edu.cn/files/miml-image-data.rar
 
 
-def ner_etl(project: Project) -> str:
+def ner_etl(lb_client: Client, model_run_id: str) -> str:
     """
     Creates a jsonl file that is used for input into a vertex ai training job
 
@@ -85,11 +87,36 @@ def ner_etl(project: Project) -> str:
 
     #TODO: Validate the ontology:
     #  "You must supply at least 1, and no more than 100, unique labels to annotate entities that you want to extract."
+    query_str = """
+        mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
+            exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
+                downloadUrl createdAt status
+            }
+        }
+        """
+    url = lb_client.execute(query_str,
+                            {'modelRunId': model_run_id
+                            })['exportModelRunAnnotations']['downloadUrl']
+    counter = 1
+    while url is None:
+        logger.info(f"Number of times tried: {counter}")
+        counter += 1
+        if counter > 10:
+            raise Exception(
+                f"Unsuccessfully got downloadUrl after {counter} attempts.")
+        time.sleep(10)
+        url = lb_client.execute(query_str,
+                                {'modelRunId': model_run_id
+                                })['exportModelRunAnnotations']['downloadUrl']
+
+    response = requests.get(url)
+    response.raise_for_status()
+    contents = ndjson.loads(response.content)
 
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
             exc.submit(process_label, label)
-            for label in project.label_generator()
+            for label in LBV1Converter().deserialize(contents)
         ]
         training_data = [future.result() for future in training_data_futures]
         training_data = [data for data in training_data if data is not None]
@@ -104,15 +131,15 @@ def ner_etl(project: Project) -> str:
     return "\n".join(training_data)
 
 
-def main(project_id: str, gcs_bucket: str, gcs_key: str):
+def main(model_run_id: str, gcs_bucket: str, gcs_key: str):
     gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'])
-    lb_client = Client(api_key=_labelbox_api_key)
+    lb_client = Client(api_key=_labelbox_api_key,
+                       endpoint='https://api.labelbox.com/_gql')
     bucket = gcs_client.bucket(gcs_bucket)
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/ner/{nowgmt}.jsonl'
     blob = bucket.blob(gcs_key)
-    project = lb_client.get_project(project_id)
-    json_data = ner_etl(project)
+    json_data = ner_etl(lb_client, model_run_id)
     blob.upload_from_string(json_data)
     logger.info("ETL Complete. URI: %s", f"gs://{bucket.name}/{blob.name}")
 
@@ -120,7 +147,7 @@ def main(project_id: str, gcs_bucket: str, gcs_key: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Vertex AI ETL Runner')
     parser.add_argument('--gcs_bucket', type=str, required=True)
-    parser.add_argument('--project_id', type=str, required=True)
+    parser.add_argument('--model_run_id', type=str, required=True)
     parser.add_argument('--gcs_key', type=str, required=False, default=None)
     args = parser.parse_args()
     main(**vars(args))
