@@ -1,7 +1,19 @@
 # Changelog
+# Version 3.15.0 (2022-02-28) 
+## Added 
+* Extras folder which contains useful applications using the sdk
+* Addition of ResourceTag at the Organization and Project level
+* Updates to the example notebooks 
+
+## Fix
+* EPSGTransformer now properly transforms Polygon to Polygon
+* VideoData string representation now properly shows VideoData
+
+
 # Version 3.14.0 (2022-02-10) 
 ## Added 
 * Updated metrics for classifications to be per-answer 
+
 
 # Version 3.13.0 (2022-02-07) 
 ## Added
