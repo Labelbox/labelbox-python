@@ -5,7 +5,6 @@ import time
 import logging
 import requests
 import ndjson
-from labelbox.data.annotation_types.collection import LabelGenerator
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
