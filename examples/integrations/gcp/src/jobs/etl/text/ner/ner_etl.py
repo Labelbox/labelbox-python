@@ -67,7 +67,9 @@ def process_label(label: Label) -> str:
         "textContent": label.data.value,
         'dataItemResourceLabels': {
             "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)]
+                                                [random.randint(0, 2)],
+            "dataRowId":
+                label.data.uid
         }
     })
 
