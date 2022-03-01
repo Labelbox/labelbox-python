@@ -182,8 +182,7 @@ class ModelRun(DbObject):
         })
 
     @experimental
-    def export_model_run_annotations(self,
-                                     download: bool = False) -> LabelGenerator:
+    def export_annotations(self, download: bool = False) -> LabelGenerator:
         """
         Experimental. To use, make sure client has enable_experimental=True.
 
