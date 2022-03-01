@@ -73,3 +73,8 @@ def test_model_run_upsert_data_rows_with_existing_labels(
     ])
     assert n_data_rows == len(
         list(model_run_with_model_run_data_rows.model_run_data_rows()))
+
+
+def test_model_run_export_labels(model_run_with_model_run_data_rows):
+    labels = model_run_with_model_run_data_rows.export_labels(download=True)
+    assert len(labels) == 3

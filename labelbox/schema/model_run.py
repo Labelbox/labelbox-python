@@ -200,8 +200,7 @@ class ModelRun(DbObject):
             None is returned.
         """
         sleep_time = 2
-        query_str = """
-            mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
+        query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
                 exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
                     downloadUrl createdAt status
                 }
