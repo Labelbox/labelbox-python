@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Iterable, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 from pathlib import Path
 import os
 import time
@@ -182,7 +182,11 @@ class ModelRun(DbObject):
         })
 
     @experimental
-    def export_annotations(self, download: bool = False) -> LabelGenerator:
+    def export_labels(
+        self,
+        download: bool = False,
+        timeout_seconds: int = 600
+    ) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """
         Experimental. To use, make sure client has enable_experimental=True.
 
@@ -191,10 +195,12 @@ class ModelRun(DbObject):
         Args:
             download (bool): Returns the url if False
         Returns:
-            URL of the data file that is generated from this ModelRun. 
+            URL of the data file with this ModelRun's labels.
             If download=True, this instead returns the contents as NDJSON format.
+            If the server didn't generate during the `timeout_seconds` period, 
+            None is returned.
         """
-
+        sleep_time = 2
         query_str = """
             mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
                 exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
@@ -202,38 +208,27 @@ class ModelRun(DbObject):
                 }
             }
             """
-        url = self.client.execute(
-            query_str, {'modelRunId': self.model_id},
-            experimental=True)['exportModelRunAnnotations']['downloadUrl']
 
-        counter = 1
-        while url is None:
-            logger.info(f"Fetching model run annotations...attempt: {counter}")
-            counter += 1
-            if counter == 10:
-                raise Exception(
-                    f"Unsuccessfully got downloadUrl after {counter} attempts.")
-            time.sleep(10)
+        while True:
             url = self.client.execute(
-                query_str, {'modelRunId': self.model_id},
+                query_str, {'modelRunId': self.uid},
                 experimental=True)['exportModelRunAnnotations']['downloadUrl']
 
-        if not download:
-            return url
-        else:
-            response = requests.get(url)
-            response.raise_for_status()
-            contents = ndjson.loads(response.content)
-            return contents
-        """
-        # Need to discuss how to properly get the asset data type from export
-        # Until then, we can't do much with contents as the LBV1Converter may 
-        # not infer correct media type and error out
-        # for now, return the contents as either url or ndjson content
-        # """
+            if url:
+                if not download:
+                    return url
+                else:
+                    response = requests.get(url)
+                    response.raise_for_status()
+                    return ndjson.loads(response.content)
 
-        # labels = LBV1Converter.deserialize(contents)
-        # return labels
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                return None
+
+            logger.debug("ModelRun '%s' label export, waiting for server...",
+                         self.uid)
+            time.sleep(sleep_time)
 
 
 class ModelRunDataRow(DbObject):
