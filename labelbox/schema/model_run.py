@@ -2,14 +2,20 @@ from typing import TYPE_CHECKING, Dict, Iterable, Union
 from pathlib import Path
 import os
 import time
+import logging
+import requests
+import ndjson
+from labelbox.data.annotation_types.collection import LabelGenerator
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, experimental
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
+
+logger = logging.getLogger(__name__)
 
 
 class ModelRun(DbObject):
@@ -174,6 +180,61 @@ class ModelRun(DbObject):
             model_run_id_param: self.uid,
             data_row_ids_param: data_row_ids
         })
+
+    @experimental
+    def export_model_run_annotations(self,
+                                     download: bool = False) -> LabelGenerator:
+        """
+        Experimental. To use, make sure client has enable_experimental=True.
+
+        Fetches Labels from the ModelRun
+
+        Args:
+            download (bool): Returns the url if False
+        Returns:
+            URL of the data file that is generated from this ModelRun. 
+            If download=True, this instead returns the contents as NDJSON format.
+        """
+
+        query_str = """
+            mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
+                exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
+                    downloadUrl createdAt status
+                }
+            }
+            """
+        url = self.client.execute(
+            query_str, {'modelRunId': self.model_id},
+            experimental=True)['exportModelRunAnnotations']['downloadUrl']
+
+        counter = 1
+        while url is None:
+            logger.info(f"Fetching model run annotations...attempt: {counter}")
+            counter += 1
+            if counter == 10:
+                raise Exception(
+                    f"Unsuccessfully got downloadUrl after {counter} attempts.")
+            time.sleep(10)
+            url = self.client.execute(
+                query_str, {'modelRunId': self.model_id},
+                experimental=True)['exportModelRunAnnotations']['downloadUrl']
+
+        if not download:
+            return url
+        else:
+            response = requests.get(url)
+            response.raise_for_status()
+            contents = ndjson.loads(response.content)
+            return contents
+        """
+        # Need to discuss how to properly get the asset data type from export
+        # Until then, we can't do much with contents as the LBV1Converter may 
+        # not infer correct media type and error out
+        # for now, return the contents as either url or ndjson content
+        # """
+
+        # labels = LBV1Converter.deserialize(contents)
+        # return labels
 
 
 class ModelRunDataRow(DbObject):
