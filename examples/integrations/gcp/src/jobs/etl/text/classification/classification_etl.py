@@ -54,7 +54,9 @@ def process_single_classification_label(label: Label) -> str:
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
             "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)]
+                                                [random.randint(0, 2)],
+            "dataRowId":
+                label.data.uid
         }
     })
 
@@ -79,7 +81,9 @@ def process_multi_classification_label(label: Label) -> str:
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
             "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)]
+                                                [random.randint(0, 2)],
+            "dataRowId":
+                label.data.uid
         }
     })
 
