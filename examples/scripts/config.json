@@ -1,0 +1,37 @@
+[
+  {
+    "dir": "basics",
+    "title": "Basics",
+    "order": 0
+  },
+  {
+    "dir": "project_configuration",
+    "title": "Project configuration",
+    "order": 1
+  },
+  {
+    "dir": "annotation_types",
+    "title": "Annotation types",
+    "order": 2
+  },
+  {
+    "dir": "model_assisted_labeling",
+    "title": "Model assisted labeling",
+    "order": 3
+  },
+  {
+    "dir": "label_export",
+    "title": "Label export",
+    "order": 4
+  },
+  {
+    "dir": "model_diagnostics",
+    "title": "Model diagnostics",
+    "order": 5
+  },
+  {
+    "dir": "integrations",
+    "title": "Integrations",
+    "order": 6
+  }
+]
