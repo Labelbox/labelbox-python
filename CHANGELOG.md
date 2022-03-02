@@ -1,4 +1,12 @@
 # Changelog
+# Version X.XX.X (2022-03-XX)
+## Updated
+* Deprecation Notice: Dropdowns will no longer be supported after 2022-03-31
+    - This includes creating/adding Dropdowns to an ontology
+    - This will not affect existing Dropdowns in an ontology
+    - For the same functionality, use Radio 
+
+# Changelog
 # Version 3.15.0 (2022-02-28) 
 ## Added 
 * Extras folder which contains useful applications using the sdk
