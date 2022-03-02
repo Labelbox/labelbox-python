@@ -3,6 +3,7 @@
 ## Updated
 * Deprecation Notice: Dropdowns will no longer be supported after 2022-03-31
     - This includes creating/adding Dropdowns to an ontology
+    - This includes creating/adding Dropdown Annotation Type
     - This will not affect existing Dropdowns in an ontology
     - For the same functionality, use Radio 
 
