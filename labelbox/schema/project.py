@@ -221,6 +221,40 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
+    def video_label_generator(self, timeout_seconds=600, **kwargs):
+        """
+        Download video annotations
+
+        Returns:
+            LabelGenerator for accessing labels for each video
+        """
+        warnings.warn(
+            "video_label_generator will be deprecated in a future release. "
+            "Use label_generator for video or text/image labels."
+            )
+        _check_converter_import()
+        json_data = self.export_labels(download=True,
+                                       timeout_seconds=timeout_seconds,
+                                       **kwargs)
+        # assert that the instance this would fail is only if timeout runs out
+        assert isinstance(
+            json_data,
+            List), "Unable to successfully get labels. Please try again"
+        if json_data is None:
+            raise TimeoutError(
+                f"Unable to download labels in {timeout_seconds} seconds."
+                "Please try again or contact support if the issue persists.")
+        is_video = [
+            'frames' in row['Label'] for row in json_data if row['Label']
+        ]
+        if len(is_video) and not all(is_video):
+            raise ValueError(
+                "Found non-video data rows in export. "
+                "Use project.export_labels() to export projects with mixed data types. "
+                "Or use project.label_generator() for text and imagery data.")
+        return LBV1Converter.deserialize_video(json_data, self.client)            
+            
+
     def label_generator(self, timeout_seconds=600, **kwargs):
         """
         Download text and image annotations, or video annotations.
