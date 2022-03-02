@@ -28,7 +28,7 @@ def upload_doc(path, section):
 
     payload = {
         "hidden": True,
-        "title": title.replace(' ', '-') + f'-{section["slug"]}',
+        "title": f'{section["slug"]}-' + title.replace(' ', '-'),
         "category": CATEGORY_ID,
         "parentDoc": section['id'],
         "body": body
