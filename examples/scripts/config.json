@@ -20,8 +20,8 @@
     "order": 3
   },
   {
-    "dir": "label_export",
-    "title": "Label export",
+    "dir": "annotation_import",
+    "title": "Annotation import",
     "order": 4
   },
   {
