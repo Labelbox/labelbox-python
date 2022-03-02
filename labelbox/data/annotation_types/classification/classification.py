@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Union, Optional
+import warnings
 
 try:
     from typing import Literal
@@ -17,7 +18,6 @@ class _TempName(BaseModel):
         res = super().dict(*args, **kwargs)
         res.pop('name')
         return res
-
 
 class ClassificationAnswer(FeatureSchema):
     """
@@ -74,4 +74,10 @@ class Dropdown(_TempName):
     - This is not currently compatible with MAL.
     """
     name: Literal["dropdown"] = "dropdown"
-    answer: List[ClassificationAnswer]
+    answer: List[ClassificationAnswer]    
+
+    def __init__(self, **data: Any):
+        warnings.warn(
+            "Dropdown classification is deprecated and will be "
+            "removed in a future release")
+        super().__init__(**data)       

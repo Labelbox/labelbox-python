@@ -4,6 +4,7 @@ import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Type
+import warnings
 
 from pydantic import constr
 
@@ -126,6 +127,12 @@ class Classification:
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
+
+    def __post_init__(self):
+        if self.class_type == Classification.Type.DROPDOWN:
+            warnings.warn(
+            "Dropdown classification is deprecated and will be "
+            "removed in a future release")
 
     @property
     def name(self) -> str:
