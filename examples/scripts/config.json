@@ -15,23 +15,18 @@
     "order": 2
   },
   {
-    "dir": "model_assisted_labeling",
-    "title": "Model assisted labeling",
+    "dir": "annotation_import",
+    "title": "Annotation Import",
     "order": 3
   },
   {
-    "dir": "annotation_import",
-    "title": "Annotation import",
+    "dir": "label_export",
+    "title": "Label export",
     "order": 4
   },
   {
     "dir": "model_diagnostics",
     "title": "Model diagnostics",
     "order": 5
-  },
-  {
-    "dir": "integrations",
-    "title": "Integrations",
-    "order": 6
   }
 ]
