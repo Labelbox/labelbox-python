@@ -19,6 +19,7 @@ class _TempName(BaseModel):
         res.pop('name')
         return res
 
+
 class ClassificationAnswer(FeatureSchema):
     """
     - Represents a classification option.
@@ -72,12 +73,15 @@ class Dropdown(_TempName):
     """
     - A classification with many selected options allowed .
     - This is not currently compatible with MAL.
+
+    Deprecation Notice: Dropdown classification is deprecated and will be
+        removed in a future release. Dropdown will also
+        no longer be able to be created in the Editor on 3/31/2022.    
     """
     name: Literal["dropdown"] = "dropdown"
-    answer: List[ClassificationAnswer]    
+    answer: List[ClassificationAnswer]
 
     def __init__(self, **data: Any):
-        warnings.warn(
-            "Dropdown classification is deprecated and will be "
-            "removed in a future release")
-        super().__init__(**data)       
+        warnings.warn("Dropdown classification is deprecated and will be "
+                      "removed in a future release")
+        super().__init__(**data)
