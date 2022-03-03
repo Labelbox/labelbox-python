@@ -31,7 +31,7 @@ def test_label_export(configured_project_with_label):
     exported_labels = requests.get(exported_labels_url)
     labels = [example['ID'] for example in exported_labels.json()]
     assert labels[0] == label_id
-    # TODO: Add test for bulk export back.
+    #TODO: Add test for bulk export back.
     # The new exporter doesn't work with the create_label mutation
 
 
