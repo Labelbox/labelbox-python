@@ -132,7 +132,8 @@ class Classification:
         if self.class_type == Classification.Type.DROPDOWN:
             warnings.warn(
             "Dropdown classification is deprecated and will be "
-            "removed in a future release")
+            "removed in a future release. Dropdown will also "
+            "no longer be able to be created in the Editor on 3/31/2022.")
 
     @property
     def name(self) -> str:
