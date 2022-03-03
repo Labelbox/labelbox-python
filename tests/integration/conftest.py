@@ -134,7 +134,6 @@ def image_url(client):
     return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
-
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
@@ -241,7 +240,8 @@ def configured_project(project, client, rand_gen, image_url):
 
 
 @pytest.fixture
-def configured_project_with_label(client, rand_gen, image_url, project, dataset, datarow):
+def configured_project_with_label(client, rand_gen, image_url, project, dataset,
+                                  datarow):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
