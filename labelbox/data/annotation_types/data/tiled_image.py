@@ -24,7 +24,6 @@ VALID_LNG_RANGE = range(-180, 180)
 DEFAULT_TMS_TILE_SIZE = 256
 TILE_DOWNLOAD_CONCURRENCY = 4
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 VectorTool = Union[Point, Line, Rectangle, Polygon]
