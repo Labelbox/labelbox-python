@@ -10,9 +10,6 @@ def test_reviews(configured_project_with_label):
     assert set(label.reviews()) == set()
 
     r1 = label.create_review(score=-1.0)
-    # They work on data that was created in the editor but not with project.create_label
-    # assert r1.project() == project
-    # assert r1.label() == label
     assert r1.score == -1.0
     assert set(label.reviews()) == {r1}
 

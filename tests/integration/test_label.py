@@ -18,9 +18,6 @@ def test_labels(configured_project_with_label):
 
     label.delete()
 
-    # Labels are not visible in the project immediately.
-    time.sleep(5)
-
     assert list(project.labels()) == []
     assert list(data_row.labels()) == []
 

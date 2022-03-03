@@ -134,23 +134,6 @@ def image_url(client):
     return client.upload_data(requests.get(IMG_URL).content, sign=True)
 
 
-@pytest.fixture
-def rand_gen():
-
-    def gen(field_type):
-        if field_type is str:
-            return "".join(ascii_letters[randint(0,
-                                                 len(ascii_letters) - 1)]
-                           for _ in range(16))
-
-        if field_type is datetime:
-            return datetime.now()
-
-        raise Exception("Can't random generate for field type '%r'" %
-                        field_type)
-
-    return gen
-
 
 @pytest.fixture
 def project(client, rand_gen):
@@ -258,15 +241,13 @@ def configured_project(project, client, rand_gen, image_url):
 
 
 @pytest.fixture
-def configured_project_with_label(client, rand_gen, image_url):
+def configured_project_with_label(client, rand_gen, image_url, project, dataset, datarow):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
-    project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row = dataset.create_data_row(row_data=image_url)
+    project.datasets.connect(dataset)
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -280,7 +261,7 @@ def configured_project_with_label(client, rand_gen, image_url):
         "uuid": str(uuid.uuid4()),
         "schemaId": ontology.tools[0].feature_schema_id,
         "dataRow": {
-            "id": data_row.uid
+            "id": datarow.uid
         },
         "bbox": {
             "top": 20,
@@ -302,10 +283,7 @@ def configured_project_with_label(client, rand_gen, image_url):
     project.create_label = create_label
     project.create_label()
     label = next(project.labels())
-    yield [project, dataset, data_row, label]
-    dataset.delete()
-    project.delete()
-    data_row.delete()
+    yield [project, dataset, datarow, label]
 
     for label in project.labels():
         label.delete()
