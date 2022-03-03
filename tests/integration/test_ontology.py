@@ -5,11 +5,11 @@ from labelbox.orm.model import Entity
 import json
 import time
 
+
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
-    "which is not finalized yet. introduce this back when"
-    "Relationship feature is complete and we introduce"
-    "a Relationship object to the ontology that we can parse"
-    )
+                  "which is not finalized yet. introduce this back when"
+                  "Relationship feature is complete and we introduce"
+                  "a Relationship object to the ontology that we can parse")
 def test_from_project_ontology(project) -> None:
     o = OntologyBuilder.from_project(project)
     assert o.asdict() == project.ontology().normalized
