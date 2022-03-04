@@ -51,7 +51,7 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 | MAL Using Annotation Types | [Github](annotation_types/mal_using_annotation_types.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/mal_using_annotation_types.ipynb) |
 
 
-## [Annotation Import](annotation_import)
+## [Annotation Import (Ground Truth & MAL)](annotation_import)
 
 
 | Notebook                    | Github                            | Google Colab | Learn more |
@@ -61,7 +61,6 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 | Text Annotation Import | [Github](annotation_import/text.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/text.ipynb) |
 | Tiled Imagery Annotation Import    | [Github](annotation_import/tiled.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/tiled.ipynb) |
 | Video Model-Assisted Labeling                    | [Github](annotation_import/video.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/video.ipynb) | 
-| MAL with Subclasses           | [Github](annotation_import/subclassifications.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/subclassifications.ipynb) |
 ------
 
 ## [Project Configuration](project_configuration)
