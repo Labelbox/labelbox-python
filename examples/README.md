@@ -51,18 +51,17 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 | MAL Using Annotation Types | [Github](annotation_types/mal_using_annotation_types.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_types/mal_using_annotation_types.ipynb) |
 
 
-## [Model Assisted Labeling](model_assisted_labeling)
+## [Annotation Import](annotation_import)
 
 
 | Notebook                    | Github                            | Google Colab | Learn more |
 | --------------------------- | --------------------------------- | ------------ | ---------- |
-| MAL Basics                    | [Github](model_assisted_labeling/mal_basics.ipynb)            | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/mal_basics.ipynb) | [Docs](https://docs.labelbox.com/docs/model-assisted-labeling) |
-| Image MAL                     | [Github](model_assisted_labeling/image_mal.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/image_mal.ipynb) | 
-| Video MAL                     | [Github](model_assisted_labeling/video_mal.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/video_mal.ipynb) | 
-| Named Entity Recognition MAL  | [Github](annotation_import/ner_mal.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/ner_mal.ipynb) |
-| Debugging MAL                 | [Github](model_assisted_labeling/debugging_mal.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/debugging_mal.ipynb) |
-| MAL with Subclasses           | [Github](model_assisted_labeling/mal_with_subclasses.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/mal_with_subclasses.ipynb) |
-| Tiled Imagery MAL    | [Github](model_assisted_labeling/tiled_imagery_mal.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_assisted_labeling/tiled_imagery_mal.ipynb) |
+| Basics                    | [Github](annotation_import/basics.ipynb)            | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/basics.ipynb) | [Docs](https://docs.labelbox.com/docs/model-assisted-labeling) |
+| Image Annotation Import                    | [Github](annotation_import/image.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/image.ipynb) | 
+| Text Annotation Import | [Github](annotation_import/text.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/text.ipynb) |
+| Tiled Imagery Annotation Import    | [Github](annotation_import/tiled.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/tiled.ipynb) |
+| Video Model-Assisted Labeling                    | [Github](annotation_import/video.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/video.ipynb) | 
+| MAL with Subclasses           | [Github](annotation_import/subclassifications.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/subclassifications.ipynb) |
 ------
 
 ## [Project Configuration](project_configuration)
