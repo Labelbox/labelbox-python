@@ -15,8 +15,7 @@ CATEGORY_SLUG = 'tutorials'
 
 
 def upload_doc(path, section):
-    title = path.split('/')[-1].replace(".ipynb",
-                                        '').capitalize().replace('_', ' ')
+    title = path.split('/')[-1].replace(".ipynb", '').capitalize().replace('_', ' ')
 
     with open(path) as fb:
         nb = nbformat.reads(json.dumps(json.load(fb)), as_version=4)
@@ -74,29 +73,29 @@ def make_sections(sections):
 
 
 def change_name(slug, title, headers):
-    resp = requests.put(f'{README_DOC_ENDPOINT}/{slug}',
-                        json={
-                            "title": title,
-                            "category": CATEGORY_ID
-                        },
-                        headers=headers)
+    resp = requests.put(
+        f'{README_DOC_ENDPOINT}/{slug}',
+        json={
+            "title": title,
+            "category": CATEGORY_ID
+        },
+        headers=headers
+    )
     resp.raise_for_status()
 
 
 def erase_category_docs(cat_slug):
-    headers = {"Accept": "application/json", "Authorization": README_AUTH}
+    headers = {
+        "Accept": "application/json",
+        "Authorization": README_AUTH
+    }
 
-    response = requests.request(
-        "GET",
-        f'https://dash.readme.com/api/v1/categories/{cat_slug}/docs',
-        headers=headers)
+    response = requests.request("GET", f'https://dash.readme.com/api/v1/categories/{cat_slug}/docs', headers=headers)
     docs = response.json()
     for doc in docs:
         for child in doc["children"]:
-            resp = requests.delete(f'{README_DOC_ENDPOINT}/{child["slug"]}',
-                                   headers=headers)
-        resp = requests.delete(f'{README_DOC_ENDPOINT}/{doc["slug"]}',
-                               headers=headers)
+            resp = requests.delete(f'{README_DOC_ENDPOINT}/{child["slug"]}', headers=headers)
+        resp = requests.delete(f'{README_DOC_ENDPOINT}/{doc["slug"]}', headers=headers)
 
 
 @click.command()
