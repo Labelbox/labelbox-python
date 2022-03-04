@@ -39,7 +39,7 @@ Train a model using data annotated on Labelbox
 | Panoptic Detection (Detectron2)          | [Github](coco_panoptic.ipynb)    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/detectron2/coco_panoptic.ipynb)
 ------
 
-## [Annotation Types](annotation_types)
+## [Annotation Types (Ground Truth & MAL)](annotation_types)
 
 Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/annotation-types-1)
 
