@@ -1,6 +1,3 @@
 
-
-
-
-convert:
-	python scripts/tutorials.py --config-path  'scripts/config.json'
+upload:
+	python scripts/upload_documentation.py --config-path  'scripts/config.json'
