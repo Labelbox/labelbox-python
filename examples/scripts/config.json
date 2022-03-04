@@ -16,7 +16,7 @@
   },
   {
     "dir": "annotation_import",
-    "title": "Annotation import",
+    "title": "Annotation import (Ground Truth & MAL)",
     "order": 3
   },
   {

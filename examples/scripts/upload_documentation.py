@@ -28,7 +28,7 @@ def upload_doc(path, section):
 
     payload = {
         "hidden": True,
-        "title": f'{section["slug"]}-' + title.replace(' ', '-'),
+        "title": f'{section["slug"]}-' + title.replace(' ', '-').replace("(", ''),
         "category": CATEGORY_ID,
         "parentDoc": section['id'],
         "body": body
@@ -52,7 +52,7 @@ def make_sections(sections):
         payload = {
             "hidden": True,
             "order": section['order'],
-            "title": section['title'].replace(' ', '-') + '-nb-section',
+            "title": 'section-' + section['dir'] + '-notebooks',
             "category": CATEGORY_ID
         }
         headers = {
