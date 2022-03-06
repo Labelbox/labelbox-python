@@ -58,9 +58,9 @@ pipelines: Pipelines = {
     'image_multi_classification':
         ImageMultiClassificationPipeline(*_common_params),
     'text_single_classification':
-        TextSingleClassificationPipeline(*_common_params),
+        TextSingleClassificationPipeline(_labelbox_api_key, *_common_params),
     'text_multi_classification':
-        TextMultiClassificationPipeline(*_common_params),
+        TextMultiClassificationPipeline(_labelbox_api_key, *_common_params),
 }
 
 PipelineName = Union[Literal['bounding_box', 'ner',

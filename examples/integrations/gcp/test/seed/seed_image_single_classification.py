@@ -41,7 +41,7 @@ def setup_project(client):
 
 ds = tfds.load('cats_vs_dogs', split='train')
 annotations = []
-max_examples = 350
+max_examples = 10  #350
 project, dataset, feature_schema_lookup = setup_project(client)
 for idx, example in tqdm(enumerate(ds.as_numpy_iterator())):
     if idx > max_examples:
@@ -86,21 +86,11 @@ json_labels = project.export_labels(download=True)
 for row in json_labels:
     row['media_type'] = 'image'
 
-lbv1_labels = LBV1Converter.deserialize(json_labels)
-
-while label := next(lbv1_labels, None):
-    labels.append(label.uid)
-    current_label_count += 1
-    if current_label_count == max_labels:
-        lb_model_run = lb_model.create_model_run(f"0.0.{model_run_iterator}")
-        print(f"Upload of {current_label_count} commencing.")
-        lb_model_run.upsert_labels(labels)
-        labels = []
-        current_label_count = 1
-        model_run_iterator += 1
-
-model_run_iterator += 1
-lb_model_run = lb_model.create_model_run(f"0.0.{model_run_iterator}")
-lb_model_run.upsert_labels(labels)  #remaining labels
-
+max_labels = 2000
+labels = [
+    label.uid
+    for label in list(LBV1Converter.deserialize(json_labels))[:max_labels]
+]
+lb_model_run = lb_model.create_model_run(f"0.0.0")
+lb_model_run.upsert_labels(labels)
 print("Successfully created Model and ModelRun")

@@ -5,8 +5,12 @@ import argparse
 import time
 import logging
 from typing import Union, Literal
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 import os
+from collections import Counter
+
+from google.api_core import retry
 
 import requests
 from google.cloud import storage
@@ -18,6 +22,8 @@ from labelbox import Client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+storage.blob._MAX_MULTIPART_SIZE = 1 * 1024 * 1024
 
 VERTEX_MIN_TRAINING_EXAMPLES = 1
 
@@ -31,13 +37,26 @@ if _labelbox_api_key is None:
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 
-def process_single_classification_label(label: Label) -> str:
+# TODO: Add this to other file uploads...
+@retry.Retry(predicate=retry.if_exception_type(Exception), deadline=120.)
+def upload_text_to_gcs(text_content: str, data_row_id: str,
+                       bucket: storage.Bucket):
+    gcs_key = f"training/text/{data_row_id}.txt"
+    blob = bucket.blob(gcs_key)
+    blob.chunk_size = 1 * 1024 * 1024  # Set 5 MB blob size
+    blob.upload_from_string(data=text_content, content_type="text/plain")
+    return f"gs://{bucket.name}/{blob.name}"
+
+
+def process_single_classification_label(label: Label,
+                                        bucket: storage.Bucket) -> str:
     classifications = []
     for annotation in label.annotations:
         if isinstance(annotation.value, Radio):
-
-            classifications.append(
-                {"displayName": annotation.value.answer.name})
+            classifications.append({
+                "displayName":
+                    f"{annotation.name}_{annotation.value.answer.name}"
+            })
 
     if len(classifications) > 1:
         logger.info(
@@ -48,8 +67,10 @@ def process_single_classification_label(label: Label) -> str:
         classification = {'displayName': 'no_label'}
     else:
         classification = classifications[0]
+
+    uri = upload_text_to_gcs(label.data.value, label.data.uid, bucket)
     return json.dumps({
-        'textContent': label.data.value,
+        'textGcsUri': uri,
         'classificationAnnotation': classification,
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
@@ -61,22 +82,28 @@ def process_single_classification_label(label: Label) -> str:
     })
 
 
-def process_multi_classification_label(label: Label) -> str:
+def process_multi_classification_label(label: Label,
+                                       bucket: storage.Bucket) -> str:
     classifications = []
     for annotation in label.annotations:
         if isinstance(annotation.value, Radio):
-            classifications.append(
-                {"displayName": annotation.value.answer.name})
+            classifications.append({
+                "displayName":
+                    f"{annotation.name}_{annotation.value.answer.name}"
+            })
         elif isinstance(annotation.value, Checklist):
+            # Display name is a combination of tool name and value.
+            # This makes it so that tool names don't need to be globally unique
             classifications.extend([{
-                "displayName": answer.name
+                "displayName": f"{annotation.name}_{answer.name}"
             } for answer in annotation.value.answer])
 
     if len(classifications) == 0:
         classifications = [{'displayName': 'no_label'}]
 
+    uri = upload_text_to_gcs(label.data.value, label.data.uid, bucket)
     return json.dumps({
-        'textContent': label.data.value,
+        'textGcsUri': uri,
         'classificationAnnotations': classifications,
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
@@ -89,7 +116,7 @@ def process_multi_classification_label(label: Label) -> str:
 
 
 def text_classification_etl(lb_client: Client, model_run_id: str,
-                            multi: bool) -> str:
+                            bucket: storage.Bucket, multi: bool) -> str:
     """
     Creates a jsonl file that is used for input into a vertex ai training job
 
@@ -131,8 +158,13 @@ def text_classification_etl(lb_client: Client, model_run_id: str,
 
     fn = process_multi_classification_label if multi else process_single_classification_label
     with ThreadPoolExecutor(max_workers=8) as exc:
-        training_data_futures = [exc.submit(fn, label) for label in labels]
-        training_data = [future.result() for future in training_data_futures]
+        training_data_futures = [
+            exc.submit(fn, label, bucket) for label in labels
+        ]
+        training_data = [
+            future.result()
+            for future in tqdm(as_completed(training_data_futures))
+        ]
 
     # The requirement seems to only apply to training data.
     # This should be changed to check by split
@@ -140,7 +172,30 @@ def text_classification_etl(lb_client: Client, model_run_id: str,
         raise Exception("Not enought training examples provided")
 
     # jsonl
+    if multi:
+        training_data = list(filter_classes_by_example_count(training_data))
     return "\n".join(training_data)
+
+
+def filter_classes_by_example_count(training_data, min_examples=30):
+    names = []
+    for row in training_data:
+        for name in [
+                x['displayName']
+                for x in json.loads(row)['classificationAnnotations']
+        ]:
+            names.append(name)
+
+    not_useable = {k for k, v in Counter(names).items() if v < min_examples}
+    for row in training_data:
+        names = [
+            x['displayName']
+            for x in json.loads(row)['classificationAnnotations']
+        ]
+        if not_useable.intersection(set(names)):
+            continue
+        else:
+            yield row
 
 
 def main(model_run_id: str, gcs_bucket: str, gcs_key: str,
@@ -152,7 +207,7 @@ def main(model_run_id: str, gcs_bucket: str, gcs_key: str,
     nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
     gcs_key = gcs_key or f'etl/{classification_type}-classification/{nowgmt}.jsonl'
     blob = bucket.blob(gcs_key)
-    json_data = text_classification_etl(lb_client, model_run_id,
+    json_data = text_classification_etl(lb_client, model_run_id, bucket,
                                         classification_type == 'multi')
     blob.upload_from_string(json_data)
     logger.info("ETL Complete. URI: %s", f"gs://{bucket.name}/{blob.name}")

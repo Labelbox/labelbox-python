@@ -3,3 +3,6 @@ docker
 google-cloud-storage
 google-cloud-aiplatform
 google-cloud-secret-manager
+opencv-python-headless
+labelbox[data]
+ndjson

@@ -117,6 +117,3 @@ class BoundingBoxPipeline(Pipeline):
             return
 
         logger.info(f"Deployment status: {deployment_status}")
-
-    def run_remote(self, *args, **kwargs):
-        raise NotImplementedError("")

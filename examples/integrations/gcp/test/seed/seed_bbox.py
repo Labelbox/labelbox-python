@@ -30,7 +30,7 @@ def setup_project(client):
         "gsutil cp -r -m gs://vertex-matt-test/bbox_seed_datarows ../assets")
 
     datarows = []
-    assets_directory = "../assets/bbox_seed_datarows"
+    assets_directory = "../assets/"
 
     print("Assets acquired from gcs. Now creating datarows...")
 
