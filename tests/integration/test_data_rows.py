@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from labelbox import DataRow
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, MalformedQueryException
 
 
 def test_get_data_row(datarow, client):
@@ -290,3 +290,6 @@ def test_delete_data_row_attachment(datarow, image_url):
         datarow.delete_attachment(uid)
 
     assert len(list(datarow.attachments())) == 0
+
+    with pytest.raises(MalformedQueryException):
+        datarow.delete_attachment("not valid id")
