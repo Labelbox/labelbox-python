@@ -2,7 +2,8 @@ import time
 
 
 def test_model_run(client, configured_project_with_label, rand_gen):
-    project, label_id = configured_project_with_label
+    project, _, _, label = configured_project_with_label
+    label_id = label.uid
     ontology = project.ontology()
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
     model = client.create_model(data["name"], data["ontology_id"])

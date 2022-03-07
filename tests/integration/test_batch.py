@@ -20,7 +20,7 @@ def big_dataset(dataset: Dataset):
     dataset.delete()
 
 
-def test_submit_batch(configured_project: Project, big_dataset):
+def test_submit_batch(configured_project: Project, big_dataset: Dataset):
     configured_project.update(queue_mode=QueueMode.Batch)
 
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]

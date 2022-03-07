@@ -159,7 +159,7 @@ def test_html_instructions(configured_project):
 
 
 def test_same_ontology_after_instructions(
-        client, configured_project_with_complex_ontology):
+        configured_project_with_complex_ontology):
     project, _ = configured_project_with_complex_ontology
     initial_ontology = project.ontology().normalized
     project.upsert_instructions('tests/data/assets/loremipsum.pdf')
