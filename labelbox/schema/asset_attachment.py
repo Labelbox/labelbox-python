@@ -1,11 +1,11 @@
 from enum import Enum
 from typing import Dict
 
-from labelbox.orm.db_object import DbObject, Deletable
+from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 
 
-class AssetAttachment(DbObject, Deletable):
+class AssetAttachment(DbObject):
     """ Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
