@@ -23,6 +23,9 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     assert model_run_data_row.data_row().uid == next(
         next(project.datasets()).data_rows()).uid
 
+    fetch_model = client.get_model_run(model_run.uid)
+    assert fetch_model == model_run
+
 
 def test_model_run_delete(client, model_run):
     models_before = list(client.get_models())
