@@ -5,14 +5,12 @@ import argparse
 import time
 import logging
 from typing import Union, Literal
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
 import os
 from collections import Counter
+import requests
 
 from google.api_core import retry
-
-import requests
 from google.cloud import storage
 from google.cloud import secretmanager
 
@@ -161,10 +159,7 @@ def text_classification_etl(lb_client: Client, model_run_id: str,
         training_data_futures = [
             exc.submit(fn, label, bucket) for label in labels
         ]
-        training_data = [
-            future.result()
-            for future in tqdm(as_completed(training_data_futures))
-        ]
+        training_data = [future.result() for future in training_data_futures]
 
     # The requirement seems to only apply to training data.
     # This should be changed to check by split

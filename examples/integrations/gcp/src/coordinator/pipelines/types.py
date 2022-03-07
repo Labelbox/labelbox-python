@@ -1,28 +1,24 @@
 from typing import Union, Optional, Dict, Any, Literal
+from collections import defaultdict
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from enum import Enum
 import os
 import time
 import uuid
-from collections import defaultdict
-
 import logging
 
 from google.cloud import storage
 from google.cloud import aiplatform
-import requests
-import ndjson
-
 from labelbox.data.serialization import LBV1Converter, NDJsonConverter
 from labelbox import ModelRun, Client
 from labelbox.data.annotation_types import Radio, Checklist
-import uuid
 from labelbox.data.serialization import LBV1Converter, NDJsonConverter
 from labelbox.data.metrics.group import get_label_pairs
 from labelbox.data.metrics import feature_confusion_matrix_metric
-from labelbox.data.annotation_types import Rectangle
 from labelbox import ModelRun
+import requests
+import ndjson
 
 logger = logging.getLogger("uvicorn")
 

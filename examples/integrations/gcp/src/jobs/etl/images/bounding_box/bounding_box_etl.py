@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import random
 import ndjson
 import json
@@ -17,8 +18,6 @@ from google.cloud import secretmanager
 from labelbox.data.annotation_types import Label, Rectangle
 from labelbox.data.serialization import LBV1Converter
 from labelbox import Client
-
-from concurrent.futures import ThreadPoolExecutor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

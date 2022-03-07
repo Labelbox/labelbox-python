@@ -1,6 +1,5 @@
 import os
 from typing import TypedDict, Union, Literal
-import json
 
 from google.cloud import aiplatform
 from google.cloud import secretmanager

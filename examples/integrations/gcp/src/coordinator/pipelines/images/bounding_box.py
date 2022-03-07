@@ -1,24 +1,19 @@
-from typing import Dict, Any, Union, Literal
+from typing import Dict, Any
 import time
 import logging
-import os
+import uuid
 
 from google.cloud import aiplatform
-from google.cloud.aiplatform.models import Model
-from google.cloud import storage
-
-from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob
-
-logger = logging.getLogger("uvicorn")
-
-import uuid
-from labelbox.data.serialization import LBV1Converter, NDJsonConverter
+from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.metrics.group import get_label_pairs
 from labelbox.data.metrics import feature_confusion_matrix_metric
 from labelbox.data.annotation_types import Rectangle
 from labelbox import ModelRun
-import requests
 import ndjson
+
+from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob
+
+logger = logging.getLogger("uvicorn")
 
 
 class BoundingBoxETL(Job):
@@ -81,7 +76,7 @@ class BoundingBoxTraining(Job):
 
 class BoundingBoxDeployment(Job):
 
-    def run(self, model: Model, job_name: str) -> JobStatus:
+    def run(self, model: aiplatform.Model, job_name: str) -> JobStatus:
         endpoint = model.deploy(deployed_model_display_name=job_name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
@@ -110,7 +105,7 @@ class BoundingBoxInference(InferenceJob):
                                 content_type="application/jsonl")
         return f"gs://{bucket.name}/{blob.name}"
 
-    def run(self, etl_file: str, model_run_id: str, model: Model,
+    def run(self, etl_file: str, model_run_id: str, model: aiplatform.Model,
             job_name: str):
         batch_prediction_job = self.batch_predict(etl_file, model, job_name,
                                                   'bounding-box')

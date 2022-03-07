@@ -4,17 +4,15 @@ import logging
 import uuid
 
 from google.cloud import aiplatform
-from google.cloud.aiplatform import Model
-
-from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob
-
-logger = logging.getLogger("uvicorn")
-
-import ndjson
 from labelbox import ModelRun
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.metrics.group import get_label_pairs
 from labelbox.data.annotation_types import TextEntity
+import ndjson
+
+from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob
+
+logger = logging.getLogger("uvicorn")
 
 
 class NERETL(Job):
@@ -75,7 +73,7 @@ class NERTraining(Job):
 
 class TextNERDeployment(Job):
 
-    def run(self, model: Model, job_name: str) -> JobStatus:
+    def run(self, model: aiplatform.Model, job_name: str) -> JobStatus:
         endpoint = model.deploy(deployed_model_display_name=job_name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
