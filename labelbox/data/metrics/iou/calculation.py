@@ -4,6 +4,8 @@ from itertools import product
 from shapely.geometry import Polygon
 import numpy as np
 
+from labelbox.data.annotation_types.ner import TextEntity
+
 from ..group import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
                                  Mask, Geometry, Point, Line, Checklist, Text,
@@ -269,3 +271,25 @@ def _ensure_valid_poly(poly):
 def _mask_iou(mask1: np.ndarray, mask2: np.ndarray) -> ScalarMetricValue:
     """Computes iou between two binary segmentation masks."""
     return np.sum(mask1 & mask2) / np.sum(mask1 | mask2)
+
+
+def _get_ner_pairs(
+    ground_truths: List[ObjectAnnotation], predictions: List[ObjectAnnotation]
+) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
+    """Get iou score for all possible pairs of ground truths and predictions"""
+    pairs = []
+    for ground_truth, prediction in product(ground_truths, predictions):
+        score = _ner_iou(ground_truth.value, prediction.value)
+        pairs.append((ground_truth, prediction, score))
+        # print(ground_truth.value.start, ground_truth.value.end,
+        #       prediction.value.start, prediction.value.end)
+    return pairs
+
+
+def _ner_iou(ner1: TextEntity, ner2: TextEntity):
+    """Computes iou between two text entity annotations"""
+    intersection_start, intersection_end = max(ner1.start, ner2.start), min(
+        ner1.end, ner2.end)
+    union_start, union_end = min(ner1.start,
+                                 ner2.start), max(ner1.end, ner2.end)
+    return (intersection_end - intersection_start) / (union_end - union_start)
