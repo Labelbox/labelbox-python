@@ -47,7 +47,9 @@ class Pipelines(TypedDict):
     text_multi_classification: Pipeline
 
 
-_common_params = [_gcs_bucket, service_account, google_cloud_project]
+_common_params = [
+    _labelbox_api_key, _gcs_bucket, service_account, google_cloud_project
+]
 pipelines: Pipelines = {
     'bounding_box':
         BoundingBoxPipeline(*_common_params),
@@ -58,9 +60,9 @@ pipelines: Pipelines = {
     'image_multi_classification':
         ImageMultiClassificationPipeline(*_common_params),
     'text_single_classification':
-        TextSingleClassificationPipeline(_labelbox_api_key, *_common_params),
+        TextSingleClassificationPipeline(*_common_params),
     'text_multi_classification':
-        TextMultiClassificationPipeline(_labelbox_api_key, *_common_params),
+        TextMultiClassificationPipeline(*_common_params),
 }
 
 PipelineName = Union[Literal['bounding_box', 'ner',

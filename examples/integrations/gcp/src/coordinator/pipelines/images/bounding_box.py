@@ -1,13 +1,24 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union, Literal
 import time
 import logging
+import os
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform.models import Model
+from google.cloud import storage
 
-from pipelines.types import Pipeline, JobStatus, JobState, Job
+from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob
 
 logger = logging.getLogger("uvicorn")
+
+import uuid
+from labelbox.data.serialization import LBV1Converter, NDJsonConverter
+from labelbox.data.metrics.group import get_label_pairs
+from labelbox.data.metrics import feature_confusion_matrix_metric
+from labelbox.data.annotation_types import Rectangle
+from labelbox import ModelRun
+import requests
+import ndjson
 
 
 class BoundingBoxETL(Job):
@@ -76,14 +87,104 @@ class BoundingBoxDeployment(Job):
                          result={'endpoint_id': endpoint.name})
 
 
+class BoundingBoxInference(InferenceJob):
+
+    def __init__(self, labelbox_api_key: str):
+        self.confidence_threshold = 0.5
+        super().__init__(labelbox_api_key)
+
+    def build_inference_file(self, bucket_name, key):
+        bucket = self.storage_client.get_bucket(bucket_name)
+        # Create a blob object from the filepath
+        blob = bucket.blob(key)
+        contents = ndjson.loads(blob.download_as_string())
+        prediction_inputs = []
+        for line in contents:
+            prediction_inputs.append({
+                "content": line['imageGcsUri'],
+                "mimeType": "text/plain",
+            })
+        nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
+        blob = bucket.blob(f"inference_file/bounding-box/{nowgmt}.jsonl")
+        blob.upload_from_string(data=ndjson.dumps(prediction_inputs),
+                                content_type="application/jsonl")
+        return f"gs://{bucket.name}/{blob.name}"
+
+    def run(self, etl_file: str, model_run_id: str, model: Model,
+            job_name: str):
+        batch_prediction_job = self.batch_predict(etl_file, model, job_name,
+                                                  'bounding-box')
+        model_run = self.lb_client._get_single(ModelRun, model_run_id)
+        tools = self.get_tool_info(model_run.model_id)
+        annotation_data = list(
+            self.process_predictions(batch_prediction_job, tools))
+        predictions = list(NDJsonConverter.deserialize(annotation_data))
+        labels = self.export_model_run_labels(model_run_id, 'image')
+        self.compute_metrics(labels, predictions, tools)
+        upload_task = model_run.add_predictions(
+            f'diagnostics-import-{uuid.uuid4()}',
+            NDJsonConverter.serialize(predictions))
+        upload_task.wait_until_done()
+        logger.info(
+            f"IMPORT ERRORS : {upload_task.errors}. Imported {len(predictions)}"
+        )
+        return JobStatus(JobState.SUCCESS)
+
+    def compute_metrics(self, labels, predictions, tools):
+        tool_name_lookup = {v: k for k, v in tools.items()}
+        pairs = get_label_pairs(labels, predictions, filter_mismatch=True)
+        for (ground_truth, prediction) in pairs.values():
+            for annotation in prediction.annotations:
+                if isinstance(annotation.value, Rectangle):
+                    annotation.name = tool_name_lookup[
+                        annotation.feature_schema_id].replace(' ', '-')
+            prediction.annotations.extend(
+                feature_confusion_matrix_metric(ground_truth.annotations,
+                                                prediction.annotations))
+
+    def process_predictions(self, batch_prediction_job, tools):
+        for batch in batch_prediction_job.iter_outputs():
+            for prediction_data in ndjson.loads(batch.download_as_string()):
+                if 'error' in prediction_data:
+                    logger.info(f"Row failed. {prediction_data}")
+                    continue
+
+                file_name = prediction_data['instance']['content'].split(
+                    "/")[-1].replace(".jpg", "")
+                data_row_id, w, h = file_name.split("_")
+                predictions = prediction_data['prediction']
+                for display_name, confidence, bbox in zip(
+                        predictions['displayNames'], predictions['confidences'],
+                        predictions['bboxes']):
+                    if confidence < self.confidence_threshold:
+                        continue
+                    x0_unscaled, x1_unscaled, y0_unscaled, y1_unscaled = bbox
+                    x0, y0, x1, y1 = x0_unscaled * int(w), y0_unscaled * int(
+                        h), x1_unscaled * int(w), y1_unscaled * int(h)
+                    yield {
+                        "uuid": str(uuid.uuid4()),
+                        'dataRow': {
+                            'id': data_row_id
+                        },
+                        'schemaId': tools[display_name],
+                        'bbox': {
+                            'top': y0,
+                            'left': x0,
+                            'height': y1 - y0,
+                            'width': x1 - x0
+                        }
+                    }
+
+
 class BoundingBoxPipeline(Pipeline):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
+    def __init__(self, lb_api_key: str, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
         self.etl_job = BoundingBoxETL(gcs_bucket, service_account_email,
                                       google_cloud_project)
         self.training_job = BoundingBoxTraining()
         self.deployment = BoundingBoxDeployment()
+        self.inference = BoundingBoxInference(lb_api_key)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -116,4 +217,11 @@ class BoundingBoxPipeline(Pipeline):
             logger.info(f"Job failed. Exiting.")
             return
 
-        logger.info(f"Deployment status: {deployment_status}")
+        inference_status = self.inference.run(etl_status.result, model_run_id,
+                                              training_status.result['model'],
+                                              job_name)
+        # Report state and model id to labelbox
+        logger.info(f"Inference Status: {inference_status}")
+        if inference_status.state == JobState.FAILED:
+            logger.info(f"Job failed. Exiting.")
+            return

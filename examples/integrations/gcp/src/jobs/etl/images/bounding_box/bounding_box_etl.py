@@ -53,10 +53,10 @@ def image_to_bytes(im: Image) -> BytesIO:
     return im_bytes
 
 
-def upload_to_gcs(image_bytes: BytesIO, data_row_uid: str,
+def upload_to_gcs(image_bytes: BytesIO, data_row_uid: str, h: int, w: int,
                   bucket: Bucket) -> str:
     # Vertex will not work unless the input data is a gcs_uri
-    gcs_key = f"training/images/{data_row_uid}.jpg"
+    gcs_key = f"training/images/{data_row_uid}_{int(w)}_{int(h)}.jpg"
     blob = bucket.blob(gcs_key)
     blob.upload_from_file(image_bytes, content_type="image/jpg")
     return f"gs://{bucket.name}/{blob.name}"
@@ -68,7 +68,7 @@ def process_label(label: Label, bucket: Bucket) -> str:
     # When this is only necessary since we don't have media attributes in the export yet.
     image, (w, h) = download_image(label.data.url)
     image_bytes = image_to_bytes(image)
-    gcs_uri = upload_to_gcs(image_bytes, label.data.uid, bucket)
+    gcs_uri = upload_to_gcs(image_bytes, label.data.uid, h, w, bucket)
 
     for annotation in label.annotations:
         if isinstance(annotation.value, Rectangle):

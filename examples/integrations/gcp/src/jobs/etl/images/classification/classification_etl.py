@@ -48,9 +48,10 @@ def process_single_classification_label(label: Label, bucket: Bucket) -> str:
 
     for annotation in label.annotations:
         if isinstance(annotation.value, Radio):
-
-            classifications.append(
-                {"displayName": annotation.value.answer.name})
+            classifications.append({
+                "displayName":
+                    f"{annotation.name}_{annotation.value.answer.name}"
+            })
 
     if len(classifications) > 1:
         logger.info(
@@ -80,10 +81,11 @@ def process_multi_classification_label(label: Label, bucket: Bucket) -> str:
     for annotation in label.annotations:
         if isinstance(annotation.value, Radio):
             classifications.append(
-                {"displayName": annotation.value.answer.name})
+                f"{annotation.name}_{annotation.value.answer.name}")
+
         elif isinstance(annotation.value, Checklist):
             classifications.extend([{
-                "displayName": answer.name
+                "displayName": f"{annotation.name}_{answer.name}"
             } for answer in annotation.value.answer])
 
     if len(classifications) == 0:
@@ -183,3 +185,5 @@ if __name__ == '__main__':
     parser.add_argument('--gcs_key', type=str, required=False, default=None)
     args = parser.parse_args()
     main(**vars(args))
+
+# TODO: Make sure dataset is being created properly...

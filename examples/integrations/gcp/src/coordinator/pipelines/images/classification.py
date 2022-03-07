@@ -1,24 +1,19 @@
-from typing import Dict, Any, Union, Literal
+from typing import Dict, Any
 import time
 import logging
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform import Model
 
-from pipelines.types import Pipeline, JobStatus, JobState, Job
-
-logger = logging.getLogger("uvicorn")
-
-ImageClassificationType = Union[Literal['single'], Literal['multi']]
+from pipelines.types import Pipeline, JobStatus, JobState, Job, ClassificationInferenceJob, ClassificationType
 
 logger = logging.getLogger("uvicorn")
 
 
 class ImageClassificationETL(Job):
 
-    def __init__(self, classification_type: ImageClassificationType,
-                 gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
+    def __init__(self, classification_type: ClassificationType, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
         self.classification_type = classification_type
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
@@ -47,7 +42,7 @@ class ImageClassificationETL(Job):
 
 class ClassificationTraining(Job):
 
-    def __init__(self, classification_type: ImageClassificationType):
+    def __init__(self, classification_type: ClassificationType):
         self.classification_type = classification_type
         if classification_type == 'single':
             self.multi_label = False
@@ -93,16 +88,28 @@ class ImageClassificationDeployment(Job):
                          result={'endpoint_id': endpoint.name})
 
 
+class ImageClassificationInference(ClassificationInferenceJob):
+
+    def __init__(self, labelbox_api_key: str,
+                 classification_type: ClassificationType):
+        self.classification_threshold = 0.2
+        super().__init__(labelbox_api_key, classification_type, 'image')
+
+
 class ImageClassificationPipeline(Pipeline):
 
-    def __init__(self, image_classification_type: ImageClassificationType,
-                 gcs_bucket: str, service_account_email: str,
+    def __init__(self, image_classification_type: ClassificationType,
+                 lb_api_key: str, gcs_bucket: str, service_account_email: str,
                  google_cloud_project: str):
+
+        self.image_classification_type = image_classification_type
         self.etl_job = ImageClassificationETL(image_classification_type,
                                               gcs_bucket, service_account_email,
                                               google_cloud_project)
         self.training_job = ClassificationTraining(image_classification_type)
         self.deployment = ImageClassificationDeployment()
+        self.inference = ImageClassificationInference(
+            lb_api_key, image_classification_type)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -128,24 +135,33 @@ class ImageClassificationPipeline(Pipeline):
 
         deployment_status = self.deployment.run(training_status.result['model'],
                                                 job_name)
-        # Report state and model id to labelbox
+
         logger.info(f"Deployment Status: {deployment_status}")
         if deployment_status.state == JobState.FAILED:
+            logger.info(f"Job failed. Exiting.")
+            return
+
+        inference_status = self.inference.run(etl_status.result, model_run_id,
+                                              training_status.result['model'],
+                                              job_name)
+
+        logger.info(f"Inference Status: {inference_status}")
+        if inference_status.state == JobState.FAILED:
             logger.info(f"Job failed. Exiting.")
             return
 
 
 class ImageSingleClassificationPipeline(ImageClassificationPipeline):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
-        super().__init__('single', gcs_bucket, service_account_email,
-                         google_cloud_project)
+    def __init__(self, lb_api_key: str, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
+        super().__init__('single', lb_api_key, gcs_bucket,
+                         service_account_email, google_cloud_project)
 
 
 class ImageMultiClassificationPipeline(ImageClassificationPipeline):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
-        super().__init__('multi', gcs_bucket, service_account_email,
+    def __init__(self, lb_api_key: str, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
+        super().__init__('multi', lb_api_key, gcs_bucket, service_account_email,
                          google_cloud_project)

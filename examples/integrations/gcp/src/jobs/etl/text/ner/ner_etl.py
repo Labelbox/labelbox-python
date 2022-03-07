@@ -74,9 +74,6 @@ def process_label(label: Label) -> str:
     })
 
 
-#http://www.lamda.nju.edu.cn/files/miml-image-data.rar
-
-
 def ner_etl(lb_client: Client, model_run_id: str) -> str:
     """
     Creates a jsonl file that is used for input into a vertex ai training job
