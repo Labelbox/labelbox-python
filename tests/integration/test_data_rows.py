@@ -276,3 +276,17 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
             DataRow.row_data: image_url
         }] * n_urls + [fp.name] * n_local)
     assert len(list(dataset.data_rows())) == n_local + n_urls
+
+
+def test_delete_data_row_attachment(datarow, image_url):
+    attachment_uids = []
+    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
+                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    for attachment_type, attachment_value in attachments:
+        attachment_uids.append(
+            datarow.create_attachment(attachment_type, attachment_value).uid)
+
+    for uid in attachment_uids:
+        datarow.delete_attachment(uid)
+
+    assert len(list(datarow.attachments())) == 0
