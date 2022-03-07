@@ -6,7 +6,6 @@ import pytest
 import requests
 
 from labelbox import DataRow
-from labelbox.exceptions import InvalidQueryError, MalformedQueryException
 
 
 def test_get_data_row(datarow, client):
@@ -279,17 +278,14 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
 
 
 def test_delete_data_row_attachment(datarow, image_url):
-    attachment_uids = []
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
-    for attachment_type, attachment_value in attachments:
-        attachment_uids.append(
-            datarow.create_attachment(attachment_type, attachment_value).uid)
+    attachments = []
+    to_attach = [("IMAGE", image_url), ("TEXT", "test-text"),
+                 ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    for attachment_type, attachment_value in to_attach:
+        attachments.append(
+            datarow.create_attachment(attachment_type, attachment_value))
 
-    for uid in attachment_uids:
-        datarow.delete_attachment(uid)
+    for attachment in attachments:
+        attachment.delete()
 
     assert len(list(datarow.attachments())) == 0
-
-    with pytest.raises(MalformedQueryException):
-        datarow.delete_attachment("not valid id")
