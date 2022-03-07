@@ -1,11 +1,11 @@
 from enum import Enum
 from typing import Dict
 
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, Deletable
 from labelbox.orm.model import Field
 
 
-class AssetAttachment(DbObject):
+class AssetAttachment(DbObject, Deletable):
     """ Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
@@ -42,3 +42,11 @@ class AssetAttachment(DbObject):
             raise ValueError(
                 f"meta_type must be one of {valid_types}. Found {attachment_type}"
             )
+
+    def delete(self) -> None:
+        """Deletes an attachment on the data row."""
+        query_str = """mutation deleteDataRowAttachmentPyApi($attachment_id: ID!) {
+            deleteDataRowAttachment(where: {id: $attachment_id}) {
+                    id}
+            }"""
+        self.client.execute(query_str, {"attachment_id": self.uid})

@@ -96,11 +96,3 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             })
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
-
-    def delete_attachment(self, attachment_id: str) -> None:
-        """Deletes an attachment on the data row."""
-        query_str = """mutation deleteDataRowAttachmentPyApi($attachment_id: ID!) {
-            deleteDataRowAttachment(where: {id: $attachment_id}) {
-                    id}
-            }"""
-        self.client.execute(query_str, {"attachment_id": attachment_id})
