@@ -1,4 +1,3 @@
-
 import os
 import ndjson
 import uuid
@@ -11,9 +10,9 @@ from google.cloud.storage.bucket import Bucket
 from labelbox import Client
 from labelbox.schema.ontology import OntologyBuilder
 from labelbox.data.annotation_types import (Label, LabelList, ImageData, Radio,
-    ClassificationAnnotation, ClassificationAnswer)
+                                            ClassificationAnnotation,
+                                            ClassificationAnswer)
 from labelbox.data.serialization import NDJsonConverter
-
 
 lb = Client()
 
@@ -28,6 +27,7 @@ storage_client = storage.Client()
 vertex_model_id = '8502483835173208064'
 vertex_model = aiplatform.Model(vertex_model_id)
 etl_file = '2022-03-04_18:36:50.jsonl'
+
 
 def create_batch_prediction_job(
     model_resource_name: str,
@@ -59,8 +59,12 @@ def image_classification_batch_prediction(bucket: Bucket):
     """
     etl_blob = bucket.blob('etl/image-single-classification/' + etl_file)
     etl_jsonl = ndjson.loads(etl_blob.download_as_text())
-    predict_data = [str({"content": l['imageGcsUri'] ,
-                         "mimeType": "image/jpeg"}) for l in etl_jsonl[:10]]
+    predict_data = [
+        str({
+            "content": l['imageGcsUri'],
+            "mimeType": "image/jpeg"
+        }) for l in etl_jsonl[:10]
+    ]
 
     return "\n".join(predict_data)
 
@@ -73,8 +77,7 @@ blob.upload_from_string(json_data)
 dest = 'gs://' + bucket_name + '/predictions'
 blob_uri = 'gs://' + bucket_name + '/predictions/predict.jsonl'
 
-job = create_batch_prediction_job(vertex_model_id, 'test_batch',
-                                  blob_uri, dest)
+job = create_batch_prediction_job(vertex_model_id, 'test_batch', blob_uri, dest)
 
 predictions_out_name = job.output_info.gcs_output_directory + \
                        '/predictions_00001.jsonl'
@@ -91,26 +94,21 @@ ontology = OntologyBuilder.from_project(lb_project)
 
 for l in preds_jsonl:
     data_row_id = l['instance']['content'].split('/')[-1].split('.')[0]
-    predictions.append(Label(
-        data=ImageData(uid=data_row_id),
-        annotations=[
-            ClassificationAnnotation(
-                value=Radio(answer=ClassificationAnswer(
-                    name=l['prediction']['displayNames'][0])),
-                name=ontology.classifications[0].instructions
-            )
-        ]
-    ))
+    predictions.append(
+        Label(data=ImageData(uid=data_row_id),
+              annotations=[
+                  ClassificationAnnotation(
+                      value=Radio(answer=ClassificationAnswer(
+                          name=l['prediction']['displayNames'][0])),
+                      name=ontology.classifications[0].instructions)
+              ]))
 
-signer = lambda _bytes: client.upload_data(content=_bytes, sign=True)
 predictions.assign_feature_schema_ids(ontology)
 
 for lb_model_run in lb_model.model_runs():
     if lb_model_run.uid == lb_model_run_id:
         break
 
-upload_task = lb_model_run.add_predictions(f'mea-import-{uuid.uuid4()}',
-                                           NDJsonConverter.serialize(
-                                               predictions))
+upload_task = lb_model_run.add_predictions(
+    f'mea-import-{uuid.uuid4()}', NDJsonConverter.serialize(predictions))
 upload_task.wait_until_done()
-
