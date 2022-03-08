@@ -5,7 +5,7 @@ import json
 import argparse
 import time
 import logging
-from typing import Tuple
+from typing import Tuple, Union, Literal, Optional
 from io import BytesIO
 import os
 
@@ -21,6 +21,14 @@ from labelbox import Client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+Partition = Union[Literal['training'], Literal['test'], Literal['validation']]
+# Maps from our partition naming convention to google's
+partition_mapping = {
+    'training': 'train',
+    'test': 'test',
+    'validation': 'validation'
+}
 
 # Optionally set env var for testing
 _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
@@ -61,7 +69,12 @@ def upload_to_gcs(image_bytes: BytesIO, data_row_uid: str, h: int, w: int,
     return f"gs://{bucket.name}/{blob.name}"
 
 
-def process_label(label: Label, bucket: Bucket) -> str:
+def process_label(label: Label, partition: Optional[Partition],
+                  bucket: Bucket) -> str:
+    if partition is None:
+        logger.warning("No partition assigned. Skipping.")
+        return
+
     bounding_box_annotations = []
     # TODO: Only download if the label has annotations
     # When this is only necessary since we don't have media attributes in the export yet.
@@ -96,10 +109,8 @@ def process_label(label: Label, bucket: Bucket) -> str:
             bounding_box_annotations[:VERTEX_MAX_EXAMPLES_PER_IMAGE],
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)],
-            "dataRowId":
-                label.data.uid
+            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "dataRowId": label.data.uid
         }
     })
 
@@ -140,10 +151,14 @@ def bounding_box_etl(lb_client: Client, model_run_id: str, bucket) -> str:
 
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
-            exc.submit(process_label, label, bucket)
-            for label in LBV1Converter().deserialize(contents)
+            exc.submit(process_label, label, content['Data Split'], bucket)
+            for content, label in zip(contents,
+                                      LBV1Converter().deserialize(contents))
         ]
     training_data = [future.result() for future in training_data_futures]
+    training_data = [
+        example for example in training_data if example is not None
+    ]
 
     # The requirement seems to only apply to training data.
     # This should be changed to check by split

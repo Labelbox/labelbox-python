@@ -4,7 +4,7 @@ import ndjson
 import argparse
 import time
 import logging
-from typing import Union, Literal
+from typing import Optional, Union, Literal
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 import os
@@ -22,6 +22,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 VERTEX_MIN_TRAINING_EXAMPLES = 1
+
+Partition = Union[Literal['training'], Literal['test'], Literal['validation']]
+# Maps from our partition naming convention to google's
+partition_mapping = {
+    'training': 'train',
+    'test': 'test',
+    'validation': 'validation'
+}
 
 # Optionally set env var for testing
 _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
@@ -42,7 +50,13 @@ def upload_to_gcs(image_url: str, data_row_uid: str, bucket: Bucket) -> str:
     return f"gs://{bucket.name}/{blob.name}"
 
 
-def process_single_classification_label(label: Label, bucket: Bucket) -> str:
+def process_single_classification_label(label: Label,
+                                        partition: Optional[Partition],
+                                        bucket: Bucket) -> str:
+    if partition is None:
+        logger.warning("No partition assigned. Skipping.")
+        return
+
     classifications = []
     gcs_uri = upload_to_gcs(label.data.url, label.data.uid, bucket)
 
@@ -52,7 +66,6 @@ def process_single_classification_label(label: Label, bucket: Bucket) -> str:
                 "displayName":
                     f"{annotation.name}_{annotation.value.answer.name}"
             })
-
     if len(classifications) > 1:
         logger.info(
             "Skipping example. Must provide <= 1 classification per image.")
@@ -66,15 +79,19 @@ def process_single_classification_label(label: Label, bucket: Bucket) -> str:
         'classificationAnnotation': classification,
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)],
-            "dataRowId":
-                label.data.uid
+            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "dataRowId": label.data.uid
         }
     })
 
 
-def process_multi_classification_label(label: Label, bucket: Bucket) -> str:
+def process_multi_classification_label(label: Label,
+                                       partition: Optional[Partition],
+                                       bucket: Bucket) -> str:
+    if partition is None:
+        logger.warning("No partition assigned. Skipping.")
+        return
+
     classifications = []
     gcs_uri = upload_to_gcs(label.data.url, label.data.uid, bucket)
 
@@ -96,10 +113,8 @@ def process_multi_classification_label(label: Label, bucket: Bucket) -> str:
         'classificationAnnotations': classifications,
         # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)],
-            "dataRowId":
-                label.data.uid
+            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "dataRowId": label.data.uid
         }
     })
 
@@ -142,14 +157,18 @@ def image_classification_etl(lb_client: Client, model_run_id: str,
     for row in contents:
         row['media_type'] = 'image'
 
-    labels = LBV1Converter.deserialize(contents)
+    label_data = zip(LBV1Converter.deserialize(contents), contents)
 
     fn = process_multi_classification_label if multi else process_single_classification_label
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
-            exc.submit(fn, label, bucket) for label in labels
+            exc.submit(fn, label, content['Data Split'], bucket)
+            for label, content in label_data
         ]
         training_data = [future.result() for future in training_data_futures]
+        training_data = [
+            example for example in training_data if example is not None
+        ]
 
     # The requirement seems to only apply to training data.
     # This should be changed to check by split
