@@ -106,6 +106,7 @@ class TextClassificationPipeline(Pipeline):
         self.deployment = TextClassificationDeployment()
         self.inference = TextClassificationInference(lb_api_key,
                                                      text_classification_type)
+        super().__init__(lb_api_key)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here

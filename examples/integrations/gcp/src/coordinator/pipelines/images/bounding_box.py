@@ -180,6 +180,7 @@ class BoundingBoxPipeline(Pipeline):
         self.training_job = BoundingBoxTraining()
         self.deployment = BoundingBoxDeployment()
         self.inference = BoundingBoxInference(lb_api_key)
+        super().__init__(lb_api_key)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here

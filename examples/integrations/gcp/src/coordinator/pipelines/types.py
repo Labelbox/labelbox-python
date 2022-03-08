@@ -53,8 +53,8 @@ class Job(ABC):
 
 class Pipeline(Job):
 
-    def __init__(self, lb_client):
-        self.lb_client = lb_client
+    def __init__(self, lb_api_key):
+        self.lb_client = Client(lb_api_key, enable_experimental=True)
 
     def run_job(self, model_run_id, fn):
         try:
@@ -71,19 +71,19 @@ class Pipeline(Job):
                      model_run_id,
                      metadata=None,
                      error_message=None):
-        self.lb_client.execute(
-            """
+        self.lb_client.execute("""
             mutation setPipelineStatusPyApi(modelRunId: ID!, data: UpdateTrainingPipelineInput!){
                 updateTrainingPipeline(id: $modelRunId, data: data: $data){status}
             }
         """, {
-                'modelRunId': model_run_id,
-                'data': {
-                    'status': state.value,
-                    'errorMessage': error_message,
-                    metadata: metadata
-                }
-            })
+            'modelRunId': model_run_id,
+            'data': {
+                'status': state.value,
+                'errorMessage': error_message,
+                metadata: metadata
+            }
+        },
+                               experimental=True)
 
     @abstractmethod
     def parse_args(self, json_data: Dict[str, Any]):

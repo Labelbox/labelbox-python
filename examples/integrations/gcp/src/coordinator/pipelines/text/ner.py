@@ -185,6 +185,7 @@ class NERPipeline(Pipeline):
         self.training_job = NERTraining()
         self.deployment = TextNERDeployment()
         self.inference = NERInference(lb_api_key)
+        super().__init__(lb_api_key)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
