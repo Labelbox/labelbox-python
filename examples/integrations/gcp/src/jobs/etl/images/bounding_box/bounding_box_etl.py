@@ -107,7 +107,6 @@ def process_label(label: Label, partition: Optional[Partition],
             gcs_uri,
         'boundingBoxAnnotations':
             bounding_box_annotations[:VERTEX_MAX_EXAMPLES_PER_IMAGE],
-        # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
             "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
             "dataRowId": label.data.uid

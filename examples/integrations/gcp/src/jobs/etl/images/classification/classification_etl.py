@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 
 import requests
-from google.cloud.storage.bucket import Bucket
 from google.cloud import storage
 from google.cloud import secretmanager
 
@@ -41,7 +40,8 @@ if _labelbox_api_key is None:
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 
-def upload_to_gcs(image_url: str, data_row_uid: str, bucket: Bucket) -> str:
+def upload_to_gcs(image_url: str, data_row_uid: str,
+                  bucket: storage.Bucket) -> str:
     # Vertex will not work unless the input data is a gcs_uri
     image_bytes = BytesIO(requests.get(image_url).content)
     gcs_key = f"training/images/{data_row_uid}.jpg"
@@ -52,7 +52,7 @@ def upload_to_gcs(image_url: str, data_row_uid: str, bucket: Bucket) -> str:
 
 def process_single_classification_label(label: Label,
                                         partition: Optional[Partition],
-                                        bucket: Bucket) -> str:
+                                        bucket: storage.Bucket) -> str:
     if partition is None:
         logger.warning("No partition assigned. Skipping.")
         return
@@ -77,7 +77,6 @@ def process_single_classification_label(label: Label,
     return json.dumps({
         'imageGcsUri': gcs_uri,
         'classificationAnnotation': classification,
-        # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
             "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
             "dataRowId": label.data.uid
@@ -87,7 +86,7 @@ def process_single_classification_label(label: Label,
 
 def process_multi_classification_label(label: Label,
                                        partition: Optional[Partition],
-                                       bucket: Bucket) -> str:
+                                       bucket: storage.Bucket) -> str:
     if partition is None:
         logger.warning("No partition assigned. Skipping.")
         return
@@ -111,7 +110,6 @@ def process_multi_classification_label(label: Label,
     return json.dumps({
         'imageGcsUri': gcs_uri,
         'classificationAnnotations': classifications,
-        # TODO: Replace with the split from the export in the future.
         'dataItemResourceLabels': {
             "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
             "dataRowId": label.data.uid
@@ -120,7 +118,7 @@ def process_multi_classification_label(label: Label,
 
 
 def image_classification_etl(lb_client: Client, model_run_id: str,
-                             bucket: Bucket, multi: bool) -> str:
+                             bucket: storage.Bucket, multi: bool) -> str:
     """
     Creates a jsonl file that is used for input into a vertex ai training job
 
