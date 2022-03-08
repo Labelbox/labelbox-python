@@ -30,6 +30,14 @@ class JobState(Enum):
     FAILED = 'FAILED'
 
 
+class PipelineState(Enum):
+    EXPORTING_DATA = "EXPORTING_DATA"
+    PREPARING_DATA = "PREPARING_DATA"
+    TRAINING_MODEL = "TRAINING_MODEL"
+    COMPLETE = "COMPLETE"
+    FAILED = "FAILED"
+
+
 @dataclass
 class JobStatus:
     state: JobState
@@ -39,11 +47,43 @@ class JobStatus:
 
 class Job(ABC):
 
-    def run(self, json_data: Dict[str, Any]):
+    def run(self):
         ...
 
 
 class Pipeline(Job):
+
+    def __init__(self, lb_client):
+        self.lb_client = lb_client
+
+    def run_job(self, model_run_id, fn):
+        try:
+            return fn()
+        except Exception as e:
+            self.update_state(PipelineState.FAILED,
+                              model_run_id,
+                              error_message=str(e))
+            logger.info("Job")
+            return
+
+    def update_state(self,
+                     state: PipelineState,
+                     model_run_id,
+                     metadata=None,
+                     error_message=None):
+        self.lb_client.execute(
+            """
+            mutation setPipelineStatusPyApi(modelRunId: ID!, data: UpdateTrainingPipelineInput!){
+                updateTrainingPipeline(id: $modelRunId, data: data: $data){status}
+            }
+        """, {
+                'modelRunId': model_run_id,
+                'data': {
+                    'status': state.value,
+                    'errorMessage': error_message,
+                    metadata: metadata
+                }
+            })
 
     @abstractmethod
     def parse_args(self, json_data: Dict[str, Any]):
