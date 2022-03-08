@@ -69,7 +69,8 @@ def feature_confusion_matrix(
         return vector_confusion_matrix(ground_truths, predictions,
                                        include_subclasses, iou)
     elif isinstance(predictions[0].value, TextEntity):
-        pass  #TODO
+        return ner_confusion_matrix(ground_truths, predictions,
+                                    include_subclasses, iou)
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_confusion_matrix(ground_truths, predictions)
     else:
@@ -293,12 +294,10 @@ def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
 
 
 def ner_confusion_matrix(ground_truths: List[ObjectAnnotation],
-                         predictions: list[ObjectAnnotation],
+                         predictions: List[ObjectAnnotation],
                          include_subclasses: bool,
                          iou: float) -> Optional[ConfusionMatrixMetricValue]:
     """Computes confusion matrix metric between two lists of TextEntity objects
-    
-    TODO: work on include_subclasses logic
 
     Args:
         ground_truths: List of ground truth mask annotations

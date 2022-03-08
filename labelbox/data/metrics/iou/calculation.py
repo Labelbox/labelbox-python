@@ -281,8 +281,6 @@ def _get_ner_pairs(
     for ground_truth, prediction in product(ground_truths, predictions):
         score = _ner_iou(ground_truth.value, prediction.value)
         pairs.append((ground_truth, prediction, score))
-        # print(ground_truth.value.start, ground_truth.value.end,
-        #       prediction.value.start, prediction.value.end)
     return pairs
 
 
@@ -292,4 +290,7 @@ def _ner_iou(ner1: TextEntity, ner2: TextEntity):
         ner1.end, ner2.end)
     union_start, union_end = min(ner1.start,
                                  ner2.start), max(ner1.end, ner2.end)
+    #edge case of only one character in text
+    if union_start == union_end:
+        return 1
     return (intersection_end - intersection_start) / (union_end - union_start)
