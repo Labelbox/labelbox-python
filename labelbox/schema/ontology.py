@@ -4,6 +4,7 @@ import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Type
+import warnings
 
 from pydantic import constr
 
@@ -82,6 +83,11 @@ class Option:
 @dataclass
 class Classification:
     """
+
+    Deprecation Notice: Dropdown classification is deprecated and will be
+        removed in a future release. Dropdown will also
+        no longer be able to be created in the Editor on 3/31/2022.
+            
     A classfication to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
@@ -126,6 +132,13 @@ class Classification:
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
+
+    def __post_init__(self):
+        if self.class_type == Classification.Type.DROPDOWN:
+            warnings.warn(
+                "Dropdown classification is deprecated and will be "
+                "removed in a future release. Dropdown will also "
+                "no longer be able to be created in the Editor on 3/31/2022.")
 
     @property
     def name(self) -> str:
