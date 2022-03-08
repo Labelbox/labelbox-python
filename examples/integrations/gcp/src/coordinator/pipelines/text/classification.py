@@ -1,22 +1,18 @@
-from typing import Dict, Any, Union, Literal
+from typing import Dict, Any
 import time
 import logging
 
 from google.cloud import aiplatform
-from google.cloud.aiplatform import Model
 
-from pipelines.types import Pipeline, JobStatus, JobState, Job
+from pipelines.types import Pipeline, JobStatus, JobState, Job, ClassificationInferenceJob, ClassificationType
 
 logger = logging.getLogger("uvicorn")
-
-TextClassificationType = Union[Literal['single'], Literal['multi']]
 
 
 class TextClassificationETL(Job):
 
-    def __init__(self, classification_type: TextClassificationType,
-                 gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
+    def __init__(self, classification_type: ClassificationType, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
         self.classification_type = classification_type
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
@@ -45,7 +41,7 @@ class TextClassificationETL(Job):
 
 class TextClassificationTraining(Job):
 
-    def __init__(self, classification_type: TextClassificationType):
+    def __init__(self, classification_type: ClassificationType):
         self.classification_type = classification_type
         if classification_type == 'single':
             self.multi_label = False
@@ -84,22 +80,32 @@ class TextClassificationTraining(Job):
 
 class TextClassificationDeployment(Job):
 
-    def run(self, model: Model, job_name: str) -> JobStatus:
+    def run(self, model: aiplatform.Model, job_name: str) -> JobStatus:
         endpoint = model.deploy(deployed_model_display_name=job_name)
         return JobStatus(JobState.SUCCESS,
                          result={'endpoint_id': endpoint.name})
 
 
+class TextClassificationInference(ClassificationInferenceJob):
+
+    def __init__(self, labelbox_api_key: str,
+                 classification_type: ClassificationType):
+        super().__init__(labelbox_api_key, classification_type, 'text')
+
+
 class TextClassificationPipeline(Pipeline):
 
-    def __init__(self, text_classification_type: TextClassificationType,
-                 gcs_bucket: str, service_account_email: str,
+    def __init__(self, text_classification_type: ClassificationType,
+                 lb_api_key: str, gcs_bucket: str, service_account_email: str,
                  google_cloud_project: str):
+        self.classification_type = text_classification_type
         self.etl_job = TextClassificationETL(text_classification_type,
                                              gcs_bucket, service_account_email,
                                              google_cloud_project)
         self.training_job = TextClassificationTraining(text_classification_type)
         self.deployment = TextClassificationDeployment()
+        self.inference = TextClassificationInference(lb_api_key,
+                                                     text_classification_type)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -131,21 +137,27 @@ class TextClassificationPipeline(Pipeline):
             logger.info(f"Job failed. Exiting.")
             return
 
-    def run_remote(self, *args, **kwargs):
-        raise NotImplementedError("")
+        inference_status = self.inference.run(etl_status.result, model_run_id,
+                                              training_status.result['model'],
+                                              job_name)
+        # Report state and model id to labelbox
+        logger.info(f"Inference Status: {inference_status}")
+        if inference_status.state == JobState.FAILED:
+            logger.info(f"Job failed. Exiting.")
+            return
 
 
 class TextSingleClassificationPipeline(TextClassificationPipeline):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
+    def __init__(self, lb_api_key, gcs_bucket: str, service_account_email: str,
                  google_cloud_project: str):
-        super().__init__('single', gcs_bucket, service_account_email,
-                         google_cloud_project)
+        super().__init__('single', lb_api_key, gcs_bucket,
+                         service_account_email, google_cloud_project)
 
 
 class TextMultiClassificationPipeline(TextClassificationPipeline):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
-        super().__init__('multi', gcs_bucket, service_account_email,
+    def __init__(self, lb_api_key: str, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
+        super().__init__('multi', lb_api_key, gcs_bucket, service_account_email,
                          google_cloud_project)

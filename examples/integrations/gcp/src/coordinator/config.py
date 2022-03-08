@@ -1,6 +1,5 @@
 import os
 from typing import TypedDict, Union, Literal
-import json
 
 from google.cloud import aiplatform
 from google.cloud import secretmanager
@@ -47,7 +46,9 @@ class Pipelines(TypedDict):
     text_multi_classification: Pipeline
 
 
-_common_params = [_gcs_bucket, service_account, google_cloud_project]
+_common_params = [
+    _labelbox_api_key, _gcs_bucket, service_account, google_cloud_project
+]
 pipelines: Pipelines = {
     'bounding_box':
         BoundingBoxPipeline(*_common_params),

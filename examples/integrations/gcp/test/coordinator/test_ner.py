@@ -8,7 +8,7 @@ This script simulates a webhook event.
 # Make sure that the LABELBOX_API_KEY cooresponds to the org that belongs to this project.
 # If you want any real data to be produced, there should be some text in the project.
 """
-model_run_id = "9da87028-0f77-046e-6fd9-5cac14c07eae"
+model_run_id = "9da8f643-11ea-0de5-67cf-6d9e33bb03be"
 secret = b'test_secret'
 
 payload = json.dumps({'model_run_id': model_run_id, 'pipeline': 'ner'})
