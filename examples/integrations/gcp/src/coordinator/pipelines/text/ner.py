@@ -139,7 +139,7 @@ class NERInference(InferenceJob):
                         }
                     }
 
-    def run(self, etl_file: str, model_run_id: str, model: Model,
+    def run(self, etl_file: str, model_run_id: str, model: aiplatform.Model,
             job_name: str):
         batch_prediction_job = self.batch_predict(etl_file, model, job_name,
                                                   "ner")
