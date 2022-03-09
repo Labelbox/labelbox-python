@@ -38,7 +38,7 @@ _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
 if _labelbox_api_key is None:
     client = secretmanager.SecretManagerServiceClient()
     secret_id = "labelbox_api_key"
-    name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/2"
+    name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/1"
     response = client.access_secret_version(request={"name": name})
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
