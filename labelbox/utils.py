@@ -2,7 +2,7 @@ import re
 
 
 def _convert(s, sep, title):
-    components = re.findall(r"[A-Z][a-z0-9]*|[a-z][a-z0-9]*", s)
+    components = re.findall(r"[0-9A-Z][a-z0-9]*|[0-9a-z][a-z0-9]*", s)
     components = list(map(str.lower, filter(None, components)))
     for i in range(len(components)):
         if title(i):
