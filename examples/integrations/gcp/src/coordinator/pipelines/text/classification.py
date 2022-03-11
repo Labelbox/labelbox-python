@@ -4,7 +4,8 @@ import logging
 
 from google.cloud import aiplatform
 
-from pipelines.types import Pipeline, JobStatus, JobState, Job, ClassificationInferenceJob, ClassificationType, PipelineState
+from pipelines.types import Pipeline, JobStatus, JobState, Job, \
+    ClassificationInferenceJob, ClassificationType, PipelineState
 
 logger = logging.getLogger("uvicorn")
 
@@ -118,7 +119,7 @@ class TextClassificationPipeline(Pipeline):
         model_run_id, job_name = self.parse_args(json_data)
         self.update_state(PipelineState.PREPARING_DATA, model_run_id)
         etl_status = self.run_job(
-            model_run_id, lambda: self.etl_job.rum(model_run_id, job_name))
+            model_run_id, lambda: self.etl_job.run(model_run_id, job_name))
         if etl_status is None:
             return
         self.update_state(PipelineState.TRAINING_MODEL,
