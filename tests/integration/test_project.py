@@ -43,6 +43,10 @@ def test_project(client, rand_gen):
     assert set(final) == set(before)
 
 
+@pytest.mark.skip(
+    reason="this will fail if run multiple times, limit is defaulted to 3 per org"
+    "add this back in when either all test orgs have unlimited, or we delete all tags befoer running"
+)
 def test_update_project_resource_tags(client, rand_gen):
     before = list(client.get_projects())
     for o in before:
