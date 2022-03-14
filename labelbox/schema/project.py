@@ -877,7 +877,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-                          "consensus average_benchmark_agreement last_activity_time")
+    "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
