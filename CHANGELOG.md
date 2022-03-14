@@ -5,6 +5,7 @@
 * Ability to fetch labels from a model run with `model_run.export_labels()`
     - Note: this is only Experimental. To use, client param `enable_experimental` should
     be set to true 
+* Ability to delete an attachment
 
 ## Fix
 * Logger level is no longer set to INFO
