@@ -257,6 +257,8 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     ])
     project.setup(editor, ontology_builder.asdict())
     ontology = ontology_builder.from_project(project)
+    #TODO: added to avoid index error. remove sleep when api is more consistent
+    time.sleep(2)
     predictions = [{
         "uuid": str(uuid.uuid4()),
         "schemaId": ontology.tools[0].feature_schema_id,
