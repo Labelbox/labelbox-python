@@ -256,6 +256,9 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
     ])
     project.setup(editor, ontology_builder.asdict())
+    #TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
+    time.sleep(2)
+
     ontology = ontology_builder.from_project(project)
     predictions = [{
         "uuid": str(uuid.uuid4()),
