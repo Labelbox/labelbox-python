@@ -1,4 +1,22 @@
 # Changelog
+# Version 3.16.0 (2022-03-08)
+## Added
+* Ability to fetch a model run with `client.get_model_run()`
+* Ability to fetch labels from a model run with `model_run.export_labels()`
+    - Note: this is only Experimental. To use, client param `enable_experimental` should
+    be set to true 
+
+## Fix
+* Logger level is no longer set to INFO
+
+## Updated
+* Deprecation: Creating Dropdowns will no longer be supported after 2022-03-31
+    - This includes creating/adding Dropdowns to an ontology
+    - This includes creating/adding Dropdown Annotation Type
+    - For the same functionality, use Radio 
+    - This will not affect existing Dropdowns
+
+# Changelog
 # Version 3.15.0 (2022-02-28) 
 ## Added 
 * Extras folder which contains useful applications using the sdk
