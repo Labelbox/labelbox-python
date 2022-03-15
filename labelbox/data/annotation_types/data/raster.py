@@ -13,7 +13,7 @@ from joblib import Memory
 from .base_data import BaseData
 from ..types import TypedArray
 
-memory = Memory("/tmp")
+memory = Memory(location="/tmp", verbose=0)
 
 
 #restructured outside of class to use memory cache
