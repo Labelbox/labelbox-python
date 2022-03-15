@@ -4,6 +4,7 @@ import json
 import argparse
 import time
 import logging
+from typing import Optional, Union, Literal
 from concurrent.futures import ThreadPoolExecutor
 import os
 
@@ -23,6 +24,14 @@ VERTEX_MIN_TRAINING_EXAMPLES, VERTEX_MAX_TRAINING_EXAMPLES = 50, 100_000
 MIN_ANNOTATIONS, MAX_ANNOTATIONS = 1, 20
 MIN_ANNOTATION_NAME_LENGTH, MAX_ANNOTATION_NAME_LENGTH = 2, 30
 
+Partition = Union[Literal['training'], Literal['test'], Literal['validation']]
+# Maps from our partition naming convention to google's
+partition_mapping = {
+    'training': 'train',
+    'test': 'test',
+    'validation': 'validation'
+}
+
 # Optionally set env var for testing
 _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
 if _labelbox_api_key is None:
@@ -33,7 +42,11 @@ if _labelbox_api_key is None:
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 
-def process_label(label: Label) -> str:
+def process_label(label: Label, partition: Optional[Partition]) -> str:
+    if partition is None:
+        logger.warning("No partition assigned. Skipping.")
+        return
+
     text_annotations = []
     for annotation in label.annotations:
         if isinstance(annotation.value, TextEntity):
@@ -66,10 +79,8 @@ def process_label(label: Label) -> str:
         # Note that this always uploads the text data in-line
         "textContent": label.data.value,
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": ['test', 'train', 'validation']
-                                                [random.randint(0, 2)],
-            "dataRowId":
-                label.data.uid
+            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "dataRowId": label.data.uid
         }
     })
 
@@ -112,10 +123,12 @@ def ner_etl(lb_client: Client, model_run_id: str) -> str:
     response.raise_for_status()
     contents = ndjson.loads(response.content)
 
+    label_data = zip(LBV1Converter.deserialize(contents), contents)
+
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
-            exc.submit(process_label, label)
-            for label in LBV1Converter().deserialize(contents)
+            exc.submit(process_label, label, content['Data Split'])
+            for label, content in label_data
         ]
         training_data = [future.result() for future in training_data_futures]
         training_data = [data for data in training_data if data is not None]

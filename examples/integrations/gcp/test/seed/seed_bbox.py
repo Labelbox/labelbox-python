@@ -27,10 +27,10 @@ def setup_project(client):
 
     #fetch from gcs bucket the assets
     os.system(
-        "gsutil cp -r -m gs://vertex-matt-test/bbox_seed_datarows ../assets")
+        "gsutil -m cp -r gs://vertex-matt-test/bbox_seed_datarows ../assets")
 
     datarows = []
-    assets_directory = "../assets/"
+    assets_directory = "../assets/bbox_seed_datarows/"
 
     print("Assets acquired from gcs. Now creating datarows...")
 
