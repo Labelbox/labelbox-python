@@ -228,6 +228,9 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             LabelGenerator for accessing labels for each video
         """
+        warnings.warn(
+            "video_label_generator will be deprecated in a future release. "
+            "Use label_generator for video or text/image labels.")
         _check_converter_import()
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds,
@@ -252,10 +255,12 @@ class Project(DbObject, Updateable, Deletable):
 
     def label_generator(self, timeout_seconds=600, **kwargs):
         """
-        Download text and image annotations
+        Download text and image annotations, or video annotations.
+
+        For a mixture of text/image and video, use project.export_labels()
 
         Returns:
-            LabelGenerator for accessing labels for each text or image
+            LabelGenerator for accessing labels
         """
         _check_converter_import()
         json_data = self.export_labels(download=True,
@@ -272,11 +277,14 @@ class Project(DbObject, Updateable, Deletable):
         is_video = [
             'frames' in row['Label'] for row in json_data if row['Label']
         ]
-        if len(is_video) and any(is_video):
+
+        if len(is_video) and not all(is_video) and any(is_video):
             raise ValueError(
-                "Found video data rows in export. "
+                "Found mixed data types of video and text/image. "
                 "Use project.export_labels() to export projects with mixed data types. "
-                "Or use project.video_label_generator() for video data.")
+            )
+        if len(is_video) and all(is_video):
+            return LBV1Converter.deserialize_video(json_data, self.client)
         return LBV1Converter.deserialize(json_data)
 
     def export_labels(self,
