@@ -7,6 +7,7 @@ from google.cloud import aiplatform
 from labelbox import ModelRun
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.metrics.group import get_label_pairs
+from labelbox.data.metrics import feature_confusion_matrix_metric
 from labelbox.data.annotation_types import TextEntity
 import ndjson
 
@@ -172,8 +173,9 @@ class NERInference(InferenceJob):
                     annotation.name = tool_name_lookup[
                         annotation.feature_schema_id].replace(' ', '-')
             # TODO: Metrics are not yet supported for TextEntity
-            #metrics = []
-            #prediction.annotations.extend(metrics)
+            prediction.annotations.extend(
+                feature_confusion_matrix_metric(ground_truth.annotations,
+                                                prediction.annotations))
 
 
 class NERPipeline(Pipeline):
