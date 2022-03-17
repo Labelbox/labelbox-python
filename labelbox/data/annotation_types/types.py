@@ -1,5 +1,6 @@
 import sys
 from typing import Generic, TypeVar, Any
+from tempfile import _TemporaryFileWrapper
 
 from typing_extensions import Annotated
 from packaging import version
@@ -41,3 +42,17 @@ if version.parse(np.__version__) >= version.parse('1.22.0'):
     TypedArray = _GenericAlias(_TypedArray, (Any, DType))
 else:
     TypedArray = _TypedArray[Any, DType]
+
+
+class _TempFile(_TemporaryFileWrapper):
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, val):
+        return val
+
+
+TempFile = _TempFile

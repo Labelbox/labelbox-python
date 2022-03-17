@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from pydantic import root_validator
 
 from .base_data import BaseData
-from ..types import TypedArray
+from ..types import TypedArray, TempFile
 
 
 class RasterData(BaseModel, ABC):
@@ -21,7 +21,7 @@ class RasterData(BaseModel, ABC):
     file_path: Optional[str] = None
     url: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
-    cache_data: Optional[bytes] = None
+    cache_data: Optional[TempFile] = None
 
     @classmethod
     def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
