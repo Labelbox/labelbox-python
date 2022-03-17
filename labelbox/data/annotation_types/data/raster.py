@@ -9,43 +9,9 @@ from PIL import Image
 from google.api_core import retry
 from pydantic import BaseModel
 from pydantic import root_validator
-from joblib import Memory
 
 from .base_data import BaseData
 from ..types import TypedArray
-
-memory = Memory(location="/tmp", verbose=0)
-
-
-#restructured outside of class to use memory cache
-@memory.cache
-def bytes_to_np(image_bytes: bytes) -> np.ndarray:
-    """
-    Converts image bytes to a numpy array
-    Args:
-        image_bytes (bytes): PNG encoded image
-    Returns:
-        numpy array representing the image
-    """
-    arr = np.array(Image.open(BytesIO(image_bytes)))
-    if len(arr.shape) == 2:
-        arr = np.stack((arr,) * 3, axis=-1)
-    return arr[:, :, :3]
-
-
-#restructured outside of class to use memory cache
-@memory.cache
-def np_to_bytes(arr: np.ndarray) -> bytes:
-    """
-    Converts a numpy array to bytes
-    Args:
-        arr (np.array): numpy array representing the image
-    Returns:
-        png encoded bytes
-    """
-    im_bytes = BytesIO()
-    Image.fromarray(arr).save(im_bytes, format="PNG")
-    return im_bytes.getvalue()
 
 
 class RasterData(BaseModel, ABC):
@@ -89,11 +55,37 @@ class RasterData(BaseModel, ABC):
         return cls(arr=arr, **kwargs)
 
     def bytes_to_np(self, image_bytes: bytes) -> np.ndarray:
-        return bytes_to_np(image_bytes)
+        """
+        Converts image bytes to a numpy array
+        Args:
+            image_bytes (bytes): PNG encoded image
+        Returns:
+            numpy array representing the image
+        """
+        arr = np.array(Image.open(BytesIO(image_bytes)))
+        if len(arr.shape) == 2:
+            arr = np.stack((arr,) * 3, axis=-1)
+        return arr[:, :, :3]
 
     def np_to_bytes(self, arr: np.ndarray) -> bytes:
-        self._validate_array(arr)
-        return np_to_bytes(arr)
+        """
+        Converts a numpy array to bytes
+        Args:
+            arr (np.array): numpy array representing the image
+        Returns:
+            png encoded bytes
+        """
+        if len(arr.shape) != 3:
+            raise ValueError(
+                "unsupported image format. Must be 3D ([H,W,C])."
+                f"Use {self.__class__.__name__}.from_2D_arr to construct from 2D"
+            )
+        if arr.dtype != np.uint8:
+            raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
+
+        im_bytes = BytesIO()
+        Image.fromarray(arr).save(im_bytes, format="PNG")
+        return im_bytes.getvalue()
 
     @property
     def value(self) -> np.ndarray:
@@ -142,18 +134,6 @@ class RasterData(BaseModel, ABC):
         response = requests.get(self.url)
         response.raise_for_status()
         return response.content
-
-    def _validate_array(self, arr: np.ndarray) -> None:
-        """
-        Raises an exception if the shape is not supported.
-        """
-        if len(arr.shape) != 3:
-            raise ValueError(
-                "unsupported image format. Must be 3D ([H,W,C])."
-                f"Use {self.__class__.__name__}.from_2D_arr to construct from 2D"
-            )
-        if arr.dtype != np.uint8:
-            raise TypeError(f"image data type must be uint8. Found {arr.dtype}")
 
     @retry.Retry(deadline=30.)
     def create_url(self, signer: Callable[[bytes], str]) -> str:
