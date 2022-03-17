@@ -4,12 +4,10 @@ from itertools import product
 from shapely.geometry import Polygon
 import numpy as np
 
-from labelbox.data.annotation_types.ner import TextEntity
-
 from ..group import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
                                  Mask, Geometry, Point, Line, Checklist, Text,
-                                 Radio, ScalarMetricValue)
+                                 TextEntity, Radio, ScalarMetricValue)
 
 
 def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
@@ -63,6 +61,8 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
         return vector_miou(ground_truths, predictions, include_subclasses)
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_miou(ground_truths, predictions)
+    elif isinstance(predictions[0].value, TextEntity):
+        return ner_miou(ground_truths, predictions, include_subclasses)
     else:
         raise ValueError(
             f"Unexpected annotation found. Found {type(predictions[0].value)}")
@@ -293,4 +293,29 @@ def _ner_iou(ner1: TextEntity, ner2: TextEntity):
     #edge case of only one character in text
     if union_start == union_end:
         return 1
+    #if there is no intersection
+    if intersection_start > intersection_end:
+        return 0
     return (intersection_end - intersection_start) / (union_end - union_start)
+
+
+def ner_miou(ground_truths: List[ObjectAnnotation],
+             predictions: List[ObjectAnnotation],
+             include_subclasses: bool) -> Optional[ScalarMetricValue]:
+    """
+    Computes iou score for all features with the same feature schema id.
+    Calculation includes subclassifications.
+
+    Args:
+        ground_truths: List of ground truth ner annotations
+        predictions: List of prediction ner annotations
+    Returns:
+        float representing the iou score for the feature type.
+         If there are no matches then this returns none
+    """
+    if has_no_matching_annotations(ground_truths, predictions):
+        return 0.
+    elif has_no_annotations(ground_truths, predictions):
+        return None
+    pairs = _get_ner_pairs(ground_truths, predictions)
+    return object_pair_miou(pairs, include_subclasses)

@@ -115,3 +115,10 @@ def test_vector_with_subclass(pair):
 @parametrize("pair", strings_to_fixtures(["point_pair", "line_pair"]))
 def test_others(pair):
     check_iou(pair)
+
+
+@parametrize("pair",
+             strings_to_fixtures(
+                 ["matching_ner", "no_matching_ner", "partial_matching_ner"]))
+def test_ner(pair):
+    check_iou(pair)
