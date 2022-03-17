@@ -10,7 +10,7 @@ from labelbox.data.metrics.group import get_label_pairs
 from labelbox.data.annotation_types import TextEntity
 import ndjson
 
-from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob
+from pipelines.types import Pipeline, JobStatus, JobState, Job, InferenceJob, PipelineState
 
 logger = logging.getLogger("uvicorn")
 
@@ -185,6 +185,7 @@ class NERPipeline(Pipeline):
         self.training_job = NERTraining()
         self.deployment = TextNERDeployment()
         self.inference = NERInference(lb_api_key)
+        super().__init__(lb_api_key)
 
     def parse_args(self, json_data: Dict[str, Any]) -> str:
         # Any validation goes here
@@ -194,33 +195,38 @@ class NERPipeline(Pipeline):
 
     def run(self, json_data):
         model_run_id, job_name = self.parse_args(json_data)
-        etl_status = self.etl_job.run(model_run_id, job_name)
-        # Report state and training data uri to labelbox
-        logger.info(f"ETL Status: {etl_status}")
-        if etl_status.state == JobState.FAILED:
-            logger.info(f"Job failed. Exiting.")
+        self.update_state(PipelineState.PREPARING_DATA, model_run_id)
+        etl_status = self.run_job(
+            model_run_id, lambda: self.etl_job.run(model_run_id, job_name))
+        if etl_status is None:
             return
+        self.update_state(PipelineState.TRAINING_MODEL,
+                          model_run_id,
+                          metadata={'training_data_input': etl_status.result})
 
-        training_status = self.training_job.run(etl_status.result, job_name)
-        # Report state and model id to labelbox
-        logger.info(f"Training Status: {training_status}")
-        if training_status.state == JobState.FAILED:
-            logger.info(f"Job failed. Exiting.")
+        training_status = self.run_job(
+            model_run_id,
+            lambda: self.training_job.run(etl_status.result, job_name))
+        if training_status is None:
             return
+        self.update_state(
+            PipelineState.TRAINING_MODEL,
+            model_run_id,
+            metadata={'model_id': training_status.result['model'].name})
 
-        deployment_status = self.deployment.run(training_status.result['model'],
-                                                job_name)
-        # Report state and model id to labelbox
-        logger.info(f"Deployment Status: {deployment_status}")
-        if deployment_status.state == JobState.FAILED:
-            logger.info(f"Job failed. Exiting.")
+        deployment_status = self.run_job(
+            model_run_id, lambda: self.deployment.run(
+                training_status.result['model'], job_name))
+        if deployment_status is None:
             return
+        self.update_state(
+            PipelineState.TRAINING_MODEL,
+            model_run_id,
+            metadata={'endpoint_id': training_status.result['endpoint_id']})
 
-        inference_status = self.inference.run(etl_status.result, model_run_id,
-                                              training_status.result['model'],
-                                              job_name)
-        # Report state and model id to labelbox
-        logger.info(f"Inference Status: {inference_status}")
-        if inference_status.state == JobState.FAILED:
-            logger.info(f"Job failed. Exiting.")
-            return
+        inference_status = self.run_job(
+            model_run_id,
+            self.inference.run(etl_status.result, model_run_id,
+                               training_status.result['model'], job_name))
+        if inference_status is not None:
+            self.update_state(PipelineState.COMPLETE, model_run_id)

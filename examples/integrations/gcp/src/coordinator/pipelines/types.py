@@ -30,6 +30,14 @@ class JobState(Enum):
     FAILED = 'FAILED'
 
 
+class PipelineState(Enum):
+    EXPORTING_DATA = "EXPORTING_DATA"
+    PREPARING_DATA = "PREPARING_DATA"
+    TRAINING_MODEL = "TRAINING_MODEL"
+    COMPLETE = "COMPLETE"
+    FAILED = "FAILED"
+
+
 @dataclass
 class JobStatus:
     state: JobState
@@ -39,11 +47,50 @@ class JobStatus:
 
 class Job(ABC):
 
-    def run(self, json_data: Dict[str, Any]):
+    def run(self):
         ...
 
 
 class Pipeline(Job):
+
+    def __init__(self, lb_api_key):
+        self.lb_client = Client(lb_api_key, enable_experimental=True)
+
+    def run_job(self, model_run_id, fn):
+        try:
+            return fn()
+        except Exception as e:
+            self.update_state(PipelineState.FAILED,
+                              model_run_id,
+                              error_message=str(e))
+            logger.info(f"Job failed. {e}")
+            return
+
+    def update_state(self,
+                     state: PipelineState,
+                     model_run_id,
+                     metadata=None,
+                     error_message=None):
+        data = {
+            'status':
+                state.value,
+            **({
+                'errorMessage': error_message
+            } if error_message is not None else {}),
+            **({
+                'metadata': metadata
+            } if metadata is not None else {}),
+        }
+        logger.info(f"Setting status for model run id {model_run_id}. {data}")
+        self.lb_client.execute("""
+            mutation setPipelineStatusPyApi($modelRunId: ID!, $data: UpdateTrainingPipelineInput!){
+                updateTrainingPipeline(modelRun: {id : $modelRunId}, data: $data){status}
+            }
+        """, {
+            'modelRunId': model_run_id,
+            'data': data
+        },
+                               experimental=True)
 
     @abstractmethod
     def parse_args(self, json_data: Dict[str, Any]):
