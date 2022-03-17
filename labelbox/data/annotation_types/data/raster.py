@@ -1,3 +1,4 @@
+import tempfile
 from abc import ABC
 from io import BytesIO
 from typing import Callable, Optional, Union
@@ -54,6 +55,7 @@ class RasterData(BaseModel, ABC):
     file_path: Optional[str] = None
     url: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
+    cache: bool = False
 
     @classmethod
     def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
@@ -98,6 +100,8 @@ class RasterData(BaseModel, ABC):
         """
         Property that unifies the data access pattern for all references to the raster.
 
+        RasterData can be cached to disk by setting RasterData.cache = True prior to RasterData.value
+
         Returns:
             numpy representation of the raster
         """
@@ -108,12 +112,18 @@ class RasterData(BaseModel, ABC):
         elif self.file_path is not None:
             with open(self.file_path, "rb") as img:
                 im_bytes = img.read()
-            self.im_bytes = im_bytes
+            if self.cache:
+                self.file_path = self._create_cache_file(im_bytes)
+            else:
+                self.im_bytes = im_bytes
             arr = self.bytes_to_np(im_bytes)
             return arr
         elif self.url is not None:
             im_bytes = self.fetch_remote()
-            self.im_bytes = im_bytes
+            if self.cache:
+                self.file_path = self._create_cache_file(im_bytes)
+            else:
+                self.im_bytes = im_bytes
             return self.bytes_to_np(im_bytes)
         else:
             raise ValueError("Must set either url, file_path or im_bytes")
@@ -168,6 +178,19 @@ class RasterData(BaseModel, ABC):
             raise ValueError(
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
+
+    def _create_cache_file(self, im_bytes):
+        """
+        Utility for creating a temporary cache file to be referenced
+
+        Args:
+            im_bytes: the bytes to write to the temp file
+        Returns:
+            the path of the new file to reference
+        """
+        new_file = tempfile.NamedTemporaryFile(delete=False)
+        new_file.write(im_bytes)
+        return new_file.name
 
     @root_validator()
     def validate_args(cls, values):
