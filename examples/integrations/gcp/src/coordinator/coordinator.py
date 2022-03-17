@@ -11,6 +11,7 @@ from fastapi.logger import logger
 import uvicorn
 
 from config import pipelines, PipelineName, WEBHOOK_SECRET
+from pipelines.types import PipelineState
 
 logger = logging.getLogger("uvicorn")
 logger.setLevel(logging.DEBUG)
@@ -21,8 +22,9 @@ async def run(json_data: Dict[str, Any], pipeline: PipelineName):
     try:
         await run_in_threadpool(pipelines[pipeline].run, json_data)
     except Exception as e:
-        # TODO: Notify labelbox
-        logger.info(f"Job failed. Error: {e}")
+        pipelines[pipeline].update_state(PipelineState.FAILED,
+                                         json_data['model_run_id'],
+                                         error_message=str(e))
 
 
 @app.get("/models")
@@ -59,6 +61,9 @@ def validate_payload(data: Dict[str, str]):
         raise ValueError(
             f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {valid_pipelines}"
         )
+    if 'model_run_id' not in data:
+        raise KeyError("Must provide `model_run_id`")
+
     if 'job_name' not in data:
         data[
             'job_name'] = f'{data["pipeline"]}_{str(datetime.datetime.now()).replace(" ", "_")}'
