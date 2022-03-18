@@ -569,10 +569,7 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self,
-                     name: str,
-                     data_rows: List[str],
-                     priority: int = 5):
+    def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
         """Create a new batch for a project
 
         Args:
