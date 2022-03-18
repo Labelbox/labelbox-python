@@ -42,8 +42,54 @@ def test_project(client, rand_gen):
     assert project not in final
     assert set(final) == set(before)
 
-    # TODO this should raise ResourceNotFoundError, but it doesn't
-    project = client.get_project(project.uid)
+
+@pytest.mark.skip(
+    reason="this will fail if run multiple times, limit is defaulted to 3 per org"
+    "add this back in when either all test orgs have unlimited, or we delete all tags befoer running"
+)
+def test_update_project_resource_tags(client, rand_gen):
+    before = list(client.get_projects())
+    for o in before:
+        assert isinstance(o, Project)
+
+    org = client.get_organization()
+    assert org.uid is not None
+
+    project_name = rand_gen(str)
+    p1 = client.create_project(name=project_name)
+    assert p1.uid is not None
+
+    colorA = "#ffffff"
+    textA = rand_gen(str)
+    tag = {"text": textA, "color": colorA}
+
+    colorB = colorA
+    textB = rand_gen(str)
+    tagB = {"text": textB, "color": colorB}
+
+    tagA = client.get_organization().create_resource_tag(tag)
+    assert tagA.text == textA
+    assert '#' + tagA.color == colorA
+    assert tagA.uid is not None
+
+    tags = org.get_resource_tags()
+    lenA = len(tags)
+    assert lenA > 0
+
+    tagB = client.get_organization().create_resource_tag(tagB)
+    assert tagB.text == textB
+    assert '#' + tagB.color == colorB
+    assert tagB.uid is not None
+
+    tags = client.get_organization().get_resource_tags()
+    lenB = len(tags)
+    assert lenB > 0
+    assert lenB > lenA
+
+    project_resource_tag = client.get_project(
+        p1.uid).update_project_resource_tags([str(tagA.uid)])
+    assert len(project_resource_tag) == 1
+    assert project_resource_tag[0].uid == tagA.uid
 
 
 def test_project_filtering(client, rand_gen):
@@ -117,7 +163,7 @@ def test_html_instructions(configured_project):
 
 
 def test_same_ontology_after_instructions(
-        client, configured_project_with_complex_ontology):
+        configured_project_with_complex_ontology):
     project, _ = configured_project_with_complex_ontology
     initial_ontology = project.ontology().normalized
     project.upsert_instructions('tests/data/assets/loremipsum.pdf')

@@ -1,4 +1,49 @@
 # Changelog
+# Version 3.16.0 (2022-03-08)
+## Added
+* Ability to fetch a model run with `client.get_model_run()`
+* Ability to fetch labels from a model run with `model_run.export_labels()`
+    - Note: this is only Experimental. To use, client param `enable_experimental` should
+    be set to true 
+* Ability to delete an attachment
+
+## Fix
+* Logger level is no longer set to INFO
+
+## Updated
+* Deprecation: Creating Dropdowns will no longer be supported after 2022-03-31
+    - This includes creating/adding Dropdowns to an ontology
+    - This includes creating/adding Dropdown Annotation Type
+    - For the same functionality, use Radio 
+    - This will not affect existing Dropdowns
+
+# Changelog
+# Version 3.15.0 (2022-02-28) 
+## Added 
+* Extras folder which contains useful applications using the sdk
+* Addition of ResourceTag at the Organization and Project level
+* Updates to the example notebooks 
+
+## Fix
+* EPSGTransformer now properly transforms Polygon to Polygon
+* VideoData string representation now properly shows VideoData
+
+
+# Version 3.14.0 (2022-02-10) 
+## Added 
+* Updated metrics for classifications to be per-answer 
+
+
+# Version 3.13.0 (2022-02-07) 
+## Added
+* Added `from_shapely` method to create annotation types from Shapely objects
+* Added `start` and `end` filter on the following methods
+- `Project.export_labels()`
+- `Project.label_generator()`
+- `Project.video_label_generator()`
+* Improved type hinting 
+
+
 # Version 3.12.0 (2022-01-19)
 ## Added
 * Tiled Imagery annotation type

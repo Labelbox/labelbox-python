@@ -93,7 +93,7 @@ class Mask(Geometry):
 
         canvas = canvas if canvas is not None else np.zeros(tuple(dims),
                                                             dtype=np.uint8)
-        canvas[mask.astype(np.bool)] = color
+        canvas[mask.astype(bool)] = color
         return canvas
 
     def _extract_polygons_from_contours(self, contours: List) -> MultiPolygon:

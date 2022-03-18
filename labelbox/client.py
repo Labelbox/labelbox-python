@@ -11,8 +11,6 @@ import os
 from google.api_core import retry
 import requests
 import requests.exceptions
-from labelbox.data.annotation_types.feature import FeatureSchema
-from labelbox.data.serialization.ndjson.base import DataRow
 
 import labelbox.exceptions
 from labelbox import utils
@@ -27,6 +25,7 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
+from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, Tool, Classification
 from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
@@ -621,7 +620,7 @@ class Client:
         """
         return role.get_roles(self)
 
-    def get_data_row(self, data_row_id) -> DataRow:
+    def get_data_row(self, data_row_id):
         """
 
         Returns:
@@ -750,7 +749,7 @@ class Client:
                                    ['ontologies', 'nodes'], Entity.Ontology,
                                    ['ontologies', 'nextCursor'])
 
-    def get_feature_schema(self, feature_schema_id) -> FeatureSchema:
+    def get_feature_schema(self, feature_schema_id):
         """
         Fetches a feature schema. Only supports top level feature schemas.
 
@@ -867,7 +866,7 @@ class Client:
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
-    def create_feature_schema(self, normalized) -> FeatureSchema:
+    def create_feature_schema(self, normalized):
         """
         Creates a feature schema from normalized data.
             >>> normalized = {'tool': 'polygon',  'name': 'cat', 'color': 'black'}
@@ -908,3 +907,15 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
+
+    def get_model_run(self, model_run_id: str) -> ModelRun:
+        """ Gets a single ModelRun with the given ID.
+
+            >>> model_run = client.get_model_run("<model_run_id>")
+
+        Args:
+            model_run_id (str): Unique ID of the ModelRun.
+        Returns:
+            A ModelRun object.
+        """
+        return self._get_single(Entity.ModelRun, model_run_id)
