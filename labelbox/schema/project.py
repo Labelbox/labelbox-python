@@ -571,8 +571,8 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_batch(self,
                      name: str,
-                     data_rows: List[Union[str, "DataRow"]],
-                     priority: "BatchPriority" = 5):
+                     data_rows: List[str],
+                     priority: int = 5):
         """Create a new batch for a project
 
         Args:
@@ -588,8 +588,8 @@ class Project(DbObject, Updateable, Deletable):
 
         dr_ids = []
         for dr in data_rows:
-            from labelbox import DataRow
-            if isinstance(dr, DataRow):
+
+            if isinstance(dr, Entity.DataRow):
                 dr_ids.append(dr.uid)
             elif isinstance(dr, str):
                 dr_ids.append(dr)

@@ -1,9 +1,5 @@
-from typing import NewType
-
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-
-BatchPriority = NewType('BatchPriority', int)
 
 
 class Batch(DbObject):
@@ -26,5 +22,4 @@ class Batch(DbObject):
 
     # Relationships
     project = Relationship.ToOne("Project")
-
     created_by = Relationship.ToOne("User")

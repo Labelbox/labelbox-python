@@ -9,7 +9,7 @@ from labelbox.schema.annotation_import import MALPredictionImport, MEAPrediction
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.label import Label
-from labelbox.schema.batch import Batch, BatchPriority
+from labelbox.schema.batch import Batch
 from labelbox.schema.review import Review
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
