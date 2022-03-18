@@ -569,6 +569,60 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
+    def create_batch(self, name: str, data_rows: List[Union[str, "DataRow"]], priority: "BatchPriority" = 5):
+        """Create a new batch for a project
+
+        Args:
+            name: a name for the batch, must be unique within a project
+            data_rows: Either a list of `DataRows` or Data Row ids
+            priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
+
+        """
+
+        # @TODO: make this automatic?
+        if self.queue_mode() != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
+
+        dr_ids = []
+        for dr in data_rows:
+            from labelbox import DataRow
+            if isinstance(dr, DataRow):
+                dr_ids.append(dr.uid)
+            elif isinstance(dr, str):
+                dr_ids.append(dr)
+            else:
+                raise ValueError("Must pass")
+
+        if len(dr_ids) > 25_000:
+            raise ValueError(
+                f"Batch exceeds max size, break into smaller batches"
+            )
+        if not len(dr_ids):
+            raise ValueError("You need at least one data row in a batch")
+
+        method = 'createBatch'
+        query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
+              project(where: {id: $projectId}) {
+                %s(input: $batchInput) {
+                  %s
+                }
+              }
+            }
+        """ % (method, method, query.results_query_part(Entity.Batch))
+
+        params = {
+            "projectId": self.uid,
+            "batchInput": {
+                "name": name,
+                "dataRowIds": dr_ids,
+                "priority": priority
+            }
+        }
+
+        res = self.client.execute(query_str, params, experimental=True)["project"][method]
+        res['size'] = len(dr_ids)
+        return Entity.Batch(self.client, res)
+
     def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
 
         if self.queue_mode() == mode:
@@ -885,7 +939,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-    "consensus average_benchmark_agreement last_activity_time")
+                          "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
