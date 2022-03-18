@@ -8,13 +8,12 @@ IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_trai
 
 @pytest.fixture
 def big_dataset(dataset: Dataset):
-    task = dataset.create_data_rows(
-        [
-            {
-                "row_data": IMAGE_URL,
-                "external_id": "my-image"
-            },
-        ] * 250)
+    task = dataset.create_data_rows([
+        {
+            "row_data": IMAGE_URL,
+            "external_id": "my-image"
+        },
+    ] * 250)
     task.wait_till_done()
 
     yield dataset
