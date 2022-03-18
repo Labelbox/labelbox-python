@@ -2,7 +2,6 @@ import enum
 import json
 import logging
 import time
-import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,18 +36,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-MAX_QUEUE_BATCH_SIZE = 1000
-
 
 class QueueMode(enum.Enum):
     Batch = "Batch"
     Dataset = "Dataset"
-
-
-class QueueErrors(enum.Enum):
-    InvalidDataRowType = 'InvalidDataRowType'
-    AlreadyInProject = 'AlreadyInProject'
-    HasAttachedLabel = 'HasAttachedLabel'
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -577,55 +568,6 @@ class Project(DbObject, Updateable, Deletable):
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
-
-    def queue(self, data_row_ids: List[str]):
-        """Add Data Rows to the Project queue"""
-
-        method = "submitBatchOfDataRows"
-        return self._post_batch(method, data_row_ids)
-
-    def dequeue(self, data_row_ids: List[str]):
-        """Remove Data Rows from the Project queue"""
-
-        method = "removeBatchOfDataRows"
-        return self._post_batch(method, data_row_ids)
-
-    def _post_batch(self, method, data_row_ids: List[str]):
-        """Post batch methods"""
-
-        if self.queue_mode() != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
-
-        if len(data_row_ids) > MAX_QUEUE_BATCH_SIZE:
-            raise ValueError(
-                f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts"
-            )
-
-        query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
-              project(where: {id: $projectId}) {
-                %s(data: {dataRowIds: $dataRowIds}) {
-                  dataRows {
-                    dataRowId
-                    error
-                  }
-                }
-              }
-            }
-        """ % (method, method)
-
-        res = self.client.execute(query, {
-            "projectId": self.uid,
-            "dataRowIds": data_row_ids
-        })["project"][method]["dataRows"]
-
-        # TODO: figure out error messaging
-        if len(data_row_ids) == len(res):
-            raise ValueError("No dataRows were submitted successfully")
-
-        if len(data_row_ids) > 0:
-            warnings.warn("Some Data Rows were not submitted successfully")
-
-        return res
 
     def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
 
