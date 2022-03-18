@@ -22,7 +22,6 @@ class Batch(DbObject):
     name = Field.String("name")
     created_at = Field.DateTime("created_at")
     updated_at = Field.DateTime("updated_at")
-    deleted = Field.Boolean()
     size = Field.Int("size")
 
     # Relationships
