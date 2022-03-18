@@ -569,7 +569,10 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self, name: str, data_rows: List[Union[str, "DataRow"]], priority: "BatchPriority" = 5):
+    def create_batch(self,
+                     name: str,
+                     data_rows: List[Union[str, "DataRow"]],
+                     priority: "BatchPriority" = 5):
         """Create a new batch for a project
 
         Args:
@@ -595,8 +598,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if len(dr_ids) > 25_000:
             raise ValueError(
-                f"Batch exceeds max size, break into smaller batches"
-            )
+                f"Batch exceeds max size, break into smaller batches")
         if not len(dr_ids):
             raise ValueError("You need at least one data row in a batch")
 
@@ -619,7 +621,8 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        res = self.client.execute(query_str, params, experimental=True)["project"][method]
+        res = self.client.execute(query_str, params,
+                                  experimental=True)["project"][method]
         res['size'] = len(dr_ids)
         return Entity.Batch(self.client, res)
 
@@ -939,7 +942,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-                          "consensus average_benchmark_agreement last_activity_time")
+    "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
