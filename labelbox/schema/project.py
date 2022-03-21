@@ -2,6 +2,7 @@ import enum
 import json
 import logging
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,11 +36,6 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
-
-
-class QueueMode(enum.Enum):
-    Batch = "Batch"
-    Dataset = "Dataset"
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -89,9 +85,12 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    def update(self, **kwargs):
+    class QueueMode(enum.Enum):
+        Batch = "Batch"
+        Dataset = "Dataset"
 
-        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
+    def update(self, **kwargs):
+        mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
 
@@ -570,7 +569,7 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
-        """Create a new batch for a project
+        """Create a new batch for a project. Batches is in Beta and subject to change
 
         Args:
             name: a name for the batch, must be unique within a project
@@ -580,18 +579,17 @@ class Project(DbObject, Updateable, Deletable):
         """
 
         # @TODO: make this automatic?
-        if self.queue_mode() != QueueMode.Batch:
+        if self.queue_mode() != Project.QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
 
         dr_ids = []
         for dr in data_rows:
-
             if isinstance(dr, Entity.DataRow):
                 dr_ids.append(dr.uid)
             elif isinstance(dr, str):
                 dr_ids.append(dr)
             else:
-                raise ValueError("Must pass")
+                raise ValueError("You can DataRow ids or DataRow objects")
 
         if len(dr_ids) > 25_000:
             raise ValueError(
@@ -618,8 +616,10 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        res = self.client.execute(query_str, params,
-                                  experimental=True)["project"][method]
+        res = self.client.execute(
+            query_str, params, experimental=True
+        )["project"][method]
+
         res['size'] = len(dr_ids)
         return Entity.Batch(self.client, res)
 
@@ -628,9 +628,9 @@ class Project(DbObject, Updateable, Deletable):
         if self.queue_mode() == mode:
             return mode
 
-        if mode == QueueMode.Batch:
+        if mode == Project.QueueMode.Batch:
             status = "ENABLED"
-        elif mode == QueueMode.Dataset:
+        elif mode == Project.QueueMode.Dataset:
             status = "DISABLED"
         else:
             raise ValueError(
@@ -666,9 +666,9 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
 
         if status == "ENABLED":
-            return QueueMode.Batch
+            return Project.QueueMode.Batch
         elif status == "DISABLED":
-            return QueueMode.Dataset
+            return Project.QueueMode.Dataset
         else:
             raise ValueError("Status not known")
 
@@ -939,7 +939,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-    "consensus average_benchmark_agreement last_activity_time")
+                          "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
