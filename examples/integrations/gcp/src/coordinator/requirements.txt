@@ -1,4 +1,4 @@
-opencv-python-headless
+opencv-python-headless==4.5.5.62
 fastapi[all]
 google-cloud-storage
 google-cloud-aiplatform

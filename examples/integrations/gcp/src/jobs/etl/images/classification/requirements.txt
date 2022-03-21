@@ -1,5 +1,5 @@
 google-cloud-storage
 google-cloud-secret-manager
 # Headless version so we don't need rendering libs
-opencv-python-headless
+opencv-python-headless==4.5.5.62
 labelbox[data]
