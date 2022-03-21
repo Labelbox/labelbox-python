@@ -123,6 +123,7 @@ def main():
     ]
     lb_model_run = lb_model.create_model_run(f"0.0.0")
     lb_model_run.upsert_labels(labels)
+
     print("Successfully created Model and ModelRun", lb_model_run.uid)
 
 

@@ -144,7 +144,7 @@ class TextClassificationPipeline(Pipeline):
         self.update_state(
             PipelineState.TRAINING_MODEL,
             model_run_id,
-            metadata={'endpoint_id': training_status.result['endpoint_id']})
+            metadata={'endpoint_id': deployment_status.result['endpoint_id']})
 
         inference_status = self.run_job(
             model_run_id,

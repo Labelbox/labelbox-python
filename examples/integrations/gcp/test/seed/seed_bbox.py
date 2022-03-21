@@ -66,6 +66,7 @@ annotations = list(NDJsonConverter.serialize(labels))
 
 job = LabelImport.create_from_objects(client, project.uid, str(uuid.uuid4()),
                                       annotations)
+
 print("Upload Errors:", job.errors)
 
 lb_model = client.create_model(name=f"{project.name}-model",
