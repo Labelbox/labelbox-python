@@ -622,7 +622,8 @@ class Project(DbObject, Updateable, Deletable):
         res['size'] = len(dr_ids)
         return Entity.Batch(self.client, res)
 
-    def _update_queue_mode(self, mode: "Project.QueueMode") -> "Project.QueueMode":
+    def _update_queue_mode(self,
+                           mode: "Project.QueueMode") -> "Project.QueueMode":
 
         if self.queue_mode() == mode:
             return mode
