@@ -1,5 +1,5 @@
 FROM python:3.9
-
+RUN apt-get update -y && apt-get install -y libgl1-mesa-glx
 ARG GCS_BUCKET
 ENV GCS_BUCKET=$GCS_BUCKET
 

@@ -18,8 +18,9 @@ logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
 
-async def run(json_data: Dict[str, Any], pipeline: PipelineName):
+async def run(json_data: Dict[str, Any]):
     try:
+        pipeline = json_data['pipeline']
         await run_in_threadpool(pipelines[pipeline].run, json_data)
     except Exception as e:
         pipelines[pipeline].update_state(PipelineState.FAILED,
@@ -46,28 +47,37 @@ async def model_run(request: Request,
             detail=
             "Error: computed_signature does not match signature provided in the headers"
         )
+
     data = json.loads(req.decode("utf8"))
+    logger.info(f"Training job request recieved. Params: {data}")
     validate_payload(data)
-    background_tasks.add_task(run, data, data['pipeline'])
+    background_tasks.add_task(run, data)
 
 
 def validate_payload(data: Dict[str, str]):
     valid_pipelines = list(pipelines.keys())
-    if 'pipeline' not in data:
+    if 'modelType' not in data:
         raise KeyError(
-            "Must provide `pipeline` key indicating which pipeline to run. "
+            "Must provide `modelType` key indicating which pipeline to run. "
             f"Should be one of: {valid_pipelines}")
-    if not (data['pipeline'] in list(pipelines.keys())):
+    if not (data['modelType'] in list(pipelines.keys())):
         raise ValueError(
-            f"Unkonwn pipeline `{data['pipeline']}`. Expected one of {valid_pipelines}"
+            f"Unkonwn pipeline `{data['modelType']}`. Expected one of {valid_pipelines}"
         )
-    if 'model_run_id' not in data:
-        raise KeyError("Must provide `model_run_id`")
+    data['pipeline'] = data['modelType']
+
+    if 'modelRunId' not in data:
+        raise KeyError("Must provide `modelRunId`")
+
+    data['model_run_id'] = data['modelRunId']
 
     if 'job_name' not in data:
         data[
             'job_name'] = f'{data["pipeline"]}_{str(datetime.datetime.now()).replace(" ", "_")}'
     pipelines[data['pipeline']].parse_args(data)
+
+
+"""{'modelId': '9db9981b-af8d-0d7a-bf31-26fd406b73e4', 'modelRunId': '9ddd190d-5d63-0fc4-0758-b87923c0b6ea', 'modelType': 'text_multi_classification'}"""
 
 
 @app.get("/ping")
