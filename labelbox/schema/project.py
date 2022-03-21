@@ -616,14 +616,13 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        res = self.client.execute(
-            query_str, params, experimental=True
-        )["project"][method]
+        res = self.client.execute(query_str, params,
+                                  experimental=True)["project"][method]
 
         res['size'] = len(dr_ids)
         return Entity.Batch(self.client, res)
 
-    def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
+    def _update_queue_mode(self, mode: "Project.QueueMode") -> "Project.QueueMode":
 
         if self.queue_mode() == mode:
             return mode
@@ -652,7 +651,7 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self) -> QueueMode:
+    def queue_mode(self) -> "Project.QueueMode":
         """Provides the status of if queue mode is enabled in the project."""
 
         query_str = """query %s($projectId: ID!) {
@@ -939,7 +938,7 @@ class LabelingParameterOverride(DbObject):
 
 LabelerPerformance = namedtuple(
     "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-                          "consensus average_benchmark_agreement last_activity_time")
+    "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
