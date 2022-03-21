@@ -77,9 +77,6 @@ def validate_payload(data: Dict[str, str]):
     pipelines[data['pipeline']].parse_args(data)
 
 
-"""{'modelId': '9db9981b-af8d-0d7a-bf31-26fd406b73e4', 'modelRunId': '9ddd190d-5d63-0fc4-0758-b87923c0b6ea', 'modelType': 'text_multi_classification'}"""
-
-
 @app.get("/ping")
 def health_check():
     return "pong"
