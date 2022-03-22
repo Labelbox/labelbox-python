@@ -2,6 +2,7 @@ import enum
 import json
 import logging
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,11 +36,6 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
-
-
-class QueueMode(enum.Enum):
-    Batch = "Batch"
-    Dataset = "Dataset"
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -89,9 +85,12 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    def update(self, **kwargs):
+    class QueueMode(enum.Enum):
+        Batch = "Batch"
+        Dataset = "Dataset"
 
-        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
+    def update(self, **kwargs):
+        mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
 
@@ -569,14 +568,69 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
+    def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
+        """Create a new batch for a project. Batches is in Beta and subject to change
+
+        Args:
+            name: a name for the batch, must be unique within a project
+            data_rows: Either a list of `DataRows` or Data Row ids
+            priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
+
+        """
+
+        # @TODO: make this automatic?
+        if self.queue_mode() != Project.QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
+
+        dr_ids = []
+        for dr in data_rows:
+            if isinstance(dr, Entity.DataRow):
+                dr_ids.append(dr.uid)
+            elif isinstance(dr, str):
+                dr_ids.append(dr)
+            else:
+                raise ValueError("You can DataRow ids or DataRow objects")
+
+        if len(dr_ids) > 25_000:
+            raise ValueError(
+                f"Batch exceeds max size, break into smaller batches")
+        if not len(dr_ids):
+            raise ValueError("You need at least one data row in a batch")
+
+        method = 'createBatch'
+        query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
+              project(where: {id: $projectId}) {
+                %s(input: $batchInput) {
+                  %s
+                }
+              }
+            }
+        """ % (method, method, query.results_query_part(Entity.Batch))
+
+        params = {
+            "projectId": self.uid,
+            "batchInput": {
+                "name": name,
+                "dataRowIds": dr_ids,
+                "priority": priority
+            }
+        }
+
+        res = self.client.execute(query_str, params,
+                                  experimental=True)["project"][method]
+
+        res['size'] = len(dr_ids)
+        return Entity.Batch(self.client, res)
+
+    def _update_queue_mode(self,
+                           mode: "Project.QueueMode") -> "Project.QueueMode":
 
         if self.queue_mode() == mode:
             return mode
 
-        if mode == QueueMode.Batch:
+        if mode == Project.QueueMode.Batch:
             status = "ENABLED"
-        elif mode == QueueMode.Dataset:
+        elif mode == Project.QueueMode.Dataset:
             status = "DISABLED"
         else:
             raise ValueError(
@@ -598,7 +652,7 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self) -> QueueMode:
+    def queue_mode(self) -> "Project.QueueMode":
         """Provides the status of if queue mode is enabled in the project."""
 
         query_str = """query %s($projectId: ID!) {
@@ -612,9 +666,9 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
 
         if status == "ENABLED":
-            return QueueMode.Batch
+            return Project.QueueMode.Batch
         elif status == "DISABLED":
-            return QueueMode.Dataset
+            return Project.QueueMode.Dataset
         else:
             raise ValueError("Status not known")
 
