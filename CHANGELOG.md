@@ -9,8 +9,7 @@
 * `client.create_project` type hint added for its return type
 
 ## Updated
-
-- Deprecation: Removed batch MVP code
+* Removed batch MVP code
 
 # Version 3.16.0 (2022-03-08)
 ## Added
