@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.16.0 (2022-03-22)
+# Version 3.17.0 (2022-03-22)
 ## Added
 * Create batches from the SDK (Beta). Learn more about [batches](https://docs.labelbox.com/docs/batches)
 * Support for precision and recall metrics on Entity annotations
