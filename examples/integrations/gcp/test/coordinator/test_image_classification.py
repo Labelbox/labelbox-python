@@ -12,8 +12,8 @@ model_run_id = "9da8885e-1d6c-0fc6-765b-c05c5166a70e"
 secret = b'test_secret'
 
 payload = json.dumps({
-    'model_run_id': model_run_id,
-    'pipeline': 'image_single_classification'
+    'modelRunId': model_run_id,
+    'modelType': 'image_single_classification'
 })
 signature = "sha1=" + hmac.new(
     secret, msg=payload.encode(), digestmod=hashlib.sha1).hexdigest()

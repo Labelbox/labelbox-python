@@ -30,7 +30,7 @@ async def run(json_data: Dict[str, Any]):
 
 @app.get("/models")
 async def models():
-    return list(pipelines.keys())
+    return {k: {} for k in pipelines.keys()}
 
 
 @app.post("/model_run")

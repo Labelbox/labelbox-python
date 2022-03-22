@@ -11,7 +11,7 @@ This script simulates a webhook event.
 model_run_id = "9da8f643-11ea-0de5-67cf-6d9e33bb03be"
 secret = b'test_secret'
 
-payload = json.dumps({'model_run_id': model_run_id, 'pipeline': 'ner'})
+payload = json.dumps({'modelRunId': model_run_id, 'modelType': 'ner'})
 signature = "sha1=" + hmac.new(
     secret, msg=payload.encode(), digestmod=hashlib.sha1).hexdigest()
 res = requests.post("http://localhost:8000/model_run",
