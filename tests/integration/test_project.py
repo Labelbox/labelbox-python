@@ -5,7 +5,6 @@ import requests
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
-from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -181,6 +180,7 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    assert configured_project.queue_mode() == QueueMode.Dataset
-    configured_project.update(queue_mode=QueueMode.Batch)
-    assert configured_project.queue_mode() == QueueMode.Batch
+    assert configured_project.queue_mode(
+    ) == configured_project.QueueMode.Dataset
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    assert configured_project.queue_mode() == configured_project.QueueMode.Batch

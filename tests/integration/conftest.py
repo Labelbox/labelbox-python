@@ -1,11 +1,8 @@
 import os
 import re
-import uuid
 import time
-from datetime import datetime
+import uuid
 from enum import Enum
-from random import randint
-from string import ascii_letters
 from types import SimpleNamespace
 
 import pytest
@@ -13,12 +10,12 @@ import requests
 
 from labelbox import Client
 from labelbox import LabelingFrontend
+from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
-from labelbox import OntologyBuilder, Tool, Option, Classification
-from labelbox.schema.annotation_import import LabelImport
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -256,7 +253,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
     ])
     project.setup(editor, ontology_builder.asdict())
-    #TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
+    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
     time.sleep(2)
 
     ontology = ontology_builder.from_project(project)
