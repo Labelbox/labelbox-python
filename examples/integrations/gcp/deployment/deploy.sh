@@ -2,7 +2,7 @@ set -e
 
 
 # Load secrets
-python3 create_secrets.py
+python3 deployments/create_secrets.py
 
 
 # Build containers
