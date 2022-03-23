@@ -29,7 +29,7 @@ Deploy the coordinator service on port 8000
 2. Make sure python3 is in your path and `google-cloud-secret-manager` is installed. Run the below code. If it throws an error then you need to install `google-cloud-secret-manager` with pip.
     - python3 -c "from google.cloud import secretmanager"
 3. Deploy the service
-    - To the cloud: `cd deployments && ./deploy.sh`
+    - To the cloud: `./deployments/deploy.sh`
     - Locally: `./run.sh`
 
 
