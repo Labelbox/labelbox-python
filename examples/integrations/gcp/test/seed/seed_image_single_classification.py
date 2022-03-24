@@ -41,7 +41,7 @@ def setup_project(client):
 
 ds = tfds.load('cats_vs_dogs', split='train')
 annotations = []
-max_examples = 10  #350
+max_examples = 350
 project, dataset, feature_schema_lookup = setup_project(client)
 for idx, example in tqdm(enumerate(ds.as_numpy_iterator())):
     if idx > max_examples:

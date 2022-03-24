@@ -12,9 +12,10 @@ model_run_id = "9da8df46-8c33-024b-4ccb-60e23415c9b3"
 secret = b'test_secret'
 
 payload = json.dumps({
-    'model_run_id': model_run_id,
-    'pipeline': 'text_multi_classification'
+    'modelRunId': model_run_id,
+    'modelType': 'text_multi_classification'
 })
+
 signature = "sha1=" + hmac.new(
     secret, msg=payload.encode(), digestmod=hashlib.sha1).hexdigest()
 res = requests.post("http://localhost:8000/model_run",

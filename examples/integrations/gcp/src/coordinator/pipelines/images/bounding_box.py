@@ -68,6 +68,7 @@ class BoundingBoxTraining(Job):
             "labels.aiplatform.googleapis.com/ml_use=validation",
             test_filter_split="labels.aiplatform.googleapis.com/ml_use=test")
         logger.info("model id: %s" % model.name)
+
         return JobStatus(JobState.SUCCESS,
                          result={
                              'model_id': model.name,
@@ -216,14 +217,15 @@ class BoundingBoxPipeline(Pipeline):
                 training_status.result['model'], job_name))
         if deployment_status is None:
             return
+
         self.update_state(
             PipelineState.TRAINING_MODEL,
             model_run_id,
-            metadata={'endpoint_id': training_status.result['endpoint_id']})
+            metadata={'endpoint_id': deployment_status.result['endpoint_id']})
 
         inference_status = self.run_job(
-            model_run_id,
-            self.inference.run(etl_status.result, model_run_id,
-                               training_status.result['model'], job_name))
+            model_run_id, lambda: self.inference.run(
+                etl_status.result, model_run_id, training_status.result[
+                    'model'], job_name))
         if inference_status is not None:
             self.update_state(PipelineState.COMPLETE, model_run_id)

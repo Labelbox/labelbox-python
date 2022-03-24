@@ -2,7 +2,7 @@ set -e
 
 
 # Load secrets
-python3 create_secrets.py
+python3 deployments/create_secrets.py
 
 
 # Build containers
@@ -25,4 +25,8 @@ gcloud beta compute instances \
     --service-account ${GOOGLE_SERVICE_ACCOUNT} \
     --scopes "https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/devstorage.read_write"
 
+DEPLOYMENT_IP=$(gcloud compute instances describe labelbox-coordinator --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 echo "View deployment here: https://console.cloud.google.com/compute/instances?project=${GOOGLE_PROJECT}"
+echo "Make requests to $DEPLOYMENT_IP:8000"
+
+

@@ -1,8 +1,7 @@
+opencv-python-headless==4.5.5.62
 fastapi[all]
-docker
 google-cloud-storage
 google-cloud-aiplatform
 google-cloud-secret-manager
-opencv-python-headless
 labelbox[data]
 ndjson

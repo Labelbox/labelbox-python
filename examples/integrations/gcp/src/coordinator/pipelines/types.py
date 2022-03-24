@@ -175,6 +175,7 @@ class InferenceJob(Job):
         return LBV1Converter.deserialize(contents)
 
     def batch_predict(self, etl_file, model, job_name, model_type):
+
         bucket_name, key = self.parse_uri(etl_file)
         source_uri = self.build_inference_file(bucket_name, key)
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
@@ -190,6 +191,7 @@ class InferenceJob(Job):
         while batch_prediction_job.state == aiplatform.compat.types.job_state.JobState.JOB_STATE_RUNNING:
             time.sleep(30)
         batch_prediction_job.wait()
+
         return batch_prediction_job
 
 
@@ -252,6 +254,10 @@ class ClassificationInferenceJob(InferenceJob):
         for (ground_truth, prediction) in pairs.values():
             for annotation in prediction.annotations:
                 self.add_name_to_annotation(annotation, options)
+
+            for annotation in ground_truth.annotations:
+                self.add_name_to_annotation(annotation, options)
+
             prediction.annotations.extend(
                 feature_confusion_matrix_metric(ground_truth.annotations,
                                                 prediction.annotations))
