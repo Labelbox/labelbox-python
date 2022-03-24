@@ -451,7 +451,7 @@ class Client:
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
-
+ 
         Args:
             db_object_type (type): DbObject subclass.
             where (Comparison, LogicalOperation or None): The `where` clause
