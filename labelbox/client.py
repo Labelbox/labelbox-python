@@ -404,7 +404,7 @@ class Client:
         else:
             return db_object_type(self, res)
 
-    def get_project(self, project_id) -> Project:
+    def get_project(self, project_id):
         """ Gets a single Project with the given ID.
 
             >>> project = client.get_project("<project_id>")
@@ -451,7 +451,7 @@ class Client:
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
         """ Fetches all the objects of the given type the user has access to.
- 
+
         Args:
             db_object_type (type): DbObject subclass.
             where (Comparison, LogicalOperation or None): The `where` clause
