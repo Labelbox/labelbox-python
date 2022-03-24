@@ -29,7 +29,15 @@ async def run(json_data: Dict[str, Any]):
 
 
 @app.get("/models")
-async def models():
+async def models(X_Hub_Signature: str = Header(None)):
+    computed_signature = hmac.new(WEBHOOK_SECRET.encode(),
+                                  digestmod=hashlib.sha1).hexdigest()
+    if X_Hub_Signature != "sha1=" + computed_signature:
+        raise HTTPException(
+            status_code=401,
+            detail=
+            "Error: computed_signature does not match signature provided in the headers"
+        )
     return {k: {} for k in pipelines.keys()}
 
 
@@ -43,7 +51,7 @@ async def model_run(request: Request,
                                   digestmod=hashlib.sha1).hexdigest()
     if X_Hub_Signature != "sha1=" + computed_signature:
         raise HTTPException(
-            status_code=500,
+            status_code=401,
             detail=
             "Error: computed_signature does not match signature provided in the headers"
         )
