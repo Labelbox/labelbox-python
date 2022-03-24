@@ -84,4 +84,4 @@ jobs:
 
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
         run: |
-          tox -e py -- -svvx
+          tox -e py -- -svv --reruns 3
