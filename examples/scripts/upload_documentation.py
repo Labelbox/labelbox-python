@@ -28,11 +28,16 @@ def upload_doc(path, section):
     body, resources = exporter.from_notebook_node(nb)
 
     payload = {
-        "hidden": True,
-        "title": f'{section["slug"]}-' + title.replace(' ', '-'),
-        "category": CATEGORY_ID,
-        "parentDoc": section['id'],
-        "body": body
+        "hidden":
+            True,
+        "title":
+            f'{section["slug"]}-' + title.replace(' ', '-').replace("(", ''),
+        "category":
+            CATEGORY_ID,
+        "parentDoc":
+            section['id'],
+        "body":
+            body
     }
 
     headers = {
@@ -53,7 +58,7 @@ def make_sections(sections):
         payload = {
             "hidden": True,
             "order": section['order'],
-            "title": section['title'].replace(' ', '-') + '-nb-section',
+            "title": 'section-' + section['dir'] + '-notebooks',
             "category": CATEGORY_ID
         }
         headers = {

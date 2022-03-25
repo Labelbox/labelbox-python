@@ -6,6 +6,8 @@ from labelbox.data.annotation_types import ClassificationAnnotation, ObjectAnnot
 from labelbox.data.annotation_types import Polygon, Point, Rectangle, Mask, MaskData, Line, Radio, Text, Checklist, ClassificationAnswer
 import numpy as np
 
+from labelbox.data.annotation_types.ner import TextEntity
+
 
 class NameSpace(SimpleNamespace):
 
@@ -82,6 +84,13 @@ def get_checklist(name, answer_names):
                                         ClassificationAnswer(name=answer_name)
                                         for answer_name in answer_names
                                     ]))
+
+
+def get_ner(name, start, end, subclasses=None):
+    return ObjectAnnotation(
+        name=name,
+        value=TextEntity(start=start, end=end),
+        classifications=[] if subclasses is None else subclasses)
 
 
 def get_object_pairs(tool_fn, **kwargs):
@@ -324,6 +333,11 @@ def line_pairs():
 @pytest.fixture
 def point_pairs():
     return get_object_pairs(get_point, x=0, y=0)
+
+
+@pytest.fixture
+def ner_pairs():
+    return get_object_pairs(get_ner, start=0, end=10)
 
 
 @pytest.fixture()

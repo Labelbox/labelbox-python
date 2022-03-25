@@ -1,4 +1,39 @@
 # Changelog
+
+# Version 3.17.1 (2022-03-24)
+## Updated
+* Remove unused rasterio dependency
+
+# Version 3.17.0 (2022-03-22)
+## Added
+* Create batches from the SDK (Beta). Learn more about [batches](https://docs.labelbox.com/docs/batches)
+* Support for precision and recall metrics on Entity annotations
+
+## Fix
+* `client.create_project` type hint added for its return type
+
+## Updated
+* Removed batch MVP code
+
+# Version 3.16.0 (2022-03-08)
+## Added
+* Ability to fetch a model run with `client.get_model_run()`
+* Ability to fetch labels from a model run with `model_run.export_labels()`
+    - Note: this is only Experimental. To use, client param `enable_experimental` should
+    be set to true 
+* Ability to delete an attachment
+
+## Fix
+* Logger level is no longer set to INFO
+
+## Updated
+* Deprecation: Creating Dropdowns will no longer be supported after 2022-03-31
+    - This includes creating/adding Dropdowns to an ontology
+    - This includes creating/adding Dropdown Annotation Type
+    - For the same functionality, use Radio 
+    - This will not affect existing Dropdowns
+
+# Changelog
 # Version 3.15.0 (2022-02-28) 
 ## Added 
 * Extras folder which contains useful applications using the sdk

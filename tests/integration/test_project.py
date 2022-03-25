@@ -5,7 +5,6 @@ import requests
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
-from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -43,6 +42,10 @@ def test_project(client, rand_gen):
     assert set(final) == set(before)
 
 
+@pytest.mark.skip(
+    reason="this will fail if run multiple times, limit is defaulted to 3 per org"
+    "add this back in when either all test orgs have unlimited, or we delete all tags befoer running"
+)
 def test_update_project_resource_tags(client, rand_gen):
     before = list(client.get_projects())
     for o in before:
@@ -159,7 +162,7 @@ def test_html_instructions(configured_project):
 
 
 def test_same_ontology_after_instructions(
-        client, configured_project_with_complex_ontology):
+        configured_project_with_complex_ontology):
     project, _ = configured_project_with_complex_ontology
     initial_ontology = project.ontology().normalized
     project.upsert_instructions('tests/data/assets/loremipsum.pdf')
@@ -177,6 +180,7 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    assert configured_project.queue_mode() == QueueMode.Dataset
-    configured_project.update(queue_mode=QueueMode.Batch)
-    assert configured_project.queue_mode() == QueueMode.Batch
+    assert configured_project.queue_mode(
+    ) == configured_project.QueueMode.Dataset
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    assert configured_project.queue_mode() == configured_project.QueueMode.Batch

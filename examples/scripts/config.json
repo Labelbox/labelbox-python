@@ -1,7 +1,7 @@
 [
   {
     "dir": "basics",
-    "title": "Basics",
+    "title": "Getting started",
     "order": 0
   },
   {
@@ -16,7 +16,7 @@
   },
   {
     "dir": "annotation_import",
-    "title": "Annotation import",
+    "title": "Annotation import (Ground Truth & MAL)",
     "order": 3
   },
   {
