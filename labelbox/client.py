@@ -204,7 +204,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"]["exception"].get("status")
+            return error["extensions"].get("code")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -404,7 +404,7 @@ class Client:
         else:
             return db_object_type(self, res)
 
-    def get_project(self, project_id) -> Project:
+    def get_project(self, project_id):
         """ Gets a single Project with the given ID.
 
             >>> project = client.get_project("<project_id>")

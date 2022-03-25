@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.17.1 (2022-03-24)
+## Updated
+* Remove unused rasterio dependency
+
 # Version 3.17.0 (2022-03-22)
 ## Added
 * Create batches from the SDK (Beta). Learn more about [batches](https://docs.labelbox.com/docs/batches)
