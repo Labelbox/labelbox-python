@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.17.1 (2022-03-24)
+# Version 3.17.1 (2022-03-25)
 ## Updated
 * Remove unused rasterio dependency
 
