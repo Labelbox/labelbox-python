@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.17.2 (2022-03-28)
+## Fix
+* Project.upsert_instructions now works properly for new projects.
+
 # Version 3.17.1 (2022-03-25)
 ## Updated
 * Remove unused rasterio dependency
