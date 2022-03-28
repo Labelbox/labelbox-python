@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 import requests
@@ -137,7 +138,7 @@ def test_attach_instructions(client, project):
     project.setup(editor, empty_ontology)
 
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
-
+    time.sleep(3)
     assert project.ontology().normalized['projectInstructions'] is not None
 
     with pytest.raises(ValueError) as exc_info:
