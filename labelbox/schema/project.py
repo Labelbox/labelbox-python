@@ -415,7 +415,6 @@ class Project(DbObject, Updateable, Deletable):
             )
 
         frontend = self.labeling_frontend()
-        frontendId = frontend.uid
 
         if frontend.name != "Editor":
             logger.warning(
@@ -428,35 +427,25 @@ class Project(DbObject, Updateable, Deletable):
                 f"instructions_file must be a pdf or html file. Found {instructions_file}"
             )
 
-        lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
-        customization_options = self.ontology().normalized
-        customization_options['projectInstructions'] = instructions_url
-        option_id = lfo.uid
 
-        self.client.execute(
-            """mutation UpdateFrontendWithExistingOptionsPyApi (
-                    $frontendId: ID!,
-                    $optionsId: ID!,
-                    $name: String!,
-                    $description: String!,
-                    $customizationOptions: String!
+        query_str = """mutation setprojectinsructionsPyApi($projectId: ID!, $instructions_url: String!) {
+                setProjectInstructions(
+                    where: {id: $projectId},
+                    data: {instructionsUrl: $instructions_url}
                 ) {
-                    updateLabelingFrontend(
-                        where: {id: $frontendId},
-                        data: {name: $name, description: $description}
-                    ) {id}
-                    updateLabelingFrontendOptions(
-                        where: {id: $optionsId},
-                        data: {customizationOptions: $customizationOptions}
-                    ) {id}
-                }""", {
-                "frontendId": frontendId,
-                "optionsId": option_id,
-                "name": frontend.name,
-                "description": "Video, image, and text annotation",
-                "customizationOptions": json.dumps(customization_options)
-            })
+                    id
+                    ontology {
+                    id
+                    options
+                    }
+                }
+            }"""
+
+        self.client.execute(query_str, {
+            'projectId': self.uid,
+            'instructions_url': instructions_url
+        })
 
     def labeler_performance(self) -> PaginatedCollection:
         """ Returns the labeler performances for this Project.
