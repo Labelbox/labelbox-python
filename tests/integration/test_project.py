@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 import requests
@@ -137,9 +138,8 @@ def test_attach_instructions(client, project):
     project.setup(editor, empty_ontology)
 
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
-    assert json.loads(
-        list(project.labeling_frontend_options())
-        [-1].customization_options).get('projectInstructions') is not None
+    time.sleep(3)
+    assert project.ontology().normalized['projectInstructions'] is not None
 
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
