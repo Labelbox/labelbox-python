@@ -3,15 +3,18 @@ from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union
 import base64
 import numpy as np
+from py import process
 
 from pydantic import BaseModel
 from PIL import Image
+
+from labelbox.data.annotation_types.data.video import VideoData
 
 from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoObjectAnnotation
 from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation
 
@@ -118,6 +121,72 @@ class NDRectangle(NDBaseObject):
                    classifications=classifications)
 
 
+class NDFrameRectangle(BaseModel):
+    frame: int
+    bbox: Bbox
+
+
+class NDSegment(BaseModel):
+    keyframes: List[NDFrameRectangle]
+
+
+class NDSegments(NDBaseObject):
+    segments: List[NDSegment]
+
+    # uuid: str
+    # schema_id: str
+
+    # def process_segment(self, segment: List[VideoObjectAnnotation]):
+    #     """
+    #     We only care about the annotation.value and frame once we make it here
+    #     """
+    #     # for annotation in segment:
+    #     return [{
+    #         "frame":
+    #             annotation.frame,
+    #         "bbox":
+    #             Bbox(top=annotation.value.start.y,
+    #                  left=annotation.value.start.x,
+    #                  height=annotation.value.end.y - annotation.value.start.y,
+    #                  width=annotation.value.end.x - annotation.value.start.x)
+    #     } for annotation in segment]
+
+    def to_common(self):
+        pass
+
+    @classmethod
+    def from_common(cls, segments: List[VideoObjectAnnotation], data: VideoData,
+                    feature_schema_id: Cuid, extra: Dict[str,
+                                                         Any]) -> "NDSegments":
+        print(f"\nWE MADE IT HERE TO SEGMENTS\n")
+        # for segment in segments:
+        # print("\nSEGMENT\n", segment)
+        # processed_segment = cls.process_segment(cls, segment)
+
+        # segments = [{
+        #     "keyframes": [{
+        #         "frame": 3,
+        #         "bbox": Bbox(top=0, left=0, height=1, width=1)
+        #     }]
+        # }, {
+        #     "keyframes": [{
+        #         "frame": 5,
+        #         "bbox": Bbox(top=0, left=0, height=3, width=5)
+        #     }]
+        # }]
+
+        segments = [{"keyframes": segment} for segment in segments]
+
+        print("wew\n", segments[0], "sss\n")
+
+        a = cls(segments=segments,
+                dataRow=DataRow(id=data.uid),
+                schema_id=feature_schema_id,
+                uuid=extra.get('uuid'))
+        print("A\n", a, "\nZ")
+        return a
+
+
 class _URIMask(BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
@@ -211,6 +280,21 @@ class NDObject:
         cls, annotation: ObjectAnnotation, data: Union[ImageData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
+
+        #if it is video segments
+        if (obj == NDSegments):
+            print("hello i am ndsegment")
+            #look into segment of segments
+            #look into annotations of segment
+            #check and validate that there are no subclasses
+            #new method for processing segments ?
+
+            return obj.from_common(
+                annotation,
+                data,
+                feature_schema_id=annotation[0][0].feature_schema_id,
+                extra=annotation[0][0].extra)
+
         subclasses = [
             NDSubclassification.from_common(annot)
             for annot in annotation.classifications
@@ -221,19 +305,31 @@ class NDObject:
 
     @staticmethod
     def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":
-        result = {
-            Line: NDLine,
-            Point: NDPoint,
-            Polygon: NDPolygon,
-            Rectangle: NDRectangle,
-            Mask: NDMask,
-            TextEntity: NDTextEntity
-        }.get(type(annotation.value))
+        if isinstance(annotation, list):
+            result = NDSegments
+        else:
+            result = {
+                Line: NDLine,
+                Point: NDPoint,
+                Polygon: NDPolygon,
+                Rectangle: NDRectangle,
+                Mask: NDMask,
+                TextEntity: NDTextEntity
+            }.get(type(annotation.value))
         if result is None:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
         return result
+
+    # @staticmethod
+    # def process_segments(segments: List[List[VideoObjectAnnotation]]):
+    #     for segment in segments:
+    #         for annotation in segment:
+    #             subclasses = [
+    #                 NDSubclassification.from_common(annot)
+    #                 for annot in annotation.classifications
+    #             ]
 
 
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,

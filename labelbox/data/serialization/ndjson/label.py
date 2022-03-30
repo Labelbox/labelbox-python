@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from pydantic import BaseModel
 
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation, VideoObjectAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
@@ -33,6 +33,7 @@ class NDLabel(BaseModel):
     def from_common(cls,
                     data: LabelCollection) -> Generator["NDLabel", None, None]:
         for label in data:
+            # print(f"label in data:{label}")
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
 
@@ -45,8 +46,10 @@ class NDLabel(BaseModel):
         for data_row_id, annotations in grouped_annotations.items():
             annots = []
             for annotation in annotations:
+
                 if isinstance(annotation, NDObjectType.__args__):
                     annots.append(NDObject.to_common(annotation))
+                #TODO: have a check on if the return type needs to extend or not
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
                 elif isinstance(annotation,
@@ -65,7 +68,7 @@ class NDLabel(BaseModel):
         types = {type(annotation) for annotation in annotations}
         if TextEntity in types:
             return TextData
-        elif VideoClassificationAnnotation in types:
+        elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
             return VideoData
         else:
             return ImageData
@@ -83,26 +86,67 @@ class NDLabel(BaseModel):
     def _create_video_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
+
         video_annotations = defaultdict(list)
         for annot in label.annotations:
-            if isinstance(annot, VideoClassificationAnnotation):
+            if isinstance(
+                    annot,
+                (VideoClassificationAnnotation, VideoObjectAnnotation)):
                 video_annotations[annot.feature_schema_id].append(annot)
 
+        #break this into two groups, classifications, and then objects
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(
                 sorted([annotation.frame for annotation in annotation_group]))
-            annotation = annotation_group[0]
-            frames_data = []
-            for frames in consecutive_frames:
-                frames_data.append({'start': frames[0], 'end': frames[-1]})
-            annotation.extra.update({'frames': frames_data})
-            yield NDClassification.from_common(annotation, label.data)
+
+            if isinstance(annotation_group[0], VideoClassificationAnnotation):
+                annotation = annotation_group[0]
+                frames_data = []
+                for frames in consecutive_frames:
+                    frames_data.append({'start': frames[0], 'end': frames[-1]})
+                annotation.extra.update({'frames': frames_data})
+                yield NDClassification.from_common(annotation, label.data)
+
+            elif isinstance(annotation_group[0], VideoObjectAnnotation):
+                segments = []
+                for start_frame, end_frame in consecutive_frames:
+                    segment = []
+                    for annotation in annotation_group:
+                        if annotation.keyframe and start_frame <= annotation.frame <= end_frame:
+                            segment.append(annotation)
+                    segments.append(segment)
+
+                print(segments[0], "\n")
+                print(segments[1], "\n")
+                print(consecutive_frames)
+                yield NDObject.from_common(segments, label.data)
+                # segments = []
+                # seg_frames = []
+                # for cframes in consecutive_frames:
+                #     seg_frames.append(cframes[0])
+                #     seg_frames.append(cframes[1])
+                # print(seg_frames)
+                # for annotation in annotation_group:
+                #     if annotation.frame in seg_frames:
+                #         segments.append(annotation)
+                #     # if annotation.keyframe:
+                # #         segments.append(annotation)
+                # # print(consecutive_frames)
+                # #TODO: current issue is that the way the code is written doesn't account for
+                # #which frames are consecutive. maybe we should just have list of segments
+                # annotations = []
+                # for annotation in segments:
+                #     annotations.append(
+                #         NDObject.from_common(annotation, label.data))
+                # yield annotations[0]
+                # yield {}
 
     @classmethod
     def _create_non_video_annotations(cls, label: Label):
         non_video_annotations = [
             annot for annot in label.annotations
-            if not isinstance(annot, VideoClassificationAnnotation)
+            if not isinstance(annot, (VideoClassificationAnnotation,
+                                      VideoObjectAnnotation))
         ]
         for annotation in non_video_annotations:
             if isinstance(annotation, ClassificationAnnotation):
