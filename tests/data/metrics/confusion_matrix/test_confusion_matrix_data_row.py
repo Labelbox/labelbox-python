@@ -9,7 +9,8 @@ from labelbox.data.metrics.confusion_matrix.confusion_matrix import confusion_ma
     fixture_ref('rectangle_pairs'),
     fixture_ref('mask_pairs'),
     fixture_ref('line_pairs'),
-    fixture_ref('point_pairs')
+    fixture_ref('point_pairs'),
+    fixture_ref('ner_pairs')
 ])
 def test_overlapping_objects(tool_examples):
     for example in tool_examples:

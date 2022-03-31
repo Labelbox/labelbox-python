@@ -25,6 +25,7 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
+from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, Tool, Classification
 from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
@@ -203,7 +204,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"]["exception"].get("status")
+            return error["extensions"].get("code")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -906,3 +907,15 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
+
+    def get_model_run(self, model_run_id: str) -> ModelRun:
+        """ Gets a single ModelRun with the given ID.
+
+            >>> model_run = client.get_model_run("<model_run_id>")
+
+        Args:
+            model_run_id (str): Unique ID of the ModelRun.
+        Returns:
+            A ModelRun object.
+        """
+        return self._get_single(Entity.ModelRun, model_run_id)
