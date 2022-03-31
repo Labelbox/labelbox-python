@@ -157,7 +157,7 @@ class Classification:
                    options=[Option.from_dict(o) for o in dictionary["options"]],
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
-                   scope=dictionary.get("scope", cls.Scope.GLOBAL))
+                   scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \

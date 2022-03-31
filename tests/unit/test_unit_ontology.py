@@ -46,6 +46,8 @@ _SAMPLE_ONTOLOGY = {
                 "nested classification",
             "type":
                 "radio",
+            "scope":
+                "global",
             "options": [{
                 "schemaNodeId":
                     None,
@@ -62,6 +64,7 @@ _SAMPLE_ONTOLOGY = {
                     "instructions": "nested nested text",
                     "name": "nested nested text",
                     "type": "text",
+                    "scope": "global",
                     "options": []
                 }]
             }, {
@@ -78,6 +81,7 @@ _SAMPLE_ONTOLOGY = {
             "instructions": "nested text",
             "name": "nested text",
             "type": "text",
+            "scope": "global",
             "options": []
         }]
     }, {
@@ -118,6 +122,8 @@ _SAMPLE_ONTOLOGY = {
             "This is a question.",
         "type":
             "radio",
+        "scope":
+            "global",
         "options": [{
             "schemaNodeId": None,
             "featureSchemaId": None,
@@ -244,5 +250,6 @@ def test_option_add_option() -> None:
 
 
 def test_ontology_asdict() -> None:
+    print(OntologyBuilder.from_dict(_SAMPLE_ONTOLOGY))
     assert OntologyBuilder.from_dict(
         _SAMPLE_ONTOLOGY).asdict() == _SAMPLE_ONTOLOGY
