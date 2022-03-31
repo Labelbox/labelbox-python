@@ -12,14 +12,18 @@ import requests
 from pydantic import BaseModel, validator
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
-                    Type, Set)
+                    Type, Set, TYPE_CHECKING)
 
-import labelbox
+from labelbox import exceptions as lb_exceptions
+from labelbox.orm.model import Entity
 from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.enums import BulkImportRequestState
+
+if TYPE_CHECKING:
+    from labelbox import Project
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
@@ -60,34 +64,18 @@ def _make_request_data(project_id: str, name: str, content_length: int,
     }
 
 
-# TODO(gszpak): move it to client.py
 def _send_create_file_command(
         client, request_data: dict, file_name: str,
         file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
-    response = requests.post(
-        client.endpoint,
-        headers={"authorization": "Bearer %s" % client.api_key},
-        data=request_data,
-        files={file_name: file_data})
 
-    try:
-        response_json = response.json()
-    except ValueError:
-        raise labelbox.exceptions.LabelboxError(
-            "Failed to parse response as JSON: %s" % response.text)
+    response = client.execute(data=request_data, files={file_name: file_data})
 
-    response_data = response_json.get("data", None)
-    if response_data is None:
-        raise labelbox.exceptions.LabelboxError(
-            "Failed to upload, message: %s" % response_json.get("errors", None))
-
-    if not response_data.get("createBulkImportRequest", None):
-        raise labelbox.exceptions.LabelboxError(
+    if not response.get("createBulkImportRequest", None):
+        raise lb_exceptions.LabelboxError(
             "Failed to create BulkImportRequest, message: %s" %
-            response_json.get("errors", None) or
-            response_data.get("error", None))
+            response.get("errors", None) or response.get("error", None))
 
-    return response_data
+    return response
 
 
 class BulkImportRequest(DbObject):
@@ -208,9 +196,8 @@ class BulkImportRequest(DbObject):
             self.__exponential_backoff_refresh()
 
     @backoff.on_exception(
-        backoff.expo,
-        (labelbox.exceptions.ApiLimitError, labelbox.exceptions.TimeoutError,
-         labelbox.exceptions.NetworkError),
+        backoff.expo, (lb_exceptions.ApiLimitError, lb_exceptions.TimeoutError,
+                       lb_exceptions.NetworkError),
         max_tries=10,
         jitter=None)
     def __exponential_backoff_refresh(self) -> None:
@@ -403,7 +390,7 @@ class BulkImportRequest(DbObject):
 
 
 def _validate_ndjson(lines: Iterable[Dict[str, Any]],
-                     project: "labelbox.Project") -> None:
+                     project: "Project") -> None:
     """
     Client side validation of an ndjson object.
 
@@ -429,12 +416,12 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
             annotation.validate_instance(feature_schemas)
             uuid = str(annotation.uuid)
             if uuid in uids:
-                raise labelbox.exceptions.UuidError(
+                raise lb_exceptions.UuidError(
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
             uids.add(uuid)
         except (pydantic.ValidationError, ValueError, TypeError, KeyError) as e:
-            raise labelbox.exceptions.MALValidationError(
+            raise lb_exceptions.MALValidationError(
                 f"Invalid NDJson on line {idx}") from e
 
 
@@ -781,33 +768,60 @@ class NDTextEntity(NDBaseTool):
         return v
 
 
-class MaskFeatures(BaseModel):
+class RLEMaskFeatures(BaseModel):
+    counts: List[int]
+    size: List[int]
+
+    @validator('counts')
+    def validate_counts(cls, counts):
+        if not all([count >= 0 for count in counts]):
+            raise ValueError(
+                "Found negative value for counts. They should all be zero or positive"
+            )
+        return counts
+
+    @validator('size')
+    def validate_size(cls, size):
+        if len(size) != 2:
+            raise ValueError(
+                f"Mask `size` should have two ints representing height and with. Found : {size}"
+            )
+        if not all([count > 0 for count in size]):
+            raise ValueError(
+                f"Mask `size` should be a postitive int. Found : {size}")
+        return size
+
+
+class PNGMaskFeatures(BaseModel):
+    # base64 encoded png bytes
+    png: str
+
+
+class URIMaskFeatures(BaseModel):
     instanceURI: str
     colorRGB: Union[List[int], Tuple[int, int, int]]
+
+    @validator('colorRGB')
+    def validate_color(cls, colorRGB):
+        #Does the dtype matter? Can it be a float?
+        if not isinstance(colorRGB, (tuple, list)):
+            raise ValueError(
+                f"Received color that is not a list or tuple. Found : {colorRGB}"
+            )
+        elif len(colorRGB) != 3:
+            raise ValueError(
+                f"Must provide RGB values for segmentation colors. Found : {colorRGB}"
+            )
+        elif not all([0 <= color <= 255 for color in colorRGB]):
+            raise ValueError(
+                f"All rgb colors must be between 0 and 255. Found : {colorRGB}")
+        return colorRGB
 
 
 class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
-    mask: MaskFeatures = pydantic.Field(determinant=True)
-
-    @validator('mask')
-    def is_valid_mask(cls, v):
-        if isinstance(v, BaseModel):
-            v = v.dict()
-
-        colors = v['colorRGB']
-        #Does the dtype matter? Can it be a float?
-        if not isinstance(colors, (tuple, list)):
-            raise ValueError(
-                f"Received color that is not a list or tuple. Found : {colors}")
-        elif len(colors) != 3:
-            raise ValueError(
-                f"Must provide RGB values for segmentation colors. Found : {colors}"
-            )
-        elif not all([0 <= color <= 255 for color in colors]):
-            raise ValueError(
-                f"All rgb colors must be between 0 and 255. Found : {colors}")
-        return v
+    mask: Union[URIMaskFeatures, PNGMaskFeatures,
+                RLEMaskFeatures] = pydantic.Field(determinant=True)
 
 
 #A union with custom construction logic to improve error messages

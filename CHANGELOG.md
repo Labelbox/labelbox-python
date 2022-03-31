@@ -1,12 +1,112 @@
 # Changelog
 
-## Deprecation Notice
-| Name                                  | Replacement                            | Removed After |
-| ------------------------------------- | -------------------------------------  | ------------- |
-| `ModelRun.delete_annotation_groups()` | `ModelRun.delete_model_run_data_rows()`| 3.9           |
-| `ModelRun.annotation_groups()`        | `ModelRun.model_run_data_rows()`       | 3.9           |
-| `DataRowMetadataSchema.id`            | `DataRowMetadataSchema.uid`            | 3.9           |
------
+# Version 3.17.2 (2022-03-28)
+## Fix
+* Project.upsert_instructions now works properly for new projects.
+
+# Version 3.17.1 (2022-03-25)
+## Updated
+* Remove unused rasterio dependency
+
+# Version 3.17.0 (2022-03-22)
+## Added
+* Create batches from the SDK (Beta). Learn more about [batches](https://docs.labelbox.com/docs/batches)
+* Support for precision and recall metrics on Entity annotations
+
+## Fix
+* `client.create_project` type hint added for its return type
+
+## Updated
+* Removed batch MVP code
+
+# Version 3.16.0 (2022-03-08)
+## Added
+* Ability to fetch a model run with `client.get_model_run()`
+* Ability to fetch labels from a model run with `model_run.export_labels()`
+    - Note: this is only Experimental. To use, client param `enable_experimental` should
+    be set to true 
+* Ability to delete an attachment
+
+## Fix
+* Logger level is no longer set to INFO
+
+## Updated
+* Deprecation: Creating Dropdowns will no longer be supported after 2022-03-31
+    - This includes creating/adding Dropdowns to an ontology
+    - This includes creating/adding Dropdown Annotation Type
+    - For the same functionality, use Radio 
+    - This will not affect existing Dropdowns
+
+# Changelog
+# Version 3.15.0 (2022-02-28) 
+## Added 
+* Extras folder which contains useful applications using the sdk
+* Addition of ResourceTag at the Organization and Project level
+* Updates to the example notebooks 
+
+## Fix
+* EPSGTransformer now properly transforms Polygon to Polygon
+* VideoData string representation now properly shows VideoData
+
+
+# Version 3.14.0 (2022-02-10) 
+## Added 
+* Updated metrics for classifications to be per-answer 
+
+
+# Version 3.13.0 (2022-02-07) 
+## Added
+* Added `from_shapely` method to create annotation types from Shapely objects
+* Added `start` and `end` filter on the following methods
+- `Project.export_labels()`
+- `Project.label_generator()`
+- `Project.video_label_generator()`
+* Improved type hinting 
+
+
+# Version 3.12.0 (2022-01-19)
+## Added
+* Tiled Imagery annotation type
+- A set of classes that support Tiled Image assets
+- New demo notebook can be found here: examples/annotation_types/tiled_imagery_basics.ipynb
+- Updated tiled image mal can be found here: examples/model_assisted_labeling/tiled_imagery_mal.ipynb
+* Support transformations from one EPSG to another with `EPSGTransformer` class
+- Supports EPSG to Pixel space transformations
+
+
+# Version 3.11.1 (2022-01-10)
+## Fix
+* Make `TypedArray` class compatible with `numpy` versions `>= 1.22.0`
+* `project.upsert_review_queue` quotas can now be in the inclusive range [0,1]
+* Restore support for upserting html instructions to a project
+
+# Version 3.11.0 (2021-12-15)
+
+## Fix
+* `Dataset.create_data_rows()` now accepts an iterable of data row information instead of a list
+* `project.upsert_instructions()`
+    * now only supports pdfs since that is what the editor requires
+    * There was a bug that could cause this to modify the project ontology
+
+## Removed
+* `DataRowMetadataSchema.id` use `DataRowMetadataSchema.uid` instead
+* `ModelRun.delete_annotation_groups()` use `ModelRun.delete_model_run_data_rows()` instead
+* `ModelRun.annotation_groups()` use `ModelRun.model_run_data_rows()` instead
+
+# Version 3.10.0 (2021-11-18)
+## Added
+* `AnnotationImport.wait_until_done()` accepts a `show_progress` param. This is set to `False` by default.
+    * If enabled, a tqdm progress bar will indicate the import progress.
+    * This works for all classes that inherit from AnnotationImport: `LabelImport`, `MALPredictionImport`, `MEAPredictionImport`
+    * This is not support for `BulkImportRequest` (which will eventually be replaced by `MALPredictionImport`)
+* `Option.label` and `Option.value` can now be set independently
+* `ClassificationAnswer`s now support a new `keyframe` field for videos
+* New `LBV1Label.media_type field. This is a placeholder for future backend changes.
+
+## Fix
+* Nested checklists can have extra brackets. This would cause the annotation type converter to break.
+
+
 # Version 3.9.0 (2021-11-12)
 ## Added
 * New ontology management features
@@ -18,8 +118,8 @@
     * Set up a project from an existing ontology with `project.setup_edior()`
     * Added new `FeatureSchema` entity
 * Add support for new queue modes
-    * Send batches of data direction to a project with `project.queue()`
-    * Remove items from the queue with `project.dequeue()`
+    * Send batches of data directly to a project queue with `project.queue()`
+    * Remove items from a project queue with `project.dequeue()`
     * Query for and toggle the queue mode
 
 # Version 3.8.0 (2021-10-22)

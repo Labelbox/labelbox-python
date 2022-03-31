@@ -1,7 +1,5 @@
 import uuid
-import ndjson
 import pytest
-import requests
 
 from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 """

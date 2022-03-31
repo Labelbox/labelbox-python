@@ -2,7 +2,8 @@ import time
 
 
 def test_model_run(client, configured_project_with_label, rand_gen):
-    project, label_id = configured_project_with_label
+    project, _, _, label = configured_project_with_label
+    label_id = label.uid
     ontology = project.ontology()
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
     model = client.create_model(data["name"], data["ontology_id"])
@@ -21,6 +22,9 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     assert model_run_data_row.model_run_id == model_run.uid
     assert model_run_data_row.data_row().uid == next(
         next(project.datasets()).data_rows()).uid
+
+    fetch_model_run = client.get_model_run(model_run.uid)
+    assert fetch_model_run == model_run
 
 
 def test_model_run_delete(client, model_run):
@@ -73,3 +77,8 @@ def test_model_run_upsert_data_rows_with_existing_labels(
     ])
     assert n_data_rows == len(
         list(model_run_with_model_run_data_rows.model_run_data_rows()))
+
+
+def test_model_run_export_labels(model_run_with_model_run_data_rows):
+    labels = model_run_with_model_run_data_rows.export_labels(download=True)
+    assert len(labels) == 3

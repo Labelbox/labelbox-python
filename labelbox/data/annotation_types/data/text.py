@@ -11,7 +11,7 @@ class TextData(BaseData):
     """
     Represents text data. Requires arg file_path, text, or url
 
-    >>> TextData(text="") 
+    >>> TextData(text="")
 
     Args:
         file_path (str)

@@ -1,5 +1,5 @@
-def test_benchmark(label_pack):
-    project, _, data_row, label = label_pack
+def test_benchmark(configured_project_with_label):
+    project, _, data_row, label = configured_project_with_label
     assert set(project.benchmarks()) == set()
     assert label.is_benchmark_reference == False
 

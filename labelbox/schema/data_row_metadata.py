@@ -30,14 +30,6 @@ class DataRowMetadataSchema(BaseModel):
     options: Optional[List["DataRowMetadataSchema"]]
     parent: Optional[SchemaId]
 
-    @property
-    def id(self):
-        """ `DataRowMetadataSchema.id is being deprecated after version 3.9 
-            in favor of DataRowMetadataSchema.uid`
-        """
-        warnings.warn("`id` is being deprecated in favor of `uid`")
-        return self.uid
-
 
 DataRowMetadataSchema.update_forward_refs()
 
@@ -214,14 +206,13 @@ class DataRowMetadataOntology:
                                              Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
-        >>> mdo.parse_metadata([metdata])
+        >>> mdo.parse_metadata([metadata])
 
         Args:
             unparsed: An unparsed metadata export
 
         Returns:
             metadata: List of `DataRowMetadata`
-
         """
         parsed = []
         if isinstance(unparsed, dict):
