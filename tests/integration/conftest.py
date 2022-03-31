@@ -27,6 +27,7 @@ class Environ(Enum):
     LOCAL = 'local'
     PROD = 'prod'
     STAGING = 'staging'
+    ONPREM = 'onprem'
 
 
 @pytest.fixture(scope="session")
@@ -49,6 +50,9 @@ def graphql_url(environ: str) -> str:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
         return 'https://staging-api.labelbox.com/graphql'
+    elif environ == Environ.ONPREM:
+        instance_id = "replicated-1c0e609"
+        return f"https://app.{instance_id}.labelbox.dev/api/_gql"
     return 'http://host.docker.internal:8080/graphql'
 
 
@@ -57,6 +61,8 @@ def testing_api_key(environ: str) -> str:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
     elif environ == Environ.STAGING:
         return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    elif environ == Environ.ONPREM:
+        return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
     return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 

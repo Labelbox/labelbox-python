@@ -20,3 +20,9 @@ test-prod: build
 		-e LABELBOX_TEST_ENVIRON="prod" \
 		-e LABELBOX_TEST_API_KEY_PROD=${LABELBOX_TEST_API_KEY_PROD} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST) -svvx
+
+test-onprem: build
+	docker run -it -v ${PWD}:/usr/src -w /usr/src \
+		-e LABELBOX_TEST_ENVIRON="onprem" \
+		-e LABELBOX_TEST_API_KEY_ONPREM=${LABELBOX_TEST_API_KEY_ONPREM} \
+		local/labelbox-python:test pytest $(PATH_TO_TEST) -svvx

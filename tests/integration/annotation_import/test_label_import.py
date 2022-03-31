@@ -28,6 +28,7 @@ def test_create_from_objects(client, project, object_predictions,
                                                    project_id=project.uid,
                                                    name=name,
                                                    labels=object_predictions)
+    label_import.wait_until_done()
     assert label_import.parent_id == project.uid
     annotation_import_test_helpers.check_running_state(label_import, name)
     annotation_import_test_helpers.assert_file_content(
