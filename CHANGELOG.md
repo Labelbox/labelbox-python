@@ -1,4 +1,24 @@
 # Changelog
+
+# Version 3.17.2 (2022-03-28)
+## Fix
+* Project.upsert_instructions now works properly for new projects.
+
+# Version 3.17.1 (2022-03-25)
+## Updated
+* Remove unused rasterio dependency
+
+# Version 3.17.0 (2022-03-22)
+## Added
+* Create batches from the SDK (Beta). Learn more about [batches](https://docs.labelbox.com/docs/batches)
+* Support for precision and recall metrics on Entity annotations
+
+## Fix
+* `client.create_project` type hint added for its return type
+
+## Updated
+* Removed batch MVP code
+
 # Version 3.16.0 (2022-03-08)
 ## Added
 * Ability to fetch a model run with `client.get_model_run()`

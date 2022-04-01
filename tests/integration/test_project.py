@@ -1,11 +1,11 @@
 import json
+import time
 
 import pytest
 import requests
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
-from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -138,9 +138,8 @@ def test_attach_instructions(client, project):
     project.setup(editor, empty_ontology)
 
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
-    assert json.loads(
-        list(project.labeling_frontend_options())
-        [-1].customization_options).get('projectInstructions') is not None
+    time.sleep(3)
+    assert project.ontology().normalized['projectInstructions'] is not None
 
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
@@ -181,6 +180,7 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    assert configured_project.queue_mode() == QueueMode.Dataset
-    configured_project.update(queue_mode=QueueMode.Batch)
-    assert configured_project.queue_mode() == QueueMode.Batch
+    assert configured_project.queue_mode(
+    ) == configured_project.QueueMode.Dataset
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    assert configured_project.queue_mode() == configured_project.QueueMode.Batch

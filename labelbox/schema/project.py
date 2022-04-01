@@ -37,19 +37,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-MAX_QUEUE_BATCH_SIZE = 1000
-
-
-class QueueMode(enum.Enum):
-    Batch = "Batch"
-    Dataset = "Dataset"
-
-
-class QueueErrors(enum.Enum):
-    InvalidDataRowType = 'InvalidDataRowType'
-    AlreadyInProject = 'AlreadyInProject'
-    HasAttachedLabel = 'HasAttachedLabel'
-
 
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
@@ -98,9 +85,12 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    def update(self, **kwargs):
+    class QueueMode(enum.Enum):
+        Batch = "Batch"
+        Dataset = "Dataset"
 
-        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
+    def update(self, **kwargs):
+        mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
 
@@ -425,7 +415,6 @@ class Project(DbObject, Updateable, Deletable):
             )
 
         frontend = self.labeling_frontend()
-        frontendId = frontend.uid
 
         if frontend.name != "Editor":
             logger.warning(
@@ -438,35 +427,25 @@ class Project(DbObject, Updateable, Deletable):
                 f"instructions_file must be a pdf or html file. Found {instructions_file}"
             )
 
-        lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
-        customization_options = self.ontology().normalized
-        customization_options['projectInstructions'] = instructions_url
-        option_id = lfo.uid
 
-        self.client.execute(
-            """mutation UpdateFrontendWithExistingOptionsPyApi (
-                    $frontendId: ID!,
-                    $optionsId: ID!,
-                    $name: String!,
-                    $description: String!,
-                    $customizationOptions: String!
+        query_str = """mutation setprojectinsructionsPyApi($projectId: ID!, $instructions_url: String!) {
+                setProjectInstructions(
+                    where: {id: $projectId},
+                    data: {instructionsUrl: $instructions_url}
                 ) {
-                    updateLabelingFrontend(
-                        where: {id: $frontendId},
-                        data: {name: $name, description: $description}
-                    ) {id}
-                    updateLabelingFrontendOptions(
-                        where: {id: $optionsId},
-                        data: {customizationOptions: $customizationOptions}
-                    ) {id}
-                }""", {
-                "frontendId": frontendId,
-                "optionsId": option_id,
-                "name": frontend.name,
-                "description": "Video, image, and text annotation",
-                "customizationOptions": json.dumps(customization_options)
-            })
+                    id
+                    ontology {
+                    id
+                    options
+                    }
+                }
+            }"""
+
+        self.client.execute(query_str, {
+            'projectId': self.uid,
+            'instructions_url': instructions_url
+        })
 
     def labeler_performance(self) -> PaginatedCollection:
         """ Returns the labeler performances for this Project.
@@ -578,63 +557,69 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def queue(self, data_row_ids: List[str]):
-        """Add Data Rows to the Project queue"""
+    def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
+        """Create a new batch for a project. Batches is in Beta and subject to change
 
-        method = "submitBatchOfDataRows"
-        return self._post_batch(method, data_row_ids)
+        Args:
+            name: a name for the batch, must be unique within a project
+            data_rows: Either a list of `DataRows` or Data Row ids
+            priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
 
-    def dequeue(self, data_row_ids: List[str]):
-        """Remove Data Rows from the Project queue"""
+        """
 
-        method = "removeBatchOfDataRows"
-        return self._post_batch(method, data_row_ids)
-
-    def _post_batch(self, method, data_row_ids: List[str]):
-        """Post batch methods"""
-
-        if self.queue_mode() != QueueMode.Batch:
+        # @TODO: make this automatic?
+        if self.queue_mode() != Project.QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
 
-        if len(data_row_ids) > MAX_QUEUE_BATCH_SIZE:
-            raise ValueError(
-                f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts"
-            )
+        dr_ids = []
+        for dr in data_rows:
+            if isinstance(dr, Entity.DataRow):
+                dr_ids.append(dr.uid)
+            elif isinstance(dr, str):
+                dr_ids.append(dr)
+            else:
+                raise ValueError("You can DataRow ids or DataRow objects")
 
-        query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
+        if len(dr_ids) > 25_000:
+            raise ValueError(
+                f"Batch exceeds max size, break into smaller batches")
+        if not len(dr_ids):
+            raise ValueError("You need at least one data row in a batch")
+
+        method = 'createBatch'
+        query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
-                %s(data: {dataRowIds: $dataRowIds}) {
-                  dataRows {
-                    dataRowId
-                    error
-                  }
+                %s(input: $batchInput) {
+                  %s
                 }
               }
             }
-        """ % (method, method)
+        """ % (method, method, query.results_query_part(Entity.Batch))
 
-        res = self.client.execute(query, {
+        params = {
             "projectId": self.uid,
-            "dataRowIds": data_row_ids
-        })["project"][method]["dataRows"]
+            "batchInput": {
+                "name": name,
+                "dataRowIds": dr_ids,
+                "priority": priority
+            }
+        }
 
-        # TODO: figure out error messaging
-        if len(data_row_ids) == len(res):
-            raise ValueError("No dataRows were submitted successfully")
+        res = self.client.execute(query_str, params,
+                                  experimental=True)["project"][method]
 
-        if len(data_row_ids) > 0:
-            warnings.warn("Some Data Rows were not submitted successfully")
+        res['size'] = len(dr_ids)
+        return Entity.Batch(self.client, res)
 
-        return res
-
-    def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
+    def _update_queue_mode(self,
+                           mode: "Project.QueueMode") -> "Project.QueueMode":
 
         if self.queue_mode() == mode:
             return mode
 
-        if mode == QueueMode.Batch:
+        if mode == Project.QueueMode.Batch:
             status = "ENABLED"
-        elif mode == QueueMode.Dataset:
+        elif mode == Project.QueueMode.Dataset:
             status = "DISABLED"
         else:
             raise ValueError(
@@ -656,7 +641,7 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self) -> QueueMode:
+    def queue_mode(self) -> "Project.QueueMode":
         """Provides the status of if queue mode is enabled in the project."""
 
         query_str = """query %s($projectId: ID!) {
@@ -670,9 +655,9 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
 
         if status == "ENABLED":
-            return QueueMode.Batch
+            return Project.QueueMode.Batch
         elif status == "DISABLED":
-            return QueueMode.Dataset
+            return Project.QueueMode.Dataset
         else:
             raise ValueError("Status not known")
 
