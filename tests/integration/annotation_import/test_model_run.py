@@ -1,5 +1,3 @@
-from labelbox.orm.db_object import experimental
-from labelbox.schema.model_run import ModelRun
 import time
 
 
@@ -86,7 +84,7 @@ def test_model_run_export_labels(model_run_with_model_run_data_rows):
     assert len(labels) == 3
 
 
-def test_model_run_status(model_run_with_model_run_data_rows: ModelRun):
+def test_model_run_status(model_run_with_model_run_data_rows):
 
     def get_model_run_status():
         return model_run_with_model_run_data_rows.client.execute(
