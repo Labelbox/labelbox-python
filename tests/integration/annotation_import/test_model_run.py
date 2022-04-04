@@ -1,3 +1,5 @@
+from labelbox.orm.db_object import experimental
+from labelbox.schema.model_run import ModelRun
 import time
 
 
@@ -82,3 +84,36 @@ def test_model_run_upsert_data_rows_with_existing_labels(
 def test_model_run_export_labels(model_run_with_model_run_data_rows):
     labels = model_run_with_model_run_data_rows.export_labels(download=True)
     assert len(labels) == 3
+
+
+def test_model_run_status(model_run_with_model_run_data_rows: ModelRun):
+
+    def get_model_run_status():
+        return model_run_with_model_run_data_rows.client.execute(
+            """query trainingPipelinePyApi($modelRunId: ID!) {
+            trainingPipeline(where: {id : $modelRunId}) {status, errorMessage, metadata}}
+        """, {'modelRunId': model_run_with_model_run_data_rows.uid},
+            experimental=True)['trainingPipeline']
+
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] is None
+    assert model_run_status['metadata'] is None
+    assert model_run_status['errorMessage'] is None
+
+    status = "COMPLETE"
+    metadata = {'key1': 'value1'}
+    errorMessage = "an error"
+    model_run_with_model_run_data_rows.update_status(status, metadata,
+                                                     errorMessage)
+
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] == status
+    assert model_run_status['metadata'] == metadata
+    assert model_run_status['errorMessage'] == errorMessage
+
+    extra_metadata = {'key2': 'value2'}
+    model_run_with_model_run_data_rows.update_status(status, extra_metadata)
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] == status
+    assert model_run_status['metadata'] == {**metadata, **extra_metadata}
+    assert model_run_status['errorMessage'] == errorMessage

@@ -181,6 +181,38 @@ class ModelRun(DbObject):
         })
 
     @experimental
+    def update_status(self,
+                      status: str,
+                      metadata: Optional[Dict[str, str]] = None,
+                      error_message: Optional[Dict[str, str]] = None):
+
+        valid_statuses = [
+            "EXPORTING_DATA", "PREPARING_DATA", "TRAINING_MODEL", "COMPLETE",
+            "FAILED"
+        ]
+        if status not in valid_statuses:
+            raise ValueError(
+                f"Status must be one of : `{valid_statuses}`. Found : `{status}`"
+            )
+
+        data = {'status': status}
+        if error_message:
+            data['errorMessage'] = error_message
+
+        if metadata:
+            data['metadata'] = metadata
+
+        self.client.execute(
+            """mutation setPipelineStatusPyApi($modelRunId: ID!, $data: UpdateTrainingPipelineInput!){
+                updateTrainingPipeline(modelRun: {id : $modelRunId}, data: $data){status}
+            }
+        """, {
+                'modelRunId': self.uid,
+                'data': data
+            },
+            experimental=True)
+
+    @experimental
     def export_labels(
         self,
         download: bool = False,
@@ -196,7 +228,7 @@ class ModelRun(DbObject):
         Returns:
             URL of the data file with this ModelRun's labels.
             If download=True, this instead returns the contents as NDJSON format.
-            If the server didn't generate during the `timeout_seconds` period, 
+            If the server didn't generate during the `timeout_seconds` period,
             None is returned.
         """
         sleep_time = 2
