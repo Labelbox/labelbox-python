@@ -184,7 +184,7 @@ class ModelRun(DbObject):
     def update_status(self,
                       status: str,
                       metadata: Optional[Dict[str, str]] = None,
-                      error_message: Optional[Dict[str, str]] = None):
+                      error_message: Optional[str] = None):
 
         valid_statuses = [
             "EXPORTING_DATA", "PREPARING_DATA", "TRAINING_MODEL", "COMPLETE",
@@ -195,7 +195,7 @@ class ModelRun(DbObject):
                 f"Status must be one of : `{valid_statuses}`. Found : `{status}`"
             )
 
-        data = {'status': status}
+        data: Dict[str, Any] = {'status': status}
         if error_message:
             data['errorMessage'] = error_message
 
