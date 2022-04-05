@@ -40,7 +40,8 @@
     "Reviews": [],
     "View Label": "https://editor.labelbox.com?project=ckw3cd90b38br0zd4dh4n1xou&label=ckw3ce1mc78b50zc30dqf0qhj",
     "Has Open Issues": 0,
-    "Skipped": false
+    "Skipped": false,
+    "Data Split" : null
 }, {
     "ID": "ckw3cea3f7b9t0zbn2tgp2y83",
     "DataRow ID": "ckw3cctc41uqo0zo5gpma1mr2",
@@ -75,7 +76,8 @@
     "Reviews": [],
     "View Label": "https://editor.labelbox.com?project=ckw3cd90b38br0zd4dh4n1xou&label=ckw3cea3f7b9t0zbn2tgp2y83",
     "Has Open Issues": 0,
-    "Skipped": false
+    "Skipped": false,
+    "Data Split" : null
 }, {
     "ID": "ckw3cec4v78ex0zc3aodwdekw",
     "DataRow ID": "ckw3cctc41uqs0zo52cy6eus1",
@@ -129,7 +131,8 @@
     "Reviews": [],
     "View Label": "https://editor.labelbox.com?project=ckw3cd90b38br0zd4dh4n1xou&label=ckw3cec4v78ex0zc3aodwdekw",
     "Has Open Issues": 0,
-    "Skipped": false
+    "Skipped": false,
+    "Data Split" : null
 }, {
     "ID": "ckw3ce1s34c1i0zbp32067q4v",
     "DataRow ID": "ckw3cctc41uqk0zo52n31egs1",
@@ -149,5 +152,6 @@
     "Reviews": [],
     "View Label": "https://editor.labelbox.com?project=ckw3cd90b38br0zd4dh4n1xou&label=ckw3ce1s34c1i0zbp32067q4v",
     "Has Open Issues": 0,
-    "Skipped": true
+    "Skipped": true,
+    "Data Split" : null
 }]
