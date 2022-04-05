@@ -1,11 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
-import random
-import ndjson
 import json
 import argparse
 import time
 import logging
-from typing import Tuple, Union, Literal, Optional
+from typing import Tuple
 from io import BytesIO
 import os
 
@@ -22,7 +20,6 @@ from labelbox import Client
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-Partition = Union[Literal['training'], Literal['test'], Literal['validation']]
 # Maps from our partition naming convention to google's
 partition_mapping = {
     'training': 'train',
@@ -69,10 +66,10 @@ def upload_to_gcs(image_bytes: BytesIO, data_row_uid: str, h: int, w: int,
     return f"gs://{bucket.name}/{blob.name}"
 
 
-def process_label(label: Label, partition: Optional[Partition],
-                  bucket: Bucket) -> str:
-    if partition is None:
-        logger.warning("No partition assigned. Skipping.")
+def process_label(label: Label, bucket: Bucket) -> str:
+    data_split = label.extra.get("Data Split")
+    if data_split is None:
+        logger.warning("No data split assigned. Skipping.")
         return
 
     bounding_box_annotations = []
@@ -108,7 +105,7 @@ def process_label(label: Label, partition: Optional[Partition],
         'boundingBoxAnnotations':
             bounding_box_annotations[:VERTEX_MAX_EXAMPLES_PER_IMAGE],
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "aiplatform.googleapis.com/ml_use": partition_mapping[data_split],
             "dataRowId": label.data.uid
         }
     })
@@ -122,37 +119,13 @@ def bounding_box_etl(lb_client: Client, model_run_id: str, bucket) -> str:
     Read more about the restrictions here:
         - https://cloud.google.com/vertex-ai/docs/datasets/prepare-image#object-detection
     """
-    query_str = """
-        mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
-            exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
-                downloadUrl createdAt status
-            }
-        }
-        """
-    url = lb_client.execute(query_str,
-                            {'modelRunId': model_run_id
-                            })['exportModelRunAnnotations']['downloadUrl']
-    counter = 1
-    while url is None:
-        logger.info(f"Number of times tried: {counter}")
-        counter += 1
-        if counter > 10:
-            raise Exception(
-                f"Unsuccessfully got downloadUrl after {counter} attempts.")
-        time.sleep(10)
-        url = lb_client.execute(query_str,
-                                {'modelRunId': model_run_id
-                                })['exportModelRunAnnotations']['downloadUrl']
-
-    response = requests.get(url)
-    response.raise_for_status()
-    contents = ndjson.loads(response.content)
+    model_run = client.get_model_run(model_run_id)
+    json_labels = model_run.export_labels(download=True)
 
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
-            exc.submit(process_label, label, content['Data Split'], bucket)
-            for content, label in zip(contents,
-                                      LBV1Converter().deserialize(contents))
+            exc.submit(process_label, label, bucket)
+            for label in LBV1Converter.deserialize(json_labels)
         ]
     training_data = [future.result() for future in training_data_futures]
     training_data = [
@@ -169,7 +142,8 @@ def bounding_box_etl(lb_client: Client, model_run_id: str, bucket) -> str:
 
 
 def main(model_run_id: str, gcs_bucket: str, gcs_key: str):
-    gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'])
+    gcs_client = storage.Client(project=os.environ['GOOGLE_PROJECT'],
+                                enable_experimental=True)
     lb_client = Client(api_key=_labelbox_api_key,
                        endpoint='https://api.labelbox.com/_gql')
     bucket = gcs_client.bucket(gcs_bucket)

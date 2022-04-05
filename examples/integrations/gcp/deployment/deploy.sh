@@ -28,5 +28,3 @@ gcloud beta compute instances \
 DEPLOYMENT_IP=$(gcloud compute instances describe labelbox-coordinator --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 echo "View deployment here: https://console.cloud.google.com/compute/instances?project=${GOOGLE_PROJECT}"
 echo "Make requests to $DEPLOYMENT_IP:8000"
-
-

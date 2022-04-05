@@ -23,9 +23,9 @@ async def run(json_data: Dict[str, Any]):
         pipeline = json_data['pipeline']
         await run_in_threadpool(pipelines[pipeline].run, json_data)
     except Exception as e:
-        pipelines[pipeline].update_state(PipelineState.FAILED,
-                                         json_data['model_run_id'],
-                                         error_message=str(e))
+        pipelines[pipeline].update_status(PipelineState.FAILED,
+                                          json_data['model_run_id'],
+                                          error_message=str(e))
 
 
 @app.get("/models")

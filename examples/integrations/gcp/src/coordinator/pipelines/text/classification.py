@@ -117,21 +117,21 @@ class TextClassificationPipeline(Pipeline):
 
     def run(self, json_data):
         model_run_id, job_name = self.parse_args(json_data)
-        self.update_state(PipelineState.PREPARING_DATA, model_run_id)
+        self.update_status(PipelineState.PREPARING_DATA, model_run_id)
         etl_status = self.run_job(
             model_run_id, lambda: self.etl_job.run(model_run_id, job_name))
         if etl_status is None:
             return
-        self.update_state(PipelineState.TRAINING_MODEL,
-                          model_run_id,
-                          metadata={'training_data_input': etl_status.result})
+        self.update_status(PipelineState.TRAINING_MODEL,
+                           model_run_id,
+                           metadata={'training_data_input': etl_status.result})
 
         training_status = self.run_job(
             model_run_id,
             lambda: self.training_job.run(etl_status.result, job_name))
         if training_status is None:
             return
-        self.update_state(
+        self.update_status(
             PipelineState.TRAINING_MODEL,
             model_run_id,
             metadata={'model_id': training_status.result['model'].name})
@@ -141,7 +141,7 @@ class TextClassificationPipeline(Pipeline):
                 training_status.result['model'], job_name))
         if deployment_status is None:
             return
-        self.update_state(
+        self.update_status(
             PipelineState.TRAINING_MODEL,
             model_run_id,
             metadata={'endpoint_id': deployment_status.result['endpoint_id']})
@@ -151,7 +151,7 @@ class TextClassificationPipeline(Pipeline):
                 etl_status.result, model_run_id, training_status.result[
                     'model'], job_name))
         if inference_status is not None:
-            self.update_state(PipelineState.COMPLETE, model_run_id)
+            self.update_status(PipelineState.COMPLETE, model_run_id)
 
 
 class TextSingleClassificationPipeline(TextClassificationPipeline):
