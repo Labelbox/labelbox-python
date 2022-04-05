@@ -141,6 +141,7 @@ class LBV1Label(BaseModel):
     has_open_issues: Optional[float] = Extra('Has Open Issues')
     skipped: Optional[bool] = Extra('Skipped')
     media_type: Optional[str] = Extra('media_type')
+    data_split: Optional[str] = Extra('Data Split')
 
     def to_common(self) -> Label:
         if isinstance(self.label, list):
