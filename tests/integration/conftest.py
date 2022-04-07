@@ -48,8 +48,10 @@ def graphql_url(environ: str) -> str:
     elif environ == Environ.STAGING:
         return 'https://staging-api.labelbox.com/graphql'
     elif environ == Environ.ONPREM:
-        instance_id = "replicated-1c0e609"
-        return f"https://app.{instance_id}.labelbox.dev/api/_gql"
+        instance_id = os.environ.get('LABELBOX_TEST_ONPREM_INSTANCE', None)
+        if instance_id is None:
+            raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
+        return f"https://app.replicated-{instance_id}.labelbox.dev/api/_gql"
     return 'http://host.docker.internal:8080/graphql'
 
 

@@ -25,4 +25,5 @@ test-onprem: build
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="onprem" \
 		-e LABELBOX_TEST_API_KEY_ONPREM=${LABELBOX_TEST_API_KEY_ONPREM} \
+		-e LABELBOX_TEST_ONPREM_INSTANCE=${LABELBOX_TEST_ONPREM_INSTANCE} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST) -svvx
