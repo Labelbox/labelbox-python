@@ -14,40 +14,56 @@ Run ETL jobs, train models, deploy models, and track model performance all from 
 5. Text Checklist / Dropdown Classification
 6. Text Named Entity Recognition
 
+### Requirements
+
+1. docker-compose installed
+2. gcloud cli installed (and configured for the proper service account)
+
 
 ### Deployment
 
 Deploy the coordinator service on port 8000
 
 1. Set the following env vars locally:
+    - `DEPLOYMENT_NAME`
+        - This is the name that all of the google resources will use. This will enable multiple deployments. E.g. prod-training-service or dev-training-service.
     - `GCS_BUCKET`
-        - GCS bucket to store all of the artifacts. If the bucket doesn't exist it will automatically be created
+        - GCS bucket to store all of the artifacts. If the bucket doesn't exist it will automatically be created.
     - `GOOGLE_PROJECT`
-        - Google cloud project name
+        - Google cloud project name.
     - `SERVICE_SECRET`
-        - This can be anything. You will have to use the same secret when making a request to the service
+        - This can be anything. You will have to use the same secret when making a request to the service.
     - `GOOGLE_APPLICATION_CREDENTIALS`
-        - Path to the application credentials
+        - Path to the application credentials.
     - `GOOGLE_SERVICE_ACCOUNT`
-        - Google service account. Will have the following format: `<name>@<project>.iam.gserviceaccount.com`
+        - Google service account. Will have the following format: `<name>@<project>.iam.gserviceaccount.com`.
     - `LABELBOX_API_KEY`
 2. Deploy the service
-    - To the cloud: `./deployments/deploy.sh`
+    - To the cloud: `./deployment/deploy.sh`
     - Locally: `./run.sh`
 
 
-### Cleanup
+### Managing training deployments
 
-1. Run the `./deployments/teardown.sh` script
-    - This will delete the coordinator service and the ingress
-2. Clean up any resources in the google cloud console including:
-    - GCR images
-    - Vertex resources
-        - Endpoints
-        - Models
-        - Datasets
-    - Secrets stored in secret manager
-    - Resources stored in `GCS_BUCKET`
+
+* Delete the training deployment
+    - Set `DEPLOYMENT_NAME` env vars
+    - Run the `./deployment/teardown.sh` script
+        - Deletes the firewall, static ip, coordinator instance and the secrets
+        - The gcs bucket and gcr training artifacts, the gcr images will not be updated, and all vertex artifacts will remain.
+
+* Updating secrets
+    - Set `LABELBOX_API_KEY`, `SERVICE_SECRET`, and `DEPLOYMENT_NAME` env vars
+    - Run `./deployment/reload_secrets.sh`
+
+* Updating the coordinator
+    - Change your code locally
+    - Make sure the `DEPLOYMENT_NAME` env var is set, and run `deployment/reload_coordinator.sh`
+
+* Updating containerized jobs
+    - The training pipeline always uses the latest images. This means that anytime you build and push, the coordinator will use the pushed code automatically. <b>Do not push containers to GCR for a deployment that is being used in production unless you want those changes to be used</b>/.
+    - Update your code locally, run `docker-compose build <container_name>`, and then `docker-compose push <container_name>`.
+
 
 
 ### Design
@@ -88,11 +104,3 @@ Key terms:
 3. Add the job to a pipeline in `coordinator/config.py`
     * Update `pipelines` to include the new workflow
     * Add the new pipeline name `PipelineName` type as a Literal
-
-
-
-
-# Cleanup
-
-These are the resources that are created:
-- If you deploy a bunch..

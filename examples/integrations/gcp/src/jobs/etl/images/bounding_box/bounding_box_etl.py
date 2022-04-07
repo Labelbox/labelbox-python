@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor
-import random
 import ndjson
 import json
 import argparse

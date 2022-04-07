@@ -4,10 +4,9 @@ if [[ -z "${DEPLOYMENT_NAME}" ]]; then
   exit 0
 fi
 
-echo "WARNING THIS WILL TEMPORARILY STOP YOUR SERVICE AND KILL ALL EXISTING TRAINING JOBS."
-echo "DO YOU WANT TO PROCEED?"
-read -p "DO YOU WANT TO PROCEED (y/N)?" -n 1 -r
-echo    # (optional) move to a new line
+echo "WARNING: This will temporarily stop your service and you will lose any existing training jobs."
+read -p "Do you want to proceed? (y/N)" -n 1 -r
+
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
     docker-compose build coordinator
