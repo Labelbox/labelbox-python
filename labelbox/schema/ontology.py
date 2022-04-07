@@ -124,6 +124,10 @@ class Classification:
         RADIO = "radio"
         DROPDOWN = "dropdown"
 
+    class Scope(Enum):
+        GLOBAL = "global"
+        INDEX = "index"
+
     _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
 
     class_type: Type
@@ -132,6 +136,7 @@ class Classification:
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
+    scope: Scope = None
 
     def __post_init__(self):
         if self.class_type == Classification.Type.DROPDOWN:
@@ -151,7 +156,8 @@ class Classification:
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
                    schema_id=dictionary.get("schemaNodeId", None),
-                   feature_schema_id=dictionary.get("featureSchemaId", None))
+                   feature_schema_id=dictionary.get("featureSchemaId", None),
+                   scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
@@ -159,13 +165,22 @@ class Classification:
             raise InconsistentOntologyException(
                 f"Classification '{self.instructions}' requires options.")
         return {
-            "type": self.class_type.value,
-            "instructions": self.instructions,
-            "name": self.name,
-            "required": self.required,
+            "type":
+                self.class_type.value,
+            "instructions":
+                self.instructions,
+            "name":
+                self.name,
+            "required":
+                self.required,
             "options": [o.asdict() for o in self.options],
-            "schemaNodeId": self.schema_id,
-            "featureSchemaId": self.feature_schema_id
+            "schemaNodeId":
+                self.schema_id,
+            "featureSchemaId":
+                self.feature_schema_id,
+            "scope":
+                self.scope.value
+                if self.scope is not None else self.Scope.GLOBAL.value
         }
 
     def add_option(self, option: Option) -> None:
