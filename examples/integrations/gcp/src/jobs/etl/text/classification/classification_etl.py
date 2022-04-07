@@ -1,14 +1,11 @@
-import random
 import json
-import ndjson
 import argparse
 import time
 import logging
-from typing import Optional, Union, Literal
+from typing import Literal, Union
 from concurrent.futures import ThreadPoolExecutor
 import os
 from collections import Counter
-import requests
 
 from google.api_core import retry
 from google.cloud import storage
@@ -23,9 +20,8 @@ logger = logging.getLogger(__name__)
 
 storage.blob._MAX_MULTIPART_SIZE = 1 * 1024 * 1024
 
-VERTEX_MIN_TRAINING_EXAMPLES = 1
+VERTEX_MIN_TRAINING_EXAMPLES = 50
 
-Partition = Union[Literal['training'], Literal['test'], Literal['validation']]
 # Maps from our partition naming convention to google's
 partition_mapping = {
     'training': 'train',
@@ -56,10 +52,11 @@ def upload_text_to_gcs(text_content: str, data_row_id: str,
 
 
 def process_single_classification_label(label: Label,
-                                        partition: Optional[Partition],
                                         bucket: storage.Bucket) -> str:
-    if partition is None:
-        logger.warning("No partition assigned. Skipping.")
+    data_split = label.extra.get("Data Split")
+
+    if data_split is None:
+        logger.warning("No data split assigned. Skipping.")
         return
 
     classifications = []
@@ -85,17 +82,17 @@ def process_single_classification_label(label: Label,
         'textGcsUri': uri,
         'classificationAnnotation': classification,
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "aiplatform.googleapis.com/ml_use": partition_mapping[data_split],
             "dataRowId": label.data.uid
         }
     })
 
 
 def process_multi_classification_label(label: Label,
-                                       partition: Optional[Partition],
                                        bucket: storage.Bucket) -> str:
-    if partition is None:
-        logger.warning("No partition assigned. Skipping.")
+    data_split = label.extra.get("Data Split")
+    if data_split is None:
+        logger.warning("No data split assigned. Skipping.")
         return
 
     classifications = []
@@ -120,7 +117,7 @@ def process_multi_classification_label(label: Label,
         'textGcsUri': uri,
         'classificationAnnotations': classifications,
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "aiplatform.googleapis.com/ml_use": partition_mapping[data_split],
             "dataRowId": label.data.uid
         }
     })
@@ -136,42 +133,18 @@ def text_classification_etl(lb_client: Client, model_run_id: str,
         - Single: https://cloud.google.com/vertex-ai/docs/datasets/prepare-text#single-label-classification
     """
 
-    query_str = """
-        mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
-            exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
-                downloadUrl createdAt status
-            }
-        }
-        """
-    url = lb_client.execute(query_str,
-                            {'modelRunId': model_run_id
-                            })['exportModelRunAnnotations']['downloadUrl']
-    counter = 1
-    while url is None:
-        logger.info(f"Number of times tried: {counter}")
-        counter += 1
-        if counter > 10:
-            raise Exception(
-                f"Unsuccessfully got downloadUrl after {counter} attempts.")
-        time.sleep(10)
-        url = lb_client.execute(query_str,
-                                {'modelRunId': model_run_id
-                                })['exportModelRunAnnotations']['downloadUrl']
+    model_run = client.get_model_run(model_run_id)
+    json_labels = model_run.export_labels(download=True)
 
-    response = requests.get(url)
-    response.raise_for_status()
-    contents = ndjson.loads(response.content)
-
-    for row in contents:
+    for row in json_labels:
         row['media_type'] = 'text'
 
-    label_data = zip(LBV1Converter.deserialize(contents), contents)
+    label_data = LBV1Converter.deserialize(json_labels)
 
     fn = process_multi_classification_label if multi else process_single_classification_label
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
-            exc.submit(fn, label, content['Data Split'], bucket)
-            for label, content in label_data
+            exc.submit(fn, label, bucket) for label in label_data
         ]
         training_data = [future.result() for future in training_data_futures]
         training_data = [

@@ -1,14 +1,10 @@
-import random
-import ndjson
 import json
 import argparse
 import time
 import logging
-from typing import Optional, Union, Literal
 from concurrent.futures import ThreadPoolExecutor
 import os
 
-import requests
 from google.cloud import storage
 from google.cloud import secretmanager
 
@@ -24,7 +20,6 @@ VERTEX_MIN_TRAINING_EXAMPLES, VERTEX_MAX_TRAINING_EXAMPLES = 50, 100_000
 MIN_ANNOTATIONS, MAX_ANNOTATIONS = 1, 20
 MIN_ANNOTATION_NAME_LENGTH, MAX_ANNOTATION_NAME_LENGTH = 2, 30
 
-Partition = Union[Literal['training'], Literal['test'], Literal['validation']]
 # Maps from our partition naming convention to google's
 partition_mapping = {
     'training': 'train',
@@ -43,9 +38,10 @@ if _labelbox_api_key is None:
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
 
-def process_label(label: Label, partition: Optional[Partition]) -> str:
-    if partition is None:
-        logger.warning("No partition assigned. Skipping.")
+def process_label(label: Label) -> str:
+    data_split = label.extra.get("Data Split")
+    if data_split is None:
+        logger.warning("No data split assigned. Skipping.")
         return
 
     text_annotations = []
@@ -80,7 +76,7 @@ def process_label(label: Label, partition: Optional[Partition]) -> str:
         # Note that this always uploads the text data in-line
         "textContent": label.data.value,
         'dataItemResourceLabels': {
-            "aiplatform.googleapis.com/ml_use": partition_mapping[partition],
+            "aiplatform.googleapis.com/ml_use": partition_mapping[data_split],
             "dataRowId": label.data.uid
         }
     })
@@ -98,38 +94,16 @@ def ner_etl(lb_client: Client, model_run_id: str) -> str:
 
     #TODO: Validate the ontology:
     #  "You must supply at least 1, and no more than 100, unique labels to annotate entities that you want to extract."
-    query_str = """
-        mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
-            exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
-                downloadUrl createdAt status
-            }
-        }
-        """
-    url = lb_client.execute(query_str,
-                            {'modelRunId': model_run_id
-                            })['exportModelRunAnnotations']['downloadUrl']
-    counter = 1
-    while url is None:
-        logger.info(f"Number of times tried: {counter}")
-        counter += 1
-        if counter > 10:
-            raise Exception(
-                f"Unsuccessfully got downloadUrl after {counter} attempts.")
-        time.sleep(10)
-        url = lb_client.execute(query_str,
-                                {'modelRunId': model_run_id
-                                })['exportModelRunAnnotations']['downloadUrl']
+    model_run = client.get_model_run(model_run_id)
+    json_labels = model_run.export_labels(download=True)
 
-    response = requests.get(url)
-    response.raise_for_status()
-    contents = ndjson.loads(response.content)
-
-    label_data = zip(LBV1Converter.deserialize(contents), contents)
+    for row in json_labels:
+        row['media_type'] = 'text'
 
     with ThreadPoolExecutor(max_workers=8) as exc:
         training_data_futures = [
-            exc.submit(process_label, label, content['Data Split'])
-            for label, content in label_data
+            exc.submit(process_label, label)
+            for label in LBV1Converter.deserialize(json_labels)
         ]
         training_data = [future.result() for future in training_data_futures]
         training_data = [data for data in training_data if data is not None]
