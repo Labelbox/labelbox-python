@@ -21,8 +21,7 @@ def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
 def get_annotation_lookup(annotations):
     annotation_lookup = defaultdict(list)
     for annotation in annotations:
-        annotation_lookup[getattr(annotation, 'image_id', None) or
-                          getattr(annotation, 'name')].append(annotation)
+        annotation_lookup[getattr(annotation, 'image_id', None)].append(annotation)
     return annotation_lookup
 
 
