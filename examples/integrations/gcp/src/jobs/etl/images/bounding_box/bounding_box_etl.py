@@ -80,15 +80,19 @@ def process_label(label: Label, partition: Optional[Partition],
     bounding_box_annotations = []
     # TODO: Only download if the label has annotations
     # When this is only necessary since we don't have media attributes in the export yet.
-    image, (w, h) = download_image(label.data.url)
+    downsample_factor = 2
+    image, (w, h) = download_image(label.data.url, 1. / downsample_factor,
+                                   1. / downsample_factor)
     image_bytes = image_to_bytes(image)
     gcs_uri = upload_to_gcs(image_bytes, label.data.uid, h, w, bucket)
 
     for annotation in label.annotations:
         if isinstance(annotation.value, Rectangle):
             bbox = annotation.value
-            if (bbox.end.x - bbox.start.x) < (VERTEX_MIN_BBOX_DIM * 2) or (
-                    bbox.end.y - bbox.start.y) < (VERTEX_MIN_BBOX_DIM * 2):
+            if (bbox.end.x - bbox.start.x) < (
+                    VERTEX_MIN_BBOX_DIM * downsample_factor) or (
+                        bbox.end.y - bbox.start.y) < (VERTEX_MIN_BBOX_DIM *
+                                                      downsample_factor):
                 logger.info(
                     f"continuing. ({bbox.end.x - bbox.start.x}) or ({bbox.end.y - bbox.start.y}) "
                 )
