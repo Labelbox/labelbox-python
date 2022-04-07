@@ -379,7 +379,8 @@ class Client:
 
         if not file_data or not file_data.get("uploadFile", None):
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % file_data.get("error", None))
+                "Failed to upload, message: %s" % file_data or
+                file_data.get("error"))
 
         return file_data["uploadFile"]["url"]
 
