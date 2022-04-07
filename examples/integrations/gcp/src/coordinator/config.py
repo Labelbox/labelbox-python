@@ -13,21 +13,23 @@ from pipelines.text.classification import TextSingleClassificationPipeline, Text
 
 service_account = os.environ["GOOGLE_SERVICE_ACCOUNT"]
 google_cloud_project = os.environ['GOOGLE_PROJECT']
+_deployment_name = os.environ['DEPLOYMENT_NAME']
+
 client = secretmanager.SecretManagerServiceClient()
 
 _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
 if _labelbox_api_key is None:
-    secret_id = "labelbox_api_key"
+    secret_id = f"{_deployment_name}_labelbox_api_key"
     name = f"projects/{google_cloud_project}/secrets/{secret_id}/versions/1"
     response = client.access_secret_version(request={"name": name})
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
-WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET')
-if WEBHOOK_SECRET is None:
-    secret_id = "webhook_secret"
+SERVICE_SECRET = os.environ.get('SERVICE_SECRET')
+if SERVICE_SECRET is None:
+    secret_id = f"{_deployment_name}_service_secret"
     name = f"projects/{google_cloud_project}/secrets/{secret_id}/versions/1"
     response = client.access_secret_version(request={"name": name})
-    WEBHOOK_SECRET = response.payload.data.decode("UTF-8")
+    SERVICE_SECRET = response.payload.data.decode("UTF-8")
 
 # This should always be set (set in the build arg)
 _gcs_bucket = os.environ['GCS_BUCKET']
@@ -47,7 +49,8 @@ class Pipelines(TypedDict):
 
 
 _common_params = [
-    _labelbox_api_key, _gcs_bucket, service_account, google_cloud_project
+    _deployment_name, _labelbox_api_key, _gcs_bucket, service_account,
+    google_cloud_project
 ]
 pipelines: Pipelines = {
     'bounding_box':

@@ -10,7 +10,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.logger import logger
 import uvicorn
 
-from config import pipelines, PipelineName, WEBHOOK_SECRET
+from config import pipelines, PipelineName, SERVICE_SECRET
 from pipelines.types import PipelineState
 
 logger = logging.getLogger("uvicorn")
@@ -30,7 +30,7 @@ async def run(json_data: Dict[str, Any]):
 
 @app.get("/models")
 async def models(X_Hub_Signature: str = Header(None)):
-    computed_signature = hmac.new(WEBHOOK_SECRET.encode(),
+    computed_signature = hmac.new(SERVICE_SECRET.encode(),
                                   digestmod=hashlib.sha1).hexdigest()
     if X_Hub_Signature != "sha1=" + computed_signature:
         raise HTTPException(
@@ -46,7 +46,7 @@ async def model_run(request: Request,
                     background_tasks: BackgroundTasks,
                     X_Hub_Signature: str = Header(None)):
     req = await request.body()
-    computed_signature = hmac.new(WEBHOOK_SECRET.encode(),
+    computed_signature = hmac.new(SERVICE_SECRET.encode(),
                                   msg=req,
                                   digestmod=hashlib.sha1).hexdigest()
     if X_Hub_Signature != "sha1=" + computed_signature:

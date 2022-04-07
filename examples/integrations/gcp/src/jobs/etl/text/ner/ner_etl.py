@@ -35,8 +35,9 @@ partition_mapping = {
 # Optionally set env var for testing
 _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
 if _labelbox_api_key is None:
+    deployment_name = os.environ['DEPLOYMENT_NAME']
     client = secretmanager.SecretManagerServiceClient()
-    secret_id = "labelbox_api_key"
+    secret_id = f"{deployment_name}_labelbox_api_key"
     name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/1"
     response = client.access_secret_version(request={"name": name})
     _labelbox_api_key = response.payload.data.decode("UTF-8")

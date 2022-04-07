@@ -32,22 +32,24 @@ partition_mapping = {
 
 # Optionally set env var for testing
 _labelbox_api_key = os.environ.get('LABELBOX_API_KEY')
+
 if _labelbox_api_key is None:
+    deployment_name = os.environ['DEPLOYMENT_NAME']
     client = secretmanager.SecretManagerServiceClient()
-    secret_id = "labelbox_api_key"
+    secret_id = f"{deployment_name}_labelbox_api_key"
     name = f"projects/{os.environ['GOOGLE_PROJECT']}/secrets/{secret_id}/versions/1"
     response = client.access_secret_version(request={"name": name})
     _labelbox_api_key = response.payload.data.decode("UTF-8")
 
-VERTEX_MIN_BBOX_DIM = 8
+VERTEX_MIN_BBOX_DIM = 9
 VERTEX_MAX_EXAMPLES_PER_IMAGE = 500
 # Technically this is 10. But I don't want this to block dev
 VERTEX_MIN_TRAINING_EXAMPLES = 1
 
 
 def download_image(image_url: str,
-                   scale_w: float = 1 / 4.,
-                   scale_h: float = 1 / 4.) -> Tuple[Image, Tuple[int, int]]:
+                   scale_w: float = 1 / 2.,
+                   scale_h: float = 1 / 2.) -> Tuple[Image, Tuple[int, int]]:
     im = load_image(BytesIO(requests.get(image_url).content))
     w, h = im.size
     return im.resize((int(w * scale_w), int(h * scale_h))), (w, h)
@@ -85,8 +87,8 @@ def process_label(label: Label, partition: Optional[Partition],
     for annotation in label.annotations:
         if isinstance(annotation.value, Rectangle):
             bbox = annotation.value
-            if (bbox.end.x - bbox.start.x) < VERTEX_MIN_BBOX_DIM or (
-                    bbox.end.y - bbox.start.y) < VERTEX_MIN_BBOX_DIM:
+            if (bbox.end.x - bbox.start.x) < (VERTEX_MIN_BBOX_DIM * 2) or (
+                    bbox.end.y - bbox.start.y) < (VERTEX_MIN_BBOX_DIM * 2):
                 logger.info(
                     f"continuing. ({bbox.end.x - bbox.start.x}) or ({bbox.end.y - bbox.start.y}) "
                 )
@@ -102,6 +104,10 @@ def process_label(label: Label, partition: Optional[Partition],
                 "xMax": round(bbox.end.x / w, 2),
                 "yMax": round(bbox.end.y / h, 2),
             })
+
+    if len(bounding_box_annotations) == 0:
+        return
+
     return json.dumps({
         'imageGcsUri':
             gcs_uri,

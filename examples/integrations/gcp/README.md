@@ -1,5 +1,8 @@
 ## ETl / Train / Deploy / Analyze using GCP and Labelbox
 
+
+# You need GCLOUD installed and configured
+
 ### Overview
 
 Run ETL jobs, train models, deploy models, and track model performance all from a single service. The code deploys a service called the `coordinator` to google cloud. It exposes a rest api for launching various pipelines. The coordinator only has to be deployed once and then will be controllable via the labelbox web app (WIP). This project is designed to be easily extended for custom workflows. However, we will support the following models with no additional configuration required:
@@ -17,18 +20,18 @@ Run ETL jobs, train models, deploy models, and track model performance all from 
 Deploy the coordinator service on port 8000
 
 1. Set the following env vars locally:
-    - `GOOGLE_SERVICE_ACCOUNT`
-        - Google service account. Will have the following format: `<name>@<project>.iam.gserviceaccount.com`
     - `GCS_BUCKET`
-        - GCS bucket to store all of the artifacts
+        - GCS bucket to store all of the artifacts. If the bucket doesn't exist it will automatically be created
     - `GOOGLE_PROJECT`
         - Google cloud project name
-    - `WEBHOOK_SECRET`
+    - `SERVICE_SECRET`
         - This can be anything. You will have to use the same secret when making a request to the service
+    - `GOOGLE_APPLICATION_CREDENTIALS`
+        - Path to the application credentials
+    - `GOOGLE_SERVICE_ACCOUNT`
+        - Google service account. Will have the following format: `<name>@<project>.iam.gserviceaccount.com`
     - `LABELBOX_API_KEY`
-2. Make sure python3 is in your path and `google-cloud-secret-manager` is installed. Run the below code. If it throws an error then you need to install `google-cloud-secret-manager` with pip.
-    - python3 -c "from google.cloud import secretmanager"
-3. Deploy the service
+2. Deploy the service
     - To the cloud: `./deployments/deploy.sh`
     - Locally: `./run.sh`
 
@@ -86,3 +89,10 @@ Key terms:
     * Update `pipelines` to include the new workflow
     * Add the new pipeline name `PipelineName` type as a Literal
 
+
+
+
+# Cleanup
+
+These are the resources that are created:
+- If you deploy a bunch..

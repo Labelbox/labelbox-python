@@ -19,12 +19,12 @@ logger = logging.getLogger("uvicorn")
 
 class BoundingBoxETL(Job):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
+    def __init__(self, deployment_name: str, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
         self.google_cloud_project = google_cloud_project
-        self.container_name = f"gcr.io/{google_cloud_project}/training-repo/bounding_box_etl"
+        self.container_name = f"gcr.io/{google_cloud_project}/{deployment_name}/bounding_box_etl"
 
     def run(self, model_run_id: str, job_name: str) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
@@ -175,9 +175,10 @@ class BoundingBoxInference(InferenceJob):
 
 class BoundingBoxPipeline(Pipeline):
 
-    def __init__(self, lb_api_key: str, gcs_bucket: str,
+    def __init__(self, deployment_name: str, lb_api_key: str, gcs_bucket: str,
                  service_account_email: str, google_cloud_project: str):
-        self.etl_job = BoundingBoxETL(gcs_bucket, service_account_email,
+        self.etl_job = BoundingBoxETL(deployment_name, gcs_bucket,
+                                      service_account_email,
                                       google_cloud_project)
         self.training_job = BoundingBoxTraining()
         self.deployment = BoundingBoxDeployment()

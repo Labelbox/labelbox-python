@@ -18,12 +18,12 @@ logger = logging.getLogger("uvicorn")
 
 class NERETL(Job):
 
-    def __init__(self, gcs_bucket: str, service_account_email: str,
-                 google_cloud_project: str):
+    def __init__(self, deployment_name: str, gcs_bucket: str,
+                 service_account_email: str, google_cloud_project: str):
         self.gcs_bucket = gcs_bucket
         self.service_account_email = service_account_email
         self.google_cloud_project = google_cloud_project
-        self.container_name = f"gcr.io/{google_cloud_project}/training-repo/ner_etl"
+        self.container_name = f"gcr.io/{google_cloud_project}/{deployment_name}/ner_etl"
 
     def run(self, model_run_id: str, job_name) -> JobStatus:
         nowgmt = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
@@ -180,10 +180,10 @@ class NERInference(InferenceJob):
 
 class NERPipeline(Pipeline):
 
-    def __init__(self, lb_api_key: str, gcs_bucket: str,
+    def __init__(self, deployment_name: str, lb_api_key: str, gcs_bucket: str,
                  service_account_email: str, google_cloud_project: str):
-        self.etl_job = NERETL(gcs_bucket, service_account_email,
-                              google_cloud_project)
+        self.etl_job = NERETL(deployment_name, gcs_bucket,
+                              service_account_email, google_cloud_project)
         self.training_job = NERTraining()
         self.deployment = TextNERDeployment()
         self.inference = NERInference(lb_api_key)

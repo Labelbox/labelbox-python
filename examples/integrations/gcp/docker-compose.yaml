@@ -9,38 +9,61 @@ services:
           GCS_BUCKET: ${GCS_BUCKET}
           GOOGLE_PROJECT: ${GOOGLE_PROJECT}
           GOOGLE_SERVICE_ACCOUNT: ${GOOGLE_SERVICE_ACCOUNT}
-    image: gcr.io/${GOOGLE_PROJECT}/training-repo/coordinator
+          DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
+    image: gcr.io/${GOOGLE_PROJECT}/${DEPLOYMENT_NAME}/coordinator
     # The rest is only needed for local deployments.
     # Otherwise google runs with all ports mapped to the host
     # and application credentials are inherited
     volumes:
-      - ~/.config/gcloud:/root/.config/gcloud
+      - type: bind
+        source: ${GOOGLE_APPLICATION_CREDENTIALS}
+        target: ${GOOGLE_APPLICATION_CREDENTIALS}
     ports:
       - 8000:8000
     environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/sandbox.json
-    # Application credentials only required locally.
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
+
+  # Only used locally
+  deployment_config:
+    build:
+      context: ./deployment/
+      dockerfile: Dockerfile
+    image: gcr.io/${GOOGLE_PROJECT}/training/deployment_config
+    volumes:
+      - type: bind
+        source: ${GOOGLE_APPLICATION_CREDENTIALS}
+        target: ${GOOGLE_APPLICATION_CREDENTIALS}
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
+      GCS_BUCKET: ${GCS_BUCKET}
+      GOOGLE_PROJECT: ${GOOGLE_PROJECT}
+      GOOGLE_SERVICE_ACCOUNT: ${GOOGLE_SERVICE_ACCOUNT}
+      LABELBOX_API_KEY: ${LABELBOX_API_KEY}
+      SERVICE_SECRET: ${SERVICE_SECRET}
+      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
 
   bounding_box_etl:
     build:
       context: ./src/jobs/etl/images/bounding_box/
       dockerfile: Dockerfile
-    image: gcr.io/${GOOGLE_PROJECT}/training-repo/bounding_box_etl
+      args:
+        DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
+    image: gcr.io/${GOOGLE_PROJECT}/${DEPLOYMENT_NAME}/bounding_box_etl
 
   ner_etl:
     build:
       context: ./src/jobs/etl/text/ner/
       dockerfile: Dockerfile
-    image: gcr.io/${GOOGLE_PROJECT}/training-repo/ner_etl
+    image: gcr.io/${GOOGLE_PROJECT}/${DEPLOYMENT_NAME}/ner_etl
 
   image_classification_etl:
     build:
       context: ./src/jobs/etl/images/classification/
       dockerfile: Dockerfile
-    image: gcr.io/${GOOGLE_PROJECT}/training-repo/image_classification_etl
+    image: gcr.io/${GOOGLE_PROJECT}/${DEPLOYMENT_NAME}/image_classification_etl
 
   text_classification_etl:
     build:
       context: ./src/jobs/etl/text/classification/
       dockerfile: Dockerfile
-    image: gcr.io/${GOOGLE_PROJECT}/training-repo/text_classification_etl
+    image: gcr.io/${GOOGLE_PROJECT}/${DEPLOYMENT_NAME}/text_classification_etl
