@@ -110,7 +110,6 @@ class ImageClassificationPipeline(Pipeline):
                                               gcs_bucket, service_account_email,
                                               google_cloud_project)
         self.training_job = ClassificationTraining(image_classification_type)
-        self.deployment = ImageClassificationDeployment()
         self.inference = ImageClassificationInference(
             lb_api_key, image_classification_type)
         super().__init__(lb_api_key)
@@ -141,16 +140,6 @@ class ImageClassificationPipeline(Pipeline):
             PipelineState.TRAINING_MODEL,
             model_run_id,
             metadata={'model_id': training_status.result['model'].name})
-
-        deployment_status = self.run_job(
-            model_run_id, lambda: self.deployment.run(
-                training_status.result['model'], job_name))
-        if deployment_status is None:
-            return
-        self.update_state(
-            PipelineState.TRAINING_MODEL,
-            model_run_id,
-            metadata={'endpoint_id': deployment_status.result['endpoint_id']})
 
         inference_status = self.run_job(
             model_run_id, lambda: self.inference.run(
