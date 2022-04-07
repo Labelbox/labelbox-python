@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.18.0 (2022-04-07)
+## Added
+* Added beta support for exporting labels from model_runs
+* LBV1Converter now supports data_split key
+* Classification objects now include `scope` key
+
+## Fix
+* Updated notebooks
+
 # Version 3.17.2 (2022-03-28)
 ## Fix
 * Project.upsert_instructions now works properly for new projects.
