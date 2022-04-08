@@ -123,7 +123,7 @@ class NDRectangle(NDBaseObject):
 
 class NDFrameRectangle(BaseModel):
     frame: int
-    bbox: Bbox
+    # bbox: Bbox
 
 
 class NDSegment(BaseModel):
@@ -158,7 +158,7 @@ class NDSegments(NDBaseObject):
     def from_common(cls, segments: List[VideoObjectAnnotation], data: VideoData,
                     feature_schema_id: Cuid, extra: Dict[str,
                                                          Any]) -> "NDSegments":
-        print(f"\nWE MADE IT HERE TO SEGMENTS\n")
+        # print(f"\nWE MADE IT HERE TO SEGMENTS\n")
         # for segment in segments:
         # print("\nSEGMENT\n", segment)
         # processed_segment = cls.process_segment(cls, segment)
@@ -177,13 +177,15 @@ class NDSegments(NDBaseObject):
 
         segments = [{"keyframes": segment} for segment in segments]
 
-        print("wew\n", segments[0], "sss\n")
+        print("before class instantiatino\n", segments[0],
+              "\nbefore class instantiatino")
 
         a = cls(segments=segments,
                 dataRow=DataRow(id=data.uid),
                 schema_id=feature_schema_id,
                 uuid=extra.get('uuid'))
-        print("A\n", a, "\nZ")
+        print("\nI am from_common  ndsegments", a,
+              "\nI am from_common  ndsegments\n")
         return a
 
 
