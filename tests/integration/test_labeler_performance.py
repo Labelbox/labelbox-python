@@ -13,4 +13,4 @@ def test_labeler_performance(configured_project_with_label):
     assert isinstance(my_performance.last_activity_time, datetime)
     now_utc = datetime.now().astimezone(timezone.utc)
     assert timedelta(0) < now_utc - my_performance.last_activity_time < \
-        timedelta(seconds=30)
+        timedelta(seconds=60)
