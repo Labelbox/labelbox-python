@@ -1,7 +1,11 @@
 from datetime import datetime, timezone, timedelta
 import pytest
+import os
 
 
+@pytest.mark.skipif(
+    condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+    reason="longer runtime than expected for onprem. unskip when resolved.")
 def test_labeler_performance(configured_project_with_label):
     project, _, _, _ = configured_project_with_label
 
