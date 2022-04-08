@@ -123,33 +123,44 @@ class NDRectangle(NDBaseObject):
 
 class NDFrameRectangle(BaseModel):
     frame: int
-    # bbox: Bbox
+    bbox: Bbox
+
+    #make a new class that has Frame as the base and then inherit from it
+
+    @classmethod
+    def from_common(cls, frame: int, rectangle: Rectangle):
+        return cls(frame=frame,
+                   bbox=Bbox(top=rectangle.start.y,
+                             left=rectangle.start.x,
+                             height=rectangle.end.y - rectangle.start.y,
+                             width=rectangle.end.x - rectangle.start.x))
 
 
 class NDSegment(BaseModel):
     keyframes: List[NDFrameRectangle]
 
+    @staticmethod
+    #lets make NDFrameObject as a method to call on similar to the other one
+
+    @classmethod
+    def from_common(cls, segment):
+        NDFrameObject = {
+            Rectangle: NDFrameRectangle
+        }.get(type(segment[0].value))
+
+        # for a in segment:
+        # print("\nHELLO", a)
+        b = cls(keyframes=[
+            NDFrameObject.from_common(object_annotation.frame,
+                                      object_annotation.value)
+            for object_annotation in segment
+        ])
+        # print("\n\n B AS DICT IS", b.dict(by_alias=True))
+        return b
+
 
 class NDSegments(NDBaseObject):
     segments: List[NDSegment]
-
-    # uuid: str
-    # schema_id: str
-
-    # def process_segment(self, segment: List[VideoObjectAnnotation]):
-    #     """
-    #     We only care about the annotation.value and frame once we make it here
-    #     """
-    #     # for annotation in segment:
-    #     return [{
-    #         "frame":
-    #             annotation.frame,
-    #         "bbox":
-    #             Bbox(top=annotation.value.start.y,
-    #                  left=annotation.value.start.x,
-    #                  height=annotation.value.end.y - annotation.value.start.y,
-    #                  width=annotation.value.end.x - annotation.value.start.x)
-    #     } for annotation in segment]
 
     def to_common(self):
         pass
@@ -158,34 +169,18 @@ class NDSegments(NDBaseObject):
     def from_common(cls, segments: List[VideoObjectAnnotation], data: VideoData,
                     feature_schema_id: Cuid, extra: Dict[str,
                                                          Any]) -> "NDSegments":
-        # print(f"\nWE MADE IT HERE TO SEGMENTS\n")
-        # for segment in segments:
-        # print("\nSEGMENT\n", segment)
-        # processed_segment = cls.process_segment(cls, segment)
 
-        # segments = [{
-        #     "keyframes": [{
-        #         "frame": 3,
-        #         "bbox": Bbox(top=0, left=0, height=1, width=1)
-        #     }]
-        # }, {
-        #     "keyframes": [{
-        #         "frame": 5,
-        #         "bbox": Bbox(top=0, left=0, height=3, width=5)
-        #     }]
-        # }]
+        segments = [NDSegment.from_common(segment) for segment in segments]
 
-        segments = [{"keyframes": segment} for segment in segments]
-
-        print("before class instantiatino\n", segments[0],
-              "\nbefore class instantiatino")
+        # print("\nbefore class instantiation\n", segments,
+        #       "\nbefore class instantiation\n")
 
         a = cls(segments=segments,
                 dataRow=DataRow(id=data.uid),
                 schema_id=feature_schema_id,
                 uuid=extra.get('uuid'))
-        print("\nI am from_common  ndsegments", a,
-              "\nI am from_common  ndsegments\n")
+        # print("\nI am from_common  ndsegments", a,
+        #   "\nI am from_common  ndsegments\n")
         return a
 
 
