@@ -29,8 +29,6 @@ class NDLabel(BaseModel):
             grouped_annotations[annotation.data_row.id].append(annotation)
         return LabelGenerator(
             data=self._generate_annotations(grouped_annotations))
-        # c = LabelGenerator(data=self._generate_annotations(grouped_annotations))
-        # print(next(c), "Wefwefweefw\n")
 
     @classmethod
     def from_common(cls,
@@ -50,8 +48,6 @@ class NDLabel(BaseModel):
             annots = []
             for annotation in annotations:
                 if isinstance(annotation, NDSegments):
-                    # b = NDSegments.to_common(annotation, annotation.schema_id)
-                    # print(type(b), b)
                     annots.extend(
                         NDSegments.to_common(annotation, annotation.schema_id))
 
@@ -65,7 +61,6 @@ class NDLabel(BaseModel):
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
-            # print(type(annots[0]), annots[0])
             data = self._infer_media_type(annotations)(uid=data_row_id)
             yield Label(annotations=annots, data=data)
 
@@ -101,7 +96,6 @@ class NDLabel(BaseModel):
                 (VideoClassificationAnnotation, VideoObjectAnnotation)):
                 video_annotations[annot.feature_schema_id].append(annot)
 
-        #break this into two groups, classifications, and then objects
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(
                 sorted([annotation.frame for annotation in annotation_group]))

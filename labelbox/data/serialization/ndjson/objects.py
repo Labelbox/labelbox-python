@@ -3,7 +3,6 @@ from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union
 import base64
 import numpy as np
-from py import process
 
 from pydantic import BaseModel
 from PIL import Image
@@ -158,7 +157,6 @@ class NDSegment(BaseModel):
         return result
 
     def to_common(self, feature_schema_id: Cuid):
-        # print(f"\n to_common in ndsegment {self.keyframes}\n")
         return [
             keyframe.to_common(feature_schema_id) for keyframe in self.keyframes
         ]
