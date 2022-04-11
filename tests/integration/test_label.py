@@ -2,6 +2,7 @@ import time
 
 import pytest
 import requests
+import os
 
 from labelbox import Label
 
@@ -35,6 +36,8 @@ def test_label_export(configured_project_with_label):
     # The new exporter doesn't work with the create_label mutation
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="does not work for onprem")
 def test_label_update(configured_project_with_label):
     _, _, _, label = configured_project_with_label
     label.update(label="something else")
