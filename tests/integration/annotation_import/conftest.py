@@ -223,12 +223,11 @@ def entity_inference(prediction_id_mapping):
 @pytest.fixture
 def segmentation_inference(prediction_id_mapping):
     segmentation = prediction_id_mapping['superpixel'].copy()
-    segmentation.update({
-        'mask': {
-            'instanceURI': "https://picsum.photos/200/300",
+    segmentation.update(
+        {'mask': {
+            'instanceURI': "sampleuri",
             'colorRGB': [0, 0, 0]
-        }
-    })
+        }})
     del segmentation['tool']
     return segmentation
 
@@ -253,7 +252,7 @@ def segmentation_inference_png(prediction_id_mapping):
     segmentation.update({
         'uuid': str(uuid.uuid4()),
         'mask': {
-            'png': "https://picsum.photos/200/300",
+            'png': "somedata",
         }
     })
     del segmentation['tool']
