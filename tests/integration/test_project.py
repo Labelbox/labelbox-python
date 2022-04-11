@@ -1,5 +1,6 @@
 import json
 import time
+import os
 
 import pytest
 import requests
@@ -124,6 +125,8 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="new mutation does not work for onprem")
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
         project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
@@ -147,6 +150,8 @@ def test_attach_instructions(client, project):
         exc_info.value)
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="new mutation does not work for onprem")
 def test_html_instructions(configured_project):
     html_file_path = '/tmp/instructions.html'
     sample_html_str = "<html></html>"
@@ -161,6 +166,8 @@ def test_html_instructions(configured_project):
     assert requests.get(instructions).text == sample_html_str
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="new mutation does not work for onprem")
 def test_same_ontology_after_instructions(
         configured_project_with_complex_ontology):
     project, _ = configured_project_with_complex_ontology
