@@ -23,6 +23,11 @@ class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
 
 
+class VideoSupported(BaseModel):
+    #support for video for objects are per-frame basis
+    frame: int
+
+
 class _Point(BaseModel):
     x: float
     y: float
@@ -121,11 +126,8 @@ class NDRectangle(NDBaseObject):
                    classifications=classifications)
 
 
-class NDFrameRectangle(BaseModel):
-    frame: int
+class NDFrameRectangle(VideoSupported):
     bbox: Bbox
-
-    #make a new class that has Frame as the base and then inherit from it
 
     @classmethod
     def from_common(cls, frame: int, rectangle: Rectangle):
@@ -140,23 +142,19 @@ class NDSegment(BaseModel):
     keyframes: List[NDFrameRectangle]
 
     @staticmethod
-    #lets make NDFrameObject as a method to call on similar to the other one
+    def lookup_segment_object_type(segment: List) -> "NDFrameObjectType":
+        result = {Rectangle: NDFrameRectangle}.get(type(segment[0].value))
+        return result
 
     @classmethod
     def from_common(cls, segment):
-        NDFrameObject = {
-            Rectangle: NDFrameRectangle
-        }.get(type(segment[0].value))
+        nd_frame_object_type = cls.lookup_segment_object_type(segment)
 
-        # for a in segment:
-        # print("\nHELLO", a)
-        b = cls(keyframes=[
-            NDFrameObject.from_common(object_annotation.frame,
-                                      object_annotation.value)
+        return cls(keyframes=[
+            nd_frame_object_type.from_common(object_annotation.frame,
+                                             object_annotation.value)
             for object_annotation in segment
         ])
-        # print("\n\n B AS DICT IS", b.dict(by_alias=True))
-        return b
 
 
 class NDSegments(NDBaseObject):
@@ -331,3 +329,5 @@ class NDObject:
 
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
                      NDTextEntity]
+
+NDFrameObjectType = NDFrameRectangle
