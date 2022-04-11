@@ -129,6 +129,15 @@ class NDRectangle(NDBaseObject):
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
 
+    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
+        return VideoObjectAnnotation(
+            frame=self.frame,
+            keyframe=True,
+            feature_schema_id=feature_schema_id,
+            value=Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
+                            end=Point(x=self.bbox.left + self.bbox.width,
+                                      y=self.bbox.top + self.bbox.height)))
+
     @classmethod
     def from_common(cls, frame: int, rectangle: Rectangle):
         return cls(frame=frame,
@@ -143,8 +152,16 @@ class NDSegment(BaseModel):
 
     @staticmethod
     def lookup_segment_object_type(segment: List) -> "NDFrameObjectType":
+        """Used for determining which object type the annotation contains
+        returns the object type"""
         result = {Rectangle: NDFrameRectangle}.get(type(segment[0].value))
         return result
+
+    def to_common(self, feature_schema_id: Cuid):
+        # print(f"\n to_common in ndsegment {self.keyframes}\n")
+        return [
+            keyframe.to_common(feature_schema_id) for keyframe in self.keyframes
+        ]
 
     @classmethod
     def from_common(cls, segment):
@@ -160,8 +177,11 @@ class NDSegment(BaseModel):
 class NDSegments(NDBaseObject):
     segments: List[NDSegment]
 
-    def to_common(self):
-        pass
+    def to_common(self, feature_schema_id: Cuid):
+        result = []
+        for segment in self.segments:
+            result.extend(NDSegment.to_common(segment, feature_schema_id))
+        return result
 
     @classmethod
     def from_common(cls, segments: List[VideoObjectAnnotation], data: VideoData,
@@ -170,16 +190,10 @@ class NDSegments(NDBaseObject):
 
         segments = [NDSegment.from_common(segment) for segment in segments]
 
-        # print("\nbefore class instantiation\n", segments,
-        #       "\nbefore class instantiation\n")
-
-        a = cls(segments=segments,
-                dataRow=DataRow(id=data.uid),
-                schema_id=feature_schema_id,
-                uuid=extra.get('uuid'))
-        # print("\nI am from_common  ndsegments", a,
-        #   "\nI am from_common  ndsegments\n")
-        return a
+        return cls(segments=segments,
+                   dataRow=DataRow(id=data.uid),
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'))
 
 
 class _URIMask(BaseModel):
@@ -278,11 +292,8 @@ class NDObject:
 
         #if it is video segments
         if (obj == NDSegments):
-            print("hello i am ndsegment")
-            #look into segment of segments
-            #look into annotations of segment
-            #check and validate that there are no subclasses
-            #new method for processing segments ?
+            #TODO: need to process segments' classifications
+            #unsure if here or will be elsewhere
 
             return obj.from_common(
                 annotation,
@@ -316,15 +327,6 @@ class NDObject:
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
         return result
-
-    # @staticmethod
-    # def process_segments(segments: List[List[VideoObjectAnnotation]]):
-    #     for segment in segments:
-    #         for annotation in segment:
-    #             subclasses = [
-    #                 NDSubclassification.from_common(annot)
-    #                 for annot in annotation.classifications
-    #             ]
 
 
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,

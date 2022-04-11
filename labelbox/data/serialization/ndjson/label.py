@@ -15,12 +15,13 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
-from .objects import NDObject, NDObjectType
+from .objects import NDObject, NDObjectType, NDFrameObjectType, NDSegments
 
 
 class NDLabel(BaseModel):
     annotations: List[Union[NDObjectType, NDClassificationType,
-                            NDConfusionMatrixMetric, NDScalarMetric]]
+                            NDConfusionMatrixMetric, NDScalarMetric,
+                            NDSegments]]
 
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
@@ -28,28 +29,34 @@ class NDLabel(BaseModel):
             grouped_annotations[annotation.data_row.id].append(annotation)
         return LabelGenerator(
             data=self._generate_annotations(grouped_annotations))
+        # c = LabelGenerator(data=self._generate_annotations(grouped_annotations))
+        # print(next(c), "Wefwefweefw\n")
 
     @classmethod
     def from_common(cls,
                     data: LabelCollection) -> Generator["NDLabel", None, None]:
         for label in data:
-            # print(f"label in data:{label}")
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
 
     def _generate_annotations(
-        self, grouped_annotations: Dict[str, List[Union[NDObjectType,
-                                                        NDClassificationType,
-                                                        NDConfusionMatrixMetric,
-                                                        NDScalarMetric]]]
+        self,
+        grouped_annotations: Dict[str,
+                                  List[Union[NDObjectType, NDClassificationType,
+                                             NDConfusionMatrixMetric,
+                                             NDScalarMetric, NDSegments]]]
     ) -> Generator[Label, None, None]:
         for data_row_id, annotations in grouped_annotations.items():
             annots = []
             for annotation in annotations:
+                if isinstance(annotation, NDSegments):
+                    # b = NDSegments.to_common(annotation, annotation.schema_id)
+                    # print(type(b), b)
+                    annots.extend(
+                        NDSegments.to_common(annotation, annotation.schema_id))
 
-                if isinstance(annotation, NDObjectType.__args__):
+                elif isinstance(annotation, NDObjectType.__args__):
                     annots.append(NDObject.to_common(annotation))
-                #TODO: have a check on if the return type needs to extend or not
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
                 elif isinstance(annotation,
@@ -58,7 +65,7 @@ class NDLabel(BaseModel):
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
-
+            # print(type(annots[0]), annots[0])
             data = self._infer_media_type(annotations)(uid=data_row_id)
             yield Label(annotations=annots, data=data)
 
@@ -115,31 +122,7 @@ class NDLabel(BaseModel):
                         if annotation.keyframe and start_frame <= annotation.frame <= end_frame:
                             segment.append(annotation)
                     segments.append(segment)
-
-                print(segments[0], "\n")
-                print(segments[1], "\n")
-                print(consecutive_frames)
                 yield NDObject.from_common(segments, label.data)
-                # segments = []
-                # seg_frames = []
-                # for cframes in consecutive_frames:
-                #     seg_frames.append(cframes[0])
-                #     seg_frames.append(cframes[1])
-                # print(seg_frames)
-                # for annotation in annotation_group:
-                #     if annotation.frame in seg_frames:
-                #         segments.append(annotation)
-                #     # if annotation.keyframe:
-                # #         segments.append(annotation)
-                # # print(consecutive_frames)
-                # #TODO: current issue is that the way the code is written doesn't account for
-                # #which frames are consecutive. maybe we should just have list of segments
-                # annotations = []
-                # for annotation in segments:
-                #     annotations.append(
-                #         NDObject.from_common(annotation, label.data))
-                # yield annotations[0]
-                # yield {}
 
     @classmethod
     def _create_non_video_annotations(cls, label: Label):
