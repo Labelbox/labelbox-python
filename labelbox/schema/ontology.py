@@ -225,6 +225,7 @@ class Tool:
     class Type(Enum):
         POLYGON = "polygon"
         SEGMENTATION = "superpixel"
+        RASTER_SEGMENTATION = "raster-segmentation"
         POINT = "point"
         BBOX = "rectangle"
         LINE = "line"

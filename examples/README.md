@@ -11,6 +11,7 @@
 | Notebook                    | Github                            | Google Colab |
 | --------------------------- | --------------------------------- | ------------ |
 | Fundamentals                | [Github](basics/basics.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/basics.ipynb) |
+| Batches                   | [Github](basics/batches.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/batches.ipynb) |
 | Data Rows                   | [Github](basics/data_rows.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_rows.ipynb) |
 | Data Row Metadata           | [Github](basics/data_row_metadata.ipynb)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_row_metadata.ipynb) |
 | Datasets                    | [Github](basics/datasets.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/datasets.ipynb) |
