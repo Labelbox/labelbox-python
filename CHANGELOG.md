@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.19.0 (2022-04-12)
+## Added
+* Added Tool object type RASTER_SEGMENTATION for Video and DICOM ontologies
+
 # Version 3.18.0 (2022-04-07)
 ## Added
 * Added beta support for exporting labels from model_runs
