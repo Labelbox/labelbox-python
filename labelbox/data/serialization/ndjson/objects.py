@@ -1,12 +1,11 @@
 from ast import Bytes
 from io import BytesIO
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Tuple, Union
 import base64
 import numpy as np
 
 from pydantic import BaseModel
 from PIL import Image
-from labelbox.data.annotation_types import classification
 
 from labelbox.data.annotation_types.data.video import VideoData
 
@@ -25,8 +24,22 @@ class NDBaseObject(NDAnnotation):
 
 
 class VideoSupported(BaseModel):
-    #support for video for objects are per-frame basis
+    """support for video for objects are per-frame basis
+    classifications are here as well because we do not want to inherit NDAnnotation
+    """
     frame: int
+    classifications: List[NDSubclassificationType] = []
+
+    @staticmethod
+    def lookup_subclass_type(subclass_annotation: ClassificationAnnotation):
+        """Returns the NDSubclassificationType of a classification.
+        Useful for extracting the subclass to use from_common with"""
+        result = {
+            Radio: NDRadioSubclass,
+            Text: NDText,
+            Checklist: NDChecklist
+        }.get(type(subclass_annotation.value))
+        return result
 
 
 class _Point(BaseModel):
@@ -130,14 +143,11 @@ class NDRectangle(NDBaseObject):
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
 
-    def to_common(
-        self, feature_schema_id: Cuid,
-        classifications: List[ClassificationAnnotation]
-    ) -> VideoObjectAnnotation:
+    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
         classifications = [
             ClassificationAnnotation(value=classification.to_common(),
                                      feature_schema_id=classification.schema_id)
-            for classification in classifications
+            for classification in self.classifications
         ]
         return VideoObjectAnnotation(
             frame=self.frame,
@@ -149,8 +159,14 @@ class NDFrameRectangle(VideoSupported):
                                       y=self.bbox.top + self.bbox.height)))
 
     @classmethod
-    def from_common(cls, frame: int, rectangle: Rectangle):
+    def from_common(cls, frame: int, rectangle: Rectangle,
+                    subclassifications: List[ClassificationAnnotation]):
         return cls(frame=frame,
+                   classifications=[
+                       cls.lookup_subclass_type(subclass).from_common(
+                           subclass.value, subclass.feature_schema_id)
+                       for subclass in subclassifications
+                   ],
                    bbox=Bbox(top=rectangle.start.y,
                              left=rectangle.start.x,
                              height=rectangle.end.y - rectangle.start.y,
@@ -159,7 +175,6 @@ class NDFrameRectangle(VideoSupported):
 
 class NDSegment(BaseModel):
     keyframes: List[NDFrameRectangle]
-    classifications: Optional[List[NDSubclassificationType]] = []
 
     @staticmethod
     def lookup_segment_object_type(
@@ -169,41 +184,21 @@ class NDSegment(BaseModel):
         result = {Rectangle: NDFrameRectangle}.get(type(segment[0].value))
         return result
 
-    @staticmethod
-    def lookup_subclass_type(subclass_annotation: VideoObjectAnnotation):
-        """Returns the NDSubclassificationType of a classification. 
-        Useful for extracting the subclass to use from_common with"""
-        result = {
-            Radio: NDRadioSubclass,
-            Text: NDText,
-            Checklist: NDChecklist
-        }.get(type(subclass_annotation.value))
-        return result
-
     def to_common(self, feature_schema_id: Cuid):
         return [
-            keyframe.to_common(feature_schema_id, self.classifications)
-            for keyframe in self.keyframes
+            keyframe.to_common(feature_schema_id) for keyframe in self.keyframes
         ]
 
     @classmethod
     def from_common(cls, segment: List):
 
         nd_frame_object_type = cls.lookup_segment_object_type(segment)
-
-        classifications = segment[0].classifications if not None else []
-        subclassifications = [
-            cls.lookup_subclass_type(classification).from_common(
-                classification.value, classification.feature_schema_id)
-            for classification in classifications
-        ]
-
-        return cls(classifications=subclassifications,
-                   keyframes=[
-                       nd_frame_object_type.from_common(object_annotation.frame,
-                                                        object_annotation.value)
-                       for object_annotation in segment
-                   ])
+        return cls(keyframes=[
+            nd_frame_object_type.from_common(object_annotation.frame,
+                                             object_annotation.value,
+                                             object_annotation.classifications)
+            for object_annotation in segment
+        ])
 
 
 class NDSegments(NDBaseObject):
