@@ -43,10 +43,6 @@ def test_project(client, rand_gen):
     assert set(final) == set(before)
 
 
-@pytest.mark.skip(
-    reason="""Querying for resource tag intermittently not working.\n
-    Additionally, unsure if this should be resourceTag or resourceTags, but Tags causes
-    'Internal server error' """)
 def test_update_project_resource_tags(client, rand_gen):
 
     def delete_tag(tag_id: str):
