@@ -1,9 +1,13 @@
 # Changelog
 
-# Version 3.18.1 (2022-04-14)
+# Version 3.19.1 (2022-04-14)
 ## Fix
 * `create_data_rows` and `create_data_rows_sync` now uploads the file with a mimetype
 * Orgs that only allow DA uploads were getting errors when using these functions
+
+# Version 3.19.0 (2022-04-12)
+## Added
+* Added Tool object type RASTER_SEGMENTATION for Video and DICOM ontologies
 
 # Version 3.18.0 (2022-04-07)
 ## Added

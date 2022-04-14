@@ -1,4 +1,6 @@
 import time
+import os
+import pytest
 
 
 def test_model_run(client, configured_project_with_label, rand_gen):
@@ -84,6 +86,8 @@ def test_model_run_export_labels(model_run_with_model_run_data_rows):
     assert len(labels) == 3
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="does not work for onprem")
 def test_model_run_status(model_run_with_model_run_data_rows):
 
     def get_model_run_status():
