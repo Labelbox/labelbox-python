@@ -2,6 +2,7 @@ from itertools import groupby
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
+import warnings
 
 from pydantic import BaseModel
 
@@ -109,6 +110,10 @@ class NDLabel(BaseModel):
                 yield NDClassification.from_common(annotation, label.data)
 
             elif isinstance(annotation_group[0], VideoObjectAnnotation):
+                warnings.warn(
+                    "Nested classifications are not currently supported ",
+                    "for video object annotations ",
+                    "and will not import alongside the object annotations.")
                 segments = []
                 for start_frame, end_frame in consecutive_frames:
                     segment = []
