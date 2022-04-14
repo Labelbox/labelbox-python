@@ -290,9 +290,6 @@ class NDObject:
 
         #if it is video segments
         if (obj == NDSegments):
-            #TODO: need to process segments' classifications
-            #unsure if here or will be elsewhere
-
             return obj.from_common(
                 annotation,
                 data,

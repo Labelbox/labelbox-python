@@ -16,7 +16,7 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
-from .objects import NDObject, NDObjectType, NDFrameObjectType, NDSegments
+from .objects import NDObject, NDObjectType, NDSegments
 
 
 class NDLabel(BaseModel):
