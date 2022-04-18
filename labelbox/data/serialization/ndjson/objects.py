@@ -284,7 +284,9 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation: ObjectAnnotation, data: Union[ImageData, TextData]
+        cls, annotation: Union[ObjectAnnotation,
+                               List[List[VideoObjectAnnotation]]],
+        data: Union[ImageData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
 
