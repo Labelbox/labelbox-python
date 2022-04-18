@@ -307,7 +307,8 @@ class NDObject:
                                data)
 
     @staticmethod
-    def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":
+    def lookup_object(
+            annotation: Union[ObjectAnnotation, List]) -> "NDObjectType":
         if isinstance(annotation, list):
             result = NDSegments
         else:
