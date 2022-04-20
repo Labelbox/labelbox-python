@@ -517,15 +517,89 @@ def video_bbox_label():
         })
 
 
+def video_serialized_bbox_label():
+    return {
+        'uuid':
+            'b24e672b-8f79-4d96-bf5e-b552ca0820d5',
+        'dataRow': {
+            'id': 'cklr9mr4m5iao0rb6cvxu4qbn'
+        },
+        'schemaId':
+            'ckz38ofop0mci0z9i9w3aa9o4',
+        'classifications': [],
+        'segments': [{
+            'keyframes': [{
+                'frame': 1,
+                'bbox': {
+                    'top': 46.0,
+                    'left': 70.0,
+                    'height': 249.0,
+                    'width': 384.0
+                }
+            }, {
+                'frame': 5,
+                'bbox': {
+                    'top': 32.0,
+                    'left': 70.0,
+                    'height': 316.0,
+                    'width': 277.0
+                }
+            }]
+        }, {
+            'keyframes': [{
+                'frame': 9,
+                'bbox': {
+                    'top': 132.0,
+                    'left': 70.0,
+                    'height': 216.0,
+                    'width': 213.0
+                }
+            }, {
+                'frame': 15,
+                'bbox': {
+                    'top': 74.0,
+                    'left': 70.0,
+                    'height': 274.0,
+                    'width': 288.0
+                }
+            }, {
+                'frame': 21,
+                'bbox': {
+                    'top': 31.0,
+                    'left': 70.0,
+                    'height': 317.0,
+                    'width': 464.0
+                }
+            }, {
+                'frame': 29,
+                'bbox': {
+                    'top': 19.0,
+                    'left': 70.0,
+                    'height': 329.0,
+                    'width': 536.0
+                }
+            }]
+        }]
+    }
+
+
 def test_serialize_video_objects():
     label = video_bbox_label()
     serialized_labels = NDJsonConverter.serialize([label])
     label = next(serialized_labels)
+
+    manual_label = video_serialized_bbox_label()
+
+    for key in label.keys():
+        #ignore uuid because we randomize if there was none
+        if key != "uuid":
+            assert label[key] == manual_label[key]
+
     assert len(label['segments']) == 2
     assert len(label['segments'][0]['keyframes']) == 2
     assert len(label['segments'][1]['keyframes']) == 4
 
-    #converts back only the keyframes. should be the sum of all prev segments
+    # #converts back only the keyframes. should be the sum of all prev segments
     deserialized_labels = NDJsonConverter.deserialize([label])
     label = next(deserialized_labels)
     assert len(label.annotations) == 6
