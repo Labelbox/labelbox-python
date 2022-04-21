@@ -16,7 +16,6 @@ def big_dataset(dataset: Dataset):
     task.wait_till_done()
 
     yield dataset
-    dataset.delete()
 
 
 def test_create_batch(configured_project: Project, big_dataset: Dataset):
