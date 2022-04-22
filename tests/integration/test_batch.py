@@ -26,6 +26,7 @@ def test_create_batch(configured_project: Project, big_dataset: Dataset):
     assert batch.name == 'test-batch'
     assert batch.size == len(data_rows)
 
+
 def test_export_data_rows(configured_project: Project, dataset: Dataset):
     n_data_rows = 5
     task = dataset.create_data_rows([
