@@ -298,7 +298,7 @@ class Project(DbObject, Updateable, Deletable):
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
             """Returns a concatenated string of the dictionary's keys and values
-            
+
             The string will be formatted as {key}: 'value' for each key. Value will be inclusive of
             quotations while key will not. This can be toggled with `value_with_quotes`"""
 
@@ -839,6 +839,25 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["bulkImportRequests"],
                                    Entity.BulkImportRequest)
+
+    def batches(self) -> PaginatedCollection:
+        """ Fetch all batches that belong to this project
+
+        Returns:
+            A `PaginatedCollection of `Batch`es
+        """
+        id_param = "projectId"
+        query_str = """query GetProjectBatchesPyApi($from: String, $first: PageSize, $%s: ID!) {
+            project(where: {id: $%s}) {id
+            batches(after: $from, first: $first) { nodes { %s } pageInfo { endCursor }}}}
+        """ % (id_param, id_param, query.results_query_part(Entity.Batch))
+        return PaginatedCollection(self.client,
+                                   query_str, {id_param: self.uid},
+                                   ['project', 'batches', 'nodes'],
+                                   Entity.Batch,
+                                   cursor_path=['project', 'batches',
+                                                'pageInfo', 'endCursor'],
+                                   experimental=True)
 
     def upload_annotations(
             self,
