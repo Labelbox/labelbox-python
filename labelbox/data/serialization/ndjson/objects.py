@@ -313,15 +313,14 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation: ObjectAnnotation, data: Union[ImageData, TextData]
+        cls, annotation: Union[ObjectAnnotation,
+                               List[List[VideoObjectAnnotation]]],
+        data: Union[ImageData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
 
         #if it is video segments
         if (obj == NDSegments):
-            #TODO: need to process segments' classifications
-            #unsure if here or will be elsewhere
-
             return obj.from_common(
                 annotation,
                 data,
@@ -337,7 +336,8 @@ class NDObject:
                                data)
 
     @staticmethod
-    def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":
+    def lookup_object(
+            annotation: Union[ObjectAnnotation, List]) -> "NDObjectType":
         if isinstance(annotation, list):
             result = NDSegments
         else:
