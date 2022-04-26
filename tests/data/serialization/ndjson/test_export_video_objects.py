@@ -545,7 +545,7 @@ def video_serialized_bbox_label():
                     'height': 316.0,
                     'width': 277.0
                 },
-                "classifications": []                
+                "classifications": []
             }]
         }, {
             'keyframes': [{
