@@ -347,8 +347,8 @@ class Entity(metaclass=EntityMeta):
         Invite: Type[labelbox.Invite]
         InviteLimit: Type[labelbox.InviteLimit]
         ProjectRole: Type[labelbox.ProjectRole]
-        Batch: Type[labelbox.Batch]
         Project: Type[labelbox.Project]
+        Batch: Type[labelbox.Batch]
 
     @classmethod
     def _attributes_of_type(cls, attr_type):
