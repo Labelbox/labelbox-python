@@ -347,6 +347,7 @@ class Entity(metaclass=EntityMeta):
         Invite: Type[labelbox.Invite]
         InviteLimit: Type[labelbox.InviteLimit]
         ProjectRole: Type[labelbox.ProjectRole]
+        Project: Type[labelbox.Project]
         Batch: Type[labelbox.Batch]
 
     @classmethod
