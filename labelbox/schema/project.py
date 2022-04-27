@@ -1,4 +1,4 @@
-import enum
+from enum import Enum
 import json
 import logging
 import time
@@ -63,6 +63,37 @@ class Project(DbObject, Updateable, Deletable):
         benchmarks (Relationship): `ToMany` relationship to Benchmark
         ontology (Relationship): `ToOne` relationship to Ontology
     """
+
+    class MediaType(Enum):
+        """add DOCUMENT, GEOSPATIAL_TILE, SIMPLE_TILE to match the UI choices"""
+        Audio = "AUDIO"
+        Conversational = "CONVERSATIONAL"
+        Dicom = "DICOM"
+        Document = "PDF"
+        Geospatial_Tile = "TMS_GEO"
+        Image = "IMAGE"
+        Json = "JSON"
+        Pdf = "PDF"
+        Simple_Tile = "TMS_SIMPLE"
+        Text = "TEXT"
+        Tms_Geo = "TMS_GEO"
+        Tms_Simple = "TMS_SIMPLE"
+        Video = "VIDEO"
+        Unknown = "UNKNOWN"
+
+        @classmethod
+        def _missing_(cls, name):
+            """Handle missing null data types for projects 
+            created without setting allowedMediaType"""
+            # return Project.MediaType.UNKNOWN
+
+            if name is None:
+                return cls.Unknown
+
+            for member in cls.__members__:
+                if member.name == name.upper():
+                    return member
+
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -71,6 +102,8 @@ class Project(DbObject, Updateable, Deletable):
     last_activity_time = Field.DateTime("last_activity_time")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
+    # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
+    media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
@@ -85,7 +118,7 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    class QueueMode(enum.Enum):
+    class QueueMode(Enum):
         Batch = "Batch"
         Dataset = "Dataset"
 
@@ -93,6 +126,20 @@ class Project(DbObject, Updateable, Deletable):
         mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
+
+        media_type = kwargs.get("media_type")
+        if media_type:
+            if isinstance(media_type, Project.MediaType
+                         ) and media_type != Project.MediaType.Unknown:
+                kwargs["media_type"] = media_type.value
+            else:
+                media_types = [
+                    item for item in Project.MediaType.__members__
+                    if item != "Unknown"
+                ]
+                raise TypeError(
+                    f"{media_type} is not a supported type. Please use any of {media_types} from the {type(media_type).__name__} enumeration."
+                )
 
         return super().update(**kwargs)
 

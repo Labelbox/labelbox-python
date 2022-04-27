@@ -611,6 +611,20 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
+        media_type = kwargs.get("media_type")
+        if media_type:
+            if isinstance(media_type, Project.MediaType
+                         ) and media_type is not Project.MediaType.Unknown:
+                kwargs["media_type"] = media_type.value
+            else:
+                media_types = [
+                    item for item in Project.MediaType.__members__
+                    if item != "Unknown"
+                ]
+                raise TypeError(
+                    f"{media_type} is not a supported type. Please use any of {media_types} from the {type(media_type).__name__} enumeration."
+                )
+
         return self._create(Entity.Project, kwargs)
 
     def get_roles(self) -> List[Role]:
