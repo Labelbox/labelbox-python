@@ -40,7 +40,7 @@ class Batch(DbObject):
         super().__init__(client, *args, **kwargs)
         self.project_id = project_id
 
-    def project(self) -> Project:
+    def project(self) -> 'Project':  # type: ignore
         """ Returns Project which this Batch belongs to
 
         Raises:
@@ -55,7 +55,7 @@ class Batch(DbObject):
         response = self.client.execute(query_str, params)
 
         if response is None:
-            raise ResourceNotFoundError(Project, params)
+            raise ResourceNotFoundError(Entity.Project, params)
 
         return Entity.Project(self.client, response["project"])
 
