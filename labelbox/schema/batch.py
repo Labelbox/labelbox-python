@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, TYPE_CHECKING
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm import query
 from labelbox.orm.model import Entity, Field, Relationship
@@ -8,6 +8,9 @@ import ndjson
 import requests
 import logging
 import time
+
+if TYPE_CHECKING:
+    from labelbox import Project
 
 logger = logging.getLogger(__name__)
 
@@ -37,24 +40,25 @@ class Batch(DbObject):
         super().__init__(client, *args, **kwargs)
         self.project_id = project_id
 
-    def project(self) -> Entity.Project:
+    def project(self) -> Project:
         """ Returns Project which this Batch belongs to
 
         Raises:
             LabelboxError: if the project is not found
         """
+        Project = Entity.Project
         query_str = """query getProjectPyApi($projectId: ID!) {
             project(
                 where: {id: $projectId}){
                     %s
-                }}""" % query.results_query_part(Entity.Project)
+                }}""" % query.results_query_part(Project)
         params = {"projectId": self.project_id}
         response = self.client.execute(query_str, params)
 
         if response is None:
-            raise ResourceNotFoundError(Entity.Project, params)
+            raise ResourceNotFoundError(Project, params)
 
-        return Entity.Project(self.client, response["project"])
+        return Project(self.client, response["project"])
 
     def remove_queued_data_rows(self) -> None:
         """ Removes remaining queued data rows from the batch and labeling queue.
