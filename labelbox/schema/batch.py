@@ -1,7 +1,8 @@
 from typing import Generator
 from labelbox.orm.db_object import DbObject, experimental
+from labelbox.orm import query
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.exceptions import LabelboxError
+from labelbox.exceptions import LabelboxError, ResourceNotFoundError
 from io import StringIO
 import ndjson
 import requests
@@ -30,8 +31,48 @@ class Batch(DbObject):
     size = Field.Int("size")
 
     # Relationships
-    project = Relationship.ToOne("Project")
     created_by = Relationship.ToOne("User")
+
+    def __init__(self, client, project_id, *args, **kwargs):
+        super().__init__(client, *args, **kwargs)
+        self.project_id = project_id
+
+    def project(self) -> Entity.Project:
+        """ Returns Project which this Batch belongs to
+
+        Raises:
+            LabelboxError: if the project is not found
+        """
+        query_str = """query getProjectPyApi($projectId: ID!) {
+            project(
+                where: {id: $projectId}){
+                    %s
+                }}""" % query.results_query_part(Entity.Project)
+        params = {"projectId": self.project_id}
+        response = self.client.execute(query_str, params)
+
+        if response is None:
+            raise ResourceNotFoundError(Entity.Project, params)
+
+        return Entity.Project(self.client, response["project"])
+
+    def remove_queued_data_rows(self) -> None:
+        """ Removes remaining queued data rows from the batch and labeling queue.
+
+        Args:
+            batch (Batch): Batch to remove queued data rows from
+        """
+
+        project_id_param = "projectId"
+        batch_id_param = "batchId"
+        self.client.execute("""mutation ArchiveBatchPyApi($%s: ID!, $%s: ID!) {
+            project(where: {id: $%s}) { archiveBatch(batchId: $%s) { id archivedAt } }
+        }""" % (project_id_param, batch_id_param, project_id_param,
+                batch_id_param), {
+                    project_id_param: self.project_id,
+                    batch_id_param: self.uid
+                },
+                            experimental=True)
 
     def export_data_rows(self, timeout_seconds=120) -> Generator:
         """ Returns a generator that produces all data rows that are currently

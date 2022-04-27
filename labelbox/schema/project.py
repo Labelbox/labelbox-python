@@ -609,7 +609,7 @@ class Project(DbObject, Updateable, Deletable):
                                   experimental=True)["project"][method]
 
         res['size'] = len(dr_ids)
-        return Entity.Batch(self.client, res)
+        return Entity.Batch(self.client, self.uid, res)
 
     def _update_queue_mode(self,
                            mode: "Project.QueueMode") -> "Project.QueueMode":
@@ -851,17 +851,17 @@ class Project(DbObject, Updateable, Deletable):
             project(where: {id: $%s}) {id
             batches(after: $from, first: $first) { nodes { %s } pageInfo { endCursor }}}}
         """ % (id_param, id_param, query.results_query_part(Entity.Batch))
-        return PaginatedCollection(self.client,
-                                   query_str, {id_param: self.uid},
-                                   ['project', 'batches', 'nodes'],
-                                   Entity.Batch,
-                                   cursor_path={
-                                       'project': None,
-                                       'batches': None,
-                                       'pageInfo': None,
-                                       'endCursor': None
-                                   },
-                                   experimental=True)
+        return PaginatedCollection(
+            self.client,
+            query_str, {id_param: self.uid}, ['project', 'batches', 'nodes'],
+            lambda client, res: Entity.Batch(client, self.uid, res),
+            cursor_path={
+                'project': None,
+                'batches': None,
+                'pageInfo': None,
+                'endCursor': None
+            },
+            experimental=True)
 
     def upload_annotations(
             self,

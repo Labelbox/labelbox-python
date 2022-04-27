@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.20.0 (2022-04-27)
+## Added
+* Batches in a project can be retrieved with `project.batches()`
+* Added `Batch.remove_queued_data_rows()` to cancel remaining data rows in batch
+* Added `Batch.export_data_rows()` which returns `DataRow`s for a batch
+
+## Fix
+* `batch.project()` now works
+
 # Version 3.19.1 (2022-04-14)
 ## Fix
 * `create_data_rows` and `create_data_rows_sync` now uploads the file with a mimetype
