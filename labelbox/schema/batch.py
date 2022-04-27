@@ -46,19 +46,18 @@ class Batch(DbObject):
         Raises:
             LabelboxError: if the project is not found
         """
-        Project = Entity.Project
         query_str = """query getProjectPyApi($projectId: ID!) {
             project(
                 where: {id: $projectId}){
                     %s
-                }}""" % query.results_query_part(Project)
+                }}""" % query.results_query_part(Entity.Project)
         params = {"projectId": self.project_id}
         response = self.client.execute(query_str, params)
 
         if response is None:
             raise ResourceNotFoundError(Project, params)
 
-        return Project(self.client, response["project"])
+        return Entity.Project(self.client, response["project"])
 
     def remove_queued_data_rows(self) -> None:
         """ Removes remaining queued data rows from the batch and labeling queue.
