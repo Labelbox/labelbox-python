@@ -855,12 +855,7 @@ class Project(DbObject, Updateable, Deletable):
             self.client,
             query_str, {id_param: self.uid}, ['project', 'batches', 'nodes'],
             lambda client, res: Entity.Batch(client, self.uid, res),
-            cursor_path={
-                'project': None,
-                'batches': None,
-                'pageInfo': None,
-                'endCursor': None
-            },
+            cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
             experimental=True)
 
     def upload_annotations(
