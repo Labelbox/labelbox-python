@@ -5,6 +5,8 @@
 * Batches in a project can be retrieved with `project.batches()`
 * Added `Batch.remove_queued_data_rows()` to cancel remaining data rows in batch
 * Added `Batch.export_data_rows()` which returns `DataRow`s for a batch
+
+## Updated
 * NDJsonConverter now supports Video bounding box annotations.
     * Note: Currently does not support nested classifications.
     * Note: Converting an export into Labelbox annotation types, and back to export will result in only keyframe annotations. This is to support correct import format.
