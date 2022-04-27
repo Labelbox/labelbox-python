@@ -40,6 +40,27 @@ def test_create_batch(configured_project: Project, big_dataset: Dataset):
     assert batch.size == len(data_rows)
 
 
+def test_archive_batch(configured_project: Project, small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch("batch to archive", data_rows)
+    batch.remove_queued_data_rows()
+    exported_data_rows = list(batch.export_data_rows())
+
+    assert len(exported_data_rows) == 0
+
+
+def test_batch_project(configured_project: Project, small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch(
+        "batch to test project relationship", data_rows)
+    project_from_batch = batch.project()
+
+    assert project_from_batch.uid == configured_project.uid
+    assert project_from_batch.name == configured_project.name
+
+
 def test_export_data_rows(configured_project: Project, dataset: Dataset):
     n_data_rows = 5
     task = dataset.create_data_rows([
@@ -51,6 +72,7 @@ def test_export_data_rows(configured_project: Project, dataset: Dataset):
     task.wait_till_done()
 
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
     batch = configured_project.create_batch("batch test", data_rows)
 
     result = list(batch.export_data_rows())
@@ -58,22 +80,3 @@ def test_export_data_rows(configured_project: Project, dataset: Dataset):
 
     assert len(result) == n_data_rows
     assert set(data_rows) == set(exported_data_rows)
-
-
-def test_archive_batch(configured_project: Project, small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = configured_project.create_batch("batch to archive", data_rows)
-    batch.remove_queued_data_rows()
-    exported_data_rows = list(batch.export_data_rows())
-
-    assert len(exported_data_rows) == 0
-
-
-def test_batch_project(configured_project: Project, small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = configured_project.create_batch(
-        "batch to test project relationship", data_rows)
-    project_from_batch = batch.project()
-
-    assert project_from_batch.uid == configured_project.uid
-    assert project_from_batch.name == configured_project.name
