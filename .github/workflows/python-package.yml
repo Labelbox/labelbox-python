@@ -83,5 +83,7 @@ jobs:
           LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
 
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
+
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[DA_GCP_LABELBOX_API_KEY] }}
         run: |
           tox -e py -- -svv --reruns 5 --reruns-delay 10
