@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict
 
 from labelbox.exceptions import LabelboxError
 from labelbox import utils
@@ -129,7 +129,7 @@ class Organization(DbObject):
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
         }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
 
-    def create_resource_tag(self, tag=None) -> ResourceTag:
+    def create_resource_tag(self, tag: Dict[str, str]) -> ResourceTag:
         """
         Creates a resource tag.
             >>> tag = {'text': 'tag-1',  'color': 'ffffff'}
@@ -148,9 +148,13 @@ class Organization(DbObject):
                query.results_query_part(ResourceTag))
 
         params = {
-            tag_text_param: tag.get("text", ""),
-            tag_color_param: tag.get("color", "")
+            tag_text_param: tag.get("text", None),
+            tag_color_param: tag.get("color", None)
         }
+        if not all(params.values()):
+            raise ValueError(
+                f"tag must contain 'text' and 'color' keys. received: {tag}")
+
         res = self.client.execute(query_str, params)
         return ResourceTag(self.client, res['createResourceTag'])
 
