@@ -1,11 +1,10 @@
-import json
 import time
 import os
 
 import pytest
 import requests
 
-from labelbox import Project, LabelingFrontend
+from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
 
 
@@ -44,11 +43,19 @@ def test_project(client, rand_gen):
     assert set(final) == set(before)
 
 
-@pytest.mark.skip(
-    reason="this will fail if run multiple times, limit is defaulted to 3 per org"
-    "add this back in when either all test orgs have unlimited, or we delete all tags befoer running"
-)
 def test_update_project_resource_tags(client, rand_gen):
+
+    def delete_tag(tag_id: str):
+        """Deletes a tag given the tag uid. Currently internal use only so this is not public"""
+        res = client.execute(
+            """mutation deleteResourceTagPyApi($tag_id: String!) {
+        deleteResourceTag(input: {id: $tag_id}) {
+            id
+        }
+        }
+        """, {"tag_id": tag_id})
+        return res
+
     before = list(client.get_projects())
     for o in before:
         assert isinstance(o, Project)
@@ -91,6 +98,9 @@ def test_update_project_resource_tags(client, rand_gen):
         p1.uid).update_project_resource_tags([str(tagA.uid)])
     assert len(project_resource_tag) == 1
     assert project_resource_tag[0].uid == tagA.uid
+
+    delete_tag(tagA.uid)
+    delete_tag(tagB.uid)
 
 
 def test_project_filtering(client, rand_gen):
@@ -191,3 +201,22 @@ def test_queue_mode(configured_project: Project):
     ) == configured_project.QueueMode.Dataset
     configured_project.update(queue_mode=configured_project.QueueMode.Batch)
     assert configured_project.queue_mode() == configured_project.QueueMode.Batch
+
+
+def test_batches(configured_project: Project, dataset: Dataset, image_url):
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch_one = 'batch one'
+    batch_two = 'batch two'
+    configured_project.create_batch(batch_one, [data_rows[0]])
+    configured_project.create_batch(batch_two, [data_rows[1]])
+
+    names = set([batch.name for batch in list(configured_project.batches())])
+    assert names == set([batch_one, batch_two])
