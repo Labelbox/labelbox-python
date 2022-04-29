@@ -31,32 +31,6 @@ def check_iou(pair, mask=None):
     assert math.isclose(feature_ious[0].value, pair.expected)
 
 
-def check_iou_checklist(pair, mask=None):
-    """specialized test since checklists have more than one feature ious """
-    default = Label(data=ImageData(uid="ckppihxc10005aeyjen11h7jh"))
-    prediction = next(NDJsonConverter.deserialize(pair.predictions), default)
-    label = next(LBV1Converter.deserialize([pair.labels]))
-    if mask:
-        for annotation in [*prediction.annotations, *label.annotations]:
-            if isinstance(annotation.value, Mask):
-                annotation.value.mask.arr = np.frombuffer(
-                    base64.b64decode(annotation.value.mask.url.encode('utf-8')),
-                    dtype=np.uint8).reshape((32, 32, 3))
-    assert math.isclose(data_row_miou(label, prediction),
-                        pair.data_row_expected)
-    assert math.isclose(
-        miou_metric(label.annotations, prediction.annotations)[0].value,
-        pair.data_row_expected)
-    feature_ious = feature_miou_metric(label.annotations,
-                                       prediction.annotations)
-    mapping = {}
-    for iou in feature_ious:
-        if not mapping.get(iou.value, None):
-            mapping[iou.value] = 0
-        mapping[iou.value] += 1
-    assert mapping == pair.expected
-
-
 def strings_to_fixtures(strings):
     return [fixture_ref(x) for x in strings]
 
@@ -96,7 +70,7 @@ def test_radio(pair):
                  "empty_checklist_prediction",
              ]))
 def test_checklist(pair):
-    check_iou_checklist(pair)
+    check_iou(pair)
 
 
 @parametrize("pair", strings_to_fixtures(["matching_text",
@@ -114,11 +88,4 @@ def test_vector_with_subclass(pair):
 
 @parametrize("pair", strings_to_fixtures(["point_pair", "line_pair"]))
 def test_others(pair):
-    check_iou(pair)
-
-
-@parametrize("pair",
-             strings_to_fixtures(
-                 ["matching_ner", "no_matching_ner", "partial_matching_ner"]))
-def test_ner(pair):
     check_iou(pair)

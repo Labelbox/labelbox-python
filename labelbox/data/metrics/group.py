@@ -3,16 +3,13 @@ Tools for grouping features and labels so that we can compute metrics on the ind
 """
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
-
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation, Checklist, Radio, Text
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
 try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
 
 from ..annotation_types.feature import FeatureSchema
-from ..annotation_types import ObjectAnnotation, ClassificationAnnotation, Label, LabelList
+from ..annotation_types import ObjectAnnotation, Label, LabelList
 
 
 def get_identifying_key(
@@ -59,19 +56,6 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
     all_names = True
     all_schemas = True
     for feature in features:
-        if isinstance(feature, ClassificationAnnotation):
-            if isinstance(feature.value, Checklist):
-                all_schemas, all_names = all_have_key(feature.value.answer)
-            elif isinstance(feature.value, Text):
-                if feature.name is None:
-                    all_names = False
-                if feature.feature_schema_id is None:
-                    all_schemas = False
-            else:
-                if feature.value.answer.name is None:
-                    all_names = False
-                if feature.value.answer.feature_schema_id is None:
-                    all_schemas = False
         if feature.name is None:
             all_names = False
         if feature.feature_schema_id is None:
@@ -171,25 +155,7 @@ def _create_feature_lookup(features: List[FeatureSchema],
     """
     grouped_features = defaultdict(list)
     for feature in features:
-        if isinstance(feature, ClassificationAnnotation):
-            #checklists
-            if isinstance(feature.value, Checklist):
-                for answer in feature.value.answer:
-                    new_answer = Radio(answer=answer)
-                    new_annotation = ClassificationAnnotation(
-                        value=new_answer,
-                        name=answer.name,
-                        feature_schema_id=answer.feature_schema_id)
-
-                    grouped_features[getattr(answer,
-                                             key)].append(new_annotation)
-            elif isinstance(feature.value, Text):
-                grouped_features[getattr(feature, key)].append(feature)
-            else:
-                grouped_features[getattr(feature.value.answer,
-                                         key)].append(feature)
-        else:
-            grouped_features[getattr(feature, key)].append(feature)
+        grouped_features[getattr(feature, key)].append(feature)
     return grouped_features
 
 

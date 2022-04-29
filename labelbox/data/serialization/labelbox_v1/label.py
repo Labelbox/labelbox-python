@@ -1,4 +1,3 @@
-from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
 from typing import List, Optional, Union
 
@@ -38,9 +37,7 @@ class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
 class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
     frame_number: int = Field(..., alias='frameNumber')
 
-    def to_common(
-        self
-    ) -> List[Union[VideoClassificationAnnotation, VideoObjectAnnotation]]:
+    def to_common(self):
         classifications = [
             VideoClassificationAnnotation(
                 value=classification.to_common(),
@@ -141,7 +138,6 @@ class LBV1Label(BaseModel):
     has_open_issues: Optional[float] = Extra('Has Open Issues')
     skipped: Optional[bool] = Extra('Skipped')
     media_type: Optional[str] = Extra('media_type')
-    data_split: Optional[str] = Extra('Data Split')
 
     def to_common(self) -> Label:
         if isinstance(self.label, list):
@@ -175,9 +171,8 @@ class LBV1Label(BaseModel):
                          external_id=label.data.external_id,
                          **label.extra)
 
-    def _data_row_to_common(
-            self) -> Union[ImageData, TextData, VideoData, TiledImageData]:
-        # Use data row information to construct the appropriate annotation type
+    def _data_row_to_common(self) -> Union[ImageData, TextData, VideoData]:
+        # Use data row information to construct the appropriate annotatin type
         data_row_info = {
             'url' if self._is_url() else 'text': self.row_data,
             'external_id': self.external_id,
@@ -220,22 +215,20 @@ class LBV1Label(BaseModel):
                     f"Can't infer data type from row data. row_data: {self.row_data[:200]}"
                 )
 
-    def _has_object_annotations(self) -> bool:
+    def _has_object_annotations(self):
         return len(self.label.objects) > 0
 
-    def _has_text_annotations(self) -> bool:
+    def _has_text_annotations(self):
         return len([
             annotation for annotation in self.label.objects
             if isinstance(annotation, LBV1TextEntity)
         ]) > 0
 
-    def _row_contains(self, substrs) -> bool:
+    def _row_contains(self, substrs):
         return any([substr in self.row_data for substr in substrs])
 
-    def _is_url(self) -> bool:
-        return self.row_data.startswith(
-            ("http://", "https://", "gs://",
-             "s3://")) or "tileLayerUrl" in self.row_data
+    def _is_url(self):
+        return self.row_data.startswith(("http://", "https://"))
 
     class Config:
         allow_population_by_field_name = True

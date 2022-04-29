@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from typing import Dict, Optional, TYPE_CHECKING
 
-from labelbox.orm.model import Field, Entity
+from labelbox.orm.model import Field
 from labelbox.orm.db_object import DbObject
+from labelbox.schema.project import Project
 
 if TYPE_CHECKING:
-    from labelbox import Client, Project
+    from labelbox import Client
 
 _ROLES: Optional[Dict[str, "Role"]] = None
 
@@ -40,5 +41,5 @@ class UserRole(Role):
 
 @dataclass
 class ProjectRole:
-    project: "Project"
+    project: Project
     role: Role

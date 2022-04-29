@@ -46,6 +46,7 @@ def big_dataset(dataset: Dataset, image_url):
     task.wait_till_done()
 
     yield dataset
+    dataset.delete()
 
 
 def make_metadata(dr_id) -> DataRowMetadata:

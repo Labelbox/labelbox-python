@@ -7,24 +7,17 @@ import numpy as np
 from pydantic import BaseModel
 from PIL import Image
 
-from labelbox.data.annotation_types.data.video import VideoData
-
 from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoObjectAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation
 
 
 class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
-
-
-class VideoSupported(BaseModel):
-    #support for video for objects are per-frame basis
-    frame: int
 
 
 class _Point(BaseModel):
@@ -125,75 +118,6 @@ class NDRectangle(NDBaseObject):
                    classifications=classifications)
 
 
-class NDFrameRectangle(VideoSupported):
-    bbox: Bbox
-
-    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
-        return VideoObjectAnnotation(
-            frame=self.frame,
-            keyframe=True,
-            feature_schema_id=feature_schema_id,
-            value=Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
-                            end=Point(x=self.bbox.left + self.bbox.width,
-                                      y=self.bbox.top + self.bbox.height)))
-
-    @classmethod
-    def from_common(cls, frame: int, rectangle: Rectangle):
-        return cls(frame=frame,
-                   bbox=Bbox(top=rectangle.start.y,
-                             left=rectangle.start.x,
-                             height=rectangle.end.y - rectangle.start.y,
-                             width=rectangle.end.x - rectangle.start.x))
-
-
-class NDSegment(BaseModel):
-    keyframes: List[NDFrameRectangle]
-
-    @staticmethod
-    def lookup_segment_object_type(segment: List) -> "NDFrameObjectType":
-        """Used for determining which object type the annotation contains
-        returns the object type"""
-        result = {Rectangle: NDFrameRectangle}.get(type(segment[0].value))
-        return result
-
-    def to_common(self, feature_schema_id: Cuid):
-        return [
-            keyframe.to_common(feature_schema_id) for keyframe in self.keyframes
-        ]
-
-    @classmethod
-    def from_common(cls, segment):
-        nd_frame_object_type = cls.lookup_segment_object_type(segment)
-
-        return cls(keyframes=[
-            nd_frame_object_type.from_common(object_annotation.frame,
-                                             object_annotation.value)
-            for object_annotation in segment
-        ])
-
-
-class NDSegments(NDBaseObject):
-    segments: List[NDSegment]
-
-    def to_common(self, feature_schema_id: Cuid):
-        result = []
-        for segment in self.segments:
-            result.extend(NDSegment.to_common(segment, feature_schema_id))
-        return result
-
-    @classmethod
-    def from_common(cls, segments: List[VideoObjectAnnotation], data: VideoData,
-                    feature_schema_id: Cuid, extra: Dict[str,
-                                                         Any]) -> "NDSegments":
-
-        segments = [NDSegment.from_common(segment) for segment in segments]
-
-        return cls(segments=segments,
-                   dataRow=DataRow(id=data.uid),
-                   schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'))
-
-
 class _URIMask(BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
@@ -284,20 +208,9 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation: Union[ObjectAnnotation,
-                               List[List[VideoObjectAnnotation]]],
-        data: Union[ImageData, TextData]
+        cls, annotation: ObjectAnnotation, data: Union[ImageData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
-
-        #if it is video segments
-        if (obj == NDSegments):
-            return obj.from_common(
-                annotation,
-                data,
-                feature_schema_id=annotation[0][0].feature_schema_id,
-                extra=annotation[0][0].extra)
-
         subclasses = [
             NDSubclassification.from_common(annot)
             for annot in annotation.classifications
@@ -307,19 +220,15 @@ class NDObject:
                                data)
 
     @staticmethod
-    def lookup_object(
-            annotation: Union[ObjectAnnotation, List]) -> "NDObjectType":
-        if isinstance(annotation, list):
-            result = NDSegments
-        else:
-            result = {
-                Line: NDLine,
-                Point: NDPoint,
-                Polygon: NDPolygon,
-                Rectangle: NDRectangle,
-                Mask: NDMask,
-                TextEntity: NDTextEntity
-            }.get(type(annotation.value))
+    def lookup_object(annotation: ObjectAnnotation) -> "NDObjectType":
+        result = {
+            Line: NDLine,
+            Point: NDPoint,
+            Polygon: NDPolygon,
+            Rectangle: NDRectangle,
+            Mask: NDMask,
+            TextEntity: NDTextEntity
+        }.get(type(annotation.value))
         if result is None:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
@@ -329,5 +238,3 @@ class NDObject:
 
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
                      NDTextEntity]
-
-NDFrameObjectType = NDFrameRectangle

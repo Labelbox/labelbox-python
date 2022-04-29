@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Union, Optional
 from pydantic import BaseModel, validator
 
 import labelbox
-from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)
@@ -36,7 +35,7 @@ class Label(BaseModel):
         extra: additional context
     """
     uid: Optional[Cuid] = None
-    data: Union[VideoData, ImageData, TextData, TiledImageData]
+    data: Union[VideoData, ImageData, TextData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoObjectAnnotation,
                             VideoClassificationAnnotation, ScalarMetric,
