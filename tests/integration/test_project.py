@@ -6,6 +6,7 @@ import requests
 
 from labelbox import Project, LabelingFrontend
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.media_type import MediaType
 
 
 def test_project(client, rand_gen):
@@ -204,22 +205,18 @@ def test_queue_mode(configured_project: Project):
 
 
 def test_media_type(client, configured_project: Project, rand_gen):
-    # Existing project
-    assert configured_project.media_type is None or isinstance(
-        configured_project.media_type, Project.MediaType)
+    # Existing project with no media_type
+    assert isinstance(configured_project.media_type, MediaType)
 
-    # No media_type
+    # Update test
     project = client.create_project(name=rand_gen(str))
-    assert project.media_type == Project.MediaType.Unknown
-    project.update(media_type=Project.MediaType.Image)
-    assert project.media_type == Project.MediaType.Image
+    project.update(media_type=MediaType.Image)
+    assert project.media_type == MediaType.Image
     project.delete()
 
-    for media_type in Project.MediaType:
-        if media_type == Project.MediaType.Unknown:
-            continue
+    for media_type in MediaType.get_accepted_members():
 
         project = client.create_project(name=rand_gen(str),
-                                        media_type=media_type)
-        assert project.media_type == media_type
+                                        media_type=MediaType[media_type])
+        assert project.media_type == MediaType[media_type]
         project.delete()

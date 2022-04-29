@@ -19,6 +19,7 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.media_type import MediaType
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -64,36 +65,6 @@ class Project(DbObject, Updateable, Deletable):
         ontology (Relationship): `ToOne` relationship to Ontology
     """
 
-    class MediaType(Enum):
-        """add DOCUMENT, GEOSPATIAL_TILE, SIMPLE_TILE to match the UI choices"""
-        Audio = "AUDIO"
-        Conversational = "CONVERSATIONAL"
-        Dicom = "DICOM"
-        Document = "PDF"
-        Geospatial_Tile = "TMS_GEO"
-        Image = "IMAGE"
-        Json = "JSON"
-        Pdf = "PDF"
-        Simple_Tile = "TMS_SIMPLE"
-        Text = "TEXT"
-        Tms_Geo = "TMS_GEO"
-        Tms_Simple = "TMS_SIMPLE"
-        Video = "VIDEO"
-        Unknown = "UNKNOWN"
-
-        @classmethod
-        def _missing_(cls, name):
-            """Handle missing null data types for projects 
-            created without setting allowedMediaType"""
-            # return Project.MediaType.UNKNOWN
-
-            if name is None:
-                return cls.Unknown
-
-            for member in cls.__members__:
-                if member.name == name.upper():
-                    return member
-
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -129,17 +100,12 @@ class Project(DbObject, Updateable, Deletable):
 
         media_type = kwargs.get("media_type")
         if media_type:
-            if isinstance(media_type, Project.MediaType
-                         ) and media_type != Project.MediaType.Unknown:
+            if MediaType.is_accepted(media_type):
                 kwargs["media_type"] = media_type.value
             else:
-                media_types = [
-                    item for item in Project.MediaType.__members__
-                    if item != "Unknown"
-                ]
-                raise TypeError(
-                    f"{media_type} is not a supported type. Please use any of {media_types} from the {type(media_type).__name__} enumeration."
-                )
+                raise TypeError(f"{media_type} is not a valid media type. Use"
+                                f" any of {MediaType.get_accepted_members()}"
+                                " from MediaType. Example: MediaType.Image.")
 
         return super().update(**kwargs)
 

@@ -32,6 +32,8 @@ from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 
+from labelbox.schema.media_type import MediaType
+
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
@@ -613,17 +615,12 @@ class Client:
         """
         media_type = kwargs.get("media_type")
         if media_type:
-            if isinstance(media_type, Project.MediaType
-                         ) and media_type is not Project.MediaType.Unknown:
+            if MediaType.is_accepted(media_type):
                 kwargs["media_type"] = media_type.value
             else:
-                media_types = [
-                    item for item in Project.MediaType.__members__
-                    if item != "Unknown"
-                ]
-                raise TypeError(
-                    f"{media_type} is not a supported type. Please use any of {media_types} from the {type(media_type).__name__} enumeration."
-                )
+                raise TypeError(f"{media_type} is not a valid media type. Use"
+                                f" any of {MediaType.get_accepted_members()}"
+                                " from MediaType. Example: MediaType.Image.")
 
         return self._create(Entity.Project, kwargs)
 
