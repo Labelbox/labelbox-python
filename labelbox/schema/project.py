@@ -6,7 +6,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Union, Iterable, List, Optional
+from typing import TYPE_CHECKING, Dict, Union, Iterable, List, Optional, Any
 from urllib.parse import urlparse
 
 import ndjson
@@ -18,8 +18,10 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.schema.data_row import DataRow
+from labelbox.schema.resource_tag import ResourceTag
+
+if TYPE_CHECKING:
+    from labelbox import BulkImportRequest
 
 try:
     datetime.fromisoformat  # type: ignore[attr-defined]
@@ -34,19 +36,6 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
-
-MAX_QUEUE_BATCH_SIZE = 1000
-
-
-class QueueMode(enum.Enum):
-    Batch = "Batch"
-    Dataset = "Dataset"
-
-
-class QueueErrors(enum.Enum):
-    InvalidDataRowType = 'InvalidDataRowType'
-    AlreadyInProject = 'AlreadyInProject'
-    HasAttachedLabel = 'HasAttachedLabel'
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -96,15 +85,18 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    def update(self, **kwargs):
+    class QueueMode(enum.Enum):
+        Batch = "Batch"
+        Dataset = "Dataset"
 
-        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
+    def update(self, **kwargs):
+        mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
 
         return super().update(**kwargs)
 
-    def members(self):
+    def members(self) -> PaginatedCollection:
         """ Fetch all current members for this project
 
         Returns:
@@ -120,7 +112,34 @@ class Project(DbObject, Updateable, Deletable):
                                    {id_param: str(self.uid)},
                                    ["project", "members"], ProjectMember)
 
-    def labels(self, datasets=None, order_by=None):
+    def update_project_resource_tags(
+            self, resource_tag_ids: List[str]) -> List[ResourceTag]:
+        """ Creates project resource tags
+
+        Args:
+            resource_tag_ids
+        Returns:
+            a list of ResourceTag ids that was created.
+        """
+        project_id_param = "projectId"
+        tag_ids_param = "resourceTagIds"
+
+        query_str = """mutation UpdateProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
+            project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){%s}}}""" % (
+            project_id_param, tag_ids_param, project_id_param, tag_ids_param,
+            tag_ids_param, query.results_query_part(ResourceTag))
+
+        res = self.client.execute(query_str, {
+            project_id_param: self.uid,
+            tag_ids_param: resource_tag_ids
+        })
+
+        return [
+            ResourceTag(self.client, tag)
+            for tag in res["project"]["updateProjectResourceTags"]
+        ]
+
+    def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
 
         Args:
@@ -154,7 +173,8 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
-    def export_queued_data_rows(self, timeout_seconds=120):
+    def export_queued_data_rows(self,
+                                timeout_seconds=120) -> List[Dict[str, str]]:
         """ Returns all data rows that are currently enqueued for this project.
 
         Args:
@@ -191,16 +211,24 @@ class Project(DbObject, Updateable, Deletable):
                 self.uid)
             time.sleep(sleep_time)
 
-    def video_label_generator(self, timeout_seconds=600):
+    def video_label_generator(self, timeout_seconds=600, **kwargs):
         """
         Download video annotations
 
         Returns:
             LabelGenerator for accessing labels for each video
         """
+        warnings.warn(
+            "video_label_generator will be deprecated in a future release. "
+            "Use label_generator for video or text/image labels.")
         _check_converter_import()
         json_data = self.export_labels(download=True,
-                                       timeout_seconds=timeout_seconds)
+                                       timeout_seconds=timeout_seconds,
+                                       **kwargs)
+        # assert that the instance this would fail is only if timeout runs out
+        assert isinstance(
+            json_data,
+            List), "Unable to successfully get labels. Please try again"
         if json_data is None:
             raise TimeoutError(
                 f"Unable to download labels in {timeout_seconds} seconds."
@@ -215,16 +243,23 @@ class Project(DbObject, Updateable, Deletable):
                 "Or use project.label_generator() for text and imagery data.")
         return LBV1Converter.deserialize_video(json_data, self.client)
 
-    def label_generator(self, timeout_seconds=600):
+    def label_generator(self, timeout_seconds=600, **kwargs):
         """
-        Download text and image annotations
+        Download text and image annotations, or video annotations.
+
+        For a mixture of text/image and video, use project.export_labels()
 
         Returns:
-            LabelGenerator for accessing labels for each text or image
+            LabelGenerator for accessing labels
         """
         _check_converter_import()
         json_data = self.export_labels(download=True,
-                                       timeout_seconds=timeout_seconds)
+                                       timeout_seconds=timeout_seconds,
+                                       **kwargs)
+        # assert that the instance this would fail is only if timeout runs out
+        assert isinstance(
+            json_data,
+            List), "Unable to successfully get labels. Please try again"
         if json_data is None:
             raise TimeoutError(
                 f"Unable to download labels in {timeout_seconds} seconds."
@@ -232,30 +267,79 @@ class Project(DbObject, Updateable, Deletable):
         is_video = [
             'frames' in row['Label'] for row in json_data if row['Label']
         ]
-        if len(is_video) and any(is_video):
+
+        if len(is_video) and not all(is_video) and any(is_video):
             raise ValueError(
-                "Found video data rows in export. "
+                "Found mixed data types of video and text/image. "
                 "Use project.export_labels() to export projects with mixed data types. "
-                "Or use project.video_label_generator() for video data.")
+            )
+        if len(is_video) and all(is_video):
+            return LBV1Converter.deserialize_video(json_data, self.client)
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels(self, download=False, timeout_seconds=600):
+    def export_labels(self,
+                      download=False,
+                      timeout_seconds=600,
+                      **kwargs) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
         Will only generate a new URL at a max frequency of 30 min.
 
         Args:
+            download (bool): Returns the url if False
             timeout_seconds (float): Max waiting time, in seconds.
+            start (str): Earliest date for labels, formatted "YYYY-MM-DD"
+            end (str): Latest date for labels, formatted "YYYY-MM-DD"
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
+
+        def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
+            """Returns a concatenated string of the dictionary's keys and values
+
+            The string will be formatted as {key}: 'value' for each key. Value will be inclusive of
+            quotations while key will not. This can be toggled with `value_with_quotes`"""
+
+            quote = "\"" if value_with_quotes else ""
+            return ",".join([
+                f"""{c}: {quote}{dictionary.get(c)}{quote}"""
+                for c in dictionary
+                if dictionary.get(c)
+            ])
+
+        def _validate_datetime(string_date: str) -> bool:
+            """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
+            if string_date:
+                try:
+                    datetime.strptime(string_date, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError(f"""Incorrect format for: {string_date}. 
+                    Format must be \"YYYY-MM-DD\"""")
+            return True
+
         sleep_time = 2
         id_param = "projectId"
+        filter_param = ""
+        filter_param_dict = {}
+
+        if "start" in kwargs or "end" in kwargs:
+            created_at_dict = {
+                "start": kwargs.get("start", ""),
+                "end": kwargs.get("end", "")
+            }
+            [_validate_datetime(date) for date in created_at_dict.values()]
+            filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
+                created_at_dict, value_with_quotes=True)
+
+        if filter_param_dict:
+            filter_param = """, filters: {%s }""" % (_string_from_dict(
+                filter_param_dict, value_with_quotes=False))
+
         query_str = """mutation GetLabelExportUrlPyApi($%s: ID!)
-            {exportLabels(data:{projectId: $%s }) {downloadUrl createdAt shouldPoll} }
-        """ % (id_param, id_param)
+            {exportLabels(data:{projectId: $%s%s}) {downloadUrl createdAt shouldPoll} }
+        """ % (id_param, id_param, filter_param)
 
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
@@ -277,7 +361,7 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def export_issues(self, status=None):
+    def export_issues(self, status=None) -> str:
         """ Calls the server-side Issues exporting that
         returns the URL to that payload.
 
@@ -311,18 +395,18 @@ class Project(DbObject, Updateable, Deletable):
 
         return res.get('issueExportUrl')
 
-    def upsert_instructions(self, instructions_file: str):
+    def upsert_instructions(self, instructions_file: str) -> None:
         """
         * Uploads instructions to the UI. Running more than once will replace the instructions
 
         Args:
             instructions_file (str): Path to a local file.
-                * Must be a pdf file
+                * Must be a pdf or html file
 
         Raises:
             ValueError:
                 * project must be setup
-                * instructions file must have a ".pdf" extension
+                * instructions file must have a ".pdf" or ".html" extension
         """
 
         if self.setup_complete is None:
@@ -331,49 +415,39 @@ class Project(DbObject, Updateable, Deletable):
             )
 
         frontend = self.labeling_frontend()
-        frontendId = frontend.uid
 
         if frontend.name != "Editor":
             logger.warning(
                 f"This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name)
 
-        supported_instruction_formats = (".pdf")
+        supported_instruction_formats = (".pdf", ".html")
         if not instructions_file.endswith(supported_instruction_formats):
             raise ValueError(
-                f"instructions_file must be a pdf. Found {instructions_file}")
+                f"instructions_file must be a pdf or html file. Found {instructions_file}"
+            )
 
-        lfo = list(self.labeling_frontend_options())[-1]
         instructions_url = self.client.upload_file(instructions_file)
-        customization_options = self.ontology().normalized
-        customization_options['projectInstructions'] = instructions_url
-        option_id = lfo.uid
 
-        self.client.execute(
-            """mutation UpdateFrontendWithExistingOptionsPyApi (
-                    $frontendId: ID!,
-                    $optionsId: ID!,
-                    $name: String!,
-                    $description: String!,
-                    $customizationOptions: String!
+        query_str = """mutation setprojectinsructionsPyApi($projectId: ID!, $instructions_url: String!) {
+                setProjectInstructions(
+                    where: {id: $projectId},
+                    data: {instructionsUrl: $instructions_url}
                 ) {
-                    updateLabelingFrontend(
-                        where: {id: $frontendId},
-                        data: {name: $name, description: $description}
-                    ) {id}
-                    updateLabelingFrontendOptions(
-                        where: {id: $optionsId},
-                        data: {customizationOptions: $customizationOptions}
-                    ) {id}
-                }""", {
-                "frontendId": frontendId,
-                "optionsId": option_id,
-                "name": frontend.name,
-                "description": "Video, image, and text annotation",
-                "customizationOptions": json.dumps(customization_options)
-            })
+                    id
+                    ontology {
+                    id
+                    options
+                    }
+                }
+            }"""
 
-    def labeler_performance(self):
+        self.client.execute(query_str, {
+            'projectId': self.uid,
+            'instructions_url': instructions_url
+        })
+
+    def labeler_performance(self) -> PaginatedCollection:
         """ Returns the labeler performances for this Project.
 
         Returns:
@@ -400,7 +474,7 @@ class Project(DbObject, Updateable, Deletable):
                                    ["project", "labelerPerformance"],
                                    create_labeler_performance)
 
-    def review_metrics(self, net_score):
+    def review_metrics(self, net_score) -> int:
         """ Returns this Project's review metrics.
 
         Args:
@@ -421,7 +495,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
-    def setup_editor(self, ontology):
+    def setup_editor(self, ontology) -> None:
         """
         Sets up the project using the Pictor editor.
 
@@ -456,7 +530,7 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def setup(self, labeling_frontend, labeling_frontend_options):
+    def setup(self, labeling_frontend, labeling_frontend_options) -> None:
         """ Finalizes the Project setup.
 
         Args:
@@ -483,63 +557,69 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def queue(self, data_row_ids: List[str]):
-        """Add Data Rows to the Project queue"""
+    def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
+        """Create a new batch for a project. Batches is in Beta and subject to change
 
-        method = "submitBatchOfDataRows"
-        return self._post_batch(method, data_row_ids)
+        Args:
+            name: a name for the batch, must be unique within a project
+            data_rows: Either a list of `DataRows` or Data Row ids
+            priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
 
-    def dequeue(self, data_row_ids: List[str]):
-        """Remove Data Rows from the Project queue"""
+        """
 
-        method = "removeBatchOfDataRows"
-        return self._post_batch(method, data_row_ids)
-
-    def _post_batch(self, method, data_row_ids: List[str]):
-        """Post batch methods"""
-
-        if self.queue_mode() != QueueMode.Batch:
+        # @TODO: make this automatic?
+        if self.queue_mode() != Project.QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
 
-        if len(data_row_ids) > MAX_QUEUE_BATCH_SIZE:
-            raise ValueError(
-                f"Batch exceeds max size of {MAX_QUEUE_BATCH_SIZE}, consider breaking it into parts"
-            )
+        dr_ids = []
+        for dr in data_rows:
+            if isinstance(dr, Entity.DataRow):
+                dr_ids.append(dr.uid)
+            elif isinstance(dr, str):
+                dr_ids.append(dr)
+            else:
+                raise ValueError("You can DataRow ids or DataRow objects")
 
-        query = """mutation %sPyApi($projectId: ID!, $dataRowIds: [ID!]!) {
+        if len(dr_ids) > 25_000:
+            raise ValueError(
+                f"Batch exceeds max size, break into smaller batches")
+        if not len(dr_ids):
+            raise ValueError("You need at least one data row in a batch")
+
+        method = 'createBatch'
+        query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
-                %s(data: {dataRowIds: $dataRowIds}) {
-                  dataRows {
-                    dataRowId
-                    error
-                  }
+                %s(input: $batchInput) {
+                  %s
                 }
               }
             }
-        """ % (method, method)
+        """ % (method, method, query.results_query_part(Entity.Batch))
 
-        res = self.client.execute(query, {
+        params = {
             "projectId": self.uid,
-            "dataRowIds": data_row_ids
-        })["project"][method]["dataRows"]
+            "batchInput": {
+                "name": name,
+                "dataRowIds": dr_ids,
+                "priority": priority
+            }
+        }
 
-        # TODO: figure out error messaging
-        if len(data_row_ids) == len(res):
-            raise ValueError("No dataRows were submitted successfully")
+        res = self.client.execute(query_str, params,
+                                  experimental=True)["project"][method]
 
-        if len(data_row_ids) > 0:
-            warnings.warn("Some Data Rows were not submitted successfully")
+        res['size'] = len(dr_ids)
+        return Entity.Batch(self.client, self.uid, res)
 
-        return res
-
-    def _update_queue_mode(self, mode: QueueMode) -> QueueMode:
+    def _update_queue_mode(self,
+                           mode: "Project.QueueMode") -> "Project.QueueMode":
 
         if self.queue_mode() == mode:
             return mode
 
-        if mode == QueueMode.Batch:
+        if mode == Project.QueueMode.Batch:
             status = "ENABLED"
-        elif mode == QueueMode.Dataset:
+        elif mode == Project.QueueMode.Dataset:
             status = "DISABLED"
         else:
             raise ValueError(
@@ -561,7 +641,8 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self):
+    def queue_mode(self) -> "Project.QueueMode":
+        """Provides the status of if queue mode is enabled in the project."""
 
         query_str = """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {
@@ -574,20 +655,20 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
 
         if status == "ENABLED":
-            return QueueMode.Batch
+            return Project.QueueMode.Batch
         elif status == "DISABLED":
-            return QueueMode.Dataset
+            return Project.QueueMode.Dataset
         else:
             raise ValueError("Status not known")
 
-    def validate_labeling_parameter_overrides(self, data):
+    def validate_labeling_parameter_overrides(self, data) -> None:
         for idx, row in enumerate(data):
             if len(row) != 3:
                 raise TypeError(
                     f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items. Index: {idx}"
                 )
             data_row, priority, num_labels = row
-            if not isinstance(data_row, DataRow):
+            if not isinstance(data_row, Entity.DataRow):
                 raise TypeError(
                     f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
                 )
@@ -603,7 +684,7 @@ class Project(DbObject, Updateable, Deletable):
                         f"{name} must be greater than 0 for data_row {data_row}. Index: {idx}"
                     )
 
-    def set_labeling_parameter_overrides(self, data):
+    def set_labeling_parameter_overrides(self, data) -> bool:
         """ Adds labeling parameter overrides to this project.
 
         See information on priority here:
@@ -651,7 +732,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    def unset_labeling_parameter_overrides(self, data_rows):
+    def unset_labeling_parameter_overrides(self, data_rows) -> bool:
         """ Removes labeling parameter overrides to this project.
 
         * This will remove unlabeled duplicates in the queue.
@@ -670,7 +751,7 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
-    def upsert_review_queue(self, quota_factor):
+    def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
 
         More information can be found here:
@@ -681,7 +762,7 @@ class Project(DbObject, Updateable, Deletable):
                 to reinitiate. Between 0 and 1.
         """
 
-        if not 0. < quota_factor < 1.:
+        if not 0. <= quota_factor <= 1.:
             raise ValueError("Quota factor must be in the range of [0,1]")
 
         id_param = "projectId"
@@ -695,7 +776,7 @@ class Project(DbObject, Updateable, Deletable):
             quota_param: quota_factor
         })
 
-    def extend_reservations(self, queue_type):
+    def extend_reservations(self, queue_type) -> int:
         """ Extends all the current reservations for the current user on the given
         queue type.
         Args:
@@ -738,7 +819,7 @@ class Project(DbObject, Updateable, Deletable):
         return res["project"]["showPredictionsToLabelers"][
             "showingPredictionsToLabelers"]
 
-    def bulk_import_requests(self):
+    def bulk_import_requests(self) -> PaginatedCollection:
         """ Returns bulk import request objects which are used in model-assisted labeling.
         These are returned with the oldest first, and most recent last.
         """
@@ -756,13 +837,32 @@ class Project(DbObject, Updateable, Deletable):
                 query.results_query_part(Entity.BulkImportRequest))
         return PaginatedCollection(self.client, query_str,
                                    {id_param: str(self.uid)},
-                                   ["bulkImportRequests"], BulkImportRequest)
+                                   ["bulkImportRequests"],
+                                   Entity.BulkImportRequest)
+
+    def batches(self) -> PaginatedCollection:
+        """ Fetch all batches that belong to this project
+
+        Returns:
+            A `PaginatedCollection of `Batch`es
+        """
+        id_param = "projectId"
+        query_str = """query GetProjectBatchesPyApi($from: String, $first: PageSize, $%s: ID!) {
+            project(where: {id: $%s}) {id
+            batches(after: $from, first: $first) { nodes { %s } pageInfo { endCursor }}}}
+        """ % (id_param, id_param, query.results_query_part(Entity.Batch))
+        return PaginatedCollection(
+            self.client,
+            query_str, {id_param: self.uid}, ['project', 'batches', 'nodes'],
+            lambda client, res: Entity.Batch(client, self.uid, res),
+            cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
+            experimental=True)
 
     def upload_annotations(
             self,
             name: str,
             annotations: Union[str, Path, Iterable[Dict]],
-            validate: bool = True) -> 'BulkImportRequest':  # type: ignore
+            validate: bool = False) -> 'BulkImportRequest':  # type: ignore
         """ Uploads annotations to a new Editor project.
 
         Args:
@@ -795,18 +895,19 @@ class Project(DbObject, Updateable, Deletable):
                 return bool(parsed.scheme) and bool(parsed.netloc)
 
             if _is_url_valid(annotations):
-                return BulkImportRequest.create_from_url(client=self.client,
-                                                         project_id=self.uid,
-                                                         name=name,
-                                                         url=str(annotations),
-                                                         validate=validate)
+                return Entity.BulkImportRequest.create_from_url(
+                    client=self.client,
+                    project_id=self.uid,
+                    name=name,
+                    url=str(annotations),
+                    validate=validate)
             else:
                 path = Path(annotations)
                 if not path.exists():
                     raise FileNotFoundError(
                         f'{annotations} is not a valid url nor existing local file'
                     )
-                return BulkImportRequest.create_from_local_file(
+                return Entity.BulkImportRequest.create_from_local_file(
                     client=self.client,
                     project_id=self.uid,
                     name=name,
@@ -814,7 +915,7 @@ class Project(DbObject, Updateable, Deletable):
                     validate_file=validate,
                 )
         elif isinstance(annotations, Iterable):
-            return BulkImportRequest.create_from_objects(
+            return Entity.BulkImportRequest.create_from_objects(
                 client=self.client,
                 project_id=self.uid,
                 name=name,
@@ -854,5 +955,5 @@ def _check_converter_import():
     if 'LBV1Converter' not in globals():
         raise ImportError(
             "Missing dependencies to import converter. "
-            "Use `pip install labelbox[data]` to add missing dependencies. "
+            "Use `pip install labelbox[data] --upgrade` to add missing dependencies. "
             "or download raw json with project.export_labels()")

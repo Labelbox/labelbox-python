@@ -81,7 +81,7 @@ class LBV1Dropdown(LBV1Feature):
 class LBV1Text(LBV1Feature):
     answer: str
 
-    def to_common(self):
+    def to_common(self) -> Text:
         return Text(answer=self.answer)
 
     @classmethod

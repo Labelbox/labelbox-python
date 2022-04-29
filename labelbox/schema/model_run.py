@@ -1,13 +1,20 @@
-from typing import Dict, Iterable, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 from pathlib import Path
 import os
 import time
+import logging
+import requests
+import ndjson
 
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.annotation_import import MEAPredictionImport
 from labelbox.orm.query import results_query_part
-from labelbox.orm.model import Field, Relationship
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.db_object import DbObject, experimental
+
+if TYPE_CHECKING:
+    from labelbox import MEAPredictionImport
+
+logger = logging.getLogger(__name__)
 
 
 class ModelRun(DbObject):
@@ -119,13 +126,13 @@ class ModelRun(DbObject):
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
             if os.path.exists(predictions):
-                return MEAPredictionImport.create_from_file(
+                return Entity.MEAPredictionImport.create_from_file(
                     path=str(predictions), **kwargs)
             else:
-                return MEAPredictionImport.create_from_url(url=str(predictions),
-                                                           **kwargs)
+                return Entity.MEAPredictionImport.create_from_url(
+                    url=str(predictions), **kwargs)
         elif isinstance(predictions, Iterable):
-            return MEAPredictionImport.create_from_objects(
+            return Entity.MEAPredictionImport.create_from_objects(
                 predictions=predictions, **kwargs)
         else:
             raise ValueError(
@@ -172,6 +179,86 @@ class ModelRun(DbObject):
             model_run_id_param: self.uid,
             data_row_ids_param: data_row_ids
         })
+
+    @experimental
+    def update_status(self,
+                      status: str,
+                      metadata: Optional[Dict[str, str]] = None,
+                      error_message: Optional[str] = None):
+
+        valid_statuses = [
+            "EXPORTING_DATA", "PREPARING_DATA", "TRAINING_MODEL", "COMPLETE",
+            "FAILED"
+        ]
+        if status not in valid_statuses:
+            raise ValueError(
+                f"Status must be one of : `{valid_statuses}`. Found : `{status}`"
+            )
+
+        data: Dict[str, Any] = {'status': status}
+        if error_message:
+            data['errorMessage'] = error_message
+
+        if metadata:
+            data['metadata'] = metadata
+
+        self.client.execute(
+            """mutation setPipelineStatusPyApi($modelRunId: ID!, $data: UpdateTrainingPipelineInput!){
+                updateTrainingPipeline(modelRun: {id : $modelRunId}, data: $data){status}
+            }
+        """, {
+                'modelRunId': self.uid,
+                'data': data
+            },
+            experimental=True)
+
+    @experimental
+    def export_labels(
+        self,
+        download: bool = False,
+        timeout_seconds: int = 600
+    ) -> Optional[Union[str, List[Dict[Any, Any]]]]:
+        """
+        Experimental. To use, make sure client has enable_experimental=True.
+
+        Fetches Labels from the ModelRun
+
+        Args:
+            download (bool): Returns the url if False
+        Returns:
+            URL of the data file with this ModelRun's labels.
+            If download=True, this instead returns the contents as NDJSON format.
+            If the server didn't generate during the `timeout_seconds` period,
+            None is returned.
+        """
+        sleep_time = 2
+        query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
+                exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
+                    downloadUrl createdAt status
+                }
+            }
+            """
+
+        while True:
+            url = self.client.execute(
+                query_str, {'modelRunId': self.uid},
+                experimental=True)['exportModelRunAnnotations']['downloadUrl']
+
+            if url:
+                if not download:
+                    return url
+                else:
+                    response = requests.get(url)
+                    response.raise_for_status()
+                    return ndjson.loads(response.content)
+
+            timeout_seconds -= sleep_time
+            if timeout_seconds <= 0:
+                return None
+
+            logger.debug("ModelRun '%s' label export, waiting for server...",
+                         self.uid)
+            time.sleep(sleep_time)
 
 
 class ModelRunDataRow(DbObject):

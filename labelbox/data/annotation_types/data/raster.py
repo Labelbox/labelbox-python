@@ -23,7 +23,8 @@ class RasterData(BaseModel, ABC):
 
     @classmethod
     def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
-                                    TypedArray[Literal['int']]], **kwargs):
+                                    TypedArray[Literal['int']]],
+                    **kwargs) -> "RasterData":
         """Construct from a 2D numpy array
 
         Args:

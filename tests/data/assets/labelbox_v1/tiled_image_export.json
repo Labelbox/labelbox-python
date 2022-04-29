@@ -1,0 +1,230 @@
+[{
+        "ID": "ckwdp4o2t8fjq108j6c8t9507",
+        "DataRow ID": "ckwdowhd91rp80zqh2ev9cx9w",
+        "Labeled Data": "{\n    \"tileLayerUrl\": \"https://s3-us-east-2.amazonaws.com/lb-ron/CACI/ron_mctiles/{z}/{x}/{y}.png\",\n    \"bounds\": [\n        [19.3469381, -99.3922238],\n        [19.42443609, -99.22896466]\n    ],\n    \"minZoom\": 12,\n    \"maxZoom\": 21,\n    \"tileSize\": 10000,\n    \"epsg\": \"EPSG4326\",\n    \"alternativeLayers\": [{\n            \"tileLayerUrl\": \"https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw\",\n            \"name\": \"Satellite\"\n        },\n        {\n            \"tileLayerUrl\": \"https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw\",\n            \"name\": \"Guidance\"\n        }\n    ]\n}",
+        "Label": {
+            "objects": [{
+                "featureId": "ckwdp4zzf00003g6bmj3fnk07",
+                "schemaId": "ckw3oiu476k780zbpdxqbawbg",
+                "color": "#ff0000",
+                "title": "polygon",
+                "value": "polygon",
+                "type": "polygon",
+                "geometry": {
+                    "coordinates": [
+                        [
+                            [-99.2032814025879, 19.410744883371013],
+                            [-99.18886184692384, 19.41123059525866],
+                            [-99.19281005859376, 19.40264947166554],
+                            [-99.2087745666504, 19.397953948267737],
+                            [-99.21255111694336, 19.398439698351616],
+                            [-99.2032814025879, 19.410744883371013]
+                        ]
+                    ]
+                }
+            }, {
+                "featureId": "ckwdp52w900023g6bkq3p5c9a",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "type": "point",
+                "geometry": {
+                    "coordinates": [-99.16156768798828, 19.405725775580528]
+                }
+            }, {
+                "featureId": "ckwdp53mx00043g6bxvgz1odn",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "type": "point",
+                "geometry": {
+                    "coordinates": [-99.19692993164064, 19.378036946667645]
+                }
+            }, {
+                "featureId": "ckwdp547j00063g6bn19303pv",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "type": "point",
+                "geometry": {
+                    "coordinates": [-99.16019439697268, 19.37447429931405]
+                }
+            }, {
+                "featureId": "ckwdp54yt00073g6bgawsm0dk",
+                "schemaId": "ckwdnchwp843o108j6eof4qdi",
+                "color": "#FF4A46",
+                "title": "poly line",
+                "value": "poly_line",
+                "type": "polyline",
+                "geometry": {
+                    "coordinates": [
+                        [-99.2161560058594, 19.358765334468117],
+                        [-99.19795989990236, 19.36216637277295],
+                        [-99.18560028076172, 19.356497936190603],
+                        [-99.17324066162112, 19.360222930999285]
+                    ]
+                }
+            }, {
+                "featureId": "ckx841y2700013g69pboavi3s",
+                "schemaId": "ckwdnchwp843s108j5w9i491y",
+                "color": "#006FA6",
+                "title": "bbox",
+                "value": "bbox",
+                "type": "rectangle",
+                "geometry": {
+                    "coordinates": [
+                        [
+                            [-99.36567524971268, 19.34717117508651],
+                            [-99.36567524971268, 19.41999425190506],
+                            [-99.3649886680726, 19.41999425190506],
+                            [-99.3649886680726, 19.34717117508651],
+                            [-99.36567524971268, 19.34717117508651]
+                        ]
+                    ]
+                }
+            }],
+            "classifications": [],
+            "relationships": []
+        },
+        "Created By": "jtso@labelbox.com",
+        "Project Name": "tms_mal_project",
+        "Created At": "2021-11-24T15:43:41.000Z",
+        "Updated At": "2021-12-15T22:34:02.363Z",
+        "Seconds to Label": 910.657,
+        "External ID": null,
+        "Agreement": -1,
+        "Benchmark Agreement": -1,
+        "Benchmark ID": null,
+        "Dataset Name": "mx_large_tiled.json",
+        "Reviews": [],
+        "View Label": "https://editor.labelbox.com?project=ckw3oipbx9iee0zc321ut9aua&label=ckwdp4o2t8fjq108j6c8t9507",
+        "Has Open Issues": 0,
+        "Skipped": false,
+        "Data Split" : null
+    },
+    {
+        "ID": "ckwmlfgyobl6r0z9p0jhb3235",
+        "DataRow ID": "ckwb4r0fk005c0zqo5le521ih",
+        "Labeled Data": "\n    {\n        \"tileLayerUrl\": \"https://labelbox.s3-us-west-2.amazonaws.com/pathology/{z}/{x}/{y}.png\",\n        \"minZoom\": 1,\n        \"maxZoom\": 8.5,\n        \"bounds\": [\n            [0, 0],\n            [135, 128]\n        ],\n        \"epsg\": \"Simple\",\n        \"version\": 2,\n        \"tileSize\": 128\n    }",
+        "Label": {
+            "objects": [{
+                "featureId": "ckx83js8l00033g691hz1zs4g",
+                "schemaId": "ckw3oiu476k780zbpdxqbawbg",
+                "color": "#ff0000",
+                "title": "polygon",
+                "value": "polygon",
+                "polygon": [{
+                    "x": 52.49074938173845,
+                    "y": 24.209072254552296
+                }, {
+                    "x": 45.99135397338951,
+                    "y": 33.20339437483625
+                }, {
+                    "x": 52.99070287468838,
+                    "y": 38.94976684057322
+                }, {
+                    "x": 58.24021455066253,
+                    "y": 30.455129282527267
+                }]
+            }, {
+                "featureId": "ckwmlfm5r00023g6bvigbvtyh",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "point": {
+                    "x": 0,
+                    "y": 128
+                }
+            }, {
+                "featureId": "ckwmlg1oi00053g6b9peptx9l",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "point": {
+                    "x": 22.352061642639708,
+                    "y": 128
+                }
+            }, {
+                "featureId": "ckwnmjc6600013g6brrg60h3k",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "point": {
+                    "x": 5.921614630706372,
+                    "y": 6.468767056927199
+                }
+            }, {
+                "featureId": "ckwnmjeul00033g6b2b7rezcz",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "point": {
+                    "x": 132.24738299361238,
+                    "y": 64.15800846258857
+                }
+            }, {
+                "featureId": "ckwnmjfu800053g6b5tea82ip",
+                "schemaId": "ckwdnchwp843m108j4o6f7zvg",
+                "color": "#FF34FF",
+                "title": "point",
+                "value": "point",
+                "point": {
+                    "x": 135,
+                    "y": 89.80450287438632
+                }
+            }, {
+                "featureId": "ckx83jvyd00063g69wndhctep",
+                "schemaId": "ckwdnchwp843o108j6eof4qdi",
+                "color": "#FF4A46",
+                "title": "poly line",
+                "value": "poly_line",
+                "line": [{
+                    "x": 23.743423537118105,
+                    "y": 49.692984928690166
+                }, {
+                    "x": 36.742214353816,
+                    "y": 49.19330036645216
+                }, {
+                    "x": 42.49167952274007,
+                    "y": 58.18762248673612
+                }]
+            }, {
+                "featureId": "ckx83jplk00013g69d2mjchbg",
+                "schemaId": "ckwdnchwp843s108j5w9i491y",
+                "color": "#006FA6",
+                "title": "bbox",
+                "value": "bbox",
+                "bbox": {
+                    "top": 31.454498407003257,
+                    "left": 31.24272593136689,
+                    "height": 6.995583871331959,
+                    "width": 8.499209380148628
+                }
+            }],
+            "classifications": [],
+            "relationships": []
+        },
+        "Created By": "jtso@labelbox.com",
+        "Project Name": "tms_mal_project",
+        "Created At": "2021-11-30T21:17:42.000Z",
+        "Updated At": "2021-12-15T22:19:57.398Z",
+        "Seconds to Label": 421.39300000000003,
+        "External ID": null,
+        "Agreement": -1,
+        "Benchmark Agreement": -1,
+        "Benchmark ID": null,
+        "Dataset Name": "simple tms",
+        "Reviews": [],
+        "View Label": "https://editor.labelbox.com?project=ckw3oipbx9iee0zc321ut9aua&label=ckwmlfgyobl6r0z9p0jhb3235",
+        "Has Open Issues": 0,
+        "Skipped": false,
+        "Data Split" : null
+    }
+]

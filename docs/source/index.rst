@@ -174,3 +174,10 @@ DataRowMetadata
 .. automodule:: labelbox.schema.data_row_metadata
    :members:
    :show-inheritance:   
+
+AnnotationImport
+----------------------------
+
+.. automodule:: labelbox.schema.annotation_import
+   :members:
+   :show-inheritance:      
