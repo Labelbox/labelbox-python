@@ -6,8 +6,6 @@ from labelbox.data.annotation_types import ClassificationAnnotation, ObjectAnnot
 from labelbox.data.annotation_types import Polygon, Point, Rectangle, Mask, MaskData, Line, Radio, Text, Checklist, ClassificationAnswer
 import numpy as np
 
-from labelbox.data.annotation_types.ner import TextEntity
-
 
 class NameSpace(SimpleNamespace):
 
@@ -84,13 +82,6 @@ def get_checklist(name, answer_names):
                                         ClassificationAnswer(name=answer_name)
                                         for answer_name in answer_names
                                     ]))
-
-
-def get_ner(name, start, end, subclasses=None):
-    return ObjectAnnotation(
-        name=name,
-        value=TextEntity(start=start, end=end),
-        classifications=[] if subclasses is None else subclasses)
 
 
 def get_object_pairs(tool_fn, **kwargs):
@@ -192,27 +183,24 @@ def radio_pairs():
     return [
         NameSpace(predictions=[get_radio("is_animal", answer_name="yes")],
                   ground_truths=[get_radio("is_animal", answer_name="yes")],
-                  expected={'yes': [1, 0, 0, 0]}),
+                  expected={'is_animal': [1, 0, 0, 0]}),
         NameSpace(predictions=[get_radio("is_animal", answer_name="yes")],
                   ground_truths=[get_radio("is_animal", answer_name="no")],
-                  expected={
-                      'no': [0, 0, 0, 1],
-                      'yes': [0, 1, 0, 0]
-                  }),
+                  expected={'is_animal': [0, 1, 0, 1]}),
         NameSpace(predictions=[get_radio("is_animal", answer_name="yes")],
                   ground_truths=[],
-                  expected={'yes': [0, 1, 0, 0]}),
+                  expected={'is_animal': [0, 1, 0, 0]}),
         NameSpace(predictions=[],
                   ground_truths=[get_radio("is_animal", answer_name="yes")],
-                  expected={'yes': [0, 0, 0, 1]}),
+                  expected={'is_animal': [0, 0, 0, 1]}),
         NameSpace(predictions=[
             get_radio("is_animal", answer_name="yes"),
             get_radio("is_short", answer_name="no")
         ],
                   ground_truths=[get_radio("is_animal", answer_name="yes")],
                   expected={
-                      'no': [0, 1, 0, 0],
-                      'yes': [1, 0, 0, 0]
+                      'is_animal': [1, 0, 0, 0],
+                      'is_short': [0, 1, 0, 0]
                   }),
         #Not supported yet:
         # NameSpace(
@@ -233,18 +221,18 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped"])
                   ],
-                  expected={'striped': [1, 0, 0, 0]}),
+                  expected={'animal_attributes': [1, 0, 0, 0]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes", answer_names=["striped"])
         ],
                   ground_truths=[],
-                  expected={'striped': [0, 1, 0, 0]}),
+                  expected={'animal_attributes': [0, 1, 0, 0]}),
         NameSpace(predictions=[],
                   ground_truths=[
                       get_checklist("animal_attributes",
                                     answer_names=["striped"])
                   ],
-                  expected={'striped': [0, 0, 0, 1]}),
+                  expected={'animal_attributes': [0, 0, 0, 1]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes",
                           answer_names=["striped", "short"])
@@ -253,10 +241,7 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped"])
                   ],
-                  expected={
-                      'short': [0, 1, 0, 0],
-                      'striped': [1, 0, 0, 0]
-                  }),
+                  expected={'animal_attributes': [1, 1, 0, 0]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes", answer_names=["striped"])
         ],
@@ -264,10 +249,7 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped", "short"])
                   ],
-                  expected={
-                      'short': [0, 0, 0, 1],
-                      'striped': [1, 0, 0, 0]
-                  }),
+                  expected={'animal_attributes': [1, 0, 0, 1]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes",
                           answer_names=["striped", "short", "black"])
@@ -276,11 +258,7 @@ def checklist_pairs():
                       get_checklist("animal_attributes",
                                     answer_names=["striped", "short"])
                   ],
-                  expected={
-                      'black': [0, 1, 0, 0],
-                      'short': [1, 0, 0, 0],
-                      'striped': [1, 0, 0, 0]
-                  }),
+                  expected={'animal_attributes': [2, 1, 0, 0]}),
         NameSpace(predictions=[
             get_checklist("animal_attributes",
                           answer_names=["striped", "short", "black"]),
@@ -292,11 +270,8 @@ def checklist_pairs():
                       get_checklist("animal_name", answer_names=["pup"])
                   ],
                   expected={
-                      'black': [0, 1, 0, 0],
-                      'doggy': [0, 1, 0, 0],
-                      'pup': [1, 0, 0, 0],
-                      'short': [1, 0, 0, 0],
-                      'striped': [1, 0, 0, 0]
+                      'animal_attributes': [2, 1, 0, 0],
+                      'animal_name': [1, 1, 0, 0]
                   })
 
         #Not supported yet:
@@ -333,11 +308,6 @@ def line_pairs():
 @pytest.fixture
 def point_pairs():
     return get_object_pairs(get_point, x=0, y=0)
-
-
-@pytest.fixture
-def ner_pairs():
-    return get_object_pairs(get_ner, start=0, end=10)
 
 
 @pytest.fixture()

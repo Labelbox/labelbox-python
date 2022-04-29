@@ -160,7 +160,7 @@ class VideoData(BaseData):
         return values
 
     def __repr__(self) -> str:
-        return  f"VideoData(file_path={self.file_path}," \
+        return  f"TextData(file_path={self.file_path}," \
                 f"frames={'...' if self.frames is not None else None}," \
                 f"url={self.url})"
 

@@ -42,11 +42,3 @@ class AssetAttachment(DbObject):
             raise ValueError(
                 f"meta_type must be one of {valid_types}. Found {attachment_type}"
             )
-
-    def delete(self) -> None:
-        """Deletes an attachment on the data row."""
-        query_str = """mutation deleteDataRowAttachmentPyApi($attachment_id: ID!) {
-            deleteDataRowAttachment(where: {id: $attachment_id}) {
-                    id}
-            }"""
-        self.client.execute(query_str, {"attachment_id": self.uid})

@@ -8,12 +8,7 @@ import base64
 
 class NameSpace(SimpleNamespace):
 
-    def __init__(self,
-                 predictions,
-                 labels,
-                 expected,
-                 data_row_expected=None,
-                 classifications=None):
+    def __init__(self, predictions, labels, expected, classifications=None):
         super(NameSpace,
               self).__init__(predictions=predictions,
                              labels={
@@ -24,8 +19,7 @@ class NameSpace(SimpleNamespace):
                                      'classifications': classifications or []
                                  }
                              },
-                             expected=expected,
-                             data_row_expected=data_row_expected)
+                             expected=expected)
 
 
 @pytest.fixture
@@ -354,8 +348,7 @@ def matching_checklist():
                              'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
                          }]
                      }],
-                     data_row_expected=1.,
-                     expected={1.0: 3})
+                     expected=1.)
 
 
 @pytest.fixture
@@ -398,11 +391,7 @@ def partially_matching_checklist_1():
                              'schemaId': 'ckppiebx80004aeyjuwvos69e'
                          }]
                      }],
-                     data_row_expected=0.6,
-                     expected={
-                         0.0: 2,
-                         1.0: 3
-                     })
+                     expected=0.6)
 
 
 @pytest.fixture
@@ -441,11 +430,7 @@ def partially_matching_checklist_2():
                              'schemaId': 'ckppiebx80004aeyjuwvos69e'
                          }]
                      }],
-                     data_row_expected=0.5,
-                     expected={
-                         1.0: 2,
-                         0.0: 2
-                     })
+                     expected=0.5)
 
 
 @pytest.fixture
@@ -484,11 +469,7 @@ def partially_matching_checklist_3():
                              'schemaId': 'ckppide010001aeyj0yhiaghc'
                          }]
                      }],
-                     data_row_expected=0.5,
-                     expected={
-                         1.0: 2,
-                         0.0: 2
-                     })
+                     expected=0.5)
 
 
 @pytest.fixture
@@ -504,8 +485,7 @@ def empty_checklist_label():
                              'schemaId': 'ckppid25v0000aeyjmxfwlc7t'
                          }]
                      }],
-                     data_row_expected=0.0,
-                     expected={0.0: 1})
+                     expected=0)
 
 
 @pytest.fixture
@@ -522,8 +502,7 @@ def empty_checklist_prediction():
                          }]
                      }],
                      predictions=[],
-                     data_row_expected=0.0,
-                     expected={0.0: 1})
+                     expected=0)
 
 
 @pytest.fixture
@@ -696,84 +675,3 @@ def point_pair():
                          }
                      }],
                      expected=0.879113232477017)
-
-
-@pytest.fixture
-def matching_ner():
-    return NameSpace(labels=[{
-        'featureId': 'ckppivl7p0006aeyj92cezr9d',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'format': "text.location",
-        'data': {
-            "location": {
-                "start": 0,
-                "end": 10
-            }
-        }
-    }],
-                     predictions=[{
-                         'dataRow': {
-                             'id': 'ckppihxc10005aeyjen11h7jh'
-                         },
-                         'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-                         "location": {
-                             "start": 0,
-                             "end": 10
-                         }
-                     }],
-                     expected=1)
-
-
-@pytest.fixture
-def no_matching_ner():
-    return NameSpace(labels=[{
-        'featureId': 'ckppivl7p0006aeyj92cezr9d',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'format': "text.location",
-        'data': {
-            "location": {
-                "start": 0,
-                "end": 5
-            }
-        }
-    }],
-                     predictions=[{
-                         'dataRow': {
-                             'id': 'ckppihxc10005aeyjen11h7jh'
-                         },
-                         'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-                         "location": {
-                             "start": 5,
-                             "end": 10
-                         }
-                     }],
-                     expected=0)
-
-
-@pytest.fixture
-def partial_matching_ner():
-    return NameSpace(labels=[{
-        'featureId': 'ckppivl7p0006aeyj92cezr9d',
-        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-        'format': "text.location",
-        'data': {
-            "location": {
-                "start": 0,
-                "end": 7
-            }
-        }
-    }],
-                     predictions=[{
-                         'dataRow': {
-                             'id': 'ckppihxc10005aeyjen11h7jh'
-                         },
-                         'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-                         "location": {
-                             "start": 3,
-                             "end": 5
-                         }
-                     }],
-                     expected=0.2857142857142857)

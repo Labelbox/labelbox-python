@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 from labelbox.schema import ontology
 from .annotation_types import (Text, Dropdown, Checklist, Radio,
@@ -84,9 +84,8 @@ def get_classifications(
     return list(existing_classifications.values())
 
 
-def get_tools(
-        annotations: List[ObjectAnnotation],
-        existing_tools: List[ontology.Classification]) -> List[ontology.Tool]:
+def get_tools(annotations: List[ObjectAnnotation],
+              existing_tools: List[ontology.Classification]):
     existing_tools = {tool.name: tool for tool in existing_tools}
     for annotation in annotations:
         if annotation.name in existing_tools:
@@ -104,8 +103,7 @@ def get_tools(
     return list(existing_tools.values())
 
 
-def tool_mapping(
-        annotation) -> Union[Mask, Polygon, Point, Rectangle, Line, TextEntity]:
+def tool_mapping(annotation):
     tool_types = ontology.Tool.Type
     mapping = {
         Mask: tool_types.SEGMENTATION,
@@ -123,8 +121,7 @@ def tool_mapping(
     return result
 
 
-def classification_mapping(
-        annotation) -> Union[Text, Checklist, Radio, Dropdown]:
+def classification_mapping(annotation):
     classification_types = ontology.Classification.Type
     mapping = {
         Text: classification_types.TEXT,

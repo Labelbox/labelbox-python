@@ -4,10 +4,10 @@ import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Type
-import warnings
 
 from pydantic import constr
 
+from labelbox.schema import project
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
@@ -50,10 +50,7 @@ class Option:
             self.label = self.value
 
     @classmethod
-    def from_dict(
-            cls,
-            dictionary: Dict[str,
-                             Any]) -> Dict[Union[str, int], Union[str, int]]:
+    def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(value=dictionary["value"],
                    label=dictionary["label"],
                    schema_id=dictionary.get("schemaNodeId", None),
@@ -72,7 +69,7 @@ class Option:
             "options": [o.asdict() for o in self.options]
         }
 
-    def add_option(self, option: 'Classification') -> None:
+    def add_option(self, option: 'Classification'):
         if option.instructions in (o.instructions for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{option.instructions}' "
@@ -83,11 +80,6 @@ class Option:
 @dataclass
 class Classification:
     """
-
-    Deprecation Notice: Dropdown classification is deprecated and will be
-        removed in a future release. Dropdown will also
-        no longer be able to be created in the Editor on 3/31/2022.
-            
     A classfication to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
@@ -124,10 +116,6 @@ class Classification:
         RADIO = "radio"
         DROPDOWN = "dropdown"
 
-    class Scope(Enum):
-        GLOBAL = "global"
-        INDEX = "index"
-
     _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
 
     class_type: Type
@@ -136,28 +124,19 @@ class Classification:
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-    scope: Scope = None
-
-    def __post_init__(self):
-        if self.class_type == Classification.Type.DROPDOWN:
-            warnings.warn(
-                "Dropdown classification is deprecated and will be "
-                "removed in a future release. Dropdown will also "
-                "no longer be able to be created in the Editor on 3/31/2022.")
 
     @property
-    def name(self) -> str:
+    def name(self):
         return self.instructions
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
+    def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(class_type=cls.Type(dictionary["type"]),
                    instructions=dictionary["instructions"],
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
                    schema_id=dictionary.get("schemaNodeId", None),
-                   feature_schema_id=dictionary.get("featureSchemaId", None),
-                   scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
+                   feature_schema_id=dictionary.get("featureSchemaId", None))
 
     def asdict(self) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
@@ -165,25 +144,16 @@ class Classification:
             raise InconsistentOntologyException(
                 f"Classification '{self.instructions}' requires options.")
         return {
-            "type":
-                self.class_type.value,
-            "instructions":
-                self.instructions,
-            "name":
-                self.name,
-            "required":
-                self.required,
+            "type": self.class_type.value,
+            "instructions": self.instructions,
+            "name": self.name,
+            "required": self.required,
             "options": [o.asdict() for o in self.options],
-            "schemaNodeId":
-                self.schema_id,
-            "featureSchemaId":
-                self.feature_schema_id,
-            "scope":
-                self.scope.value
-                if self.scope is not None else self.Scope.GLOBAL.value
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id
         }
 
-    def add_option(self, option: Option) -> None:
+    def add_option(self, option: Option):
         if option.value in (o.value for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate option '{option.value}' "
@@ -225,7 +195,6 @@ class Tool:
     class Type(Enum):
         POLYGON = "polygon"
         SEGMENTATION = "superpixel"
-        RASTER_SEGMENTATION = "raster-segmentation"
         POINT = "point"
         BBOX = "rectangle"
         LINE = "line"
@@ -240,7 +209,7 @@ class Tool:
     feature_schema_id: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
+    def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(name=dictionary['name'],
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
@@ -263,7 +232,7 @@ class Tool:
             "featureSchemaId": self.feature_schema_id
         }
 
-    def add_classification(self, classification: Classification) -> None:
+    def add_classification(self, classification: Classification):
         if classification.instructions in (
                 c.instructions for c in self.classifications):
             raise InconsistentOntologyException(
@@ -350,14 +319,14 @@ class OntologyBuilder:
     classifications: List[Classification] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
+    def from_dict(cls, dictionary: Dict[str, Any]):
         return cls(tools=[Tool.from_dict(t) for t in dictionary["tools"]],
                    classifications=[
                        Classification.from_dict(c)
                        for c in dictionary["classifications"]
                    ])
 
-    def asdict(self) -> Dict[str, Any]:
+    def asdict(self):
         self._update_colors()
         return {
             "tools": [t.asdict() for t in self.tools],
@@ -375,21 +344,21 @@ class OntologyBuilder:
                 self.tools[index].color = '#%02x%02x%02x' % rgb_color
 
     @classmethod
-    def from_project(cls, project: "project.Project") -> "OntologyBuilder":
+    def from_project(cls, project: "project.Project"):
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
 
     @classmethod
-    def from_ontology(cls, ontology: Ontology) -> "OntologyBuilder":
+    def from_ontology(cls, ontology: Ontology):
         return cls.from_dict(ontology.normalized)
 
-    def add_tool(self, tool: Tool) -> None:
+    def add_tool(self, tool: Tool):
         if tool.name in (t.name for t in self.tools):
             raise InconsistentOntologyException(
                 f"Duplicate tool name '{tool.name}'. ")
         self.tools.append(tool)
 
-    def add_classification(self, classification: Classification) -> None:
+    def add_classification(self, classification: Classification):
         if classification.instructions in (
                 c.instructions for c in self.classifications):
             raise InconsistentOntologyException(

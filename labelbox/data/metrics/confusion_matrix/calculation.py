@@ -2,9 +2,9 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..iou.calculation import _get_mask_pairs, _get_vector_pairs, _get_ner_pairs, miou
+from ..iou.calculation import _get_mask_pairs, _get_vector_pairs, miou
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
-                                 Mask, Geometry, Checklist, Radio, TextEntity,
+                                 Mask, Geometry, Checklist, Radio,
                                  ScalarMetricValue, ConfusionMatrixMetricValue)
 from ..group import (get_feature_pairs, get_identifying_key, has_no_annotations,
                      has_no_matching_annotations)
@@ -68,9 +68,6 @@ def feature_confusion_matrix(
     elif isinstance(predictions[0].value, Geometry):
         return vector_confusion_matrix(ground_truths, predictions,
                                        include_subclasses, iou)
-    elif isinstance(predictions[0].value, TextEntity):
-        return ner_confusion_matrix(ground_truths, predictions,
-                                    include_subclasses, iou)
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_confusion_matrix(ground_truths, predictions)
     else:
@@ -291,23 +288,3 @@ def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
     fn_mask = (prediction_np == 0) & (ground_truth_np == 1)
     tn_mask = prediction_np == ground_truth_np == 0
     return [np.sum(tp_mask), np.sum(fp_mask), np.sum(fn_mask), np.sum(tn_mask)]
-
-
-def ner_confusion_matrix(ground_truths: List[ObjectAnnotation],
-                         predictions: List[ObjectAnnotation],
-                         include_subclasses: bool,
-                         iou: float) -> Optional[ConfusionMatrixMetricValue]:
-    """Computes confusion matrix metric between two lists of TextEntity objects
-
-    Args:
-        ground_truths: List of ground truth mask annotations
-        predictions: List of prediction mask annotations
-    Returns:
-        confusion matrix as a list: [TP,FP,TN,FN]
-    """
-    if has_no_matching_annotations(ground_truths, predictions):
-        return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
-    elif has_no_annotations(ground_truths, predictions):
-        return None
-    pairs = _get_ner_pairs(ground_truths, predictions)
-    return object_pair_confusion_matrix(pairs, include_subclasses, iou)

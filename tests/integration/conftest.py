@@ -1,8 +1,12 @@
 import os
 import re
-import time
 import uuid
+import time
+from collections import namedtuple
+from datetime import datetime
 from enum import Enum
+from random import randint
+from string import ascii_letters
 from types import SimpleNamespace
 
 import pytest
@@ -10,12 +14,14 @@ import requests
 
 from labelbox import Client
 from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.orm import query
+from labelbox.schema.annotation_import import MALPredictionImport
+from labelbox.orm.db_object import Entity, DbObject
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
+from labelbox import OntologyBuilder, Tool, Option, Classification
+from labelbox.schema.annotation_import import LabelImport
 
 IMG_URL = "https://picsum.photos/200/300"
 
@@ -24,7 +30,6 @@ class Environ(Enum):
     LOCAL = 'local'
     PROD = 'prod'
     STAGING = 'staging'
-    ONPREM = 'onprem'
 
 
 @pytest.fixture(scope="session")
@@ -47,11 +52,6 @@ def graphql_url(environ: str) -> str:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
         return 'https://staging-api.labelbox.com/graphql'
-    elif environ == Environ.ONPREM:
-        hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
-        if hostname is None:
-            raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
-        return f"{hostname}/api/_gql"
     return 'http://host.docker.internal:8080/graphql'
 
 
@@ -60,8 +60,6 @@ def testing_api_key(environ: str) -> str:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
     elif environ == Environ.STAGING:
         return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
-    elif environ == Environ.ONPREM:
-        return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
     return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
@@ -88,7 +86,8 @@ def get_project_invites(client, project_id):
                                query_str, {id_param: project_id},
                                ['project', 'invites', 'nodes'],
                                Invite,
-                               cursor_path=['project', 'invites', 'nextCursor'])
+                               cursor_path=['project', 'invites', 'nextCursor'],
+                               experimental=True)
 
 
 def get_invites(client):
@@ -140,8 +139,48 @@ def image_url(client):
 
 
 @pytest.fixture
+def rand_gen():
+
+    def gen(field_type):
+        if field_type is str:
+            return "".join(ascii_letters[randint(0,
+                                                 len(ascii_letters) - 1)]
+                           for _ in range(16))
+
+        if field_type is datetime:
+            return datetime.now()
+
+        raise Exception("Can't random generate for field type '%r'" %
+                        field_type)
+
+    return gen
+
+
+@pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
+
+    def create_label(**kwargs):
+        """ Creates a label on a Legacy Editor project. Not supported in the new Editor.
+        Args:
+            **kwargs: Label attributes. At minimum, the label `DataRow`.
+        """
+        Label = Entity.Label
+        kwargs[Label.project] = project
+        kwargs[Label.seconds_to_label] = kwargs.get(Label.seconds_to_label.name,
+                                                    0.0)
+        data = {
+            Label.attribute(attr) if isinstance(attr, str) else attr:
+            value.uid if isinstance(value, DbObject) else value
+            for attr, value in kwargs.items()
+        }
+        query_str, params = query.create(Label, data)
+        query_str = query_str.replace(
+            "data: {", "data: {type: {connect: {name: \"Any\"}} ")
+        res = project.client.execute(query_str, params)
+        return Label(project.client, res["createLabel"])
+
+    project.create_label = create_label
     yield project
     project.delete()
 
@@ -165,6 +204,21 @@ def datarow(dataset, image_url):
     dr = next(dataset.data_rows())
     yield dr
     dr.delete()
+
+
+LabelPack = namedtuple("LabelPack", "project dataset data_row label")
+
+
+@pytest.fixture
+def label_pack(project, rand_gen, image_url):
+    client = project.client
+    dataset = client.create_dataset(name=rand_gen(str))
+    project.datasets.connect(dataset)
+    data_row = dataset.create_data_row(row_data=IMG_URL)
+    label = project.create_label(data_row=data_row, label=rand_gen(str))
+    time.sleep(10)
+    yield LabelPack(project, dataset, data_row, label)
+    dataset.delete()
 
 
 @pytest.fixture
@@ -245,14 +299,10 @@ def configured_project(project, client, rand_gen, image_url):
 
 
 @pytest.fixture
-def configured_project_with_label(client, rand_gen, image_url, project, dataset,
-                                  datarow):
-    """Project with a connected dataset, having one datarow
-    Project contains an ontology with 1 bbox tool
-    Additionally includes a create_label method for any needed extra labels
-    One label is already created and yielded when using fixture
-    """
-    project.datasets.connect(dataset)
+def configured_project_with_label(client, rand_gen, image_url):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    data_row = dataset.create_data_row(row_data=image_url)
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -261,15 +311,13 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
     ])
     project.setup(editor, ontology_builder.asdict())
-    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
-    time.sleep(2)
-
+    project.enable_model_assisted_labeling()
     ontology = ontology_builder.from_project(project)
     predictions = [{
         "uuid": str(uuid.uuid4()),
         "schemaId": ontology.tools[0].feature_schema_id,
         "dataRow": {
-            "id": datarow.uid
+            "id": data_row.uid
         },
         "bbox": {
             "top": 20,
@@ -278,23 +326,13 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
             "width": 50
         }
     }]
-
-    def create_label():
-        """ Ad-hoc function to create a LabelImport
-        
-        Creates a LabelImport task which will create a label
-        """
-        upload_task = LabelImport.create_from_objects(
-            client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
-        upload_task.wait_until_done(sleep_time_seconds=5)
-
-    project.create_label = create_label
-    project.create_label()
-    label = next(project.labels())
-    yield [project, dataset, datarow, label]
-
-    for label in project.labels():
-        label.delete()
+    upload_task = LabelImport.create_from_objects(
+        client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
+    upload_task.wait_until_done()
+    label = next(project.labels()).uid
+    yield [project, label]
+    dataset.delete()
+    project.delete()
 
 
 @pytest.fixture

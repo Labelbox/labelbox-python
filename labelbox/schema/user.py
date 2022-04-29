@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-
-if TYPE_CHECKING:
-    from labelbox import Role, Project
+from labelbox.schema.role import Role
+from labelbox.schema.project import Project
 
 
 class User(DbObject):
@@ -42,7 +40,7 @@ class User(DbObject):
     projects = Relationship.ToMany("Project", False)
     org_role = Relationship.ToOne("OrgRole", False)
 
-    def update_org_role(self, role: "Role") -> None:
+    def update_org_role(self, role: Role):
         """ Updated the `User`s organization role.
 
         See client.get_roles() to get all valid roles
@@ -63,7 +61,7 @@ class User(DbObject):
             role_id_param: role.uid
         })
 
-    def remove_from_project(self, project: "Project") -> None:
+    def remove_from_project(self, project: "Project"):
         """ Removes a User from a project. Only used for project based users.
         Project based user means their org role is "NONE"
 
@@ -73,7 +71,7 @@ class User(DbObject):
         """
         self.upsert_project_role(project, self.client.get_roles()['NONE'])
 
-    def upsert_project_role(self, project: "Project", role: "Role") -> None:
+    def upsert_project_role(self, project: "Project", role: Role):
         """ Updates or replaces a User's role in a project.
 
         Args:

@@ -1,6 +1,6 @@
 import pytest
 import ndjson
-from pytest_cases import parametrize, fixture_ref
+from pytest_cases import pytest_parametrize_plus, fixture_ref
 
 from labelbox.exceptions import MALValidationError
 from labelbox.schema.bulk_import_request import (NDChecklist, NDClassification,
@@ -23,14 +23,14 @@ def test_subclassification_construction(rectangle_inference):
     assert isinstance(tool.classifications[0], NDRadio)
 
 
-@parametrize("inference, expected_type",
-             [(fixture_ref('polygon_inference'), NDPolygon),
-              (fixture_ref('rectangle_inference'), NDRectangle),
-              (fixture_ref('line_inference'), NDPolyline),
-              (fixture_ref('entity_inference'), NDTextEntity),
-              (fixture_ref('segmentation_inference'), NDMask),
-              (fixture_ref('segmentation_inference_rle'), NDMask),
-              (fixture_ref('segmentation_inference_png'), NDMask)])
+@pytest_parametrize_plus("inference, expected_type",
+                         [(fixture_ref('polygon_inference'), NDPolygon),
+                          (fixture_ref('rectangle_inference'), NDRectangle),
+                          (fixture_ref('line_inference'), NDPolyline),
+                          (fixture_ref('entity_inference'), NDTextEntity),
+                          (fixture_ref('segmentation_inference'), NDMask),
+                          (fixture_ref('segmentation_inference_rle'), NDMask),
+                          (fixture_ref('segmentation_inference_png'), NDMask)])
 def test_tool_construction(inference, expected_type):
     assert isinstance(NDTool.build(inference), expected_type)
 
@@ -209,12 +209,10 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
 
     with pytest.raises(MALValidationError):
         configured_project.upload_annotations(name="name",
-                                              validate=True,
                                               annotations=str(file_path))
 
     with pytest.raises(MALValidationError):
         configured_project.upload_annotations(name="name",
-                                              validate=True,
                                               annotations=repeat_uuid)
 
 

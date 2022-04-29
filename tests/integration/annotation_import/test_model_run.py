@@ -1,11 +1,8 @@
 import time
-import os
-import pytest
 
 
 def test_model_run(client, configured_project_with_label, rand_gen):
-    project, _, _, label = configured_project_with_label
-    label_id = label.uid
+    project, label_id = configured_project_with_label
     ontology = project.ontology()
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
     model = client.create_model(data["name"], data["ontology_id"])
@@ -24,9 +21,6 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     assert model_run_data_row.model_run_id == model_run.uid
     assert model_run_data_row.data_row().uid == next(
         next(project.datasets()).data_rows()).uid
-
-    fetch_model_run = client.get_model_run(model_run.uid)
-    assert fetch_model_run == model_run
 
 
 def test_model_run_delete(client, model_run):
@@ -79,43 +73,3 @@ def test_model_run_upsert_data_rows_with_existing_labels(
     ])
     assert n_data_rows == len(
         list(model_run_with_model_run_data_rows.model_run_data_rows()))
-
-
-def test_model_run_export_labels(model_run_with_model_run_data_rows):
-    labels = model_run_with_model_run_data_rows.export_labels(download=True)
-    assert len(labels) == 3
-
-
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-                    reason="does not work for onprem")
-def test_model_run_status(model_run_with_model_run_data_rows):
-
-    def get_model_run_status():
-        return model_run_with_model_run_data_rows.client.execute(
-            """query trainingPipelinePyApi($modelRunId: ID!) {
-            trainingPipeline(where: {id : $modelRunId}) {status, errorMessage, metadata}}
-        """, {'modelRunId': model_run_with_model_run_data_rows.uid},
-            experimental=True)['trainingPipeline']
-
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] is None
-    assert model_run_status['metadata'] is None
-    assert model_run_status['errorMessage'] is None
-
-    status = "COMPLETE"
-    metadata = {'key1': 'value1'}
-    errorMessage = "an error"
-    model_run_with_model_run_data_rows.update_status(status, metadata,
-                                                     errorMessage)
-
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status
-    assert model_run_status['metadata'] == metadata
-    assert model_run_status['errorMessage'] == errorMessage
-
-    extra_metadata = {'key2': 'value2'}
-    model_run_with_model_run_data_rows.update_status(status, extra_metadata)
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status
-    assert model_run_status['metadata'] == {**metadata, **extra_metadata}
-    assert model_run_status['errorMessage'] == errorMessage

@@ -206,13 +206,14 @@ class DataRowMetadataOntology:
                                              Dict]]]]) -> List[DataRowMetadata]:
         """ Parse metadata responses
 
-        >>> mdo.parse_metadata([metadata])
+        >>> mdo.parse_metadata([metdata])
 
         Args:
             unparsed: An unparsed metadata export
 
         Returns:
             metadata: List of `DataRowMetadata`
+
         """
         parsed = []
         if isinstance(unparsed, dict):

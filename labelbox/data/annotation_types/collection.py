@@ -22,12 +22,7 @@ class LabelList:
     """
 
     def __init__(self, data: Optional[Iterable[Label]] = None):
-        if data is None:
-            self._data = []
-        elif isinstance(data, Label):
-            self._data = [data]
-        else:
-            self._data = data
+        self._data = [] if data is None else data
         self._index = 0
 
     def assign_feature_schema_ids(
@@ -138,7 +133,7 @@ class LabelList:
                     )
             external_ids.add(label.data.external_id)
 
-    def append(self, label: Label) -> None:
+    def append(self, label: Label):
         self._data.append(label)
 
     def __iter__(self) -> "LabelList":

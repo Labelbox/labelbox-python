@@ -41,9 +41,3 @@ def test_no_integration(client, image_url):
     dr = ds.create_data_row(row_data=image_url)
     assert requests.get(dr.row_data).status_code == 200
     ds.delete()
-
-
-def test_no_default_integration(client):
-    ds = client.create_dataset(name="new_ds")
-    assert ds.iam_integration() is None
-    ds.delete()

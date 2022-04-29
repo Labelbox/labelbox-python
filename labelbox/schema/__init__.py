@@ -18,5 +18,4 @@ import labelbox.schema.task
 import labelbox.schema.user
 import labelbox.schema.webhook
 import labelbox.schema.data_row_metadata
-import labelbox.schema.batch
 import labelbox.schema.iam_integration

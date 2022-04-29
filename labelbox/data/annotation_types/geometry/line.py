@@ -4,7 +4,6 @@ import geojson
 import numpy as np
 import cv2
 from pydantic import validator
-from shapely.geometry import LineString as SLineString
 
 from .point import Point
 from .geometry import Geometry
@@ -25,17 +24,6 @@ class Line(Geometry):
     def geometry(self) -> geojson.MultiLineString:
         return geojson.MultiLineString(
             [[[point.x, point.y] for point in self.points]])
-
-    @classmethod
-    def from_shapely(cls, shapely_obj: SLineString) -> "Line":
-        """Transforms a shapely object."""
-        if not isinstance(shapely_obj, SLineString):
-            raise TypeError(
-                f"Expected Shapely Line. Got {shapely_obj.geom_type}")
-
-        obj_coords = shapely_obj.__geo_interface__['coordinates']
-        return Line(
-            points=[Point(x=coords[0], y=coords[1]) for coords in obj_coords])
 
     def draw(self,
              height: Optional[int] = None,

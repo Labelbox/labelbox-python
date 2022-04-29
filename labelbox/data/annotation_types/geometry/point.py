@@ -3,7 +3,6 @@ from typing import Optional, Tuple, Union
 import geojson
 import numpy as np
 import cv2
-from shapely.geometry import Point as SPoint
 
 from .geometry import Geometry
 
@@ -24,16 +23,6 @@ class Point(Geometry):
     @property
     def geometry(self) -> geojson.Point:
         return geojson.Point((self.x, self.y))
-
-    @classmethod
-    def from_shapely(cls, shapely_obj: SPoint) -> "Point":
-        """Transforms a shapely object."""
-        if not isinstance(shapely_obj, SPoint):
-            raise TypeError(
-                f"Expected Shapely Point. Got {shapely_obj.geom_type}")
-
-        obj_coords = shapely_obj.__geo_interface__['coordinates']
-        return Point(x=obj_coords[0], y=obj_coords[1])
 
     def draw(self,
              height: Optional[int] = None,

@@ -20,17 +20,9 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
-from labelbox.schema.dataset import Dataset
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
-from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.model import Model
-from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, Tool, Classification
-from labelbox.schema.organization import Organization
-from labelbox.schema.user import User
-from labelbox.schema.project import Project
-from labelbox.schema.role import Role
+from labelbox.schema.ontology import Tool, Classification
 
 logger = logging.getLogger(__name__)
 
@@ -204,7 +196,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"].get("code")
+            return error["extensions"]["exception"].get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -379,8 +371,7 @@ class Client:
 
         if not file_data or not file_data.get("uploadFile", None):
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % file_data or
-                file_data.get("error"))
+                "Failed to upload, message: %s" % file_data.get("error", None))
 
         return file_data["uploadFile"]["url"]
 
@@ -420,7 +411,7 @@ class Client:
         """
         return self._get_single(Entity.Project, project_id)
 
-    def get_dataset(self, dataset_id) -> Dataset:
+    def get_dataset(self, dataset_id):
         """ Gets a single Dataset with the given ID.
 
             >>> dataset = client.get_dataset("<dataset_id>")
@@ -435,14 +426,14 @@ class Client:
         """
         return self._get_single(Entity.Dataset, dataset_id)
 
-    def get_user(self) -> User:
+    def get_user(self):
         """ Gets the current User database object.
 
             >>> user = client.get_user()
         """
         return self._get_single(Entity.User, None)
 
-    def get_organization(self) -> Organization:
+    def get_organization(self):
         """ Gets the Organization DB object of the current user.
 
             >>> organization = client.get_organization()
@@ -470,7 +461,7 @@ class Client:
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
 
-    def get_projects(self, where=None) -> List[Project]:
+    def get_projects(self, where=None):
         """ Fetches all the projects the user has access to.
 
             >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
@@ -483,7 +474,7 @@ class Client:
         """
         return self._get_all(Entity.Project, where)
 
-    def get_datasets(self, where=None) -> List[Dataset]:
+    def get_datasets(self, where=None):
         """ Fetches one or more datasets.
 
             >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
@@ -496,7 +487,7 @@ class Client:
         """
         return self._get_all(Entity.Dataset, where)
 
-    def get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
+    def get_labeling_frontends(self, where=None):
         """ Fetches all the labeling frontends.
 
             >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
@@ -536,9 +527,7 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_dataset(self,
-                       iam_integration=IAMIntegration._DEFAULT,
-                       **kwargs) -> Dataset:
+    def create_dataset(self, iam_integration=IAMIntegration._DEFAULT, **kwargs):
         """ Creates a Dataset object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -596,7 +585,7 @@ class Client:
             raise e
         return dataset
 
-    def create_project(self, **kwargs) -> Project:
+    def create_project(self, **kwargs):
         """ Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -613,7 +602,7 @@ class Client:
         """
         return self._create(Entity.Project, kwargs)
 
-    def get_roles(self) -> List[Role]:
+    def get_roles(self):
         """
         Returns:
             Roles: Provides information on available roles within an organization.
@@ -630,7 +619,7 @@ class Client:
 
         return self._get_single(Entity.DataRow, data_row_id)
 
-    def get_data_row_metadata_ontology(self) -> DataRowMetadataOntology:
+    def get_data_row_metadata_ontology(self):
         """
 
         Returns:
@@ -639,7 +628,7 @@ class Client:
         """
         return DataRowMetadataOntology(self)
 
-    def get_model(self, model_id) -> Model:
+    def get_model(self, model_id):
         """ Gets a single Model with the given ID.
 
             >>> model = client.get_model("<model_id>")
@@ -654,7 +643,7 @@ class Client:
         """
         return self._get_single(Entity.Model, model_id)
 
-    def get_models(self, where=None) -> List[Model]:
+    def get_models(self, where=None):
         """ Fetches all the models the user has access to.
 
             >>> models = client.get_models(where=(Model.name == "<model_name>"))
@@ -667,7 +656,7 @@ class Client:
         """
         return self._get_all(Entity.Model, where, filter_deleted=False)
 
-    def create_model(self, name, ontology_id) -> Model:
+    def create_model(self, name, ontology_id):
         """ Creates a Model object on the server.
 
         >>> model = client.create_model(<model_name>, <ontology_id>)
@@ -718,7 +707,7 @@ class Client:
                 result[row['externalId']].append(row['dataRowId'])
         return result
 
-    def get_ontology(self, ontology_id) -> Ontology:
+    def get_ontology(self, ontology_id):
         """
         Fetches an Ontology by id.
 
@@ -729,7 +718,7 @@ class Client:
         """
         return self._get_single(Entity.Ontology, ontology_id)
 
-    def get_ontologies(self, name_contains) -> PaginatedCollection:
+    def get_ontologies(self, name_contains):
         """
         Fetches all ontologies with names that match the name_contains string.
 
@@ -771,7 +760,7 @@ class Client:
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
 
-    def get_feature_schemas(self, name_contains) -> PaginatedCollection:
+    def get_feature_schemas(self, name_contains):
         """
         Fetches top level feature schemas with names that match the `name_contains` string
 
@@ -800,8 +789,7 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self, name,
-                                             feature_schema_ids) -> Ontology:
+    def create_ontology_from_feature_schemas(self, name, feature_schema_ids):
         """
         Creates an ontology from a list of feature schema ids
 
@@ -840,7 +828,7 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized)
 
-    def create_ontology(self, name, normalized) -> Ontology:
+    def create_ontology(self, name, normalized):
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -908,15 +896,3 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
-
-    def get_model_run(self, model_run_id: str) -> ModelRun:
-        """ Gets a single ModelRun with the given ID.
-
-            >>> model_run = client.get_model_run("<model_run_id>")
-
-        Args:
-            model_run_id (str): Unique ID of the ModelRun.
-        Returns:
-            A ModelRun object.
-        """
-        return self._get_single(Entity.ModelRun, model_run_id)

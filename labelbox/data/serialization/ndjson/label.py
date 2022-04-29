@@ -2,11 +2,10 @@ from itertools import groupby
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
-import warnings
 
 from pydantic import BaseModel
 
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation, VideoObjectAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
@@ -16,13 +15,12 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
-from .objects import NDObject, NDObjectType, NDSegments
+from .objects import NDObject, NDObjectType
 
 
 class NDLabel(BaseModel):
     annotations: List[Union[NDObjectType, NDClassificationType,
-                            NDConfusionMatrixMetric, NDScalarMetric,
-                            NDSegments]]
+                            NDConfusionMatrixMetric, NDScalarMetric]]
 
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
@@ -39,20 +37,15 @@ class NDLabel(BaseModel):
             yield from cls._create_video_annotations(label)
 
     def _generate_annotations(
-        self,
-        grouped_annotations: Dict[str,
-                                  List[Union[NDObjectType, NDClassificationType,
-                                             NDConfusionMatrixMetric,
-                                             NDScalarMetric, NDSegments]]]
+        self, grouped_annotations: Dict[str, List[Union[NDObjectType,
+                                                        NDClassificationType,
+                                                        NDConfusionMatrixMetric,
+                                                        NDScalarMetric]]]
     ) -> Generator[Label, None, None]:
         for data_row_id, annotations in grouped_annotations.items():
             annots = []
             for annotation in annotations:
-                if isinstance(annotation, NDSegments):
-                    annots.extend(
-                        NDSegments.to_common(annotation, annotation.schema_id))
-
-                elif isinstance(annotation, NDObjectType.__args__):
+                if isinstance(annotation, NDObjectType.__args__):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
                     annots.extend(NDClassification.to_common(annotation))
@@ -62,6 +55,7 @@ class NDLabel(BaseModel):
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
+
             data = self._infer_media_type(annotations)(uid=data_row_id)
             yield Label(annotations=annots, data=data)
 
@@ -71,7 +65,7 @@ class NDLabel(BaseModel):
         types = {type(annotation) for annotation in annotations}
         if TextEntity in types:
             return TextData
-        elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
+        elif VideoClassificationAnnotation in types:
             return VideoData
         else:
             return ImageData
@@ -89,46 +83,26 @@ class NDLabel(BaseModel):
     def _create_video_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
-
         video_annotations = defaultdict(list)
         for annot in label.annotations:
-            if isinstance(
-                    annot,
-                (VideoClassificationAnnotation, VideoObjectAnnotation)):
+            if isinstance(annot, VideoClassificationAnnotation):
                 video_annotations[annot.feature_schema_id].append(annot)
 
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(
                 sorted([annotation.frame for annotation in annotation_group]))
-
-            if isinstance(annotation_group[0], VideoClassificationAnnotation):
-                annotation = annotation_group[0]
-                frames_data = []
-                for frames in consecutive_frames:
-                    frames_data.append({'start': frames[0], 'end': frames[-1]})
-                annotation.extra.update({'frames': frames_data})
-                yield NDClassification.from_common(annotation, label.data)
-
-            elif isinstance(annotation_group[0], VideoObjectAnnotation):
-                warnings.warn(
-                    """Nested classifications are not currently supported
-                    for video object annotations
-                    and will not import alongside the object annotations.""")
-                segments = []
-                for start_frame, end_frame in consecutive_frames:
-                    segment = []
-                    for annotation in annotation_group:
-                        if annotation.keyframe and start_frame <= annotation.frame <= end_frame:
-                            segment.append(annotation)
-                    segments.append(segment)
-                yield NDObject.from_common(segments, label.data)
+            annotation = annotation_group[0]
+            frames_data = []
+            for frames in consecutive_frames:
+                frames_data.append({'start': frames[0], 'end': frames[-1]})
+            annotation.extra.update({'frames': frames_data})
+            yield NDClassification.from_common(annotation, label.data)
 
     @classmethod
     def _create_non_video_annotations(cls, label: Label):
         non_video_annotations = [
             annot for annot in label.annotations
-            if not isinstance(annot, (VideoClassificationAnnotation,
-                                      VideoObjectAnnotation))
+            if not isinstance(annot, VideoClassificationAnnotation)
         ]
         for annotation in non_video_annotations:
             if isinstance(annotation, ClassificationAnnotation):

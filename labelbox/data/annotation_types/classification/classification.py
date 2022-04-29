@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Union, Optional
-import warnings
 
 try:
     from typing import Literal
@@ -34,7 +33,7 @@ class ClassificationAnswer(FeatureSchema):
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
 
-    def dict(self, *args, **kwargs) -> Dict[str, str]:
+    def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
         if res['keyframe'] is None:
             res.pop('keyframe')
@@ -73,15 +72,6 @@ class Dropdown(_TempName):
     """
     - A classification with many selected options allowed .
     - This is not currently compatible with MAL.
-
-    Deprecation Notice: Dropdown classification is deprecated and will be
-        removed in a future release. Dropdown will also
-        no longer be able to be created in the Editor on 3/31/2022.    
     """
     name: Literal["dropdown"] = "dropdown"
     answer: List[ClassificationAnswer]
-
-    def __init__(self, **data: Any):
-        warnings.warn("Dropdown classification is deprecated and will be "
-                      "removed in a future release")
-        super().__init__(**data)

@@ -1,23 +1,19 @@
-from typing import Generator, List, Union, Any, TYPE_CHECKING
+from labelbox.schema import iam_integration
+from labelbox import utils
 import os
 import json
 import logging
-from collections.abc import Iterable
+from itertools import islice
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import ndjson
-from itertools import islice
-
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
+from collections.abc import Iterable
 
-from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
-
-if TYPE_CHECKING:
-    from labelbox import Task, User, DataRow
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +48,7 @@ class Dataset(DbObject, Updateable, Deletable):
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-    def create_data_row(self, **kwargs) -> "DataRow":
+    def create_data_row(self, **kwargs):
         """ Creates a single DataRow belonging to this dataset.
 
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
@@ -80,7 +76,7 @@ class Dataset(DbObject, Updateable, Deletable):
         kwargs[DataRow.dataset.name] = self
         return self.client._create(DataRow, kwargs)
 
-    def create_data_rows_sync(self, items) -> None:
+    def create_data_rows_sync(self, items):
         """ Synchronously bulk upload data rows.
 
         Use this instead of `Dataset.create_data_rows` for smaller batches of data rows that need to be uploaded quickly.
@@ -121,7 +117,7 @@ class Dataset(DbObject, Updateable, Deletable):
             url_param: descriptor_url
         })
 
-    def create_data_rows(self, items) -> Union["Task", List[Any]]:
+    def create_data_rows(self, items):
         """ Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
@@ -164,15 +160,14 @@ class Dataset(DbObject, Updateable, Deletable):
 
         # Fetch and return the task.
         task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
+        user = self.client.get_user()
+        task = list(user.created_tasks(where=Entity.Task.uid == task_id))
         # Cache user in a private variable as the relationship can't be
         # resolved due to server-side limitations (see Task.created_by)
         # for more info.
-        if len(tasks) != 1:
+        if len(task) != 1:
             raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
+        task = task[0]
         task._user = user
         return task
 
@@ -316,10 +311,8 @@ class Dataset(DbObject, Updateable, Deletable):
         data = json.dumps(items)
         return self.client.upload_data(data)
 
-    def data_rows_for_external_id(self,
-                                  external_id,
-                                  limit=10) -> List["DataRow"]:
-        """ Convenience method for getting a multiple `DataRow` belonging to this
+    def data_rows_for_external_id(self, external_id, limit=10):
+        """ Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
         Args:
@@ -327,7 +320,7 @@ class Dataset(DbObject, Updateable, Deletable):
             limit (int): The maximum number of data rows to return for the given external_id
 
         Returns:
-            A list of `DataRow` with the given ID.
+            A single `DataRow` with the given ID.
 
         Raises:
             labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
@@ -345,7 +338,7 @@ class Dataset(DbObject, Updateable, Deletable):
             raise ResourceNotFoundError(DataRow, where)
         return data_rows
 
-    def data_row_for_external_id(self, external_id) -> "DataRow":
+    def data_row_for_external_id(self, external_id):
         """ Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
@@ -368,7 +361,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 external_id)
         return data_rows[0]
 
-    def export_data_rows(self, timeout_seconds=120) -> Generator:
+    def export_data_rows(self, timeout_seconds=120):
         """ Returns a generator that produces all data rows that are currently
         attached to this dataset.
 

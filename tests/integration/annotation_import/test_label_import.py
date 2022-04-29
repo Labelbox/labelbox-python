@@ -1,5 +1,7 @@
 import uuid
+import ndjson
 import pytest
+import requests
 
 from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 """
@@ -20,18 +22,15 @@ def test_create_from_url(client, project, annotation_import_test_helpers):
     annotation_import_test_helpers.check_running_state(label_import, name, url)
 
 
-def test_create_from_objects(client, configured_project, object_predictions,
+def test_create_from_objects(client, project, object_predictions,
                              annotation_import_test_helpers):
-    """this test should check running state only to validate running, not completed"""
     name = str(uuid.uuid4())
 
-    label_import = LabelImport.create_from_objects(
-        client=client,
-        project_id=configured_project.uid,
-        name=name,
-        labels=object_predictions)
-
-    assert label_import.parent_id == configured_project.uid
+    label_import = LabelImport.create_from_objects(client=client,
+                                                   project_id=project.uid,
+                                                   name=name,
+                                                   labels=object_predictions)
+    assert label_import.parent_id == project.uid
     annotation_import_test_helpers.check_running_state(label_import, name)
     annotation_import_test_helpers.assert_file_content(
         label_import.input_file_url, object_predictions)
