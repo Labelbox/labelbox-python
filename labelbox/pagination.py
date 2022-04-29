@@ -1,6 +1,6 @@
 # Size of a single page in a paginated query.
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -23,9 +23,9 @@ class PaginatedCollection:
                  client: "Client",
                  query: str,
                  params: Dict[str, str],
-                 dereferencing: Dict[str, Any],
-                 obj_class: Type["DbObject"],
-                 cursor_path: Optional[Dict[str, Any]] = None,
+                 dereferencing: Union[List[str], Dict[str, Any]],
+                 obj_class: Union[Type["DbObject"], Callable[[Any, Any], Any]],
+                 cursor_path: Optional[List[str]] = None,
                  experimental: bool = False):
         """ Creates a PaginatedCollection.
 
@@ -105,7 +105,7 @@ class _Pagination(ABC):
 
 class _CursorPagination(_Pagination):
 
-    def __init__(self, cursor_path: Dict[str, Any], *args, **kwargs):
+    def __init__(self, cursor_path: List[str], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_path = cursor_path
         self.next_cursor: Optional[Any] = None

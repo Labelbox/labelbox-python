@@ -1,10 +1,11 @@
-import json
+import time
+import os
 
 import pytest
+import requests
 
-from labelbox import Project, LabelingFrontend
+from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
-from labelbox.schema.project import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -41,8 +42,65 @@ def test_project(client, rand_gen):
     assert project not in final
     assert set(final) == set(before)
 
-    # TODO this should raise ResourceNotFoundError, but it doesn't
-    project = client.get_project(project.uid)
+
+def test_update_project_resource_tags(client, rand_gen):
+
+    def delete_tag(tag_id: str):
+        """Deletes a tag given the tag uid. Currently internal use only so this is not public"""
+        res = client.execute(
+            """mutation deleteResourceTagPyApi($tag_id: String!) {
+        deleteResourceTag(input: {id: $tag_id}) {
+            id
+        }
+        }
+        """, {"tag_id": tag_id})
+        return res
+
+    before = list(client.get_projects())
+    for o in before:
+        assert isinstance(o, Project)
+
+    org = client.get_organization()
+    assert org.uid is not None
+
+    project_name = rand_gen(str)
+    p1 = client.create_project(name=project_name)
+    assert p1.uid is not None
+
+    colorA = "#ffffff"
+    textA = rand_gen(str)
+    tag = {"text": textA, "color": colorA}
+
+    colorB = colorA
+    textB = rand_gen(str)
+    tagB = {"text": textB, "color": colorB}
+
+    tagA = client.get_organization().create_resource_tag(tag)
+    assert tagA.text == textA
+    assert '#' + tagA.color == colorA
+    assert tagA.uid is not None
+
+    tags = org.get_resource_tags()
+    lenA = len(tags)
+    assert lenA > 0
+
+    tagB = client.get_organization().create_resource_tag(tagB)
+    assert tagB.text == textB
+    assert '#' + tagB.color == colorB
+    assert tagB.uid is not None
+
+    tags = client.get_organization().get_resource_tags()
+    lenB = len(tags)
+    assert lenB > 0
+    assert lenB > lenA
+
+    project_resource_tag = client.get_project(
+        p1.uid).update_project_resource_tags([str(tagA.uid)])
+    assert len(project_resource_tag) == 1
+    assert project_resource_tag[0].uid == tagA.uid
+
+    delete_tag(tagA.uid)
+    delete_tag(tagB.uid)
 
 
 def test_project_filtering(client, rand_gen):
@@ -77,6 +135,8 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="new mutation does not work for onprem")
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
         project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
@@ -91,17 +151,35 @@ def test_attach_instructions(client, project):
     project.setup(editor, empty_ontology)
 
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
-    assert json.loads(
-        list(project.labeling_frontend_options())
-        [-1].customization_options).get('projectInstructions') is not None
+    time.sleep(3)
+    assert project.ontology().normalized['projectInstructions'] is not None
 
     with pytest.raises(ValueError) as exc_info:
         project.upsert_instructions('/tmp/file.invalid_file_extension')
-    assert "instructions_file must be a pdf. Found" in str(exc_info.value)
+    assert "instructions_file must be a pdf or html file. Found" in str(
+        exc_info.value)
 
 
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="new mutation does not work for onprem")
+def test_html_instructions(configured_project):
+    html_file_path = '/tmp/instructions.html'
+    sample_html_str = "<html></html>"
+
+    with open(html_file_path, 'w') as file:
+        file.write(sample_html_str)
+
+    configured_project.upsert_instructions(html_file_path)
+    updated_ontology = configured_project.ontology().normalized
+
+    instructions = updated_ontology.pop('projectInstructions')
+    assert requests.get(instructions).text == sample_html_str
+
+
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="new mutation does not work for onprem")
 def test_same_ontology_after_instructions(
-        client, configured_project_with_complex_ontology):
+        configured_project_with_complex_ontology):
     project, _ = configured_project_with_complex_ontology
     initial_ontology = project.ontology().normalized
     project.upsert_instructions('tests/data/assets/loremipsum.pdf')
@@ -119,6 +197,26 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    assert configured_project.queue_mode() == QueueMode.Dataset
-    configured_project.update(queue_mode=QueueMode.Batch)
-    assert configured_project.queue_mode() == QueueMode.Batch
+    assert configured_project.queue_mode(
+    ) == configured_project.QueueMode.Dataset
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    assert configured_project.queue_mode() == configured_project.QueueMode.Batch
+
+
+def test_batches(configured_project: Project, dataset: Dataset, image_url):
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch_one = 'batch one'
+    batch_two = 'batch two'
+    configured_project.create_batch(batch_one, [data_rows[0]])
+    configured_project.create_batch(batch_two, [data_rows[1]])
+
+    names = set([batch.name for batch in list(configured_project.batches())])
+    assert names == set([batch_one, batch_two])

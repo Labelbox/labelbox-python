@@ -7,10 +7,12 @@ shapely
 tqdm
 geojson
 numpy
-rasterio
 PILLOW
 opencv-python
 typeguard
 imagesize
 azure-storage-blob
 loguru
+pyproj
+pygeotile
+typing-extensions

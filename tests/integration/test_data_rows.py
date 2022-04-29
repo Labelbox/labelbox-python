@@ -6,7 +6,6 @@ import pytest
 import requests
 
 from labelbox import DataRow
-from labelbox.exceptions import InvalidQueryError
 
 
 def test_get_data_row(datarow, client):
@@ -57,9 +56,6 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
         },
     ])
     assert task in client.get_user().created_tasks()
-    # TODO make Tasks expandable
-    with pytest.raises(InvalidQueryError):
-        assert task.created_by() == client.get_user()
     task.wait_till_done()
     assert task.status == "COMPLETE"
 
@@ -161,9 +157,13 @@ def test_data_row_filtering_sorting(dataset, image_url):
     # Test filtering
     row1 = list(dataset.data_rows(where=DataRow.external_id == "row1"))
     assert len(row1) == 1
+    row1 = dataset.data_rows_for_external_id("row1")
+    assert len(row1) == 1
     row1 = row1[0]
     assert row1.external_id == "row1"
     row2 = list(dataset.data_rows(where=DataRow.external_id == "row2"))
+    assert len(row2) == 1
+    row2 = dataset.data_rows_for_external_id("row2")
     assert len(row2) == 1
     row2 = row2[0]
     assert row2.external_id == "row2"
@@ -275,3 +275,17 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
             DataRow.row_data: image_url
         }] * n_urls + [fp.name] * n_local)
     assert len(list(dataset.data_rows())) == n_local + n_urls
+
+
+def test_delete_data_row_attachment(datarow, image_url):
+    attachments = []
+    to_attach = [("IMAGE", image_url), ("TEXT", "test-text"),
+                 ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    for attachment_type, attachment_value in to_attach:
+        attachments.append(
+            datarow.create_attachment(attachment_type, attachment_value))
+
+    for attachment in attachments:
+        attachment.delete()
+
+    assert len(list(datarow.attachments())) == 0
