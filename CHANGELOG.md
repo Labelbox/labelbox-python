@@ -2,7 +2,7 @@
 
 # Version 3.20.1 (2022-05-02)
 ## Updated
-* Ontology Classification `scope` field is now correctly only for top level classifications
+* Ontology Classification `scope` field is only set for top level classifications
 
 # Version 3.20.0 (2022-04-27)
 ## Added
