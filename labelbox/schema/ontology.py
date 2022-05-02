@@ -69,7 +69,7 @@ class Option:
             "featureSchemaId": self.feature_schema_id,
             "label": self.label,
             "value": self.value,
-            "options": [o.asdict() for o in self.options]
+            "options": [o.asdict(is_subclass=True) for o in self.options]
         }
 
     def add_option(self, option: 'Classification') -> None:
@@ -159,29 +159,25 @@ class Classification:
                    feature_schema_id=dictionary.get("featureSchemaId", None),
                    scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
 
-    def asdict(self) -> Dict[str, Any]:
+    def asdict(self, is_subclass: bool = False) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
                 and len(self.options) < 1:
             raise InconsistentOntologyException(
                 f"Classification '{self.instructions}' requires options.")
-        return {
-            "type":
-                self.class_type.value,
-            "instructions":
-                self.instructions,
-            "name":
-                self.name,
-            "required":
-                self.required,
+        classification = {
+            "type": self.class_type.value,
+            "instructions": self.instructions,
+            "name": self.name,
+            "required": self.required,
             "options": [o.asdict() for o in self.options],
-            "schemaNodeId":
-                self.schema_id,
-            "featureSchemaId":
-                self.feature_schema_id,
-            "scope":
-                self.scope.value
-                if self.scope is not None else self.Scope.GLOBAL.value
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id
         }
+        if is_subclass:
+            return classification
+        classification[
+            "scope"] = self.scope.value if self.scope is not None else self.Scope.GLOBAL.value
+        return classification
 
     def add_option(self, option: Option) -> None:
         if option.value in (o.value for o in self.options):
@@ -258,7 +254,9 @@ class Tool:
             "name": self.name,
             "required": self.required,
             "color": self.color,
-            "classifications": [c.asdict() for c in self.classifications],
+            "classifications": [
+                c.asdict(is_subclass=True) for c in self.classifications
+            ],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id
         }
