@@ -615,11 +615,11 @@ class Client:
         """
         media_type = kwargs.get("media_type")
         if media_type:
-            if MediaType.is_accepted(media_type):
+            if MediaType.is_supported(media_type):
                 kwargs["media_type"] = media_type.value
             else:
                 raise TypeError(f"{media_type} is not a valid media type. Use"
-                                f" any of {MediaType.get_accepted_members()}"
+                                f" any of {MediaType.get_supported_members()}"
                                 " from MediaType. Example: MediaType.Image.")
 
         return self._create(Entity.Project, kwargs)

@@ -214,7 +214,7 @@ def test_media_type(client, configured_project: Project, rand_gen):
     assert project.media_type == MediaType.Image
     project.delete()
 
-    for media_type in MediaType.get_accepted_members():
+    for media_type in MediaType.get_supported_members():
 
         project = client.create_project(name=rand_gen(str),
                                         media_type=MediaType[media_type])

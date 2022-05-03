@@ -34,12 +34,12 @@ class MediaType(Enum):
                 return member
 
     @classmethod
-    def is_accepted(cls, value):
+    def is_supported(cls, value):
         return isinstance(value,
                           cls) and value not in [cls.Unknown, cls.Unsupported]
 
     @classmethod
-    def get_accepted_members(cls):
+    def get_supported_members(cls):
         return [
             item for item in cls.__members__
             if item not in ["Unknown", "Unsupported"]
