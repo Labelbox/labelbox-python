@@ -41,7 +41,7 @@ def results_query_part(entity):
         entity (type): The entity which needs fetching.
     """
     # Query for fields
-    fields = [field.graphql_name for field in entity.fields()]
+    fields = [field.graphql_name if field.graphql_name != "metadataFields" else "metadataFields { value schemaId }" for field in entity.fields()]
 
     # Query for cached relationships
     fields.extend([

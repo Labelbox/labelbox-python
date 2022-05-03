@@ -5,6 +5,7 @@ from typing import List, Dict, Union, TYPE_CHECKING
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.schema.data_row_metadata import DataRowMetadataField
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment
@@ -34,6 +35,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
+    metadata_fields = Field.List(DataRowMetadataField, "metadata_fields")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")

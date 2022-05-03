@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 import time
 import ndjson
-from itertools import islice
+from itertools import islice, chain
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
@@ -78,6 +78,15 @@ class Dataset(DbObject, Updateable, Deletable):
         if os.path.exists(row_data):
             kwargs[DataRow.row_data.name] = self.client.upload_file(row_data)
         kwargs[DataRow.dataset.name] = self
+
+        # Parse metadata fields, if they are provided
+        if DataRow.metadata_fields.name in kwargs:
+            mdo = self.client.get_data_row_metadata_ontology()
+            metadata_fields = kwargs[DataRow.metadata_fields.name]
+            metadata = list(chain.from_iterable(
+                            mdo.parse_upsert(m) for m in metadata_fields))
+            kwargs[DataRow.metadata_fields.name] = [md.dict(by_alias=True) for md in metadata]
+
         return self.client._create(DataRow, kwargs)
 
     def create_data_rows_sync(self, items) -> None:
