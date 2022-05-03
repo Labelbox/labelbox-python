@@ -4,7 +4,7 @@ import os
 import pytest
 import requests
 
-from labelbox import Project, LabelingFrontend
+from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
 
@@ -202,6 +202,25 @@ def test_queue_mode(configured_project: Project):
     ) == configured_project.QueueMode.Dataset
     configured_project.update(queue_mode=configured_project.QueueMode.Batch)
     assert configured_project.queue_mode() == configured_project.QueueMode.Batch
+
+
+def test_batches(configured_project: Project, dataset: Dataset, image_url):
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch_one = 'batch one'
+    batch_two = 'batch two'
+    configured_project.create_batch(batch_one, [data_rows[0]])
+    configured_project.create_batch(batch_two, [data_rows[1]])
+
+    names = set([batch.name for batch in list(configured_project.batches())])
+    assert names == set([batch_one, batch_two])
 
 
 def test_media_type(client, configured_project: Project, rand_gen):

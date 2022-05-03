@@ -7,7 +7,8 @@ RUN apt install -y libsm6 \
                 ffmpeg \
                 libfontconfig1 \
                 libxrender1 \
-                libgl1-mesa-glx
+                libgl1-mesa-glx \
+                libgeos-dev
 
 WORKDIR /usr/src/labelbox
 COPY requirements.txt /usr/src/labelbox

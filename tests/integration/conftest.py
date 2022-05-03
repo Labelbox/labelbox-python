@@ -51,8 +51,7 @@ def graphql_url(environ: str) -> str:
         hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
         if hostname is None:
             raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
-        instance_id = hostname.split("-")[1].split(".")[0]
-        return f"https://app.replicated-{instance_id}.labelbox.dev/api/_gql"
+        return f"{hostname}/api/_gql"
     return 'http://host.docker.internal:8080/graphql'
 
 

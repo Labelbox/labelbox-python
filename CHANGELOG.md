@@ -1,5 +1,24 @@
 # Changelog
 
+# Version 3.20.1 (2022-05-02)
+## Updated
+* Ontology Classification `scope` field is only set for top level classifications
+
+# Version 3.20.0 (2022-04-27)
+## Added
+* Batches in a project can be retrieved with `project.batches()`
+* Added `Batch.remove_queued_data_rows()` to cancel remaining data rows in batch
+* Added `Batch.export_data_rows()` which returns `DataRow`s for a batch
+
+## Updated
+* NDJsonConverter now supports Video bounding box annotations.
+    * Note: Currently does not support nested classifications.
+    * Note: Converting an export into Labelbox annotation types, and back to export will result in only keyframe annotations. This is to support correct import format.
+
+
+## Fix
+* `batch.project()` now works
+
 # Version 3.19.1 (2022-04-14)
 ## Fix
 * `create_data_rows` and `create_data_rows_sync` now uploads the file with a mimetype
