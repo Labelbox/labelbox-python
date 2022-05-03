@@ -55,7 +55,6 @@ class Project(DbObject, Updateable, Deletable):
         datasets (Relationship): `ToMany` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
-        reviews (Relationship): `ToMany` relationship to Review
         labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
         labeling_frontend_options (Relationship): `ToMany` relationship to LabelingFrontendOptions
         labeling_parameter_overrides (Relationship): `ToMany` relationship to LabelingParameterOverride
