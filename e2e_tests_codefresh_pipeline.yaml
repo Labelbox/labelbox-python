@@ -32,15 +32,15 @@ steps:
     commands:
       - pytest
   sendSlack:
-    title: "Alert on failure"
+    title: "Alert on success"
     type: slack-message-sender
     arguments:
       WEBHOOK_URL: "${{slack_webhook_url}}"
-      MESSAGE: "Annotations Import pipelines have failed -- ${{CF_BUILD_URL}}"
+      MESSAGE: "SDK Tests have succeeded-- ${{CF_BUILD_URL}}"
     when:
       condition:
         all:
-          failed: e2e_test.result == 'failure'
+          succeeded: e2e_test.result == 'success'
   check_for_failures:
     image: alpine
     commands:
