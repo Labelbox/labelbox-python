@@ -230,7 +230,8 @@ class DataRowMetadataOntology:
                     self._refresh_ontology()
                     if f["schemaId"] not in self.fields_by_id:
                         raise ValueError(
-                            f"Schema Id `{f['schemaId']}` not found in ontology")
+                            f"Schema Id `{f['schemaId']}` not found in ontology"
+                        )
 
                 schema = self.fields_by_id[f["schemaId"]]
                 if schema.kind == DataRowMetadataKind.enum:
