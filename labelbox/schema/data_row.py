@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.data_row_metadata import DataRowMetadataField # type: ignore
+from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment
