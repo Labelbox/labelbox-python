@@ -54,6 +54,15 @@ class Field:
         def name(self):
             return self.enum_cls.__name__
 
+    class ListType:
+
+        def __init__(self, list_cls: type):
+            self.list_cls = list_cls
+
+        @property
+        def name(self):
+            return self.list_cls.__name__
+
     class Order(Enum):
         """ Type of sort ordering. """
         Asc = auto()
@@ -91,8 +100,12 @@ class Field:
     def Json(*args):
         return Field(Field.Type.Json, *args)
 
+    @staticmethod
+    def List(list_cls: type, *args):
+        return Field(Field.ListType(list_cls), *args)
+
     def __init__(self,
-                 field_type: Union[Type, EnumType],
+                 field_type: Union[Type, EnumType, ListType],
                  name,
                  graphql_name=None):
         """ Field init.
