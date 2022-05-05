@@ -1,5 +1,11 @@
 # Changelog
 
+# Version 3.21.0 (in progress)
+## Added
+  * Projects can be created with a `media_type`
+  * Added `media_type` attribute to `Project`
+  * New `MediaType` enumeration
+
 # Version 3.20.1 (2022-05-02)
 ## Updated
 * Ontology Classification `scope` field is only set for top level classifications
