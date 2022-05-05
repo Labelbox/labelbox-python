@@ -295,7 +295,7 @@ class DataRowMetadataOntology:
                     data_row_id=m.data_row_id,
                     fields=list(
                         chain.from_iterable(
-                            self._parse_upsert(m) for m in m.fields))).dict(
+                            self.parse_upsert(m) for m in m.fields))).dict(
                                 by_alias=True))
 
         res = _batch_operations(_batch_upsert, items, self._batch_size)
@@ -393,7 +393,7 @@ class DataRowMetadataOntology:
                                  data_row_ids,
                                  batch_size=self._batch_size)
 
-    def _parse_upsert(
+    def parse_upsert(
             self, metadatum: DataRowMetadataField
     ) -> List[_UpsertDataRowMetadataInput]:
         """Format for metadata upserts to GQL"""

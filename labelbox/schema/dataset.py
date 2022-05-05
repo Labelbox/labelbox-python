@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 import time
 import ndjson
-from itertools import islice
+from itertools import islice, chain
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
@@ -256,6 +256,18 @@ class Dataset(DbObject, Updateable, Deletable):
                     )
             return attachments
 
+        def parse_metadata_fields(item):
+            metadata_fields = item.get('metadata_fields')
+            if metadata_fields:
+                mdo = self.client.get_data_row_metadata_ontology()
+                metadata = list(
+                    chain.from_iterable(
+                        mdo.parse_upsert(m) for m in metadata_fields))
+                metadata_fields = [
+                    md.dict(by_alias=True) for md in metadata
+                ]
+            item['metadata_fields'] = metadata_fields
+
         def format_row(item):
             # Formats user input into a consistent dict structure
             if isinstance(item, dict):
@@ -289,13 +301,16 @@ class Dataset(DbObject, Updateable, Deletable):
             # Don't make any changes to tms data
             if "tileLayerUrl" in item:
                 validate_attachments(item)
-                return item
+                return item                
             # Convert all payload variations into the same dict format
             item = format_row(item)
             # Make sure required keys exist (and there are no extra keys)
             validate_keys(item)
             # Make sure attachments are valid
             validate_attachments(item)
+            print(f"!! Before parsing metadata field: {item}")
+            parse_metadata_fields(item)
+            print(f"!! After parsing metadata field: {item}")
             # Upload any local file paths
             item = upload_if_necessary(item)
 
