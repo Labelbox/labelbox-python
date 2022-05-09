@@ -136,10 +136,6 @@ class DataRowMetadataOntology:
             str,
             DataRowMetadataSchema] = self._make_name_index(self.custom_fields)
 
-    def _refresh_ontology(self):
-        self._raw_ontology = self._get_ontology()
-        self._build_ontology()
-
     @staticmethod
     def _make_name_index(fields: List[DataRowMetadataSchema]):
         index = {}
@@ -204,6 +200,10 @@ class DataRowMetadataOntology:
 
         return fields
 
+    def refresh_ontology(self):
+        self._raw_ontology = self._get_ontology()
+        self._build_ontology()
+
     def parse_metadata(
         self, unparsed: List[Dict[str,
                                   List[Union[str,
@@ -227,7 +227,7 @@ class DataRowMetadataOntology:
             for f in dr["fields"]:
                 if f["schemaId"] not in self.fields_by_id:
                     # Update metadata ontology if field can't be found
-                    self._refresh_ontology()
+                    self.refresh_ontology()
                     if f["schemaId"] not in self.fields_by_id:
                         raise ValueError(
                             f"Schema Id `{f['schemaId']}` not found in ontology"
@@ -411,7 +411,7 @@ class DataRowMetadataOntology:
 
         if metadatum.schema_id not in self.fields_by_id:
             # Update metadata ontology if field can't be found
-            self._refresh_ontology()
+            self.refresh_ontology()
             if metadatum.schema_id not in self.fields_by_id:
                 raise ValueError(
                     f"Schema Id `{metadatum.schema_id}` not found in ontology")
@@ -443,7 +443,7 @@ class DataRowMetadataOntology:
         for schema_id in delete.fields:
             if schema_id not in self.fields_by_id:
                 # Update metadata ontology if field can't be found
-                self._refresh_ontology()
+                self.refresh_ontology()
                 if schema_id not in self.fields_by_id:
                     raise ValueError(
                         f"Schema Id `{schema_id}` not found in ontology")
