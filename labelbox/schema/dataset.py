@@ -314,7 +314,9 @@ class Dataset(DbObject, Updateable, Deletable):
             items = [future.result() for future in as_completed(futures)]
         # Prepare and upload the desciptor file
         data = json.dumps(items)
-        return self.client.upload_data(data)
+        return self.client.upload_data(data,
+                                       content_type="application/json",
+                                       filename="json_import.json")
 
     def data_rows_for_external_id(self,
                                   external_id,
