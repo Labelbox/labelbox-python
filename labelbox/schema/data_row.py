@@ -34,7 +34,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
-    metadata_fields = Field.List(DataRowMetadataField, "metadata_fields")
+    custom_metadata = Field.List(DataRowMetadataField, "custom_metadata")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")

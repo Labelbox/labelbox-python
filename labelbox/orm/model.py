@@ -62,7 +62,7 @@ class Field:
         @property
         def name(self):
             if self.list_cls.__name__ == "DataRowMetadataField":
-                return "[DataRowMetadataFieldInput!]"
+                return "[DataRowCustomMetadataUpsertInput!]"
             return self.list_cls.__name__
 
     class Order(Enum):

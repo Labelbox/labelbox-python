@@ -80,13 +80,13 @@ class Dataset(DbObject, Updateable, Deletable):
         kwargs[DataRow.dataset.name] = self
 
         # Parse metadata fields, if they are provided
-        if DataRow.metadata_fields.name in kwargs:
+        if DataRow.custom_metadata.name in kwargs:
             mdo = self.client.get_data_row_metadata_ontology()
-            metadata_fields = kwargs[DataRow.metadata_fields.name]
+            metadata_fields = kwargs[DataRow.custom_metadata.name]
             metadata = list(
                 chain.from_iterable(
                     mdo.parse_upsert(m) for m in metadata_fields))
-            kwargs[DataRow.metadata_fields.name] = [
+            kwargs[DataRow.custom_metadata.name] = [
                 md.dict(by_alias=True) for md in metadata
             ]
 

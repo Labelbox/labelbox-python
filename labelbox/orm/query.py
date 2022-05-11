@@ -42,8 +42,8 @@ def results_query_part(entity):
     """
     # Query for fields
     fields = [
-        field.graphql_name if field.graphql_name != "metadataFields" else
-        "metadataFields { value schemaId }" for field in entity.fields()
+        field.graphql_name if field.graphql_name != "customMetadata" else
+        "customMetadata { value schemaId }" for field in entity.fields()
     ]
 
     # Query for cached relationships

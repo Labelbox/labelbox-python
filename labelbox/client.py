@@ -37,7 +37,7 @@ from labelbox.schema.media_type import MediaType
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
+_DATAROW_METADATA_CREATE_ERROR = "Failed to add metadata on DataRow ID"
 
 class Client:
     """ A Labelbox client.
@@ -270,6 +270,8 @@ class Client:
 
             if get_error_status_code(internal_server_error) == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
+            elif _DATAROW_METADATA_CREATE_ERROR in message:
+                raise labelbox.exceptions.ResourceCreationError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
