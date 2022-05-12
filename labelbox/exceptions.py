@@ -70,6 +70,7 @@ class InvalidQueryError(LabelboxError):
     or server side query validation. """
     pass
 
+
 class ResourceCreationError(LabelboxError):
     """ Indicates that a resource could not be created in the server side
     due to a validation or transaction error"""

@@ -17,6 +17,7 @@ CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 IMAGE_EMBEDDING_SCHEMA_ID = "ckrzang79000008l6hb5s6za1"
 TEXT_EMBEDDING_SCHEMA_ID = "ckrzao09x000108l67vrcdnh3"
 
+
 def test_missing_api_key():
     key = os.environ.get(labelbox.client._LABELBOX_API_KEY, None)
     if key is not None:
@@ -142,18 +143,23 @@ def test_api_limit_error(client):
     # Sleep at the end of this test to allow other tests to execute.
     time.sleep(60)
 
+
 def test_resource_creation_error(dataset, image_url):
+
     def make_metadata_fields():
         embeddings = [0.0] * 128
         msg = "A message"
         time = datetime.utcnow()
 
         fields = [
-            DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
+            DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID,
+                                 value=TEST_SPLIT_ID),
             DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
             DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
-            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=embeddings),
-            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=embeddings),
+            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
+                                 value=embeddings),
+            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
+                                 value=embeddings),
         ]
         return fields
 
