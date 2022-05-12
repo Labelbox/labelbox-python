@@ -1,4 +1,4 @@
-import enum
+from enum import Enum
 import json
 import logging
 import time
@@ -19,6 +19,7 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.media_type import MediaType
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -55,7 +56,6 @@ class Project(DbObject, Updateable, Deletable):
         datasets (Relationship): `ToMany` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
-        reviews (Relationship): `ToMany` relationship to Review
         labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
         labeling_frontend_options (Relationship): `ToMany` relationship to LabelingFrontendOptions
         labeling_parameter_overrides (Relationship): `ToMany` relationship to LabelingParameterOverride
@@ -63,6 +63,7 @@ class Project(DbObject, Updateable, Deletable):
         benchmarks (Relationship): `ToMany` relationship to Benchmark
         ontology (Relationship): `ToOne` relationship to Ontology
     """
+
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -71,6 +72,8 @@ class Project(DbObject, Updateable, Deletable):
     last_activity_time = Field.DateTime("last_activity_time")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
+    # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
+    media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
 
     # Relationships
     datasets = Relationship.ToMany("Dataset", True)
@@ -85,7 +88,7 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    class QueueMode(enum.Enum):
+    class QueueMode(Enum):
         Batch = "Batch"
         Dataset = "Dataset"
 
@@ -93,6 +96,15 @@ class Project(DbObject, Updateable, Deletable):
         mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
+
+        media_type = kwargs.get("media_type")
+        if media_type:
+            if MediaType.is_supported(media_type):
+                kwargs["media_type"] = media_type.value
+            else:
+                raise TypeError(f"{media_type} is not a valid media type. Use"
+                                f" any of {MediaType.get_supported_members()}"
+                                " from MediaType. Example: MediaType.Image.")
 
         return super().update(**kwargs)
 

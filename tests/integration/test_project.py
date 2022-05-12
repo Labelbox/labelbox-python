@@ -6,6 +6,7 @@ import requests
 
 from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.media_type import MediaType
 
 
 def test_project(client, rand_gen):
@@ -220,3 +221,21 @@ def test_batches(configured_project: Project, dataset: Dataset, image_url):
 
     names = set([batch.name for batch in list(configured_project.batches())])
     assert names == set([batch_one, batch_two])
+
+
+def test_media_type(client, configured_project: Project, rand_gen):
+    # Existing project with no media_type
+    assert isinstance(configured_project.media_type, MediaType)
+
+    # Update test
+    project = client.create_project(name=rand_gen(str))
+    project.update(media_type=MediaType.Image)
+    assert project.media_type == MediaType.Image
+    project.delete()
+
+    for media_type in MediaType.get_supported_members():
+
+        project = client.create_project(name=rand_gen(str),
+                                        media_type=MediaType[media_type])
+        assert project.media_type == MediaType[media_type]
+        project.delete()

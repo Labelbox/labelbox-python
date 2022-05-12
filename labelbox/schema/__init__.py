@@ -20,3 +20,4 @@ import labelbox.schema.webhook
 import labelbox.schema.data_row_metadata
 import labelbox.schema.batch
 import labelbox.schema.iam_integration
+import labelbox.schema.media_type

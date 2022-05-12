@@ -32,6 +32,8 @@ from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 
+from labelbox.schema.media_type import MediaType
+
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
@@ -611,6 +613,15 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
+        media_type = kwargs.get("media_type")
+        if media_type:
+            if MediaType.is_supported(media_type):
+                kwargs["media_type"] = media_type.value
+            else:
+                raise TypeError(f"{media_type} is not a valid media type. Use"
+                                f" any of {MediaType.get_supported_members()}"
+                                " from MediaType. Example: MediaType.Image.")
+
         return self._create(Entity.Project, kwargs)
 
     def get_roles(self) -> List[Role]:
