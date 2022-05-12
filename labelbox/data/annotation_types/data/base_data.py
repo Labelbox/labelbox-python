@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Optional, Dict, List, Any
+from labelbox
 
 from pydantic import BaseModel
 
@@ -12,4 +13,4 @@ class BaseData(BaseModel, ABC):
     external_id: Optional[str] = None
     uid: Optional[str] = None
     media_attributes: Optional[Dict[str, Any]] = None
-    metadata: Optional[List[Dict[str, Any]]]
+    metadata: Optional[List[Dict[str, Any]]] = None

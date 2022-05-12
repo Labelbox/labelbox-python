@@ -127,9 +127,9 @@ class LBV1Label(BaseModel):
     id: Optional[str] = Field(None, alias='ID')
     external_id: Optional[str] = Field(None, alias="External ID")
     data_row_media_attributes: Optional[Dict[str, Any]] = Field(
-        ..., alias="Media Attributes")
+        {}, alias="Media Attributes")
     data_row_metadata: Optional[List[Dict[str, Any]]] = Field(
-        ..., alias="DataRow Metadata")
+        [], alias="DataRow Metadata")
 
     created_by: Optional[str] = Extra('Created By')
     project_name: Optional[str] = Extra('Project Name')
@@ -171,12 +171,13 @@ class LBV1Label(BaseModel):
             label_ = LBV1LabelAnnotationsVideo.from_common(label.annotations)
         else:
             label_ = LBV1LabelAnnotations.from_common(label.annotations)
-
         return LBV1Label(label=label_,
                          id=label.uid,
                          data_row_id=label.data.uid,
                          row_data=label.data.url,
                          external_id=label.data.external_id,
+                         data_row_media_attributes=label.data.media_attributes,
+                         data_row_metadata=label.data.metadata,
                          **label.extra)
 
     def _data_row_to_common(

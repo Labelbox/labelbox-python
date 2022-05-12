@@ -66,6 +66,14 @@ def make_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
+def test_export_empty_metadata(configured_project_with_label):
+    project, _, _, _ = configured_project_with_label
+    labels = project.label_generator()
+    label = next(labels)
+    assert label.data.media_attributes == {}
+    assert label.data.metadata == []
+
+
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
