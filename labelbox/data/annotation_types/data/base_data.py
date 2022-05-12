@@ -1,6 +1,5 @@
 from abc import ABC
 from typing import Optional, Dict, List, Any
-from labelbox
 
 from pydantic import BaseModel
 
