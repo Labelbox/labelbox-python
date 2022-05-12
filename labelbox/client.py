@@ -37,7 +37,7 @@ from labelbox.schema.media_type import MediaType
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
-_DATAROW_METADATA_CREATE_ERROR = "Failed to add metadata on DataRow ID"
+_DATAROW_METADATA_CREATE_ERROR = "Failed to validate the metadata"
 
 
 class Client:
