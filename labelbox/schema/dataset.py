@@ -15,6 +15,7 @@ from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.schema.data_row_metadata import DataRowMetadataField
 
 if TYPE_CHECKING:
     from labelbox import Task, User, DataRow
@@ -256,9 +257,24 @@ class Dataset(DbObject, Updateable, Deletable):
                     )
             return attachments
 
+        def convert_metadata_field(metadata_field):
+            if isinstance(metadata_field, DataRowMetadataField):
+                return metadata_field
+            elif isinstance(metadata_field, dict):
+                if not all (key in metadata_field for key in ("schema_id", "value")):
+                    raise ValueError(f"Custom metadata fields must have 'schema_id' and 'value' keys")
+                return DataRowMetadataField(schema_id=metadata_field["schema_id"], value=metadata_field["value"])
+            else:
+                raise ValueError(f"Metadata field is neither 'DataRowMetadataField' type or a dictionary!")
+
         def parse_metadata_fields(item):
-            metadata_fields = item.get('metadata_fields')
+            metadata_fields = item.get('custom_metadata')
             if metadata_fields:
+                # Convert all metadata fields to DataRowMetadataField type
+                metadata_fields = [
+                    convert_metadata_field(m)
+                    for m in metadata_fields
+                ]
                 mdo = self.client.get_data_row_metadata_ontology()
                 metadata = list(
                     chain.from_iterable(
@@ -266,7 +282,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 metadata_fields = [
                     md.dict(by_alias=True) for md in metadata
                 ]
-            item['metadata_fields'] = metadata_fields
+                item['custom_metadata'] = metadata_fields
 
         def format_row(item):
             # Formats user input into a consistent dict structure
@@ -308,9 +324,8 @@ class Dataset(DbObject, Updateable, Deletable):
             validate_keys(item)
             # Make sure attachments are valid
             validate_attachments(item)
-            print(f"!! Before parsing metadata field: {item}")
+            # Parse metadata fields if they exist
             parse_metadata_fields(item)
-            print(f"!! After parsing metadata field: {item}")
             # Upload any local file paths
             item = upload_if_necessary(item)
 
@@ -329,7 +344,7 @@ class Dataset(DbObject, Updateable, Deletable):
             items = [future.result() for future in as_completed(futures)]
         # Prepare and upload the desciptor file
         data = json.dumps(items)
-        print(f"!! input data: {data}")
+        #print(f"!! input data: {data}")
         return self.client.upload_data(data)
 
     def data_rows_for_external_id(self,
