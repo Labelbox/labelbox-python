@@ -165,4 +165,4 @@ def test_resource_creation_error(dataset, image_url):
 
     with pytest.raises(labelbox.exceptions.ResourceCreationError) as excinfo:
         dataset.create_data_row(row_data=image_url,
-                                metadata_fields=make_metadata_fields())
+                                custom_metadata=make_metadata_fields())

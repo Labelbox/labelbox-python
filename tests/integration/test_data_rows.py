@@ -156,7 +156,7 @@ def test_data_row_single_creation_with_metadata(dataset, rand_gen, image_url):
     assert len(list(dataset.data_rows())) == 0
 
     data_row = dataset.create_data_row(row_data=image_url,
-                                       metadata_fields=make_metadata_fields())
+                                       custom_metadata=make_metadata_fields())
 
     assert len(list(dataset.data_rows())) == 1
     assert data_row.dataset() == dataset
