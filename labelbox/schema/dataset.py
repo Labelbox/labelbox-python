@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 import time
 import ndjson
-from itertools import islice
+from itertools import islice, chain
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
@@ -78,6 +78,18 @@ class Dataset(DbObject, Updateable, Deletable):
         if os.path.exists(row_data):
             kwargs[DataRow.row_data.name] = self.client.upload_file(row_data)
         kwargs[DataRow.dataset.name] = self
+
+        # Parse metadata fields, if they are provided
+        if DataRow.custom_metadata.name in kwargs:
+            mdo = self.client.get_data_row_metadata_ontology()
+            metadata_fields = kwargs[DataRow.custom_metadata.name]
+            metadata = list(
+                chain.from_iterable(
+                    mdo.parse_upsert(m) for m in metadata_fields))
+            kwargs[DataRow.custom_metadata.name] = [
+                md.dict(by_alias=True) for md in metadata
+            ]
+
         return self.client._create(DataRow, kwargs)
 
     def create_data_rows_sync(self, items) -> None:
@@ -397,8 +409,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-                return (
-                    Entity.DataRow(self.client, result) for result in reader)
+                # TODO: Update result to parse customMetadata when resolver returns
+                return (Entity.DataRow(self.client, {
+                    **result, 'customMetadata': []
+                }) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 

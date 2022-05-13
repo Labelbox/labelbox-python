@@ -2,10 +2,20 @@ from multiprocessing.dummy import Pool
 import os
 import time
 import pytest
+from datetime import datetime
 
 from labelbox import Project, Dataset, User
+from labelbox.schema.data_row_metadata import DataRowMetadataField
 import labelbox.client
 import labelbox.exceptions
+
+SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
+TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
+EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
+TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
+CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
+IMAGE_EMBEDDING_SCHEMA_ID = "ckrzang79000008l6hb5s6za1"
+TEXT_EMBEDDING_SCHEMA_ID = "ckrzao09x000108l67vrcdnh3"
 
 
 def test_missing_api_key():
@@ -132,3 +142,28 @@ def test_api_limit_error(client):
 
     # Sleep at the end of this test to allow other tests to execute.
     time.sleep(60)
+
+
+@pytest.mark.skip("Staging environment not returning correct exception")
+def test_resource_creation_error(dataset, image_url):
+
+    def make_metadata_fields():
+        embeddings = [0.0] * 128
+        msg = "A message"
+        time = datetime.utcnow()
+
+        fields = [
+            DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID,
+                                 value=TEST_SPLIT_ID),
+            DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
+            DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
+            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
+                                 value=embeddings),
+            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
+                                 value=embeddings),
+        ]
+        return fields
+
+    with pytest.raises(labelbox.exceptions.ResourceCreationError) as excinfo:
+        dataset.create_data_row(row_data=image_url,
+                                custom_metadata=make_metadata_fields())

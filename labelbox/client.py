@@ -37,6 +37,7 @@ from labelbox.schema.media_type import MediaType
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
+_DATAROW_METADATA_CREATE_ERROR = "Failed to validate the metadata"
 
 
 class Client:
@@ -90,6 +91,7 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
+        self._data_row_metadata_ontology = None
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -269,6 +271,8 @@ class Client:
 
             if get_error_status_code(internal_server_error) == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
+            elif _DATAROW_METADATA_CREATE_ERROR in message:
+                raise labelbox.exceptions.ResourceCreationError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
@@ -648,7 +652,9 @@ class Client:
             DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
 
         """
-        return DataRowMetadataOntology(self)
+        if self._data_row_metadata_ontology is None:
+            self._data_row_metadata_ontology = DataRowMetadataOntology(self)
+        return self._data_row_metadata_ontology
 
     def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.
