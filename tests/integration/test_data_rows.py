@@ -165,7 +165,7 @@ def test_data_row_single_creation_with_metadata(dataset, rand_gen, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    assert len(data_row.metadata_fields) == 5
+    assert len(data_row.custom_metadata) == 5
 
     with NamedTemporaryFile() as fp:
         data = rand_gen(str).encode()
