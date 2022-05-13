@@ -274,4 +274,4 @@ def test_parse_raw_metadata(mdo):
 
     for row in parsed:
         for field in row.fields:
-            assert mdo._parse_upsert(field)
+            assert mdo.parse_upsert(field)
