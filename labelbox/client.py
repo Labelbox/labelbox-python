@@ -90,6 +90,7 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
+        self._data_row_metadata_ontology = None
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -648,7 +649,9 @@ class Client:
             DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
 
         """
-        return DataRowMetadataOntology(self)
+        if self._data_row_metadata_ontology is None:
+            self._data_row_metadata_ontology = DataRowMetadataOntology(self)
+        return self._data_row_metadata_ontology
 
     def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.

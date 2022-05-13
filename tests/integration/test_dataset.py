@@ -109,3 +109,19 @@ def test_data_row_export(dataset, image_url):
     result = list(dataset.export_data_rows())
     assert len(result) == n_data_rows
     assert set(result) == ids
+
+
+def test_create_descriptor_file(dataset):
+    import unittest.mock as mock
+    with mock.patch.object(dataset.client,
+                           'upload_data',
+                           wraps=dataset.client.upload_data) as upload_data_spy:
+        dataset._create_descriptor_file(items=[{'row_data': 'some text...'}])
+        upload_data_spy.assert_called()
+        call_args, call_kwargs = upload_data_spy.call_args_list[0][
+            0], upload_data_spy.call_args_list[0][1]
+        assert call_args == ('[{"data": "some text..."}]',)
+        assert call_kwargs == {
+            'content_type': 'application/json',
+            'filename': 'json_import.json'
+        }

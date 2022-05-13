@@ -32,8 +32,9 @@ class Field:
     Attributes:
         field_type (Field.Type): The type of the field.
         name (str): name that the attribute has in client-side Python objects
-        grapgql_name (str): name that the attribute has in queries (and in
+        graphql_name (str): name that the attribute has in queries (and in
             server-side database definition).
+        result_subquery (str): graphql query result payload for a field.
     """
 
     class Type(Enum):
@@ -55,13 +56,23 @@ class Field:
             return self.enum_cls.__name__
 
     class ListType:
+        """ Represents Field that is a list of some object.
+        Args:
+            list_cls (type): Type of object that list is made of.
+            graphql_type (str): Inner object's graphql type.
+                By default, the list_cls's name is used as the graphql type.
+        """
 
-        def __init__(self, list_cls: type):
+        def __init__(self, list_cls: type, graphql_type=None):
             self.list_cls = list_cls
+            if graphql_type is None:
+                self.graphql_type = self.list_cls.__name__
+            else:
+                self.graphql_type = graphql_type
 
         @property
         def name(self):
-            return self.list_cls.__name__
+            return f"[{self.graphql_type}]"
 
     class Order(Enum):
         """ Type of sort ordering. """
@@ -101,13 +112,14 @@ class Field:
         return Field(Field.Type.Json, *args)
 
     @staticmethod
-    def List(list_cls: type, *args):
-        return Field(Field.ListType(list_cls), *args)
+    def List(list_cls: type, graphql_type=None, **kwargs):
+        return Field(Field.ListType(list_cls, graphql_type), **kwargs)
 
     def __init__(self,
                  field_type: Union[Type, EnumType, ListType],
                  name,
-                 graphql_name=None):
+                 graphql_name=None,
+                 result_subquery=None):
         """ Field init.
         Args:
             field_type (Field.Type): The type of the field.
@@ -116,12 +128,14 @@ class Field:
             graphql_name (str): query and server-side name of a database object.
                 If None, it is constructed from the client-side name by converting
                 snake_case (Python convention) into camelCase (GraphQL convention).
+            result_subquery (str): graphql query result payload for a field.
         """
         self.field_type = field_type
         self.name = name
         if graphql_name is None:
             graphql_name = utils.camel_case(name)
         self.graphql_name = graphql_name
+        self.result_subquery = result_subquery
 
     @property
     def asc(self):
