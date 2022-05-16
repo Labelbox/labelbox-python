@@ -43,7 +43,6 @@ def test_export_annotations_nested_checklist(
             ]
         }]
     }]
-
     task = LabelImport.create_from_objects(client, project.uid,
                                            f'label-import-{uuid.uuid4()}', data)
     task.wait_until_done()
