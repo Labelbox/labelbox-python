@@ -301,8 +301,8 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             download (bool): Returns the url if False
             timeout_seconds (float): Max waiting time, in seconds.
-            start (str): Earliest date for labels, formatted "YYYY-MM-DD"
-            end (str): Latest date for labels, formatted "YYYY-MM-DD"
+            start (str): Earliest date for labels, formatted "YYYY-MM-DD" in UTC timezone
+            end (str): Latest date for labels, formatted "YYYY-MM-DD" in UTC timezone
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
