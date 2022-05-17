@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 import time
 import ndjson
-from itertools import islice, chain
+from itertools import islice
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
@@ -15,7 +15,6 @@ from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.data_row_metadata import DataRowMetadataField
 
 if TYPE_CHECKING:
     from labelbox import Task, User, DataRow
