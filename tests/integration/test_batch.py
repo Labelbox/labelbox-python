@@ -1,5 +1,4 @@
 import pytest
-import uuid
 
 from labelbox import Dataset, Project
 
@@ -36,9 +35,8 @@ def test_create_batch(configured_project: Project, big_dataset: Dataset):
     configured_project.update(queue_mode=Project.QueueMode.Batch)
 
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch_name = f"test-batch-{uuid.uuid4()}"
-    batch = configured_project.create_batch(batch_name, data_rows, 3)
-    assert batch.name == batch_name
+    batch = configured_project.create_batch("test-batch", data_rows, 3)
+    assert batch.name == "test-batch"
     assert batch.size == len(data_rows)
 
 
