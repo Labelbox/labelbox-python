@@ -31,7 +31,7 @@ steps:
     working_directory: "IMAGE_WORK_DIR"
     commands:
       - pytest
-  sendSlackSuccessToPagesActiveLearning:
+  send_slack_success_to_pages_active_learning:
     title: "Alert on success to pages active learning"
     type: slack-message-sender
     arguments:
@@ -41,7 +41,7 @@ steps:
       condition:
         all:
           succeeded: e2e_test.result == 'success'
-  sendSlackFailureToE2E:
+  send_slack_failure_to_e2e:
     title: "Alert on failure to e2e channel"
     type: slack-message-sender
     arguments:
@@ -51,7 +51,7 @@ steps:
       condition:
         all:
           failed: e2e_test.result == 'failure'   
-  sendSlackFailureToDeployProd:
+  send_slack_failure_to_deploy_prod:
     title: "Alert on failure to deployments prod channel"
     type: slack-message-sender
     arguments:
