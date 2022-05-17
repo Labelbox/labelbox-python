@@ -82,7 +82,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         # Parse metadata fields, if they are provided
         if DataRow.custom_metadata.name in kwargs:
-            kwargs[DataRow.custom_metadata.name] = self._parse_metadata(
+            mdo = self.client.get_data_row_metadata_ontology()
+            kwargs[DataRow.custom_metadata.name] = mdo.parse_upsert_metadata(
                 kwargs[DataRow.custom_metadata.name])
 
         return self.client._create(DataRow, kwargs)
@@ -266,7 +267,9 @@ class Dataset(DbObject, Updateable, Deletable):
         def parse_metadata_fields(item):
             metadata_fields = item.get('custom_metadata')
             if metadata_fields:
-                item['custom_metadata'] = self._parse_metadata(metadata_fields)
+                mdo = self.client.get_data_row_metadata_ontology()
+                item['custom_metadata'] = mdo.parse_upsert_metadata(
+                    metadata_fields)
 
         def format_row(item):
             # Formats user input into a consistent dict structure
@@ -427,28 +430,3 @@ class Dataset(DbObject, Updateable, Deletable):
             logger.debug("Dataset '%s' data row export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
-
-    def _convert_metadata_field(self, metadata_field):
-        if isinstance(metadata_field, DataRowMetadataField):
-            return metadata_field
-        elif isinstance(metadata_field, dict):
-            if not all(key in metadata_field for key in ("schema_id", "value")):
-                raise ValueError(
-                    f"Custom metadata field '{metadata_field}' must have 'schema_id' and 'value' keys"
-                )
-            return DataRowMetadataField(schema_id=metadata_field["schema_id"],
-                                        value=metadata_field["value"])
-        else:
-            raise ValueError(
-                f"Metadata field '{metadata_field}' is neither 'DataRowMetadataField' type or a dictionary!"
-            )
-
-    def _parse_metadata(self, metadata_fields):
-        # Convert all metadata fields to DataRowMetadataField type
-        metadata_fields = [
-            self._convert_metadata_field(m) for m in metadata_fields
-        ]
-        mdo = self.client.get_data_row_metadata_ontology()
-        parsed_metadata = list(
-            chain.from_iterable(mdo.parse_upsert(m) for m in metadata_fields))
-        return [m.dict(by_alias=True) for m in parsed_metadata]
