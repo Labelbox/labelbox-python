@@ -40,9 +40,10 @@ def confusion_matrix_metric(ground_truths: List[Union[
     if value is None:
         return []
 
-    return [
-        ConfusionMatrixMetric(metric_name=f"{int(iou*100)}pct_iou", value=value)
-    ]
+    metric_name = _get_metric_name(annotation_pairs[key][0],
+                                   annotation_pairs[key][1], iou)
+
+    return [ConfusionMatrixMetric(metric_name=metric_name, value=value)]
 
 
 def feature_confusion_matrix_metric(
@@ -74,8 +75,35 @@ def feature_confusion_matrix_metric(
                                          include_subclasses, iou)
         if value is None:
             continue
+
+        metric_name = _get_metric_name(annotation_pairs[key][0],
+                                       annotation_pairs[key][1], iou)
         metrics.append(
-            ConfusionMatrixMetric(metric_name=f"{int(iou*100)}pct_iou",
+            ConfusionMatrixMetric(metric_name=name,
                                   feature_name=key,
                                   value=value))
     return metrics
+
+
+def _get_metric_name(ground_truths: List[Union[ObjectAnnotation,
+                                               ClassificationAnnotation]],
+                     predictions: List[Union[ObjectAnnotation,
+                                             ClassificationAnnotation]],
+                     iou: float):
+    if _is_classification(ground_truths, predictions):
+        return "classification"
+    else:
+        return f"{int(iou*100)}pct_iou"
+
+
+def _is_classification(ground_truths: List[Union[ObjectAnnotation,
+                                                 ClassificationAnnotation]],
+                       predictions: List[Union[ObjectAnnotation,
+                                               ClassificationAnnotation]]):
+    if len(predictions) and isinstance(predictions[0],
+                                       ClassificationAnnotation):
+        return True
+    elif len(ground_truths) and isinstance(ground_truths[0],
+                                           ClassificationAnnotation):
+        return True
+    return False
