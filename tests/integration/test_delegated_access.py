@@ -1,35 +1,56 @@
+import os
+
 import requests
 import pytest
 
+from labelbox import Client
 
-@pytest.mark.skip("Can only be tested in specific organizations.")
-def test_default_integration(client):
-    # This tests assumes the following:
-    # 1. gcp delegated access is configured to work with utkarsh-da-test-bucket
-    # 2. the integration name is gcp test
-    # 3. This integration is the default
+
+@pytest.mark.skipif(os.environ.get("DA_GCP_LABELBOX_API_KEY") is None,
+                    reason="DA_GCP_LABELBOX_API_KEY not found")
+def test_default_integration():
+    """
+    This tests assumes the following:
+    1. gcp delegated access is configured to work with jtso-gcs-sdk-da-tests
+    2. the integration name is gcs sdk test bucket
+    3. This integration is the default
+    
+    Currently tests against:
+    Org ID: cl269lvvj78b50zau34s4550z
+    Email: jtso+gcp_sdk_tests@labelbox.com"""
+    client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
     ds = client.create_dataset(name="new_ds")
     dr = ds.create_data_row(
         row_data=
-        "gs://utkarsh-da-test-bucket/mathew-schwartz-8rj4sz9YLCI-unsplash.jpg")
+        "gs://jtso-gcs-sdk-da-tests/nikita-samokhin-D6QS6iv_CTY-unsplash.jpg")
     assert requests.get(dr.row_data).status_code == 200
-    assert ds.iam_integration().name == "GCP Test"
+    assert ds.iam_integration().name == "gcs sdk test bucket"
     ds.delete()
 
 
-@pytest.mark.skip("Can only be tested in specific organizations.")
-def test_non_default_integration(client):
-    # This tests assumes the following:
-    # 1. aws delegated access is configured to work with lbox-test-bucket
-    # 2. an integration called aws is available to the org
+@pytest.mark.skipif(os.environ.get("DA_GCP_LABELBOX_API_KEY") is None,
+                    reason="DA_GCP_LABELBOX_API_KEY not found")
+def test_non_default_integration():
+    """
+    This tests assumes the following:
+    1. aws delegated access is configured to work with lbox-test-bucket
+    2. an integration called aws is available to the org
+
+    Currently tests against:
+    Org ID: cl26d06tk0gch10901m7jeg9v
+    Email: jtso+aws_sdk_tests@labelbox.com
+    """
+    client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
     integrations = client.get_organization().get_iam_integrations()
-    integration = [inte for inte in integrations if 'aws' in inte.name][0]
+    integration = [
+        inte for inte in integrations if 'aws-da-test-bucket' in inte.name
+    ][0]
     assert integration.valid
     ds = client.create_dataset(iam_integration=integration, name="new_ds")
-    assert ds.iam_integration().name == "aws"
+    assert ds.iam_integration().name == "aws-da-test-bucket"
     dr = ds.create_data_row(
         row_data=
-        "https://lbox-test-bucket.s3.us-east-1.amazonaws.com/2021_09_08_0hz_Kleki.png"
+        "https://jtso-aws-da-sdk-tests.s3.us-east-2.amazonaws.com/adrian-yu-qkN4D3Rf1gw-unsplash.jpg"
     )
     assert requests.get(dr.row_data).status_code == 200
     ds.delete()

@@ -58,6 +58,14 @@ def test_ref():
         x: (np.random.random((32, 32, 3)) * 255).astype(np.uint8)
         for x in range(5)
     }
-    data = VideoData(frames=data, external_id=external_id, uid=uid)
+    metadata = []
+    media_attributes = {}
+    data = VideoData(frames=data,
+                     external_id=external_id,
+                     uid=uid,
+                     metadata=metadata,
+                     media_attributes=media_attributes)
     assert data.external_id == external_id
     assert data.uid == uid
+    assert data.media_attributes == media_attributes
+    assert data.metadata == metadata

@@ -1,6 +1,6 @@
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 
 from pydantic import BaseModel, Field
 
@@ -126,6 +126,10 @@ class LBV1Label(BaseModel):
     row_data: str = Field(None, alias="Labeled Data")
     id: Optional[str] = Field(None, alias='ID')
     external_id: Optional[str] = Field(None, alias="External ID")
+    data_row_media_attributes: Optional[Dict[str, Any]] = Field(
+        {}, alias="Media Attributes")
+    data_row_metadata: Optional[List[Dict[str, Any]]] = Field(
+        [], alias="DataRow Metadata")
 
     created_by: Optional[str] = Extra('Created By')
     project_name: Optional[str] = Extra('Project Name')
@@ -167,12 +171,13 @@ class LBV1Label(BaseModel):
             label_ = LBV1LabelAnnotationsVideo.from_common(label.annotations)
         else:
             label_ = LBV1LabelAnnotations.from_common(label.annotations)
-
         return LBV1Label(label=label_,
                          id=label.uid,
                          data_row_id=label.data.uid,
                          row_data=label.data.url,
                          external_id=label.data.external_id,
+                         data_row_media_attributes=label.data.media_attributes,
+                         data_row_metadata=label.data.metadata,
                          **label.extra)
 
     def _data_row_to_common(
@@ -181,7 +186,9 @@ class LBV1Label(BaseModel):
         data_row_info = {
             'url' if self._is_url() else 'text': self.row_data,
             'external_id': self.external_id,
-            'uid': self.data_row_id
+            'uid': self.data_row_id,
+            'media_attributes': self.data_row_media_attributes,
+            'metadata': self.data_row_metadata
         }
 
         self.media_type = self.media_type or self._infer_media_type()

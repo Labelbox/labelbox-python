@@ -13,12 +13,16 @@ class NameSpace(SimpleNamespace):
                  labels,
                  expected,
                  data_row_expected=None,
+                 media_attributes=None,
+                 metadata=None,
                  classifications=None):
         super(NameSpace,
               self).__init__(predictions=predictions,
                              labels={
                                  'DataRow ID': 'ckppihxc10005aeyjen11h7jh',
                                  'Labeled Data': "https://.jpg",
+                                 'Media Attributes': media_attributes or {},
+                                 'DataRow Metadata': metadata or [],
                                  'Label': {
                                      'objects': labels,
                                      'classifications': classifications or []

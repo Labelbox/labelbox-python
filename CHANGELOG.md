@@ -1,6 +1,10 @@
 # Changelog
 
-# Version 3.21.0
+# Version 3.21.1 (2022-05-12)
+## Updated
+  * `Project.create_batch()` timeout increased to 180 seconds
+
+# Version 3.21.0 (2022-05-11)
 ## Added
   * Projects can be created with a `media_type`
   * Added `media_type` attribute to `Project`

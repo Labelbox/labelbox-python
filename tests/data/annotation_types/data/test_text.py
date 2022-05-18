@@ -13,7 +13,11 @@ def test_validate_schema():
 
 def test_text():
     text = "hello world"
-    text_data = TextData(text=text)
+    metadata = []
+    media_attributes = {}
+    text_data = TextData(text=text,
+                         metadata=metadata,
+                         media_attributes=media_attributes)
     assert text_data.text == text
 
 
@@ -36,6 +40,14 @@ def test_file(tmpdir):
 def test_ref():
     external_id = "external_id"
     uid = "uid"
-    data = TextData(text="hello world", external_id=external_id, uid=uid)
+    metadata = []
+    media_attributes = {}
+    data = TextData(text="hello world",
+                    external_id=external_id,
+                    uid=uid,
+                    metadata=metadata,
+                    media_attributes=media_attributes)
     assert data.external_id == external_id
     assert data.uid == uid
+    assert data.media_attributes == media_attributes
+    assert data.metadata == metadata
