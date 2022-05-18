@@ -105,8 +105,8 @@ class Batch(DbObject):
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
                 # TODO: Update result to parse customMetadata when resolver returns
-                return (Entity.DataRow(self.client, {**result})
-                        for result in reader)
+                return (
+                    Entity.DataRow(self.client, result) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 
