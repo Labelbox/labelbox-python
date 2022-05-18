@@ -90,16 +90,16 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
-        self._data_row_metadata_ontology = None
 
     @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
+        labelbox.exceptions.InternalServerError,
+        labelbox.exceptions.ConnectTimeoutError))
     def execute(self,
                 query=None,
                 params=None,
                 data=None,
                 files=None,
-                timeout=30.0,
+                timeout=(3., 65.),
                 experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
@@ -124,6 +124,8 @@ class Client:
             labelbox.exceptions.ApiLimitError: If the server API limit was
                 exceeded. See "How to import data" in the online documentation
                 to see API limits.
+            labelbox.exceptions.ConnectTimeoutError: If the request times out when
+                attempting to connect to the remote server.
             labelbox.exceptions.TimeoutError: If response was not received
                 in `timeout` seconds.
             labelbox.exceptions.NetworkError: If an unknown error occurred
@@ -170,6 +172,9 @@ class Client:
 
             response = requests.post(**request)
             logger.debug("Response: %s", response.text)
+
+        except requests.exceptions.ConnectTimeout as e:
+            raise labelbox.exceptions.ConnectTimeoutError(str(e))
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
         except requests.exceptions.RequestException as e:
@@ -322,12 +327,14 @@ class Client:
                                     content_type=content_type)
 
     @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
+        labelbox.exceptions.InternalServerError,
+        labelbox.exceptions.ConnectTimeoutError))
     def upload_data(self,
                     content: bytes,
                     filename: str = None,
                     content_type: str = None,
-                    sign: bool = False) -> str:
+                    sign: bool = False,
+                    timeout=(3., 65.)) -> str:
         """ Uploads the given data (bytes) to Labelbox.
 
         Args:
@@ -335,12 +342,16 @@ class Client:
             filename: name of the upload
             content_type: content type of data uploaded
             sign: whether or not to sign the url
+            timeout (float): Max allowed time for query execution,
+                in seconds.
 
         Returns:
             str, the URL of uploaded data.
 
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
+            labelbox.exceptions.ConnectTimeoutError: If the request times out when
+                attempting to connect to the remote server.
         """
 
         request_data = {
@@ -359,14 +370,19 @@ class Client:
                 }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
-        response = requests.post(
-            self.endpoint,
-            headers={"authorization": "Bearer %s" % self.api_key},
-            data=request_data,
-            files={
-                "1": (filename, content, content_type) if
-                     (filename and content_type) else content
-            })
+
+        try:
+            response = requests.post(
+                self.endpoint,
+                headers={"authorization": "Bearer %s" % self.api_key},
+                data=request_data,
+                files={
+                    "1": (filename, content, content_type) if
+                         (filename and content_type) else content
+                },
+                timeout=timeout)
+        except requests.exceptions.ConnectTimeout as e:
+            raise labelbox.exceptions.ConnectTimeoutError(str(e))
 
         if response.status_code == 502:
             error_502 = '502 Bad Gateway'

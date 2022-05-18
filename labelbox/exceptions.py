@@ -90,6 +90,10 @@ class TimeoutError(LabelboxError):
     pass
 
 
+class ConnectTimeoutError(TimeoutError):
+    """Raised when a request times out while trying to connect to a remote server."""
+
+
 class InvalidAttributeError(LabelboxError):
     """ Raised when a field (name or Field instance) is not valid or found
     for a specific DB object type. """

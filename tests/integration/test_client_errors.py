@@ -3,6 +3,7 @@ import os
 import time
 import pytest
 
+from google.api_core.exceptions import RetryError
 from labelbox import Project, Dataset, User
 import labelbox.client
 import labelbox.exceptions
@@ -43,16 +44,36 @@ def test_semantic_error(client):
 
 
 def test_timeout_error(client, project):
-    time.sleep(60)  #Fails to connect if we don't wait
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-        query_str = """query getOntology { 
-        project (where: {id: $%s}) { 
-            ontology { 
-                normalized 
-                } 
+        query_str = """query getOntology {
+        project (where: {id: $%s}) {
+            ontology {
+                normalized
+                }
             }
         } """ % (project.uid)
-        client.execute(query_str, check_naming=False, timeout=0.01)
+        client.execute(query_str, check_naming=False, timeout=(3., 0.01))
+
+
+def test_connect_timeout_error(client, project):
+    with pytest.raises(RetryError) as excinfo:
+        query_str = """query getOntology {
+        project (where: {id: $%s}) {
+            ontology {
+                normalized
+                }
+            }
+        } """ % (project.uid)
+        client.execute(query_str, check_naming=False, timeout=(0.00001, 3.))
+    assert isinstance(excinfo.value.cause,
+                      labelbox.exceptions.ConnectTimeoutError)
+
+
+def test_connect_timeout_error_on_file_upload(client):
+    with pytest.raises(RetryError) as excinfo:
+        client.upload_data(b"some bytes", timeout=(0.00001, 3.))
+    assert isinstance(excinfo.value.cause,
+                      labelbox.exceptions.ConnectTimeoutError)
 
 
 def test_query_complexity_error(client):
