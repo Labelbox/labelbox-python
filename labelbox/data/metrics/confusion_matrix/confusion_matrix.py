@@ -77,7 +77,7 @@ def feature_confusion_matrix_metric(
         metric_name = _get_metric_name(annotation_pairs[key][0],
                                        annotation_pairs[key][1], iou)
         metrics.append(
-            ConfusionMatrixMetric(metric_name=name,
+            ConfusionMatrixMetric(metric_name=metric_name,
                                   feature_name=key,
                                   value=value))
     return metrics
