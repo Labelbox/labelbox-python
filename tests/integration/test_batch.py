@@ -36,7 +36,7 @@ def test_create_batch(configured_project: Project, big_dataset: Dataset):
 
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
     batch = configured_project.create_batch("test-batch", data_rows, 3)
-    assert batch.name == 'test-batch'
+    assert batch.name == "test-batch"
     assert batch.size == len(data_rows)
 
 

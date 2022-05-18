@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 import time
 import ndjson
-from itertools import islice, chain
+from itertools import islice
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
@@ -82,13 +82,8 @@ class Dataset(DbObject, Updateable, Deletable):
         # Parse metadata fields, if they are provided
         if DataRow.custom_metadata.name in kwargs:
             mdo = self.client.get_data_row_metadata_ontology()
-            metadata_fields = kwargs[DataRow.custom_metadata.name]
-            metadata = list(
-                chain.from_iterable(
-                    mdo.parse_upsert(m) for m in metadata_fields))
-            kwargs[DataRow.custom_metadata.name] = [
-                md.dict(by_alias=True) for md in metadata
-            ]
+            kwargs[DataRow.custom_metadata.name] = mdo.parse_upsert_metadata(
+                kwargs[DataRow.custom_metadata.name])
 
         return self.client._create(DataRow, kwargs)
 
@@ -268,6 +263,13 @@ class Dataset(DbObject, Updateable, Deletable):
                     )
             return attachments
 
+        def parse_metadata_fields(item):
+            metadata_fields = item.get('custom_metadata')
+            if metadata_fields:
+                mdo = self.client.get_data_row_metadata_ontology()
+                item['custom_metadata'] = mdo.parse_upsert_metadata(
+                    metadata_fields)
+
         def format_row(item):
             # Formats user input into a consistent dict structure
             if isinstance(item, dict):
@@ -308,6 +310,8 @@ class Dataset(DbObject, Updateable, Deletable):
             validate_keys(item)
             # Make sure attachments are valid
             validate_attachments(item)
+            # Parse metadata fields if they exist
+            parse_metadata_fields(item)
             # Upload any local file paths
             item = upload_if_necessary(item)
 
