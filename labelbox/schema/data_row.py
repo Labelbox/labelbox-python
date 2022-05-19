@@ -22,7 +22,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         updated_at (datetime)
         created_at (datetime)
         media_attributes (dict): generated media attributes for the datarow
-        custom_metadata (list): metadata associated with the datarow
+        metadata_fields (list): metadata associated with the datarow
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
@@ -38,7 +38,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     metadata_fields = Field.List(
         DataRowMetadataField,
         graphql_type="DataRowCustomMetadataUpsertInput!",
-        name="metadata_fields")
+        name="metadata_fields",
+        result_subquery="metadataFields { schemaId name value kind }")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
