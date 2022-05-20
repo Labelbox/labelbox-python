@@ -617,7 +617,9 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        res = self.client.execute(query_str, params,
+        res = self.client.execute(query_str,
+                                  params,
+                                  timeout=180.0,
                                   experimental=True)["project"][method]
 
         res['size'] = len(dr_ids)

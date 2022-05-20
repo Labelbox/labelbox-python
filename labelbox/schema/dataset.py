@@ -78,6 +78,13 @@ class Dataset(DbObject, Updateable, Deletable):
         if os.path.exists(row_data):
             kwargs[DataRow.row_data.name] = self.client.upload_file(row_data)
         kwargs[DataRow.dataset.name] = self
+
+        # Parse metadata fields, if they are provided
+        if DataRow.custom_metadata.name in kwargs:
+            mdo = self.client.get_data_row_metadata_ontology()
+            kwargs[DataRow.custom_metadata.name] = mdo.parse_upsert_metadata(
+                kwargs[DataRow.custom_metadata.name])
+
         return self.client._create(DataRow, kwargs)
 
     def create_data_rows_sync(self, items) -> None:
@@ -256,6 +263,13 @@ class Dataset(DbObject, Updateable, Deletable):
                     )
             return attachments
 
+        def parse_metadata_fields(item):
+            metadata_fields = item.get('custom_metadata')
+            if metadata_fields:
+                mdo = self.client.get_data_row_metadata_ontology()
+                item['custom_metadata'] = mdo.parse_upsert_metadata(
+                    metadata_fields)
+
         def format_row(item):
             # Formats user input into a consistent dict structure
             if isinstance(item, dict):
@@ -296,6 +310,8 @@ class Dataset(DbObject, Updateable, Deletable):
             validate_keys(item)
             # Make sure attachments are valid
             validate_attachments(item)
+            # Parse metadata fields if they exist
+            parse_metadata_fields(item)
             # Upload any local file paths
             item = upload_if_necessary(item)
 
@@ -397,8 +413,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-                return (
-                    Entity.DataRow(self.client, result) for result in reader)
+                # TODO: Update result to parse customMetadata when resolver returns
+                return (Entity.DataRow(self.client, {
+                    **result, 'customMetadata': []
+                }) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 

@@ -1,6 +1,18 @@
 # Changelog
 
-# Version 3.21.0
+# Version 3.22.0 (2022-05-20)
+## Added
+* `Dataset.create_data_row()` and `Dataset.create_data_rows()` now uploads metadata to data row
+* Added `media_attributes` and `metadata` to `BaseData`
+
+## Updated
+* Removed `iou` from classification metrics
+
+# Version 3.21.1 (2022-05-12)
+## Updated
+  * `Project.create_batch()` timeout increased to 180 seconds
+
+# Version 3.21.0 (2022-05-11)
 ## Added
   * Projects can be created with a `media_type`
   * Added `media_type` attribute to `Project`

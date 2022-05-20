@@ -1,11 +1,59 @@
 from tempfile import NamedTemporaryFile
 import uuid
 import time
+from datetime import datetime
 
 import pytest
 import requests
 
 from labelbox import DataRow
+from labelbox.schema.data_row_metadata import DataRowMetadataField
+import labelbox.exceptions
+
+SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
+TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
+EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
+TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
+CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
+EXPECTED_METADATA_SCHEMA_IDS = [
+    SPLIT_SCHEMA_ID, TEST_SPLIT_ID, EMBEDDING_SCHEMA_ID, TEXT_SCHEMA_ID,
+    CAPTURE_DT_SCHEMA_ID
+].sort()
+
+
+def make_metadata_fields():
+    embeddings = [0.0] * 128
+    msg = "A message"
+    time = datetime.utcnow()
+
+    fields = [
+        DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
+        DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
+        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=embeddings),
+    ]
+    return fields
+
+
+def make_metadata_fields_dict():
+    embeddings = [0.0] * 128
+    msg = "A message"
+    time = datetime.utcnow()
+
+    fields = [{
+        "schema_id": SPLIT_SCHEMA_ID,
+        "value": TEST_SPLIT_ID
+    }, {
+        "schema_id": CAPTURE_DT_SCHEMA_ID,
+        "value": time
+    }, {
+        "schema_id": TEXT_SCHEMA_ID,
+        "value": msg
+    }, {
+        "schema_id": EMBEDDING_SCHEMA_ID,
+        "value": embeddings
+    }]
+    return fields
 
 
 def test_get_data_row(datarow, client):
@@ -107,7 +155,6 @@ def test_data_row_large_bulk_creation(dataset, image_url):
     assert len(list(dataset.data_rows())) == n_local + n_urls
 
 
-@pytest.mark.xfail(reason="DataRow.dataset() relationship not set")
 def test_data_row_single_creation(dataset, rand_gen, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
@@ -128,6 +175,150 @@ def test_data_row_single_creation(dataset, rand_gen, image_url):
         data_row_2 = dataset.create_data_row(row_data=fp.name)
         assert len(list(dataset.data_rows())) == 2
         assert requests.get(data_row_2.row_data).content == data
+
+
+def test_create_data_row_with_metadata(dataset, image_url):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+
+    data_row = dataset.create_data_row(row_data=image_url,
+                                       custom_metadata=make_metadata_fields())
+
+    assert len(list(dataset.data_rows())) == 1
+    assert data_row.dataset() == dataset
+    assert data_row.created_by() == client.get_user()
+    assert data_row.organization() == client.get_organization()
+    assert requests.get(image_url).content == \
+        requests.get(data_row.row_data).content
+    assert data_row.media_attributes is not None
+    assert len(data_row.custom_metadata) == 5
+    assert [m["schemaId"] for m in data_row.custom_metadata
+           ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+
+
+def test_create_data_row_with_metadata_dict(dataset, image_url):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+
+    data_row = dataset.create_data_row(
+        row_data=image_url, custom_metadata=make_metadata_fields_dict())
+
+    assert len(list(dataset.data_rows())) == 1
+    assert data_row.dataset() == dataset
+    assert data_row.created_by() == client.get_user()
+    assert data_row.organization() == client.get_organization()
+    assert requests.get(image_url).content == \
+        requests.get(data_row.row_data).content
+    assert data_row.media_attributes is not None
+    assert len(data_row.custom_metadata) == 5
+    assert [m["schemaId"] for m in data_row.custom_metadata
+           ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+
+
+def test_create_data_row_with_invalid_metadata(dataset, image_url):
+    fields = make_metadata_fields()
+    fields.append(
+        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
+
+    with pytest.raises(labelbox.exceptions.MalformedQueryException) as excinfo:
+        dataset.create_data_row(row_data=image_url, custom_metadata=fields)
+
+
+def test_create_data_rows_with_metadata(dataset, image_url):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+
+    task = dataset.create_data_rows([
+        {
+            DataRow.row_data: image_url,
+            DataRow.external_id: "row1",
+            DataRow.custom_metadata: make_metadata_fields()
+        },
+        {
+            DataRow.row_data: image_url,
+            DataRow.external_id: "row2",
+            "custom_metadata": make_metadata_fields()
+        },
+        {
+            DataRow.row_data: image_url,
+            DataRow.external_id: "row3",
+            DataRow.custom_metadata: make_metadata_fields_dict()
+        },
+        {
+            DataRow.row_data: image_url,
+            DataRow.external_id: "row4",
+            "custom_metadata": make_metadata_fields_dict()
+        },
+    ])
+    task.wait_till_done()
+
+    assert len(list(dataset.data_rows())) == 4
+    for r in ["row1", "row2", "row3", "row4"]:
+        row = list(dataset.data_rows(where=DataRow.external_id == r))[0]
+        assert row.dataset() == dataset
+        assert row.created_by() == client.get_user()
+        assert row.organization() == client.get_organization()
+        assert requests.get(image_url).content == \
+            requests.get(row.row_data).content
+        assert row.media_attributes is not None
+        assert len(row.custom_metadata) == 5
+        assert [m["schemaId"] for m in row.custom_metadata
+               ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+
+
+def test_create_data_rows_with_invalid_metadata(dataset, image_url):
+    fields = make_metadata_fields()
+    fields.append(
+        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
+
+    task = dataset.create_data_rows([{
+        DataRow.row_data: image_url,
+        DataRow.custom_metadata: fields
+    }])
+    task.wait_till_done()
+    assert task.status == "FAILED"
+
+
+def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
+    fields = make_metadata_fields()
+    fields.append({"schemaId": "some schema id"})
+
+    with pytest.raises(ValueError) as exc:
+        dataset.create_data_rows([
+            {
+                DataRow.row_data: image_url,
+                DataRow.external_id: "row1",
+                DataRow.custom_metadata: fields
+            },
+        ])
+
+
+def test_create_data_rows_with_metadata_missing_schema_id(dataset, image_url):
+    fields = make_metadata_fields()
+    fields.append({"value": "some value"})
+
+    with pytest.raises(ValueError) as exc:
+        dataset.create_data_rows([
+            {
+                DataRow.row_data: image_url,
+                DataRow.external_id: "row1",
+                DataRow.custom_metadata: fields
+            },
+        ])
+
+
+def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
+    fields = make_metadata_fields()
+    fields.append("Neither DataRowMetadataField or dict")
+
+    with pytest.raises(ValueError) as exc:
+        task = dataset.create_data_rows([
+            {
+                DataRow.row_data: image_url,
+                DataRow.external_id: "row1",
+                DataRow.custom_metadata: fields
+            },
+        ])
 
 
 def test_data_row_update(dataset, rand_gen, image_url):

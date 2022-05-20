@@ -21,7 +21,9 @@ def test_legacy_scalar_metric():
             'im_bytes': None,
             'file_path': None,
             'url': None,
-            'arr': None
+            'arr': None,
+            'media_attributes': None,
+            'metadata': None,
         },
         'annotations': [{
             'value': 10.0,
@@ -70,7 +72,9 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
             'im_bytes': None,
             'file_path': None,
             'url': None,
-            'arr': None
+            'arr': None,
+            'media_attributes': None,
+            'metadata': None,
         },
         'annotations': [{
             'value':
@@ -125,7 +129,9 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
             'im_bytes': None,
             'file_path': None,
             'url': None,
-            'arr': None
+            'arr': None,
+            'media_attributes': None,
+            'metadata': None,
         },
         'annotations': [{
             'value':

@@ -11,7 +11,8 @@ from labelbox.data.annotation_types import Label, ImageData, Mask
 
 
 def check_iou(pair, mask=None):
-    default = Label(data=ImageData(uid="ckppihxc10005aeyjen11h7jh"))
+    default = Label(data=ImageData(
+        uid="ckppihxc10005aeyjen11h7jh", media_attributes=None, metadata=None))
     prediction = next(NDJsonConverter.deserialize(pair.predictions), default)
     label = next(LBV1Converter.deserialize([pair.labels]))
     if mask:
