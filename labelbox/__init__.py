@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "3.20.1"
+__version__ = "3.22.0"
 
 import sys
 import warnings
