@@ -57,6 +57,12 @@ def make_metadata_fields_dict():
     return fields
 
 
+def filter_precomputed_embeddings(metadata_fields):
+    return list(
+        filter(lambda md: md["name"] != "precomputedImageEmbedding",
+               metadata_fields))
+
+
 def test_get_data_row(datarow, client):
     assert client.get_data_row(datarow.uid)
 
@@ -243,8 +249,9 @@ def test_create_data_row_with_metadata(dataset, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    assert len(data_row.metadata_fields) == 4
-    assert [m["schemaId"] for m in data_row.metadata_fields
+    filtered_md_fields = filter_precomputed_embeddings(data_row.metadata_fields)
+    assert len(filtered_md_fields) == 4
+    assert [m["schemaId"] for m in filtered_md_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
@@ -262,8 +269,9 @@ def test_create_data_row_with_metadata_dict(dataset, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    assert len(data_row.metadata_fields) == 4
-    assert [m["schemaId"] for m in data_row.metadata_fields
+    filtered_md_fields = filter_precomputed_embeddings(data_row.metadata_fields)
+    assert len(filtered_md_fields) == 4
+    assert [m["schemaId"] for m in filtered_md_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
@@ -313,8 +321,11 @@ def test_create_data_rows_with_metadata(dataset, image_url):
         assert requests.get(image_url).content == \
             requests.get(row.row_data).content
         assert row.media_attributes is not None
-        assert len(row.metadata_fields) == 4
-        assert [m["schemaId"] for m in row.metadata_fields
+
+        # Remove 'precomputedImageEmbedding' metadata if automatically added
+        filtered_md_fields = filter_precomputed_embeddings(row.metadata_fields)
+        assert len(filtered_md_fields) == 4
+        assert [m["schemaId"] for m in filtered_md_fields
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
