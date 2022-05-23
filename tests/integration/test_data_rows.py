@@ -60,7 +60,7 @@ def make_metadata_fields_dict():
 def filter_precomputed_embeddings(metadata_fields):
     return list(
         filter(lambda md: md["name"] != "precomputedImageEmbedding",
-        metadata_fields))
+               metadata_fields))
 
 
 def test_get_data_row(datarow, client):
