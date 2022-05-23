@@ -313,8 +313,13 @@ def test_create_data_rows_with_metadata(dataset, image_url):
         assert requests.get(image_url).content == \
             requests.get(row.row_data).content
         assert row.media_attributes is not None
-        assert len(row.metadata_fields) == 4
-        assert [m["schemaId"] for m in row.metadata_fields
+
+        # Remove 'precomputedImageEmbedding' metadata if automatically added
+        filtered_md_fields = list(
+            filter(lambda md: md["name"] != "precomputedImageEmbedding",
+                   row.metadata_fields))
+        assert len(filtered_md_fields) == 4
+        assert [m["schemaId"] for m in filtered_md_fields
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
