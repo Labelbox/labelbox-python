@@ -52,40 +52,57 @@ class Dataset(DbObject, Updateable, Deletable):
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-    def create_data_row(self, **kwargs) -> "DataRow":
+    def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
 
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
+            items: Dictionary containing new `DataRow` data. At a minimum,
+                must contain `row_data` or `DataRow.row_data`.
             **kwargs: Key-value arguments containing new `DataRow` data. At a minimum,
                 must contain `row_data`.
 
         Raises:
+            InvalidQueryError: If both dictionary and `kwargs` are provided as inputs
             InvalidQueryError: If `DataRow.row_data` field value is not provided
                 in `kwargs`.
             InvalidAttributeError: in case the DB object type does not contain
                 any of the field names given in `kwargs`.
 
         """
+        invalid_argument_error = "Argument to create_data_row() must be either a dictionary, or kwargs containing `row_data` at minimum"
+
+        def convert_field_keys(items):
+            if not isinstance(items, dict):
+                raise InvalidQueryError(invalid_argument_error)
+            return {
+                key.name if isinstance(key, Field) else key: value
+                for key, value in items.items()
+            }
+
+        if items is not None and len(kwargs) > 0:
+            raise InvalidQueryError(invalid_argument_error)
+
         DataRow = Entity.DataRow
-        if DataRow.row_data.name not in kwargs:
+        args = convert_field_keys(items) if items is not None else kwargs
+
+        if DataRow.row_data.name not in args:
             raise InvalidQueryError(
                 "DataRow.row_data missing when creating DataRow.")
 
         # If row data is a local file path, upload it to server.
-        row_data = kwargs[DataRow.row_data.name]
+        row_data = args[DataRow.row_data.name]
         if os.path.exists(row_data):
-            kwargs[DataRow.row_data.name] = self.client.upload_file(row_data)
-        kwargs[DataRow.dataset.name] = self
+            args[DataRow.row_data.name] = self.client.upload_file(row_data)
+        args[DataRow.dataset.name] = self
 
         # Parse metadata fields, if they are provided
-        if DataRow.custom_metadata.name in kwargs:
+        if DataRow.metadata_fields.name in args:
             mdo = self.client.get_data_row_metadata_ontology()
-            kwargs[DataRow.custom_metadata.name] = mdo.parse_upsert_metadata(
-                kwargs[DataRow.custom_metadata.name])
-
-        return self.client._create(DataRow, kwargs)
+            args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
+                args[DataRow.metadata_fields.name])
+        return self.client._create(DataRow, args)
 
     def create_data_rows_sync(self, items) -> None:
         """ Synchronously bulk upload data rows.
@@ -264,10 +281,10 @@ class Dataset(DbObject, Updateable, Deletable):
             return attachments
 
         def parse_metadata_fields(item):
-            metadata_fields = item.get('custom_metadata')
+            metadata_fields = item.get('metadata_fields')
             if metadata_fields:
                 mdo = self.client.get_data_row_metadata_ontology()
-                item['custom_metadata'] = mdo.parse_upsert_metadata(
+                item['metadata_fields'] = mdo.parse_upsert_metadata(
                     metadata_fields)
 
         def format_row(item):
@@ -413,9 +430,9 @@ class Dataset(DbObject, Updateable, Deletable):
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-                # TODO: Update result to parse customMetadata when resolver returns
+                # TODO: Update result to parse metadataFields when resolver returns
                 return (Entity.DataRow(self.client, {
-                    **result, 'customMetadata': []
+                    **result, 'metadataFields': []
                 }) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")

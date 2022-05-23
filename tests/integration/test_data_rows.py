@@ -1,3 +1,4 @@
+import imghdr
 from tempfile import NamedTemporaryFile
 import uuid
 import time
@@ -54,6 +55,12 @@ def make_metadata_fields_dict():
         "value": embeddings
     }]
     return fields
+
+
+def filter_precomputed_embeddings(metadata_fields):
+    return list(
+        filter(lambda md: md["name"] != "precomputedImageEmbedding",
+               metadata_fields))
 
 
 def test_get_data_row(datarow, client):
@@ -177,12 +184,63 @@ def test_data_row_single_creation(dataset, rand_gen, image_url):
         assert requests.get(data_row_2.row_data).content == data
 
 
+def test_create_data_row_with_dict(dataset, image_url):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+    dr = {"row_data": image_url}
+    data_row = dataset.create_data_row(dr)
+    assert len(list(dataset.data_rows())) == 1
+    assert data_row.dataset() == dataset
+    assert data_row.created_by() == client.get_user()
+    assert data_row.organization() == client.get_organization()
+    assert requests.get(image_url).content == \
+        requests.get(data_row.row_data).content
+    assert data_row.media_attributes is not None
+
+
+def test_create_data_row_with_dict_containing_field(dataset, image_url):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+    dr = {DataRow.row_data: image_url}
+    data_row = dataset.create_data_row(dr)
+    assert len(list(dataset.data_rows())) == 1
+    assert data_row.dataset() == dataset
+    assert data_row.created_by() == client.get_user()
+    assert data_row.organization() == client.get_organization()
+    assert requests.get(image_url).content == \
+        requests.get(data_row.row_data).content
+    assert data_row.media_attributes is not None
+
+
+def test_create_data_row_with_dict_unpacked(dataset, image_url):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+    dr = {"row_data": image_url}
+    data_row = dataset.create_data_row(**dr)
+    assert len(list(dataset.data_rows())) == 1
+    assert data_row.dataset() == dataset
+    assert data_row.created_by() == client.get_user()
+    assert data_row.organization() == client.get_organization()
+    assert requests.get(image_url).content == \
+        requests.get(data_row.row_data).content
+    assert data_row.media_attributes is not None
+
+
+def test_create_data_row_with_invalid_input(dataset, image_url):
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_row("asdf")
+
+    dr = {"row_data": image_url}
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_row(dr, row_data=image_url)
+
+
 def test_create_data_row_with_metadata(dataset, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
     data_row = dataset.create_data_row(row_data=image_url,
-                                       custom_metadata=make_metadata_fields())
+                                       metadata_fields=make_metadata_fields())
 
     assert len(list(dataset.data_rows())) == 1
     assert data_row.dataset() == dataset
@@ -191,8 +249,9 @@ def test_create_data_row_with_metadata(dataset, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    assert len(data_row.custom_metadata) == 5
-    assert [m["schemaId"] for m in data_row.custom_metadata
+    filtered_md_fields = filter_precomputed_embeddings(data_row.metadata_fields)
+    assert len(filtered_md_fields) == 4
+    assert [m["schemaId"] for m in filtered_md_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
@@ -201,7 +260,7 @@ def test_create_data_row_with_metadata_dict(dataset, image_url):
     assert len(list(dataset.data_rows())) == 0
 
     data_row = dataset.create_data_row(
-        row_data=image_url, custom_metadata=make_metadata_fields_dict())
+        row_data=image_url, metadata_fields=make_metadata_fields_dict())
 
     assert len(list(dataset.data_rows())) == 1
     assert data_row.dataset() == dataset
@@ -210,8 +269,9 @@ def test_create_data_row_with_metadata_dict(dataset, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    assert len(data_row.custom_metadata) == 5
-    assert [m["schemaId"] for m in data_row.custom_metadata
+    filtered_md_fields = filter_precomputed_embeddings(data_row.metadata_fields)
+    assert len(filtered_md_fields) == 4
+    assert [m["schemaId"] for m in filtered_md_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
@@ -221,7 +281,7 @@ def test_create_data_row_with_invalid_metadata(dataset, image_url):
         DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
 
     with pytest.raises(labelbox.exceptions.MalformedQueryException) as excinfo:
-        dataset.create_data_row(row_data=image_url, custom_metadata=fields)
+        dataset.create_data_row(row_data=image_url, metadata_fields=fields)
 
 
 def test_create_data_rows_with_metadata(dataset, image_url):
@@ -232,22 +292,22 @@ def test_create_data_rows_with_metadata(dataset, image_url):
         {
             DataRow.row_data: image_url,
             DataRow.external_id: "row1",
-            DataRow.custom_metadata: make_metadata_fields()
+            DataRow.metadata_fields: make_metadata_fields()
         },
         {
             DataRow.row_data: image_url,
             DataRow.external_id: "row2",
-            "custom_metadata": make_metadata_fields()
+            "metadata_fields": make_metadata_fields()
         },
         {
             DataRow.row_data: image_url,
             DataRow.external_id: "row3",
-            DataRow.custom_metadata: make_metadata_fields_dict()
+            DataRow.metadata_fields: make_metadata_fields_dict()
         },
         {
             DataRow.row_data: image_url,
             DataRow.external_id: "row4",
-            "custom_metadata": make_metadata_fields_dict()
+            "metadata_fields": make_metadata_fields_dict()
         },
     ])
     task.wait_till_done()
@@ -261,8 +321,11 @@ def test_create_data_rows_with_metadata(dataset, image_url):
         assert requests.get(image_url).content == \
             requests.get(row.row_data).content
         assert row.media_attributes is not None
-        assert len(row.custom_metadata) == 5
-        assert [m["schemaId"] for m in row.custom_metadata
+
+        # Remove 'precomputedImageEmbedding' metadata if automatically added
+        filtered_md_fields = filter_precomputed_embeddings(row.metadata_fields)
+        assert len(filtered_md_fields) == 4
+        assert [m["schemaId"] for m in filtered_md_fields
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
 
 
@@ -273,7 +336,7 @@ def test_create_data_rows_with_invalid_metadata(dataset, image_url):
 
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
-        DataRow.custom_metadata: fields
+        DataRow.metadata_fields: fields
     }])
     task.wait_till_done()
     assert task.status == "FAILED"
@@ -288,7 +351,7 @@ def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row1",
-                DataRow.custom_metadata: fields
+                DataRow.metadata_fields: fields
             },
         ])
 
@@ -302,7 +365,7 @@ def test_create_data_rows_with_metadata_missing_schema_id(dataset, image_url):
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row1",
-                DataRow.custom_metadata: fields
+                DataRow.metadata_fields: fields
             },
         ])
 
@@ -316,7 +379,7 @@ def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row1",
-                DataRow.custom_metadata: fields
+                DataRow.metadata_fields: fields
             },
         ])
 

@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.22.1 (2022-05-23)
+## Updated
+* Renamed `custom_metadata` to `metadata_fields` in DataRow
+
 # Version 3.22.0 (2022-05-20)
 ## Added
 * `Dataset.create_data_row()` and `Dataset.create_data_rows()` now uploads metadata to data row
