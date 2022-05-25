@@ -150,7 +150,6 @@ class RelationshipManager:
         query_string, params = query.relationship(
             self.source if self.filter_on_id else type(self.source), rel, where,
             order_by)
-        print(f"!! QUery string {query_string}")
         return PaginatedCollection(
             self.source.client, query_string, params,
             [utils.camel_case(self.source.type_name()), rel.graphql_name],
