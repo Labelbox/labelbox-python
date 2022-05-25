@@ -430,7 +430,6 @@ class Dataset(DbObject, Updateable, Deletable):
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-
                 # TODO: Update result to parse metadataFields when resolver returns
                 return (Entity.DataRow(self.client, {
                     **result, 'metadataFields': []
