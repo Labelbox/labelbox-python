@@ -430,10 +430,11 @@ class Dataset(DbObject, Updateable, Deletable):
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
+                for r in reader:
+                    print(f"Reader: {r}")
                 # TODO: Update result to parse metadataFields when resolver returns
-                return (Entity.DataRow(self.client, {
-                    **result, 'metadataFields': []
-                }) for result in reader)
+                return (
+                    Entity.DataRow(self.client, result) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 

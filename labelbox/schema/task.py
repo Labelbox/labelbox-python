@@ -1,5 +1,8 @@
 import logging
+import requests
 import time
+import validators
+from validators import ValidationFailure
 from typing import TYPE_CHECKING, Optional
 
 from labelbox.exceptions import ResourceNotFoundError
@@ -31,6 +34,7 @@ class Task(DbObject):
     name = Field.String("name")
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
+    result = Field.String("result")
     _user: Optional["User"] = None
 
     # Relationships
@@ -65,3 +69,15 @@ class Task(DbObject):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
+    
+    def get_result(self) -> str:
+        """ Downloads the result file from Task
+        """
+        if self.result:
+            result_url = validators.url(self.result)
+            if isinstance(result_url, ValidationFailure):
+                raise TypeError(f"{result_url} is not a valid url")
+            response = requests.get(self.result)
+            response.raise_for_status()
+            return response.text
+        return ""
