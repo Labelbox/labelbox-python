@@ -1,8 +1,6 @@
 import logging
 import requests
 import time
-import validators
-from validators import ValidationFailure
 from typing import TYPE_CHECKING, Optional
 
 from labelbox.exceptions import ResourceNotFoundError
