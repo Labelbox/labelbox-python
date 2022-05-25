@@ -69,7 +69,7 @@ class Task(DbObject):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
-    
+
     def get_result(self) -> str:
         """ Downloads the result file from Task
         """
