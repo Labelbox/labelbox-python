@@ -14,4 +14,3 @@ imagesize
 pyproj
 pygeotile
 typing-extensions
-validators

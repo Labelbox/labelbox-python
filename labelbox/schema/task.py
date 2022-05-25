@@ -74,9 +74,6 @@ class Task(DbObject):
         """ Downloads the result file from Task
         """
         if self.result:
-            result_url = validators.url(self.result)
-            if isinstance(result_url, ValidationFailure):
-                raise TypeError(f"{result_url} is not a valid url")
             response = requests.get(self.result)
             response.raise_for_status()
             return response.text
