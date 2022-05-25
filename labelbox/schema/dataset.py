@@ -344,7 +344,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         # TODO: If any datarows contain metadata, we're limiting max # of datarows
         # until we address performance issues with datarow create with metadata
-        max_datarow_with_metadata = 2
+        max_datarow_with_metadata = 30_000
         if (len(items) > max_datarow_with_metadata):
             for row in items:
                 if 'metadata_fields' in row:
