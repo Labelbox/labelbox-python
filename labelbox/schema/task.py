@@ -68,11 +68,12 @@ class Task(DbObject):
             time.sleep(sleep_time_seconds)
             self.refresh()
 
-    def get_result(self) -> str:
+    def errors(self) -> dict:
         """ Downloads the result file from Task
         """
-        if self.result:
+        if self.status == "FAILED" and self.result:
             response = requests.get(self.result)
             response.raise_for_status()
-            return response.text
-        return ""
+            data = response.json()
+            return data['error']
+        return None
