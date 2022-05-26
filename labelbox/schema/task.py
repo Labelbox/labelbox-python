@@ -68,7 +68,7 @@ class Task(DbObject):
             time.sleep(sleep_time_seconds)
             self.refresh()
 
-    def errors(self) -> dict:
+    def errors(self):
         """ Downloads the result file from Task
         """
         if self.status == "FAILED" and self.result:
