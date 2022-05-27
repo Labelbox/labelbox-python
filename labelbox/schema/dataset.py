@@ -432,6 +432,7 @@ class Dataset(DbObject, Updateable, Deletable):
             {exportDatasetDataRows(data:{datasetId: $%s }) {downloadUrl createdAt status}}
         """ % (id_param, id_param)
         sleep_time = 2
+        flag_fields = {'metadataFields': []}
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportDatasetDataRows"]
@@ -440,10 +441,14 @@ class Dataset(DbObject, Updateable, Deletable):
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-                # TODO: Update result to parse metadataFields when resolver returns
-                return (Entity.DataRow(self.client, {
-                    **result, 'metadataFields': []
-                }) for result in reader)
+
+                datarows = set()
+                for result in reader:
+                    for field, default_value in flag_fields.items():
+                        if field not in result.keys():
+                            result[field] = default_value
+                    datarows.add(Entity.DataRow(self.client, result))
+                return datarows
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 
