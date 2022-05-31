@@ -1,6 +1,6 @@
 FROM python:3.7
 
-RUN pip install pytest pytest-cases pytest-rerunfailures
+RUN pip install pytest pytest-cases pytest-rerunfailures allure-pytest
 RUN apt-get -y update
 RUN apt install -y libsm6 \
                 libxext6 \
