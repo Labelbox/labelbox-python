@@ -75,5 +75,7 @@ class Task(DbObject):
             response = requests.get(self.result)
             response.raise_for_status()
             data = response.json()
+            if 'error' not in data:
+                raise KeyError(f"Key 'error' does not exist in {data}")
             return data['error']
         return None
