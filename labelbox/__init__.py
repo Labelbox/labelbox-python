@@ -1,13 +1,6 @@
 name = "labelbox"
 __version__ = "3.22.1"
 
-import sys
-import warnings
-
-if sys.version_info < (3, 7):
-    warnings.warn("""Python 3.6 will no longer be actively supported
-    starting 06/01/2022. Please upgrade to Python 3.7 or higher.""")
-
 from labelbox.client import Client
 from labelbox.schema.project import Project
 from labelbox.schema.model import Model
