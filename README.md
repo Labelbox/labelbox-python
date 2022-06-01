@@ -121,3 +121,6 @@ make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LA
 ```
 make -B {build|test-staging|test-prod}
 ```
+
+6. Testing against Delegated Access will be skipped unless the local env contains the key: 
+DA_GCP_LABELBOX_API_KEY. These tests will be included when run against a PR. If you would like to test it manually, please reach out to the Devops team for information on the key.

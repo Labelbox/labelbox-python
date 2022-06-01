@@ -1,0 +1,71 @@
+version: "1.0"
+stages:
+  - "clone"
+  - "build"
+  - "e2e_test"
+steps:
+  main_clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "Labelbox/labelbox-python"
+    stage: "clone"
+    revision: "${{CF_BRANCH}}"
+  parallel_build:
+    type: "parallel"
+    stage: "build"
+    steps:
+      build_sdk_test:
+        description: "Building Docker image for sdk tests"
+        tag: "testing"
+        type: "build"
+        image_name: "sdk-tests"
+        disable_push: true
+        working_directory: "${{main_clone}}"
+        dockerfile: "Dockerfile"
+  e2e_test:
+    title: "Python SDK e2e tests"
+    description: "Running Python SDK e2e tests"
+    fail_fast: false
+    stage: "e2e_test"
+    image: "${{build_sdk_test}}"
+    working_directory: "IMAGE_WORK_DIR"
+    commands:
+      - pytest
+  send_slack_success_to_pages_active_learning:
+    title: "Alert on success to pages active learning"
+    type: slack-message-sender
+    arguments:
+      WEBHOOK_URL: "${{slack_webhook_url}}"
+      MESSAGE: "SDK Tests have succeeded-- ${{CF_BUILD_URL}}"
+    when:
+      condition:
+        all:
+          succeeded: e2e_test.result == 'success'
+  send_slack_failure_to_e2e:
+    title: "Alert on failure to e2e channel"
+    type: slack-message-sender
+    arguments:
+      WEBHOOK_URL: "${{slack_webhook_e2e}}"
+      MESSAGE: "SDK Tests have failed-- ${{CF_BUILD_URL}}"
+    when:
+      condition:
+        all:
+          failed: e2e_test.result == 'failure'   
+  send_slack_failure_to_deploy_prod:
+    title: "Alert on failure to deployments prod channel"
+    type: slack-message-sender
+    arguments:
+      WEBHOOK_URL: "${{slack_webhook_deployments_prod}}"
+      MESSAGE: "SDK Tests have failed-- ${{CF_BUILD_URL}}"
+    when:
+      condition:
+        all:
+          failed: e2e_test.result == 'failure'            
+  check_for_failures:
+    image: alpine
+    commands:
+      - exit 1
+    when:
+      condition:
+        any:
+          myCondition: e2e_test.result == 'failure'

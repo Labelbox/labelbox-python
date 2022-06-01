@@ -200,6 +200,10 @@ class DataRowMetadataOntology:
 
         return fields
 
+    def refresh_ontology(self):
+        self._raw_ontology = self._get_ontology()
+        self._build_ontology()
+
     def parse_metadata(
         self, unparsed: List[Dict[str,
                                   List[Union[str,
@@ -221,6 +225,14 @@ class DataRowMetadataOntology:
         for dr in unparsed:
             fields = []
             for f in dr["fields"]:
+                if f["schemaId"] not in self.fields_by_id:
+                    # Update metadata ontology if field can't be found
+                    self.refresh_ontology()
+                    if f["schemaId"] not in self.fields_by_id:
+                        raise ValueError(
+                            f"Schema Id `{f['schemaId']}` not found in ontology"
+                        )
+
                 schema = self.fields_by_id[f["schemaId"]]
                 if schema.kind == DataRowMetadataKind.enum:
                     continue
@@ -297,7 +309,6 @@ class DataRowMetadataOntology:
                         chain.from_iterable(
                             self._parse_upsert(m) for m in m.fields))).dict(
                                 by_alias=True))
-
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
@@ -399,8 +410,11 @@ class DataRowMetadataOntology:
         """Format for metadata upserts to GQL"""
 
         if metadatum.schema_id not in self.fields_by_id:
-            raise ValueError(
-                f"Schema Id `{metadatum.schema_id}` not found in ontology")
+            # Update metadata ontology if field can't be found
+            self.refresh_ontology()
+            if metadatum.schema_id not in self.fields_by_id:
+                raise ValueError(
+                    f"Schema Id `{metadatum.schema_id}` not found in ontology")
 
         schema = self.fields_by_id[metadatum.schema_id]
 
@@ -421,6 +435,33 @@ class DataRowMetadataOntology:
 
         return [_UpsertDataRowMetadataInput(**p) for p in parsed]
 
+    # Convert metadata to DataRowMetadataField objects, parse all fields
+    # and return a dictionary of metadata fields for upsert
+    def parse_upsert_metadata(self, metadata_fields):
+
+        def _convert_metadata_field(metadata_field):
+            if isinstance(metadata_field, DataRowMetadataField):
+                return metadata_field
+            elif isinstance(metadata_field, dict):
+                if not all(key in metadata_field
+                           for key in ("schema_id", "value")):
+                    raise ValueError(
+                        f"Custom metadata field '{metadata_field}' must have 'schema_id' and 'value' keys"
+                    )
+                return DataRowMetadataField(
+                    schema_id=metadata_field["schema_id"],
+                    value=metadata_field["value"])
+            else:
+                raise ValueError(
+                    f"Metadata field '{metadata_field}' is neither 'DataRowMetadataField' type or a dictionary"
+                )
+
+        # Convert all metadata fields to DataRowMetadataField type
+        metadata_fields = [_convert_metadata_field(m) for m in metadata_fields]
+        parsed_metadata = list(
+            chain.from_iterable(self._parse_upsert(m) for m in metadata_fields))
+        return [m.dict(by_alias=True) for m in parsed_metadata]
+
     def _validate_delete(self, delete: DeleteDataRowMetadata):
         if not len(delete.fields):
             raise ValueError(f"No fields specified for {delete.data_row_id}")
@@ -428,8 +469,11 @@ class DataRowMetadataOntology:
         deletes = set()
         for schema_id in delete.fields:
             if schema_id not in self.fields_by_id:
-                raise ValueError(
-                    f"Schema Id `{schema_id}` not found in ontology")
+                # Update metadata ontology if field can't be found
+                self.refresh_ontology()
+                if schema_id not in self.fields_by_id:
+                    raise ValueError(
+                        f"Schema Id `{schema_id}` not found in ontology")
 
             schema = self.fields_by_id[schema_id]
             # handle users specifying enums by adding all option enums

@@ -1,10 +1,10 @@
 import logging
-from datetime import datetime
-from typing import List, Dict, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment
@@ -22,6 +22,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         updated_at (datetime)
         created_at (datetime)
         media_attributes (dict): generated media attributes for the datarow
+        metadata_fields (list): metadata associated with the datarow
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
@@ -34,6 +35,11 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
+    metadata_fields = Field.List(
+        DataRowMetadataField,
+        graphql_type="DataRowCustomMetadataUpsertInput!",
+        name="metadata_fields",
+        result_subquery="metadataFields { schemaId name value kind }")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")

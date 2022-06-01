@@ -25,7 +25,7 @@ class PaginatedCollection:
                  params: Dict[str, str],
                  dereferencing: Union[List[str], Dict[str, Any]],
                  obj_class: Union[Type["DbObject"], Callable[[Any, Any], Any]],
-                 cursor_path: Optional[Dict[str, Any]] = None,
+                 cursor_path: Optional[List[str]] = None,
                  experimental: bool = False):
         """ Creates a PaginatedCollection.
 
@@ -105,7 +105,7 @@ class _Pagination(ABC):
 
 class _CursorPagination(_Pagination):
 
-    def __init__(self, cursor_path: Dict[str, Any], *args, **kwargs):
+    def __init__(self, cursor_path: List[str], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_path = cursor_path
         self.next_cursor: Optional[Any] = None

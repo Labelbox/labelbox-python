@@ -25,11 +25,14 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
+from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, Tool, Classification
 from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
+
+from labelbox.schema.media_type import MediaType
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +90,7 @@ class Client:
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
+        self._data_row_metadata_ontology = None
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError))
@@ -203,7 +207,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"]["exception"].get("status")
+            return error["extensions"].get("code")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -378,7 +382,8 @@ class Client:
 
         if not file_data or not file_data.get("uploadFile", None):
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % file_data.get("error", None))
+                "Failed to upload, message: %s" % file_data or
+                file_data.get("error"))
 
         return file_data["uploadFile"]["url"]
 
@@ -609,6 +614,15 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
+        media_type = kwargs.get("media_type")
+        if media_type:
+            if MediaType.is_supported(media_type):
+                kwargs["media_type"] = media_type.value
+            else:
+                raise TypeError(f"{media_type} is not a valid media type. Use"
+                                f" any of {MediaType.get_supported_members()}"
+                                " from MediaType. Example: MediaType.Image.")
+
         return self._create(Entity.Project, kwargs)
 
     def get_roles(self) -> List[Role]:
@@ -635,7 +649,9 @@ class Client:
             DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
 
         """
-        return DataRowMetadataOntology(self)
+        if self._data_row_metadata_ontology is None:
+            self._data_row_metadata_ontology = DataRowMetadataOntology(self)
+        return self._data_row_metadata_ontology
 
     def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.
@@ -906,3 +922,15 @@ class Client:
         # But the features are the same so we just grab the feature schema id
         res['id'] = res['normalized']['featureSchemaId']
         return Entity.FeatureSchema(self, res)
+
+    def get_model_run(self, model_run_id: str) -> ModelRun:
+        """ Gets a single ModelRun with the given ID.
+
+            >>> model_run = client.get_model_run("<model_run_id>")
+
+        Args:
+            model_run_id (str): Unique ID of the ModelRun.
+        Returns:
+            A ModelRun object.
+        """
+        return self._get_single(Entity.ModelRun, model_run_id)

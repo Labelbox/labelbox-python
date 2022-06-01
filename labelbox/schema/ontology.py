@@ -4,6 +4,7 @@ import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Type
+import warnings
 
 from pydantic import constr
 
@@ -68,7 +69,7 @@ class Option:
             "featureSchemaId": self.feature_schema_id,
             "label": self.label,
             "value": self.value,
-            "options": [o.asdict() for o in self.options]
+            "options": [o.asdict(is_subclass=True) for o in self.options]
         }
 
     def add_option(self, option: 'Classification') -> None:
@@ -82,6 +83,11 @@ class Option:
 @dataclass
 class Classification:
     """
+
+    Deprecation Notice: Dropdown classification is deprecated and will be
+        removed in a future release. Dropdown will also
+        no longer be able to be created in the Editor on 3/31/2022.
+            
     A classfication to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
@@ -118,6 +124,10 @@ class Classification:
         RADIO = "radio"
         DROPDOWN = "dropdown"
 
+    class Scope(Enum):
+        GLOBAL = "global"
+        INDEX = "index"
+
     _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
 
     class_type: Type
@@ -126,6 +136,14 @@ class Classification:
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
+    scope: Scope = None
+
+    def __post_init__(self):
+        if self.class_type == Classification.Type.DROPDOWN:
+            warnings.warn(
+                "Dropdown classification is deprecated and will be "
+                "removed in a future release. Dropdown will also "
+                "no longer be able to be created in the Editor on 3/31/2022.")
 
     @property
     def name(self) -> str:
@@ -138,14 +156,15 @@ class Classification:
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
                    schema_id=dictionary.get("schemaNodeId", None),
-                   feature_schema_id=dictionary.get("featureSchemaId", None))
+                   feature_schema_id=dictionary.get("featureSchemaId", None),
+                   scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
 
-    def asdict(self) -> Dict[str, Any]:
+    def asdict(self, is_subclass: bool = False) -> Dict[str, Any]:
         if self.class_type in self._REQUIRES_OPTIONS \
                 and len(self.options) < 1:
             raise InconsistentOntologyException(
                 f"Classification '{self.instructions}' requires options.")
-        return {
+        classification = {
             "type": self.class_type.value,
             "instructions": self.instructions,
             "name": self.name,
@@ -154,6 +173,11 @@ class Classification:
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id
         }
+        if is_subclass:
+            return classification
+        classification[
+            "scope"] = self.scope.value if self.scope is not None else self.Scope.GLOBAL.value
+        return classification
 
     def add_option(self, option: Option) -> None:
         if option.value in (o.value for o in self.options):
@@ -197,6 +221,7 @@ class Tool:
     class Type(Enum):
         POLYGON = "polygon"
         SEGMENTATION = "superpixel"
+        RASTER_SEGMENTATION = "raster-segmentation"
         POINT = "point"
         BBOX = "rectangle"
         LINE = "line"
@@ -229,7 +254,9 @@ class Tool:
             "name": self.name,
             "required": self.required,
             "color": self.color,
-            "classifications": [c.asdict() for c in self.classifications],
+            "classifications": [
+                c.asdict(is_subclass=True) for c in self.classifications
+            ],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id
         }

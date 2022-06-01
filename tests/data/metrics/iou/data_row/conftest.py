@@ -13,12 +13,16 @@ class NameSpace(SimpleNamespace):
                  labels,
                  expected,
                  data_row_expected=None,
+                 media_attributes=None,
+                 metadata=None,
                  classifications=None):
         super(NameSpace,
               self).__init__(predictions=predictions,
                              labels={
                                  'DataRow ID': 'ckppihxc10005aeyjen11h7jh',
                                  'Labeled Data': "https://.jpg",
+                                 'Media Attributes': media_attributes or {},
+                                 'DataRow Metadata': metadata or [],
                                  'Label': {
                                      'objects': labels,
                                      'classifications': classifications or []
@@ -320,45 +324,42 @@ def empty_radio_prediction():
 
 @pytest.fixture
 def matching_checklist():
-    return NameSpace(
-        labels=[],
-        classifications=[{
-            'featureId':
-                '1234567890111213141516171',
-            'schemaId':
-                'ckppid25v0000aeyjmxfwlc7t',
-            'uuid':
-                '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-            'schemaId':
-                'ckppid25v0000aeyjmxfwlc7t',
-            'answers': [{
-                'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-            }, {
-                'schemaId': 'ckppide010001aeyj0yhiaghc'
-            }, {
-                'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
-            }]
-        }],
-        predictions=[{
-            'uuid':
-                '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
-            'schemaId':
-                'ckppid25v0000aeyjmxfwlc7t',
-            'dataRow': {
-                'id': 'ckppihxc10005aeyjen11h7jh'
-            },
-            'answers': [{
-                'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
-            }, {
-                'schemaId': 'ckppide010001aeyj0yhiaghc'
-            }, {
-                'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
-            }]
-        }],
-        data_row_expected=1.,
-        #  expected = [1.]
-        #  expected=[1., 1., 1.])
-        expected={1.0: 3})
+    return NameSpace(labels=[],
+                     classifications=[{
+                         'featureId':
+                             '1234567890111213141516171',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'uuid':
+                             '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         }, {
+                             'schemaId': 'ckppide010001aeyj0yhiaghc'
+                         }, {
+                             'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
+                         }]
+                     }],
+                     predictions=[{
+                         'uuid':
+                             '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId':
+                             'ckppid25v0000aeyjmxfwlc7t',
+                         'dataRow': {
+                             'id': 'ckppihxc10005aeyjen11h7jh'
+                         },
+                         'answers': [{
+                             'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         }, {
+                             'schemaId': 'ckppide010001aeyj0yhiaghc'
+                         }, {
+                             'schemaId': 'ckppidq4u0002aeyjmcc4toxw'
+                         }]
+                     }],
+                     data_row_expected=1.,
+                     expected={1.0: 3})
 
 
 @pytest.fixture
@@ -699,3 +700,84 @@ def point_pair():
                          }
                      }],
                      expected=0.879113232477017)
+
+
+@pytest.fixture
+def matching_ner():
+    return NameSpace(labels=[{
+        'featureId': 'ckppivl7p0006aeyj92cezr9d',
+        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+        'format': "text.location",
+        'data': {
+            "location": {
+                "start": 0,
+                "end": 10
+            }
+        }
+    }],
+                     predictions=[{
+                         'dataRow': {
+                             'id': 'ckppihxc10005aeyjen11h7jh'
+                         },
+                         'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         "location": {
+                             "start": 0,
+                             "end": 10
+                         }
+                     }],
+                     expected=1)
+
+
+@pytest.fixture
+def no_matching_ner():
+    return NameSpace(labels=[{
+        'featureId': 'ckppivl7p0006aeyj92cezr9d',
+        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+        'format': "text.location",
+        'data': {
+            "location": {
+                "start": 0,
+                "end": 5
+            }
+        }
+    }],
+                     predictions=[{
+                         'dataRow': {
+                             'id': 'ckppihxc10005aeyjen11h7jh'
+                         },
+                         'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         "location": {
+                             "start": 5,
+                             "end": 10
+                         }
+                     }],
+                     expected=0)
+
+
+@pytest.fixture
+def partial_matching_ner():
+    return NameSpace(labels=[{
+        'featureId': 'ckppivl7p0006aeyj92cezr9d',
+        'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+        'format': "text.location",
+        'data': {
+            "location": {
+                "start": 0,
+                "end": 7
+            }
+        }
+    }],
+                     predictions=[{
+                         'dataRow': {
+                             'id': 'ckppihxc10005aeyjen11h7jh'
+                         },
+                         'uuid': '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
+                         'schemaId': 'ckppid25v0000aeyjmxfwlc7t',
+                         "location": {
+                             "start": 3,
+                             "end": 5
+                         }
+                     }],
+                     expected=0.2857142857142857)

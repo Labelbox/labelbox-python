@@ -5,8 +5,6 @@ TITLE = "ThisIsAString"
 CAMEL = "thisIsAString"
 MIXED = "this_Is_AString"
 
-ALL = [SNAKE, TITLE, CAMEL, MIXED]
-
 
 def test_camel():
     assert utils.camel_case(SNAKE) == CAMEL

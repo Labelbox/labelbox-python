@@ -46,7 +46,6 @@ def big_dataset(dataset: Dataset, image_url):
     task.wait_till_done()
 
     yield dataset
-    dataset.delete()
 
 
 def make_metadata(dr_id) -> DataRowMetadata:
@@ -65,6 +64,13 @@ def make_metadata(dr_id) -> DataRowMetadata:
                                  value=embeddings),
         ])
     return metadata
+
+
+def test_export_empty_metadata(configured_project_with_label):
+    project, _, _, _ = configured_project_with_label
+    labels = project.label_generator()
+    label = next(labels)
+    assert label.data.metadata == []
 
 
 def test_get_datarow_metadata_ontology(mdo):

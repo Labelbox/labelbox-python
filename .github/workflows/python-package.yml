@@ -17,12 +17,15 @@ jobs:
           - python-version: 3.7
             prod-key: LABELBOX_API_KEY
             staging-key: STAGING_LABELBOX_API_KEY
+            da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.8
             prod-key: PROD_LABELBOX_API_KEY_2
             staging-key: STAGING_LABELBOX_API_KEY_2
+            da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.9
             prod-key: PROD_LABELBOX_API_KEY_3
             staging-key: STAGING_LABELBOX_API_KEY_3
+            da-test-key: DA_GCP_LABELBOX_API_KEY
 
     steps:
       - name: Cancel previous workflow
@@ -83,5 +86,7 @@ jobs:
           LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
 
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
+
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -svvx
+          tox -e py -- -svv --reruns 5 --reruns-delay 10

@@ -40,6 +40,14 @@ def test_im_path():
 def test_ref():
     external_id = "external_id"
     uid = "uid"
-    data = ImageData(im_bytes=b'', external_id=external_id, uid=uid)
+    metadata = []
+    media_attributes = {}
+    data = ImageData(im_bytes=b'',
+                     external_id=external_id,
+                     uid=uid,
+                     metadata=metadata,
+                     media_attributes=media_attributes)
     assert data.external_id == external_id
     assert data.uid == uid
+    assert data.media_attributes == media_attributes
+    assert data.metadata == metadata

@@ -1,17 +1,14 @@
-from labelbox.schema.labeling_frontend import LabelingFrontend
 import time
 
 import pytest
 import requests
+import os
 
 from labelbox import Label
 
 
-def test_labels(label_pack):
-    project, dataset, data_row, label = label_pack
-
-    # Labels are not visible in the project immediately.
-    time.sleep(10)
+def test_labels(configured_project_with_label):
+    project, _, data_row, label = configured_project_with_label
 
     assert list(project.labels()) == [label]
     assert list(data_row.labels()) == [label]
@@ -22,71 +19,54 @@ def test_labels(label_pack):
 
     label.delete()
 
-    # Labels are not visible in the project immediately.
-    time.sleep(10)
-
     assert list(project.labels()) == []
     assert list(data_row.labels()) == []
 
 
-def test_label_export(client, configured_project_with_label):
-    project, label_id = configured_project_with_label
+def test_label_export(configured_project_with_label):
+    project, _, _, label = configured_project_with_label
+    label_id = label.uid
 
     exported_labels_url = project.export_labels()
     assert exported_labels_url is not None
     exported_labels = requests.get(exported_labels_url)
     labels = [example['ID'] for example in exported_labels.json()]
     assert labels[0] == label_id
-    # TODO: Add test for bulk export back.
+    #TODO: Add test for bulk export back.
     # The new exporter doesn't work with the create_label mutation
 
 
-def test_label_update(label_pack):
-    project, dataset, data_row, label = label_pack
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="does not work for onprem")
+def test_label_update(configured_project_with_label):
+    _, _, _, label = configured_project_with_label
     label.update(label="something else")
     assert label.label == "something else"
 
 
-def test_label_filter_order(client, project, rand_gen, image_url):
-    dataset_1 = client.create_dataset(name=rand_gen(str), projects=project)
-    dataset_2 = client.create_dataset(name=rand_gen(str), projects=project)
-    data_row_1 = dataset_1.create_data_row(row_data=image_url)
-    data_row_2 = dataset_2.create_data_row(row_data=image_url)
+def test_label_filter_order(configured_project_with_label):
+    project, _, _, label = configured_project_with_label
 
-    l1 = project.create_label(data_row=data_row_1, label="l1")
-    time.sleep(1)  #Ensure there is no race condition
-    l2 = project.create_label(data_row=data_row_2, label="l2")
+    l1 = label
+    project.create_label()
+    l2 = next(project.labels())
 
-    # Labels are not visible in the project immediately.
-    time.sleep(20)
-
-    # Filtering supported on dataset
     assert set(project.labels()) == {l1, l2}
-    assert set(project.labels(datasets=[])) == set()
-    assert set(project.labels(datasets=[dataset_1])) == {l1}
-    assert set(project.labels(datasets=[dataset_2])) == {l2}
-    assert set(project.labels(datasets=[dataset_1, dataset_2])) == {l1, l2}
 
     assert list(project.labels(order_by=Label.created_at.asc)) == [l1, l2]
     assert list(project.labels(order_by=Label.created_at.desc)) == [l2, l1]
 
-    dataset_1.delete()
-    dataset_2.delete()
-    project.delete()
 
+def test_label_bulk_deletion(configured_project_with_label):
+    project, _, _, _ = configured_project_with_label
 
-def test_label_bulk_deletion(project, rand_gen, image_url):
-    dataset = project.client.create_dataset(name=rand_gen(str),
-                                            projects=project)
-    row_1 = dataset.create_data_row(row_data=image_url)
-    row_2 = dataset.create_data_row(row_data=image_url)
-
-    l1 = project.create_label(data_row=row_1, label="l1")
-    l2 = project.create_label(data_row=row_1, label="l2")
-    l3 = project.create_label(data_row=row_2, label="l3")
-
-    # Labels are not visible in the project immediately.
-    time.sleep(10)
+    for _ in range(2):
+        #only run twice, already have one label in the fixture
+        project.create_label()
+    labels = project.labels()
+    l1 = next(labels)
+    l2 = next(labels)
+    l3 = next(labels)
 
     assert set(project.labels()) == {l1, l2, l3}
 
@@ -98,5 +78,3 @@ def test_label_bulk_deletion(project, rand_gen, image_url):
     time.sleep(5)
 
     assert set(project.labels()) == {l2}
-
-    dataset.delete()
