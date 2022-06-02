@@ -1,4 +1,5 @@
 import logging
+import requests
 import time
 from typing import TYPE_CHECKING, Optional
 
@@ -31,6 +32,7 @@ class Task(DbObject):
     name = Field.String("name")
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
+    result = Field.String("result")
     _user: Optional["User"] = None
 
     # Relationships
@@ -65,3 +67,13 @@ class Task(DbObject):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
+
+    def errors(self):
+        """ Downloads the result file from Task
+        """
+        if self.status == "FAILED" and self.result:
+            response = requests.get(self.result)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('error')
+        return None
