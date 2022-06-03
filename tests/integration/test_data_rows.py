@@ -557,7 +557,5 @@ def test_create_data_rows_result(client, dataset, image_url):
         },
     ])
     assert task.errors is None
-    assert 'createdDataRows' in task.result
-    results = task.result['createdDataRows']
-    for result in results:
+    for result in task.result:
         client.get_data_row(result['id'])

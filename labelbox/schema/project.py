@@ -327,7 +327,7 @@ class Project(DbObject, Updateable, Deletable):
                 try:
                     datetime.strptime(string_date, "%Y-%m-%d")
                 except ValueError:
-                    raise ValueError(f"""Incorrect format for: {string_date}. 
+                    raise ValueError(f"""Incorrect format for: {string_date}.
                     Format must be \"YYYY-MM-DD\"""")
             return True
 

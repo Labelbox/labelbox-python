@@ -1,8 +1,8 @@
 import logging
+import json
 import requests
 import time
-from typing import TYPE_CHECKING, Optional, Dict, Any
-from functools import lru_cache
+from typing import TYPE_CHECKING, TypeVar, Callable, Optional, Dict, Any, List
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
@@ -10,6 +10,11 @@ from labelbox.orm.model import Field, Relationship
 
 if TYPE_CHECKING:
     from labelbox import User
+
+    def lru_cache() -> Callable[..., Callable[..., Dict[str, Any]]]:
+        pass
+else:
+    from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -73,33 +78,40 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Downloads the result file from Task
         """
-        self.wait_till_done(timeout_seconds=600)
         if self.status == "FAILED":
-            data = self._fetch_remote(self.result_url)
-            if data:
-                return data.get('error', None)
-        elif self.status == "IN_PROGRESS":
-            raise Exception("Job state IN_PROGRESS. Result not available.")
+            result = self._fetch_remote_json()
+            return result['error']
         return None
 
     @property
-    def result(self) -> Dict[str, Any]:
+    def result(self) -> List[Dict[str, Any]]:
         """ Fetch the result for a task
         """
-        self.wait_till_done(timeout_seconds=600)
-        if self.status == "COMPLETE":
-            return self._fetch_remote(self.result_url)
-        elif self.status == "FAILED":
-            errors = self.errors
-            message = errors.get('message') or errors
-            raise Exception(f"Job failed. Errors : {message}")
+        if self.status == "FAILED":
+            raise ValueError(f"Job failed. Errors : {self.errors}")
         else:
-            raise Exception("Job state IN_PROGRESS. Result not available.")
+            result = self._fetch_remote_json()
+            return [{
+                'id': data_row['id'],
+                'external_id': data_row.get('externalId'),
+                'row_data': data_row['rowData']
+            } for data_row in result['createdDataRows']]
 
     @lru_cache()
-    def _fetch_remote(self, result_url) -> Dict[str, Any]:
+    def _fetch_remote_json(self) -> Dict[str, Any]:
         """ Function for fetching and caching the result data.
         """
-        response = requests.get(result_url)
+        if self.name != 'JSON Import':
+            raise ValueError(
+                "Task result is only supported for `JSON Import` tasks."
+                " Download task.result_url manually to access the result for other tasks."
+            )
+        self.wait_till_done(timeout_seconds=600)
+        if self.status == "IN_PROGRESS":
+            raise ValueError(
+                "Job status still in `IN_PROGRESS`. The result is not available. Increase timeout or contact support."
+            )
+
+        response = requests.get(self.result_url)
         response.raise_for_status()
         return response.json()
