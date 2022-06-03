@@ -1,3 +1,5 @@
+import pytest
+
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
 
@@ -24,6 +26,10 @@ def test_task_errors(dataset, image_url):
     assert task.status == "FAILED"
     assert task.errors is not None
     assert 'message' in task.errors
+    with pytest.raises(Exception) as exc_info:
+        task.result
+    assert str(exc_info.value).startswith(
+        "Job failed. Errors : Failed to validate the metadata")
 
 
 def test_task_success(dataset, image_url):

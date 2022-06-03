@@ -90,7 +90,9 @@ class Task(DbObject):
         if self.status == "COMPLETE":
             return self._fetch_remote(self.result_url)
         elif self.status == "FAILED":
-            raise Exception(f"Job failed. Errors : {self.errors()}")
+            errors = self.errors
+            message = errors.get('message') or errors
+            raise Exception(f"Job failed. Errors : {message}")
         else:
             raise Exception("Job state IN_PROGRESS. Result not available.")
 
