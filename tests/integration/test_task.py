@@ -22,8 +22,8 @@ def test_task_errors(dataset, image_url):
     assert task in client.get_user().created_tasks()
     task.wait_till_done()
     assert task.status == "FAILED"
-    assert task.errors() is not None
-    assert 'message' in task.errors()
+    assert task.errors is not None
+    assert 'message' in task.errors
 
 
 def test_task_success(dataset, image_url):
@@ -36,4 +36,6 @@ def test_task_success(dataset, image_url):
     assert task in client.get_user().created_tasks()
     task.wait_till_done()
     assert task.status == "COMPLETE"
-    assert task.errors() is None
+    assert task.errors is None
+    assert task.result is not None
+

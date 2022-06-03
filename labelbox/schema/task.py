@@ -1,7 +1,8 @@
 import logging
 import requests
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Dict, Any
+from functools import lru_cache
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
@@ -32,12 +33,13 @@ class Task(DbObject):
     name = Field.String("name")
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
-    result = Field.String("result")
+    result_url = Field.String("result_url", "result")
     _user: Optional["User"] = None
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
+
 
     def refresh(self) -> None:
         """ Refreshes Task data from the server. """
@@ -68,12 +70,36 @@ class Task(DbObject):
             time.sleep(sleep_time_seconds)
             self.refresh()
 
-    def errors(self):
+    @property
+    def errors(self) -> Optional[Dict[str, Any]]:
         """ Downloads the result file from Task
         """
-        if self.status == "FAILED" and self.result:
-            response = requests.get(self.result)
-            response.raise_for_status()
-            data = response.json()
-            return data.get('error')
+        self.wait_till_done(timeout_seconds = 600)
+        if self.status == "FAILED":
+            data = self._fetch_remote(self.result_url)
+            if data:
+                return data.get('error', None)
+        elif self.status == "IN_PROGRESS":
+            raise Exception("Job state IN_PROGRESS. Result not available.")
         return None
+
+    @property
+    def result(self) -> Dict[str, Any]:
+        """ Fetch the result for a task
+        """
+        self.wait_till_done(timeout_seconds = 600)
+        if self.status == "COMPLETE":
+            return self._fetch_remote(self.result_url)
+        elif self.status == "FAILED":
+            raise Exception(f"Job failed. Errors : {self.errors()}")
+        else:
+            raise Exception("Job state IN_PROGRESS. Result not available.")
+
+    @lru_cache()
+    def _fetch_remote(self, result_url) -> Dict[str, Any]:
+        """ Function for fetching and caching the result data.
+        """
+        response = requests.get(result_url)
+        response.raise_for_status()
+        return response.json()
+
