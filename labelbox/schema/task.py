@@ -40,7 +40,6 @@ class Task(DbObject):
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
 
-
     def refresh(self) -> None:
         """ Refreshes Task data from the server. """
         assert self._user is not None
@@ -74,7 +73,7 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Downloads the result file from Task
         """
-        self.wait_till_done(timeout_seconds = 600)
+        self.wait_till_done(timeout_seconds=600)
         if self.status == "FAILED":
             data = self._fetch_remote(self.result_url)
             if data:
@@ -87,7 +86,7 @@ class Task(DbObject):
     def result(self) -> Dict[str, Any]:
         """ Fetch the result for a task
         """
-        self.wait_till_done(timeout_seconds = 600)
+        self.wait_till_done(timeout_seconds=600)
         if self.status == "COMPLETE":
             return self._fetch_remote(self.result_url)
         elif self.status == "FAILED":
@@ -102,4 +101,3 @@ class Task(DbObject):
         response = requests.get(result_url)
         response.raise_for_status()
         return response.json()
-

@@ -38,4 +38,3 @@ def test_task_success(dataset, image_url):
     assert task.status == "COMPLETE"
     assert task.errors is None
     assert task.result is not None
-
