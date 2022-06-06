@@ -109,7 +109,7 @@ class Task(DbObject):
         self.wait_till_done(timeout_seconds=600)
         if self.status == "IN_PROGRESS":
             raise ValueError(
-                "Job status still in `IN_PROGRESS`. The result is not available. Increase timeout or contact support."
+                "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
             )
 
         response = requests.get(self.result_url)
