@@ -69,7 +69,7 @@ def get_image(
         img = Image.open(io.BytesIO(image))
         h, w = img.height, img.width
         return CocoImage(
-            id=image_id, width=w, height=h, file_name=Path(label.data.url).name
+            id=image_id, width=w, height=h, file_name=Path(label.data.url).name.split('?')[0]
         )
 
 
