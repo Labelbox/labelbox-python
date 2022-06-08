@@ -342,6 +342,16 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Must pass an iterable to create_data_rows. Found {type(items)}"
             )
 
+        # TODO: If any datarows contain metadata, we're limiting max # of datarows
+        # until we address performance issues with datarow create with metadata
+        max_datarow_with_metadata = 30_000
+        if (len(items) > max_datarow_with_metadata):
+            for row in items:
+                if 'metadata_fields' in row:
+                    raise ValueError(
+                        f"Cannot create more than {max_datarow_with_metadata} DataRows, if any DataRows contain metadata"
+                    )
+
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [executor.submit(convert_item, item) for item in items]
             items = [future.result() for future in as_completed(futures)]

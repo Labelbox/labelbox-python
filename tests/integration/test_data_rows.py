@@ -543,3 +543,19 @@ def test_delete_data_row_attachment(datarow, image_url):
         attachment.delete()
 
     assert len(list(datarow.attachments())) == 0
+
+
+def test_create_data_rows_result(client, dataset, image_url):
+    task = dataset.create_data_rows([
+        {
+            DataRow.row_data: image_url,
+            DataRow.external_id: "row1",
+        },
+        {
+            DataRow.row_data: image_url,
+            DataRow.external_id: "row1",
+        },
+    ])
+    assert task.errors is None
+    for result in task.result:
+        client.get_data_row(result['id'])

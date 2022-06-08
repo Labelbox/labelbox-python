@@ -1,5 +1,16 @@
 # Changelog
 
+# Version 3.23.0 (2022-06-08)
+## Added
+* `Task` objects now have the following properties:
+    * `errors` - fetch information about why the task failed
+    * `result` - fetch the result of the task
+    * These are currently only compatible with data row import tasks.
+* Officially added support for python 3.9
+
+## Removed
+* python 3.6 is no longer officially supported
+
 # Version 3.22.1 (2022-05-23)
 ## Updated
 * Renamed `custom_metadata` to `metadata_fields` in DataRow
