@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.23.0 (2022-06-08)
+# Version 3.23.1 (2022-06-08)
 ## Added
 * `Task` objects now have the following properties:
     * `errors` - fetch information about why the task failed
