@@ -21,12 +21,12 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "backoff==1.10.0", "requests>=2.22.0", "google-api-core>=1.22.1",
-        "pydantic>=1.8,<2.0", "tqdm"
+        "pydantic>=1.8,<2.0", "tqdm", "ndjson"
     ],
     extras_require={
         'data': [
             "shapely", "geojson", "numpy", "PILLOW", "opencv-python",
-            "typeguard", "imagesize", "pyproj", "pygeotile", "ndjson"
+            "typeguard", "imagesize", "pyproj", "pygeotile",
             "typing-extensions", "packaging"
         ],
     },
