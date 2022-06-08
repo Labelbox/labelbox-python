@@ -2,8 +2,10 @@
 
 # Version 3.23.0 (2022-06-08)
 ## Added
-* `Task` objects now has `errors` and `result` properties
-    * These are currently only compatible with data row import tasks
+* `Task` objects now have the following properties:
+    * `errors` - fetch information about why the task failed
+    * `result` - fetch the result of the task
+    * These are currently only compatible with data row import tasks.
 * Officially added support for python 3.9
 
 ## Removed
