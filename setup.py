@@ -26,7 +26,7 @@ setuptools.setup(
     extras_require={
         'data': [
             "shapely", "geojson", "numpy", "PILLOW", "opencv-python",
-            "typeguard", "imagesize", "pyproj", "pygeotile",
+            "typeguard", "imagesize", "pyproj", "pygeotile", "ndjson"
             "typing-extensions", "packaging"
         ],
     },
