@@ -14,3 +14,4 @@ typeguard
 imagesize
 azure-storage-blob
 loguru
+azure-utils>=1.3.0

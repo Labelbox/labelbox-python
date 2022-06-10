@@ -2,6 +2,7 @@ import io
 from pathlib import Path
 from typing import Optional, Tuple
 
+from azure_utils.blob import get_blob_metadata
 from loguru import logger
 from PIL import Image
 import imagesize
@@ -64,10 +65,26 @@ def get_image(
         conn = get_connection_string()
         client = create_blobstorage_client(conn, azure_storage_container)
         file_path = extract_file_path(label.data.url)
-        logger.info(f"Downloading {file_path} from blobstorage")
-        image = client.download_blob(file_path).readall()
-        img = Image.open(io.BytesIO(image))
-        h, w = img.height, img.width
+
+        logger.info(f"Checking size of image in: {file_path}, from blobstorage")
+        # Check is done on the image if height and width exists as metadata
+        image_metadata = get_blob_metadata(
+            azure_connection=conn,
+            azure_container_name=azure_storage_container,
+            azure_blob_name=file_path
+        )
+        if 'height' in image_metadata and 'width' in image_metadata:
+            # Metadata exists and h and w taken from this instead
+            logger.info(f"Using metadata {image_metadata} to extract and check image size")
+            h = image_metadata['height']
+            w = image_metadata['width']
+        else:
+            # Metadata doesn't exist so download is required
+            logger.info(f"Downloading {file_path} from blobstorage")
+            image = client.download_blob(file_path).readall()
+            img = Image.open(io.BytesIO(image))
+            h, w = img.height, img.width
+
         return CocoImage(
             id=image_id, width=w, height=h, file_name=Path(label.data.url).name.split('?')[0]
         )
