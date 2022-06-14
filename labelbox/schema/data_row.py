@@ -36,10 +36,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
     metadata_fields = Field.List(
-        DataRowMetadataField,
+        dict,
         graphql_type="DataRowCustomMetadataUpsertInput!",
         name="metadata_fields",
         result_subquery="metadataFields { schemaId name value kind }")
+    metadata = Field.List(DataRowMetadataField,
+                          graphql_type="DataRowCustomMetadataUpsertInput!",
+                          name="metadata",
+                          graphql_name="customMetadata",
+                          result_subquery="customMetadata { schemaId value }")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")

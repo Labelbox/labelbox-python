@@ -1,7 +1,5 @@
-import imghdr
 from tempfile import NamedTemporaryFile
 import uuid
-import time
 from datetime import datetime
 
 import pytest
@@ -20,6 +18,14 @@ EXPECTED_METADATA_SCHEMA_IDS = [
     SPLIT_SCHEMA_ID, TEST_SPLIT_ID, EMBEDDING_SCHEMA_ID, TEXT_SCHEMA_ID,
     CAPTURE_DT_SCHEMA_ID
 ].sort()
+
+
+@pytest.fixture
+def mdo(client):
+    mdo = client.get_data_row_metadata_ontology()
+    mdo._raw_ontology = mdo._get_ontology()
+    mdo._build_ontology()
+    yield mdo
 
 
 def make_metadata_fields():
@@ -55,12 +61,6 @@ def make_metadata_fields_dict():
         "value": embeddings
     }]
     return fields
-
-
-def filter_precomputed_embeddings(metadata_fields):
-    return list(
-        filter(lambda md: md["name"] != "precomputedImageEmbedding",
-               metadata_fields))
 
 
 def test_get_data_row(datarow, client):
@@ -235,7 +235,7 @@ def test_create_data_row_with_invalid_input(dataset, image_url):
         dataset.create_data_row(dr, row_data=image_url)
 
 
-def test_create_data_row_with_metadata(dataset, image_url):
+def test_create_data_row_with_metadata(mdo, dataset, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
@@ -249,13 +249,17 @@ def test_create_data_row_with_metadata(dataset, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    filtered_md_fields = filter_precomputed_embeddings(data_row.metadata_fields)
-    assert len(filtered_md_fields) == 4
-    assert [m["schemaId"] for m in filtered_md_fields
+    metadata_fields = data_row.metadata_fields
+    metadata = data_row.metadata
+    assert len(metadata_fields) == 4
+    assert len(metadata) == 4
+    assert [m["schemaId"] for m in metadata_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+    for m in metadata:
+        assert mdo._parse_upsert(m)
 
 
-def test_create_data_row_with_metadata_dict(dataset, image_url):
+def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
@@ -269,10 +273,14 @@ def test_create_data_row_with_metadata_dict(dataset, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
-    filtered_md_fields = filter_precomputed_embeddings(data_row.metadata_fields)
-    assert len(filtered_md_fields) == 4
-    assert [m["schemaId"] for m in filtered_md_fields
+    metadata_fields = data_row.metadata_fields
+    metadata = data_row.metadata
+    assert len(metadata_fields) == 4
+    assert len(metadata) == 4
+    assert [m["schemaId"] for m in metadata_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+    for m in metadata:
+        assert mdo._parse_upsert(m)
 
 
 def test_create_data_row_with_invalid_metadata(dataset, image_url):
@@ -284,7 +292,7 @@ def test_create_data_row_with_invalid_metadata(dataset, image_url):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
 
 
-def test_create_data_rows_with_metadata(dataset, image_url):
+def test_create_data_rows_with_metadata(mdo, dataset, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
@@ -322,11 +330,14 @@ def test_create_data_rows_with_metadata(dataset, image_url):
             requests.get(row.row_data).content
         assert row.media_attributes is not None
 
-        # Remove 'precomputedImageEmbedding' metadata if automatically added
-        filtered_md_fields = filter_precomputed_embeddings(row.metadata_fields)
-        assert len(filtered_md_fields) == 4
-        assert [m["schemaId"] for m in filtered_md_fields
+        metadata_fields = row.metadata_fields
+        metadata = row.metadata
+        assert len(metadata_fields) == 4
+        assert len(metadata) == 4
+        assert [m["schemaId"] for m in metadata_fields
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+        for m in metadata:
+            assert mdo._parse_upsert(m)
 
 
 def test_create_data_rows_with_invalid_metadata(dataset, image_url):
