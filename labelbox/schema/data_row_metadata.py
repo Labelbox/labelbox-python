@@ -232,6 +232,16 @@ class DataRowMetadataOntology:
     def parse_metadata_fields(
             self, unparsed: List[Dict[str,
                                       Dict]]) -> List[DataRowMetadataField]:
+        """ Parse metadata fields as list of `DataRowMetadataField`
+
+        >>> mdo.parse_metadata_fields([metadata_fields])
+
+        Args:
+            unparsed: An unparsed list of metadata represented as a dict containing 'schemaId' and 'value'
+
+        Returns:
+            metadata: List of `DataRowMetadataField`
+        """
         parsed = []
         if isinstance(unparsed, dict):
             raise ValueError("Pass a list of dictionaries")
