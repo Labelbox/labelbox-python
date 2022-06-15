@@ -1,5 +1,10 @@
 # Changelog
 
+# Version 3.23.2 (2022-06-15)
+## Added
+* `Data Row` object now has a new field, `metadata`, which returns metadata associated with data row as a list of `DataRowMetadataField`
+    * Note: This field is read-only. Any metadata import should be done using the existing field, `metadata_fields`
+
 # Version 3.23.1 (2022-06-08)
 ## Added
 * `Task` objects now have the following properties:
