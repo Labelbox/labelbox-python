@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 
 import pytest
@@ -282,3 +281,34 @@ def test_parse_raw_metadata(mdo):
     for row in parsed:
         for field in row.fields:
             assert mdo._parse_upsert(field)
+
+
+def test_parse_raw_metadata_fields(mdo):
+    example = [
+        {
+            'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
+            'value': 'my-new-message'
+        },
+        {
+            'schemaId': 'cko8sbczn0002h2dkdaxb5kal',
+            'value': {}
+        },
+        {
+            'schemaId': 'cko8sbscr0003h2dk04w86hof',
+            'value': {}
+        },
+        {
+            'schemaId': 'cko8sdzv70006h2dk8jg64zvb',
+            'value': '2021-07-20T21:41:14.606710Z'
+        },
+        {
+            'schemaId': FAKE_SCHEMA_ID,
+            'value': 0.5
+        },
+    ]
+
+    parsed = mdo.parse_metadata_fields(example)
+    assert len(parsed) == 4
+
+    for field in parsed:
+        assert mdo._parse_upsert(field)
