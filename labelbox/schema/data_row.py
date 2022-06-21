@@ -23,7 +23,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         created_at (datetime)
         media_attributes (dict): generated media attributes for the data row
         metadata_fields (list): metadata associated with the data row
-        metadata (list): metadata associated with the data row as list of DataRowMetadataField
+        metadata (list): metadata associated with the data row as list of DataRowMetadataField.
+            When importing Data Rows with metadata, use `metadata_fields` instead
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
