@@ -21,8 +21,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             Otherwise, it's treated as an external URL.
         updated_at (datetime)
         created_at (datetime)
-        media_attributes (dict): generated media attributes for the datarow
-        metadata_fields (list): metadata associated with the datarow
+        media_attributes (dict): generated media attributes for the data row
+        metadata_fields (list): metadata associated with the data row
+        metadata (list): metadata associated with the data row as list of DataRowMetadataField.
+            When importing Data Rows with metadata, use `metadata_fields` instead
 
         dataset (Relationship): `ToOne` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
@@ -36,10 +38,14 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     created_at = Field.DateTime("created_at")
     media_attributes = Field.Json("media_attributes")
     metadata_fields = Field.List(
-        DataRowMetadataField,
+        dict,
         graphql_type="DataRowCustomMetadataUpsertInput!",
         name="metadata_fields",
         result_subquery="metadataFields { schemaId name value kind }")
+    metadata = Field.List(DataRowMetadataField,
+                          name="metadata",
+                          graphql_name="customMetadata",
+                          result_subquery="customMetadata { schemaId value }")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")

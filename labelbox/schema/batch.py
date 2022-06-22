@@ -106,7 +106,8 @@ class Batch(DbObject):
                 reader = ndjson.reader(StringIO(response.text))
                 # TODO: Update result to parse metadataFields when resolver returns
                 return (Entity.DataRow(self.client, {
-                    **result, 'metadataFields': []
+                    **result, 'metadataFields': [],
+                    'customMetadata': []
                 }) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")

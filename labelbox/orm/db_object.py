@@ -70,6 +70,15 @@ class DbObject(Entity):
                         "field %s", value, field)
             elif isinstance(field.field_type, Field.EnumType):
                 value = field.field_type.enum_cls(value)
+            elif isinstance(field.field_type, Field.ListType):
+                if field.field_type.list_cls.__name__ == "DataRowMetadataField":
+                    mdo = self.client.get_data_row_metadata_ontology()
+                    try:
+                        value = mdo.parse_metadata_fields(value)
+                    except ValueError:
+                        logger.warning(
+                            "Failed to convert value '%s' to metadata for field %s",
+                            value, field)
             setattr(self, field.name, value)
 
     def __repr__(self):

@@ -76,17 +76,38 @@ client = Client(API_KEY)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Fetch seed data
+# MAGIC ## Create seed data
 # MAGIC
-# MAGIC Next we'll load a demo dataset into a Spark table so you can see how to easily load assets into Labelbox via URL. For simplicity, you can get a Dataset ID from Labelbox and we'll load those URLs into a Spark table for you (so you don't need to worry about finding data to get this demo notebook to run). Below we'll grab the "Example Nature Dataset" included in Labelbox trials.
+# MAGIC Next we'll load a demo dataset into a Spark table so you can see how to easily load assets into Labelbox via URLs with the Labelbox Connector for Databricks.
 # MAGIC
 # MAGIC Also, Labelbox has native support for AWS, Azure, and GCP cloud storage. You can connect Labelbox to your storage via [Delegated Access](https://docs.labelbox.com/docs/iam-delegated-access) and easily load those assets for annotation. For more information, you can watch this [video](https://youtu.be/wlWo6EmPDV4).
+# MAGIC
+# MAGIC You can also add data to Labelbox [using the Labelbox SDK directly](https://docs.labelbox.com/docs/datasets-datarows). We recommend using the SDK if you have complicated dataset creation requirements (e.g. including metadata with your dataset) which aren't handled by the Labelbox Connector for Databricks.
 
 # COMMAND ----------
 
-sample_dataset = next(
-    client.get_datasets(where=(Dataset.name == "Example Nature Dataset")))
-sample_dataset.uid
+sample_dataset_dict = {
+    "external_id": [
+        "sample1.jpg", "sample2.jpg", "sample3.jpg", "sample4.jpg",
+        "sample5.jpg", "sample6.jpg", "sample7.jpg", "sample8.jpg",
+        "sample9.jpg", "sample10.jpg"
+    ],
+    "row_data": [
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000247422.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000484849.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000215782.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_val2014_000000312024.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000486139.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000302713.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000523272.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000094514.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_val2014_000000050578.jpg",
+        "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000073727.jpg"
+    ]
+}
+
+df = pd.DataFrame.from_dict(sample_dataset_dict).to_spark(
+)  #produces our demo Spark table of datarows for Labelbox
 
 # COMMAND ----------
 
@@ -96,18 +117,13 @@ SAMPLE_TABLE = "sample_unstructured_data"
 tblList = spark.catalog.listTables()
 
 if not any([table.name == SAMPLE_TABLE for table in tblList]):
-
-    df = pd.DataFrame([{
-        "external_id": dr.external_id,
-        "row_data": dr.row_data
-    } for dr in sample_dataset.data_rows()]).to_spark()
-    df.registerTempTable(SAMPLE_TABLE)
+    df.createOrReplaceTempView(SAMPLE_TABLE)
     print(f"Registered table: {SAMPLE_TABLE}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You should now have a temporary table "sample_unstructured_data" which includes the file names and URLs for some demo images. We're going to share this table with Labelbox using the Labelbox Connector for Databricks!
+# MAGIC You should now have a temporary table "sample_unstructured_data" which includes the file names and URLs for some demo images. We're going to use this table with Labelbox using the Labelbox Connector for Databricks!
 
 # COMMAND ----------
 
@@ -167,14 +183,13 @@ project_demo.datasets.connect(demo_dataset)  # add the dataset to the queue
 ontology = OntologyBuilder()
 
 tools = [
-    Tool(tool=Tool.Type.BBOX, name="Frog"),
+    Tool(tool=Tool.Type.BBOX, name="Car"),
     Tool(tool=Tool.Type.BBOX, name="Flower"),
     Tool(tool=Tool.Type.BBOX, name="Fruit"),
     Tool(tool=Tool.Type.BBOX, name="Plant"),
     Tool(tool=Tool.Type.SEGMENTATION, name="Bird"),
     Tool(tool=Tool.Type.SEGMENTATION, name="Person"),
-    Tool(tool=Tool.Type.SEGMENTATION, name="Sleep"),
-    Tool(tool=Tool.Type.SEGMENTATION, name="Yak"),
+    Tool(tool=Tool.Type.SEGMENTATION, name="Dog"),
     Tool(tool=Tool.Type.SEGMENTATION, name="Gemstone"),
 ]
 for tool in tools:
@@ -223,7 +238,7 @@ LABEL_TABLE = "exported_labels"
 # COMMAND ----------
 
 labels_table = labelspark.get_annotations(client, project_demo.uid, spark, sc)
-labels_table.registerTempTable(LABEL_TABLE)
+labels_table.createOrReplaceTempView(LABEL_TABLE)
 display(labels_table)
 
 # COMMAND ----------
@@ -231,18 +246,18 @@ display(labels_table)
 # MAGIC %md
 # MAGIC ## Other features of Labelbox
 # MAGIC
-# MAGIC <h3> [Model Assisted Labeling](https://docs.labelbox.com/docs/model-assisted-labeling) </h3>
-# MAGIC Once you train a model on your initial set of unstructured data, you can plug that model into Labelbox to support a Model Assisted Labeling workflow. Review the outputs of your model, make corrections, and retrain with ease! You can reduce future labeling costs by >50% by leveraging model assisted labeling.
+# MAGIC [Model Assisted Labeling](https://docs.labelbox.com/docs/model-assisted-labeling)
+# MAGIC <br>Once you train a model on your initial set of unstructured data, you can plug that model into Labelbox to support a Model Assisted Labeling workflow. Review the outputs of your model, make corrections, and retrain with ease! You can reduce future labeling costs by >50% by leveraging model assisted labeling.
 # MAGIC
 # MAGIC <img src="https://files.readme.io/4c65e12-model-assisted-labeling.png" alt="MAL" width="800"/>
 # MAGIC
-# MAGIC <h3> [Catalog](https://docs.labelbox.com/docs/catalog) </h3>
-# MAGIC Once you've created datasets and annotations in Labelbox, you can easily browse your datasets and curate new ones in Catalog. Use your model embeddings to find images by similarity search.
+# MAGIC [Catalog](https://docs.labelbox.com/docs/catalog)
+# MAGIC <br>Once you've created datasets and annotations in Labelbox, you can easily browse your datasets and curate new ones in Catalog. Use your model embeddings to find images by similarity search.
 # MAGIC
 # MAGIC <img src="https://files.readme.io/14f82d4-catalog-marketing.jpg" alt="Catalog" width="800"/>
 # MAGIC
-# MAGIC <h3> [Model Diagnostics](https://labelbox.com/product/model-diagnostics) </h3>
-# MAGIC Labelbox complements your MLFlow experiment tracking with the ability to easily visualize experiment predictions at scale. Model Diagnostics helps you quickly identify areas where your model is weak so you can collect the right data and refine the next model iteration.
+# MAGIC [Model Diagnostics](https://labelbox.com/product/model-diagnostics)
+# MAGIC <br>Labelbox complements your MLFlow experiment tracking with the ability to easily visualize experiment predictions at scale. Model Diagnostics helps you quickly identify areas where your model is weak so you can collect the right data and refine the next model iteration.
 # MAGIC
 # MAGIC <img src="https://images.ctfassets.net/j20krz61k3rk/4LfIELIjpN6cou4uoFptka/20cbdc38cc075b82f126c2c733fb7082/identify-patterns-in-your-model-behavior.png" alt="Diagnostics" width="800"/>
 
@@ -255,12 +270,12 @@ display(labels_table)
 # MAGIC * Checkout our [notebook examples](https://github.com/Labelbox/labelspark/tree/master/notebooks) to follow along with interactive tutorials
 # MAGIC * view our [API reference](https://labelbox.com/docs/python-api/api-reference).
 # MAGIC
-# MAGIC <h4>Questions or comments? Reach out to us at [ecosystem+databricks@labelbox.com](mailto:ecosystem+databricks@labelbox.com)
+# MAGIC <b>Questions or comments? Reach out to us at [ecosystem+databricks@labelbox.com](mailto:ecosystem+databricks@labelbox.com)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Copyright Labelbox, Inc. 2021. The source in this notebook is provided subject to the [Labelbox Terms of Service](https://docs.labelbox.com/page/terms-of-service).  All included or referenced third party libraries are subject to the licenses set forth below.
+# MAGIC Copyright Labelbox, Inc. 2022. The source in this notebook is provided subject to the [Labelbox Terms of Service](https://docs.labelbox.com/page/terms-of-service).  All included or referenced third party libraries are subject to the licenses set forth below.
 # MAGIC
 # MAGIC |Library Name|Library license | Library License URL | Library Source URL |
 # MAGIC |---|---|---|---|

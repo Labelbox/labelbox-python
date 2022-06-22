@@ -1,6 +1,5 @@
 # type: ignore
 from datetime import datetime
-import warnings
 from copy import deepcopy
 from enum import Enum
 from itertools import chain
@@ -224,32 +223,51 @@ class DataRowMetadataOntology:
 
         for dr in unparsed:
             fields = []
-            for f in dr["fields"]:
-                if f["schemaId"] not in self.fields_by_id:
-                    # Update metadata ontology if field can't be found
-                    self.refresh_ontology()
-                    if f["schemaId"] not in self.fields_by_id:
-                        raise ValueError(
-                            f"Schema Id `{f['schemaId']}` not found in ontology"
-                        )
-
-                schema = self.fields_by_id[f["schemaId"]]
-                if schema.kind == DataRowMetadataKind.enum:
-                    continue
-                elif schema.kind == DataRowMetadataKind.option:
-                    field = DataRowMetadataField(schema_id=schema.parent,
-                                                 value=schema.uid)
-                elif schema.kind == DataRowMetadataKind.datetime:
-                    field = DataRowMetadataField(
-                        schema_id=schema.uid,
-                        value=datetime.fromisoformat(f["value"][:-1] +
-                                                     "+00:00"))
-                else:
-                    field = DataRowMetadataField(schema_id=schema.uid,
-                                                 value=f["value"])
-                fields.append(field)
+            if "fields" in dr:
+                fields = self.parse_metadata_fields(dr["fields"])
             parsed.append(
                 DataRowMetadata(data_row_id=dr["dataRowId"], fields=fields))
+        return parsed
+
+    def parse_metadata_fields(
+            self, unparsed: List[Dict[str,
+                                      Dict]]) -> List[DataRowMetadataField]:
+        """ Parse metadata fields as list of `DataRowMetadataField`
+
+        >>> mdo.parse_metadata_fields([metadata_fields])
+
+        Args:
+            unparsed: An unparsed list of metadata represented as a dict containing 'schemaId' and 'value'
+
+        Returns:
+            metadata: List of `DataRowMetadataField`
+        """
+        parsed = []
+        if isinstance(unparsed, dict):
+            raise ValueError("Pass a list of dictionaries")
+
+        for f in unparsed:
+            if f["schemaId"] not in self.fields_by_id:
+                # Update metadata ontology if field can't be found
+                self.refresh_ontology()
+                if f["schemaId"] not in self.fields_by_id:
+                    raise ValueError(
+                        f"Schema Id `{f['schemaId']}` not found in ontology")
+
+            schema = self.fields_by_id[f["schemaId"]]
+            if schema.kind == DataRowMetadataKind.enum:
+                continue
+            elif schema.kind == DataRowMetadataKind.option:
+                field = DataRowMetadataField(schema_id=schema.parent,
+                                             value=schema.uid)
+            elif schema.kind == DataRowMetadataKind.datetime:
+                field = DataRowMetadataField(
+                    schema_id=schema.uid,
+                    value=datetime.fromisoformat(f["value"][:-1] + "+00:00"))
+            else:
+                field = DataRowMetadataField(schema_id=schema.uid,
+                                             value=f["value"])
+            parsed.append(field)
         return parsed
 
     def bulk_upsert(

@@ -25,6 +25,7 @@ class Environ(Enum):
     PROD = 'prod'
     STAGING = 'staging'
     ONPREM = 'onprem'
+    CUSTOM = 'custom'
 
 
 @pytest.fixture(scope="session")
@@ -52,6 +53,12 @@ def graphql_url(environ: str) -> str:
         if hostname is None:
             raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
         return f"{hostname}/api/_gql"
+    elif environ == Environ.CUSTOM:
+        graphql_api_endpoint = os.environ.get(
+            'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
+        if graphql_api_endpoint is None:
+            raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
+        return graphql_api_endpoint
     return 'http://host.docker.internal:8080/graphql'
 
 
@@ -62,6 +69,8 @@ def testing_api_key(environ: str) -> str:
         return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
     elif environ == Environ.ONPREM:
         return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
+    elif environ == Environ.CUSTOM:
+        return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
     return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
