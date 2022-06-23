@@ -37,7 +37,7 @@ class _TypedArray(np.ndarray, Generic[DType, DShape]):
 
 
 if version.parse(np.__version__) >= version.parse('1.22.0'):
-    from numpy.typing import _GenericAlias
+    from numpy._typing import _GenericAlias
     TypedArray = _GenericAlias(_TypedArray, (Any, DType))
 else:
     TypedArray = _TypedArray[Any, DType]
