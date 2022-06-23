@@ -1,5 +1,10 @@
 # Changelog
 
+# Version 3.23.3 (2022-06-23)
+
+## Fix
+* Import for `numpy` has been adjusted to work with numpy v.1.23.0
+
 # Version 3.23.2 (2022-06-15)
 ## Added
 * `Data Row` object now has a new field, `metadata`, which returns metadata associated with data row as a list of `DataRowMetadataField`
