@@ -1,3 +1,4 @@
+from typing import Optional
 from uuid import uuid4
 from pydantic import BaseModel, validator, Field
 
@@ -32,12 +33,18 @@ class NDJsonBase(BaseModel):
 
 
 class NDAnnotation(NDJsonBase):
-    schema_id: Cuid
+    schema_id: Optional[Cuid] = None
+    name: Optional[str] = None
+
+    @validator('name', pre=True, always=True)
+    def validate_name(cls, v, values):
+        if v is None and 'schema_id' not in values:
+            raise ValueError("Name is not set. Either set name or schema_id.")
 
     @validator('schema_id', pre=True, always=True)
-    def validate_id(cls, v):
-        if v is None:
+    def validate_id(cls, v, values):
+        if v is None and 'name' not in values:
             raise ValueError(
-                "Schema ids are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
+                "Schema ids or names are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
             )
         return v

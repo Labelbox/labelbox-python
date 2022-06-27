@@ -47,7 +47,7 @@ class NDPoint(NDBaseObject):
 
     @classmethod
     def from_common(cls, point: Point,
-                    classifications: List[ClassificationAnnotation],
+                    classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDPoint":
         return cls(point={
@@ -55,6 +55,7 @@ class NDPoint(NDBaseObject):
             'y': point.y
         },
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
@@ -68,7 +69,7 @@ class NDLine(NDBaseObject):
 
     @classmethod
     def from_common(cls, line: Line,
-                    classifications: List[ClassificationAnnotation],
+                    classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDLine":
         return cls(line=[{
@@ -76,6 +77,7 @@ class NDLine(NDBaseObject):
             'y': pt.y
         } for pt in line.points],
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
@@ -89,7 +91,7 @@ class NDPolygon(NDBaseObject):
 
     @classmethod
     def from_common(cls, polygon: Polygon,
-                    classifications: List[ClassificationAnnotation],
+                    classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDPolygon":
         return cls(polygon=[{
@@ -97,6 +99,7 @@ class NDPolygon(NDBaseObject):
             'y': pt.y
         } for pt in polygon.points],
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
@@ -112,7 +115,7 @@ class NDRectangle(NDBaseObject):
 
     @classmethod
     def from_common(cls, rectangle: Rectangle,
-                    classifications: List[ClassificationAnnotation],
+                    classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDRectangle":
         return cls(bbox=Bbox(top=rectangle.start.y,
@@ -120,6 +123,7 @@ class NDRectangle(NDBaseObject):
                              height=rectangle.end.y - rectangle.start.y,
                              width=rectangle.end.x - rectangle.start.x),
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
@@ -128,10 +132,12 @@ class NDRectangle(NDBaseObject):
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
 
-    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
+    def to_common(self, name: str,
+                  feature_schema_id: Cuid) -> VideoObjectAnnotation:
         return VideoObjectAnnotation(
             frame=self.frame,
             keyframe=True,
+            name=name,
             feature_schema_id=feature_schema_id,
             value=Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
                             end=Point(x=self.bbox.left + self.bbox.width,
@@ -156,9 +162,10 @@ class NDSegment(BaseModel):
         result = {Rectangle: NDFrameRectangle}.get(type(segment[0].value))
         return result
 
-    def to_common(self, feature_schema_id: Cuid):
+    def to_common(self, name: str, feature_schema_id: Cuid):
         return [
-            keyframe.to_common(feature_schema_id) for keyframe in self.keyframes
+            keyframe.to_common(name=name, feature_schema_id=feature_schema_id)
+            for keyframe in self.keyframes
         ]
 
     @classmethod
@@ -175,21 +182,25 @@ class NDSegment(BaseModel):
 class NDSegments(NDBaseObject):
     segments: List[NDSegment]
 
-    def to_common(self, feature_schema_id: Cuid):
+    def to_common(self, name: str, feature_schema_id: Cuid):
         result = []
         for segment in self.segments:
-            result.extend(NDSegment.to_common(segment, feature_schema_id))
+            result.extend(
+                NDSegment.to_common(segment,
+                                    name=name,
+                                    feature_schema_id=feature_schema_id))
         return result
 
     @classmethod
     def from_common(cls, segments: List[VideoObjectAnnotation], data: VideoData,
-                    feature_schema_id: Cuid, extra: Dict[str,
-                                                         Any]) -> "NDSegments":
+                    name: str, feature_schema_id: Cuid,
+                    extra: Dict[str, Any]) -> "NDSegments":
 
         segments = [NDSegment.from_common(segment) for segment in segments]
 
         return cls(segments=segments,
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'))
 
@@ -222,7 +233,7 @@ class NDMask(NDBaseObject):
 
     @classmethod
     def from_common(cls, mask: Mask,
-                    classifications: List[ClassificationAnnotation],
+                    classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDMask":
 
@@ -237,6 +248,7 @@ class NDMask(NDBaseObject):
 
         return cls(mask=lbv1_mask,
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
@@ -255,7 +267,7 @@ class NDTextEntity(NDBaseObject):
 
     @classmethod
     def from_common(cls, text_entity: TextEntity,
-                    classifications: List[ClassificationAnnotation],
+                    classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
                     data: Union[ImageData, TextData]) -> "NDTextEntity":
         return cls(location=Location(
@@ -263,6 +275,7 @@ class NDTextEntity(NDBaseObject):
             end=text_entity.end,
         ),
                    dataRow=DataRow(id=data.uid),
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
@@ -278,6 +291,7 @@ class NDObject:
             for annot in annotation.classifications
         ]
         return ObjectAnnotation(value=common_annotation,
+                                name=annotation.name,
                                 feature_schema_id=annotation.schema_id,
                                 classifications=classifications,
                                 extra={'uuid': annotation.uuid})
@@ -295,6 +309,7 @@ class NDObject:
             return obj.from_common(
                 annotation,
                 data,
+                name=annotation[0][0].name,
                 feature_schema_id=annotation[0][0].feature_schema_id,
                 extra=annotation[0][0].extra)
 
@@ -302,7 +317,7 @@ class NDObject:
             NDSubclassification.from_common(annot)
             for annot in annotation.classifications
         ]
-        return obj.from_common(annotation.value, subclasses,
+        return obj.from_common(annotation.value, subclasses, annotation.name,
                                annotation.feature_schema_id, annotation.extra,
                                data)
 

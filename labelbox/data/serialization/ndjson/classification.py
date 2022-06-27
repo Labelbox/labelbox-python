@@ -11,13 +11,19 @@ from .base import NDAnnotation
 
 
 class NDFeature(BaseModel):
-    schema_id: Cuid
+    schema_id: Optional[Cuid] = None
+    name: Optional[str] = None
+
+    @validator('name', pre=True, always=True)
+    def validate_name(cls, v, values):
+        if v is None and 'schema_id' not in values:
+            raise ValueError("Name is not set. Either set name or schema_id.")
 
     @validator('schema_id', pre=True, always=True)
-    def validate_id(cls, v):
-        if v is None:
+    def validate_id(cls, v, values):
+        if v is None and 'name' not in values:
             raise ValueError(
-                "Schema ids are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
+                "Schema ids or names are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
             )
         return v
 
@@ -50,9 +56,9 @@ class NDTextSubclass(NDFeature):
         return Text(answer=self.answer)
 
     @classmethod
-    def from_common(cls, text: Text,
+    def from_common(cls, text: Text, name: str,
                     feature_schema_id: Cuid) -> "NDTextSubclass":
-        return cls(answer=text.answer, schema_id=feature_schema_id)
+        return cls(answer=text.answer, name=name, schema_id=feature_schema_id)
 
 
 class NDChecklistSubclass(NDFeature):
@@ -60,15 +66,16 @@ class NDChecklistSubclass(NDFeature):
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[
-            ClassificationAnswer(feature_schema_id=answer.schema_id)
+            ClassificationAnswer(name=answer.name,
+                                 feature_schema_id=answer.schema_id)
             for answer in self.answer
         ])
 
     @classmethod
-    def from_common(cls, checklist: Checklist,
+    def from_common(cls, checklist: Checklist, name: str,
                     feature_schema_id: Cuid) -> "NDChecklistSubclass":
         return cls(answer=[
-            NDFeature(schema_id=answer.feature_schema_id)
+            NDFeature(name=name, schema_id=answer.feature_schema_id)
             for answer in checklist.answer
         ],
                    schema_id=feature_schema_id)
@@ -85,12 +92,14 @@ class NDRadioSubclass(NDFeature):
 
     def to_common(self) -> Radio:
         return Radio(answer=ClassificationAnswer(
-            feature_schema_id=self.answer.schema_id))
+            name=self.answer.name, feature_schema_id=self.answer.schema_id))
 
     @classmethod
-    def from_common(cls, radio: Radio,
+    def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
-        return cls(answer=NDFeature(schema_id=radio.answer.feature_schema_id),
+        return cls(answer=NDFeature(name=radio.answer.name,
+                                    schema_id=radio.answer.feature_schema_id),
+                   name=name,
                    schema_id=feature_schema_id)
 
 
@@ -100,12 +109,13 @@ class NDRadioSubclass(NDFeature):
 class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
-    def from_common(cls, text: Text, feature_schema_id: Cuid,
+    def from_common(cls, text: Text, name: str, feature_schema_id: Cuid,
                     extra: Dict[str, Any], data: Union[TextData,
                                                        ImageData]) -> "NDText":
         return cls(
             answer=text.answer,
             data_row={'id': data.uid},
+            name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
         )
@@ -115,14 +125,15 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
     @classmethod
     def from_common(
-            cls, checklist: Checklist, feature_schema_id: Cuid,
+            cls, checklist: Checklist, name: str, feature_schema_id: Cuid,
             extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                ImageData]) -> "NDChecklist":
         return cls(answer=[
-            NDFeature(schema_id=answer.feature_schema_id)
+            NDFeature(name=name, schema_id=answer.feature_schema_id)
             for answer in checklist.answer
         ],
                    data_row={'id': data.uid},
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    frames=extra.get('frames'))
@@ -131,11 +142,12 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls, radio: Radio, feature_schema_id: Cuid,
+    def from_common(cls, radio: Radio, name: str, feature_schema_id: Cuid,
                     extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                        ImageData]) -> "NDRadio":
         return cls(answer=NDFeature(schema_id=radio.answer.feature_schema_id),
                    data_row={'id': data.uid},
+                   name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    frames=extra.get('frames'))
@@ -159,6 +171,7 @@ class NDSubclassification:
     def to_common(
             annotation: "NDClassificationType") -> ClassificationAnnotation:
         return ClassificationAnnotation(value=annotation.to_common(),
+                                        name=annotation.name,
                                         feature_schema_id=annotation.schema_id)
 
     @staticmethod
@@ -182,6 +195,7 @@ class NDClassification:
     ) -> Union[ClassificationAnnotation, VideoClassificationAnnotation]:
         common = ClassificationAnnotation(
             value=annotation.to_common(),
+            name=annotation.name,
             feature_schema_id=annotation.schema_id,
             extra={'uuid': annotation.uuid})
         if getattr(annotation, 'frames', None) is None:
@@ -204,7 +218,7 @@ class NDClassification:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
-        return classify_obj.from_common(annotation.value,
+        return classify_obj.from_common(annotation.value, annotation.name,
                                         annotation.feature_schema_id,
                                         annotation.extra, data)
 
