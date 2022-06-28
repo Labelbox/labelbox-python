@@ -294,7 +294,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 for key in message.keys():
                     if not key in accepted_message_keys:
                         raise KeyError(
-                            f"Invalid {key} key found! Accepted keys in messages list is ")
+                            f"Invalid {key} key found! Accepted keys in messages list is {accepted_message_keys}")
 
             if conversational_data and not isinstance(conversational_data, list):
                 raise ValueError(
@@ -348,19 +348,22 @@ class Dataset(DbObject, Updateable, Deletable):
 
             if "conversationalData" in item:
                 messages = item.pop("conversationalData")
+                version = item.pop("version")
+                type = item.pop("type")
+                if "externalId" in item:
+                    external_id = item.pop("externalId")
+                    item["external_id"] = external_id
                 validate_conversational_data(messages)
-                validate_attachments(item)
                 one_conversation = \
-                {
-                    "type": item["type"],
-                    "version": item["version"],
-                    "messages": messages
-                }
+                    {
+                        "type": type,
+                        "version": version,
+                        "messages": messages
+                    }
                 conversationUrl = self.client.upload_data(json.dumps(one_conversation),
                                                           content_type="application/json",
                                                           filename="conversational_data.json")
-                item["conversationalUrl"] = conversationUrl
-                return item
+                item["row_data"] = conversationUrl
 
             # Convert all payload variations into the same dict format
             item = format_row(item)
