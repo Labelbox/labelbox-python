@@ -39,4 +39,4 @@ class NDJsonConverter:
             A generator for accessing the ndjson representation of the data
         """
         for example in NDLabel.from_common(labels):
-            yield example.dict(by_alias=True)
+            yield example.dict(by_alias=True, exclude_none=True)
