@@ -48,7 +48,7 @@ def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
-        return 'https://staging-api.labelbox.com/graphql'
+        return 'https://api.lb-stage.xyz/graphql'
     elif environ == Environ.ONPREM:
         hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
         if hostname is None:
@@ -196,7 +196,7 @@ def sample_video() -> str:
 def sample_bulk_conversation() -> list:
     path_to_conversation = 'tests/integration/media/bulk_conversation.json'
     assert os.path.exists(path_to_conversation)
-    # return path_to_conversation
+
     
     with open(path_to_conversation) as json_file:
         conversations = json.load(json_file)
