@@ -226,6 +226,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     {DataRow.row_data:"/path/to/file1.jpg"},
         >>>     "path/to/file2.jpg",
         >>>     {"tileLayerUrl" : "http://", ...}
+        >>>     {"conversation" : "{}", ...}
         >>>     ])
 
         For an example showing how to upload tiled data_rows see the following notebook:
@@ -280,6 +281,29 @@ class Dataset(DbObject, Updateable, Deletable):
                     )
             return attachments
 
+        def validate_conversational_data(conversational_data: list) -> None:
+            """
+            Checks each conversational message for keys expected as per https://docs.labelbox.com/reference/text-conversational#sample-conversational-json
+
+            Args:
+                conversational_data (list): list of dictionaries.
+            """
+            def check_message_keys(message):
+                accepted_message_keys = set([
+                    "messageId", "timestampUsec", "content", "user", "align", "canLabel"])
+                for key in message.keys():
+                    if not key in accepted_message_keys:
+                        raise KeyError(
+                            f"Invalid {key} key found! Accepted keys in messages list is ")
+
+            if conversational_data and not isinstance(conversational_data, list):
+                raise ValueError(
+                    f"conversationalData must be a list. Found {type(conversational_data)}"
+                )
+
+            [check_message_keys(message)
+                for message in conversational_data]
+
         def parse_metadata_fields(item):
             metadata_fields = item.get('metadata_fields')
             if metadata_fields:
@@ -321,6 +345,23 @@ class Dataset(DbObject, Updateable, Deletable):
             if "tileLayerUrl" in item:
                 validate_attachments(item)
                 return item
+
+            if "conversationalData" in item:
+                messages = item.pop("conversationalData")
+                validate_conversational_data(messages)
+                validate_attachments(item)
+                one_conversation = \
+                {
+                    "type": item["type"],
+                    "version": item["version"],
+                    "messages": messages
+                }
+                conversationUrl = self.client.upload_data(json.dumps(one_conversation),
+                                                          content_type="application/json",
+                                                          filename="conversational_data.json")
+                item["conversationalUrl"] = conversationUrl
+                return item
+
             # Convert all payload variations into the same dict format
             item = format_row(item)
             # Make sure required keys exist (and there are no extra keys)
