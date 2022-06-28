@@ -48,3 +48,11 @@ class NDAnnotation(NDJsonBase):
                 "Schema ids or names are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
             )
         return v
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if res.name is None:
+            res.pop('name')
+        if res.schema_id is None:
+            res.pop('schema_id')
+        return res

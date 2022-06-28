@@ -27,6 +27,14 @@ class NDFeature(BaseModel):
             )
         return v
 
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if res.name is None:
+            res.pop('name')
+        if res.schema_id is None:
+            res.pop('schema_id')
+        return res
+
     class Config:
         allow_population_by_field_name = True
         alias_generator = camel_case

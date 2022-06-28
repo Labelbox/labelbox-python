@@ -24,3 +24,11 @@ class FeatureSchema(BaseModel):
                 "Must set either feature_schema_id or name for all feature schemas"
             )
         return values
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if res.name is None:
+            res.pop('name')
+        if res.feature_schema_id is None:
+            res.pop('feature_schema_id')
+        return res
