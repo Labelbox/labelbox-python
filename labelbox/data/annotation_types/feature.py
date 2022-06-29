@@ -27,8 +27,8 @@ class FeatureSchema(BaseModel):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if res.name is None:
+        if res['name'] is None:
             res.pop('name')
-        if res.feature_schema_id is None:
+        if res['feature_schema_id'] is None:
             res.pop('feature_schema_id')
         return res
