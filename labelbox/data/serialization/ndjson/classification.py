@@ -29,10 +29,10 @@ class NDFeature(BaseModel):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if res['name'] is None:
+        if self.name is None:
             res.pop('name')
-        if res['schema_id'] is None:
-            res.pop('schema_id')
+        if self.schema_id is None:
+            res.pop('schemaId')
         return res
 
     class Config:
