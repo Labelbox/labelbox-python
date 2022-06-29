@@ -29,6 +29,8 @@ FAKE_NUMBER_FIELD = {
 @pytest.fixture
 def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
+    for schema in mdo.custom_fields:
+        mdo.delete_schema(schema.name)
     mdo._raw_ontology = mdo._get_ontology()
     mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
     mdo._build_ontology()
@@ -76,7 +78,7 @@ def test_export_empty_metadata(configured_project_with_label):
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    assert "number" in mdo.custom_by_name
+    assert len(mdo.custom_fields) == 1
 
     split = mdo.reserved_by_name["split"]["train"]
 
