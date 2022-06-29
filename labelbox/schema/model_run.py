@@ -92,6 +92,7 @@ class ModelRun(DbObject):
 
     def _wait_until_done(self, status_fn, timeout_seconds=60, sleep_time=5):
         # Do not use this function outside of the scope of upsert_data_rows or upsert_labels. It could change.
+        original_timeout = timeout_seconds
         while True:
             res = status_fn()
             if res['status'] == 'COMPLETE':
@@ -102,7 +103,7 @@ class ModelRun(DbObject):
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(
-                    f"Unable to complete import within {timeout_seconds} seconds."
+                    f"Unable to complete import within {original_timeout} seconds."
                 )
 
             time.sleep(sleep_time)
@@ -179,6 +180,39 @@ class ModelRun(DbObject):
             model_run_id_param: self.uid,
             data_row_ids_param: data_row_ids
         })
+
+    @experimental
+    def assign_data_rows_to_split(self,
+                                  data_row_ids,
+                                  split,
+                                  timeout_seconds=60):
+        valid_splits = ["TRAINING", "TEST", "VALIDATION"]
+        if split not in valid_splits:
+            raise ValueError(
+                f"split must be one of : `{valid_splits}`. Found : `{split}`")
+
+        task_id = self.client.execute(
+            """mutation assignDataSplitPyApi($modelRunId: ID!, $data: CreateAssignDataRowsToDataSplitTaskInput!){
+                  createAssignDataRowsToDataSplitTask(modelRun : {id: $modelRunId}, data: $data)}
+            """, {
+                'modelRunId': self.uid,
+                'data': {
+                    'assignments': [{
+                        'split': split,
+                        'dataRowIds': data_row_ids
+                    }]
+                }
+            },
+            experimental=True)['createAssignDataRowsToDataSplitTask']
+
+        status_query_str = """query assignDataRowsToDataSplitTaskStatusPyApi($id: ID!){
+            assignDataRowsToDataSplitTaskStatus(where: {id : $id}){status errorMessage}}
+            """
+
+        return self._wait_until_done(lambda: self.client.execute(
+            status_query_str, {'id': task_id}, experimental=True)[
+                'assignDataRowsToDataSplitTaskStatus'],
+                                     timeout_seconds=timeout_seconds)
 
     @experimental
     def update_status(self,
@@ -264,6 +298,7 @@ class ModelRun(DbObject):
 class ModelRunDataRow(DbObject):
     label_id = Field.String("label_id")
     model_run_id = Field.String("model_run_id")
+    data_split = Field.String("data_split")
     data_row = Relationship.ToOne("DataRow", False, cache=True)
 
     def __init__(self, client, model_id, *args, **kwargs):

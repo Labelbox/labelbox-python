@@ -2,6 +2,8 @@ import time
 import os
 import pytest
 
+from collections import Counter
+
 
 def test_model_run(client, configured_project_with_label, rand_gen):
     project, _, _, label = configured_project_with_label
@@ -119,3 +121,24 @@ def test_model_run_status(model_run_with_model_run_data_rows):
     assert model_run_status['status'] == status
     assert model_run_status['metadata'] == {**metadata, **extra_metadata}
     assert model_run_status['errorMessage'] == errorMessage
+
+
+def test_model_run_split_assignment(model_run, dataset, image_url):
+    n_data_rows = 10
+    data_rows = dataset.create_data_rows([{
+        "row_data": image_url
+    } for _ in range(n_data_rows)])
+    data_row_ids = [data_row['id'] for data_row in data_rows.result]
+
+    model_run.upsert_data_rows(data_row_ids)
+
+    for split in ["TRAINING", "TEST", "VALIDATION"]:
+        model_run.assign_data_rows_to_split(data_row_ids[:(n_data_rows // 2)],
+                                            split)
+        counts = Counter()
+        for data_row in model_run.model_run_data_rows():
+            counts[data_row.data_split] += 1
+        assert counts[split] == n_data_rows // 2
+
+    with pytest.raises(ValueError):
+        model_run.assign_data_rows_to_split(data_row_ids, "INVALID SPLIT")
