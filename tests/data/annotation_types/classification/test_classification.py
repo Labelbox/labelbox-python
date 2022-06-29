@@ -92,7 +92,6 @@ def test_radio():
     assert classification.dict() == {
         'answer': {
             'name': answer.name,
-            'feature_schema_id': None,
             'extra': {}
         }
     }
@@ -107,7 +106,6 @@ def test_radio():
         'value': {
             'answer': {
                 'name': answer.name,
-                'feature_schema_id': None,
                 'extra': {}
             }
         }
@@ -144,7 +142,6 @@ def test_checklist():
         'value': {
             'answer': [{
                 'name': answer.name,
-                'feature_schema_id': None,
                 'extra': {}
             }]
         },
