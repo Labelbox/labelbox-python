@@ -1,10 +1,11 @@
 from datetime import datetime
 
 import pytest
+import uuid
 
 from labelbox import DataRow, Dataset
-from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DeleteDataRowMetadata, \
-    DataRowMetadataOntology
+from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DeleteDataRowMetadata, \
+    DataRowMetadataOntology, _parse_metadata_schema
 
 INVALID_SCHEMA_ID = "1" * 25
 FAKE_SCHEMA_ID = "0" * 25
@@ -75,7 +76,7 @@ def test_export_empty_metadata(configured_project_with_label):
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    assert len(mdo.custom_fields) == 1
+    assert "number" in mdo.custom_by_name
 
     split = mdo.reserved_by_name["split"]["train"]
 
@@ -312,3 +313,77 @@ def test_parse_raw_metadata_fields(mdo):
 
     for field in parsed:
         assert mdo._parse_upsert(field)
+
+
+def test_parse_metadata_schema():
+    unparsed = {
+        'id':
+            'cl467a4ec0046076g7s9yheoa',
+        'name':
+            'enum metadata',
+        'kind':
+            'CustomMetadataEnum',
+        'options': [{
+            'id': 'cl467a4ec0047076ggjneeruy',
+            'name': 'option1',
+            'kind': 'CustomMetadataEnumOption'
+        }, {
+            'id': 'cl4qa31u0009e078p5m280jer',
+            'name': 'option2',
+            'kind': 'CustomMetadataEnumOption'
+        }]
+    }
+    parsed = _parse_metadata_schema(unparsed)
+    assert parsed.uid == 'cl467a4ec0046076g7s9yheoa'
+    assert parsed.name == 'enum metadata'
+    assert parsed.kind == DataRowMetadataKind.enum
+    assert len(parsed.options) == 2
+    assert parsed.options[0].uid == 'cl467a4ec0047076ggjneeruy'
+    assert parsed.options[0].kind == DataRowMetadataKind.option
+
+
+def test_create_schema(mdo):
+    metadata_name = str(uuid.uuid4())
+    created_schema = mdo.create_schema(metadata_name, DataRowMetadataKind.enum,
+                                       ["option 1", "option 2"])
+    assert created_schema.name == metadata_name
+    assert created_schema.kind == DataRowMetadataKind.enum
+    assert len(created_schema.options) == 2
+    assert created_schema.options[0].name == "option 1"
+    mdo.delete_schema(metadata_name)
+
+
+def test_update_schema(mdo):
+    metadata_name = str(uuid.uuid4())
+    created_schema = mdo.create_schema(metadata_name, DataRowMetadataKind.enum,
+                                       ["option 1", "option 2"])
+    updated_schema = mdo.update_schema(metadata_name,
+                                       f"{metadata_name}_updated")
+    assert updated_schema.name == f"{metadata_name}_updated"
+    assert updated_schema.uid == created_schema.uid
+    assert updated_schema.kind == DataRowMetadataKind.enum
+    mdo.delete_schema(f"{metadata_name}_updated")
+
+
+def test_update_enum_options(mdo):
+    metadata_name = str(uuid.uuid4())
+    created_schema = mdo.create_schema(metadata_name, DataRowMetadataKind.enum,
+                                       ["option 1", "option 2"])
+    updated_schema = mdo.update_enum_option(metadata_name, "option 1",
+                                            "option 3")
+    assert updated_schema.name == metadata_name
+    assert updated_schema.uid == created_schema.uid
+    assert updated_schema.kind == DataRowMetadataKind.enum
+    assert updated_schema.options[0].uid == created_schema.options[0].uid
+    assert updated_schema.options[0].name == "option 3"
+    mdo.delete_schema(metadata_name)
+
+
+def test_delete_schema(mdo):
+    metadata_name = str(uuid.uuid4())
+    created_schema = mdo.create_schema(metadata_name,
+                                       DataRowMetadataKind.string)
+    status = mdo.delete_schema(created_schema.name)
+    mdo.refresh_ontology()
+    assert status
+    assert metadata_name not in mdo.custom_by_name
