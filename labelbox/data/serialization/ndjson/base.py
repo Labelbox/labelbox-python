@@ -51,8 +51,8 @@ class NDAnnotation(NDJsonBase):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if self.name is None:
+        if res['name'] is None:
             res.pop('name')
-        if self.schema_id is None:
+        if res['schemaId'] is None:
             res.pop('schemaId')
         return res
