@@ -135,9 +135,9 @@ class DataRowMetadataOntology:
             f for f in self.fields if f.reserved
         ]
         self.reserved_by_id = self._make_id_index(self.reserved_fields)
-        self.reserved_by_name: Dict[
-            str,
-            DataRowMetadataSchema] = self._make_name_index(self.reserved_fields)
+        self.reserved_by_name: Dict[str, Union[DataRowMetadataSchema, Dict[
+            str, DataRowMetadataSchema]]] = self._make_name_index(
+                self.reserved_fields)
         self.reserved_by_name_normalized: Dict[
             str, DataRowMetadataSchema] = self._make_normalized_name_index(
                 self.reserved_fields)
@@ -147,15 +147,18 @@ class DataRowMetadataOntology:
             f for f in self.fields if not f.reserved
         ]
         self.custom_by_id = self._make_id_index(self.custom_fields)
-        self.custom_by_name: Dict[
+        self.custom_by_name: Dict[str, Union[DataRowMetadataSchema, Dict[
             str,
-            DataRowMetadataSchema] = self._make_name_index(self.custom_fields)
+            DataRowMetadataSchema]]] = self._make_name_index(self.custom_fields)
         self.custom_by_name_normalized: Dict[
             str, DataRowMetadataSchema] = self._make_normalized_name_index(
                 self.custom_fields)
 
     @staticmethod
-    def _make_name_index(fields: List[DataRowMetadataSchema]):
+    def _make_name_index(
+        fields: List[DataRowMetadataSchema]
+    ) -> Dict[str, Union[DataRowMetadataSchema, Dict[str,
+                                                     DataRowMetadataSchema]]]:
         index = {}
         for f in fields:
             if f.options:
@@ -167,7 +170,9 @@ class DataRowMetadataOntology:
         return index
 
     @staticmethod
-    def _make_normalized_name_index(fields: List[DataRowMetadataSchema]):
+    def _make_normalized_name_index(
+        fields: List[DataRowMetadataSchema]
+    ) -> Dict[str, DataRowMetadataSchema]:
         index = {}
         for f in fields:
             index[f.name] = f
@@ -226,13 +231,16 @@ class DataRowMetadataOntology:
         return fields
 
     def refresh_ontology(self):
+        """ Update the `DataRowMetadataOntology` instance with the latest 
+            metadata ontology schemas
+        """
         self._raw_ontology = self._get_ontology()
         self._build_ontology()
 
     def create_schema(self,
                       name: str,
                       kind: DataRowMetadataKind,
-                      options: List[str] = None):
+                      options: List[str] = None) -> DataRowMetadataSchema:
         """ Create metadata schema
 
         >>> mdo.create_schema(name, kind, options)
@@ -267,7 +275,7 @@ class DataRowMetadataOntology:
 
         return self._upsert_schema(upsert_schema)
 
-    def update_schema(self, name: str, new_name: str):
+    def update_schema(self, name: str, new_name: str) -> DataRowMetadataSchema:
         """ Update metadata schema
 
         >>> mdo.update_schema(name, new_name)
@@ -298,7 +306,8 @@ class DataRowMetadataOntology:
 
         return self._upsert_schema(upsert_schema)
 
-    def update_enum_option(self, name: str, option: str, new_option: str):
+    def update_enum_option(self, name: str, option: str,
+                           new_option: str) -> DataRowMetadataSchema:
         """ Update Enum metadata schema option
 
         >>> mdo.update_enum_option(name, option, new_option)
@@ -334,7 +343,7 @@ class DataRowMetadataOntology:
 
         return self._upsert_schema(upsert_schema)
 
-    def delete_schema(self, name: str):
+    def delete_schema(self, name: str) -> bool:
         """ Delete metadata schema
 
         >>> mdo.delete_schema(name)
@@ -579,9 +588,18 @@ class DataRowMetadataOntology:
                                  data_row_ids,
                                  batch_size=self._batch_size)
 
-    # Convert metadata to DataRowMetadataField objects, parse all fields
-    # and return a dictionary of metadata fields for upsert
-    def parse_upsert_metadata(self, metadata_fields):
+    def parse_upsert_metadata(self, metadata_fields) -> List[Dict[str, Any]]:
+        """ Converts either `DataRowMetadataField` or a dictionary representation
+            of `DataRowMetadataField` into a validated, flattened dictionary of
+            metadata fields that are used to create data row metadata. Used
+            internally in `Dataset.create_data_rows()`
+
+        Args:
+            metadata_fields: List of `DataRowMetadataField` or a dictionary representation
+                of `DataRowMetadataField`
+        Returns:
+            List of dictionaries representing a flattened view of metadata fields
+        """
 
         def _convert_metadata_field(metadata_field):
             if isinstance(metadata_field, DataRowMetadataField):
@@ -606,7 +624,9 @@ class DataRowMetadataOntology:
             chain.from_iterable(self._parse_upsert(m) for m in metadata_fields))
         return [m.dict(by_alias=True) for m in parsed_metadata]
 
-    def _upsert_schema(self, upsert_schema: _UpsertCustomMetadataSchemaInput):
+    def _upsert_schema(
+        self, upsert_schema: _UpsertCustomMetadataSchemaInput
+    ) -> DataRowMetadataSchema:
         query = """mutation UpsertCustomMetadataSchemaPyApi($data: UpsertCustomMetadataSchemaInput!) {
                 upsertCustomMetadataSchema(data: $data){
                     id
