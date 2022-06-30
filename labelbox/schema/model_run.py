@@ -5,6 +5,7 @@ import time
 import logging
 import requests
 import ndjson
+from enum import Enum
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
@@ -17,12 +18,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class DataSplit(Enum):
+    TRAINING = "TRAINING"
+    TEST = "TEST"
+    VALIDATION = "VALIDATION"
+    UNASSIGNED = "UNASSIGNED"
+
+
 class ModelRun(DbObject):
     name = Field.String("name")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
+
+    class Status(Enum):
+        EXPORTING_DATA = "EXPORTING_DATA"
+        PREPARING_DATA = "PREPARING_DATA"
+        TRAINING_MODEL = "TRAINING_MODEL"
+        COMPLETE = "COMPLETE"
+        FAILED = "FAILED"
 
     def upsert_labels(self, label_ids, timeout_seconds=60):
         """ Adds data rows and labels to a model run
@@ -90,7 +105,7 @@ class ModelRun(DbObject):
             }})['MEADataRowRegistrationTaskStatus'],
                                      timeout_seconds=timeout_seconds)
 
-    def _wait_until_done(self, status_fn, timeout_seconds=60, sleep_time=5):
+    def _wait_until_done(self, status_fn, timeout_seconds=120, sleep_time=5):
         # Do not use this function outside of the scope of upsert_data_rows or upsert_labels. It could change.
         original_timeout = timeout_seconds
         while True:
@@ -105,7 +120,6 @@ class ModelRun(DbObject):
                 raise TimeoutError(
                     f"Unable to complete import within {original_timeout} seconds."
                 )
-
             time.sleep(sleep_time)
 
     def add_predictions(
@@ -162,7 +176,7 @@ class ModelRun(DbObject):
             deleteModelRuns(where: {ids: [$%s]})}""" % (ids_param, ids_param)
         self.client.execute(query_str, {ids_param: str(self.uid)})
 
-    def delete_model_run_data_rows(self, data_row_ids):
+    def delete_model_run_data_rows(self, data_row_ids: List[str]):
         """ Deletes data rows from model runs.
 
         Args:
@@ -183,11 +197,20 @@ class ModelRun(DbObject):
 
     @experimental
     def assign_data_rows_to_split(self,
-                                  data_row_ids,
-                                  split,
+                                  data_row_ids: List[str],
+                                  split: Union[DataSplit, str],
                                   timeout_seconds=60):
-        valid_splits = ["TRAINING", "TEST", "VALIDATION"]
-        if split not in valid_splits:
+
+        split_value = split.value if isinstance(split, DataSplit) else split
+
+        if split_value == DataSplit.UNASSIGNED.value:
+            raise ValueError(
+                f"Cannot assign split value of `{DataSplit.UNASSIGNED.value}`.")
+
+        valid_splits = filter(lambda name: name != DataSplit.UNASSIGNED.value,
+                              DataSplit._member_names_)
+
+        if split_value not in valid_splits:
             raise ValueError(
                 f"split must be one of : `{valid_splits}`. Found : `{split}`")
 
@@ -198,7 +221,7 @@ class ModelRun(DbObject):
                 'modelRunId': self.uid,
                 'data': {
                     'assignments': [{
-                        'split': split,
+                        'split': split_value,
                         'dataRowIds': data_row_ids
                     }]
                 }
@@ -216,20 +239,18 @@ class ModelRun(DbObject):
 
     @experimental
     def update_status(self,
-                      status: str,
+                      status: Union[str, "ModelRun.Status"],
                       metadata: Optional[Dict[str, str]] = None,
                       error_message: Optional[str] = None):
 
-        valid_statuses = [
-            "EXPORTING_DATA", "PREPARING_DATA", "TRAINING_MODEL", "COMPLETE",
-            "FAILED"
-        ]
-        if status not in valid_statuses:
+        status_value = status.value if isinstance(status,
+                                                  ModelRun.Status) else status
+        if status_value not in ModelRun.Status._member_names_:
             raise ValueError(
-                f"Status must be one of : `{valid_statuses}`. Found : `{status}`"
+                f"Status must be one of : `{ModelRun.Status._member_names_}`. Found : `{status_value}`"
             )
 
-        data: Dict[str, Any] = {'status': status}
+        data: Dict[str, Any] = {'status': status_value}
         if error_message:
             data['errorMessage'] = error_message
 
@@ -298,7 +319,7 @@ class ModelRun(DbObject):
 class ModelRunDataRow(DbObject):
     label_id = Field.String("label_id")
     model_run_id = Field.String("model_run_id")
-    data_split = Field.String("data_split")
+    data_split = Field.Enum(DataSplit, "data_split")
     data_row = Relationship.ToOne("DataRow", False, cache=True)
 
     def __init__(self, client, model_id, *args, **kwargs):
