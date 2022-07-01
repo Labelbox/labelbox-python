@@ -4,6 +4,8 @@ from labelbox import Project
 from labelbox.exceptions import InvalidQueryError
 
 
+# Avoid assertions using equality to prevent intermittent failures due to
+# other builds simultaneously adding projects to test org
 def test_where(client):
     p_a = client.create_project(name="a")
     p_b = client.create_project(name="b")
@@ -17,13 +19,19 @@ def test_where(client):
     def get(where=None):
         return _get(client.get_projects, where)
 
-    assert get() == {p_a.uid, p_b.uid, p_c.uid}
-    assert get(Project.name == "a") == {p_a.uid}
-    assert get(Project.name != "b") == {p_a.uid, p_c.uid}
-    assert get(Project.name > "b") == {p_c.uid}
-    assert get(Project.name < "b") == {p_a.uid}
-    assert get(Project.name >= "b") == {p_b.uid, p_c.uid}
-    assert get(Project.name <= "b") == {p_a.uid, p_b.uid}
+    assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
+    e_a = get(Project.name == "a")
+    assert p_a.uid in e_a and p_b not in e_a and p_c not in e_a
+    not_b = get(Project.name != "b")
+    assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
+    gt_b = get(Project.name > "b")
+    assert p_c.uid in gt_b and p_a.uid not in gt_b and p_b.uid not in gt_b
+    lt_b = get(Project.name < "b")
+    assert p_a.uid in lt_b and p_b.uid not in lt_b and p_c.uid not in lt_b
+    ge_b = get(Project.name >= "b")
+    assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
+    le_b = get(Project.name <= "b")
+    assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
     dataset = client.create_dataset(name="Dataset")
     p_a.datasets.connect(dataset)
@@ -33,13 +41,19 @@ def test_where(client):
     def get(where=None):
         return _get(dataset.projects, where)
 
-    assert get() == {p_a.uid, p_b.uid, p_c.uid}
-    assert get(Project.name == "a") == {p_a.uid}
-    assert get(Project.name != "b") == {p_a.uid, p_c.uid}
-    assert get(Project.name > "b") == {p_c.uid}
-    assert get(Project.name < "b") == {p_a.uid}
-    assert get(Project.name >= "b") == {p_b.uid, p_c.uid}
-    assert get(Project.name <= "b") == {p_a.uid, p_b.uid}
+    assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
+    e_a = get(Project.name == "a")
+    assert p_a.uid in e_a and p_b not in e_a and p_c not in e_a
+    not_b = get(Project.name != "b")
+    assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
+    gt_b = get(Project.name > "b")
+    assert p_c.uid in gt_b and p_a.uid not in gt_b and p_b.uid not in gt_b
+    lt_b = get(Project.name < "b")
+    assert p_a.uid in lt_b and p_b.uid not in lt_b and p_c.uid not in lt_b
+    ge_b = get(Project.name >= "b")
+    assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
+    le_b = get(Project.name <= "b")
+    assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
     dataset.delete()
     p_a.delete()
