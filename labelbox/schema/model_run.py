@@ -199,7 +199,7 @@ class ModelRun(DbObject):
     def assign_data_rows_to_split(self,
                                   data_row_ids: List[str],
                                   split: Union[DataSplit, str],
-                                  timeout_seconds=60):
+                                  timeout_seconds=120):
 
         split_value = split.value if isinstance(split, DataSplit) else split
 
@@ -212,7 +212,7 @@ class ModelRun(DbObject):
 
         if split_value not in valid_splits:
             raise ValueError(
-                f"split must be one of : `{valid_splits}`. Found : `{split}`")
+                f"`split` must be one of : `{valid_splits}`. Found : `{split}`")
 
         task_id = self.client.execute(
             """mutation assignDataSplitPyApi($modelRunId: ID!, $data: CreateAssignDataRowsToDataSplitTaskInput!){
