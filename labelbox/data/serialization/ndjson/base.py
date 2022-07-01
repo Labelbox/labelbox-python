@@ -44,15 +44,13 @@ class NDAnnotation(NDJsonBase):
     @validator('schema_id', pre=True, always=True)
     def validate_id(cls, v, values):
         if v is None and 'name' not in values:
-            raise ValueError(
-                "Schema ids or names are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
-            )
+            raise ValueError("Schema id or name are not set. Set either one.")
         return v
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if res['name'] is None:
+        if 'name' in res and res['name'] is None:
             res.pop('name')
-        if res['schemaId'] is None:
+        if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
         return res

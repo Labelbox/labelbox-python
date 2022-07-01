@@ -1,3 +1,4 @@
+from tkinter import N
 from typing import Any, Dict, List, Union, Optional
 
 from pydantic import BaseModel, Field, validator
@@ -29,9 +30,9 @@ class NDFeature(BaseModel):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if res['name'] is None:
+        if 'name' in res and res['name'] is None:
             res.pop('name')
-        if res['schemaId'] is None:
+        if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
         return res
 
@@ -153,7 +154,8 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     def from_common(cls, radio: Radio, name: str, feature_schema_id: Cuid,
                     extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                        ImageData]) -> "NDRadio":
-        return cls(answer=NDFeature(schema_id=radio.answer.feature_schema_id),
+        return cls(answer=NDFeature(name=radio.answer.name,
+                                    schema_id=radio.answer.feature_schema_id),
                    data_row={'id': data.uid},
                    name=name,
                    schema_id=feature_schema_id,
@@ -172,7 +174,7 @@ class NDSubclassification:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
-        return classify_obj.from_common(annotation.value,
+        return classify_obj.from_common(annotation.value, annotation.name,
                                         annotation.feature_schema_id)
 
     @staticmethod

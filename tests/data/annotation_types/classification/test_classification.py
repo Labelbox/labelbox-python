@@ -43,8 +43,9 @@ def test_subclass():
         classification = ClassificationAnnotation(value=Text(answer=answer))
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name=name)
-    assert classification.dict() == {
+    assert classification.dict(by_alias=True) == {
         'name': name,
+        'feature_schema_id': None,
         'extra': {},
         'value': {
             'answer': answer
@@ -92,6 +93,7 @@ def test_radio():
     assert classification.dict() == {
         'answer': {
             'name': answer.name,
+            'feature_schema_id': None,
             'extra': {}
         }
     }
@@ -106,6 +108,7 @@ def test_radio():
         'value': {
             'answer': {
                 'name': answer.name,
+                'feature_schema_id': None,
                 'extra': {}
             }
         }
@@ -127,6 +130,7 @@ def test_checklist():
     assert classification.dict() == {
         'answer': [{
             'name': answer.name,
+            'feature_schema_id': None,
             'extra': {}
         }]
     }
@@ -142,6 +146,7 @@ def test_checklist():
         'value': {
             'answer': [{
                 'name': answer.name,
+                'feature_schema_id': None,
                 'extra': {}
             }]
         },
@@ -160,7 +165,13 @@ def test_dropdown():
     with pytest.raises(ValidationError):
         classification = Dropdown(answer=answer)
     classification = Dropdown(answer=[answer])
-    assert classification.dict() == {'answer': [{'name': '1', 'extra': {}}]}
+    assert classification.dict() == {
+        'answer': [{
+            'name': '1',
+            'feature_schema_id': None,
+            'extra': {}
+        }]
+    }
     classification = ClassificationAnnotation(
         value=Dropdown(answer=[answer]),
         feature_schema_id=feature_schema_id,
@@ -172,6 +183,7 @@ def test_dropdown():
         'value': {
             'answer': [{
                 'name': answer.name,
+                'feature_schema_id': None,
                 'extra': {}
             }]
         }

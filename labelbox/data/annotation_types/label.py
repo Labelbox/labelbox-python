@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Union, Optional
+import warnings
 
 from pydantic import BaseModel, validator
 
@@ -136,6 +137,9 @@ class Label(BaseModel):
             ontology_builder: The ontology that matches the feature names assigned to objects in this dataset
         Returns:
             Label. useful for chaining these modifying functions
+
+        Warning: assign_feature_schema_ids is now obsolete, you can
+                 now use names directly without having to lookup schema_ids.
         """
         tool_lookup, classification_lookup = get_feature_schema_lookup(
             ontology_builder)
