@@ -1,3 +1,4 @@
+# type: ignore
 from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 from pathlib import Path
 import os
