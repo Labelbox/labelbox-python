@@ -146,7 +146,10 @@ def client(environ: str):
 
 @pytest.fixture(scope="session")
 def image_url(client):
-    return client.upload_data(requests.get(IMG_URL).content, sign=True)
+    return client.upload_data(requests.get(IMG_URL).content,
+                              content_type="application/json",
+                              filename="json_import.json",
+                              sign=True)
 
 
 @pytest.fixture
@@ -182,7 +185,7 @@ def iframe_url(environ) -> str:
     if environ in [Environ.PROD, Environ.LOCAL]:
         return 'https://editor.labelbox.com'
     elif environ == Environ.STAGING:
-        return 'https://staging.labelbox.dev/editor'
+        return 'https://editor.lb-stage.xyz'
 
 
 @pytest.fixture
