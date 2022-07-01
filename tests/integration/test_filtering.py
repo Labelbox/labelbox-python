@@ -21,7 +21,7 @@ def test_where(client):
 
     assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
     e_a = get(Project.name == "a")
-    assert p_a.uid in e_a and p_b not in e_a and p_c not in e_a
+    assert p_a.uid in e_a and p_b.uid not in e_a and p_c.uid not in e_a
     not_b = get(Project.name != "b")
     assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
     gt_b = get(Project.name > "b")
@@ -43,7 +43,7 @@ def test_where(client):
 
     assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
     e_a = get(Project.name == "a")
-    assert p_a.uid in e_a and p_b not in e_a and p_c not in e_a
+    assert p_a.uid in e_a and p_b.uid not in e_a and p_c.uid not in e_a
     not_b = get(Project.name != "b")
     assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
     gt_b = get(Project.name > "b")
