@@ -197,7 +197,6 @@ def sample_bulk_conversation() -> list:
     path_to_conversation = 'tests/integration/media/bulk_conversation.json'
     assert os.path.exists(path_to_conversation)
 
-    
     with open(path_to_conversation) as json_file:
         conversations = json.load(json_file)
     return conversations
@@ -302,7 +301,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     def create_label():
         """ Ad-hoc function to create a LabelImport
-        
+
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(

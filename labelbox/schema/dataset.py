@@ -288,21 +288,25 @@ class Dataset(DbObject, Updateable, Deletable):
             Args:
                 conversational_data (list): list of dictionaries.
             """
+
             def check_message_keys(message):
                 accepted_message_keys = set([
-                    "messageId", "timestampUsec", "content", "user", "align", "canLabel"])
+                    "messageId", "timestampUsec", "content", "user", "align",
+                    "canLabel"
+                ])
                 for key in message.keys():
                     if not key in accepted_message_keys:
                         raise KeyError(
-                            f"Invalid {key} key found! Accepted keys in messages list is {accepted_message_keys}")
+                            f"Invalid {key} key found! Accepted keys in messages list is {accepted_message_keys}"
+                        )
 
-            if conversational_data and not isinstance(conversational_data, list):
+            if conversational_data and not isinstance(conversational_data,
+                                                      list):
                 raise ValueError(
                     f"conversationalData must be a list. Found {type(conversational_data)}"
                 )
 
-            [check_message_keys(message)
-                for message in conversational_data]
+            [check_message_keys(message) for message in conversational_data]
 
         def parse_metadata_fields(item):
             metadata_fields = item.get('metadata_fields')
@@ -360,9 +364,10 @@ class Dataset(DbObject, Updateable, Deletable):
                         "version": version,
                         "messages": messages
                     }
-                conversationUrl = self.client.upload_data(json.dumps(one_conversation),
-                                                          content_type="application/json",
-                                                          filename="conversational_data.json")
+                conversationUrl = self.client.upload_data(
+                    json.dumps(one_conversation),
+                    content_type="application/json",
+                    filename="conversational_data.json")
                 item["row_data"] = conversationUrl
 
             # Convert all payload variations into the same dict format
