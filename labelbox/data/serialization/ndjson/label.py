@@ -93,7 +93,6 @@ class NDLabel(BaseModel):
 
         video_annotations = defaultdict(list)
         for annot in label.annotations:
-            # print(dict(annot))
             if isinstance(
                     annot,
                 (VideoClassificationAnnotation, VideoObjectAnnotation)):
