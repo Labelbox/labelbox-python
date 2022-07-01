@@ -145,7 +145,10 @@ def client(environ: str):
 
 @pytest.fixture(scope="session")
 def image_url(client):
-    return client.upload_data(requests.get(IMG_URL).content, sign=True)
+    return client.upload_data(requests.get(IMG_URL).content,
+                              content_type="application/json",
+                              filename="json_import.json",
+                              sign=True)
 
 
 @pytest.fixture
@@ -181,7 +184,7 @@ def iframe_url(environ) -> str:
     if environ in [Environ.PROD, Environ.LOCAL]:
         return 'https://editor.labelbox.com'
     elif environ == Environ.STAGING:
-        return 'https://staging.labelbox.dev/editor'
+        return 'https://editor.lb-stage.xyz'
 
 
 @pytest.fixture
@@ -290,7 +293,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     def create_label():
         """ Ad-hoc function to create a LabelImport
-        
+
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
