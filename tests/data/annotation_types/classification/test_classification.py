@@ -43,7 +43,7 @@ def test_subclass():
         classification = ClassificationAnnotation(value=Text(answer=answer))
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name=name)
-    assert classification.dict(by_alias=True) == {
+    assert classification.dict() == {
         'name': name,
         'feature_schema_id': None,
         'extra': {},
