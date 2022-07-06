@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.23.4 (2022-07-06)
+# Version 3.24.0 (2022-07-06)
 ## Added
 * `DataRowMetadataOntology` class now has functions to create/update/delete metadata schema
     * `create_schema` - Create custom metadata schema
