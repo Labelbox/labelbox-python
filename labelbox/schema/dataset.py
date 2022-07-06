@@ -226,7 +226,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     {DataRow.row_data:"/path/to/file1.jpg"},
         >>>     "path/to/file2.jpg",
         >>>     {"tileLayerUrl" : "http://", ...}
-        >>>     {"conversation" : "{}", ...}
+        >>>     {"conversationalData" : [...], ...}
         >>>     ])
 
         For an example showing how to upload tiled data_rows see the following notebook:

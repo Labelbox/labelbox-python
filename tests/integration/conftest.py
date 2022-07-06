@@ -191,15 +191,12 @@ def iframe_url(environ) -> str:
 @pytest.fixture
 def sample_video() -> str:
     path_to_video = 'tests/integration/media/cat.mp4'
-    assert os.path.exists(path_to_video)
     return path_to_video
 
 
 @pytest.fixture
 def sample_bulk_conversation() -> list:
     path_to_conversation = 'tests/integration/media/bulk_conversation.json'
-    assert os.path.exists(path_to_conversation)
-
     with open(path_to_conversation) as json_file:
         conversations = json.load(json_file)
     return conversations
