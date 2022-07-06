@@ -162,6 +162,7 @@ class Client:
                 'headers': self.headers,
                 'timeout': timeout
             }
+            print(f"Request: {request}")
             if files:
                 request.update({'files': files})
                 request['headers'] = {
@@ -169,7 +170,7 @@ class Client:
                 }
 
             response = requests.post(**request)
-            print(f"Response: {response}")
+            print(f"Response: {response.text}")
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
