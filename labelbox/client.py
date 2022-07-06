@@ -169,6 +169,7 @@ class Client:
                 }
 
             response = requests.post(**request)
+            print(f"Response: {response}")
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
