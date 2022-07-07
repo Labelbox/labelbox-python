@@ -1,3 +1,4 @@
+# type: ignore
 from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 from pathlib import Path
 import os
@@ -5,6 +6,7 @@ import time
 import logging
 import requests
 import ndjson
+from enum import Enum
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
@@ -17,12 +19,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class DataSplit(Enum):
+    TRAINING = "TRAINING"
+    TEST = "TEST"
+    VALIDATION = "VALIDATION"
+    UNASSIGNED = "UNASSIGNED"
+
+
 class ModelRun(DbObject):
     name = Field.String("name")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
+
+    class Status(Enum):
+        EXPORTING_DATA = "EXPORTING_DATA"
+        PREPARING_DATA = "PREPARING_DATA"
+        TRAINING_MODEL = "TRAINING_MODEL"
+        COMPLETE = "COMPLETE"
+        FAILED = "FAILED"
 
     def upsert_labels(self, label_ids, timeout_seconds=60):
         """ Adds data rows and labels to a model run
@@ -90,8 +106,9 @@ class ModelRun(DbObject):
             }})['MEADataRowRegistrationTaskStatus'],
                                      timeout_seconds=timeout_seconds)
 
-    def _wait_until_done(self, status_fn, timeout_seconds=60, sleep_time=5):
+    def _wait_until_done(self, status_fn, timeout_seconds=120, sleep_time=5):
         # Do not use this function outside of the scope of upsert_data_rows or upsert_labels. It could change.
+        original_timeout = timeout_seconds
         while True:
             res = status_fn()
             if res['status'] == 'COMPLETE':
@@ -102,9 +119,8 @@ class ModelRun(DbObject):
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(
-                    f"Unable to complete import within {timeout_seconds} seconds."
+                    f"Unable to complete import within {original_timeout} seconds."
                 )
-
             time.sleep(sleep_time)
 
     def add_predictions(
@@ -161,7 +177,7 @@ class ModelRun(DbObject):
             deleteModelRuns(where: {ids: [$%s]})}""" % (ids_param, ids_param)
         self.client.execute(query_str, {ids_param: str(self.uid)})
 
-    def delete_model_run_data_rows(self, data_row_ids):
+    def delete_model_run_data_rows(self, data_row_ids: List[str]):
         """ Deletes data rows from model runs.
 
         Args:
@@ -181,21 +197,61 @@ class ModelRun(DbObject):
         })
 
     @experimental
+    def assign_data_rows_to_split(self,
+                                  data_row_ids: List[str],
+                                  split: Union[DataSplit, str],
+                                  timeout_seconds=120):
+
+        split_value = split.value if isinstance(split, DataSplit) else split
+
+        if split_value == DataSplit.UNASSIGNED.value:
+            raise ValueError(
+                f"Cannot assign split value of `{DataSplit.UNASSIGNED.value}`.")
+
+        valid_splits = filter(lambda name: name != DataSplit.UNASSIGNED.value,
+                              DataSplit._member_names_)
+
+        if split_value not in valid_splits:
+            raise ValueError(
+                f"`split` must be one of : `{valid_splits}`. Found : `{split}`")
+
+        task_id = self.client.execute(
+            """mutation assignDataSplitPyApi($modelRunId: ID!, $data: CreateAssignDataRowsToDataSplitTaskInput!){
+                  createAssignDataRowsToDataSplitTask(modelRun : {id: $modelRunId}, data: $data)}
+            """, {
+                'modelRunId': self.uid,
+                'data': {
+                    'assignments': [{
+                        'split': split_value,
+                        'dataRowIds': data_row_ids
+                    }]
+                }
+            },
+            experimental=True)['createAssignDataRowsToDataSplitTask']
+
+        status_query_str = """query assignDataRowsToDataSplitTaskStatusPyApi($id: ID!){
+            assignDataRowsToDataSplitTaskStatus(where: {id : $id}){status errorMessage}}
+            """
+
+        return self._wait_until_done(lambda: self.client.execute(
+            status_query_str, {'id': task_id}, experimental=True)[
+                'assignDataRowsToDataSplitTaskStatus'],
+                                     timeout_seconds=timeout_seconds)
+
+    @experimental
     def update_status(self,
-                      status: str,
+                      status: Union[str, "ModelRun.Status"],
                       metadata: Optional[Dict[str, str]] = None,
                       error_message: Optional[str] = None):
 
-        valid_statuses = [
-            "EXPORTING_DATA", "PREPARING_DATA", "TRAINING_MODEL", "COMPLETE",
-            "FAILED"
-        ]
-        if status not in valid_statuses:
+        status_value = status.value if isinstance(status,
+                                                  ModelRun.Status) else status
+        if status_value not in ModelRun.Status._member_names_:
             raise ValueError(
-                f"Status must be one of : `{valid_statuses}`. Found : `{status}`"
+                f"Status must be one of : `{ModelRun.Status._member_names_}`. Found : `{status_value}`"
             )
 
-        data: Dict[str, Any] = {'status': status}
+        data: Dict[str, Any] = {'status': status_value}
         if error_message:
             data['errorMessage'] = error_message
 
@@ -264,6 +320,7 @@ class ModelRun(DbObject):
 class ModelRunDataRow(DbObject):
     label_id = Field.String("label_id")
     model_run_id = Field.String("model_run_id")
+    data_split = Field.Enum(DataSplit, "data_split")
     data_row = Relationship.ToOne("DataRow", False, cache=True)
 
     def __init__(self, client, model_id, *args, **kwargs):

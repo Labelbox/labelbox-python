@@ -1,3 +1,4 @@
+import json
 import pytest
 import requests
 from labelbox import Dataset
@@ -99,6 +100,17 @@ def test_upload_video_file(dataset, sample_video: str) -> None:
         response = requests.head(url, allow_redirects=True)
         assert int(response.headers['Content-Length']) == content_length
         assert response.headers['Content-Type'] == 'video/mp4'
+
+
+def test_bulk_conversation(dataset, sample_bulk_conversation: list) -> None:
+    """
+    Tests that bulk conversations can be uploaded.
+
+    """
+    task = dataset.create_data_rows(sample_bulk_conversation)
+    task.wait_till_done()
+
+    assert len(list(dataset.data_rows())) == len(sample_bulk_conversation)
 
 
 def test_data_row_export(dataset, image_url):

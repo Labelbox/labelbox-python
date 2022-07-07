@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "3.23.3"
+__version__ = "3.24.0"
 
 from labelbox.client import Client
 from labelbox.schema.project import Project
@@ -21,7 +21,7 @@ from labelbox.schema.ontology import Ontology, OntologyBuilder, Classification, 
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
-from labelbox.schema.model_run import ModelRun
+from labelbox.schema.model_run import ModelRun, DataSplit
 from labelbox.schema.benchmark import Benchmark
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.resource_tag import ResourceTag

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import time
@@ -47,7 +48,7 @@ def graphql_url(environ: str) -> str:
     if environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
-        return 'https://staging-api.labelbox.com/graphql'
+        return 'https://api.lb-stage.xyz/graphql'
     elif environ == Environ.ONPREM:
         hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
         if hostname is None:
@@ -145,7 +146,10 @@ def client(environ: str):
 
 @pytest.fixture(scope="session")
 def image_url(client):
-    return client.upload_data(requests.get(IMG_URL).content, sign=True)
+    return client.upload_data(requests.get(IMG_URL).content,
+                              content_type="application/json",
+                              filename="json_import.json",
+                              sign=True)
 
 
 @pytest.fixture
@@ -181,14 +185,21 @@ def iframe_url(environ) -> str:
     if environ in [Environ.PROD, Environ.LOCAL]:
         return 'https://editor.labelbox.com'
     elif environ == Environ.STAGING:
-        return 'https://staging.labelbox.dev/editor'
+        return 'https://editor.lb-stage.xyz'
 
 
 @pytest.fixture
 def sample_video() -> str:
     path_to_video = 'tests/integration/media/cat.mp4'
-    assert os.path.exists(path_to_video)
     return path_to_video
+
+
+@pytest.fixture
+def sample_bulk_conversation() -> list:
+    path_to_conversation = 'tests/integration/media/bulk_conversation.json'
+    with open(path_to_conversation) as json_file:
+        conversations = json.load(json_file)
+    return conversations
 
 
 @pytest.fixture
@@ -290,7 +301,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     def create_label():
         """ Ad-hoc function to create a LabelImport
-        
+
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
