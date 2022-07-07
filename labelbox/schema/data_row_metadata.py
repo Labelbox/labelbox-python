@@ -366,6 +366,7 @@ class DataRowMetadataOntology:
         res = self._client.execute(query, {'where': {
             'id': schema.uid
         }})['deleteCustomMetadataSchema']
+        self.refresh_ontology()
 
         return res['success']
 
@@ -642,6 +643,7 @@ class DataRowMetadataOntology:
         res = self._client.execute(
             query, {"data": upsert_schema.dict(exclude_none=True)
                    })['upsertCustomMetadataSchema']
+        self.refresh_ontology()
         return _parse_metadata_schema(res)
 
     def _parse_upsert(
