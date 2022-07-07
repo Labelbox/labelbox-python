@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.24.1 (2022-07-07)
+## Updated
+* Added `refresh_ontology()` as part of create/update/delete metadata schema functions
+
 # Version 3.24.0 (2022-07-06)
 ## Added
 * `DataRowMetadataOntology` class now has functions to create/update/delete metadata schema
