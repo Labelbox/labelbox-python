@@ -17,7 +17,8 @@ class NDFeature(BaseModel):
     @validator('name', pre=True, always=True)
     def validate_name(cls, v, values):
         if v is None and 'schema_id' not in values:
-            raise ValueError("Name is not set. Either set name or schema_id.")
+            raise ValueError(
+                "Name and schema_id are not set. Either set name or schema_id.")
 
     @validator('schema_id', pre=True, always=True)
     def validate_id(cls, v, values):

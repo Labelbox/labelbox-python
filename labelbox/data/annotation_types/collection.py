@@ -34,12 +34,14 @@ class LabelList:
             self, ontology_builder: "ontology.OntologyBuilder") -> "LabelList":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
-        This is necessary for MAL.
 
         Args:
             ontology_builder: The ontology that matches the feature names assigned to objects in this LabelList
         Returns:
             LabelList. useful for chaining these modifying functions
+
+        Warning: assign_feature_schema_ids is now obsolete, you can
+                 now use names directly without having to lookup schema_ids.
         """
         for label in self._data:
             label.assign_feature_schema_ids(ontology_builder)

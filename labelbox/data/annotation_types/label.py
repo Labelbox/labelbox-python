@@ -131,7 +131,6 @@ class Label(BaseModel):
             self, ontology_builder: ontology.OntologyBuilder) -> "Label":
         """
         Adds schema ids to all FeatureSchema objects in the Labels.
-        This is necessary for MAL.
 
         Args:
             ontology_builder: The ontology that matches the feature names assigned to objects in this dataset

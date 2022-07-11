@@ -9,12 +9,14 @@ import pydantic
 import backoff
 import ndjson
 import requests
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING)
 
 from labelbox import exceptions as lb_exceptions
+from labelbox.data.annotation_types.types import Cuid
+from labelbox.data.ontology import get_feature_schema_lookup
 from labelbox.orm.model import Entity
 from labelbox import utils
 from labelbox.orm import query
@@ -408,12 +410,14 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
         MALValidationError: Raise for invalid NDJson
         UuidError: Duplicate UUID in upload
     """
-    feature_schemas = get_mal_schemas(project.ontology())
+    feature_schemas_by_id, feature_schemas_by_name = get_mal_schemas(
+        project.ontology())
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
         try:
             annotation = NDAnnotation(**line)
-            annotation.validate_instance(feature_schemas)
+            annotation.validate_instance(feature_schemas_by_id,
+                                         feature_schemas_by_name)
             uuid = str(annotation.uuid)
             if uuid in uids:
                 raise lb_exceptions.UuidError(
@@ -437,14 +441,18 @@ def parse_classification(tool):
         dict
     """
     if tool['type'] in ['radio', 'checklist']:
+        option_schema_ids = [r['featureSchemaId'] for r in tool['options']]
+        option_names = [r['value'] for r in tool['options']]
         return {
             'tool': tool['type'],
             'featureSchemaId': tool['featureSchemaId'],
-            'options': [r['featureSchemaId'] for r in tool['options']]
+            'name': tool['name'],
+            'options': [*option_schema_ids, *option_names]
         }
     elif tool['type'] == 'text':
         return {
             'tool': tool['type'],
+            'name': tool['name'],
             'featureSchemaId': tool['featureSchemaId']
         }
 
@@ -456,24 +464,37 @@ def get_mal_schemas(ontology):
     Args:
         ontology (Ontology)
     Returns:
-        Dict : Useful for looking up a tool from a given feature schema id
+        Dict, Dict : Useful for looking up a tool from a given feature schema id or name
     """
 
-    valid_feature_schemas = {}
+    valid_feature_schemas_by_schema_id = {}
+    valid_feature_schemas_by_name = {}
     for tool in ontology.normalized['tools']:
         classifications = [
             parse_classification(classification_tool)
             for classification_tool in tool['classifications']
         ]
-        classifications = {v['featureSchemaId']: v for v in classifications}
-        valid_feature_schemas[tool['featureSchemaId']] = {
+        classifications_by_schema_id = {
+            v['featureSchemaId']: v for v in classifications
+        }
+        classifications_by_name = {v['name']: v for v in classifications}
+        valid_feature_schemas_by_schema_id[tool['featureSchemaId']] = {
             'tool': tool['tool'],
-            'classifications': classifications
+            'classificationsBySchemaId': classifications_by_schema_id,
+            'classificationsByName': classifications_by_name,
+            'name': tool['name']
+        }
+        valid_feature_schemas_by_name[tool['name']] = {
+            'tool': tool['tool'],
+            'classificationsBySchemaId': classifications_by_schema_id,
+            'classificationsByName': classifications_by_name,
+            'name': tool['name']
         }
     for tool in ontology.normalized['classifications']:
-        valid_feature_schemas[tool['featureSchemaId']] = parse_classification(
-            tool)
-    return valid_feature_schemas
+        valid_feature_schemas_by_schema_id[
+            tool['featureSchemaId']] = parse_classification(tool)
+        valid_feature_schemas_by_name[tool['name']] = parse_classification(tool)
+    return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
 LabelboxID: str = pydantic.Field(..., min_length=25, max_length=25)
@@ -585,7 +606,15 @@ class DataRow(BaseModel):
 
 
 class NDFeatureSchema(BaseModel):
-    schemaId: str = LabelboxID
+    schemaId: Optional[Cuid] = None
+    name: Optional[str] = None
+
+    @root_validator
+    def must_set_one(cls, values):
+        if values['schemaId'] is None and values['name'] is None:
+            raise ValueError(
+                "Must set either schemaId or name for all feature schemas")
+        return values
 
 
 class NDBase(NDFeatureSchema):
@@ -593,19 +622,36 @@ class NDBase(NDFeatureSchema):
     uuid: UUID
     dataRow: DataRow
 
-    def validate_feature_schemas(self, valid_feature_schemas):
-        if self.schemaId not in valid_feature_schemas:
-            raise ValueError(
-                f"schema id {self.schemaId} is not valid for the provided project's ontology."
-            )
+    def validate_feature_schemas(self, valid_feature_schemas_by_id,
+                                 valid_feature_schemas_by_name):
+        if self.name:
+            if self.name not in valid_feature_schemas_by_name:
+                raise ValueError(
+                    f"name {self.name} is not valid for the provided project's ontology."
+                )
 
-        if self.ontology_type != valid_feature_schemas[self.schemaId]['tool']:
-            raise ValueError(
-                f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas[self.schemaId]['tool']}"
-            )
+            if self.ontology_type != valid_feature_schemas_by_name[
+                    self.name]['tool']:
+                raise ValueError(
+                    f"Name {self.name} does not map to the assigned tool {valid_feature_schemas_by_name[self.name]['tool']}"
+                )
 
-    def validate_instance(self, valid_feature_schemas):
-        self.validate_feature_schemas(valid_feature_schemas)
+        if self.schemaId:
+            if self.schemaId not in valid_feature_schemas_by_id:
+                raise ValueError(
+                    f"schema id {self.schemaId} is not valid for the provided project's ontology."
+                )
+
+            if self.ontology_type != valid_feature_schemas_by_id[
+                    self.schemaId]['tool']:
+                raise ValueError(
+                    f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas_by_id[self.schemaId]['tool']}"
+                )
+
+    def validate_instance(self, valid_feature_schemas_by_id,
+                          valid_feature_schemas_by_name):
+        self.validate_feature_schemas(valid_feature_schemas_by_id,
+                                      valid_feature_schemas_by_name)
 
     class Config:
         #Users shouldn't to add extra data to the payload
@@ -629,9 +675,20 @@ class NDText(NDBase):
     #No feature schema to check
 
 
+class NDAnswer(BaseModel):
+    schemaId: Optional[Cuid] = None
+    value: Optional[str] = None
+
+    @root_validator
+    def must_set_one(cls, values):
+        if values['schemaId'] is None and values['value'] is None:
+            raise ValueError("Must set either schemaId or value for answers")
+        return values
+
+
 class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: List[NDFeatureSchema] = pydantic.Field(determinant=True)
+    answers: List[NDAnswer] = pydantic.Field(determinant=True)
 
     @validator('answers', pre=True)
     def validate_answers(cls, value, field):
@@ -640,17 +697,23 @@ class NDChecklist(VideoSupported, NDBase):
             raise ValueError("Checklist answers should not be empty")
         return value
 
-    def validate_feature_schemas(self, valid_feature_schemas):
+    def validate_feature_schemas(self, valid_feature_schemas_by_id,
+                                 valid_feature_schemas_by_name):
         #Test top level feature schema for this tool
-        super(NDChecklist, self).validate_feature_schemas(valid_feature_schemas)
+        super(NDChecklist,
+              self).validate_feature_schemas(valid_feature_schemas_by_id,
+                                             valid_feature_schemas_by_name)
         #Test the feature schemas provided to the answer field
-        if len(set([answer.schemaId for answer in self.answers])) != len(
-                self.answers):
+        if len(set([answer.value or answer.schemaId for answer in self.answers
+                   ])) != len(self.answers):
             raise ValueError(
                 f"Duplicated featureSchema found for checklist {self.uuid}")
         for answer in self.answers:
-            options = valid_feature_schemas[self.schemaId]['options']
-            if answer.schemaId not in options:
+            options = valid_feature_schemas_by_name[
+                self.
+                name]['options'] if self.name else valid_feature_schemas_by_id[
+                    self.schemaId]['options']
+            if answer.value not in options and answer.schemaId not in options:
                 raise ValueError(
                     f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {answer}"
                 )
@@ -658,14 +721,19 @@ class NDChecklist(VideoSupported, NDBase):
 
 class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
-    answer: NDFeatureSchema = pydantic.Field(determinant=True)
+    answer: NDAnswer = pydantic.Field(determinant=True)
 
-    def validate_feature_schemas(self, valid_feature_schemas):
-        super(NDRadio, self).validate_feature_schemas(valid_feature_schemas)
-        options = valid_feature_schemas[self.schemaId]['options']
-        if self.answer.schemaId not in options:
+    def validate_feature_schemas(self, valid_feature_schemas_by_id,
+                                 valid_feature_schemas_by_name):
+        super(NDRadio,
+              self).validate_feature_schemas(valid_feature_schemas_by_id,
+                                             valid_feature_schemas_by_name)
+        options = valid_feature_schemas_by_name[
+            self.name]['options'] if self.name else valid_feature_schemas_by_id[
+                self.schemaId]['options']
+        if self.answer.value not in options and self.answer.schemaId not in options:
             raise ValueError(
-                f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer.schemaId}"
+                f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer.value or self.answer.schemaId}"
             )
 
 
@@ -684,11 +752,20 @@ class NDBaseTool(NDBase):
     classifications: List[NDClassification] = []
 
     #This is indepdent of our problem
-    def validate_feature_schemas(self, valid_feature_schemas):
-        super(NDBaseTool, self).validate_feature_schemas(valid_feature_schemas)
+    def validate_feature_schemas(self, valid_feature_schemas_by_id,
+                                 valid_feature_schemas_by_name):
+        super(NDBaseTool,
+              self).validate_feature_schemas(valid_feature_schemas_by_id,
+                                             valid_feature_schemas_by_name)
         for classification in self.classifications:
             classification.validate_feature_schemas(
-                valid_feature_schemas[self.schemaId]['classifications'])
+                valid_feature_schemas_by_name[
+                    self.name]['classificationsBySchemaId']
+                if self.name else valid_feature_schemas_by_id[self.schemaId]
+                ['classificationsBySchemaId'], valid_feature_schemas_by_name[
+                    self.name]['classificationsByName']
+                if self.name else valid_feature_schemas_by_id[
+                    self.schemaId]['classificationsByName'])
 
     @validator('classifications', pre=True)
     def validate_subclasses(cls, value, field):
