@@ -1,4 +1,3 @@
-import inspect
 import json
 from labelbox.data.serialization.ndjson.classification import NDRadio
 
