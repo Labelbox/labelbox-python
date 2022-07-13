@@ -9,4 +9,4 @@ def test_video():
 
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
-    assert res == [data[2], data[0], data[1]]
+    assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
