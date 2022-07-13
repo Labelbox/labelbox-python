@@ -185,7 +185,7 @@ def rectangle_inference(prediction_id_mapping):
                 "schemaId":
                     rectangle['tool']['classifications'][0]['options'][0]
                     ['featureSchemaId'],
-                "value":
+                "name":
                     rectangle['tool']['classifications'][0]['options'][0]
                     ['value']
             }

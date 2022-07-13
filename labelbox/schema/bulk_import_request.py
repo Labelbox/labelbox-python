@@ -675,20 +675,9 @@ class NDText(NDBase):
     #No feature schema to check
 
 
-class NDAnswer(BaseModel):
-    schemaId: Optional[Cuid] = None
-    value: Optional[str] = None
-
-    @root_validator
-    def must_set_one(cls, values):
-        if values['schemaId'] is None and values['value'] is None:
-            raise ValueError("Must set either schemaId or value for answers")
-        return values
-
-
 class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: List[NDAnswer] = pydantic.Field(determinant=True)
+    answers: List[NDFeatureSchema] = pydantic.Field(determinant=True)
 
     @validator('answers', pre=True)
     def validate_answers(cls, value, field):
@@ -704,7 +693,7 @@ class NDChecklist(VideoSupported, NDBase):
               self).validate_feature_schemas(valid_feature_schemas_by_id,
                                              valid_feature_schemas_by_name)
         #Test the feature schemas provided to the answer field
-        if len(set([answer.value or answer.schemaId for answer in self.answers
+        if len(set([answer.name or answer.schemaId for answer in self.answers
                    ])) != len(self.answers):
             raise ValueError(
                 f"Duplicated featureSchema found for checklist {self.uuid}")
@@ -713,7 +702,7 @@ class NDChecklist(VideoSupported, NDBase):
                 self.
                 name]['options'] if self.name else valid_feature_schemas_by_id[
                     self.schemaId]['options']
-            if answer.value not in options and answer.schemaId not in options:
+            if answer.name not in options and answer.schemaId not in options:
                 raise ValueError(
                     f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {answer}"
                 )
@@ -721,7 +710,7 @@ class NDChecklist(VideoSupported, NDBase):
 
 class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
-    answer: NDAnswer = pydantic.Field(determinant=True)
+    answer: NDFeatureSchema = pydantic.Field(determinant=True)
 
     def validate_feature_schemas(self, valid_feature_schemas_by_id,
                                  valid_feature_schemas_by_name):
@@ -731,9 +720,9 @@ class NDRadio(VideoSupported, NDBase):
         options = valid_feature_schemas_by_name[
             self.name]['options'] if self.name else valid_feature_schemas_by_id[
                 self.schemaId]['options']
-        if self.answer.value not in options and self.answer.schemaId not in options:
+        if self.answer.name not in options and self.answer.schemaId not in options:
             raise ValueError(
-                f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer.value or self.answer.schemaId}"
+                f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer.name or self.answer.schemaId}"
             )
 
 

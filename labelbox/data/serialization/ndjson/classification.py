@@ -11,8 +11,8 @@ from .base import NDAnnotation
 
 
 class NDFeature(BaseModel):
-    schema_id: Optional[Cuid] = None
     name: Optional[str] = None
+    schema_id: Optional[Cuid] = None
 
     @root_validator()
     def must_set_one(cls, values):
