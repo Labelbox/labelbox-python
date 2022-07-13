@@ -50,7 +50,8 @@ class NDLabel(BaseModel):
             for annotation in annotations:
                 if isinstance(annotation, NDSegments):
                     annots.extend(
-                        NDSegments.to_common(annotation, annotation.schema_id))
+                        NDSegments.to_common(annotation, annotation.name,
+                                             annotation.schema_id))
                 elif isinstance(annotation, NDObjectType.__args__):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
@@ -97,7 +98,8 @@ class NDLabel(BaseModel):
             if isinstance(
                     annot,
                 (VideoClassificationAnnotation, VideoObjectAnnotation)):
-                video_annotations[annot.feature_schema_id].append(annot)
+                video_annotations[annot.feature_schema_id or
+                                  annot.name].append(annot)
 
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(

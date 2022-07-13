@@ -135,6 +135,7 @@ def prediction_id_mapping(configured_project):
         result[tool_type] = {
             "uuid": str(uuid.uuid4()),
             "schemaId": tool['featureSchemaId'],
+            "name": tool['name'],
             "dataRow": {
                 "id": configured_project.data_row_ids[idx],
             },
@@ -178,10 +179,15 @@ def rectangle_inference(prediction_id_mapping):
         'classifications': [{
             "schemaId":
                 rectangle['tool']['classifications'][0]['featureSchemaId'],
+            "name":
+                rectangle['tool']['classifications'][0]['name'],
             "answer": {
                 "schemaId":
                     rectangle['tool']['classifications'][0]['options'][0]
-                    ['featureSchemaId']
+                    ['featureSchemaId'],
+                "name":
+                    rectangle['tool']['classifications'][0]['options'][0]
+                    ['value']
             }
         }]
     })
