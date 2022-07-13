@@ -291,7 +291,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def export_labels(self,
                       download=False,
-                      timeout_seconds=600,
+                      timeout_seconds=1800,
                       **kwargs) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
