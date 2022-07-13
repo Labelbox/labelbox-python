@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Union, Optional
-import warnings
 
 from pydantic import BaseModel, validator
 
@@ -137,7 +136,7 @@ class Label(BaseModel):
         Returns:
             Label. useful for chaining these modifying functions
 
-        Warning: You can now import annotations using names directly without having to lookup schema_ids
+        Note: You can now import annotations using names directly without having to lookup schema_ids
         """
         tool_lookup, classification_lookup = get_feature_schema_lookup(
             ontology_builder)
