@@ -1,6 +1,6 @@
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
 import warnings
 
