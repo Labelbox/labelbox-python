@@ -65,9 +65,11 @@ class NDPoint(NDBaseObject):
 class NDFramePoint(VideoSupported):
     point: _Point
 
-    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
+    def to_common(self, name: str,
+                  feature_schema_id: Cuid) -> VideoObjectAnnotation:
         return VideoObjectAnnotation(frame=self.frame,
                                      keyframe=True,
+                                     name=name,
                                      feature_schema_id=feature_schema_id,
                                      value=Point(x=self.point.x,
                                                  y=self.point.y))
@@ -102,10 +104,12 @@ class NDLine(NDBaseObject):
 class NDFrameLine(VideoSupported):
     line: List[_Point]
 
-    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
+    def to_common(self, name: str,
+                  feature_schema_id: Cuid) -> VideoObjectAnnotation:
         return VideoObjectAnnotation(
             frame=self.frame,
             keyframe=True,
+            name=name,
             feature_schema_id=feature_schema_id,
             value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]))
 
