@@ -627,7 +627,7 @@ class NDBase(NDFeatureSchema):
         if self.name:
             if self.name not in valid_feature_schemas_by_name:
                 raise ValueError(
-                    f"name {self.name} is not valid for the provided project's ontology."
+                    f"Name {self.name} is not valid for the provided project's ontology."
                 )
 
             if self.ontology_type != valid_feature_schemas_by_name[
@@ -639,7 +639,7 @@ class NDBase(NDFeatureSchema):
         if self.schemaId:
             if self.schemaId not in valid_feature_schemas_by_id:
                 raise ValueError(
-                    f"schema id {self.schemaId} is not valid for the provided project's ontology."
+                    f"Schema id {self.schemaId} is not valid for the provided project's ontology."
                 )
 
             if self.ontology_type != valid_feature_schemas_by_id[

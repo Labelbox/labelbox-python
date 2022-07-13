@@ -29,6 +29,16 @@ def test_image():
         r.pop('classifications', None)
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
 
+def test_image_with_name_only():
+    with open('tests/data/assets/ndjson/image_import_name_only.json', 'r') as file:
+        data = json.load(file)
+
+    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.serialize(res))
+    for r in res:
+        r.pop('classifications', None)
+    assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
+
 
 def test_mask():
     data = [{

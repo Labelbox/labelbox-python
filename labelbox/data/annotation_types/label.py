@@ -137,8 +137,7 @@ class Label(BaseModel):
         Returns:
             Label. useful for chaining these modifying functions
 
-        Warning: assign_feature_schema_ids is now obsolete, you can
-                 now use names directly without having to lookup schema_ids.
+        Warning: You can now import annotations using names directly without having to lookup schema_ids
         """
         tool_lookup, classification_lookup = get_feature_schema_lookup(
             ontology_builder)

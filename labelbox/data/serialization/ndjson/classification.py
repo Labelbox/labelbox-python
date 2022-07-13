@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation
@@ -14,19 +14,13 @@ class NDFeature(BaseModel):
     schema_id: Optional[Cuid] = None
     name: Optional[str] = None
 
-    @validator('name', pre=True, always=True)
-    def validate_name(cls, v, values):
-        if v is None and 'schema_id' not in values:
-            raise ValueError(
-                "Name and schema_id are not set. Either set name or schema_id.")
-
-    @validator('schema_id', pre=True, always=True)
-    def validate_id(cls, v, values):
-        if v is None and 'name' not in values:
-            raise ValueError(
-                "Schema ids or names are not set. Either set name or schema_id.`."
-            )
-        return v
+    @root_validator()
+    def must_set_one(cls, values):
+        if ('schema_id' not in values or
+                values['schema_id'] is None) and ('name' not in values or
+                                                  values['name'] is None):
+            raise ValueError("Schema id or name are not set. Set either one.")
+        return values
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
@@ -84,9 +78,10 @@ class NDChecklistSubclass(NDFeature):
     def from_common(cls, checklist: Checklist, name: str,
                     feature_schema_id: Cuid) -> "NDChecklistSubclass":
         return cls(answer=[
-            NDFeature(name=name, schema_id=answer.feature_schema_id)
+            NDFeature(name=answer.name, schema_id=answer.feature_schema_id)
             for answer in checklist.answer
         ],
+                   name=name,
                    schema_id=feature_schema_id)
 
     def dict(self, *args, **kwargs):
@@ -138,7 +133,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
             extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                ImageData]) -> "NDChecklist":
         return cls(answer=[
-            NDFeature(name=name, schema_id=answer.feature_schema_id)
+            NDFeature(name=answer.name, schema_id=answer.feature_schema_id)
             for answer in checklist.answer
         ],
                    data_row={'id': data.uid},

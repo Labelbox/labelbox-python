@@ -40,8 +40,7 @@ class LabelList:
         Returns:
             LabelList. useful for chaining these modifying functions
 
-        Warning: assign_feature_schema_ids is now obsolete, you can
-                 now use names directly without having to lookup schema_ids.
+        Note: You can now import annotations using names directly without having to lookup schema_ids  
         """
         for label in self._data:
             label.assign_feature_schema_ids(ontology_builder)
