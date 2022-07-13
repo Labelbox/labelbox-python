@@ -526,6 +526,8 @@ def video_serialized_bbox_label():
         },
         'schemaId':
             'ckz38ofop0mci0z9i9w3aa9o4',
+        'name':
+            'bbox toy',
         'classifications': [],
         'segments': [{
             'keyframes': [{

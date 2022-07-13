@@ -9,3 +9,12 @@ def test_nested():
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
     assert res == data
+
+
+def test_nested_name_only():
+    with open('tests/data/assets/ndjson/nested_import_name_only.json',
+              'r') as file:
+        data = json.load(file)
+    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.serialize(res))
+    assert res == data
