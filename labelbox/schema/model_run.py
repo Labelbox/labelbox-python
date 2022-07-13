@@ -203,13 +203,7 @@ class ModelRun(DbObject):
                                   timeout_seconds=120):
 
         split_value = split.value if isinstance(split, DataSplit) else split
-
-        if split_value == DataSplit.UNASSIGNED.value:
-            raise ValueError(
-                f"Cannot assign split value of `{DataSplit.UNASSIGNED.value}`.")
-
-        valid_splits = filter(lambda name: name != DataSplit.UNASSIGNED.value,
-                              DataSplit._member_names_)
+        valid_splits = DataSplit._member_names_
 
         if split_value not in valid_splits:
             raise ValueError(

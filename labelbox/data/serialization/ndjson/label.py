@@ -52,7 +52,6 @@ class NDLabel(BaseModel):
                     annots.extend(
                         NDSegments.to_common(annotation, annotation.name,
                                              annotation.schema_id))
-
                 elif isinstance(annotation, NDObjectType.__args__):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
@@ -63,12 +62,15 @@ class NDLabel(BaseModel):
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
-            data = self._infer_media_type(annotations)(uid=data_row_id)
+            data = self._infer_media_type(annots)(uid=data_row_id)
             yield Label(annotations=annots, data=data)
 
     def _infer_media_type(
-        self, annotations: List[Union[NDObjectType, NDClassificationType]]
-    ) -> Union[TextEntity, TextData, ImageData]:
+        self, annotations: List[Union[TextEntity, VideoClassificationAnnotation,
+                                      VideoObjectAnnotation, ObjectAnnotation,
+                                      ClassificationAnnotation, ScalarMetric,
+                                      ConfusionMatrixMetric]]
+    ) -> Union[TextData, VideoData, ImageData]:
         types = {type(annotation) for annotation in annotations}
         if TextEntity in types:
             return TextData
@@ -102,7 +104,6 @@ class NDLabel(BaseModel):
         for annotation_group in video_annotations.values():
             consecutive_frames = cls._get_consecutive_frames(
                 sorted([annotation.frame for annotation in annotation_group]))
-
             if isinstance(annotation_group[0], VideoClassificationAnnotation):
                 annotation = annotation_group[0]
                 frames_data = []

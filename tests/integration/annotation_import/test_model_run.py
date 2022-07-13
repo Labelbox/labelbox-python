@@ -146,13 +146,7 @@ def test_model_run_split_assignment(model_run, dataset, image_url):
     with pytest.raises(ValueError):
         model_run.assign_data_rows_to_split(data_row_ids, "INVALID SPLIT")
 
-    with pytest.raises(ValueError):
-        model_run.assign_data_rows_to_split(data_row_ids, DataSplit.UNASSIGNED)
-
-    for split in ["TRAINING", "TEST", "VALIDATION", *DataSplit]:
-        if split == DataSplit.UNASSIGNED:
-            continue
-
+    for split in ["TRAINING", "TEST", "VALIDATION", "UNASSIGNED", *DataSplit]:
         model_run.assign_data_rows_to_split(data_row_ids, split)
         counts = Counter()
         for data_row in model_run.model_run_data_rows():

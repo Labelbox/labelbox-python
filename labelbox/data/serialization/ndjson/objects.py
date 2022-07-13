@@ -6,6 +6,7 @@ import numpy as np
 
 from pydantic import BaseModel
 from PIL import Image
+from labelbox.data.annotation_types import feature
 
 from labelbox.data.annotation_types.data.video import VideoData
 
@@ -61,6 +62,21 @@ class NDPoint(NDBaseObject):
                    classifications=classifications)
 
 
+class NDFramePoint(VideoSupported):
+    point: _Point
+
+    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
+        return VideoObjectAnnotation(frame=self.frame,
+                                     keyframe=True,
+                                     feature_schema_id=feature_schema_id,
+                                     value=Point(x=self.point.x,
+                                                 y=self.point.y))
+
+    @classmethod
+    def from_common(cls, frame: int, point: Point):
+        return cls(frame=frame, point=_Point(x=point.x, y=point.y))
+
+
 class NDLine(NDBaseObject):
     line: List[_Point]
 
@@ -81,6 +97,25 @@ class NDLine(NDBaseObject):
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications)
+
+
+class NDFrameLine(VideoSupported):
+    line: List[_Point]
+
+    def to_common(self, feature_schema_id: Cuid) -> VideoObjectAnnotation:
+        return VideoObjectAnnotation(
+            frame=self.frame,
+            keyframe=True,
+            feature_schema_id=feature_schema_id,
+            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]))
+
+    @classmethod
+    def from_common(cls, frame: int, line: Line):
+        return cls(frame=frame,
+                   line=[{
+                       'x': pt.x,
+                       'y': pt.y
+                   } for pt in line.points])
 
 
 class NDPolygon(NDBaseObject):
@@ -153,18 +188,30 @@ class NDFrameRectangle(VideoSupported):
 
 
 class NDSegment(BaseModel):
-    keyframes: List[NDFrameRectangle]
+    keyframes: List[Union[NDFrameRectangle, NDFramePoint, NDFrameLine]]
 
     @staticmethod
     def lookup_segment_object_type(segment: List) -> "NDFrameObjectType":
         """Used for determining which object type the annotation contains
         returns the object type"""
-        result = {Rectangle: NDFrameRectangle}.get(type(segment[0].value))
+        result = {
+            Rectangle: NDFrameRectangle,
+            Point: NDFramePoint,
+            Line: NDFrameLine,
+        }.get(type(segment[0].value))
         return result
 
-    def to_common(self, name: str, feature_schema_id: Cuid):
+    @staticmethod
+    def segment_with_uuid(keyframe: Union[NDFrameRectangle, NDFramePoint,
+                                          NDFrameLine], uuid: str):
+        keyframe.extra = {'uuid': uuid}
+        return keyframe
+
+    def to_common(self, name: str, feature_schema_id: Cuid, uuid: str):
         return [
-            keyframe.to_common(name=name, feature_schema_id=feature_schema_id)
+            self.segment_with_uuid(
+                keyframe.to_common(name=name,
+                                   feature_schema_id=feature_schema_id), uuid)
             for keyframe in self.keyframes
         ]
 
@@ -188,7 +235,8 @@ class NDSegments(NDBaseObject):
             result.extend(
                 NDSegment.to_common(segment,
                                     name=name,
-                                    feature_schema_id=feature_schema_id))
+                                    feature_schema_id=feature_schema_id,
+                                    uuid=self.uuid))
         return result
 
     @classmethod
@@ -345,4 +393,4 @@ class NDObject:
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
                      NDTextEntity]
 
-NDFrameObjectType = NDFrameRectangle
+NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
