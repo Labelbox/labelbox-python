@@ -43,7 +43,6 @@ def test_semantic_error(client):
 
 
 def test_timeout_error(client, project):
-    time.sleep(60)  #Fails to connect if we don't wait
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
         query_str = """query getOntology { 
         project (where: {id: $%s}) { 
@@ -52,7 +51,9 @@ def test_timeout_error(client, project):
                 } 
             }
         } """ % (project.uid)
-        client.execute(query_str, check_naming=False, timeout=0.01)
+
+        # Setting connect timeout to 30s, and read timeout to 0.01s
+        client.execute(query_str, check_naming=False, timeout=(30.0, 0.01))
 
 
 def test_query_complexity_error(client):

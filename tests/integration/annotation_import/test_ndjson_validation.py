@@ -82,6 +82,10 @@ def test_invalid_checklist_item(checklist_inference, configured_project):
     with pytest.raises(MALValidationError):
         _validate_ndjson([pred], configured_project)
 
+    pred['answers'] = [{"name": "asdfg"}]
+    with pytest.raises(MALValidationError):
+        _validate_ndjson([pred], configured_project)
+
     pred['answers'] = [{"schemaId": "1232132132"}]
     with pytest.raises(MALValidationError):
         _validate_ndjson([pred], configured_project)
@@ -177,10 +181,25 @@ def test_invalid_feature_schema(configured_project, rectangle_inference):
         _validate_ndjson([pred], configured_project)
 
 
+def test_name_only_feature_schema(configured_project, rectangle_inference):
+    #Trying to upload a polygon and rectangle at the same time
+    pred = rectangle_inference.copy()
+    del pred['schemaId']
+    _validate_ndjson([pred], configured_project)
+
+
+def test_schema_id_only_feature_schema(configured_project, rectangle_inference):
+    #Trying to upload a polygon and rectangle at the same time
+    pred = rectangle_inference.copy()
+    del pred['name']
+    _validate_ndjson([pred], configured_project)
+
+
 def test_missing_feature_schema(configured_project, rectangle_inference):
     #Trying to upload a polygon and rectangle at the same time
     pred = rectangle_inference.copy()
     del pred['schemaId']
+    del pred['name']
     with pytest.raises(MALValidationError):
         _validate_ndjson([pred], configured_project)
 

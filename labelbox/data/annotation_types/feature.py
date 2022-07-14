@@ -10,9 +10,6 @@ class FeatureSchema(BaseModel):
     Class that represents a feature schema.
     Could be a annotation, a subclass, or an option.
     Schema ids might not be known when constructing these objects so both a name and schema id are valid.
-
-    Use `LabelList.assign_feature_schema_ids` or `LabelGenerator.assign_feature_schema_ids`
-    to retroactively add schema ids by looking them up from the names.
     """
     name: Optional[str] = None
     feature_schema_id: Optional[Cuid] = None
@@ -24,3 +21,11 @@ class FeatureSchema(BaseModel):
                 "Must set either feature_schema_id or name for all feature schemas"
             )
         return values
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if 'name' in res and res['name'] is None:
+            res.pop('name')
+        if 'featureSchemaId' in res and res['featureSchemaId'] is None:
+            res.pop('featureSchemaId')
+        return res

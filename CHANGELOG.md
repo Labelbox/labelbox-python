@@ -1,5 +1,19 @@
 # Changelog
 
+# Version 3.24.1 (2022-07-07)
+## Updated
+* Added `refresh_ontology()` as part of create/update/delete metadata schema functions
+
+# Version 3.24.0 (2022-07-06)
+## Added
+* `DataRowMetadataOntology` class now has functions to create/update/delete metadata schema
+    * `create_schema` - Create custom metadata schema
+    * `update_schema` - Update name of custom metadata schema
+    * `update_enum_options` - Update name of an Enum option for an Enum custom metadata schema
+    * `delete_schema` - Delete custom metadata schema
+* `ModelRun` class now has `assign_data_rows_to_split` function, which can assign a `DataSplit` to a list of `DataRow`s
+* `Dataset.create_data_rows()` can bulk import `conversationalData`
+
 # Version 3.23.3 (2022-06-23)
 
 ## Fix
