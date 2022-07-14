@@ -185,8 +185,10 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
-    def export_queued_data_rows(self,
-                                timeout_seconds=120,  include_metadata: bool=False) -> List[Dict[str, str]]:
+    def export_queued_data_rows(
+            self,
+            timeout_seconds=120,
+            include_metadata: bool = False) -> List[Dict[str, str]]:
         """ Returns all data rows that are currently enqueued for this project.
 
         Args:
@@ -203,7 +205,10 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, metadata_param, id_param, metadata_param)
         sleep_time = 2
         while True:
-            res = self.client.execute(query_str, {id_param: self.uid, metadata_param: include_metadata})
+            res = self.client.execute(query_str, {
+                id_param: self.uid,
+                metadata_param: include_metadata
+            })
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
