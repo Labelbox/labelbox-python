@@ -115,7 +115,7 @@ class ModelRun(DbObject):
                 return True
             elif res['status'] == 'FAILED':
                 raise Exception(
-                    f"MEA Import Failed. Details : {res['errorMessage']}")
+                    f"Jop failed. Details : {res['errorMessage']}")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(
