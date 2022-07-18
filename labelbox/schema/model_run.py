@@ -12,11 +12,14 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
+from labelbox.data.annotation_types import LabelList
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
 
 logger = logging.getLogger(__name__)
+
+DATAROWS_IMPORT_LIMIT = 25000
 
 
 class DataSplit(Enum):
@@ -121,6 +124,34 @@ class ModelRun(DbObject):
                     f"Unable to complete import within {original_timeout} seconds."
                 )
             time.sleep(sleep_time)
+
+    def upsert_predictions_and_send_to_project(
+        self,
+        name: str,
+        predictions: LabelList,
+        project_id: str,
+        priority: Optional[int] = 5,
+    ) -> 'MEAPredictionImport':  # type: ignore
+        """ Upload predictions and creates a batch import to project.
+        Args:
+            name (str): name of the AnnotationImport job as well as the name of the batch import
+            predictions (Iterable):
+                iterable of annotation rows
+            project_id (str): id of the project to import into
+            priority (int): priority of the job
+        Returns:
+            (AnnotationImport, Project)
+        """
+        data_rows_set = set(
+            map(lambda x: x.data_row.id, predictions)[:DATAROWS_IMPORT_LIMIT])
+        data_rows = list(data_rows_set)
+        project = self.client.get_project(project_id)
+        batch = project.create_batch(name, data_rows, priority)
+
+        predictions_for_data_rows = filter(
+            lambda x: x.data_row.id in data_rows_set, predictions)
+
+        return (self.add_predictions(name, predictions_for_data_rows), batch)
 
     def add_predictions(
         self,
