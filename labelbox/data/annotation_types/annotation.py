@@ -89,6 +89,7 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
         feature_schema_id (Optional[Cuid])
         value (Union[Text, Checklist, Radio, Dropdown])
         frame (int): The frame index that this annotation corresponds to
+        segment_id (Optional[Int]): Index of video segment this annotation belongs to
         extra (Dict[str, Any])
     """
     frame: int
