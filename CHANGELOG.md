@@ -7,6 +7,9 @@
     * In Python dictionaries, you can now use `schemaId` key or `name` key for all tools, classifications, options
 * Labelbox's Annotation Types now support model assisted labeling or label imports using ontology object names
 
+## Removed
+* `Project.video_label_generator`. Use `Project.label_generator` instead.
+
 ## Updated
 * Model Runs now support unassigned splits
 # Version 3.24.1 (2022-07-07)
