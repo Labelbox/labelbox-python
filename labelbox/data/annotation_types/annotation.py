@@ -92,3 +92,4 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
         extra (Dict[str, Any])
     """
     frame: int
+    segment_index: Optional[int] = None

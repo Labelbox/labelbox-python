@@ -65,9 +65,10 @@ class NDPoint(NDBaseObject):
 class NDFramePoint(VideoSupported):
     point: _Point
 
-    def to_common(self, name: str,
-                  feature_schema_id: Cuid) -> VideoObjectAnnotation:
+    def to_common(self, name: str, feature_schema_id: Cuid,
+                  segment_index: int) -> VideoObjectAnnotation:
         return VideoObjectAnnotation(frame=self.frame,
+                                     segment_index=segment_index,
                                      keyframe=True,
                                      name=name,
                                      feature_schema_id=feature_schema_id,
@@ -104,10 +105,11 @@ class NDLine(NDBaseObject):
 class NDFrameLine(VideoSupported):
     line: List[_Point]
 
-    def to_common(self, name: str,
-                  feature_schema_id: Cuid) -> VideoObjectAnnotation:
+    def to_common(self, name: str, feature_schema_id: Cuid,
+                  segment_index: int) -> VideoObjectAnnotation:
         return VideoObjectAnnotation(
             frame=self.frame,
+            segment_index=segment_index,
             keyframe=True,
             name=name,
             feature_schema_id=feature_schema_id,
@@ -171,10 +173,11 @@ class NDRectangle(NDBaseObject):
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
 
-    def to_common(self, name: str,
-                  feature_schema_id: Cuid) -> VideoObjectAnnotation:
+    def to_common(self, name: str, feature_schema_id: Cuid,
+                  segment_index: int) -> VideoObjectAnnotation:
         return VideoObjectAnnotation(
             frame=self.frame,
+            segment_index=segment_index,
             keyframe=True,
             name=name,
             feature_schema_id=feature_schema_id,
@@ -211,11 +214,13 @@ class NDSegment(BaseModel):
         keyframe.extra = {'uuid': uuid}
         return keyframe
 
-    def to_common(self, name: str, feature_schema_id: Cuid, uuid: str):
+    def to_common(self, name: str, feature_schema_id: Cuid, uuid: str,
+                  segment_index: int):
         return [
             self.segment_with_uuid(
                 keyframe.to_common(name=name,
-                                   feature_schema_id=feature_schema_id), uuid)
+                                   feature_schema_id=feature_schema_id,
+                                   segment_index=segment_index), uuid)
             for keyframe in self.keyframes
         ]
 
@@ -235,11 +240,12 @@ class NDSegments(NDBaseObject):
 
     def to_common(self, name: str, feature_schema_id: Cuid):
         result = []
-        for segment in self.segments:
+        for idx, segment in enumerate(self.segments):
             result.extend(
                 NDSegment.to_common(segment,
                                     name=name,
                                     feature_schema_id=feature_schema_id,
+                                    segment_index=idx,
                                     uuid=self.uuid))
         return result
 
