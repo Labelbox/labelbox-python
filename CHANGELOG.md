@@ -6,6 +6,10 @@
 * Importing annotations with model assisted labeling or label imports using ontology object names instead of schemaId now possible
     * In Python dictionaries, you can now use `schemaId` key or `name` key for all tools, classifications, options
 * Labelbox's Annotation Types now support model assisted labeling or label imports using ontology object names
+* Export metadata when using the following methods:
+    * `Batch.export_data_rows(include_metadata=True)`
+    * `Dataset.export_data_rows(include_metadata=True)`
+    * `Project.export_queued_data_rows(include_metadata=True)`
 
 ## Removed
 * `Project.video_label_generator`. Use `Project.label_generator` instead.
