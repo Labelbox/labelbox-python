@@ -89,6 +89,39 @@ class NDLabel(BaseModel):
         return consecutive
 
     @classmethod
+    def _get_segment_frame_ranges(
+        cls, annotation_group: List[Union[VideoClassificationAnnotation,
+                                          VideoObjectAnnotation]]
+    ) -> List[Tuple[int, int]]:
+        sorted_frame_segment_indices = sorted([
+            (annotation.frame, annotation.segment_index)
+            for annotation in annotation_group
+            if annotation.segment_index is not None
+        ])
+        if len(sorted_frame_segment_indices) == 0:
+            # Group segment by consecutive frames, since `segment_index` is not present
+            return cls._get_consecutive_frames(
+                sorted([annotation.frame for annotation in annotation_group]))
+        elif len(sorted_frame_segment_indices) == len(annotation_group):
+            # Group segment by segment_index
+            last_segment_id = 0
+            segment_groups = defaultdict(list)
+            for frame, segment_index in sorted_frame_segment_indices:
+                if segment_index < last_segment_id:
+                    raise ValueError(
+                        f"`segment_index` must be in ascending order. Please investigate video annotation at frame, '{frame}'"
+                    )
+                segment_groups[segment_index].append(frame)
+                last_segment_id = segment_index
+            frame_ranges = []
+            for group in segment_groups.values():
+                frame_ranges.append((group[0], group[-1]))
+            return frame_ranges
+        else:
+            raise ValueError(
+                f"Video annotations cannot partially have `segment_index` set")
+
+    @classmethod
     def _create_video_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
@@ -102,12 +135,12 @@ class NDLabel(BaseModel):
                                   annot.name].append(annot)
 
         for annotation_group in video_annotations.values():
-            consecutive_frames = cls._get_consecutive_frames(
-                sorted([annotation.frame for annotation in annotation_group]))
+            segment_frame_ranges = cls._get_segment_frame_ranges(
+                annotation_group)
             if isinstance(annotation_group[0], VideoClassificationAnnotation):
                 annotation = annotation_group[0]
                 frames_data = []
-                for frames in consecutive_frames:
+                for frames in segment_frame_ranges:
                     frames_data.append({'start': frames[0], 'end': frames[-1]})
                 annotation.extra.update({'frames': frames_data})
                 yield NDClassification.from_common(annotation, label.data)
@@ -118,7 +151,7 @@ class NDLabel(BaseModel):
                     for video object annotations
                     and will not import alongside the object annotations.""")
                 segments = []
-                for start_frame, end_frame in consecutive_frames:
+                for start_frame, end_frame in segment_frame_ranges:
                     segment = []
                     for annotation in annotation_group:
                         if annotation.keyframe and start_frame <= annotation.frame <= end_frame:
