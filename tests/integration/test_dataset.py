@@ -2,7 +2,8 @@ import json
 import pytest
 import requests
 from labelbox import Dataset
-from labelbox.exceptions import ResourceNotFoundError
+from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException
+from labelbox.schema.dataset import MAX_DATAROW_PER_API_OPERATION
 
 
 def test_dataset(client, rand_gen):
@@ -137,3 +138,12 @@ def test_create_descriptor_file(dataset):
             'content_type': 'application/json',
             'filename': 'json_import.json'
         }
+
+
+def test_max_dataset_limit(dataset, image_url, rand_gen):
+    external_id = str(rand_gen)
+    items = [dict(row_data=image_url, external_id=external_id)
+            ] * (MAX_DATAROW_PER_API_OPERATION + 1)
+
+    with pytest.raises(MalformedQueryException):
+        dataset.create_data_rows(items)
