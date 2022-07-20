@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
@@ -72,11 +72,13 @@ class VideoObjectAnnotation(ObjectAnnotation):
         value (Geometry)
         frame (Int): The frame index that this annotation corresponds to
         keyframe (bool): Whether or not this annotation was a human generated or interpolated annotation
+        segment_id (Optional[Int]): Index of video segment this annotation belongs to
         classifications (List[ClassificationAnnotation]) = []
         extra (Dict[str, Any])
     """
     frame: int
     keyframe: bool
+    segment_index: Optional[int] = None
 
 
 class VideoClassificationAnnotation(ClassificationAnnotation):
@@ -87,6 +89,8 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
         feature_schema_id (Optional[Cuid])
         value (Union[Text, Checklist, Radio, Dropdown])
         frame (int): The frame index that this annotation corresponds to
+        segment_id (Optional[Int]): Index of video segment this annotation belongs to
         extra (Dict[str, Any])
     """
     frame: int
+    segment_index: Optional[int] = None

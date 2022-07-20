@@ -15,11 +15,15 @@ from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.exceptions import MalformedQueryException
 
 if TYPE_CHECKING:
     from labelbox import Task, User, DataRow
 
 logger = logging.getLogger(__name__)
+
+MAX_DATAROW_PER_API_OPERATION = 150000
+MAX_DATAROW_WITH_METADATA = 30000
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -391,14 +395,18 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Must pass an iterable to create_data_rows. Found {type(items)}"
             )
 
+        if len(items) > MAX_DATAROW_PER_API_OPERATION:
+            raise MalformedQueryException(
+                f"Cannot create more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
+            )
+
         # TODO: If any datarows contain metadata, we're limiting max # of datarows
         # until we address performance issues with datarow create with metadata
-        max_datarow_with_metadata = 30_000
-        if (len(items) > max_datarow_with_metadata):
+        if len(items) > MAX_DATAROW_WITH_METADATA:
             for row in items:
                 if 'metadata_fields' in row:
-                    raise ValueError(
-                        f"Cannot create more than {max_datarow_with_metadata} DataRows, if any DataRows contain metadata"
+                    raise MalformedQueryException(
+                        f"Cannot create more than {MAX_DATAROW_WITH_METADATA} DataRows, if any DataRows contain metadata"
                     )
 
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
@@ -462,7 +470,9 @@ class Dataset(DbObject, Updateable, Deletable):
                 external_id)
         return data_rows[0]
 
-    def export_data_rows(self, timeout_seconds=120) -> Generator:
+    def export_data_rows(self,
+                         timeout_seconds=120,
+                         include_metadata: bool = False) -> Generator:
         """ Returns a generator that produces all data rows that are currently
         attached to this dataset.
 
@@ -477,23 +487,24 @@ class Dataset(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         id_param = "datasetId"
-        query_str = """mutation GetDatasetDataRowsExportUrlPyApi($%s: ID!)
-            {exportDatasetDataRows(data:{datasetId: $%s }) {downloadUrl createdAt status}}
-        """ % (id_param, id_param)
+        metadata_param = "includeMetadataInput"
+        query_str = """mutation GetDatasetDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
+            {exportDatasetDataRows(data:{datasetId: $%s , includeMetadataInput: $%s}) {downloadUrl createdAt status}}
+        """ % (id_param, metadata_param, id_param, metadata_param)
         sleep_time = 2
         while True:
-            res = self.client.execute(query_str, {id_param: self.uid})
+            res = self.client.execute(query_str, {
+                id_param: self.uid,
+                metadata_param: include_metadata
+            })
             res = res["exportDatasetDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-                # TODO: Update result to parse metadataFields when resolver returns
-                return (Entity.DataRow(self.client, {
-                    **result, 'metadataFields': [],
-                    'customMetadata': []
-                }) for result in reader)
+                return (
+                    Entity.DataRow(self.client, result) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 

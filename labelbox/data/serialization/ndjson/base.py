@@ -1,5 +1,6 @@
+from typing import Optional
 from uuid import uuid4
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, root_validator, validator, Field
 
 from labelbox.utils import camel_case
 from ...annotation_types.types import Cuid
@@ -32,12 +33,21 @@ class NDJsonBase(BaseModel):
 
 
 class NDAnnotation(NDJsonBase):
-    schema_id: Cuid
+    name: Optional[str] = None
+    schema_id: Optional[Cuid] = None
 
-    @validator('schema_id', pre=True, always=True)
-    def validate_id(cls, v):
-        if v is None:
-            raise ValueError(
-                "Schema ids are not set. Use `LabelGenerator.assign_feature_schema_ids`, `LabelList.assign_feature_schema_ids`, or `Label.assign_feature_schema_ids`."
-            )
-        return v
+    @root_validator()
+    def must_set_one(cls, values):
+        if ('schema_id' not in values or
+                values['schema_id'] is None) and ('name' not in values or
+                                                  values['name'] is None):
+            raise ValueError("Schema id or name are not set. Set either one.")
+        return values
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if 'name' in res and res['name'] is None:
+            res.pop('name')
+        if 'schemaId' in res and res['schemaId'] is None:
+            res.pop('schemaId')
+        return res
