@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.25.0 (2022-07-18)
+# Version 3.25.0 (2022-07-20)
 
 ## Added
 * Importing annotations with model assisted labeling or label imports using ontology object names instead of schemaId now possible
