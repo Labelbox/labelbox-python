@@ -395,19 +395,19 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Must pass an iterable to create_data_rows. Found {type(items)}"
             )
 
+        if len(items) > MAX_DATAROW_PER_API_OPERATION:
+            raise MalformedQueryException(
+                f"Cannot create more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
+            )
+
         # TODO: If any datarows contain metadata, we're limiting max # of datarows
         # until we address performance issues with datarow create with metadata
-        if (len(items) > MAX_DATAROW_WITH_METADATA):
+        if len(items) > MAX_DATAROW_WITH_METADATA:
             for row in items:
                 if 'metadata_fields' in row:
                     raise MalformedQueryException(
                         f"Cannot create more than {MAX_DATAROW_WITH_METADATA} DataRows, if any DataRows contain metadata"
                     )
-
-        if len(items) > MAX_DATAROW_PER_API_OPERATION:
-            raise MalformedQueryException(
-                f"Cannot create more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
-            )
 
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [executor.submit(convert_item, item) for item in items]
