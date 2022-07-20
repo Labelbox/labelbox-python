@@ -20,6 +20,8 @@
 * `Dataset.create_data_rows` now has the following limits:
     * 150,000 rows per upload without metadata
     * 30,000 rows per upload with metadata
+
+    
 # Version 3.24.1 (2022-07-07)
 ## Updated
 * Added `refresh_ontology()` as part of create/update/delete metadata schema functions
