@@ -140,7 +140,7 @@ def test_create_descriptor_file(dataset):
         }
 
 
-def test_max_dataset_limit(dataset, image_url, rand_gen):
+def test_max_dataset_datarow_upload(dataset, image_url, rand_gen):
     external_id = str(rand_gen)
     items = [dict(row_data=image_url, external_id=external_id)
             ] * (MAX_DATAROW_PER_API_OPERATION + 1)
