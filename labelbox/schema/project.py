@@ -185,8 +185,10 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
-    def export_queued_data_rows(self,
-                                timeout_seconds=120) -> List[Dict[str, str]]:
+    def export_queued_data_rows(
+            self,
+            timeout_seconds=120,
+            include_metadata: bool = False) -> List[Dict[str, str]]:
         """ Returns all data rows that are currently enqueued for this project.
 
         Args:
@@ -197,12 +199,16 @@ class Project(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         id_param = "projectId"
-        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!)
-            {exportQueuedDataRows(data:{projectId: $%s }) {downloadUrl createdAt status} }
-        """ % (id_param, id_param)
+        metadata_param = "includeMetadataInput"
+        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
+            {exportQueuedDataRows(data:{projectId: $%s , includeMetadataInput: $%s}) {downloadUrl createdAt status} }
+        """ % (id_param, metadata_param, id_param, metadata_param)
         sleep_time = 2
         while True:
-            res = self.client.execute(query_str, {id_param: self.uid})
+            res = self.client.execute(query_str, {
+                id_param: self.uid,
+                metadata_param: include_metadata
+            })
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
