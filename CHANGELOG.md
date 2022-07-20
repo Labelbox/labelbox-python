@@ -1,5 +1,27 @@
 # Changelog
 
+# Version 3.25.0 (2022-07-18)
+
+## Added
+* Importing annotations with model assisted labeling or label imports using ontology object names instead of schemaId now possible
+    * In Python dictionaries, you can now use `schemaId` key or `name` key for all tools, classifications, options
+* Labelbox's Annotation Types now support model assisted labeling or label imports using ontology object names
+* Export metadata when using the following methods:
+    * `Batch.export_data_rows(include_metadata=True)`
+    * `Dataset.export_data_rows(include_metadata=True)`
+    * `Project.export_queued_data_rows(include_metadata=True)`
+* `VideoObjectAnnotation` has `segment_index` to group video annotations into video segments    
+
+## Removed
+* `Project.video_label_generator`. Use `Project.label_generator` instead.
+
+## Updated
+* Model Runs now support unassigned splits
+* `Dataset.create_data_rows` now has the following limits:
+    * 150,000 rows per upload without metadata
+    * 30,000 rows per upload with metadata
+
+    
 # Version 3.24.1 (2022-07-07)
 ## Updated
 * Added `refresh_ontology()` as part of create/update/delete metadata schema functions
