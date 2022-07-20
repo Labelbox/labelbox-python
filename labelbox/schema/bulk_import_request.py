@@ -15,7 +15,6 @@ from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING)
 
 from labelbox import exceptions as lb_exceptions
-from labelbox.data.annotation_types.types import Cuid
 from labelbox.data.ontology import get_feature_schema_lookup
 from labelbox.orm.model import Entity
 from labelbox import utils
@@ -606,7 +605,7 @@ class DataRow(BaseModel):
 
 
 class NDFeatureSchema(BaseModel):
-    schemaId: Optional[Cuid] = None
+    schemaId: Optional[str] = None
     name: Optional[str] = None
 
     @root_validator
