@@ -10,6 +10,7 @@
     * `Batch.export_data_rows(include_metadata=True)`
     * `Dataset.export_data_rows(include_metadata=True)`
     * `Project.export_queued_data_rows(include_metadata=True)`
+* `VideoObjectAnnotation` has `segment_index` to group video annotations into video segments    
 
 ## Removed
 * `Project.video_label_generator`. Use `Project.label_generator` instead.
