@@ -1,9 +1,11 @@
 from typing import Callable, Optional
 
 import requests
+from requests.exceptions import ConnectTimeout
 from google.api_core import retry
 from pydantic import root_validator
 
+from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 
 
@@ -47,7 +49,9 @@ class TextData(BaseData):
     def set_fetch_fn(self, fn):
         object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
-    @retry.Retry(deadline=15.)
+    @retry.Retry(deadline=15.,
+                 predicate=retry.if_exception_type(ConnectTimeout,
+                                                   InternalServerError))
     def fetch_remote(self) -> str:
         """
         Method for accessing url.
@@ -56,6 +60,8 @@ class TextData(BaseData):
         simply override this function
         """
         response = requests.get(self.url)
+        if response.status_code in [500, 502, 503, 504]:
+            raise labelbox.exceptions.InternalServerError(response.text)
         response.raise_for_status()
         return response.text
 
