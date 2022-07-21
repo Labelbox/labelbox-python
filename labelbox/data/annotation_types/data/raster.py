@@ -128,7 +128,6 @@ class RasterData(BaseModel, ABC):
         """
         response = requests.get(self.url)
         if response.status_code in [500, 502, 503, 504]:
-            breakpoint()
             raise InternalServerError(response.text)
         response.raise_for_status()
         return response.content
