@@ -1,6 +1,7 @@
 import pytest
 
 from labelbox import Dataset, Project
+import labelbox
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 
@@ -50,6 +51,16 @@ def test_archive_batch(configured_project: Project, small_dataset: Dataset):
     assert len(exported_data_rows) == 0
 
 
+def test_delete(configured_project: Project, small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch("batch to delete", data_rows)
+    batch.delete()
+
+    with pytest.raises(Exception):
+        batch.delete()
+
+
 def test_batch_project(configured_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     configured_project.update(queue_mode=Project.QueueMode.Batch)
@@ -80,3 +91,25 @@ def test_export_data_rows(configured_project: Project, dataset: Dataset):
 
     assert len(result) == n_data_rows
     assert set(data_rows) == set(exported_data_rows)
+
+
+def test_delete_labels(configured_project: Project, small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch("batch to delete labels", data_rows)
+    batch.delete_labels()
+    exported_data_rows = list(batch.export_data_rows())
+
+    assert len(exported_data_rows) == 5
+
+
+def test_delete_labels_with_templates(configured_project: Project,
+                                      small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch(
+        "batch to delete labels w templates", data_rows)
+    batch.delete_labels(labels_as_template=True)
+    exported_data_rows = list(batch.export_data_rows())
+
+    assert len(exported_data_rows) == 5
