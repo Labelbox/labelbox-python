@@ -402,6 +402,32 @@ class MALPredictionImport(AnnotationImport):
             raise ValueError(f"Url {url} is not reachable")
 
     @classmethod
+    def create_for_model_run_data_rows(cls, client: "labelbox.Client",
+                                       model_run_id: str,
+                                       data_row_ids: List[str], project_id: str,
+                                       name: str) -> "MALPredictionImport":
+        """
+        Create an MAL prediction import job from a list of data row ids of a specific model run
+
+        Args:
+            client: Labelbox Client for executing queries
+            data_row_ids: A list of data row ids
+            model_run_id: model run id
+        Returns:
+            MALPredictionImport
+        """
+        query_str = cls._get_model_run_data_rows_mutation()
+        return cls(
+            client,
+            client.execute(query_str,
+                           params={
+                               "dataRowIds": data_row_ids,
+                               "modelRunId": model_run_id,
+                               "projectId": project_id,
+                               "name": name
+                           })["createMalPredictionImportForModelRunDataRows"])
+
+    @classmethod
     def from_name(cls,
                   client: "labelbox.Client",
                   project_id: str,
@@ -442,6 +468,17 @@ class MALPredictionImport(AnnotationImport):
                 projectId: $projectId
                 name: $name
                 fileUrl: $fileUrl
+            }) {%s}
+        }""" % query.results_query_part(cls)
+
+    @classmethod
+    def _get_model_run_data_rows_mutation(cls) -> str:
+        return """mutation createMalPredictionImportForModelRunDataRows($projectId : ID!, $dataRowIds: [ID!]!, $name: String!, $modelRunId: ID!) {
+            createMalPredictionImportForModelRunDataRows(data: {
+                name: $name
+                modelRunId: $modelRunId
+                dataRowIds: $dataRowIds
+                projectId: $projectId
             }) {%s}
         }""" % query.results_query_part(cls)
 

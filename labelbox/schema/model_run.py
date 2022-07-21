@@ -12,7 +12,6 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
-from labelbox.data.annotation_types import LabelList
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
@@ -128,11 +127,11 @@ class ModelRun(DbObject):
     def upsert_predictions_and_send_to_project(
         self,
         name: str,
-        predictions: LabelList,
+        predictions: Union[str, Path, Iterable[Dict]],
         project_id: str,
         priority: Optional[int] = 5,
     ) -> 'MEAPredictionImport':  # type: ignore
-        """ Upload predictions and creates a batch import to project.
+        """ Upload predictions and create a batch import to project.
         Args:
             name (str): name of the AnnotationImport job as well as the name of the batch import
             predictions (Iterable):
@@ -142,16 +141,21 @@ class ModelRun(DbObject):
         Returns:
             (AnnotationImport, Project)
         """
-        data_rows_set = set(
-            map(lambda x: x.data_row.id, predictions)[:DATAROWS_IMPORT_LIMIT])
-        data_rows = list(data_rows_set)
+        kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         project = self.client.get_project(project_id)
-        batch = project.create_batch(name, data_rows, priority)
-
-        predictions_for_data_rows = filter(
-            lambda x: x.data_row.id in data_rows_set, predictions)
-
-        return (self.add_predictions(name, predictions_for_data_rows), batch)
+        import_job = self.add_predictions(name, predictions)
+        prediction_statuses = import_job.statuses()
+        mea_to_mal_data_rows_set = set([
+            row['dataRow']['id']
+            for row in prediction_statuses
+            if row['status'] == 'SUCCESS'
+        ])
+        mea_to_mal_data_rows = list(
+            mea_to_mal_data_rows_set)[:DATAROWS_IMPORT_LIMIT]
+        batch = project.create_batch(name, mea_to_mal_data_rows, priority)
+        mal_prediction_import = Entity.MALPredictionImport.create_for_model_run_data_rows(
+            data_row_ids=mea_to_mal_data_rows, project_id=project_id, **kwargs)
+        return mea_prediction_import, batch, mal_prediction_import
 
     def add_predictions(
         self,
