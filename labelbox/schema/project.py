@@ -193,6 +193,7 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
+            include_metadata (bool): True to return related DataRow metadata
         Returns:
             Data row fields for all data rows in the queue as json
         Raises:
