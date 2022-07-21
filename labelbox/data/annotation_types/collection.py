@@ -2,6 +2,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Generator, Iterable, Union, Optional
 from uuid import uuid4
+import warnings
 
 from tqdm import tqdm
 
@@ -42,6 +43,9 @@ class LabelList:
 
         Note: You can now import annotations using names directly without having to lookup schema_ids  
         """
+        warnings.warn("This method is deprecated and will be "
+                      "removed in a future release. Feature schema ids"
+                      " are no longer required for importing.")
         for label in self._data:
             label.assign_feature_schema_ids(ontology_builder)
         return self
