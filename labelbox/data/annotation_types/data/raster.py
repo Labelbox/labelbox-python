@@ -2,13 +2,16 @@ from abc import ABC
 from io import BytesIO
 from typing import Callable, Optional, Union
 from typing_extensions import Literal
-import numpy as np
-import requests
+
 from PIL import Image
 from google.api_core import retry
 from pydantic import BaseModel
 from pydantic import root_validator
+from requests.exceptions import ConnectTimeout
+import requests
+import numpy as np
 
+from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 from ..types import TypedArray
 
@@ -113,7 +116,9 @@ class RasterData(BaseModel, ABC):
     def set_fetch_fn(self, fn):
         object.__setattr__(self, 'fetch_remote', lambda: fn(self))
 
-    @retry.Retry(deadline=60.)
+    @retry.Retry(deadline=15.,
+                 predicate=retry.if_exception_type(ConnectTimeout,
+                                                   InternalServerError))
     def fetch_remote(self) -> bytes:
         """
         Method for accessing url.
@@ -122,6 +127,9 @@ class RasterData(BaseModel, ABC):
         simply override this function
         """
         response = requests.get(self.url)
+        if response.status_code in [500, 502, 503, 504]:
+            breakpoint()
+            raise InternalServerError(response.text)
         response.raise_for_status()
         return response.content
 
