@@ -197,6 +197,9 @@ class LabelGenerator(PrefetchGenerator):
             label.assign_feature_schema_ids(ontology_builder)
             return label
 
+        warnings.warn("This method is deprecated and will be "
+                      "removed in a future release. Feature schema ids"
+                      " are no longer required for importing.")
         self._fns['assign_feature_schema_ids'] = _assign_ids
         return self
 
