@@ -1,4 +1,5 @@
 import sys
+from hashlib import md5
 
 from pydantic import BaseModel
 
@@ -11,4 +12,5 @@ class Categories(BaseModel):
 
 
 def hash_category_name(name: str) -> int:
-    return hash(name) + sys.maxsize
+    return int.from_bytes(
+        md5(name.encode('utf-8')).hexdigest().encode('utf-8'), 'little')
