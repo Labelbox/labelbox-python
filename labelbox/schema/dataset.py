@@ -481,6 +481,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
+            include_metadata (bool): True to return related DataRow metadata
         Returns:
             Generator that yields DataRow objects belonging to this dataset.
         Raises:
