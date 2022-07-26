@@ -181,3 +181,17 @@ AnnotationImport
 .. automodule:: labelbox.schema.annotation_import
    :members:
    :show-inheritance:      
+
+Batch
+----------------------------
+
+.. automodule:: labelbox.schema.batch
+   :members:
+   :show-inheritance:
+
+ResourceTag
+----------------------------
+
+.. automodule:: labelbox.schema.resource_tag
+   :members:
+   :show-inheritance:
