@@ -189,6 +189,12 @@ def iframe_url(environ) -> str:
 
 
 @pytest.fixture
+def sample_image() -> str:
+    path_to_video = 'tests/integration/media/sample_image.jpg'
+    return path_to_video
+
+
+@pytest.fixture
 def sample_video() -> str:
     path_to_video = 'tests/integration/media/cat.mp4'
     return path_to_video
