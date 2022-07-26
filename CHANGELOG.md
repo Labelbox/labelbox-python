@@ -1,5 +1,13 @@
 # Changelog
 
+# Version 3.25.2 (2022-07-26)
+## Fixed
+* Fixed Metadata not importing with DataRows when bulk importing local files.
+
+# Version 3.25.1 (2022-07-20)
+## Fixed
+* Removed extra dependency causing import errors.
+
 # Version 3.25.0 (2022-07-20)
 
 ## Added
