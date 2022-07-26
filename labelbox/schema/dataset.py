@@ -259,7 +259,7 @@ class Dataset(DbObject, Updateable, Deletable):
         def upload_if_necessary(item):
             row_data = item['row_data']
             if os.path.exists(row_data):
-                item_url = self.client.upload_file(item['row_data'])
+                item_url = self.client.upload_file(row_data)
                 item['row_data'] = item_url
                 if 'external_id' not in item:
                     # Default `external_id` to local file name
