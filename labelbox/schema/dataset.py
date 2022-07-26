@@ -260,11 +260,10 @@ class Dataset(DbObject, Updateable, Deletable):
             row_data = item['row_data']
             if os.path.exists(row_data):
                 item_url = self.client.upload_file(item['row_data'])
-                item = {
-                    "row_data": item_url,
-                    "external_id": item.get('external_id', item['row_data']),
-                    "attachments": item.get('attachments', [])
-                }
+                item['row_data'] = item_url
+                if 'external_id' not in item:
+                    # Default `external_id` to local file name
+                    item['external_id'] = row_data
             return item
 
         def validate_attachments(item):
