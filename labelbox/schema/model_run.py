@@ -152,10 +152,14 @@ class ModelRun(DbObject):
         ])
         mea_to_mal_data_rows = list(
             mea_to_mal_data_rows_set)[:DATAROWS_IMPORT_LIMIT]
+        logger.warning(
+            f"Got {len(mea_to_mal_data_rows_set)} data rows to import, trimmed down to {DATAROWS_IMPORT_LIMIT} data rows"
+        )
+
         batch = project.create_batch(name, mea_to_mal_data_rows, priority)
         mal_prediction_import = Entity.MALPredictionImport.create_for_model_run_data_rows(
             data_row_ids=mea_to_mal_data_rows, project_id=project_id, **kwargs)
-        return mea_prediction_import, batch, mal_prediction_import
+        return import_job, batch, mal_prediction_import
 
     def add_predictions(
         self,
