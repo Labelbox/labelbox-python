@@ -1,8 +1,13 @@
 # Changelog
 
 # Version 3.25.2 (2022-07-26)
+## Updated
+* Notebooks are up-to-date with examples of importing annotations without `schema_id`
+* Mask downloads now have retries
+
 ## Fixed
 * Fixed Metadata not importing with DataRows when bulk importing local files.
+* Fixed COCOConverter failing for empty annotations
 
 # Version 3.25.1 (2022-07-20)
 ## Fixed
