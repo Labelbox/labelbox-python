@@ -3,6 +3,7 @@
 # Version 3.25.2 (2022-07-26)
 ## Updated
 * Mask downloads now have retries
+* Failed `upload_data` now shows more details in the error message
 
 ## Fixed
 * Fixed Metadata not importing with DataRows when bulk importing local files.
