@@ -570,3 +570,15 @@ def test_create_data_rows_result(client, dataset, image_url):
     assert task.errors is None
     for result in task.result:
         client.get_data_row(result['id'])
+
+
+def test_create_data_rows_local_file(dataset, sample_image):
+    task = dataset.create_data_rows([{
+        DataRow.row_data: sample_image,
+        DataRow.metadata_fields: make_metadata_fields()
+    }])
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    data_row = list(dataset.data_rows())[0]
+    assert data_row.external_id == "tests/integration/media/sample_image.jpg"
+    assert len(data_row.metadata_fields) == 4

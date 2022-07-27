@@ -185,24 +185,31 @@ class Project(DbObject, Updateable, Deletable):
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labels"], Label)
 
-    def export_queued_data_rows(self,
-                                timeout_seconds=120) -> List[Dict[str, str]]:
+    def export_queued_data_rows(
+            self,
+            timeout_seconds=120,
+            include_metadata: bool = False) -> List[Dict[str, str]]:
         """ Returns all data rows that are currently enqueued for this project.
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
+            include_metadata (bool): True to return related DataRow metadata
         Returns:
             Data row fields for all data rows in the queue as json
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         id_param = "projectId"
-        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!)
-            {exportQueuedDataRows(data:{projectId: $%s }) {downloadUrl createdAt status} }
-        """ % (id_param, id_param)
+        metadata_param = "includeMetadataInput"
+        query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
+            {exportQueuedDataRows(data:{projectId: $%s , includeMetadataInput: $%s}) {downloadUrl createdAt status} }
+        """ % (id_param, metadata_param, id_param, metadata_param)
         sleep_time = 2
         while True:
-            res = self.client.execute(query_str, {id_param: self.uid})
+            res = self.client.execute(query_str, {
+                id_param: self.uid,
+                metadata_param: include_metadata
+            })
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
@@ -222,38 +229,6 @@ class Project(DbObject, Updateable, Deletable):
                 "Project '%s' queued data row export, waiting for server...",
                 self.uid)
             time.sleep(sleep_time)
-
-    def video_label_generator(self, timeout_seconds=600, **kwargs):
-        """
-        Download video annotations
-
-        Returns:
-            LabelGenerator for accessing labels for each video
-        """
-        warnings.warn(
-            "video_label_generator will be deprecated in a future release. "
-            "Use label_generator for video or text/image labels.")
-        _check_converter_import()
-        json_data = self.export_labels(download=True,
-                                       timeout_seconds=timeout_seconds,
-                                       **kwargs)
-        # assert that the instance this would fail is only if timeout runs out
-        assert isinstance(
-            json_data,
-            List), "Unable to successfully get labels. Please try again"
-        if json_data is None:
-            raise TimeoutError(
-                f"Unable to download labels in {timeout_seconds} seconds."
-                "Please try again or contact support if the issue persists.")
-        is_video = [
-            'frames' in row['Label'] for row in json_data if row['Label']
-        ]
-        if len(is_video) and not all(is_video):
-            raise ValueError(
-                "Found non-video data rows in export. "
-                "Use project.export_labels() to export projects with mixed data types. "
-                "Or use project.label_generator() for text and imagery data.")
-        return LBV1Converter.deserialize_video(json_data, self.client)
 
     def label_generator(self, timeout_seconds=600, **kwargs):
         """

@@ -77,7 +77,9 @@ class Batch(DbObject):
                 },
                             experimental=True)
 
-    def export_data_rows(self, timeout_seconds=120) -> Generator:
+    def export_data_rows(self,
+                         timeout_seconds=120,
+                         include_metadata: bool = False) -> Generator:
         """ Returns a generator that produces all data rows that are currently
         in this batch.
 
@@ -86,29 +88,31 @@ class Batch(DbObject):
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
+            include_metadata (bool): True to return related DataRow metadata
         Returns:
             Generator that yields DataRow objects belonging to this batch.
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         id_param = "batchId"
-        query_str = """mutation GetBatchDataRowsExportUrlPyApi($%s: ID!)
-            {exportBatchDataRows(data:{batchId: $%s }) {downloadUrl createdAt status}}
-        """ % (id_param, id_param)
+        metadata_param = "includeMetadataInput"
+        query_str = """mutation GetBatchDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
+            {exportBatchDataRows(data:{batchId: $%s , includeMetadataInput: $%s}) {downloadUrl createdAt status}}
+        """ % (id_param, metadata_param, id_param, metadata_param)
         sleep_time = 2
         while True:
-            res = self.client.execute(query_str, {id_param: self.uid})
+            res = self.client.execute(query_str, {
+                id_param: self.uid,
+                metadata_param: include_metadata
+            })
             res = res["exportBatchDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
                 response = requests.get(download_url)
                 response.raise_for_status()
                 reader = ndjson.reader(StringIO(response.text))
-                # TODO: Update result to parse metadataFields when resolver returns
-                return (Entity.DataRow(self.client, {
-                    **result, 'metadataFields': [],
-                    'customMetadata': []
-                }) for result in reader)
+                return (
+                    Entity.DataRow(self.client, result) for result in reader)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 
