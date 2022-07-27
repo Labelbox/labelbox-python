@@ -383,7 +383,8 @@ class Client:
         if not file_data or not file_data.get("uploadFile", None):
             try:
                 errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get("message", "Unknown error")
+                error_msg = next(iter(errors), {}).get("message",
+                                                       "Unknown error")
             except Exception as e:
                 error_msg = "Unknown error"
             raise labelbox.exceptions.LabelboxError(
