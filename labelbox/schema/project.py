@@ -333,7 +333,7 @@ class Project(DbObject, Updateable, Deletable):
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
-            if not res["shouldPoll"]:
+            if not res["shouldPoll"] and res["downloadUrl"] is not None:
                 url = res['downloadUrl']
                 if not download:
                     return url
