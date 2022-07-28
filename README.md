@@ -59,9 +59,9 @@ pip install labelbox[data]
 
 ## Documentation
 
-- [Visit our docs](https://labelbox.com/docs/python-api) to learn how the SDK works
+- [Visit our docs](https://docs.labelbox.com/reference) to learn how the SDK works
 - Checkout our [notebook examples](examples/) to follow along with interactive tutorials
-- view our [API reference](https://labelbox.com/docs/python-api/api-reference).
+- view our [API reference](https://labelbox-python.readthedocs.io/en/latest/index.html).
 
 ## Authentication
 
