@@ -1,7 +1,7 @@
 # https://cocodataset.org/#format-data
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 from pathlib import Path
 
 import numpy as np
@@ -15,14 +15,16 @@ from .annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_de
 from .image import CocoImage, get_image, get_image_id
 
 
-def mask_to_coco_object_annotation(annotation: ObjectAnnotation, annot_idx: int,
-                                   image_id: int,
-                                   category_id: int) -> COCOObjectAnnotation:
+def mask_to_coco_object_annotation(
+        annotation: ObjectAnnotation, annot_idx: int, image_id: int,
+        category_id: int) -> Optional[COCOObjectAnnotation]:
     # This is going to fill any holes into the multipolygon
     # If you need to support holes use the panoptic data format
     shapely = annotation.value.shapely.simplify(1).buffer(0)
+
     if shapely.is_empty:
-        shapely = annotation.value.shapely.simplify(1).buffer(0.01)
+        return
+
     xmin, ymin, xmax, ymax = shapely.bounds
     # Iterate over polygon once or multiple polygon for each item
     area = shapely.area
@@ -89,6 +91,19 @@ def segmentations_to_common(class_annotations: COCOObjectAnnotation,
     return annotations
 
 
+def object_annotation_to_coco(
+        annotation: ObjectAnnotation, annot_idx: int, image_id: int,
+        category_id: int) -> Optional[COCOObjectAnnotation]:
+    if isinstance(annotation.value, Mask):
+        return mask_to_coco_object_annotation(annotation, annot_idx, image_id,
+                                              category_id)
+    elif isinstance(annotation.value, (Polygon, Rectangle)):
+        return vector_to_coco_object_annotation(annotation, annot_idx, image_id,
+                                                category_id)
+    else:
+        return None
+
+
 def process_label(
     label: Label,
     idx: int,
@@ -103,20 +118,16 @@ def process_label(
     categories = {}
     for class_name in annotation_lookup:
         for annotation in annotation_lookup[class_name]:
-            if annotation.name not in categories:
-                categories[annotation.name] = hash_category_name(
-                    annotation.name)
-            if isinstance(annotation.value, Mask):
-                coco_annotations.append(
-                    mask_to_coco_object_annotation(annotation, annot_idx,
-                                                   image_id,
-                                                   categories[annotation.name]))
-            elif isinstance(annotation.value, (Polygon, Rectangle)):
-                coco_annotations.append(
-                    vector_to_coco_object_annotation(
-                        annotation, annot_idx, image_id,
-                        categories[annotation.name]))
-            annot_idx += 1
+            category_id = categories.get(annotation.name) or hash_category_name(
+                annotation.name)
+            coco_annotation = object_annotation_to_coco(annotation, annot_idx,
+                                                        image_id, category_id)
+            if coco_annotation is not None:
+                coco_annotations.append(coco_annotation)
+                if annotation.name not in categories:
+                    categories[annotation.name] = category_id
+                annot_idx += 1
+
     return image, coco_annotations, categories
 
 
@@ -147,6 +158,7 @@ class CocoInstanceDataset(BaseModel):
                     future.result() for future in tqdm(as_completed(futures))
                 ]
         else:
+
             results = [
                 process_label(label, idx, image_root)
                 for idx, label in enumerate(labels)

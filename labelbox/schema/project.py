@@ -193,6 +193,7 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
+            include_metadata (bool): True to return related DataRow metadata
         Returns:
             Data row fields for all data rows in the queue as json
         Raises:
@@ -204,6 +205,7 @@ class Project(DbObject, Updateable, Deletable):
             {exportQueuedDataRows(data:{projectId: $%s , includeMetadataInput: $%s}) {downloadUrl createdAt status} }
         """ % (id_param, metadata_param, id_param, metadata_param)
         sleep_time = 2
+        start_time = time.time()
         while True:
             res = self.client.execute(query_str, {
                 id_param: self.uid,
@@ -218,8 +220,8 @@ class Project(DbObject, Updateable, Deletable):
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 
-            timeout_seconds -= sleep_time
-            if timeout_seconds <= 0:
+            current_time = time.time()
+            if current_time - start_time > timeout_seconds:
                 raise LabelboxError(
                     f"Unable to export data rows within {timeout_seconds} seconds."
                 )
@@ -327,6 +329,7 @@ class Project(DbObject, Updateable, Deletable):
             {exportLabels(data:{projectId: $%s%s}) {downloadUrl createdAt shouldPoll} }
         """ % (id_param, id_param, filter_param)
 
+        start_time = time.time()
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
@@ -339,8 +342,8 @@ class Project(DbObject, Updateable, Deletable):
                     response.raise_for_status()
                     return response.json()
 
-            timeout_seconds -= sleep_time
-            if timeout_seconds <= 0:
+            current_time = time.time()
+            if current_time - start_time > timeout_seconds:
                 return None
 
             logger.debug("Project '%s' label export, waiting for server...",

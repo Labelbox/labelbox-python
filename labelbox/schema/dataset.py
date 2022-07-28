@@ -259,12 +259,11 @@ class Dataset(DbObject, Updateable, Deletable):
         def upload_if_necessary(item):
             row_data = item['row_data']
             if os.path.exists(row_data):
-                item_url = self.client.upload_file(item['row_data'])
-                item = {
-                    "row_data": item_url,
-                    "external_id": item.get('external_id', item['row_data']),
-                    "attachments": item.get('attachments', [])
-                }
+                item_url = self.client.upload_file(row_data)
+                item['row_data'] = item_url
+                if 'external_id' not in item:
+                    # Default `external_id` to local file name
+                    item['external_id'] = row_data
             return item
 
         def validate_attachments(item):
@@ -481,6 +480,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
+            include_metadata (bool): True to return related DataRow metadata
         Returns:
             Generator that yields DataRow objects belonging to this dataset.
         Raises:
