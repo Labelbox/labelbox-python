@@ -122,6 +122,20 @@ def configured_project(client, ontology, rand_gen, image_url):
 
 
 @pytest.fixture
+def configured_project_without_data_rows(client, ontology, rand_gen):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str))
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    project.setup(editor, ontology)
+    project.update(queue_mode=project.QueueMode.Batch)
+    yield project
+    project.delete()
+    dataset.delete()
+
+
+@pytest.fixture
 def prediction_id_mapping(configured_project):
     #Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized

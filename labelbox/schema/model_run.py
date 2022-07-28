@@ -144,7 +144,7 @@ class ModelRun(DbObject):
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         project = self.client.get_project(project_id)
         import_job = self.add_predictions(name, predictions)
-        prediction_statuses = import_job.statuses()
+        prediction_statuses = import_job.statuses
         mea_to_mal_data_rows_set = set([
             row['dataRow']['id']
             for row in prediction_statuses
@@ -152,9 +152,14 @@ class ModelRun(DbObject):
         ])
         mea_to_mal_data_rows = list(
             mea_to_mal_data_rows_set)[:DATAROWS_IMPORT_LIMIT]
-        logger.warning(
-            f"Got {len(mea_to_mal_data_rows_set)} data rows to import, trimmed down to {DATAROWS_IMPORT_LIMIT} data rows"
-        )
+
+        if len(mea_to_mal_data_rows) >= DATAROWS_IMPORT_LIMIT:
+
+            logger.warning(
+                f"Got {len(mea_to_mal_data_rows_set)} data rows to import, trimmed down to {DATAROWS_IMPORT_LIMIT} data rows"
+            )
+        if len(mea_to_mal_data_rows) == 0:
+            return import_job, None, None
 
         batch = project.create_batch(name, mea_to_mal_data_rows, priority)
         mal_prediction_import = Entity.MALPredictionImport.create_for_model_run_data_rows(

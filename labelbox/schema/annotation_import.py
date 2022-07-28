@@ -473,14 +473,14 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def _get_model_run_data_rows_mutation(cls) -> str:
-        return """mutation createMalPredictionImportForModelRunDataRows($projectId : ID!, $dataRowIds: [ID!]!, $name: String!, $modelRunId: ID!) {
+        return """mutation createMalPredictionImportForModelRunDataRowsPyApi($dataRowIds: [ID!]!, $name: String!, $modelRunId: ID!, $projectId:ID!) {
             createMalPredictionImportForModelRunDataRows(data: {
                 name: $name
                 modelRunId: $modelRunId
                 dataRowIds: $dataRowIds
                 projectId: $projectId
-            }) {%s}
-        }""" % query.results_query_part(cls)
+            }) {id importType inputFileUrl errorFileUrl project { id name } name statusFileUrl state progress}
+        }"""
 
     @classmethod
     def _get_file_mutation(cls) -> str:
