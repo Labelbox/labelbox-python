@@ -147,20 +147,20 @@ class Batch(DbObject):
                 },
                             experimental=True)
 
-    def delete_labels(self, labels_as_template=False) -> None:
+    def delete_labels(self, set_labels_as_template=False) -> None:
         """ Deletes labels that were created for data rows in the batch.
 
         Args:
             batch (Batch): Batch to remove queued data rows from
-            labels_as_template (bool): When set to true, the deleted labels will be kept as templates.
+            set_labels_as_template (bool): When set to true, the deleted labels will be kept as templates.
         """
 
         project_id_param = "projectId"
         batch_id_param = "batchId"
         type_param = "type"
-        self.client.execute(
-            """mutation DeleteBatchLabelsPyApi($%s: ID!, $%s: ID!, $%s: DeleteBatchLabelsType) {
-            project(where: {id: $%s}) { deleteBatchLabels(batchId: $%s, data:{type: $%s }) { id } }
+        res = self.client.execute(
+            """mutation DeleteBatchLabelsPyApi($%s: ID!, $%s: ID!, $%s: DeleteBatchLabelsType!) {
+            project(where: {id: $%s}) { deleteBatchLabels(batchId: $%s, data:{ type: $%s }) { deletedLabelIds } }
         }""" % (project_id_param, batch_id_param, type_param, project_id_param,
                 batch_id_param, type_param), {
                     project_id_param:
@@ -169,6 +169,7 @@ class Batch(DbObject):
                         self.uid,
                     type_param:
                         "RequeueDataWithLabelAsTemplate"
-                        if labels_as_template else "RequeueData"
+                        if set_labels_as_template else "RequeueData"
                 },
             experimental=True)
+        return res
