@@ -18,23 +18,26 @@ class Model(DbObject):
     name = Field.String("name")
     model_runs = Relationship.ToMany("ModelRun", False)
 
-    def create_model_run(self, name) -> "ModelRun":
+    def create_model_run(self, name, config) -> "ModelRun":
         """ Creates a model run belonging to this model.
 
         Args:
             name (string): The name for the model run.
+            config (json): Model run's training metadata config
         Returns:
             ModelRun, the created model run.
         """
         name_param = "name"
+        config_param = "config"
         model_id_param = "modelId"
         ModelRun = Entity.ModelRun
         query_str = """mutation CreateModelRunPyApi($%s: String!, $%s: ID!) {
-            createModelRun(data: {name: $%s, modelId: $%s}) {%s}}""" % (
-            name_param, model_id_param, name_param, model_id_param,
-            query.results_query_part(ModelRun))
+            createModelRun(data: {name: $%s, trainingMetadata: $%s, modelId: $%s}) {%s}}""" % (
+            name_param, model_id_param, name_param, config_param,
+            model_id_param, query.results_query_part(ModelRun))
         res = self.client.execute(query_str, {
             name_param: name,
+            config_param: config,
             model_id_param: self.uid
         })
         return ModelRun(self.client, res["createModelRun"])
