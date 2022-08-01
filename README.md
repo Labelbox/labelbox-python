@@ -20,7 +20,7 @@ The Labelbox Python API offers a simple, user-friendly way to interact with the 
 
 - Use Python 3.7, 3.8 or 3.9
 - [Create an account](http://app.labelbox.com/)
-- [Generate an API key](https://labelbox.com/docs/api/getting-started#create_api_key)
+- [Generate an API key](https://docs.labelbox.com/docs/create-an-api-key)
 
 ## Installation
 
@@ -59,9 +59,9 @@ pip install labelbox[data]
 
 ## Documentation
 
-- [Visit our docs](https://labelbox.com/docs/python-api) to learn how the SDK works
+- [Visit our docs](https://docs.labelbox.com/reference) to learn how the SDK works
 - Checkout our [notebook examples](examples/) to follow along with interactive tutorials
-- view our [API reference](https://labelbox.com/docs/python-api/api-reference).
+- view our [API reference](https://labelbox-python.readthedocs.io/en/latest/index.html).
 
 ## Authentication
 
