@@ -5,6 +5,7 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
+import random
 
 import pytest
 import requests
@@ -18,7 +19,8 @@ from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
 
-IMG_URL = "https://picsum.photos/200/300"
+dimension = random.randint(128, 1024)
+IMG_URL = f"http://via.placeholder.com/{dimension}/{dimension}"
 
 
 class Environ(Enum):
