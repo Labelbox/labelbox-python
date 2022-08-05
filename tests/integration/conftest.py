@@ -319,7 +319,6 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     project.create_label = create_label
     project.create_label()
     label = next(project.labels())
-    print(f"this is a label: \n{label}")
     yield [project, dataset, datarow, label]
 
     for label in project.labels():
