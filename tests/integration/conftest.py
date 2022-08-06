@@ -5,7 +5,6 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
-import random
 
 import pytest
 import requests
@@ -19,8 +18,7 @@ from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.invite import Invite
 from labelbox.schema.user import User
 
-dimension = random.randint(128, 1024)
-IMG_URL = f"http://via.placeholder.com/{dimension}/{dimension}"
+IMG_URL = "https://picsum.photos/200/300.jpg"
 
 
 class Environ(Enum):
@@ -149,8 +147,8 @@ def client(environ: str):
 @pytest.fixture(scope="session")
 def image_url(client):
     return client.upload_data(requests.get(IMG_URL).content,
-                              content_type="application/json",
-                              filename="json_import.json",
+                              content_type="image/jpeg",
+                              filename="image.jpeg",
                               sign=True)
 
 

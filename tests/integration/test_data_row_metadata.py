@@ -96,6 +96,8 @@ def test_get_datarow_metadata_ontology(mdo):
 
 
 def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
+    print(f"Datarow: {datarow}")
+    print(f"media attr: {datarow.media_attributes}")
     metadata = make_metadata(datarow.uid)
     mdo.bulk_upsert([metadata])
     exported = mdo.bulk_export([datarow.uid])
