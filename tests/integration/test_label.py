@@ -40,8 +40,10 @@ def test_label_export(configured_project_with_label):
     #TODO: Add test for bulk export back.
     # The new exporter doesn't work with the create_label mutation
 
+
 # TODO: Skipping this test in staging due to label not updating
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or os.environ['LABELBOX_TEST_ENVIRON'] == "staging",
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or
+                    os.environ['LABELBOX_TEST_ENVIRON'] == "staging",
                     reason="does not work for onprem")
 def test_label_update(configured_project_with_label):
     _, _, _, label = configured_project_with_label
