@@ -161,8 +161,7 @@ def test_attach_instructions(client, project):
         exc_info.value)
 
 
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or
-                    os.environ['LABELBOX_TEST_ENVIRON'] == "staging",
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
                     reason="new mutation does not work for onprem")
 def test_html_instructions(configured_project):
     html_file_path = '/tmp/instructions.html'
