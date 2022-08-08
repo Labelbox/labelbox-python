@@ -36,7 +36,7 @@ def mask_to_coco_object_annotation(
         image_id=image_id,
         category_id=category_id,
         segmentation=[
-            np.array(s.exterior.coords).ravel().tolist() for s in shapely
+            np.array(s.exterior.coords).ravel().tolist() for s in shapely.geoms
         ],
         area=area,
         bbox=[xmin, ymin, xmax - xmin, ymax - ymin],
