@@ -28,15 +28,14 @@ def mask_to_coco_object_annotation(
     xmin, ymin, xmax, ymax = shapely.bounds
     # Iterate over polygon once or multiple polygon for each item
     area = shapely.area
-    if shapely.type == 'Polygon':
-        shapely = [shapely]
 
     return COCOObjectAnnotation(
         id=annot_idx,
         image_id=image_id,
         category_id=category_id,
         segmentation=[
-            np.array(s.exterior.coords).ravel().tolist() for s in shapely.geoms
+            np.array(s.exterior.coords).ravel().tolist()
+            for s in ([shapely] if shapely.type == "Polygon" else shapely.geoms)
         ],
         area=area,
         bbox=[xmin, ymin, xmax - xmin, ymax - ymin],
