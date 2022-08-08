@@ -159,7 +159,8 @@ def test_data_row_large_bulk_creation(dataset, image_url):
         }] * n_local + [fp.name] * n_urls)
     task.wait_till_done()
     assert task.status == "COMPLETE"
-    assert len(list(dataset.data_rows())) == n_local + n_urls
+    # assert len(list(dataset.data_rows())) == n_local + n_urls
+    assert len(list(dataset.export_data_rows())) == n_local + n_urls
 
 
 def test_data_row_single_creation(dataset, rand_gen, image_url):
