@@ -34,6 +34,11 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     fetch_model_run = client.get_model_run(model_run.uid)
     assert fetch_model_run == model_run
 
+def test_model_run_no_config(rand_gen, model):
+    name = rand_gen(str)
+    model_run = model.create_model_run(name)
+    assert model_run.name == name
+
 
 def test_model_run_delete(client, model_run):
     models_before = list(client.get_models())
