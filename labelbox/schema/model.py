@@ -18,7 +18,7 @@ class Model(DbObject):
     name = Field.String("name")
     model_runs = Relationship.ToMany("ModelRun", False)
 
-    def create_model_run(self, name, config) -> "ModelRun":
+    def create_model_run(self, name, config=None) -> "ModelRun":
         """ Creates a model run belonging to this model.
 
         Args:
