@@ -359,6 +359,18 @@ def model_run(rand_gen, model):
         # Already was deleted by the test
         pass
 
+@pytest.fixture
+def model_run_with_training_metadata(rand_gen, model):
+    name = rand_gen(str)
+    training_metadata = {"batch_size": 1000}
+    model_run = model.create_model_run(name, training_metadata)
+    yield model_run
+    try:
+        model_run.delete()
+    except:
+        # Already was deleted by the test
+        pass
+
 
 @pytest.fixture
 def model_run_with_model_run_data_rows(client, configured_project,

@@ -263,6 +263,45 @@ class ModelRun(DbObject):
             experimental=True)
 
     @experimental
+    def update_config(self,
+                      config: Dict[str, Any]):
+        data: Dict[str, Any] = {'config': config}
+        res = self.client.execute(
+            """mutation updateModelRunConfigPyApi($modelRunId: ID!, $data: UpdateModelRunConfigInput!){
+                updateModelRunConfig(modelRun: {id : $modelRunId}, data: $data){trainingMetadata}
+            }
+        """, {
+                'modelRunId': self.uid,
+                'data': data
+            },
+            experimental=True)
+        return  res["updateModelRunConfig"]
+
+    @experimental
+    def reset_config(self):
+        res = self.client.execute(
+            """mutation resetModelRunConfigPyApi($modelRunId: ID!){
+                resetModelRunConfig(modelRun: {id : $modelRunId}){trainingMetadata}
+            }
+        """, {
+                'modelRunId': self.uid
+            },
+            experimental=True)
+        return  res["resetModelRunConfig"]
+    
+    @experimental
+    def config(self):
+        res = self.client.execute(
+            """query ModelRunPyApi($modelRunId: ID!){
+                modelRun(where: {id : $modelRunId}){trainingMetadata}
+            }
+        """, {
+                'modelRunId': self.uid
+            },
+            experimental=True)
+        return  res["modelRun"]
+
+    @experimental
     def export_labels(
         self,
         download: bool = False,

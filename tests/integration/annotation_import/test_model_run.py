@@ -56,6 +56,24 @@ def test_model_run_delete(client, model_run):
     assert len(before) == len(after) + 1
 
 
+def test_model_run_update_config(model_run_with_training_metadata):
+    new_config = {"batch_size": 2000}
+    res = model_run_with_training_metadata.update_config(new_config)
+    assert res["trainingMetadata"]["batchSize"] == new_config["batch_size"]
+
+
+def test_model_run_reset_config(model_run_with_training_metadata):
+    res = model_run_with_training_metadata.reset_config()
+    assert res["trainingMetadata"] == None
+
+
+def test_model_run_fetch_config(model_run_with_training_metadata):
+    new_config = {"batch_size": 2000}
+    model_run_with_training_metadata.update_config(new_config)
+    res = model_run_with_training_metadata.config()
+    assert res["trainingMetadata"]["batchSize"] == new_config["batch_size"]
+
+
 def test_model_run_data_rows_delete(client, model_run_with_model_run_data_rows):
     models = list(client.get_models())
     model = models[0]
