@@ -41,6 +41,12 @@ class Model(DbObject):
             config_param: json.dumps(config),
             model_id_param: self.uid
         })
+        res = self.client.execute(
+            query_str, {
+                name_param: name,
+                config_param: json.dumps(config),
+                model_id_param: self.uid
+            })
         return ModelRun(self.client, res["createModelRun"])
 
     def delete(self) -> None:
