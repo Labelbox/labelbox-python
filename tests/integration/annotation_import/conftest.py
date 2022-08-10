@@ -359,6 +359,7 @@ def model_run(rand_gen, model):
         # Already was deleted by the test
         pass
 
+
 @pytest.fixture
 def model_run_with_training_metadata(rand_gen, model):
     name = rand_gen(str)
