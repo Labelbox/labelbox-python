@@ -1,4 +1,7 @@
 # Changelog
+# Version 3.25.3 (2022-08-10)
+## Fixed
+* Label export will continue polling if the downloadUrl is None
 
 # Version 3.25.2 (2022-07-26)
 ## Updated
@@ -651,3 +654,7 @@ a `Label`. Default value is 0.0.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
+
+### Changed
+* `Model.create_model_run()`
+    * Add training metadata config as a model run creation param
