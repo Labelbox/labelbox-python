@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-import json
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field, Relationship
