@@ -1,4 +1,7 @@
 # Changelog
+# Version 3.25.3 (2022-08-10)
+## Fixed
+* Label export will continue polling if the downloadUrl is None
 
 # Version 3.25.2 (2022-07-26)
 ## Updated
