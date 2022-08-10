@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+import json
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field, Relationship
@@ -37,7 +38,7 @@ class Model(DbObject):
             model_id_param, query.results_query_part(ModelRun))
         res = self.client.execute(query_str, {
             name_param: name,
-            config_param: config,
+            config_param: json.dumps(config),
             model_id_param: self.uid
         })
         return ModelRun(self.client, res["createModelRun"])
