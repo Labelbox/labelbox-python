@@ -39,7 +39,6 @@ def test_model_run_no_config(rand_gen, model):
     model_run = model.create_model_run(name)
     assert model_run.name == name
 
-
 def test_model_run_delete(client, model_run):
     models_before = list(client.get_models())
     model_before = models_before[0]
