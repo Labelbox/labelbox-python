@@ -39,7 +39,7 @@ class Model(DbObject):
         res = self.client.execute(
             query_str, {
                 name_param: name,
-                config_param: json.dumps(config),
+                config_param: config,
                 model_id_param: self.uid
             })
         return ModelRun(self.client, res["createModelRun"])
