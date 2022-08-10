@@ -33,7 +33,7 @@ class Model(DbObject):
         ModelRun = Entity.ModelRun
         query_str = """mutation CreateModelRunPyApi($%s: String!, $%s: Json, $%s: ID!) {
             createModelRun(data: {name: $%s, trainingMetadata: $%s, modelId: $%s}) {%s}}""" % (
-            name_param, model_id_param, name_param, config_param,
+            name_param, config_param, model_id_param, name_param, config_param,
             model_id_param, query.results_query_part(ModelRun))
         res = self.client.execute(query_str, {
             name_param: name,
