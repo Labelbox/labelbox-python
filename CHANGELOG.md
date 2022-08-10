@@ -654,3 +654,7 @@ a `Label`. Default value is 0.0.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
+
+### Changed
+* `Model.create_model_run()`
+    * Add training metadata config as a model run creation param
