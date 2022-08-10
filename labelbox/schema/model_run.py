@@ -290,7 +290,7 @@ class ModelRun(DbObject):
         return  res["resetModelRunConfig"]
     
     @experimental
-    def config(self):
+    def fetch_config(self):
         res = self.client.execute(
             """query ModelRunPyApi($modelRunId: ID!){
                 modelRun(where: {id : $modelRunId}){trainingMetadata}
