@@ -16,6 +16,7 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     name = rand_gen(str)
     config = {"batch_size": 100}
     model_run = model.create_model_run(name, config)
+    print(model_run)
     assert model_run.name == name
     assert model_run.training_metadata["batch_size"] == config["batch_size"]
     assert model_run.model_id == model.uid
