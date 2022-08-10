@@ -35,12 +35,11 @@ class Model(DbObject):
             createModelRun(data: {name: $%s, trainingMetadata: $%s, modelId: $%s}) {%s}}""" % (
             name_param, config_param, model_id_param, name_param, config_param,
             model_id_param, query.results_query_part(ModelRun))
-        res = self.client.execute(
-            query_str, {
-                name_param: name,
-                config_param: config,
-                model_id_param: self.uid
-            })
+        res = self.client.execute(query_str, {
+            name_param: name,
+            config_param: config,
+            model_id_param: self.uid
+        })
         return ModelRun(self.client, res["createModelRun"])
 
     def delete(self) -> None:
