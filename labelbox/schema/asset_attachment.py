@@ -9,7 +9,7 @@ class AssetAttachment(DbObject):
     """ Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
-        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, or TEXT_FILE. TEXT attachment type is deprecated.
+        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, or TEXT_URL. TEXT attachment type is deprecated.
         attachment_value (str): URL to an external file or a string of text
     """
 
@@ -20,7 +20,7 @@ class AssetAttachment(DbObject):
         IMAGE_OVERLAY = "IMAGE_OVERLAY"
         HTML = "HTML"
         RAW_TEXT = "RAW_TEXT"
-        TEXT_FILE = "TEXT_FILE"
+        TEXT_URL = "TEXT_URL"
 
     for topic in AttachmentType:
         vars()[topic.name] = topic.value
