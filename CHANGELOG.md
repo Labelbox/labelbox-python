@@ -2,8 +2,8 @@
 
 # Version 3.26.0 (2022-08-12)
 ## Added
-* `Batch.delete()`  which will delete an existing Batch
-* `Batch.delete_labels()`  which will delete all Label ’s created after a Project ’s mode has been set to batch.
+* `Batch.delete()` which will delete an existing `Batch`
+* `Batch.delete_labels()`  which will delete all `Label`’s created after a `Project`’s mode has been set to batch.
     * Note: Does not include labels that were imported via model-assisted labeling or label imports
 * Support for creating model config when creating a model run
 * `RAW_TEXT` and `TEXT_FILE` attachment types to replace the `TEXT` type.
