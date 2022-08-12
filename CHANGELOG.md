@@ -1,4 +1,13 @@
 # Changelog
+
+# Version 3.26.0 (2022-08-12)
+## Added
+* `Batch.delete()`  which will delete an existing Batch
+* `Batch.delete_labels()`  which will delete all Label ’s created after a Project ’s mode has been set to batch.
+    * Note: Does not include labels that were imported via model-assisted labeling or label imports
+* Support for creating model config when creating a model run
+* `RAW_TEXT` and `TEXT_FILE` attachment types to replace the `TEXT` type.
+
 # Version 3.25.3 (2022-08-10)
 ## Fixed
 * Label export will continue polling if the downloadUrl is None
@@ -29,7 +38,7 @@
     * `Batch.export_data_rows(include_metadata=True)`
     * `Dataset.export_data_rows(include_metadata=True)`
     * `Project.export_queued_data_rows(include_metadata=True)`
-* `VideoObjectAnnotation` has `segment_index` to group video annotations into video segments    
+* `VideoObjectAnnotation` has `segment_index` to group video annotations into video segments
 
 ## Removed
 * `Project.video_label_generator`. Use `Project.label_generator` instead.
@@ -40,7 +49,7 @@
     * 150,000 rows per upload without metadata
     * 30,000 rows per upload with metadata
 
-    
+
 # Version 3.24.1 (2022-07-07)
 ## Updated
 * Added `refresh_ontology()` as part of create/update/delete metadata schema functions
