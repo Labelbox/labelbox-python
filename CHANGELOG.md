@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.26.0 (2022-08-12)
+# Version 3.26.0 (2022-08-15)
 ## Added
 * `Batch.delete()` which will delete an existing `Batch`
 * `Batch.delete_labels()`  which will delete all `Label`’s created after a `Project`’s mode has been set to batch.
