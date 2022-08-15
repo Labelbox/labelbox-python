@@ -68,14 +68,15 @@ class Batch(DbObject):
 
         project_id_param = "projectId"
         batch_id_param = "batchId"
-        self.client.execute("""mutation ArchiveBatchPyApi($%s: ID!, $%s: ID!) {
-            project(where: {id: $%s}) { archiveBatch(batchId: $%s) { id archivedAt } }
+        self.client.execute(
+            """mutation RemoveQueuedDataRowsFromBatchPyApi($%s: ID!, $%s: ID!) {
+            project(where: {id: $%s}) { removeQueuedDataRowsFromBatch(batchId: $%s) { id } }
         }""" % (project_id_param, batch_id_param, project_id_param,
                 batch_id_param), {
                     project_id_param: self.project_id,
                     batch_id_param: self.uid
                 },
-                            experimental=True)
+            experimental=True)
 
     def export_data_rows(self,
                          timeout_seconds=120,
@@ -125,3 +126,50 @@ class Batch(DbObject):
             logger.debug("Batch '%s' data row export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    def delete(self) -> None:
+        """ Deletes the given batch.
+
+        Note: Batch deletion for batches that has labels is forbidden. 
+
+        Args:
+            batch (Batch): Batch to remove queued data rows from
+        """
+
+        project_id_param = "projectId"
+        batch_id_param = "batchId"
+        self.client.execute("""mutation DeleteBatchPyApi($%s: ID!, $%s: ID!) {
+            project(where: {id: $%s}) { deleteBatch(batchId: $%s) { deletedBatchId } }
+        }""" % (project_id_param, batch_id_param, project_id_param,
+                batch_id_param), {
+                    project_id_param: self.project_id,
+                    batch_id_param: self.uid
+                },
+                            experimental=True)
+
+    def delete_labels(self, set_labels_as_template=False) -> None:
+        """ Deletes labels that were created for data rows in the batch.
+
+        Args:
+            batch (Batch): Batch to remove queued data rows from
+            set_labels_as_template (bool): When set to true, the deleted labels will be kept as templates.
+        """
+
+        project_id_param = "projectId"
+        batch_id_param = "batchId"
+        type_param = "type"
+        res = self.client.execute(
+            """mutation DeleteBatchLabelsPyApi($%s: ID!, $%s: ID!, $%s: DeleteBatchLabelsType!) {
+            project(where: {id: $%s}) { deleteBatchLabels(batchId: $%s, data:{ type: $%s }) { deletedLabelIds } }
+        }""" % (project_id_param, batch_id_param, type_param, project_id_param,
+                batch_id_param, type_param), {
+                    project_id_param:
+                        self.project_id,
+                    batch_id_param:
+                        self.uid,
+                    type_param:
+                        "RequeueDataWithLabelAsTemplate"
+                        if set_labels_as_template else "RequeueData"
+                },
+            experimental=True)
+        return res

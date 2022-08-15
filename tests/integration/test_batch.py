@@ -50,6 +50,15 @@ def test_archive_batch(configured_project: Project, small_dataset: Dataset):
     assert len(exported_data_rows) == 0
 
 
+def test_delete(configured_project: Project, small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch("batch to delete", data_rows)
+    batch.delete()
+
+    assert len(list(configured_project.batches())) == 0
+
+
 def test_batch_project(configured_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     configured_project.update(queue_mode=Project.QueueMode.Batch)
@@ -80,3 +89,29 @@ def test_export_data_rows(configured_project: Project, dataset: Dataset):
 
     assert len(result) == n_data_rows
     assert set(data_rows) == set(exported_data_rows)
+
+
+@pytest.mark.skip(
+    reason="Test cannot be used effectively with MAL/LabelImport. \
+Fix/Unskip after resolving deletion with MAL/LabelImport")
+def test_delete_labels(configured_project_with_label):
+    project, dataset, _, _ = configured_project_with_label
+
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    project.update(queue_mode=Project.QueueMode.Batch)
+    batch = project.create_batch("batch to delete labels", data_rows)
+
+
+@pytest.mark.skip(
+    reason="Test cannot be used effectively with MAL/LabelImport. \
+Fix/Unskip after resolving deletion with MAL/LabelImport")
+def test_delete_labels_with_templates(configured_project: Project,
+                                      small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    batch = configured_project.create_batch(
+        "batch to delete labels w templates", data_rows)
+    exported_data_rows = list(batch.export_data_rows())
+    res = batch.delete_labels(labels_as_template=True)
+    exported_data_rows = list(batch.export_data_rows())
+    assert len(exported_data_rows) == 5
