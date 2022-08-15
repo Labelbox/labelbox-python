@@ -64,7 +64,7 @@ def test_model_run_update_config(model_run_with_training_metadata):
 
 def test_model_run_reset_config(model_run_with_training_metadata):
     res = model_run_with_training_metadata.reset_config()
-    assert res["trainingMetadata"] == None
+    assert res["trainingMetadata"] is None
 
 
 def test_model_run_fetch_config(model_run_with_training_metadata):
