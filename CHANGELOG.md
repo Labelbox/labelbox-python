@@ -1,5 +1,33 @@
 # Changelog
 
+# Version 3.26.0 (2022-08-15)
+## Added
+* `Batch.delete()` which will delete an existing `Batch`
+* `Batch.delete_labels()`  which will delete all `Label`’s created after a `Project`’s mode has been set to batch.
+    * Note: Does not include labels that were imported via model-assisted labeling or label imports
+* Support for creating model config when creating a model run
+* `RAW_TEXT` and `TEXT_FILE` attachment types to replace the `TEXT` type.
+
+# Version 3.25.3 (2022-08-10)
+## Fixed
+* Label export will continue polling if the downloadUrl is None
+
+# Version 3.25.2 (2022-07-26)
+## Updated
+* Mask downloads now have retries
+* Failed `upload_data` now shows more details in the error message
+
+## Fixed
+* Fixed Metadata not importing with DataRows when bulk importing local files.
+* Fixed COCOConverter failing for empty annotations
+
+## Documentation
+* Notebooks are up-to-date with examples of importing annotations without `schema_id`
+
+# Version 3.25.1 (2022-07-20)
+## Fixed
+* Removed extra dependency causing import errors.
+
 # Version 3.25.0 (2022-07-20)
 
 ## Added
@@ -10,7 +38,7 @@
     * `Batch.export_data_rows(include_metadata=True)`
     * `Dataset.export_data_rows(include_metadata=True)`
     * `Project.export_queued_data_rows(include_metadata=True)`
-* `VideoObjectAnnotation` has `segment_index` to group video annotations into video segments    
+* `VideoObjectAnnotation` has `segment_index` to group video annotations into video segments
 
 ## Removed
 * `Project.video_label_generator`. Use `Project.label_generator` instead.
@@ -21,7 +49,7 @@
     * 150,000 rows per upload without metadata
     * 30,000 rows per upload with metadata
 
-    
+
 # Version 3.24.1 (2022-07-07)
 ## Updated
 * Added `refresh_ontology()` as part of create/update/delete metadata schema functions
@@ -635,3 +663,7 @@ a `Label`. Default value is 0.0.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
+
+### Changed
+* `Model.create_model_run()`
+    * Add training metadata config as a model run creation param

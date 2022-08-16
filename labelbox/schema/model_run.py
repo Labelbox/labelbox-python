@@ -34,6 +34,7 @@ class ModelRun(DbObject):
     created_at = Field.DateTime("created_at")
     created_by_id = Field.String("created_by_id", "createdBy")
     model_id = Field.String("model_id")
+    training_metadata = Field.Json("training_metadata")
 
     class Status(Enum):
         EXPORTING_DATA = "EXPORTING_DATA"
