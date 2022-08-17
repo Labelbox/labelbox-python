@@ -259,33 +259,40 @@ class LBV1TextEntity(LBV1ObjectBase):
                    **extra)
 
 
+class LBV1DocumentRectangle(LBV1Rectangle):
+    unit: str
+    page: int
+
+
 class LBV1Objects(BaseModel):
-    objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
-                        LBV1TextEntity, LBV1Mask, LBV1TIPoint, LBV1TILine,
-                        LBV1TIPolygon, LBV1TIRectangle]]
+    objects: List[Union[LBV1DocumentRectangle, LBV1Line, LBV1Point, LBV1Polygon,
+                        LBV1Rectangle, LBV1TextEntity, LBV1Mask, LBV1TIPoint,
+                        LBV1TILine, LBV1TIPolygon, LBV1TIRectangle,]]
 
     def to_common(self) -> List[ObjectAnnotation]:
         objects = [
-            ObjectAnnotation(value=obj.to_common(),
-                             classifications=[
-                                 ClassificationAnnotation(
-                                     value=cls.to_common(),
-                                     feature_schema_id=cls.schema_id,
-                                     name=cls.title,
-                                     extra={
-                                         'feature_id': cls.feature_id,
-                                         'title': cls.title,
-                                         'value': cls.value
-                                     }) for cls in obj.classifications
-                             ],
-                             name=obj.title,
-                             feature_schema_id=obj.schema_id,
-                             extra={
-                                 'instanceURI': obj.instanceURI,
-                                 'color': obj.color,
-                                 'feature_id': obj.feature_id,
-                                 'value': obj.value,
-                             }) for obj in self.objects
+            ObjectAnnotation(
+                value=obj.to_common(),
+                classifications=[
+                    ClassificationAnnotation(value=cls.to_common(),
+                                             feature_schema_id=cls.schema_id,
+                                             name=cls.title,
+                                             extra={
+                                                 'feature_id': cls.feature_id,
+                                                 'title': cls.title,
+                                                 'value': cls.value
+                                             }) for cls in obj.classifications
+                ],
+                name=obj.title,
+                feature_schema_id=obj.schema_id,
+                extra={
+                    'instanceURI': obj.instanceURI,
+                    'color': obj.color,
+                    'feature_id': obj.feature_id,
+                    'value': obj.value,
+                    'page': obj.page if hasattr(obj, 'page') else None,
+                    'unit': obj.unit if hasattr(obj, 'unit') else None,
+                }) for obj in self.objects
         ]
         return objects
 
