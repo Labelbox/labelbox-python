@@ -270,7 +270,7 @@ class ModelRun(DbObject):
              config (dict): A dictionary of keys and values
          Returns: 
              model run id and updated training metadata
-         """ 
+         """
         data: Dict[str, Any] = {'config': config}
         res = self.client.execute(
             """mutation updateModelRunConfigPyApi($modelRunId: ID!, $data: UpdateModelRunConfigInput!){
@@ -289,7 +289,7 @@ class ModelRun(DbObject):
          Resets model run's training metadata config
          Returns: 
              Model run id and reset training metadata
-         """ 
+         """
         res = self.client.execute(
             """mutation resetModelRunConfigPyApi($modelRunId: ID!){
                 resetModelRunConfig(modelRun: {id : $modelRunId}){trainingMetadata}
@@ -304,7 +304,7 @@ class ModelRun(DbObject):
          Gets model run's training metadata 
          Returns: 
              training metadata as a dictionary 
-         """ 
+         """
         res = self.client.execute("""query ModelRunPyApi($modelRunId: ID!){
                 modelRun(where: {id : $modelRunId}){trainingMetadata}
             }
