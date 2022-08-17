@@ -1,15 +1,6 @@
 # Changelog
 
-# Version 3.26.0 (2022-08-15)
-## Added
-* `Batch.delete()` which will delete an existing `Batch`
-* `Batch.delete_labels()`  which will delete all `Label`’s created after a `Project`’s mode has been set to batch.
-    * Note: Does not include labels that were imported via model-assisted labeling or label imports
-* Support for creating model config when creating a model run
-* `RAW_TEXT` and `TEXT_FILE` attachment types to replace the `TEXT` type.
-
-# Version 3.25.3 (2022-08-10)
-
+# Version 3.26.1 (2022-08-18)
 ### Added
 * `ModelRun.update_config()`
     * Updates model run training metadata
@@ -22,6 +13,15 @@
 * `Model.create_model_run()`
     * Add training metadata config as a model run creation param
 
+# Version 3.26.0 (2022-08-15)
+## Added
+* `Batch.delete()` which will delete an existing `Batch`
+* `Batch.delete_labels()`  which will delete all `Label`’s created after a `Project`’s mode has been set to batch.
+    * Note: Does not include labels that were imported via model-assisted labeling or label imports
+* Support for creating model config when creating a model run
+* `RAW_TEXT` and `TEXT_FILE` attachment types to replace the `TEXT` type.
+
+# Version 3.25.3 (2022-08-10)
 ## Fixed
 * Label export will continue polling if the downloadUrl is None
 
