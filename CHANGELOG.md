@@ -9,6 +9,19 @@
 * `RAW_TEXT` and `TEXT_FILE` attachment types to replace the `TEXT` type.
 
 # Version 3.25.3 (2022-08-10)
+
+### Added
+* `ModelRun.update_config()`
+    * Updates model run training metadata
+* `ModelRun.reset_config()`
+    * Resets model run training metadata
+* `ModelRun.get_config()`
+    * Fetches model run training metadata
+    
+### Changed
+* `Model.create_model_run()`
+    * Add training metadata config as a model run creation param
+
 ## Fixed
 * Label export will continue polling if the downloadUrl is None
 
@@ -663,7 +676,3 @@ a `Label`. Default value is 0.0.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
-
-### Changed
-* `Model.create_model_run()`
-    * Add training metadata config as a model run creation param

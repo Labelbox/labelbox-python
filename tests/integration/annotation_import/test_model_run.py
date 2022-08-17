@@ -67,10 +67,10 @@ def test_model_run_reset_config(model_run_with_training_metadata):
     assert res["trainingMetadata"] is None
 
 
-def test_model_run_fetch_config(model_run_with_training_metadata):
+def test_model_run_get_config(model_run_with_training_metadata):
     new_config = {"batch_size": 2000}
     model_run_with_training_metadata.update_config(new_config)
-    res = model_run_with_training_metadata.fetch_config()
+    res = model_run_with_training_metadata.get_config()
     assert res["trainingMetadata"]["batchSize"] == new_config["batch_size"]
 
 

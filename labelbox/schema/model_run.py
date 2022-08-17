@@ -263,7 +263,14 @@ class ModelRun(DbObject):
             experimental=True)
 
     @experimental
-    def update_config(self, config: Dict[str, Any]):
+    def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """ 
+         Updates the model run's training metadata config
+         Args: 
+             config (dict): A dictionary of keys and values
+         Returns: 
+             model run id and updated training metadata
+         """ 
         data: Dict[str, Any] = {'config': config}
         res = self.client.execute(
             """mutation updateModelRunConfigPyApi($modelRunId: ID!, $data: UpdateModelRunConfigInput!){
@@ -277,7 +284,12 @@ class ModelRun(DbObject):
         return res["updateModelRunConfig"]
 
     @experimental
-    def reset_config(self):
+    def reset_config(self) -> Dict[str, Any]:
+        """ 
+         Resets model run's training metadata config
+         Returns: 
+             Model run id and reset training metadata
+         """ 
         res = self.client.execute(
             """mutation resetModelRunConfigPyApi($modelRunId: ID!){
                 resetModelRunConfig(modelRun: {id : $modelRunId}){trainingMetadata}
@@ -287,7 +299,12 @@ class ModelRun(DbObject):
         return res["resetModelRunConfig"]
 
     @experimental
-    def fetch_config(self):
+    def get_config(self) -> Dict[str, Any]:
+        """ 
+         Gets model run's training metadata 
+         Returns: 
+             training metadata as a dictionary 
+         """ 
         res = self.client.execute("""query ModelRunPyApi($modelRunId: ID!){
                 modelRun(where: {id : $modelRunId}){trainingMetadata}
             }
