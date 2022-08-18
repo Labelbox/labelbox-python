@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.26.1 (2022-08-18)
+# Version 0.0.0 (YYYY-MM-DD)
 ### Added
 * `ModelRun.update_config()`
     * Updates model run training metadata
