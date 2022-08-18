@@ -9,14 +9,10 @@ IGNORE_KEYS = [
 
 
 def round_dict(data: Dict[str, Any]) -> Dict[str, Any]:
-    print("hi", data)
     for key in data:
-        print("me key", key)
         if isinstance(data[key], float):
-            print("i am float", key)
             data[key] = int(data[key])
         elif isinstance(data[key], dict):
-            print("i am dict", key)
             data[key] = round_dict(data[key])
     return data
 
