@@ -1,5 +1,18 @@
 # Changelog
 
+# Version 0.0.0 (YYYY-MM-DD)
+### Added
+* `ModelRun.update_config()`
+    * Updates model run training metadata
+* `ModelRun.reset_config()`
+    * Resets model run training metadata
+* `ModelRun.get_config()`
+    * Fetches model run training metadata
+    
+### Changed
+* `Model.create_model_run()`
+    * Add training metadata config as a model run creation param
+
 # Version 3.26.0 (2022-08-15)
 ## Added
 * `Batch.delete()` which will delete an existing `Batch`
@@ -663,7 +676,3 @@ a `Label`. Default value is 0.0.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
-
-### Changed
-* `Model.create_model_run()`
-    * Add training metadata config as a model run creation param
