@@ -1,0 +1,130 @@
+[{
+    "ID": "cl6xnzi4a7ldn0729381g7104",
+    "DataRow ID": "cl6xnv9h61fv0085yhtoq06ht",
+    "Labeled Data": "https://storage.labelbox.com/ckcz6bubudyfi0855o1dt1g9s%2F4cef4e08-e13d-8a5e-fbbf-c7624babb490-Airbnb_%20Labelbox%20-%20Focus%20on%20Workforce%20-%20Labelbox%20Labeling%20Operations%20(1).pdf?Expires=1661971050348&KeyName=labelbox-assets-key-3&Signature=JK6ral5CXF7T9Q5LaQqKvJy5A2A",
+    "Label": {
+        "objects": [{
+            "featureId": "cl6xnzjpq0dmr07yocs2vfot8",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 144.68,
+                "left": 107.84,
+                "height": 441.6,
+                "width": 9.48
+            },
+            "page": 0,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dmr07yocs2vfot8?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }, {
+            "featureId": "cl6xnzjpq0dms07yobwv68gxf",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 162.73,
+                "left": 32.45,
+                "height": 388.17,
+                "width": 101.66
+            },
+            "page": 4,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dms07yobwv68gxf?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }, {
+            "featureId": "cl6xnzjpq0dmt07yo8pp45gru",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 223.26,
+                "left": 251.42,
+                "height": 457.04,
+                "width": 186.78
+            },
+            "page": 7,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dmt07yo8pp45gru?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }, {
+            "featureId": "cl6xnzjpq0dmu07yo2qik0en4",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 32.52,
+                "left": 218.17,
+                "height": 231.73,
+                "width": 110.56
+            },
+            "page": 6,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dmu07yo2qik0en4?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }, {
+            "featureId": "cl6xnzjpq0dmv07yo7phz7ofz",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 117.39,
+                "left": 4.25,
+                "height": 456.92,
+                "width": 164.83
+            },
+            "page": 7,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dmv07yo7phz7ofz?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }, {
+            "featureId": "cl6xnzjpq0dmw07yofocp6uf6",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 82.13,
+                "left": 217.28,
+                "height": 279.76,
+                "width": 82.43
+            },
+            "page": 8,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dmw07yofocp6uf6?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }, {
+            "featureId": "cl6xnzjpq0dmx07yo0qh40z0n",
+            "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+            "color": "#1CE6FF",
+            "title": "boxy",
+            "value": "boxy",
+            "bbox": {
+                "top": 298.12,
+                "left": 83.34,
+                "height": 203.83,
+                "width": 0.38
+            },
+            "page": 3,
+            "unit": "POINTS",
+            "instanceURI": "https://api.labelbox.com/masks/feature/cl6xnzjpq0dmx07yo0qh40z0n?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja2NjOWZtbXc0aGNkMDczOHFpeWM2YW54Iiwib3JnYW5pemF0aW9uSWQiOiJja2N6NmJ1YnVkeWZpMDg1NW8xZHQxZzlzIiwiaWF0IjoxNjYwNzYxNDUwLCJleHAiOjE2NjMzNTM0NTB9.X4-j6zee8o685PUrL9C6oC2m6TayKuJQHhN8iLgG8kI"
+        }],
+        "classifications": [],
+        "relationships": []
+    },
+    "Created By": "jtso@labelbox.com",
+    "Project Name": "PDF MAL Test",
+    "Created At": "2022-08-17T18:37:18.000Z",
+    "Updated At": "2022-08-17T18:37:20.073Z",
+    "Seconds to Label": 15.003,
+    "External ID": "Airbnb_ Labelbox - Focus on Workforce - Labelbox Labeling Operations (1).pdf",
+    "Global Key": null,
+    "Agreement": -1,
+    "Benchmark Agreement": -1,
+    "Benchmark ID": null,
+    "Dataset Name": "PDF ",
+    "Reviews": [],
+    "View Label": "https://editor.labelbox.com?project=cl6xntneb7t28072bggdydv7a&label=cl6xnzi4a7ldn0729381g7104",
+    "Has Open Issues": 0,
+    "Skipped": false
+}]

@@ -146,6 +146,7 @@ class LBV1Label(BaseModel):
     skipped: Optional[bool] = Extra('Skipped')
     media_type: Optional[str] = Extra('media_type')
     data_split: Optional[str] = Extra('Data Split')
+    global_key: Optional[str] = Extra('Global Key')
 
     def to_common(self) -> Label:
         if isinstance(self.label, list):

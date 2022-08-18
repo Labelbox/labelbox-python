@@ -10,6 +10,7 @@ def test_text():
     serialized = next(LBV1Converter.serialize(collection))
 
     payload['media_type'] = 'text'
+    payload['Global Key'] = None
 
     assert serialized.keys() == payload.keys()
     for key in serialized:
@@ -18,6 +19,8 @@ def test_text():
         elif key == 'Label':
             for annotation_a, annotation_b in zip(serialized[key]['objects'],
                                                   payload[key]['objects']):
+                annotation_b['page'] = None
+                annotation_b['unit'] = None
                 if not len(annotation_a['classifications']):
                     # We don't add a classification key to the payload if there is no classifications.
                     annotation_a.pop('classifications')
