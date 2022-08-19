@@ -5,6 +5,8 @@ import cv2
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.data.annotation_types import Mask, Label, ObjectAnnotation, ImageData, MaskData
 
+IGNORE_KEYS = ['classifications', 'unit', 'page']
+
 
 def round_dict(data):
     if isinstance(data, dict):
@@ -26,7 +28,8 @@ def test_image():
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
     for r in res:
-        r.pop('classifications', None)
+        for key in IGNORE_KEYS:
+            r.pop(key, None)
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
 
 
@@ -38,7 +41,8 @@ def test_image_with_name_only():
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
     for r in res:
-        r.pop('classifications', None)
+        for key in IGNORE_KEYS:
+            r.pop(key, None)
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
 
 
@@ -68,7 +72,8 @@ def test_mask():
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
     for r in res:
-        r.pop('classifications', None)
+        for key in IGNORE_KEYS:
+            r.pop(key, None)
 
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
 
@@ -94,5 +99,7 @@ def test_mask_from_arr():
         "mask": {
             "png":
                 "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAAAAABWESUoAAAAHklEQVR4nGNgGAKAEYn8j00BEyETBoOCUTAKhhwAAJW+AQwvpePVAAAAAElFTkSuQmCC"
-        }
+        },
+        "page": None,
+        "unit": None
     }

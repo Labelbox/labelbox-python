@@ -1,6 +1,6 @@
 from ast import Bytes
 from io import BytesIO
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
 import numpy as np
 
@@ -21,6 +21,8 @@ from .base import DataRow, NDAnnotation
 
 class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
+    page: Optional[int] = None
+    unit: Optional[str] = None
 
 
 class VideoSupported(BaseModel):
@@ -167,7 +169,9 @@ class NDRectangle(NDBaseObject):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   classifications=classifications)
+                   classifications=classifications,
+                   page=extra.get('page'),
+                   unit=extra.get('unit'))
 
 
 class NDFrameRectangle(VideoSupported):
@@ -352,7 +356,11 @@ class NDObject:
                                 name=annotation.name,
                                 feature_schema_id=annotation.schema_id,
                                 classifications=classifications,
-                                extra={'uuid': annotation.uuid})
+                                extra={
+                                    'uuid': annotation.uuid,
+                                    'page': annotation.page,
+                                    'unit': annotation.unit
+                                })
 
     @classmethod
     def from_common(

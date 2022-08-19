@@ -2,6 +2,8 @@ import json
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
+IGNORE_KEYS = ['unit', 'page']
+
 
 def test_video():
     with open('tests/data/assets/ndjson/video_import.json', 'r') as file:
@@ -9,6 +11,9 @@ def test_video():
 
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
+    for r in res:
+        for key in IGNORE_KEYS:
+            r.pop(key, None)
     assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
 
 
@@ -19,4 +24,7 @@ def test_video_name_only():
 
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
+    for r in res:
+        for key in IGNORE_KEYS:
+            r.pop(key, None)
     assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]

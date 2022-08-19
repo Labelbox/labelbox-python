@@ -8,6 +8,10 @@
     * Resets model run training metadata
 * `ModelRun.get_config()`
     * Fetches model run training metadata
+* Support for document (pdf) de/serialization from exports
+    * Use the `LBV1Converter.serialize()` and `LBV1Converter.deserialize()` methods
+* Support for document (pdf) de/serialization for imports
+    * Use the `NDJsonConverter.serialize()` and `NDJsonConverter.deserialize()` methods
     
 ### Changed
 * `Model.create_model_run()`
