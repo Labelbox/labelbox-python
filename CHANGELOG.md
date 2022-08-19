@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 0.0.0 (YYYY-MM-DD)
+# Version 0.0.0 (YYYY-MM-DD) - In Progress
 ### Added
 * `ModelRun.update_config()`
     * Updates model run training metadata
