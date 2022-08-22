@@ -5,7 +5,7 @@ import cv2
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.data.annotation_types import Mask, Label, ObjectAnnotation, ImageData, MaskData
 
-IGNORE_KEYS = ['classifications', 'unit', 'page']
+IGNORE_KEYS = ['classifications']
 
 
 def round_dict(data):
