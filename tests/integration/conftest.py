@@ -152,6 +152,14 @@ def image_url(client):
                               sign=True)
 
 
+@pytest.fixture(scope="session")
+def pdf_url(client):
+    return client.upload_file('tests/assets/loremipsum.pdf')
+    #   content_type="application/pdf",
+    #   filename="document.pdf",
+    #   sign=True)
+
+
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str))

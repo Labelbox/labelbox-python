@@ -1,10 +1,12 @@
 import uuid
 import ndjson
 import pytest
+import random
 
 from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
+from labelbox.schema.annotation_import import MALPredictionImport
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -185,3 +187,37 @@ def test_delete(configured_project, predictions):
     bulk_import_request.delete()
     all_import_requests = configured_project.bulk_import_requests()
     assert len(list(all_import_requests)) == 0
+
+
+def test_pdf_mal_bbox(client, configured_project_pdf):
+    """
+    tests pdf mal against only a bbox annotation
+    """
+    annotations = []
+    num_annotations = 1
+
+    for row in configured_project_pdf.export_queued_data_rows():
+        for _ in range(num_annotations):
+            annotations.append({
+                "uuid": str(uuid.uuid4()),
+                "name": "bbox",
+                "dataRow": {
+                    "id": row['id']
+                },
+                "bbox": {
+                    "top": round(random.uniform(0, 300), 2),
+                    "left": round(random.uniform(0, 300), 2),
+                    "height": round(random.uniform(200, 500), 2),
+                    "width": round(random.uniform(0, 200), 2)
+                },
+                "page": random.randint(0, 1),
+                "unit": "POINTS"
+            })
+    import_annotations = MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_pdf.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=annotations)
+    import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
