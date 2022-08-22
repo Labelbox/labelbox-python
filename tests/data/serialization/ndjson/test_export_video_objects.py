@@ -586,7 +586,7 @@ def video_serialized_bbox_label():
 
 
 #ignore uuid because we randomize if there was none
-IGNORE_KEYS = ["uuid", "page", "unit"]
+IGNORE_KEYS = ["uuid"]
 
 
 def test_serialize_video_objects():

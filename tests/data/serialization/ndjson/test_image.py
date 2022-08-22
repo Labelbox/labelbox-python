@@ -100,6 +100,4 @@ def test_mask_from_arr():
             "png":
                 "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAAAAABWESUoAAAAHklEQVR4nGNgGAKAEYn8j00BEyETBoOCUTAKhhwAAJW+AQwvpePVAAAAAElFTkSuQmCC"
         },
-        "page": None,
-        "unit": None
     }
