@@ -155,9 +155,6 @@ def image_url(client):
 @pytest.fixture(scope="session")
 def pdf_url(client):
     return client.upload_file('tests/assets/loremipsum.pdf')
-    #   content_type="application/pdf",
-    #   filename="document.pdf",
-    #   sign=True)
 
 
 @pytest.fixture
