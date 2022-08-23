@@ -1,6 +1,9 @@
 # Changelog
 
 # Version 0.0.0 (YYYY-MM-DD)
+### Changed
+* `ModelRun.get_config()`
+    * Modifies get_config to return un-nested Model Run config
 ### Added
 * `ModelRun.update_config()`
     * Updates model run training metadata
