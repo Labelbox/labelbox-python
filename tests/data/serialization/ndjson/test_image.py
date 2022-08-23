@@ -69,6 +69,7 @@ def test_mask():
     res = list(NDJsonConverter.serialize(res))
     for r in res:
         r.pop('classifications', None)
+
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
 
 
@@ -93,5 +94,5 @@ def test_mask_from_arr():
         "mask": {
             "png":
                 "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAAAAABWESUoAAAAHklEQVR4nGNgGAKAEYn8j00BEyETBoOCUTAKhhwAAJW+AQwvpePVAAAAAElFTkSuQmCC"
-        },
+        }
     }
