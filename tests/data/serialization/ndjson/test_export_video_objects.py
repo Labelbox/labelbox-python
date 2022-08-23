@@ -585,10 +585,6 @@ def video_serialized_bbox_label():
     }
 
 
-#ignore uuid because we randomize if there was none
-IGNORE_KEYS = ["uuid"]
-
-
 def test_serialize_video_objects():
     label = video_bbox_label()
     serialized_labels = NDJsonConverter.serialize([label])
@@ -597,7 +593,8 @@ def test_serialize_video_objects():
     manual_label = video_serialized_bbox_label()
 
     for key in label.keys():
-        if key not in IGNORE_KEYS:
+        #ignore uuid because we randomize if there was none
+        if key != "uuid":
             assert label[key] == manual_label[key]
 
     assert len(label['segments']) == 2
