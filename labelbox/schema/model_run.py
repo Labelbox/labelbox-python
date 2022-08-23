@@ -310,7 +310,7 @@ class ModelRun(DbObject):
             }
         """, {'modelRunId': self.uid},
                                   experimental=True)
-        return res["modelRun"]
+        return res["modelRun"]["trainingMetadata"]
 
     @experimental
     def export_labels(
