@@ -94,12 +94,31 @@ def ontology():
         'type': 'text',
         'options': []
     }
+    radio = {
+        'required':
+            False,
+        'instructions':
+            'radio',
+        'name':
+            'radio',
+        'type':
+            'radio',
+        'options': [{
+            'label': 'first_radio_answer',
+            'value': 'first_radio_answer',
+            'options': []
+        }, {
+            'label': 'second_radio_answer',
+            'value': 'second_radio_answer',
+            'options': []
+        }]
+    }
 
     tools = [
         bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
         segmentation_tool
     ]
-    classifications = [checklist, free_form_text]
+    classifications = [checklist, free_form_text, radio]
     return {"tools": tools, "classifications": classifications}
 
 
