@@ -42,7 +42,7 @@ class ModelRun(DbObject):
         FAILED = "FAILED"
 
     def upsert_labels(self, label_ids, timeout_seconds=60):
-        """ Adds data rows and labels to a model run
+        """ Adds data rows and labels to a Model Run
         Args:
             label_ids (list): label ids to insert
             timeout_seconds (float): Max waiting time, in seconds.
@@ -75,7 +75,7 @@ class ModelRun(DbObject):
                                      timeout_seconds=timeout_seconds)
 
     def upsert_data_rows(self, data_row_ids, timeout_seconds=60):
-        """ Adds data rows to a model run without any associated labels
+        """ Adds data rows to a Model Run without any associated labels
         Args:
             data_row_ids (list): data row ids to add to mea
             timeout_seconds (float): Max waiting time, in seconds.
@@ -167,7 +167,7 @@ class ModelRun(DbObject):
             ['annotationGroups', 'pageInfo', 'endCursor'])
 
     def delete(self):
-        """ Deletes specified model run.
+        """ Deletes specified Model Run.
 
         Returns:
             Query execution success.
@@ -178,10 +178,10 @@ class ModelRun(DbObject):
         self.client.execute(query_str, {ids_param: str(self.uid)})
 
     def delete_model_run_data_rows(self, data_row_ids: List[str]):
-        """ Deletes data rows from model runs.
+        """ Deletes data rows from Model Runs.
 
         Args:
-            data_row_ids (list): List of data row ids to delete from the model run.
+            data_row_ids (list): List of data row ids to delete from the Model Run.
         Returns:
             Query execution success.
         """
@@ -261,6 +261,56 @@ class ModelRun(DbObject):
                 'data': data
             },
             experimental=True)
+
+    @experimental
+    def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """ 
+         Updates the Model Run's training metadata config
+         Args: 
+             config (dict): A dictionary of keys and values
+         Returns: 
+             Model Run id and updated training metadata
+         """
+        data: Dict[str, Any] = {'config': config}
+        res = self.client.execute(
+            """mutation updateModelRunConfigPyApi($modelRunId: ID!, $data: UpdateModelRunConfigInput!){
+                updateModelRunConfig(modelRun: {id : $modelRunId}, data: $data){trainingMetadata}
+            }
+        """, {
+                'modelRunId': self.uid,
+                'data': data
+            },
+            experimental=True)
+        return res["updateModelRunConfig"]
+
+    @experimental
+    def reset_config(self) -> Dict[str, Any]:
+        """ 
+         Resets Model Run's training metadata config
+         Returns: 
+             Model Run id and reset training metadata
+         """
+        res = self.client.execute(
+            """mutation resetModelRunConfigPyApi($modelRunId: ID!){
+                resetModelRunConfig(modelRun: {id : $modelRunId}){trainingMetadata}
+            }
+        """, {'modelRunId': self.uid},
+            experimental=True)
+        return res["resetModelRunConfig"]
+
+    @experimental
+    def get_config(self) -> Dict[str, Any]:
+        """ 
+         Gets Model Run's training metadata 
+         Returns: 
+             training metadata as a dictionary 
+         """
+        res = self.client.execute("""query ModelRunPyApi($modelRunId: ID!){
+                modelRun(where: {id : $modelRunId}){trainingMetadata}
+            }
+        """, {'modelRunId': self.uid},
+                                  experimental=True)
+        return res["modelRun"]["trainingMetadata"]
 
     @experimental
     def export_labels(

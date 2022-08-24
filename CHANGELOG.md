@@ -1,6 +1,22 @@
 # Changelog
 
-# Version 3.26.0 (2022-08-12)
+# Version 3.26.1 (2022-08-23)
+### Changed
+* `ModelRun.get_config()`
+    * Modifies get_config to return un-nested Model Run config
+### Added
+* `ModelRun.update_config()`
+    * Updates model run training metadata
+* `ModelRun.reset_config()`
+    * Resets model run training metadata
+* `ModelRun.get_config()`
+    * Fetches model run training metadata
+    
+### Changed
+* `Model.create_model_run()`
+    * Add training metadata config as a model run creation param
+
+# Version 3.26.0 (2022-08-15)
 ## Added
 * `Batch.delete()` which will delete an existing `Batch`
 * `Batch.delete_labels()`  which will delete all `Label`’s created after a `Project`’s mode has been set to batch.
@@ -663,7 +679,3 @@ a `Label`. Default value is 0.0.
 
 ## Version 2.2 (2019-10-18)
 Changelog not maintained before version 2.2.
-
-### Changed
-* `Model.create_model_run()`
-    * Add training metadata config as a model run creation param

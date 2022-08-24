@@ -22,6 +22,7 @@ def test_image(file_path):
 
     # We are storing the media types now.
     payload['media_type'] = 'image'
+    payload['Global Key'] = None
 
     assert serialized.keys() == payload.keys()
 
@@ -31,6 +32,8 @@ def test_image(file_path):
         elif key == 'Label':
             for annotation_a, annotation_b in zip(serialized[key]['objects'],
                                                   payload[key]['objects']):
+                annotation_b['page'] = None
+                annotation_b['unit'] = None
                 if not len(annotation_a['classifications']):
                     # We don't add a classification key to the payload if there is no classifications.
                     annotation_a.pop('classifications')
