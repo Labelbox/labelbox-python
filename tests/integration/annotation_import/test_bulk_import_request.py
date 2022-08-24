@@ -213,36 +213,55 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
                 "page": random.randint(0, 1),
                 "unit": "POINTS"
             })
-        annotations.extend([{
-            'name': 'text',
-            'answer': 'the answer to the text question',
-            'uuid': 'fc1913c6-b735-4dea-bd25-c18152a4715f',
-            "dataRow": {
-                "id": row['id']
-            }
-        }, {
-            'name':
-                'checklist',
-            'uuid':
-                '9d7b2e57-d68f-4388-867a-af2a9b233719',
-            "dataRow": {
-                "id": row['id']
+        annotations.extend([
+            {  #annotations intended to test classifications
+                'name': 'text',
+                'answer': 'the answer to the text question',
+                'uuid': 'fc1913c6-b735-4dea-bd25-c18152a4715f',
+                "dataRow": {
+                    "id": row['id']
+                }
             },
-            'answer': [{
-                'name': 'first_checklist_answer'
-            }, {
-                'name': 'second_checklist_answer'
-            }]
-        }, {
-            'name': 'radio',
-            'answer': {
-                'name': 'second_radio_answer'
+            {
+                'name':
+                    'checklist',
+                'uuid':
+                    '9d7b2e57-d68f-4388-867a-af2a9b233719',
+                "dataRow": {
+                    "id": row['id']
+                },
+                'answer': [{
+                    'name': 'first_checklist_answer'
+                }, {
+                    'name': 'second_checklist_answer'
+                }]
             },
-            'uuid': 'ad60897f-ea1a-47de-b923-459339764921',
-            "dataRow": {
-                "id": row['id']
+            {
+                'name': 'radio',
+                'answer': {
+                    'name': 'second_radio_answer'
+                },
+                'uuid': 'ad60897f-ea1a-47de-b923-459339764921',
+                "dataRow": {
+                    "id": row['id']
+                }
+            },
+            {  #adding this with the intention to ensure we allow page: 0 
+                "uuid": str(uuid.uuid4()),
+                "name": "bbox",
+                "dataRow": {
+                    "id": row['id']
+                },
+                "bbox": {
+                    "top": round(random.uniform(0, 300), 2),
+                    "left": round(random.uniform(0, 300), 2),
+                    "height": round(random.uniform(200, 500), 2),
+                    "width": round(random.uniform(0, 200), 2)
+                },
+                "page": 0,
+                "unit": "POINTS"
             }
-        }])
+        ])
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
         project_id=configured_project_pdf.uid,
