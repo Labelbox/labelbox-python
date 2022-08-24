@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 0.0.0 (YYYY-MM-DD)
+# Version 3.26.1 (2022-08-23)
 ### Changed
 * `ModelRun.get_config()`
     * Modifies get_config to return un-nested Model Run config
