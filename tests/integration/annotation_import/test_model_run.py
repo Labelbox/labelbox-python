@@ -71,7 +71,7 @@ def test_model_run_get_config(model_run_with_training_metadata):
     new_config = {"batch_size": 2000}
     model_run_with_training_metadata.update_config(new_config)
     res = model_run_with_training_metadata.get_config()
-    assert res["trainingMetadata"]["batch_size"] == new_config["batch_size"]
+    assert res["batch_size"] == new_config["batch_size"]
 
 
 def test_model_run_data_rows_delete(client, model_run_with_model_run_data_rows):
