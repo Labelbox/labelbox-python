@@ -94,12 +94,31 @@ def ontology():
         'type': 'text',
         'options': []
     }
+    radio = {
+        'required':
+            False,
+        'instructions':
+            'radio',
+        'name':
+            'radio',
+        'type':
+            'radio',
+        'options': [{
+            'label': 'first_radio_answer',
+            'value': 'first_radio_answer',
+            'options': []
+        }, {
+            'label': 'second_radio_answer',
+            'value': 'second_radio_answer',
+            'options': []
+        }]
+    }
 
     tools = [
         bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
         segmentation_tool
     ]
-    classifications = [checklist, free_form_text]
+    classifications = [checklist, free_form_text, radio]
     return {"tools": tools, "classifications": classifications}
 
 
@@ -114,6 +133,23 @@ def configured_project(client, ontology, rand_gen, image_url):
     data_row_ids = []
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
+    project.datasets.connect(dataset)
+    project.data_row_ids = data_row_ids
+    yield project
+    project.delete()
+    dataset.delete()
+
+
+@pytest.fixture
+def configured_project_pdf(client, ontology, rand_gen, pdf_url):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str))
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    project.setup(editor, ontology)
+    data_row_ids = []
+    data_row_ids.append(dataset.create_data_row(row_data=pdf_url).uid)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
