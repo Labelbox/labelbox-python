@@ -223,17 +223,15 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
                 }
             },
             {
-                'name':
-                    'checklist',
-                'uuid':
-                    '9d7b2e57-d68f-4388-867a-af2a9b233719',
+                'name': 'checklist',
+                'uuid': '9d7b2e57-d68f-4388-867a-af2a9b233719',
                 "dataRow": {
                     "id": row['id']
                 },
                 'answer': [{
-                    'name': 'first_checklist_answer'
+                    'name': 'option1'
                 }, {
-                    'name': 'second_checklist_answer'
+                    'name': 'optionN'
                 }]
             },
             {
