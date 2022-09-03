@@ -1048,7 +1048,12 @@ class Client:
                                                      get_job_params)
 
         get_data_rows_str = """query getDataRowsForGlobalKeysPyApi($jobId: ID!) {
-            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { fetchedDataRows {id}} jobStatus}}
+            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { 
+                fetchedDataRows {id} 
+                notFoundGlobalKeys
+                accessDeniedGlobalKeys
+                deletedDataRowGlobalKeys
+                } jobStatus}}
             """
         get_data_rows_params = {
             "jobId":
@@ -1058,6 +1063,7 @@ class Client:
         while timeout >= 0:
             res = self.execute(get_data_rows_str, get_data_rows_params)
             if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
+                # TODO: should consider deleted, not found, global keys return?
                 return res["dataRowsForGlobalKeysResult"]['data'][
                     'fetchedDataRows']
             time.sleep(2)
