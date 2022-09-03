@@ -7,6 +7,7 @@ from collections import defaultdict
 import logging
 import mimetypes
 import os
+import time
 
 from google.api_core import retry
 import requests
@@ -31,6 +32,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
+from labelbox.schema.global_key import AssignGlobalKeyToDataRowInput
 
 from labelbox.schema.media_type import MediaType
 
@@ -939,3 +941,127 @@ class Client:
             A ModelRun object.
         """
         return self._get_single(Entity.ModelRun, model_run_id)
+
+    def assign_global_keys_to_data_rows(
+            self,
+            global_key_to_data_row_inputs: List[AssignGlobalKeyToDataRowInput],
+            timeout=30) -> List[Dict[str, str]]:
+        """
+        Assigns global keys to the related data rows.
+        
+        >>> global_key_data_row_inputs = [
+            AssignGlobalKeyToDataRowInput(data_row_id = "cl7asgri20yvo075b4vtfedjb", global_key = "key1"),
+            AssignGlobalKeyToDataRowInput(data_row_id = "cl7asgri10yvg075b4pz176ht", global_key = "key2")
+        ]
+        >>> client.assign_global_keys_to_data_rows(global_key_data_row_inputs)
+
+        Args:
+            A list of AssignGlobalKeyToDataRowInput objects.
+        Returns:
+            Returns successful assigned global keys and data rows
+        """
+
+        mutation_str = """mutation assignGlobalKeysToDataRowsPyApi($globalKeyDataRowLinks: [AssignGlobalKeyToDataRowInput!]!) { 
+            assignGlobalKeysToDataRows(data: {assignInputs: $globalKeyDataRowLinks}) { 
+                jobId 
+            }
+        }
+        """
+        mutation_params = {
+            'globalKeyDataRowLinks': [
+                input.dict(by_alias=True)
+                for input in global_key_to_data_row_inputs
+            ]
+        }
+        assign_global_keys_to_data_rows_job = self.execute(
+            mutation_str, mutation_params)
+
+        get_failed_assignments_str = """query getDataRowsForGlobalKeysPyApi($jobId: ID!) {
+            assignGlobalKeysToDataRowsResult(jobId: {id: $jobId}) {
+                sanitizedAssignments {
+                    dataRowId
+                    globalKey
+                }
+                invalidGlobalKeyAssignments {
+                    dataRowId
+                    globalKey
+                }
+                unmodifiedAssignments {
+                    dataRowId
+                    globalKey
+                }
+                accessDeniedAssignments {
+                    dataRowId
+                    globalKey
+                }}}
+        """
+        get_failed_assignments_params = {
+            "jobId":
+                assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"
+                                                   ]["jobId"]
+        }
+
+        # TODO: Add a timeout to this based on success or not. output looks different than expected.
+        # TODO: Current output of sanitized rows is not showing any output. all outputs are empty lists.
+        # expected output {data, jobStatus} but seeing the assignment outputs above
+
+        res = self.execute(get_failed_assignments_str,
+                           get_failed_assignments_params)
+        errors = []
+        if res['assignGlobalKeysToDataRowsResult'][
+                'invalidGlobalKeyAssignments'] is not None:
+            errors.append("Invalid Global Keys: " +
+                          str(res['invalidGlobalKeyAssignments']))
+        if res['assignGlobalKeysToDataRowsResult'][
+                'unmodifiedAssignments'] is not None:
+            errors.append("Unmodified Assignments: " +
+                          str(res['unmodifiedAssignments']))
+        if res['assignGlobalKeysToDataRowsResult'][
+                'accessDeniedAssignments'] is not None:
+            errors.append("Access Denied Assignments: " +
+                          str(res['accessDeniedAssignments']))
+        if len(errors) > 0:
+            raise Exception("Failed to assign global keys to data rows: " +
+                            str(errors))
+        return res['assignGlobalKeysToDataRowsResult']['sanitizedAssignments']
+
+    def get_data_row_ids_for_global_keys(self,
+                                         global_keys: List[str],
+                                         timeout=30) -> List[Dict[str, str]]:
+        """
+        Gets data row ids for a list of global keys.
+
+        >>> data_row_ids = client.get_data_row_ids_for_global_keys(["key1",])
+
+        Args:
+            A list of global keys
+        Returns:
+            A list of data row ids. Returns empty if the global keys are not found.
+        """
+
+        get_job_query_str = """query getDataRowsForGlobalKeysJobPyApi($globalKeys: [ID!]!) {
+            dataRowsForGlobalKeys(where: {ids: $globalKeys}) { jobId}}
+            """
+        get_job_params = {"globalKeys": global_keys}
+
+        data_rows_for_global_keys_job = self.execute(get_job_query_str,
+                                                     get_job_params)
+
+        get_data_rows_str = """query getDataRowsForGlobalKeysPyApi($jobId: ID!) {
+            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { fetchedDataRows {id}} jobStatus}}
+            """
+        get_data_rows_params = {
+            "jobId":
+                data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
+        }
+
+        while timeout >= 0:
+            res = self.execute(get_data_rows_str, get_data_rows_params)
+            if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
+                return res["dataRowsForGlobalKeysResult"]['data'][
+                    'fetchedDataRows']
+            time.sleep(2)
+            timeout -= 2
+
+        raise TimeoutError(
+            "Timed out waiting for data rows for global keys job to complete.")
