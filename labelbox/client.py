@@ -1010,14 +1010,15 @@ class Client:
             if res["assignGlobalKeysToDataRowsResult"][
                     "jobStatus"] == "COMPLETE":
                 errors = []
-                res = res['assignGlobalKeysToDataRowsResult']
-                if res['invalidGlobalKeyAssignments'] is not None:
+                res = res['assignGlobalKeysToDataRowsResult']['data']
+                print(res)
+                if res['invalidGlobalKeyAssignments']:
                     errors.append("Invalid Global Keys: " +
                                   str(res['invalidGlobalKeyAssignments']))
-                if res['unmodifiedAssignments'] is not None:
+                if res['unmodifiedAssignments']:
                     errors.append("Unmodified Assignments: " +
                                   str(res['unmodifiedAssignments']))
-                if res['accessDeniedAssignments'] is not None:
+                if res['accessDeniedAssignments']:
                     errors.append("Access Denied Assignments: " +
                                   str(res['accessDeniedAssignments']))
                 if len(errors) > 0:
