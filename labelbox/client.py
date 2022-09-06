@@ -1014,9 +1014,6 @@ class Client:
                 if res['invalidGlobalKeyAssignments']:
                     errors.append("Invalid Global Keys: " +
                                   str(res['invalidGlobalKeyAssignments']))
-                if res['unmodifiedAssignments']:
-                    errors.append("Unmodified Assignments: " +
-                                  str(res['unmodifiedAssignments']))
                 if res['accessDeniedAssignments']:
                     errors.append("Access Denied Assignments: " +
                                   str(res['accessDeniedAssignments']))
@@ -1024,7 +1021,7 @@ class Client:
                     raise Exception(
                         "Failed to assign global keys to data rows: " +
                         str(errors))
-                return res['sanitizedAssignments']
+                return res['sanitizedAssignments'] + res['unmodifiedAssignments']
             time.sleep(2)
             timeout -= 2
 
