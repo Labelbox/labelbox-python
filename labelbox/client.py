@@ -978,21 +978,24 @@ class Client:
 
         get_failed_assignments_str = """query getDataRowsForGlobalKeysPyApi($jobId: ID!) {
             assignGlobalKeysToDataRowsResult(jobId: {id: $jobId}) {
-                sanitizedAssignments {
-                    dataRowId
-                    globalKey
-                }
-                invalidGlobalKeyAssignments {
-                    dataRowId
-                    globalKey
-                }
-                unmodifiedAssignments {
-                    dataRowId
-                    globalKey
-                }
-                accessDeniedAssignments {
-                    dataRowId
-                    globalKey
+                jobStatus
+                data {
+                    sanitizedAssignments {
+                        dataRowId
+                        globalKey
+                    }
+                    invalidGlobalKeyAssignments {
+                        dataRowId
+                        globalKey
+                    }
+                    unmodifiedAssignments {
+                        dataRowId
+                        globalKey
+                    }
+                    accessDeniedAssignments {
+                        dataRowId
+                        globalKey
+                    }
                 }}}
         """
         get_failed_assignments_params = {
