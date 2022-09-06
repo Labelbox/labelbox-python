@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 0.0.0 (YYYY-MM-DD) - In Progress
+# Version 3.26.2 (2022-09-06)
 ### Added
 * Support for document (pdf) de/serialization from exports
     * Use the `LBV1Converter.serialize()` and `LBV1Converter.deserialize()` methods
