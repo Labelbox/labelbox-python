@@ -1004,29 +1004,33 @@ class Client:
                                                    ]["jobId"]
         }
 
-        # TODO: Add a timeout to this based on success or not. output looks different than expected.
-        # TODO: Current output of sanitized rows is not showing any output. all outputs are empty lists.
-        # expected output {data, jobStatus} but seeing the assignment outputs above
+        while timeout >= 0:
+            res = self.execute(get_failed_assignments_str,
+                               get_failed_assignments_params)
+            if res["assignGlobalKeysToDataRowsResult"][
+                    "jobStatus"] == "COMPLETE":
+                errors = []
+                res = res['assignGlobalKeysToDataRowsResult']
+                if res['invalidGlobalKeyAssignments'] is not None:
+                    errors.append("Invalid Global Keys: " +
+                                  str(res['invalidGlobalKeyAssignments']))
+                if res['unmodifiedAssignments'] is not None:
+                    errors.append("Unmodified Assignments: " +
+                                  str(res['unmodifiedAssignments']))
+                if res['accessDeniedAssignments'] is not None:
+                    errors.append("Access Denied Assignments: " +
+                                  str(res['accessDeniedAssignments']))
+                if len(errors) > 0:
+                    raise Exception(
+                        "Failed to assign global keys to data rows: " +
+                        str(errors))
+                return res['sanitizedAssignments']
+            time.sleep(2)
+            timeout -= 2
 
-        res = self.execute(get_failed_assignments_str,
-                           get_failed_assignments_params)
-        errors = []
-        if res['assignGlobalKeysToDataRowsResult'][
-                'invalidGlobalKeyAssignments'] is not None:
-            errors.append("Invalid Global Keys: " +
-                          str(res['invalidGlobalKeyAssignments']))
-        if res['assignGlobalKeysToDataRowsResult'][
-                'unmodifiedAssignments'] is not None:
-            errors.append("Unmodified Assignments: " +
-                          str(res['unmodifiedAssignments']))
-        if res['assignGlobalKeysToDataRowsResult'][
-                'accessDeniedAssignments'] is not None:
-            errors.append("Access Denied Assignments: " +
-                          str(res['accessDeniedAssignments']))
-        if len(errors) > 0:
-            raise Exception("Failed to assign global keys to data rows: " +
-                            str(errors))
-        return res['assignGlobalKeysToDataRowsResult']['sanitizedAssignments']
+        raise labelbox.exceptions.TimeoutError(
+            "Timed out waiting for assign global keys to data rows job to complete."
+        )
 
     def get_data_row_ids_for_global_keys(self,
                                          global_keys: List[str],
@@ -1066,11 +1070,10 @@ class Client:
         while timeout >= 0:
             res = self.execute(get_data_rows_str, get_data_rows_params)
             if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
-                # TODO: should consider deleted, not found, global keys return?
                 return res["dataRowsForGlobalKeysResult"]['data'][
                     'fetchedDataRows']
             time.sleep(2)
             timeout -= 2
 
-        raise TimeoutError(
+        raise labelbox.exceptions.TimeoutError(
             "Timed out waiting for data rows for global keys job to complete.")
