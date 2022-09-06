@@ -1011,7 +1011,6 @@ class Client:
                     "jobStatus"] == "COMPLETE":
                 errors = []
                 res = res['assignGlobalKeysToDataRowsResult']['data']
-                print(res)
                 if res['invalidGlobalKeyAssignments']:
                     errors.append("Invalid Global Keys: " +
                                   str(res['invalidGlobalKeyAssignments']))
