@@ -6,6 +6,9 @@
     * Use the `LBV1Converter.serialize()` and `LBV1Converter.deserialize()` methods
 * Support for document (pdf) de/serialization for imports
     * Use the `NDJsonConverter.serialize()` and `NDJsonConverter.deserialize()` methods
+* Global Keys for data rows
+    * Assign global keys to a data row with `client.assign_global_keys_to_data_rows`
+    * Get data rows using global keys with `client.get_data_row_ids_for_global_keys`
 
 # Version 3.26.1 (2022-08-23)
 ### Changed
