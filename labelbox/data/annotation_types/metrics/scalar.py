@@ -16,8 +16,6 @@ class ScalarMetricAggregation(Enum):
     SUM = "SUM"
 
 
-
-
 class ScalarMetric(BaseMetric):
     """ Class representing scalar metrics
 
