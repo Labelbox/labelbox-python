@@ -27,4 +27,3 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.project_resource_tag import ProjectResourceTag
 from labelbox.schema.media_type import MediaType
-from labelbox.schema.global_key import AssignGlobalKeyToDataRowInput
