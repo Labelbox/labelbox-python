@@ -141,14 +141,17 @@ def configured_project(client, ontology, rand_gen, image_url):
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen):
+def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str))
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
-    project.update(queue_mode=project.QueueMode.Batch)
+    data_row_ids = []
+    data_row_ids.append(dataset.create_data_row(row_data=pdf_url).uid)
+    project.datasets.connect(dataset)
+    project.data_row_ids = data_row_ids
     yield project
     project.delete()
     dataset.delete()
