@@ -15,12 +15,12 @@ def test_create_from_url(client, tmp_path, object_predictions,
                          configured_project_without_data_rows,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())
-    file_name = f"{name}.ndjson"
+    file_name = f"{name}.json"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         ndjson.dump(object_predictions, f)
 
-    with open(file_path, "rb") as f:
+    with open(file_path, "r") as f:
         url = client.upload_data(content=f.read(),
                                  filename=file_name,
                                  sign=True,
