@@ -20,10 +20,9 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
-from labelbox.schema.enums import TaskResult
+from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -1071,11 +1070,11 @@ class Client:
                                         error_msg="Access denied to Data Row"))
 
                 if not errors:
-                    status = TaskResult.SUCCESS.value
+                    status = CollectionJobStatus.SUCCESS.value
                 elif errors and results:
-                    status = TaskResult.PARTIAL_SUCCESS.value
+                    status = CollectionJobStatus.PARTIAL_SUCCESS.value
                 else:
-                    status = TaskResult.FAILURE.value
+                    status = CollectionJobStatus.FAILURE.value
 
                 if errors:
                     logger.warning(
@@ -1128,13 +1127,6 @@ class Client:
             [{'global_key': 'asdf', 'error': 'Data Row not found'}]
         """
 
-        def _format_successful_rows(
-                rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
-            return [{
-                'data_row_id': r['id'],
-                'global_key': r['globalKey']
-            } for r in rows]
-
         def _format_failed_rows(rows: List[str],
                                 error_msg: str) -> List[Dict[str, str]]:
             return [{'global_key': r, 'error': error_msg} for r in rows]
@@ -1149,7 +1141,7 @@ class Client:
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
             dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { 
-                fetchedDataRows { id globalKey }
+                fetchedDataRows { id }
                 notFoundGlobalKeys
                 accessDeniedGlobalKeys
                 deletedDataRowGlobalKeys
@@ -1168,7 +1160,7 @@ class Client:
             if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
                 data = res["dataRowsForGlobalKeysResult"]['data']
                 results, errors = [], []
-                results.extend(_format_successful_rows(data['fetchedDataRows']))
+                results.extend([row['id'] for row in data['fetchedDataRows']])
                 errors.extend(
                     _format_failed_rows(data['notFoundGlobalKeys'],
                                         "Data Row not found"))
@@ -1179,11 +1171,11 @@ class Client:
                     _format_failed_rows(data['deletedDataRowGlobalKeys'],
                                         "Data Row deleted"))
                 if not errors:
-                    status = TaskResult.SUCCESS.value
+                    status = CollectionJobStatus.SUCCESS.value
                 elif errors and results:
-                    status = TaskResult.PARTIAL_SUCCESS.value
+                    status = CollectionJobStatus.PARTIAL_SUCCESS.value
                 else:
-                    status = TaskResult.FAILURE.value
+                    status = CollectionJobStatus.FAILURE.value
 
                 if errors:
                     logger.warning(
@@ -1235,13 +1227,9 @@ class Client:
 
         # Query for data row by data_row_id to ensure we get all fields populated in DataRow instances
         data_rows = []
-        for data_row in job_result['results']:
-            try:
-                data_rows.append(self.get_data_row(data_row['data_row_id']))
-            except labelbox.exceptions.ResourceNotFoundError:
-                raise labelbox.exceptions.ResourceNotFoundError(
-                    f"Failed to fetch Data Row for id {data_row['data_row_id']}. Please verify that DataRow is not deleted"
-                )
+        for data_row_id in job_result['results']:
+            # TODO: Need to optimize this to run over a collection of data_row_ids
+            data_rows.append(self.get_data_row(data_row_id))
 
         job_result['results'] = data_rows
 
