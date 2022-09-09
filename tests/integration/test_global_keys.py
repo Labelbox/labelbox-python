@@ -25,8 +25,8 @@ def test_assign_global_keys_to_data_rows(client, dataset, image_url):
 
     res = client.get_data_row_ids_for_global_keys([gk_1, gk_2])
 
-    assert len(res) == 2
-    successful_assignments = set(a['id'] for a in res)
+    assert len(res['results']) == 2
+    successful_assignments = set(res['results'])
     assert successful_assignments == row_ids
 
 
