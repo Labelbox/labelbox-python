@@ -582,3 +582,25 @@ def test_create_data_rows_local_file(dataset, sample_image):
     data_row = list(dataset.data_rows())[0]
     assert data_row.external_id == "tests/integration/media/sample_image.jpg"
     assert len(data_row.metadata_fields) == 4
+
+
+def test_create_data_row_with_global_key(dataset, sample_image):
+    global_key = str(uuid.uuid4())
+    row = dataset.create_data_row(row_data=sample_image, global_key=global_key)
+    assert row.global_key == global_key
+
+
+def test_create_data_rows_with_global_key(dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+    global_key_2 = str(uuid.uuid4())
+    task = dataset.create_data_rows([{
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }, {
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_2
+    }])
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    created_global_keys = set([row.global_key for row in dataset.data_rows()])
+    assert set([global_key_1, global_key_2]) == created_global_keys
