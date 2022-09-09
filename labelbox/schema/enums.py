@@ -44,3 +44,9 @@ class AnnotationImportState(Enum):
     RUNNING = "RUNNING"
     FAILED = "FAILED"
     FINISHED = "FINISHED"
+
+
+class TaskResult(Enum):
+    SUCCESS = "Success"
+    PARTIAL_SUCCESS = "Partial Success"
+    FAILURE = "Failure"

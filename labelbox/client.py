@@ -1,7 +1,7 @@
 # type: ignore
 from datetime import datetime, timezone
 import json
-from typing import List, Dict
+from typing import Any, List, Dict, Union
 from collections import defaultdict
 
 import logging
@@ -20,8 +20,10 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.enums import TaskResult
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -944,7 +946,7 @@ class Client:
     def assign_global_keys_to_data_rows(
             self,
             global_key_to_data_row_inputs: List[Dict[str, str]],
-            timeout_seconds=60) -> Dict[str, List[Dict[str, str]]]:
+            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
         """
         Assigns global keys to data rows.
         
@@ -975,22 +977,21 @@ class Client:
             [{'data_row_id': 'cl7tpjzw30031ka6g4evqdfoy', 'global_key': 'gk"', 'error': 'Invalid global key'}]
         """
 
-        def _format_successful_assignments(
-                assignments: Dict[str, str],
-                sanitized: bool) -> List[Dict[str, str]]:
+        def _format_successful_rows(rows: Dict[str, str],
+                                    sanitized: bool) -> List[Dict[str, str]]:
             return [{
-                'data_row_id': a['dataRowId'],
-                'global_key': a['globalKey'],
+                'data_row_id': r['dataRowId'],
+                'global_key': r['globalKey'],
                 'sanitized': sanitized
-            } for a in assignments]
+            } for r in rows]
 
-        def _format_failed_assignments(assignments: Dict[str, str],
-                                       error_msg: str) -> List[Dict[str, str]]:
+        def _format_failed_rows(rows: Dict[str, str],
+                                error_msg: str) -> List[Dict[str, str]]:
             return [{
-                'data_row_id': a['dataRowId'],
-                'global_key': a['globalKey'],
+                'data_row_id': r['dataRowId'],
+                'global_key': r['globalKey'],
                 'error': error_msg
-            } for a in assignments]
+            } for r in rows]
 
         # Validate input dict
         validation_errors = []
@@ -1056,31 +1057,27 @@ class Client:
                 res = res['assignGlobalKeysToDataRowsResult']['data']
                 # Successful assignments
                 results.extend(
-                    _format_successful_assignments(
-                        assignments=res['sanitizedAssignments'],
-                        sanitized=True))
+                    _format_successful_rows(rows=res['sanitizedAssignments'],
+                                            sanitized=True))
                 results.extend(
-                    _format_successful_assignments(
-                        assignments=res['unmodifiedAssignments'],
-                        sanitized=False))
+                    _format_successful_rows(rows=res['unmodifiedAssignments'],
+                                            sanitized=False))
                 # Failed assignments
                 errors.extend(
-                    _format_failed_assignments(
-                        assignments=res['invalidGlobalKeyAssignments'],
-                        error_msg="Invalid global key"))
+                    _format_failed_rows(rows=res['invalidGlobalKeyAssignments'],
+                                        error_msg="Invalid global key"))
                 errors.extend(
-                    _format_failed_assignments(
-                        assignments=res['accessDeniedAssignments'],
-                        error_msg="Access denied to Data Row"))
+                    _format_failed_rows(rows=res['accessDeniedAssignments'],
+                                        error_msg="Access denied to Data Row"))
 
-                if len(errors) == 0:
-                    status = "Success"
-                elif len(results) > 0:
-                    status = "Partial Success"
+                if not errors:
+                    status = TaskResult.SUCCESS.value
+                elif errors and results:
+                    status = TaskResult.PARTIAL_SUCCESS.value
                 else:
-                    status = "Failure"
+                    status = TaskResult.FAILURE.value
 
-                if len(errors) > 0:
+                if errors:
                     logger.warning(
                         "There are errors present. Please look at 'errors' in the returned dict for more details"
                     )
@@ -1104,7 +1101,7 @@ class Client:
     def get_data_row_ids_for_global_keys(
             self,
             global_keys: List[str],
-            timeout_seconds=60) -> List[Dict[str, str]]:
+            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
         """
         Gets data row ids for a list of global keys.
 
@@ -1131,9 +1128,16 @@ class Client:
             [{'global_key': 'asdf', 'error': 'Data Row not found'}]
         """
 
-        def _format_failed_retrieval(retrieval: List[str],
-                                     error_msg: str) -> List[Dict[str, str]]:
-            return [{'global_key': a, 'error': error_msg} for a in retrieval]
+        def _format_successful_rows(
+                rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
+            return [{
+                'data_row_id': r['id'],
+                'global_key': r['globalKey']
+            } for r in rows]
+
+        def _format_failed_rows(rows: List[str],
+                                error_msg: str) -> List[Dict[str, str]]:
+            return [{'global_key': r, 'error': error_msg} for r in rows]
 
         # Start get data rows for global keys job
         query_str = """query getDataRowsForGlobalKeysPyApi($globalKeys: [ID!]!) {
@@ -1145,7 +1149,7 @@ class Client:
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
             dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { 
-                fetchedDataRows { id }
+                fetchedDataRows { id globalKey }
                 notFoundGlobalKeys
                 accessDeniedGlobalKeys
                 deletedDataRowGlobalKeys
@@ -1164,25 +1168,24 @@ class Client:
             if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
                 data = res["dataRowsForGlobalKeysResult"]['data']
                 results, errors = [], []
-                fetched_data_rows = [dr['id'] for dr in data['fetchedDataRows']]
-                results.extend(fetched_data_rows)
+                results.extend(_format_successful_rows(data['fetchedDataRows']))
                 errors.extend(
-                    _format_failed_retrieval(data['notFoundGlobalKeys'],
-                                             "Data Row not found"))
+                    _format_failed_rows(data['notFoundGlobalKeys'],
+                                        "Data Row not found"))
                 errors.extend(
-                    _format_failed_retrieval(data['accessDeniedGlobalKeys'],
-                                             "Access denied to Data Row"))
+                    _format_failed_rows(data['accessDeniedGlobalKeys'],
+                                        "Access denied to Data Row"))
                 errors.extend(
-                    _format_failed_retrieval(data['deletedDataRowGlobalKeys'],
-                                             "Data Row deleted"))
-                if len(errors) == 0:
-                    status = "Success"
-                elif len(results) > 0:
-                    status = "Partial Success"
+                    _format_failed_rows(data['deletedDataRowGlobalKeys'],
+                                        "Data Row deleted"))
+                if not errors:
+                    status = TaskResult.SUCCESS.value
+                elif errors and results:
+                    status = TaskResult.PARTIAL_SUCCESS.value
                 else:
-                    status = "Failure"
+                    status = TaskResult.FAILURE.value
 
-                if len(errors) > 0:
+                if errors:
                     logger.warning(
                         "There are errors present. Please look at 'errors' in the returned dict for more details"
                     )
@@ -1201,7 +1204,7 @@ class Client:
     def get_data_rows_for_global_keys(
             self,
             global_keys: List[str],
-            timeout_seconds=60) -> List[Dict[str, List[str]]]:
+            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
         """
         Gets data rows for a list of global keys.
 
@@ -1232,12 +1235,12 @@ class Client:
 
         # Query for data row by data_row_id to ensure we get all fields populated in DataRow instances
         data_rows = []
-        for data_row_id in job_result['results']:
+        for data_row in job_result['results']:
             try:
-                data_rows.append(self.get_data_row(data_row_id))
+                data_rows.append(self.get_data_row(data_row['data_row_id']))
             except labelbox.exceptions.ResourceNotFoundError:
                 raise labelbox.exceptions.ResourceNotFoundError(
-                    f"Failed to fetch Data Row for id {data_row_id}. Please verify that DataRow is not deleted"
+                    f"Failed to fetch Data Row for id {data_row['data_row_id']}. Please verify that DataRow is not deleted"
                 )
 
         job_result['results'] = data_rows
