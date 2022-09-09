@@ -1,8 +1,6 @@
-from enum import Enum
 import json
 import logging
 import time
-import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,8 +16,9 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.resource_tag import ResourceTag
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -50,6 +49,7 @@ class Project(DbObject, Updateable, Deletable):
         created_at (datetime)
         setup_complete (datetime)
         last_activity_time (datetime)
+        queue_mode (string)
         auto_audit_number_of_labels (int)
         auto_audit_percentage (float)
 
@@ -70,6 +70,7 @@ class Project(DbObject, Updateable, Deletable):
     created_at = Field.DateTime("created_at")
     setup_complete = Field.DateTime("setup_complete")
     last_activity_time = Field.DateTime("last_activity_time")
+    queue_mode = Field.Enum(QueueMode, "queue_mode")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
     # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
@@ -88,10 +89,6 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
-    class QueueMode(Enum):
-        Batch = "Batch"
-        Dataset = "Dataset"
-
     def update(self, **kwargs):
         """ Updates this project with the specified attributes
 
@@ -109,7 +106,7 @@ class Project(DbObject, Updateable, Deletable):
             Attempting to switch between benchmark and consensus modes is an invalid operation and will result
             in an error.
         """
-        mode: Optional[Project.QueueMode] = kwargs.pop("queue_mode", None)
+        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
         if mode:
             self._update_queue_mode(mode)
 
@@ -573,7 +570,7 @@ class Project(DbObject, Updateable, Deletable):
         """
 
         # @TODO: make this automatic?
-        if self.queue_mode() != Project.QueueMode.Batch:
+        if self.queue_mode != QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
 
         dr_ids = []
@@ -619,14 +616,28 @@ class Project(DbObject, Updateable, Deletable):
         return Entity.Batch(self.client, self.uid, res)
 
     def _update_queue_mode(self,
-                           mode: "Project.QueueMode") -> "Project.QueueMode":
+                           mode: "QueueMode") -> "QueueMode":
 
-        if self.queue_mode() == mode:
+        """
+        Updates the queueing mode of this project.
+
+        This method is deprecated. Going forward, projects must go through a
+        migration to have the queue mode changed. Users should specify the
+        queue mode for a project during creation if a non-default mode is desired.
+
+        Args:
+            mode: the specified queue mode
+
+        Returns: the updated queueing mode of this project
+
+        """
+
+        if self.queue_mode == mode:
             return mode
 
-        if mode == Project.QueueMode.Batch:
+        if mode == QueueMode.Batch:
             status = "ENABLED"
-        elif mode == Project.QueueMode.Dataset:
+        elif mode == QueueMode.Dataset:
             status = "DISABLED"
         else:
             raise ValueError(
@@ -648,8 +659,17 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
-    def queue_mode(self) -> "Project.QueueMode":
-        """Provides the status of if queue mode is enabled in the project."""
+    def get_queue_mode(self) -> "QueueMode":
+        """
+        Provides the status of if queue mode is enabled in the project.
+
+        This method is deprecated and will be removed in a future version. To obtain
+        the queue mode of a project, simply refer to the queue_mode attribute of a
+        Project.
+
+        Returns: the QueueMode for this project
+
+        """
 
         query_str = """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {
@@ -662,9 +682,9 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
 
         if status == "ENABLED":
-            return Project.QueueMode.Batch
+            return QueueMode.Batch
         elif status == "DISABLED":
-            return Project.QueueMode.Dataset
+            return QueueMode.Dataset
         else:
             raise ValueError("Status not known")
 

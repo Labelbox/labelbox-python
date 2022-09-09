@@ -7,6 +7,7 @@ import requests
 from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.queue_mode import QueueMode
 
 
 def test_project(client, rand_gen):
@@ -14,7 +15,7 @@ def test_project(client, rand_gen):
     for o in before:
         assert isinstance(o, Project)
 
-    data = {"name": rand_gen(str), "description": rand_gen(str)}
+    data = {"name": rand_gen(str), "description": rand_gen(str), "queue_mode": QueueMode.Dataset}
     project = client.create_project(**data)
     assert project.name == data["name"]
     assert project.description == data["description"]
@@ -198,10 +199,8 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    assert configured_project.queue_mode(
-    ) == configured_project.QueueMode.Dataset
-    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
-    assert configured_project.queue_mode() == configured_project.QueueMode.Batch
+    # ensures default queue mode is dataset
+    assert configured_project.queue_mode == QueueMode.Dataset
 
 
 def test_batches(configured_project: Project, dataset: Dataset, image_url):
