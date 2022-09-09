@@ -7,7 +7,6 @@ import requests
 
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
-from labelbox.exceptions import MalformedQueryException
 import labelbox.exceptions
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
@@ -291,7 +290,7 @@ def test_create_data_row_with_invalid_metadata(dataset, image_url):
     fields.append(
         DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
 
-    with pytest.raises(labelbox.exceptions.MalformedQueryException) as excinfo:
+    with pytest.raises(labelbox.exceptions.MalformedQueryException):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
 
 
@@ -624,11 +623,6 @@ def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
 
 def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     global_key_1 = str(uuid.uuid4())
-
-
-def test_create_data_rows_with_global_key(dataset, sample_image):
-    global_key_1 = str(uuid.uuid4())
-    global_key_2 = str(uuid.uuid4())
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
         DataRow.global_key: global_key_1

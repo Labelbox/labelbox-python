@@ -1,4 +1,3 @@
-from tkinter import E
 import uuid
 import pytest
 
@@ -50,7 +49,7 @@ def test_assign_global_keys_to_data_rows_validation_error(client):
     with pytest.raises(ValueError) as excinfo:
         client.assign_global_keys_to_data_rows(assignment_inputs)
     e = """[{'data_row_id': 'test uid', 'wrong_key': 'gk 1'}, {'wrong_key': 'test uid 3', 'global_key': 'gk 3'}, {'data_row_id': 'test uid 4'}, {'global_key': 'gk 5'}, {}]"""
-    assert e
+    assert e in str(excinfo.value)
 
 
 def test_assign_same_global_keys_to_data_rows(client, dataset, image_url):
@@ -77,3 +76,72 @@ def test_assign_same_global_keys_to_data_rows(client, dataset, image_url):
     assert res['errors'][0]['data_row_id'] == dr_2.uid
     assert res['errors'][0]['global_key'] == gk_1
     assert res['errors'][0]['error'] == "Invalid global key"
+
+
+def test_global_key_sanitization(dataset, image_url):
+    uuid_str = str(uuid.uuid4())
+    unsanitized_global_key = "\"<>\\{\\}\\|" + uuid_str
+    sanitized_global_key = "_________" + uuid_str
+    dr = dataset.create_data_row(row_data=image_url,
+                                 global_key=unsanitized_global_key)
+    assert dr.global_key == sanitized_global_key
+
+
+def test_long_global_key_validation(client, dataset, image_url):
+    long_global_key = 'x' * 201
+    dr_1 = dataset.create_data_row(row_data=image_url)
+    dr_2 = dataset.create_data_row(row_data=image_url)
+
+    gk_1 = str(uuid.uuid4())
+    gk_2 = long_global_key
+
+    assignment_inputs = [{
+        "data_row_id": dr_1.uid,
+        "global_key": gk_1
+    }, {
+        "data_row_id": dr_2.uid,
+        "global_key": gk_2
+    }]
+    res = client.assign_global_keys_to_data_rows(assignment_inputs)
+
+    assert len(res['results']) == 1
+    assert len(res['errors']) == 1
+    assert res['status'] == 'PARTIAL SUCCESS'
+    assert res['results'][0]['data_row_id'] == dr_1.uid
+    assert res['results'][0]['global_key'] == gk_1
+    assert res['errors'][0]['data_row_id'] == dr_2.uid
+    assert res['errors'][0]['global_key'] == gk_2
+    assert res['errors'][0]['error'] == 'Invalid global key'
+
+
+def test_global_key_with_whitespaces_validation(client, dataset, image_url):
+    dr_1 = dataset.create_data_row(row_data=image_url)
+    dr_2 = dataset.create_data_row(row_data=image_url)
+    dr_3 = dataset.create_data_row(row_data=image_url)
+
+    gk_1 = ' global key'
+    gk_2 = 'global  key'
+    gk_3 = 'global key '
+
+    assignment_inputs = [{
+        "data_row_id": dr_1.uid,
+        "global_key": gk_1
+    }, {
+        "data_row_id": dr_2.uid,
+        "global_key": gk_2
+    }, {
+        "data_row_id": dr_3.uid,
+        "global_key": gk_3
+    }]
+    res = client.assign_global_keys_to_data_rows(assignment_inputs)
+
+    assert len(res['results']) == 0
+    assert len(res['errors']) == 3
+    assert res['status'] == 'FAILURE'
+    assign_errors_ids = set([e['data_row_id'] for e in res['errors']])
+    assign_errors_gks = set([e['global_key'] for e in res['errors']])
+    assign_errors_msgs = set([e['error'] for e in res['errors']])
+    assert assign_errors_ids == set([dr_1.uid, dr_2.uid, dr_3.uid])
+    assert assign_errors_gks == set([gk_1, gk_2, gk_3])
+    assert assign_errors_msgs == set(
+        ['Invalid global key', 'Invalid global key', 'Invalid global key'])
