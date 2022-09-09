@@ -7,6 +7,7 @@ import requests
 
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
+from labelbox.exceptions import MalformedQueryException
 import labelbox.exceptions
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
@@ -643,5 +644,54 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
 
     task.wait_till_done()
     assert task.status == "COMPLETE"
+    assert len(list(dataset.data_rows())) == 1
+    assert list(dataset.data_rows())[0].global_key == global_key_1
+
+
+def test_data_row_bulk_creation_sync_with_unique_global_keys(
+        dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+    global_key_2 = str(uuid.uuid4())
+    global_key_3 = str(uuid.uuid4())
+
+    dataset.create_data_rows_sync([
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_2
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_3
+        },
+    ])
+
+    assert {row.global_key for row in dataset.data_rows()
+           } == {global_key_1, global_key_2, global_key_3}
+
+
+def test_data_row_rulk_creation_sync_with_same_global_keys(
+        dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+
+    with pytest.raises(labelbox.exceptions.MalformedQueryException):
+        dataset.create_data_rows_sync([{
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        }, {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        }])
+
+    assert len(list(dataset.data_rows())) == 0
+
+    dataset.create_data_rows_sync([{
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }])
+
     assert len(list(dataset.data_rows())) == 1
     assert list(dataset.data_rows())[0].global_key == global_key_1
