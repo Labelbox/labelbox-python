@@ -117,6 +117,7 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == 2
     assert {data_row.row_data for data_row in data_rows} == {image_url}
+    assert {data_row.global_key for data_row in data_rows} == {None}
 
     # Test creation using file name
     with NamedTemporaryFile() as fp:
@@ -174,6 +175,7 @@ def test_data_row_single_creation(dataset, rand_gen, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
+    assert data_row.global_key is None
 
     with NamedTemporaryFile() as fp:
         data = rand_gen(str).encode()
@@ -582,3 +584,64 @@ def test_create_data_rows_local_file(dataset, sample_image):
     data_row = list(dataset.data_rows())[0]
     assert data_row.external_id == "tests/integration/media/sample_image.jpg"
     assert len(data_row.metadata_fields) == 4
+
+
+def test_data_row_with_global_key(dataset, sample_image):
+    global_key = str(uuid.uuid4())
+    row = dataset.create_data_row({
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key
+    })
+
+    assert row.global_key == global_key
+
+
+def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+    global_key_2 = str(uuid.uuid4())
+    global_key_3 = str(uuid.uuid4())
+
+    task = dataset.create_data_rows([
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_2
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_3
+        },
+    ])
+
+    task.wait_till_done()
+    assert {row.global_key for row in dataset.data_rows()
+           } == {global_key_1, global_key_2, global_key_3}
+
+
+def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+
+    task = dataset.create_data_rows([{
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }, {
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }])
+
+    task.wait_till_done()
+    assert task.status == "FAILED"
+    assert len(list(dataset.data_rows())) == 0
+
+    task = dataset.create_data_rows([{
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }])
+
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert len(list(dataset.data_rows())) == 1
+    assert list(dataset.data_rows())[0].global_key == global_key_1
