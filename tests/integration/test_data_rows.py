@@ -117,6 +117,7 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == 2
     assert {data_row.row_data for data_row in data_rows} == {image_url}
+    assert {data_row.global_key for data_row in data_rows} == {None}
 
     # Test creation using file name
     with NamedTemporaryFile() as fp:
@@ -174,6 +175,7 @@ def test_data_row_single_creation(dataset, rand_gen, image_url):
     assert requests.get(image_url).content == \
         requests.get(data_row.row_data).content
     assert data_row.media_attributes is not None
+    assert data_row.global_key is None
 
     with NamedTemporaryFile() as fp:
         data = rand_gen(str).encode()
@@ -288,7 +290,7 @@ def test_create_data_row_with_invalid_metadata(dataset, image_url):
     fields.append(
         DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
 
-    with pytest.raises(labelbox.exceptions.MalformedQueryException) as excinfo:
+    with pytest.raises(labelbox.exceptions.MalformedQueryException):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
 
 
@@ -584,23 +586,110 @@ def test_create_data_rows_local_file(dataset, sample_image):
     assert len(data_row.metadata_fields) == 4
 
 
-def test_create_data_row_with_global_key(dataset, sample_image):
+def test_data_row_with_global_key(dataset, sample_image):
     global_key = str(uuid.uuid4())
-    row = dataset.create_data_row(row_data=sample_image, global_key=global_key)
+    row = dataset.create_data_row({
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key
+    })
+
     assert row.global_key == global_key
 
 
-def test_create_data_rows_with_global_key(dataset, sample_image):
+def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
     global_key_1 = str(uuid.uuid4())
     global_key_2 = str(uuid.uuid4())
+    global_key_3 = str(uuid.uuid4())
+
+    task = dataset.create_data_rows([
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_2
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_3
+        },
+    ])
+
+    task.wait_till_done()
+    assert {row.global_key for row in dataset.data_rows()
+           } == {global_key_1, global_key_2, global_key_3}
+
+
+def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
         DataRow.global_key: global_key_1
     }, {
         DataRow.row_data: sample_image,
-        DataRow.global_key: global_key_2
+        DataRow.global_key: global_key_1
     }])
+
+    task.wait_till_done()
+    assert task.status == "FAILED"
+    assert len(list(dataset.data_rows())) == 0
+
+    task = dataset.create_data_rows([{
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }])
+
     task.wait_till_done()
     assert task.status == "COMPLETE"
-    created_global_keys = set([row.global_key for row in dataset.data_rows()])
-    assert set([global_key_1, global_key_2]) == created_global_keys
+    assert len(list(dataset.data_rows())) == 1
+    assert list(dataset.data_rows())[0].global_key == global_key_1
+
+
+def test_data_row_bulk_creation_sync_with_unique_global_keys(
+        dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+    global_key_2 = str(uuid.uuid4())
+    global_key_3 = str(uuid.uuid4())
+
+    dataset.create_data_rows_sync([
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_2
+        },
+        {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_3
+        },
+    ])
+
+    assert {row.global_key for row in dataset.data_rows()
+           } == {global_key_1, global_key_2, global_key_3}
+
+
+def test_data_row_rulk_creation_sync_with_same_global_keys(
+        dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+
+    with pytest.raises(labelbox.exceptions.MalformedQueryException):
+        dataset.create_data_rows_sync([{
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        }, {
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        }])
+
+    assert len(list(dataset.data_rows())) == 0
+
+    dataset.create_data_rows_sync([{
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }])
+
+    assert len(list(dataset.data_rows())) == 1
+    assert list(dataset.data_rows())[0].global_key == global_key_1

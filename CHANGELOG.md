@@ -1,5 +1,11 @@
 # Changelog
 
+# Version 0.0.0 (YYYY-MM-DD) - In Progress
+
+### Added
+* Global Keys for data rows
+    * Assign global keys to a data row with `client.assign_global_keys_to_data_rows`
+    * Get data rows using global keys with `client.get_data_row_ids_for_global_keys` and `client.get_data_rows_for_global_keys`
 # Version 3.26.2 (2022-09-06)
 ### Added
 * Support for document (pdf) de/serialization from exports

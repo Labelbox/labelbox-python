@@ -44,3 +44,20 @@ class AnnotationImportState(Enum):
     RUNNING = "RUNNING"
     FAILED = "FAILED"
     FINISHED = "FINISHED"
+
+
+class CollectionJobStatus(Enum):
+    """ Status of an asynchronous job over a collection.
+
+        * - State
+          - Description
+        * - SUCCESS
+          - Indicates job has successfully processed entire collection of data
+        * - PARTIAL SUCCESS
+          - Indicates some data in the collection has succeeded and other data have failed
+        * - FAILURE
+          - Indicates job has failed to process entire collection of data
+    """
+    SUCCESS = "SUCCESS"
+    PARTIAL_SUCCESS = "PARTIAL SUCCESS"
+    FAILURE = "FAILURE"
