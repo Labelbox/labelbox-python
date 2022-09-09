@@ -35,6 +35,8 @@ class NDJsonBase(BaseModel):
 class NDAnnotation(NDJsonBase):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
+    page: Optional[int] = None
+    unit: Optional[str] = None
 
     @root_validator()
     def must_set_one(cls, values):

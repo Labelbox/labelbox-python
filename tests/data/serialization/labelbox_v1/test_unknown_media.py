@@ -16,6 +16,7 @@ def test_image():
 
     for row in payload:
         row['media_type'] = 'image'
+        row['Global Key'] = None
 
     collection = LBV1Converter.deserialize(payload)
     for idx, serialized in enumerate(LBV1Converter.serialize(collection)):
@@ -30,6 +31,8 @@ def test_image():
                     if not len(annotation_a['classifications']):
                         # We don't add a classification key to the payload if there is no classifications.
                         annotation_a.pop('classifications')
+                    annotation_b['page'] = None
+                    annotation_b['unit'] = None
 
                     if isinstance(annotation_b.get('classifications'),
                                   list) and len(

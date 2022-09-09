@@ -18,6 +18,7 @@ def test_video():
     collection = LBV1Converter.deserialize([payload])
     serialized = next(LBV1Converter.serialize(collection))
     payload['media_type'] = 'video'
+    payload['Global Key'] = None
     assert serialized.keys() == payload.keys()
     for key in serialized:
         if key != 'Label':
@@ -32,6 +33,8 @@ def test_video():
 
                 for obj_a, obj_b in zip(annotation_a['objects'],
                                         annotation_b['objects']):
+                    obj_b['page'] = None
+                    obj_b['unit'] = None
                     obj_a = round_dict(obj_a)
                     obj_b = round_dict(obj_b)
                     assert obj_a == obj_b

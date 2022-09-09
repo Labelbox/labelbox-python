@@ -94,12 +94,31 @@ def ontology():
         'type': 'text',
         'options': []
     }
+    radio = {
+        'required':
+            False,
+        'instructions':
+            'radio',
+        'name':
+            'radio',
+        'type':
+            'radio',
+        'options': [{
+            'label': 'first_radio_answer',
+            'value': 'first_radio_answer',
+            'options': []
+        }, {
+            'label': 'second_radio_answer',
+            'value': 'second_radio_answer',
+            'options': []
+        }]
+    }
 
     tools = [
         bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
         segmentation_tool
     ]
-    classifications = [checklist, free_form_text]
+    classifications = [checklist, free_form_text, radio]
     return {"tools": tools, "classifications": classifications}
 
 
@@ -134,6 +153,18 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
     project.delete()
     dataset.delete()
 
+@pytest.fixture
+def configured_project_without_data_rows(client, ontology, rand_gen):
+    project = client.create_project(name=rand_gen(str))
+    dataset = client.create_dataset(name=rand_gen(str))
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    project.setup(editor, ontology)
+    project.update(queue_mode=project.QueueMode.Batch)
+    yield project
+    project.delete()
+    dataset.delete()
 
 @pytest.fixture
 def prediction_id_mapping(configured_project):
@@ -366,6 +397,19 @@ def model(client, rand_gen, configured_project):
 def model_run(rand_gen, model):
     name = rand_gen(str)
     model_run = model.create_model_run(name)
+    yield model_run
+    try:
+        model_run.delete()
+    except:
+        # Already was deleted by the test
+        pass
+
+
+@pytest.fixture
+def model_run_with_training_metadata(rand_gen, model):
+    name = rand_gen(str)
+    training_metadata = {"batch_size": 1000}
+    model_run = model.create_model_run(name, training_metadata)
     yield model_run
     try:
         model_run.delete()

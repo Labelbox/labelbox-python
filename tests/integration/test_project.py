@@ -183,7 +183,7 @@ def test_same_ontology_after_instructions(
         configured_project_with_complex_ontology):
     project, _ = configured_project_with_complex_ontology
     initial_ontology = project.ontology().normalized
-    project.upsert_instructions('tests/data/assets/loremipsum.pdf')
+    project.upsert_instructions('tests/assets/loremipsum.pdf')
     updated_ontology = project.ontology().normalized
 
     instructions = updated_ontology.pop('projectInstructions')

@@ -5,7 +5,7 @@ from pydantic import confloat
 
 from .base import ConfidenceValue, BaseMetric
 
-ScalarMetricValue = confloat(ge=0, le=10_000)
+ScalarMetricValue = confloat(ge=0, le=100_000_000)
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
 
 

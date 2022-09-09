@@ -22,6 +22,8 @@ class LBV1ObjectBase(LBV1Feature):
     instanceURI: Optional[str] = None
     classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
                                 LBV1Checklist]] = []
+    page: Optional[int] = None
+    unit: Optional[str] = None
 
     def dict(self, *args, **kwargs) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
@@ -262,7 +264,7 @@ class LBV1TextEntity(LBV1ObjectBase):
 class LBV1Objects(BaseModel):
     objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
                         LBV1TextEntity, LBV1Mask, LBV1TIPoint, LBV1TILine,
-                        LBV1TIPolygon, LBV1TIRectangle]]
+                        LBV1TIPolygon, LBV1TIRectangle,]]
 
     def to_common(self) -> List[ObjectAnnotation]:
         objects = [
@@ -285,6 +287,8 @@ class LBV1Objects(BaseModel):
                                  'color': obj.color,
                                  'feature_id': obj.feature_id,
                                  'value': obj.value,
+                                 'page': obj.page,
+                                 'unit': obj.unit,
                              }) for obj in self.objects
         ]
         return objects

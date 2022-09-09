@@ -17,6 +17,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     Attributes:
         external_id (str): User-generated file name or identifier
+        global_key (str): User-generated globally unique identifier
         row_data (str): Paths to local files are uploaded to Labelbox's server.
             Otherwise, it's treated as an external URL.
         updated_at (datetime)
@@ -33,6 +34,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         attachments (Relationship) `ToMany` relationship with AssetAttachment
     """
     external_id = Field.String("external_id")
+    global_key = Field.String("global_key")
     row_data = Field.String("row_data")
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
