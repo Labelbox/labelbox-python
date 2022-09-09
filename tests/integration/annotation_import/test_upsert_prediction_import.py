@@ -10,11 +10,21 @@ from labelbox.schema.annotation_import import AnnotationImportState, MEAPredicti
 """
 
 
-def test_create_from_url(model_run_with_model_run_data_rows,
+def test_create_from_url(client, tmp_path, object_predictions,
+                         model_run_with_model_run_data_rows,
                          configured_project_without_data_rows,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())
-    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
+    file_name = f"{name}.ndjson"
+    file_path = tmp_path / file_name
+    with file_path.open("w") as f:
+        ndjson.dump(object_predictions, f)
+
+    with open(file_path, "rb") as f:
+        url = client.upload_data(content=f.read(),
+                                 filename=file_name,
+                                 sign=True,
+                                 content_type="application/json")
 
     annotation_import, batch, mal_prediction_import = model_run_with_model_run_data_rows.upsert_predictions_and_send_to_project(
         name=name,
