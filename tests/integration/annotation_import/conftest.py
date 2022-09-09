@@ -153,6 +153,7 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
     project.delete()
     dataset.delete()
 
+
 @pytest.fixture
 def configured_project_without_data_rows(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str))
@@ -165,6 +166,7 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
     yield project
     project.delete()
     dataset.delete()
+
 
 @pytest.fixture
 def prediction_id_mapping(configured_project):
