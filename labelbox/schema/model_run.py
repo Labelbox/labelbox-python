@@ -162,10 +162,18 @@ class ModelRun(DbObject):
         if len(mea_to_mal_data_rows) == 0:
             return import_job, None, None
 
-        batch = project.create_batch(name, mea_to_mal_data_rows, priority)
-        mal_prediction_import = Entity.MALPredictionImport.create_for_model_run_data_rows(
-            data_row_ids=mea_to_mal_data_rows, project_id=project_id, **kwargs)
-        return import_job, batch, mal_prediction_import
+        try:
+            batch = project.create_batch(name, mea_to_mal_data_rows, priority)
+            try:
+                mal_prediction_import = Entity.MALPredictionImport.create_for_model_run_data_rows(
+                    data_row_ids=mea_to_mal_data_rows,
+                    project_id=project_id,
+                    **kwargs)
+                return import_job, batch, mal_prediction_import
+            except:
+                return import_job, batch, None
+        except:
+            return import_job, None, None
 
     def add_predictions(
         self,
