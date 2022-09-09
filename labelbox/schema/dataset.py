@@ -360,6 +360,9 @@ class Dataset(DbObject, Updateable, Deletable):
                 if "externalId" in item:
                     external_id = item.pop("externalId")
                     item["external_id"] = external_id
+                if "globalKey" in item:
+                    global_key = item.pop("globalKey")
+                    item["globalKey"] = global_key
                 validate_conversational_data(messages)
                 one_conversation = \
                     {

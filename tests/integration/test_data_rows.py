@@ -625,6 +625,10 @@ def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
 def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     global_key_1 = str(uuid.uuid4())
 
+
+def test_create_data_rows_with_global_key(dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+    global_key_2 = str(uuid.uuid4())
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
         DataRow.global_key: global_key_1
