@@ -82,6 +82,6 @@ class Dropdown(_TempName):
     answer: List[ClassificationAnswer]
 
     def __init__(self, **data: Any):
+        super().__init__(**data)
         warnings.warn("Dropdown classification is deprecated and will be "
                       "removed in a future release")
-        super().__init__(**data)

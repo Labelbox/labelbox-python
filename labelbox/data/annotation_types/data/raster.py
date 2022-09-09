@@ -187,7 +187,7 @@ class RasterData(BaseModel, ABC):
 
     class Config:
         # Required for sharing references
-        copy_on_model_validation = False
+        copy_on_model_validation = 'none'
         # Required for discriminating between data types
         extra = 'forbid'
 
