@@ -39,7 +39,8 @@ variable. For more info see [Labelbox API key docs](https://labelbox.helpdocs.io
 To pass tests, code must be formatted using the following command:
 
 ```shell
-yapf labelbox -i --verbose --recursive --parallel --style "google"
+yapf tests/* -i --verbose --recursive --parallel --style "google"
+yapf labelbox/* -i --verbose --recursive --parallel --style "google"
 ```
 
 ## Release Steps

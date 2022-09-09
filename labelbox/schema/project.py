@@ -615,14 +615,12 @@ class Project(DbObject, Updateable, Deletable):
         res['size'] = len(dr_ids)
         return Entity.Batch(self.client, self.uid, res)
 
-    def _update_queue_mode(self,
-                           mode: "QueueMode") -> "QueueMode":
-
+    def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
         Updates the queueing mode of this project.
 
-        This method is deprecated. Going forward, projects must go through a
-        migration to have the queue mode changed. Users should specify the
+        Deprecation notice: This method is deprecated. Going forward, projects must
+        go through a migration to have the queue mode changed. Users should specify the
         queue mode for a project during creation if a non-default mode is desired.
 
         Args:
@@ -631,6 +629,10 @@ class Project(DbObject, Updateable, Deletable):
         Returns: the updated queueing mode of this project
 
         """
+
+        logger.warning(
+            "Updating the queue_mode for a project will soon no longer be supported."
+        )
 
         if self.queue_mode == mode:
             return mode
@@ -661,15 +663,19 @@ class Project(DbObject, Updateable, Deletable):
 
     def get_queue_mode(self) -> "QueueMode":
         """
-        Provides the status of if queue mode is enabled in the project.
+        Provides the queue mode used for this project.
 
-        This method is deprecated and will be removed in a future version. To obtain
-        the queue mode of a project, simply refer to the queue_mode attribute of a
-        Project.
+        Deprecation notice: This method is deprecated and will be removed in
+        a future version. To obtain the queue mode of a project, simply refer
+        to the queue_mode attribute of a Project.
 
         Returns: the QueueMode for this project
 
         """
+
+        logger.warning(
+            "Obtaining the queue_mode for a project through this method will soon"
+            " no longer be supported.")
 
         query_str = """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {

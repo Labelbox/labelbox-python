@@ -15,7 +15,11 @@ def test_project(client, rand_gen):
     for o in before:
         assert isinstance(o, Project)
 
-    data = {"name": rand_gen(str), "description": rand_gen(str), "queue_mode": QueueMode.Dataset}
+    data = {
+        "name": rand_gen(str),
+        "description": rand_gen(str),
+        "queue_mode": QueueMode.Dataset
+    }
     project = client.create_project(**data)
     assert project.name == data["name"]
     assert project.description == data["description"]
