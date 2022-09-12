@@ -1,6 +1,7 @@
 import pytest
 
 from labelbox import Dataset, Project
+from labelbox.schema.queue_mode import QueueMode
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 
@@ -32,7 +33,7 @@ def small_dataset(dataset: Dataset):
 
 
 def test_create_batch(configured_project: Project, big_dataset: Dataset):
-    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
 
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
     batch = configured_project.create_batch("test-batch", data_rows, 3)
@@ -42,7 +43,7 @@ def test_create_batch(configured_project: Project, big_dataset: Dataset):
 
 def test_archive_batch(configured_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
     batch = configured_project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
     exported_data_rows = list(batch.export_data_rows())
@@ -52,7 +53,7 @@ def test_archive_batch(configured_project: Project, small_dataset: Dataset):
 
 def test_delete(configured_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
     batch = configured_project.create_batch("batch to delete", data_rows)
     batch.delete()
 
@@ -61,7 +62,7 @@ def test_delete(configured_project: Project, small_dataset: Dataset):
 
 def test_batch_project(configured_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
     batch = configured_project.create_batch(
         "batch to test project relationship", data_rows)
     project_from_batch = batch.project()
@@ -81,7 +82,7 @@ def test_export_data_rows(configured_project: Project, dataset: Dataset):
     task.wait_till_done()
 
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
     batch = configured_project.create_batch("batch test", data_rows)
 
     result = list(batch.export_data_rows())
@@ -98,7 +99,7 @@ def test_delete_labels(configured_project_with_label):
     project, dataset, _, _ = configured_project_with_label
 
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    project.update(queue_mode=Project.QueueMode.Batch)
+    project.update(queue_mode=QueueMode.Batch)
     batch = project.create_batch("batch to delete labels", data_rows)
 
 
@@ -108,7 +109,7 @@ Fix/Unskip after resolving deletion with MAL/LabelImport")
 def test_delete_labels_with_templates(configured_project: Project,
                                       small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    configured_project.update(queue_mode=Project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
     batch = configured_project.create_batch(
         "batch to delete labels w templates", data_rows)
     exported_data_rows = list(batch.export_data_rows())
