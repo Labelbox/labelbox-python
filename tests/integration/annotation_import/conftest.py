@@ -7,7 +7,8 @@ import ndjson
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import LabelImport, MALPredictionImport, AnnotationImportState
+from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.queue_mode import QueueMode
 
 
 @pytest.fixture
@@ -164,7 +165,7 @@ def configured_project_without_data_rows(client, configured_project, rand_gen):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup_editor(configured_project.ontology())
-    project.update(queue_mode=project.QueueMode.Batch)
+    project.update(queue_mode=QueueMode.Batch)
     yield project
     project.delete()
 
