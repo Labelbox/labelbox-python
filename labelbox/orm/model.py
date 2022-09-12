@@ -371,6 +371,7 @@ class Entity(metaclass=EntityMeta):
         LabelingFrontendOptions: Type[labelbox.LabelingFrontendOptions]
         Label: Type[labelbox.Label]
         MEAPredictionImport: Type[labelbox.MEAPredictionImport]
+        MALPredictionImport: Type[labelbox.MALPredictionImport]
         Invite: Type[labelbox.Invite]
         InviteLimit: Type[labelbox.InviteLimit]
         ProjectRole: Type[labelbox.ProjectRole]

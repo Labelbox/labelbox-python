@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+DATAROWS_IMPORT_LIMIT = 25000
+
 
 class DataSplit(Enum):
     TRAINING = "TRAINING"
@@ -122,6 +124,56 @@ class ModelRun(DbObject):
                     f"Unable to complete import within {original_timeout} seconds."
                 )
             time.sleep(sleep_time)
+
+    def upsert_predictions_and_send_to_project(
+        self,
+        name: str,
+        predictions: Union[str, Path, Iterable[Dict]],
+        project_id: str,
+        priority: Optional[int] = 5,
+    ) -> 'MEAPredictionImport':  # type: ignore
+        """ Upload predictions and create a batch import to project.
+        Args:
+            name (str): name of the AnnotationImport job as well as the name of the batch import
+            predictions (Iterable):
+                iterable of annotation rows
+            project_id (str): id of the project to import into
+            priority (int): priority of the job
+        Returns:
+            (MEAPredictionImport, Batch, MEAToMALPredictionImport)
+        """
+        kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
+        project = self.client.get_project(project_id)
+        import_job = self.add_predictions(name, predictions)
+        prediction_statuses = import_job.statuses
+        mea_to_mal_data_rows_set = set([
+            row['dataRow']['id']
+            for row in prediction_statuses
+            if row['status'] == 'SUCCESS'
+        ])
+        mea_to_mal_data_rows = list(
+            mea_to_mal_data_rows_set)[:DATAROWS_IMPORT_LIMIT]
+
+        if len(mea_to_mal_data_rows) >= DATAROWS_IMPORT_LIMIT:
+
+            logger.warning(
+                f"Got {len(mea_to_mal_data_rows_set)} data rows to import, trimmed down to {DATAROWS_IMPORT_LIMIT} data rows"
+            )
+        if len(mea_to_mal_data_rows) == 0:
+            return import_job, None, None
+
+        try:
+            batch = project.create_batch(name, mea_to_mal_data_rows, priority)
+            try:
+                mal_prediction_import = Entity.MEAToMALPredictionImport.create_for_model_run_data_rows(
+                    data_row_ids=mea_to_mal_data_rows,
+                    project_id=project_id,
+                    **kwargs)
+                return import_job, batch, mal_prediction_import
+            except:
+                return import_job, batch, None
+        except:
+            return import_job, None, None
 
     def add_predictions(
         self,
@@ -264,11 +316,11 @@ class ModelRun(DbObject):
 
     @experimental
     def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """ 
+        """
          Updates the Model Run's training metadata config
-         Args: 
+         Args:
              config (dict): A dictionary of keys and values
-         Returns: 
+         Returns:
              Model Run id and updated training metadata
          """
         data: Dict[str, Any] = {'config': config}
@@ -285,9 +337,9 @@ class ModelRun(DbObject):
 
     @experimental
     def reset_config(self) -> Dict[str, Any]:
-        """ 
+        """
          Resets Model Run's training metadata config
-         Returns: 
+         Returns:
              Model Run id and reset training metadata
          """
         res = self.client.execute(
@@ -300,10 +352,10 @@ class ModelRun(DbObject):
 
     @experimental
     def get_config(self) -> Dict[str, Any]:
-        """ 
-         Gets Model Run's training metadata 
-         Returns: 
-             training metadata as a dictionary 
+        """
+         Gets Model Run's training metadata
+         Returns:
+             training metadata as a dictionary
          """
         res = self.client.execute("""query ModelRunPyApi($modelRunId: ID!){
                 modelRun(where: {id : $modelRunId}){trainingMetadata}
