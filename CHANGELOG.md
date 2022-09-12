@@ -7,6 +7,8 @@
     * Get data rows using global keys with `client.get_data_row_ids_for_global_keys` and `client.get_data_rows_for_global_keys`
 * Project Creation
     * Introduces `Project.queue_mode` as an optional parameter when creating projects
+* `MEAToMALPredictionImport` class
+    * This allows users to use predictions stored in Models for MAL
 ### Changed
 * Increase scalar metric value limit to 100m
 * Added deprecation warnings when updating project `queue_mode`
