@@ -215,7 +215,7 @@ def test_batches(configured_project: Project, dataset: Dataset, image_url):
         },
     ] * 2)
     task.wait_till_done()
-    configured_project.update(queue_mode=configured_project.QueueMode.Batch)
+    configured_project.update(queue_mode=QueueMode.Batch)
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
     batch_one = 'batch one'
     batch_two = 'batch two'
@@ -223,7 +223,7 @@ def test_batches(configured_project: Project, dataset: Dataset, image_url):
     configured_project.create_batch(batch_two, [data_rows[1]])
 
     names = set([batch.name for batch in list(configured_project.batches())])
-    assert names == set([batch_one, batch_two])
+    assert names == {batch_one, batch_two}
 
 
 def test_media_type(client, configured_project: Project, rand_gen):
