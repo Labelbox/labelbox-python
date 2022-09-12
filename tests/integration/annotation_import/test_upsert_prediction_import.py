@@ -17,8 +17,19 @@ def test_create_from_url(client, tmp_path, object_predictions,
     name = str(uuid.uuid4())
     file_name = f"{name}.json"
     file_path = tmp_path / file_name
+
+    model_run_data_rows = [
+        mrdr.data_row().uid
+        for mrdr in model_run_with_model_run_data_rows.model_run_data_rows()
+    ]
+    predictions = [
+        p for p in object_predictions
+        if p['dataRow']['id'] in model_run_data_rows
+    ]
     with file_path.open("w") as f:
-        ndjson.dump(object_predictions, f)
+        ndjson.dump(predictions, f)
+
+    # Needs to have data row ids
 
     with open(file_path, "r") as f:
         url = client.upload_data(content=f.read(),
@@ -33,14 +44,18 @@ def test_create_from_url(client, tmp_path, object_predictions,
         priority=5)
 
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
-    annotation_import_test_helpers.check_running_state(annotation_import, name,
-                                                       url)
     annotation_import.wait_until_done()
+    assert not annotation_import.errors
+    assert annotation_import.statuses
 
-    if batch:
-        assert batch.project().uid == configured_project_without_data_rows.uid
-    if mal_prediction_import:
-        mal_prediction_import.wait_until_done()
+    assert batch
+    assert batch.project().uid == configured_project_without_data_rows.uid
+
+    assert mal_prediction_import
+    mal_prediction_import.wait_until_done()
+
+    assert not mal_prediction_import.errors
+    assert mal_prediction_import.statuses
 
 
 def test_create_from_objects(model_run_with_model_run_data_rows,
@@ -48,40 +63,55 @@ def test_create_from_objects(model_run_with_model_run_data_rows,
                              object_predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
-
+    model_run_data_rows = [
+        mrdr.data_row().uid
+        for mrdr in model_run_with_model_run_data_rows.model_run_data_rows()
+    ]
+    predictions = [
+        p for p in object_predictions
+        if p['dataRow']['id'] in model_run_data_rows
+    ]
     annotation_import, batch, mal_prediction_import = model_run_with_model_run_data_rows.upsert_predictions_and_send_to_project(
         name=name,
-        predictions=object_predictions,
+        predictions=predictions,
         project_id=configured_project_without_data_rows.uid,
         priority=5)
 
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
-    annotation_import_test_helpers.check_running_state(annotation_import, name)
-    annotation_import_test_helpers.assert_file_content(
-        annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
+    assert not annotation_import.errors
+    assert annotation_import.statuses
 
-    if batch:
-        assert batch.project().uid == configured_project_without_data_rows.uid
+    assert batch
+    assert batch.project().uid == configured_project_without_data_rows.uid
 
-    if mal_prediction_import:
-        annotation_import_test_helpers.check_running_state(
-            mal_prediction_import, name)
-        mal_prediction_import.wait_until_done()
+    assert mal_prediction_import
+    mal_prediction_import.wait_until_done()
+
+    assert not mal_prediction_import.errors
+    assert mal_prediction_import.statuses
 
 
 def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
                                 configured_project_without_data_rows,
                                 object_predictions,
                                 annotation_import_test_helpers):
+
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
-    with file_path.open("w") as f:
-        ndjson.dump(object_predictions, f)
 
-    annotation_import = model_run_with_model_run_data_rows.add_predictions(
-        name=name, predictions=str(file_path))
+    model_run_data_rows = [
+        mrdr.data_row().uid
+        for mrdr in model_run_with_model_run_data_rows.model_run_data_rows()
+    ]
+    predictions = [
+        p for p in object_predictions
+        if p['dataRow']['id'] in model_run_data_rows
+    ]
+
+    with file_path.open("w") as f:
+        ndjson.dump(predictions, f)
 
     annotation_import, batch, mal_prediction_import = model_run_with_model_run_data_rows.upsert_predictions_and_send_to_project(
         name=name,
@@ -90,42 +120,15 @@ def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
         priority=5)
 
     assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
-    annotation_import_test_helpers.check_running_state(annotation_import, name)
-    annotation_import_test_helpers.assert_file_content(
-        annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
+    assert not annotation_import.errors
+    assert annotation_import.statuses
 
-    if batch:
-        assert batch.project().uid == configured_project_without_data_rows.uid
+    assert batch
+    assert batch.project().uid == configured_project_without_data_rows.uid
 
-    if mal_prediction_import:
-        annotation_import_test_helpers.check_running_state(
-            mal_prediction_import, name)
-        mal_prediction_import.wait_until_done()
+    assert mal_prediction_import
+    mal_prediction_import.wait_until_done()
 
-
-@pytest.mark.slow
-def test_wait_till_done(model_run_predictions,
-                        model_run_with_model_run_data_rows):
-    name = str(uuid.uuid4())
-    annotation_import = model_run_with_model_run_data_rows.add_predictions(
-        name=name, predictions=model_run_predictions)
-
-    assert len(annotation_import.inputs) == len(model_run_predictions)
-    annotation_import.wait_until_done()
-    assert annotation_import.state == AnnotationImportState.FINISHED
-    # Check that the status files are being returned as expected
-    assert len(annotation_import.errors) == 0
-    assert len(annotation_import.inputs) == len(model_run_predictions)
-    input_uuids = [
-        input_annot['uuid'] for input_annot in annotation_import.inputs
-    ]
-    inference_uuids = [pred['uuid'] for pred in model_run_predictions]
-    assert set(input_uuids) == set(inference_uuids)
-    assert len(annotation_import.statuses) == len(model_run_predictions)
-    for status in annotation_import.statuses:
-        assert status['status'] == 'SUCCESS'
-    status_uuids = [
-        input_annot['uuid'] for input_annot in annotation_import.statuses
-    ]
-    assert set(input_uuids) == set(status_uuids)
+    assert not mal_prediction_import.errors
+    assert mal_prediction_import.statuses

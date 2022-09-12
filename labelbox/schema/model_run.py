@@ -140,7 +140,7 @@ class ModelRun(DbObject):
             project_id (str): id of the project to import into
             priority (int): priority of the job
         Returns:
-            (AnnotationImport, Project)
+            (MEAPredictionImport, Batch, MEAToMALPredictionImport)
         """
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         project = self.client.get_project(project_id)
@@ -165,7 +165,7 @@ class ModelRun(DbObject):
         try:
             batch = project.create_batch(name, mea_to_mal_data_rows, priority)
             try:
-                mal_prediction_import = Entity.MALPredictionImport.create_for_model_run_data_rows(
+                mal_prediction_import = Entity.MEAToMALPredictionImport.create_for_model_run_data_rows(
                     data_row_ids=mea_to_mal_data_rows,
                     project_id=project_id,
                     **kwargs)
@@ -316,11 +316,11 @@ class ModelRun(DbObject):
 
     @experimental
     def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """ 
+        """
          Updates the Model Run's training metadata config
-         Args: 
+         Args:
              config (dict): A dictionary of keys and values
-         Returns: 
+         Returns:
              Model Run id and updated training metadata
          """
         data: Dict[str, Any] = {'config': config}
@@ -337,9 +337,9 @@ class ModelRun(DbObject):
 
     @experimental
     def reset_config(self) -> Dict[str, Any]:
-        """ 
+        """
          Resets Model Run's training metadata config
-         Returns: 
+         Returns:
              Model Run id and reset training metadata
          """
         res = self.client.execute(
@@ -352,10 +352,10 @@ class ModelRun(DbObject):
 
     @experimental
     def get_config(self) -> Dict[str, Any]:
-        """ 
-         Gets Model Run's training metadata 
-         Returns: 
-             training metadata as a dictionary 
+        """
+         Gets Model Run's training metadata
+         Returns:
+             training metadata as a dictionary
          """
         res = self.client.execute("""query ModelRunPyApi($modelRunId: ID!){
                 modelRun(where: {id : $modelRunId}){trainingMetadata}

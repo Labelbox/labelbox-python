@@ -158,17 +158,15 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen):
+def configured_project_without_data_rows(client, configured_project, rand_gen):
     project = client.create_project(name=rand_gen(str))
-    dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
+    project.setup_editor(configured_project.ontology())
     project.update(queue_mode=project.QueueMode.Batch)
     yield project
     project.delete()
-    dataset.delete()
 
 
 @pytest.fixture
@@ -436,6 +434,7 @@ def model_run_with_model_run_data_rows(client, configured_project,
     model_run.upsert_labels(label_ids)
     time.sleep(3)
     yield model_run
+    model_run.delete()
     # TODO: Delete resources when that is possible ..
 
 
