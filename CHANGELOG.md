@@ -12,6 +12,8 @@
 ### Changed
 * Increase scalar metric value limit to 100m
 * Added deprecation warnings when updating project `queue_mode`
+## Fixed
+* Fix bug in `feature_confusion_matrix` and `confusion_matrix` causing FPs and FNs to be capped at 1 when there were no matching annotations 
 
 # Version 3.26.2 (2022-09-06)
 ### Added
