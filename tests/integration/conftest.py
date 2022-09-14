@@ -165,6 +165,13 @@ def project(client, rand_gen):
 
 
 @pytest.fixture
+def consensus_project(client, rand_gen):
+    project = client.create_project(name=rand_gen(str), auto_audit_percentage=0)
+    yield project
+    project.delete()
+
+
+@pytest.fixture
 def dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
