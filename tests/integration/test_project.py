@@ -207,7 +207,7 @@ def test_queue_mode(configured_project: Project):
     assert configured_project.queue_mode == QueueMode.Dataset
 
 
-def test_batches(configured_project: Project, dataset: Dataset, image_url):
+def test_batches(batch_project: Project, dataset: Dataset, image_url):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
@@ -215,14 +215,13 @@ def test_batches(configured_project: Project, dataset: Dataset, image_url):
         },
     ] * 2)
     task.wait_till_done()
-    configured_project.update(queue_mode=QueueMode.Batch)
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
     batch_one = 'batch one'
     batch_two = 'batch two'
-    configured_project.create_batch(batch_one, [data_rows[0]])
-    configured_project.create_batch(batch_two, [data_rows[1]])
+    batch_project.create_batch(batch_one, [data_rows[0]])
+    batch_project.create_batch(batch_two, [data_rows[1]])
 
-    names = set([batch.name for batch in list(configured_project.batches())])
+    names = set([batch.name for batch in list(batch_project.batches())])
     assert names == {batch_one, batch_two}
 
 
