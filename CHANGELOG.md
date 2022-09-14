@@ -9,6 +9,7 @@
     * Introduces `Project.queue_mode` as an optional parameter when creating projects
 * `MEAToMALPredictionImport` class
     * This allows users to use predictions stored in Models for MAL
+* `Task.wait_till_done` now shows a warning if task has failed
 ### Changed
 * Increase scalar metric value limit to 100m
 * Added deprecation warnings when updating project `queue_mode`

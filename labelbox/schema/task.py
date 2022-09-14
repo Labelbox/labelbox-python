@@ -64,6 +64,10 @@ class Task(DbObject):
         check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
+                if self.status == 'FAILED':
+                    logger.warning(
+                        "There are errors present. Please look at `task.errors` for more details"
+                    )
                 return
             sleep_time_seconds = min(check_frequency, timeout_seconds)
             logger.debug("Task.wait_till_done sleeping for %.2f seconds" %
@@ -94,24 +98,32 @@ class Task(DbObject):
             return [{
                 'id': data_row['id'],
                 'external_id': data_row.get('externalId'),
-                'row_data': data_row['rowData']
+                'row_data': data_row['rowData'],
+                'global_key': data_row.get('globalKey'),
             } for data_row in result['createdDataRows']]
 
     @lru_cache()
     def _fetch_remote_json(self) -> Dict[str, Any]:
         """ Function for fetching and caching the result data.
         """
+
+        def download_result():
+            response = requests.get(self.result_url)
+            response.raise_for_status()
+            return response.json()
+
         if self.name != 'JSON Import':
             raise ValueError(
                 "Task result is only supported for `JSON Import` tasks."
                 " Download task.result_url manually to access the result for other tasks."
             )
-        self.wait_till_done(timeout_seconds=600)
-        if self.status == "IN_PROGRESS":
-            raise ValueError(
-                "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
-            )
 
-        response = requests.get(self.result_url)
-        response.raise_for_status()
-        return response.json()
+        if self.status != "IN_PROGRESS":
+            return download_result()
+        else:
+            self.wait_till_done(timeout_seconds=600)
+            if self.status == "IN_PROGRESS":
+                raise ValueError(
+                    "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
+                )
+            return download_result()
