@@ -2,10 +2,10 @@ import pytest
 from labelbox import DataRow
 
 
-def test_labeling_parameter_overrides(project, rand_gen, image_url):
+def test_labeling_parameter_overrides(consensus_project, rand_gen, image_url):
+    project = consensus_project
     dataset = project.client.create_dataset(name=rand_gen(str),
                                             projects=project)
-    project.update(auto_audit_percentage=0)
 
     task = dataset.create_data_rows([{DataRow.row_data: image_url}] * 20)
     task.wait_till_done()

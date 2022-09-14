@@ -59,7 +59,7 @@ def feature_confusion_matrix(
         Returns None if there are no annotations in ground_truth or prediction annotations
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
+        return [0, len(predictions), 0, len(ground_truths)]
     elif has_no_annotations(ground_truths, predictions):
         return None
     elif isinstance(predictions[0].value, Mask):
@@ -96,7 +96,7 @@ def classification_confusion_matrix(
     """
 
     if has_no_matching_annotations(ground_truths, predictions):
-        return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
+        return [0, len(predictions), 0, len(ground_truths)]
     elif has_no_annotations(
             ground_truths,
             predictions) or len(predictions) > 1 or len(ground_truths) > 1:
@@ -141,7 +141,7 @@ def vector_confusion_matrix(ground_truths: List[ObjectAnnotation],
          Returns None if there are no annotations in ground_truth or prediction annotations
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
+        return [0, len(predictions), 0, len(ground_truths)]
     elif has_no_annotations(ground_truths, predictions):
         return None
 
@@ -264,7 +264,7 @@ def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
         confusion matrix as a list: [TP,FP,TN,FN]
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
+        return [0, len(predictions), 0, len(ground_truths)]
     elif has_no_annotations(ground_truths, predictions):
         return None
 
@@ -306,7 +306,7 @@ def ner_confusion_matrix(ground_truths: List[ObjectAnnotation],
         confusion matrix as a list: [TP,FP,TN,FN]
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return [0, int(len(predictions) > 0), 0, int(len(ground_truths) > 0)]
+        return [0, len(predictions), 0, len(ground_truths)]
     elif has_no_annotations(ground_truths, predictions):
         return None
     pairs = _get_ner_pairs(ground_truths, predictions)
