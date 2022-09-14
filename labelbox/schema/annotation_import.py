@@ -318,6 +318,88 @@ class MEAPredictionImport(AnnotationImport):
         return cls(client, res["createModelErrorAnalysisPredictionImport"])
 
 
+class MEAToMALPredictionImport(AnnotationImport):
+    project = Relationship.ToOne("Project", cache=True)
+
+    @property
+    def parent_id(self) -> str:
+        """
+        Identifier for this import. Used to refresh the status
+        """
+        return self.project().uid
+
+    @classmethod
+    def create_for_model_run_data_rows(cls, client: "labelbox.Client",
+                                       model_run_id: str,
+                                       data_row_ids: List[str], project_id: str,
+                                       name: str) -> "MEAToMALPredictionImport":
+        """
+        Create an MEA to MAL prediction import job from a list of data row ids of a specific model run
+
+        Args:
+            client: Labelbox Client for executing queries
+            data_row_ids: A list of data row ids
+            model_run_id: model run id
+        Returns:
+            MEAToMALPredictionImport
+        """
+        query_str = cls._get_model_run_data_rows_mutation()
+        return cls(
+            client,
+            client.execute(query_str,
+                           params={
+                               "dataRowIds": data_row_ids,
+                               "modelRunId": model_run_id,
+                               "projectId": project_id,
+                               "name": name
+                           })["createMalPredictionImportForModelRunDataRows"])
+
+    @classmethod
+    def from_name(cls,
+                  client: "labelbox.Client",
+                  project_id: str,
+                  name: str,
+                  as_json: bool = False) -> "MEAToMALPredictionImport":
+        """
+        Retrieves an MEA to MAL import job.
+
+        Args:
+            client: Labelbox Client for executing queries
+            project_id:  ID used for querying import jobs
+            name: Name of the import job.
+        Returns:
+            MALPredictionImport
+        """
+        query_str = """query getMEAToMALPredictionImportPyApi($projectId : ID!, $name: String!) {
+            meaToMalPredictionImport(
+                where: {projectId: $projectId, name: $name}){
+                    %s
+                }}""" % query.results_query_part(cls)
+        params = {
+            "projectId": project_id,
+            "name": name,
+        }
+        response = client.execute(query_str, params)
+        if response is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                MALPredictionImport, params)
+        response = response["meaToMalPredictionImport"]
+        if as_json:
+            return response
+        return cls(client, response)
+
+    @classmethod
+    def _get_model_run_data_rows_mutation(cls) -> str:
+        return """mutation createMalPredictionImportForModelRunDataRowsPyApi($dataRowIds: [ID!]!, $name: String!, $modelRunId: ID!, $projectId:ID!) {
+            createMalPredictionImportForModelRunDataRows(data: {
+                name: $name
+                modelRunId: $modelRunId
+                dataRowIds: $dataRowIds
+                projectId: $projectId
+            }) {%s}
+        }""" % query.results_query_part(cls)
+
+
 class MALPredictionImport(AnnotationImport):
     project = Relationship.ToOne("Project", cache=True)
 
