@@ -22,7 +22,6 @@ def test_assign_global_keys_to_data_rows(client, dataset, image_url):
 
     dr_1 = dataset.create_data_row(row_data=image_url, external_id="hello")
     dr_2 = dataset.create_data_row(row_data=image_url, external_id="world")
-    row_ids = set([dr_1.uid, dr_2.uid])
 
     gk_1 = str(uuid.uuid4())
     gk_2 = str(uuid.uuid4())

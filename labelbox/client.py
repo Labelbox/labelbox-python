@@ -1014,7 +1014,7 @@ class Client:
                 utils.camel_case(key): value for key, value in input.items()
             } for input in global_key_to_data_row_inputs]
         }
-        assign_global_keys_to_data_rows_job = self.execute(query_str, params)
+        assign_global_keys_to_data_rows_job = self.execute(query_str, params, timeout_seconds=60)
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query assignGlobalKeysToDataRowsResultPyApi($jobId: ID!) {
@@ -1187,7 +1187,7 @@ class Client:
             dataRowsForGlobalKeys(where: {ids: $globalKeys}) { jobId}}
             """
         params = {"globalKeys": global_keys}
-        data_rows_for_global_keys_job = self.execute(query_str, params)
+        data_rows_for_global_keys_job = self.execute(query_str, params, timeout_seconds=60)
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
