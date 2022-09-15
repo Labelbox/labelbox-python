@@ -1014,7 +1014,7 @@ class Client:
                 utils.camel_case(key): value for key, value in input.items()
             } for input in global_key_to_data_row_inputs]
         }
-        assign_global_keys_to_data_rows_job = self.execute(query_str, params, timeout=60)
+        assign_global_keys_to_data_rows_job = self.execute(query_str, params, timeout=180)
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query assignGlobalKeysToDataRowsResultPyApi($jobId: ID!) {
@@ -1049,7 +1049,7 @@ class Client:
         sleep_time = 2
         start_time = time.time()
         while True:
-            res = self.execute(result_query_str, result_params)
+            res = self.execute(result_query_str, result_params, timeout=180)
             if res["assignGlobalKeysToDataRowsResult"][
                     "jobStatus"] == "COMPLETE":
                 results, errors = [], []
@@ -1187,7 +1187,7 @@ class Client:
             dataRowsForGlobalKeys(where: {ids: $globalKeys}) { jobId}}
             """
         params = {"globalKeys": global_keys}
-        data_rows_for_global_keys_job = self.execute(query_str, params, timeout=60)
+        data_rows_for_global_keys_job = self.execute(query_str, params, timeout=180)
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
@@ -1207,7 +1207,7 @@ class Client:
         sleep_time = 2
         start_time = time.time()
         while True:
-            res = self.execute(result_query_str, result_params)
+            res = self.execute(result_query_str, result_params, timeout=180)
             if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
                 data = res["dataRowsForGlobalKeysResult"]['data']
                 results, errors = [], []
