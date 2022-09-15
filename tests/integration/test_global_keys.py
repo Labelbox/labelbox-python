@@ -2,6 +2,19 @@ import uuid
 import pytest
 
 
+# Helper function to assert two lists of data rows are matchin since DataRows
+# constructed by get_data_rows_for_global_keys may not include certain fields
+def verify_data_rows_match(left_data_rows, right_data_rows):
+    assert len(left_data_rows) == len(right_data_rows)
+    for i, ldr in enumerate(left_data_rows):
+        assert ldr.uid == right_data_rows[i].uid
+        assert ldr.external_id == right_data_rows[i].external_id
+        assert ldr.global_key == right_data_rows[i].global_key
+        assert ldr.created_at == right_data_rows[i].created_at
+        assert ldr.updated_at == right_data_rows[i].updated_at
+        assert ldr.row_data == right_data_rows[i].row_data
+
+
 def test_assign_global_keys_to_data_rows(client, dataset, image_url):
     """Test that the assign_global_keys_to_data_rows method can be called
     with a valid list of AssignGlobalKeyToDataRowInput objects.
@@ -161,27 +174,26 @@ def test_get_data_rows_for_global_keys(client, dataset, image_url):
     res = client.get_data_rows_for_global_keys([gk_1])
     assert res['status'] == "SUCCESS"
     assert res['errors'] == []
-    assert res['results'] == [dr_1]
+    verify_data_rows_match(res['results'], [dr_1])
 
     res = client.get_data_rows_for_global_keys([gk_2])
     assert res['status'] == "SUCCESS"
     assert res['errors'] == []
-    assert res['results'] == [dr_2]
+    verify_data_rows_match(res['results'], [dr_2])
 
     res = client.get_data_rows_for_global_keys([gk_1, gk_2])
     assert res['status'] == "SUCCESS"
     assert res['errors'] == []
-    assert res['results'] == [dr_1, dr_2]
+    verify_data_rows_match(res['results'], [dr_1, dr_2])
 
 
 def test_get_data_rows_for_invalid_global_keys(client, dataset, image_url):
     gk_1 = str(uuid.uuid4())
     gk_2 = str(uuid.uuid4())
 
-    dr_1 = dataset.create_data_row(row_data=image_url, external_id="hello")
-    dr_2 = dataset.create_data_row(row_data=image_url,
-                                   external_id="world",
-                                   global_key=gk_2)
+    dr = dataset.create_data_row(row_data=image_url,
+                                 external_id="world",
+                                 global_key=gk_2)
 
     res = client.get_data_rows_for_global_keys([gk_1])
     assert res['status'] == "FAILURE"
@@ -197,8 +209,7 @@ def test_get_data_rows_for_invalid_global_keys(client, dataset, image_url):
 
     assert res['errors'][0]['error'] == "Data Row not found"
     assert res['errors'][0]['global_key'] == gk_1
-
-    assert res['results'][0] == dr_2
+    verify_data_rows_match(res['results'], [dr])
 
 
 def test_get_data_row_ids_for_global_keys(client, dataset, image_url):
@@ -232,10 +243,9 @@ def test_get_data_row_ids_for_invalid_global_keys(client, dataset, image_url):
     gk_1 = str(uuid.uuid4())
     gk_2 = str(uuid.uuid4())
 
-    dr_1 = dataset.create_data_row(row_data=image_url, external_id="hello")
-    dr_2 = dataset.create_data_row(row_data=image_url,
-                                   external_id="world",
-                                   global_key=gk_2)
+    dr = dataset.create_data_row(row_data=image_url,
+                                 external_id="world",
+                                 global_key=gk_2)
 
     res = client.get_data_row_ids_for_global_keys([gk_1])
     assert res['status'] == "FAILURE"
@@ -252,4 +262,4 @@ def test_get_data_row_ids_for_invalid_global_keys(client, dataset, image_url):
     assert res['errors'][0]['error'] == "Data Row not found"
     assert res['errors'][0]['global_key'] == gk_1
 
-    assert res['results'][0] == dr_2.uid
+    assert res['results'][0] == dr.uid

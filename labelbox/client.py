@@ -1127,6 +1127,57 @@ class Client:
             [{'global_key': 'asdf', 'error': 'Data Row not found'}]
         """
 
+        job_result = self.get_data_rows_for_global_keys(global_keys,
+                                                        timeout_seconds)
+
+        data_row_ids = []
+        for data_row in job_result['results']:
+            data_row_ids.append(data_row.uid)
+
+        job_result['results'] = data_row_ids
+
+        return job_result
+
+    def get_data_rows_for_global_keys(
+            self,
+            global_keys: List[str],
+            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
+        """
+        Gets data rows for a list of global keys.
+
+        Args:
+            A list of global keys
+        Returns:
+            Dictionary containing 'status', 'results' and 'errors'.
+
+            'Status' contains the outcome of this job. It can be one of
+            'Success', 'Partial Success', or 'Failure'.
+
+            'Results' contains a list of `DataRow` instances successfully fetchced. It may
+            not necessarily contain all data rows requested.
+
+            'Errors' contains a list of global_keys that could not be fetched, along
+            with the failure reason
+        Examples:
+            >>> job_result = client.get_data_rows_for_global_keys(["key1","key2"])
+            >>> print(job_result['status'])
+            Partial Success
+            >>> print(job_result['results'])
+            [<DataRow ID: cl7tvvybc00icka6ggipyh8tj>, <DataRow ID: cl7tvvyfp00igka6gblrw2idc>]
+            >>> print(job_result['errors'])
+            [{'global_key': 'asdf', 'error': 'Data Row not found'}]
+        """
+
+        def _format_successful_rows(rows: List[Dict[str, str]]):
+            return [
+                Entity.DataRow(
+                    self, {
+                        **row, 'mediaAttributes': {},
+                        'metadataFields': [],
+                        'customMetadata': []
+                    }) for row in rows
+            ]
+
         def _format_failed_rows(rows: List[str],
                                 error_msg: str) -> List[Dict[str, str]]:
             return [{'global_key': r, 'error': error_msg} for r in rows]
@@ -1141,7 +1192,7 @@ class Client:
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
             dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { 
-                fetchedDataRows { id }
+                fetchedDataRows { id createdAt updatedAt externalId globalKey rowData }
                 notFoundGlobalKeys
                 accessDeniedGlobalKeys
                 deletedDataRowGlobalKeys
@@ -1160,7 +1211,7 @@ class Client:
             if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
                 data = res["dataRowsForGlobalKeysResult"]['data']
                 results, errors = [], []
-                results.extend([row['id'] for row in data['fetchedDataRows']])
+                results.extend(_format_successful_rows(data['fetchedDataRows']))
                 errors.extend(
                     _format_failed_rows(data['notFoundGlobalKeys'],
                                         "Data Row not found"))
@@ -1192,45 +1243,3 @@ class Client:
                     "Timed out waiting for get_data_rows_for_global_keys job to complete."
                 )
             time.sleep(sleep_time)
-
-    def get_data_rows_for_global_keys(
-            self,
-            global_keys: List[str],
-            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
-        """
-        Gets data rows for a list of global keys.
-
-        Args:
-            A list of global keys
-        Returns:
-            Dictionary containing 'status', 'results' and 'errors'.
-
-            'Status' contains the outcome of this job. It can be one of
-            'Success', 'Partial Success', or 'Failure'.
-
-            'Results' contains a list of `DataRow` instances successfully fetchced. It may
-            not necessarily contain all data rows requested.
-
-            'Errors' contains a list of global_keys that could not be fetched, along
-            with the failure reason
-        Examples:
-            >>> job_result = client.get_data_rows_for_global_keys(["key1","key2"])
-            >>> print(job_result['status'])
-            Partial Success
-            >>> print(job_result['results'])
-            [<DataRow ID: cl7tvvybc00icka6ggipyh8tj>, <DataRow ID: cl7tvvyfp00igka6gblrw2idc>]
-            >>> print(job_result['errors'])
-            [{'global_key': 'asdf', 'error': 'Data Row not found'}]
-        """
-        job_result = self.get_data_row_ids_for_global_keys(
-            global_keys, timeout_seconds)
-
-        # Query for data row by data_row_id to ensure we get all fields populated in DataRow instances
-        data_rows = []
-        for data_row_id in job_result['results']:
-            # TODO: Need to optimize this to run over a collection of data_row_ids
-            data_rows.append(self.get_data_row(data_row_id))
-
-        job_result['results'] = data_rows
-
-        return job_result
