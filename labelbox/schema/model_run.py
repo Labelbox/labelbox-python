@@ -43,7 +43,7 @@ class ModelRun(DbObject):
         COMPLETE = "COMPLETE"
         FAILED = "FAILED"
 
-    def upsert_labels(self, label_ids, timeout_seconds=60):
+    def upsert_labels(self, label_ids, timeout_seconds=3600):
         """ Adds data rows and labels to a Model Run
         Args:
             label_ids (list): label ids to insert
@@ -76,7 +76,7 @@ class ModelRun(DbObject):
             }})['MEALabelRegistrationTaskStatus'],
                                      timeout_seconds=timeout_seconds)
 
-    def upsert_data_rows(self, data_row_ids, timeout_seconds=60):
+    def upsert_data_rows(self, data_row_ids, timeout_seconds=3600):
         """ Adds data rows to a Model Run without any associated labels
         Args:
             data_row_ids (list): data row ids to add to mea
