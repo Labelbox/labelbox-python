@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.27.1 (2022-09-16)
+### Changed
+* Removed `client.get_data_rows_for_global_keys` until further notice
+
 # Version 3.27.0 (2022-09-12)
 ### Added
 * Global Keys for data rows

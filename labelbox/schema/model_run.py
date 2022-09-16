@@ -132,7 +132,29 @@ class ModelRun(DbObject):
         project_id: str,
         priority: Optional[int] = 5,
     ) -> 'MEAPredictionImport':  # type: ignore
-        """ Upload predictions and create a batch import to project.
+        """
+        Provides a convenient way to execute the following steps in a single function call:
+            1. Upload predictions to a Model
+            2. Create a batch from data rows that had predictions assocated with them
+            3. Attach the batch to a project
+            4. Add those same predictions to the project as MAL annotations
+
+        Note that partial successes are possible.
+        If it is important that all stages are successful then check the status of each individual task
+        with task.errors. E.g.
+
+        >>>    mea_import_job, batch, mal_import_job = upsert_predictions_and_send_to_project(name, predictions, project_id)
+        >>>    # handle mea import job successfully created (check for job failure or partial failures)
+        >>>    print(mea_import_job.status, mea_import_job.errors)
+        >>>    if batch is None:
+        >>>        # Handle batch creation failure
+        >>>    if mal_import_job is None:
+        >>>        # Handle mal_import_job creation failure
+        >>>    else:
+        >>>        # handle mal import job successfully created (check for job failure or partial failures)
+        >>>        print(mal_import_job.status, mal_import_job.errors)
+
+
         Args:
             name (str): name of the AnnotationImport job as well as the name of the batch import
             predictions (Iterable):
@@ -140,40 +162,52 @@ class ModelRun(DbObject):
             project_id (str): id of the project to import into
             priority (int): priority of the job
         Returns:
-            (MEAPredictionImport, Batch, MEAToMALPredictionImport)
+            Tuple[MEAPredictionImport, Batch, MEAToMALPredictionImport]
+            If any of these steps fail the return value will be None.
+
         """
         kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         project = self.client.get_project(project_id)
         import_job = self.add_predictions(name, predictions)
         prediction_statuses = import_job.statuses
-        mea_to_mal_data_rows_set = set([
-            row['dataRow']['id']
-            for row in prediction_statuses
-            if row['status'] == 'SUCCESS'
-        ])
         mea_to_mal_data_rows = list(
-            mea_to_mal_data_rows_set)[:DATAROWS_IMPORT_LIMIT]
+            set([
+                row['dataRow']['id']
+                for row in prediction_statuses
+                if row['status'] == 'SUCCESS'
+            ]))
 
-        if len(mea_to_mal_data_rows) >= DATAROWS_IMPORT_LIMIT:
-
-            logger.warning(
-                f"Got {len(mea_to_mal_data_rows_set)} data rows to import, trimmed down to {DATAROWS_IMPORT_LIMIT} data rows"
-            )
-        if len(mea_to_mal_data_rows) == 0:
+        if not mea_to_mal_data_rows:
+            # 0 successful model predictions imported
             return import_job, None, None
+
+        elif len(mea_to_mal_data_rows) >= DATAROWS_IMPORT_LIMIT:
+            mea_to_mal_data_rows = mea_to_mal_data_rows[:DATAROWS_IMPORT_LIMIT]
+            logger.warning(
+                f"Exeeded max data row limit {len(mea_to_mal_data_rows)}, trimmed down to {DATAROWS_IMPORT_LIMIT} data rows."
+            )
 
         try:
             batch = project.create_batch(name, mea_to_mal_data_rows, priority)
-            try:
-                mal_prediction_import = Entity.MEAToMALPredictionImport.create_for_model_run_data_rows(
-                    data_row_ids=mea_to_mal_data_rows,
-                    project_id=project_id,
-                    **kwargs)
-                return import_job, batch, mal_prediction_import
-            except:
-                return import_job, batch, None
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to create batch. Messsage : {e}.")
+            # Unable to create batch
             return import_job, None, None
+
+        try:
+            mal_prediction_import = Entity.MEAToMALPredictionImport.create_for_model_run_data_rows(
+                data_row_ids=mea_to_mal_data_rows,
+                project_id=project_id,
+                **kwargs)
+            mal_prediction_import.wait_until_done()
+        except Exception as e:
+            logger.warning(
+                f"Failed to create MEA to MAL prediction import. Message : {e}."
+            )
+            # Unable to create mea to mal prediction import
+            return import_job, batch, None
+
+        return import_job, batch, mal_prediction_import
 
     def add_predictions(
         self,
