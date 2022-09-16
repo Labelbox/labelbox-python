@@ -147,6 +147,8 @@ def test_global_key_with_whitespaces_validation(client, dataset, image_url):
         ['Invalid global key', 'Invalid global key', 'Invalid global key'])
 
 
+@pytest.mark.skip(reason='get_data_rows_for_global_keys not included in '
+                    'the initial release of global_keys')
 def test_get_data_rows_for_global_keys(client, dataset, image_url):
     gk_1 = str(uuid.uuid4())
     gk_2 = str(uuid.uuid4())
@@ -174,6 +176,8 @@ def test_get_data_rows_for_global_keys(client, dataset, image_url):
     assert res['results'] == [dr_1, dr_2]
 
 
+@pytest.mark.skip(reason='get_data_rows_for_global_keys not included in '
+                    'the initial release of global_keys')
 def test_get_data_rows_for_invalid_global_keys(client, dataset, image_url):
     gk_1 = str(uuid.uuid4())
     gk_2 = str(uuid.uuid4())
