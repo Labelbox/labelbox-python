@@ -25,6 +25,14 @@ following packages/modules:
 * Approved PRs are merged to the `develop` branch.
 * The `develop` branch is merged to `master` on each release.
 
+## Commits
+
+Before making a commit, to automatically adhere to our formatting standards,
+install and activate [pre-commit](https://pre-commit.com/)
+
+After the above, running `git commit ...` will attempt to fix formatting. If
+there was formatted needed, you will need to re-add and re-commit before pushing.
+
 ## Testing
 
 Currently, the SDK functionality is tested using integration tests. These tests
@@ -36,7 +44,8 @@ To execute tests you will need to provide an API key for the server you're using
 for testing (staging by default) in the `LABELBOX_TEST_API_KEY` environment
 variable. For more info see [Labelbox API key docs](https://labelbox.helpdocs.io/docs/api/getting-started).
 
-To pass tests, code must be formatted using the following command:
+To pass tests, code must be formatted. If pre-commit was not installed, 
+you will need to use the following command:
 
 ```shell
 yapf tests labelbox -i --verbose --recursive --parallel --style "google"
