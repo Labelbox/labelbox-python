@@ -289,8 +289,8 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             download (bool): Returns the url if False
             timeout_seconds (float): Max waiting time, in seconds.
-            start (str): Earliest date for labels, formatted "YYYY-MM-DD"
-            end (str): Latest date for labels, formatted "YYYY-MM-DD"
+            start (str): Earliest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            end (str): Latest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
@@ -311,12 +311,21 @@ class Project(DbObject, Updateable, Deletable):
 
         def _validate_datetime(string_date: str) -> bool:
             """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
+            succeed = False
             if string_date:
                 try:
                     datetime.strptime(string_date, "%Y-%m-%d")
+                    succeed = True
                 except ValueError:
-                    raise ValueError(f"""Incorrect format for: {string_date}.
-                    Format must be \"YYYY-MM-DD\"""")
+                    pass
+                try:
+                    datetime.strptime(string_date, "%Y-%m-%d %H:%M:%S")
+                    succeed = True
+                except ValueError:
+                    pass
+                if not succeed:
+                    raise ValueError(f"""Incorrect format for: {string_date}. 
+                    Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
             return True
 
         sleep_time = 2
