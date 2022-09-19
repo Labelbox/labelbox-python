@@ -95,7 +95,9 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             kwargs: a dictionary containing attributes to be upserted
 
-        Note that the quality setting cannot be changed after a project has been created. The quality mode
+        Note that the queue_mode cannot be changed after a project has been created.
+
+        Additionally, the quality setting cannot be changed after a project has been created. The quality mode
             for a project is inferred through the following attributes:
             Benchmark:
                 auto_audit_number_of_labels = 1
@@ -106,9 +108,6 @@ class Project(DbObject, Updateable, Deletable):
             Attempting to switch between benchmark and consensus modes is an invalid operation and will result
             in an error.
         """
-        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
-        if mode:
-            self._update_queue_mode(mode)
 
         media_type = kwargs.get("media_type")
         if media_type:
@@ -623,6 +622,8 @@ class Project(DbObject, Updateable, Deletable):
         go through a migration to have the queue mode changed. Users should specify the
         queue mode for a project during creation if a non-default mode is desired.
 
+        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
+
         Args:
             mode: the specified queue mode
 
@@ -668,6 +669,8 @@ class Project(DbObject, Updateable, Deletable):
         Deprecation notice: This method is deprecated and will be removed in
         a future version. To obtain the queue mode of a project, simply refer
         to the queue_mode attribute of a Project.
+
+        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
 
         Returns: the QueueMode for this project
 
