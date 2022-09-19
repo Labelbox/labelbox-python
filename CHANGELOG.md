@@ -6,6 +6,7 @@
 ### Changed
 * Updated docs for deprecated methods `_update_queue_mode` and `get_queue_mode` in `Project`
     * Use the `queue_mode` attribute in `Project` to get and set the queue mode instead
+    * For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
 ### Fixed
 
 # Version 3.27.1 (2022-09-16)

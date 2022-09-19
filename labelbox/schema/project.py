@@ -107,8 +107,6 @@ class Project(DbObject, Updateable, Deletable):
                 auto_audit_percentage <= 1.0
             Attempting to switch between benchmark and consensus modes is an invalid operation and will result
             in an error.
-
-        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
         """
 
         media_type = kwargs.get("media_type")
