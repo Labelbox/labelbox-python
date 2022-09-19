@@ -32,7 +32,7 @@ class DataRowMetadataSchema(BaseModel):
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
+Embedding: Type[List[float]] = conlist(float, min_items=2, max_items=128)
 String: Type[str] = constr(max_length=500)
 
 
