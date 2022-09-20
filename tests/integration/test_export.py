@@ -84,7 +84,8 @@ def test_export_filtered_dates(client,
     regular_export = project.export_labels(download=True)
     assert len(regular_export) == 1
 
-    filtered_export = project.export_labels(download=True, start="2020-01-01 00:00:00")
+    filtered_export = project.export_labels(download=True,
+                                            start="2020-01-01 00:00:01")
     assert len(filtered_export) == 1
 
     empty_export = project.export_labels(download=True,
