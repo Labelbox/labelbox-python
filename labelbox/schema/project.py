@@ -311,22 +311,15 @@ class Project(DbObject, Updateable, Deletable):
 
         def _validate_datetime(string_date: str) -> bool:
             """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
-            succeed = False
             if string_date:
-                try:
-                    datetime.strptime(string_date, "%Y-%m-%d")
-                    succeed = True
-                except ValueError:
-                    pass
-                try:
-                    datetime.strptime(string_date, "%Y-%m-%d %H:%M:%S")
-                    succeed = True
-                except ValueError:
-                    pass
-                if not succeed:
-                    raise ValueError(f"""Incorrect format for: {string_date}. 
-                    Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
-            return True
+                for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+                    try:
+                        datetime.strptime(string_date, fmt)
+                        return
+                    except ValueError:
+                        pass
+            raise ValueError(f"""Incorrect format for: {string_date}. 
+            Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
 
         sleep_time = 2
         id_param = "projectId"
