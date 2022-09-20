@@ -318,8 +318,9 @@ class Project(DbObject, Updateable, Deletable):
                         return True
                     except ValueError:
                         pass
-            raise ValueError(f"""Incorrect format for: {string_date}. 
-            Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
+                raise ValueError(f"""Incorrect format for: {string_date}. 
+                Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
+            return True
 
         sleep_time = 2
         id_param = "projectId"
