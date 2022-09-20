@@ -315,7 +315,7 @@ class Project(DbObject, Updateable, Deletable):
                 for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
                     try:
                         datetime.strptime(string_date, fmt)
-                        return
+                        return True
                     except ValueError:
                         pass
             raise ValueError(f"""Incorrect format for: {string_date}. 
