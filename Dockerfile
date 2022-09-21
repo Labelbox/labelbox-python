@@ -10,11 +10,9 @@ RUN apt install -y libsm6 \
                 libgl1-mesa-glx \
                 libgeos-dev
 
-WORKDIR /usr/src/labelbox
-COPY requirements.txt /usr/src/labelbox
+WORKDIR /usr/src/
+COPY requirements.txt /usr/src/
 RUN pip install -r requirements.txt
-COPY setup.py README.md  /usr/src/labelbox/
-COPY labelbox/ /usr/src/labelbox/labelbox/
-COPY tests/ /usr/src/labelbox/tests/
+COPY . /usr/src/
 
 RUN python setup.py install
