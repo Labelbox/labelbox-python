@@ -14,6 +14,6 @@ WORKDIR /usr/src/labelbox
 COPY requirements.txt /usr/src/labelbox
 RUN pip install -r requirements.txt
 COPY setup.py README.md /usr/src/labelbox/
-COPY labelbox /usr/src/labelbox/labelbox
+COPY labelbox /usr/src/labelbox/
 
 RUN python setup.py install
