@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Labelbox Python API reference'
+project = 'Python SDK reference'
 copyright = '2021, Labelbox'
 author = 'Labelbox'
 
