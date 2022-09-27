@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pydantic.main import BaseModel
 
@@ -32,6 +32,7 @@ class LBV1ClassificationAnswer(LBV1Feature):
 
 class LBV1Radio(LBV1Feature):
     answer: LBV1ClassificationAnswer
+    message_id: Optional[str] = None
 
     def to_common(self) -> Radio:
         return Radio(answer=self.answer.to_common())
@@ -46,6 +47,7 @@ class LBV1Radio(LBV1Feature):
 
 class LBV1Checklist(LBV1Feature):
     answers: List[LBV1ClassificationAnswer]
+    message_id: Optional[str] = None
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[answer.to_common() for answer in self.answers])
@@ -80,6 +82,7 @@ class LBV1Dropdown(LBV1Feature):
 
 class LBV1Text(LBV1Feature):
     answer: str
+    message_id: Optional[str] = None
 
     def to_common(self) -> Text:
         return Text(answer=self.answer)

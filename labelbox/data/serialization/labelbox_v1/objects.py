@@ -24,6 +24,7 @@ class LBV1ObjectBase(LBV1Feature):
                                 LBV1Checklist]] = []
     page: Optional[int] = None
     unit: Optional[str] = None
+    message_id: Optional[str] = None
 
     def dict(self, *args, **kwargs) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
@@ -228,7 +229,12 @@ class LBV1Mask(LBV1ObjectBase):
                    **{k: v for k, v in extra.items() if k != 'instanceURI'})
 
 
-class _TextPoint(BaseModel):
+class ConversationSupported(BaseModel):
+    """Fields that support conversational text assets"""
+    message_id: Optional[str] = Field(None, alias='messageId')
+
+
+class _TextPoint(ConversationSupported):
     start: int
     end: int
 
@@ -246,6 +252,7 @@ class LBV1TextEntity(LBV1ObjectBase):
         return TextEntity(
             start=self.data.location.start,
             end=self.data.location.end,
+            # message_id=self.data.location.message_id,
         )
 
     @classmethod
@@ -254,7 +261,9 @@ class LBV1TextEntity(LBV1ObjectBase):
                     feature_schema_id: Cuid, title: str,
                     extra: Dict[str, Any]) -> "LBV1TextEntity":
         return cls(data=_Location(
-            location=_TextPoint(start=text_entity.start, end=text_entity.end)),
+            location=_TextPoint(start=text_entity.start,
+                                end=text_entity.end,
+                                message_id=text_entity.message_id)),
                    classifications=classifications,
                    schema_id=feature_schema_id,
                    title=title,
@@ -283,12 +292,21 @@ class LBV1Objects(BaseModel):
                              name=obj.title,
                              feature_schema_id=obj.schema_id,
                              extra={
-                                 'instanceURI': obj.instanceURI,
-                                 'color': obj.color,
-                                 'feature_id': obj.feature_id,
-                                 'value': obj.value,
-                                 'page': obj.page,
-                                 'unit': obj.unit,
+                                 'instanceURI':
+                                     obj.instanceURI,
+                                 'color':
+                                     obj.color,
+                                 'feature_id':
+                                     obj.feature_id,
+                                 'value':
+                                     obj.value,
+                                 'page':
+                                     obj.page,
+                                 'unit':
+                                     obj.unit,
+                                 'message_id':
+                                     obj.data.location.message_id if isinstance(
+                                         obj, LBV1TextEntity) else None,
                              }) for obj in self.objects
         ]
         return objects
