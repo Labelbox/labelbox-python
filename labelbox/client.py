@@ -633,15 +633,10 @@ class Client:
                 raise TypeError(f"{media_type} is not a valid media type. Use"
                                 f" any of {MediaType.get_supported_members()}"
                                 " from MediaType. Example: MediaType.Image.")
-
-        queue_mode = kwargs.get("queue_mode")
-        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        auto_audit_percentage = kwargs.get("auto_audit_percentage")
-        if not queue_mode or not auto_audit_number_of_labels or not auto_audit_percentage:
+        else:
             logger.warning(
-                "Creating a project without specifying all of queue_mode, auto_audit_number_of_labels"
-                " and auto_audit_percentage through this method will soon no longer be supported."
-            )
+                "Creating a project without specifying media_type"
+                " through this method will soon no longer be supported.")
 
         return self._create(Entity.Project, kwargs)
 
