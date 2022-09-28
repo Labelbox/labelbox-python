@@ -611,7 +611,11 @@ class Client:
 
         Attribute values are passed as keyword arguments.
 
-        >>> project = client.create_project(name="<project_name>", description="<project_description>", queue_mode=QueueMode.Batch)
+        >>> project = client.create_project(
+                name="<project_name>",
+                description="<project_description>",
+                media_type=MediaType.Image
+            )
 
         Args:
             **kwargs: Keyword arguments with Project attribute values.
