@@ -1,8 +1,7 @@
 import logging
-import json
 import requests
 import time
-from typing import TYPE_CHECKING, TypeVar, Callable, Optional, Dict, Any, List
+from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
@@ -64,7 +63,9 @@ class Task(DbObject):
         check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
-                if self.status == 'FAILED':
+                if self.status == "FAILED" or (self.status == "COMPLETE" and
+                                               self.failed_data_rows
+                                               is not None):
                     logger.warning(
                         "There are errors present. Please look at `task.errors` for more details"
                     )
@@ -80,16 +81,18 @@ class Task(DbObject):
 
     @property
     def errors(self) -> Optional[Dict[str, Any]]:
-        """ Downloads the result file from Task
+        """ Fetch the error associated with an import task.
         """
         if self.status == "FAILED":
             result = self._fetch_remote_json()
-            return result['error']
+            return result["error"]
+        elif self.status == "COMPLETE":
+            return self.failed_data_rows()
         return None
 
     @property
     def result(self) -> List[Dict[str, Any]]:
-        """ Fetch the result for a task
+        """ Fetch the result for an import task.
         """
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
@@ -101,6 +104,15 @@ class Task(DbObject):
                 'row_data': data_row['rowData'],
                 'global_key': data_row.get('globalKey'),
             } for data_row in result['createdDataRows']]
+
+    def failed_data_rows(self) -> Optional[Dict[str, Any]]:
+        """ Fetch data rows which failed to be created for an import task.
+        """
+        result = self._fetch_remote_json()
+        if result.get("errors") is not None:
+            return result["errors"]
+        else:
+            return None
 
     @lru_cache()
     def _fetch_remote_json(self) -> Dict[str, Any]:
