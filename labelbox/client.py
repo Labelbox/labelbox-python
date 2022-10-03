@@ -611,7 +611,11 @@ class Client:
 
         Attribute values are passed as keyword arguments.
 
-        >>> project = client.create_project(name="<project_name>", description="<project_description>", queue_mode=QueueMode.Batch)
+        >>> project = client.create_project(
+                name="<project_name>",
+                description="<project_description>",
+                media_type=MediaType.Image
+            )
 
         Args:
             **kwargs: Keyword arguments with Project attribute values.
@@ -629,6 +633,10 @@ class Client:
                 raise TypeError(f"{media_type} is not a valid media type. Use"
                                 f" any of {MediaType.get_supported_members()}"
                                 " from MediaType. Example: MediaType.Image.")
+        else:
+            logger.warning(
+                "Creating a project without specifying media_type"
+                " through this method will soon no longer be supported.")
 
         return self._create(Entity.Project, kwargs)
 

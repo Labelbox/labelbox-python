@@ -8,6 +8,8 @@
     * Use the `queue_mode` attribute in `Project` to get and set the queue mode instead
     * For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
 * Updated `project.export_labels` to support filtering by start/end time formats "YYYY-MM-DD" and "YYYY-MM-DD hh:mm:ss"
+* Add deprecation warning for missing `media_type` in `create_project` in `Client`.
+
 ### Fixed
 
 # Version 3.27.1 (2022-09-16)
