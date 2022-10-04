@@ -1,14 +1,15 @@
 # Changelog
 
-# Version 0.0.0 (YYYY-MM-DD) - In Progress
+# Version 3.27.2 (2022-10-04)
 
 ### Added
+* Added deprecation warning for missing `media_type` in `create_project` in `Client`.
+
 ### Changed
 * Updated docs for deprecated methods `_update_queue_mode` and `get_queue_mode` in `Project`
     * Use the `queue_mode` attribute in `Project` to get and set the queue mode instead
     * For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
 * Updated `project.export_labels` to support filtering by start/end time formats "YYYY-MM-DD" and "YYYY-MM-DD hh:mm:ss"
-* Add deprecation warning for missing `media_type` in `create_project` in `Client`.
 
 ### Fixed
 
