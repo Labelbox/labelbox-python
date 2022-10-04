@@ -16,6 +16,7 @@ from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.invite import Invite
+from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
@@ -160,6 +161,14 @@ def pdf_url(client):
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str))
+    yield project
+    project.delete()
+
+
+@pytest.fixture
+def batch_project(client, rand_gen):
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch)
     yield project
     project.delete()
 

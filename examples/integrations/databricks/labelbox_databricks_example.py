@@ -64,6 +64,7 @@ else:
 
 from labelbox import Client, Dataset
 from labelbox.schema.ontology import OntologyBuilder, Tool, Classification, Option
+from labelbox.schema.media_type import MediaType
 import labelspark
 
 API_KEY = ""
@@ -177,7 +178,8 @@ print(f"https://app.labelbox.com/data/{demo_dataset.uid}")
 # COMMAND ----------
 
 # Create a new project
-project_demo = client.create_project(name="Labelbox and Databricks Example")
+project_demo = client.create_project(name="Labelbox and Databricks Example",
+                                     media_type=MediaType.Image)
 project_demo.datasets.connect(demo_dataset)  # add the dataset to the queue
 
 ontology = OntologyBuilder()

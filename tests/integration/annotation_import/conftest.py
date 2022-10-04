@@ -160,19 +160,20 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
 
 @pytest.fixture
 def configured_project_without_data_rows(client, configured_project, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+    project = client.create_project(name=rand_gen(str),
+                                    description=rand_gen(str),
+                                    queue_mode=QueueMode.Batch)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup_editor(configured_project.ontology())
-    project.update(queue_mode=QueueMode.Batch)
     yield project
     project.delete()
 
 
 @pytest.fixture
 def prediction_id_mapping(configured_project):
-    #Maps tool types to feature schema ids
+    # Maps tool types to feature schema ids
     ontology = configured_project.ontology().normalized
     result = {}
 

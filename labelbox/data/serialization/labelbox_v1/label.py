@@ -110,7 +110,7 @@ class Review(BaseModel):
     id: str
     created_at: str
     created_by: str
-    label_id: str
+    label_id: Optional[str] = None
 
     class Config:
         alias_generator = camel_case

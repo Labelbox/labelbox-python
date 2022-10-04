@@ -95,7 +95,9 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             kwargs: a dictionary containing attributes to be upserted
 
-        Note that the quality setting cannot be changed after a project has been created. The quality mode
+        Note that the queue_mode cannot be changed after a project has been created.
+
+        Additionally, the quality setting cannot be changed after a project has been created. The quality mode
             for a project is inferred through the following attributes:
             Benchmark:
                 auto_audit_number_of_labels = 1
@@ -106,9 +108,6 @@ class Project(DbObject, Updateable, Deletable):
             Attempting to switch between benchmark and consensus modes is an invalid operation and will result
             in an error.
         """
-        mode: Optional[QueueMode] = kwargs.pop("queue_mode", None)
-        if mode:
-            self._update_queue_mode(mode)
 
         media_type = kwargs.get("media_type")
         if media_type:
@@ -290,8 +289,8 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             download (bool): Returns the url if False
             timeout_seconds (float): Max waiting time, in seconds.
-            start (str): Earliest date for labels, formatted "YYYY-MM-DD"
-            end (str): Latest date for labels, formatted "YYYY-MM-DD"
+            start (str): Earliest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            end (str): Latest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
@@ -313,11 +312,14 @@ class Project(DbObject, Updateable, Deletable):
         def _validate_datetime(string_date: str) -> bool:
             """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
             if string_date:
-                try:
-                    datetime.strptime(string_date, "%Y-%m-%d")
-                except ValueError:
-                    raise ValueError(f"""Incorrect format for: {string_date}.
-                    Format must be \"YYYY-MM-DD\"""")
+                for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+                    try:
+                        datetime.strptime(string_date, fmt)
+                        return True
+                    except ValueError:
+                        pass
+                raise ValueError(f"""Incorrect format for: {string_date}. 
+                Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
             return True
 
         sleep_time = 2
@@ -623,6 +625,8 @@ class Project(DbObject, Updateable, Deletable):
         go through a migration to have the queue mode changed. Users should specify the
         queue mode for a project during creation if a non-default mode is desired.
 
+        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
+
         Args:
             mode: the specified queue mode
 
@@ -668,6 +672,8 @@ class Project(DbObject, Updateable, Deletable):
         Deprecation notice: This method is deprecated and will be removed in
         a future version. To obtain the queue mode of a project, simply refer
         to the queue_mode attribute of a Project.
+
+        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
 
         Returns: the QueueMode for this project
 
