@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class QueueMode(str, Enum):
-    Batch = "BATCHES"
+    Batch = "BATCH"
     Dataset = "DATA_SET"
 
     @classmethod

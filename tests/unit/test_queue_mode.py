@@ -8,7 +8,7 @@ def test_parse_deprecated_catalog():
 
 
 def test_parse_batches():
-    assert QueueMode("BATCHES") == QueueMode.Batch
+    assert QueueMode("BATCH") == QueueMode.Batch
 
 
 def test_parse_data_set():
