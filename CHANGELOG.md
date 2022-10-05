@@ -1,9 +1,9 @@
 # Changelog
 
 # Version 0.0.0 (YYYY-MM-DD) - In Progress
-
+g
 ### Changed
-* Update QueueMode enum to support new value for QueueMode.Batch = `BATCHES`.
+* Update QueueMode enum to support new value for QueueMode.Batch = `BATCH`.
 
 # Version 3.27.2 (2022-10-04)
 
