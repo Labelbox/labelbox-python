@@ -16,7 +16,7 @@ def confusion_matrix_metric(ground_truths: List[Union[
     ObjectAnnotation, ClassificationAnnotation]],
                             predictions: List[Union[ObjectAnnotation,
                                                     ClassificationAnnotation]],
-                            include_subclasses=True,
+                            include_subclasses=False,
                             iou=0.5) -> List[ConfusionMatrixMetric]:
     """
     Computes confusion matrix metrics between two sets of annotations.
@@ -47,7 +47,7 @@ def confusion_matrix_metric(ground_truths: List[Union[
 def feature_confusion_matrix_metric(
     ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
     predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-    include_subclasses=True,
+    include_subclasses=False,
     iou: float = 0.5,
 ) -> List[ConfusionMatrixMetric]:
     """
