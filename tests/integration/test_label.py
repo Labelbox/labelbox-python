@@ -31,6 +31,8 @@ def test_labels(configured_project_with_label):
 def test_label_export(configured_project_with_label):
     project, _, _, label = configured_project_with_label
     label_id = label.uid
+    # Wait for exporter to retrieve latest labels
+    time.sleep(10)
 
     exported_labels_url = project.export_labels()
     assert exported_labels_url is not None
