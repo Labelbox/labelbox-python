@@ -1,3 +1,4 @@
+from time import sleep
 import uuid
 
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
@@ -46,6 +47,8 @@ def test_export_annotations_nested_checklist(
     task = LabelImport.create_from_objects(client, project.uid,
                                            f'label-import-{uuid.uuid4()}', data)
     task.wait_until_done()
+    # Wait for exporter to retrieve latest labels
+    sleep(10)
     labels = project.label_generator().as_list()
     object_annotation = [
         annot for annot in next(labels).annotations
