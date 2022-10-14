@@ -23,12 +23,11 @@ def test_task_errors(dataset, image_url):
     ])
     assert task in client.get_user().created_tasks()
     task.wait_till_done()
-    assert task.status == "FAILED"
+    assert task.status == "COMPLETE"
+    assert len(task.failed_data_rows) > 0
     assert task.errors is not None
-    assert 'message' in task.errors
-    with pytest.raises(Exception) as exc_info:
-        task.result
-    assert str(exc_info.value).startswith("Job failed. Errors : {")
+    assert 'message' in task.errors[0]
+    assert len(task.result) == 0
 
 
 def test_task_success_json(dataset, image_url):
