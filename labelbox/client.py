@@ -626,6 +626,7 @@ class Client:
                 any of the attribute names given in kwargs.
         """
         media_type = kwargs.get("media_type")
+        queue_mode = kwargs.get("queue_mode")
         if media_type:
             if MediaType.is_supported(media_type):
                 kwargs["media_type"] = media_type.value
@@ -637,6 +638,12 @@ class Client:
             logger.warning(
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
+
+        if not queue_mode:
+            logger.warning(
+                "Default createProject behavior will soon be adjusted to prefer"
+                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the"
+                "time being.")
 
         return self._create(Entity.Project, kwargs)
 
