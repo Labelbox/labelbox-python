@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import sleep
 
 import pytest
 import uuid
@@ -70,6 +71,8 @@ def make_metadata(dr_id) -> DataRowMetadata:
 
 def test_export_empty_metadata(configured_project_with_label):
     project, _, _, _ = configured_project_with_label
+    # Wait for exporter to retrieve latest labels
+    sleep(10)
     labels = project.label_generator()
     label = next(labels)
     assert label.data.metadata == []
