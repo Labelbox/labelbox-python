@@ -1,5 +1,19 @@
 # Changelog
 
+# Version 3.28.0 (2022-10-14)
+
+### Added
+* Added warning for upcoming change in default project queue_mode setting
+* Added notebook example for importing Conversational Text annotations using Model-Assisted Labeling
+
+### Changed
+* Updated QueueMode enum to support new value for QueueMode.Batch = `BATCH`.
+* Task.failed_data_rows is now a property
+
+### Fixed
+* Fixed Task.wait_till_done() showing warning message for every completed task, instead of only warning when task has errors
+* Fixed error on dataset creation step in examples/annotation_import/video.ipynb notebook
+
 # Version 3.27.2 (2022-10-04)
 
 ### Added
