@@ -18,8 +18,6 @@ from .image import CocoImage, get_image, get_image_id, id_to_rgb
 from .annotation import PanopticAnnotation, SegmentInfo, get_annotation_lookup
 
 
-
-
 def vector_to_coco_segment_info(canvas: np.ndarray,
                                 annotation: ObjectAnnotation,
                                 annotation_idx: int, image: CocoImage,

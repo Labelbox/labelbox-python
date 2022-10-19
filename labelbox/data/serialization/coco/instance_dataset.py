@@ -41,8 +41,6 @@ def mask_to_coco_object_annotation(
         iscrowd=0)
 
 
-
-
 def vector_to_coco_object_annotation(annotation: ObjectAnnotation,
                                      annot_idx: int, image_id: int,
                                      category_id: int) -> COCOObjectAnnotation:

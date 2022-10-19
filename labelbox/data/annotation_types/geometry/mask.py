@@ -38,7 +38,9 @@ class Mask(Geometry):
     @property
     def geometry(self) -> Dict[str, Tuple[int, int, int]]:
         mask = self.draw(color=1)
-        contours, hierarchy = cv2.findContours(image=mask,mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
+        contours, hierarchy = cv2.findContours(image=mask,
+                                               mode=cv2.RETR_TREE,
+                                               method=cv2.CHAIN_APPROX_NONE)
 
         holes = []
         external_contours = []
@@ -49,9 +51,9 @@ class Mask(Geometry):
             else:
                 external_contours.append(contours[i])
 
-        external_polygons = self._extract_polygons_from_contours(external_contours)
+        external_polygons = self._extract_polygons_from_contours(
+            external_contours)
         holes = self._extract_polygons_from_contours(holes)
-
 
         if not external_polygons.is_valid:
             external_polygons = external_polygons.buffer(0)
