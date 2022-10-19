@@ -33,7 +33,7 @@ class Slice(DbObject):
                 }
             }
         """
-        data_row_ids = []
+        data_row_ids: List[str] = []
         total_count = 0
         end_cursor = None
         has_next_page = True
