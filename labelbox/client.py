@@ -33,6 +33,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
+from labelbox.schema.slice import Slice
 
 from labelbox.schema.media_type import MediaType
 
@@ -963,7 +964,7 @@ class Client:
             timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
         """
         Assigns global keys to data rows.
-        
+
         Args:
             A list of dicts containing data_row_id and global_key.
         Returns:
@@ -1211,3 +1212,27 @@ class Client:
                     "Timed out waiting for get_data_rows_for_global_keys job to complete."
                 )
             time.sleep(sleep_time)
+
+    def get_slice(self, slice_id) -> Slice:
+        """
+        Fetches a Slice by ID.
+
+        Args:
+             slice_id (str): The ID of the Slice
+        Returns:
+            Slice
+        """
+        query_str = """
+            query getSavedQueryPyApi($id: ID!) {
+                getSavedQuery(id: $id) {
+                    id
+                    name
+                    description
+                    filter
+                    createdAt
+                    updatedAt
+                }
+            }
+        """
+        res = self.execute(query_str, {'id': slice_id})
+        return Entity.Slice(self, res['getSavedQuery'])
