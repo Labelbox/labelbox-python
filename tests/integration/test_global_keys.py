@@ -251,9 +251,10 @@ def test_get_data_row_ids_for_invalid_global_keys(client, dataset, image_url):
     assert res['status'] == "PARTIAL SUCCESS"
 
     assert len(res['errors']) == 1
-    assert len(res['results']) == 1
+    assert len(res['results']) == 2
 
     assert res['errors'][0]['error'] == "Data Row not found"
     assert res['errors'][0]['global_key'] == gk_1
 
-    assert res['results'][0] == dr_2.uid
+    assert res['results'][0] == ''
+    assert res['results'][1] == dr_2.uid
