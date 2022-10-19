@@ -11,10 +11,16 @@ from labelbox.data.annotation_types.ner import TextEntity
 
 class NameSpace(SimpleNamespace):
 
-    def __init__(self, predictions, ground_truths, expected):
-        super(NameSpace, self).__init__(predictions=predictions,
-                                        ground_truths=ground_truths,
-                                        expected=expected)
+    def __init__(self,
+                 predictions,
+                 ground_truths,
+                 expected,
+                 expected_without_subclasses=None):
+        super(NameSpace, self).__init__(
+            predictions=predictions,
+            ground_truths=ground_truths,
+            expected=expected,
+            expected_without_subclasses=expected_without_subclasses or expected)
 
 
 def get_radio(name, answer_name):
@@ -109,7 +115,8 @@ def get_object_pairs(tool_fn, **kwargs):
                         **kwargs,
                         subclasses=[get_radio("is_animal", answer_name="yes")])
             ],
-            expected={'cat': [1, 0, 0, 0]}),
+            expected={'cat': [1, 0, 0, 0]},
+            expected_without_subclasses={'cat': [1, 0, 0, 0]}),
         NameSpace(predictions=[
             tool_fn("cat",
                     **kwargs,
@@ -121,7 +128,8 @@ def get_object_pairs(tool_fn, **kwargs):
                           **kwargs,
                           subclasses=[get_radio("is_animal", answer_name="no")])
                   ],
-                  expected={'cat': [0, 1, 0, 1]}),
+                  expected={'cat': [0, 1, 0, 1]},
+                  expected_without_subclasses={'cat': [1, 0, 0, 0]}),
         NameSpace(predictions=[
             tool_fn("cat",
                     **kwargs,
@@ -136,7 +144,8 @@ def get_object_pairs(tool_fn, **kwargs):
                           **kwargs,
                           subclasses=[get_radio("is_animal", answer_name="no")])
                   ],
-                  expected={'cat': [1, 1, 0, 0]}),
+                  expected={'cat': [1, 1, 0, 0]},
+                  expected_without_subclasses={'cat': [1, 1, 0, 0]}),
         NameSpace(predictions=[
             tool_fn("cat",
                     **kwargs,
@@ -153,6 +162,10 @@ def get_object_pairs(tool_fn, **kwargs):
                   ],
                   expected={
                       'cat': [0, 1, 0, 1],
+                      'dog': [0, 1, 0, 0]
+                  },
+                  expected_without_subclasses={
+                      'cat': [1, 0, 0, 0],
                       'dog': [0, 1, 0, 0]
                   }),
         NameSpace(
@@ -171,7 +184,10 @@ def get_object_pairs(tool_fn, **kwargs):
             ground_truths=[tool_fn("cat", **kwargs),
                            tool_fn("cat", **kwargs)],
             expected={'cat': [1, 0, 0, 1]}),
-        NameSpace(predictions=[], ground_truths=[], expected=[]),
+        NameSpace(predictions=[],
+                  ground_truths=[],
+                  expected=[],
+                  expected_without_subclasses=[]),
         NameSpace(predictions=[],
                   ground_truths=[tool_fn("cat", **kwargs)],
                   expected={'cat': [0, 0, 0, 1]}),
@@ -183,7 +199,7 @@ def get_object_pairs(tool_fn, **kwargs):
                   expected={
                       'cat': [0, 1, 0, 0],
                       'dog': [0, 0, 0, 1]
-                  }),
+                  })
     ]
 
 

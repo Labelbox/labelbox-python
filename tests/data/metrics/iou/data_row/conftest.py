@@ -12,24 +12,26 @@ class NameSpace(SimpleNamespace):
                  predictions,
                  labels,
                  expected,
+                 expected_without_subclasses=None,
                  data_row_expected=None,
                  media_attributes=None,
                  metadata=None,
                  classifications=None):
-        super(NameSpace,
-              self).__init__(predictions=predictions,
-                             labels={
-                                 'DataRow ID': 'ckppihxc10005aeyjen11h7jh',
-                                 'Labeled Data': "https://.jpg",
-                                 'Media Attributes': media_attributes or {},
-                                 'DataRow Metadata': metadata or [],
-                                 'Label': {
-                                     'objects': labels,
-                                     'classifications': classifications or []
-                                 }
-                             },
-                             expected=expected,
-                             data_row_expected=data_row_expected)
+        super(NameSpace, self).__init__(
+            predictions=predictions,
+            labels={
+                'DataRow ID': 'ckppihxc10005aeyjen11h7jh',
+                'Labeled Data': "https://.jpg",
+                'Media Attributes': media_attributes or {},
+                'DataRow Metadata': metadata or [],
+                'Label': {
+                    'objects': labels,
+                    'classifications': classifications or []
+                }
+            },
+            expected=expected,
+            expected_without_subclasses=expected_without_subclasses or expected,
+            data_row_expected=data_row_expected)
 
 
 @pytest.fixture
@@ -645,7 +647,8 @@ def test_box_with_wrong_subclass():
                              'answer': 'not_test'
                          }]
                      }],
-                     expected=0.5)
+                     expected=0.5,
+                     expected_without_subclasses=1.0)
 
 
 @pytest.fixture

@@ -14,18 +14,25 @@ from labelbox.data.metrics.confusion_matrix.confusion_matrix import confusion_ma
 ])
 def test_overlapping_objects(tool_examples):
     for example in tool_examples:
-        score = confusion_matrix_metric(example.ground_truths,
-                                        example.predictions)
 
-        if len(example.expected) == 0:
-            assert len(score) == 0
-        else:
-            expected = [0, 0, 0, 0]
-            for expected_values in example.expected.values():
-                for idx in range(4):
-                    expected[idx] += expected_values[idx]
-            assert score[0].value == tuple(
-                expected), f"{example.predictions},{example.ground_truths}"
+        for include_subclasses, expected_attr_name in [[
+                True, 'expected'
+        ], [False, 'expected_without_subclasses']]:
+            score = confusion_matrix_metric(
+                example.ground_truths,
+                example.predictions,
+                include_subclasses=include_subclasses)
+
+            if len(getattr(example, expected_attr_name)) == 0:
+                assert len(score) == 0
+            else:
+                expected = [0, 0, 0, 0]
+                for expected_values in getattr(example,
+                                               expected_attr_name).values():
+                    for idx in range(4):
+                        expected[idx] += expected_values[idx]
+                assert score[0].value == tuple(
+                    expected), f"{example.predictions},{example.ground_truths}"
 
 
 @parametrize("tool_examples",
