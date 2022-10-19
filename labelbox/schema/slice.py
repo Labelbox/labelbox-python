@@ -1,3 +1,5 @@
+from typing import List
+
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 
@@ -9,7 +11,7 @@ class Slice(DbObject):
     updated_at = Field.DateTime("updated_at")
     filter = Field.Json("filter")
 
-    def get_data_row_ids(self) -> list[str]:
+    def get_data_row_ids(self) -> List[str]:
         """
         Fetches all data row ids that match this Slice
 
