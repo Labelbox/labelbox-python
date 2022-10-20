@@ -352,7 +352,7 @@ def test_create_data_rows_with_invalid_metadata(dataset, image_url):
         DataRow.metadata_fields: fields
     }])
     task.wait_till_done()
-    assert task.status == "COMPLETE"
+    assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
 
 
@@ -633,7 +633,7 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     }])
 
     task.wait_till_done()
-    assert task.status == "COMPLETE"
+    assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
 
