@@ -33,7 +33,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
-from labelbox.schema.slice import Slice
+from labelbox.schema.slice import CatalogSlice
 
 from labelbox.schema.media_type import MediaType
 
@@ -1213,7 +1213,7 @@ class Client:
                 )
             time.sleep(sleep_time)
 
-    def get_slice(self, slice_id) -> Slice:
+    def get_slice(self, slice_id) -> CatalogSlice:
         """
         Fetches a Slice by ID.
 
@@ -1235,4 +1235,4 @@ class Client:
             }
         """
         res = self.execute(query_str, {'id': slice_id})
-        return Entity.Slice(self, res['getSavedQuery'])
+        return Entity.CatalogSlice(self, res['getSavedQuery'])
