@@ -21,14 +21,13 @@ def test_task_errors(dataset, image_url):
             ]
         },
     ])
+
     assert task in client.get_user().created_tasks()
     task.wait_till_done()
     assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert task.errors is not None
-    assert 'message' in task.errors[0]
-    assert len(task.result) == 0
-
+    assert task.errors == "Failed to create data rows after 5 retries. This chunk's data rows will not be imported. Retry by appending them to the dataset."
 
 def test_task_success_json(dataset, image_url):
     client = dataset.client
