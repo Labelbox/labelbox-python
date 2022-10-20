@@ -23,6 +23,7 @@ class Slice(DbObject):
 
 
 class CatalogSlice(Slice):
+
     def get_data_row_ids(self) -> List[str]:
         """
         Fetches all data row ids that match this Slice
