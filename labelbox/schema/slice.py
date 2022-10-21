@@ -1,7 +1,6 @@
-from typing import List
-
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
+from labelbox.pagination import PaginatedCollection
 
 
 class Slice(DbObject):
@@ -27,18 +26,19 @@ class CatalogSlice(Slice):
     Represents a Slice used for filtering data rows in Catalog.
     """
 
-    def get_data_row_ids(self) -> List[str]:
+    def get_data_row_ids(self) -> PaginatedCollection:
         """
         Fetches all data row ids that match this Slice
 
         Returns:
-            A list of data row ids
+            A PaginatedCollection of data row ids
         """
         query_str = """
-            query getDataRowIdsBySavedQueryPyApi($id: ID!, $after: String) {
+            query getDataRowIdsBySavedQueryPyApi($id: ID!, $from: String, $first: Int!) {
                 getDataRowIdsBySavedQuery(input: {
                     savedQueryId: $id,
-                    after: $after
+                    after: $from
+                    first: $first
                 }) {
                     totalCount
                     nodes
@@ -49,19 +49,10 @@ class CatalogSlice(Slice):
                 }
             }
         """
-        data_row_ids: List[str] = []
-        total_count = 0
-        end_cursor = None
-        has_next_page = True
-        while has_next_page:
-            res = self.client.execute(query_str, {
-                'id': self.uid,
-                'after': end_cursor
-            })['getDataRowIdsBySavedQuery']
-            data_row_ids = data_row_ids + res['nodes']
-            total_count = res['totalCount']
-            has_next_page = res['pageInfo']['hasNextPage']
-            end_cursor = res['pageInfo']['endCursor']
-
-        assert total_count == len(data_row_ids)
-        return data_row_ids
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params={'id': self.uid},
+            dereferencing=['getDataRowIdsBySavedQuery', 'nodes'],
+            obj_class=lambda _, data_row_id: data_row_id,
+            cursor_path=['getDataRowIdsBySavedQuery', 'pageInfo', 'endCursor'])
