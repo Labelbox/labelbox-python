@@ -1220,7 +1220,7 @@ class Client:
         Args:
              slice_id (str): The ID of the Slice
         Returns:
-            Slice
+            CatalogSlice
         """
         query_str = """
             query getSavedQueryPyApi($id: ID!) {
