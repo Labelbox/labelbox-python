@@ -1,14 +1,21 @@
 import pytest
 
 from labelbox import Project
+from labelbox.schema.queue_mode import QueueMode
 
 
 @pytest.mark.xfail(reason="Relationship sorting not implemented correctly "
                    "on the server-side")
 def test_relationship_sorting(client):
-    a = client.create_project(name="a", description="b")
-    b = client.create_project(name="b", description="c")
-    c = client.create_project(name="c", description="a")
+    a = client.create_project(name="a",
+                              description="b",
+                              queue_mode=QueueMode.Dataset)
+    b = client.create_project(name="b",
+                              description="c",
+                              queue_mode=QueueMode.Dataset)
+    c = client.create_project(name="c",
+                              description="a",
+                              queue_mode=QueueMode.Dataset)
 
     dataset = client.create_dataset(name="Dataset")
     a.datasets.connect(dataset)
