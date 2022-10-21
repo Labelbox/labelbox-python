@@ -641,7 +641,7 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
         "This chunk's data rows will not be imported. "
         "Retry by appending them to the dataset. "
         "Error: Data rows contain empty string or duplicate global keys, which are not allowed"
-     )
+    )
     assert task.errors == errorMsg
 
     task = dataset.create_data_rows([{

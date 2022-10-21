@@ -28,6 +28,7 @@ def test_task_errors(dataset, image_url):
     assert len(task.failed_data_rows) > 0
     assert task.errors is not None
 
+
 def test_task_success_json(dataset, image_url):
     client = dataset.client
     task = dataset.create_data_rows([
