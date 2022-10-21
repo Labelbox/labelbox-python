@@ -636,12 +636,9 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
-    errorMsg = (
-        "Failed to create data rows after 5 retries. "
-        "This chunk's data rows will not be imported. "
-        "Retry by appending them to the dataset. "
-        "Error: Data rows contain empty string or duplicate global keys, which are not allowed"
-    )
+    errorMsg = ("Failed to create data rows after 5 retries. "
+                "This chunk's data rows will not be imported. "
+                "Retry by appending them to the dataset.")
     assert task.errors == errorMsg
 
     task = dataset.create_data_rows([{
