@@ -173,14 +173,14 @@ DataRowMetadata
 
 .. automodule:: labelbox.schema.data_row_metadata
    :members:
-   :show-inheritance:   
+   :show-inheritance:
 
 AnnotationImport
 ----------------------------
 
 .. automodule:: labelbox.schema.annotation_import
    :members:
-   :show-inheritance:      
+   :show-inheritance:
 
 Batch
 ----------------------------
@@ -194,4 +194,19 @@ ResourceTag
 
 .. automodule:: labelbox.schema.resource_tag
    :members:
+   :show-inheritance:
+
+Slice
+-----------------------------------------
+
+.. automodule:: labelbox.schema.slice
+   :members: Slice
+   :exclude-members: CatalogSlice
+   :show-inheritance:
+
+CatalogSlice
+-----------------------------------------
+.. automodule:: labelbox.schema.slice
+   :members: CatalogSlice
+   :exclude-members: Slice
    :show-inheritance:
