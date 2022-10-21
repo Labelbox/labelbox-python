@@ -5,7 +5,8 @@ from labelbox.pagination import PaginatedCollection
 
 class Slice(DbObject):
     """
-    A Slice is a saved set of filters (saved query)
+    A Slice is a saved set of filters (saved query).
+    This is an abstract class and should not be instantiated.
 
     Attributes:
         name (datetime)
