@@ -1213,9 +1213,9 @@ class Client:
                 )
             time.sleep(sleep_time)
 
-    def get_slice(self, slice_id) -> CatalogSlice:
+    def get_catalog_slice(self, slice_id) -> CatalogSlice:
         """
-        Fetches a Slice by ID.
+        Fetches a Catalog Slice by ID.
 
         Args:
              slice_id (str): The ID of the Slice

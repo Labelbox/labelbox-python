@@ -6,7 +6,7 @@ from labelbox.orm.model import Field
 
 class Slice(DbObject):
     """
-    A Slice is a saved set of filters (saved query) used to find data rows matching a certain criteria
+    A Slice is a saved set of filters (saved query)
 
     Attributes:
         name (datetime)
@@ -23,6 +23,9 @@ class Slice(DbObject):
 
 
 class CatalogSlice(Slice):
+    """
+    Represents a Slice used for filtering data rows in Catalog.
+    """
 
     def get_data_row_ids(self) -> List[str]:
         """
