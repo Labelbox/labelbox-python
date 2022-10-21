@@ -1185,9 +1185,13 @@ class Client:
                 errors.extend(
                     _format_failed_rows(data['deletedDataRowGlobalKeys'],
                                         "Data Row deleted"))
+
+                # Invalid results may contain empty string, so we must filter
+                # them prior to checking for PARTIAL_SUCCESS
+                filtered_results = list(filter(lambda r: r != '', results))
                 if not errors:
                     status = CollectionJobStatus.SUCCESS.value
-                elif errors and results:
+                elif errors and len(filtered_results) > 0:
                     status = CollectionJobStatus.PARTIAL_SUCCESS.value
                 else:
                     status = CollectionJobStatus.FAILURE.value

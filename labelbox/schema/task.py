@@ -63,9 +63,7 @@ class Task(DbObject):
         check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
-                if self.status == "FAILED" or (self.status == "COMPLETE" and
-                                               self.failed_data_rows
-                                               is not None):
+                if self.errors is not None:
                     logger.warning(
                         "There are errors present. Please look at `task.errors` for more details"
                     )
@@ -87,7 +85,7 @@ class Task(DbObject):
             result = self._fetch_remote_json()
             return result["error"]
         elif self.status == "COMPLETE":
-            return self.failed_data_rows()
+            return self.failed_data_rows
         return None
 
     @property
@@ -105,11 +103,12 @@ class Task(DbObject):
                 'global_key': data_row.get('globalKey'),
             } for data_row in result['createdDataRows']]
 
+    @property
     def failed_data_rows(self) -> Optional[Dict[str, Any]]:
         """ Fetch data rows which failed to be created for an import task.
         """
         result = self._fetch_remote_json()
-        if result.get("errors") is not None:
+        if len(result.get("errors", [])) > 0:
             return result["errors"]
         else:
             return None
