@@ -54,6 +54,13 @@ class Mask(Geometry):
         external_polygons = self._extract_polygons_from_contours(
             external_contours)
         holes = self._extract_polygons_from_contours(holes)
+
+        if not external_polygons.is_valid:
+            external_polygons = external_polygons.buffer(0)
+
+        if not holes.is_valid:
+            holes = holes.buffer(0)
+
         return external_polygons.difference(holes).__geo_interface__
 
     def draw(self,
@@ -78,7 +85,6 @@ class Mask(Geometry):
             np.ndarray representing only this object
                 as opposed to the mask that this object references which might have multiple objects determined by colors
         """
-
         mask = self.mask.value
         mask = np.alltrue(mask == self.color, axis=2).astype(np.uint8)
 

@@ -1,6 +1,6 @@
 import pytest
 
-from labelbox import DataRow, Task
+from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
 
 EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
@@ -21,13 +21,12 @@ def test_task_errors(dataset, image_url):
             ]
         },
     ])
+
     assert task in client.get_user().created_tasks()
     task.wait_till_done()
-    assert task.status == "COMPLETE"
+    assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert task.errors is not None
-    assert 'message' in task.errors[0]
-    assert len(task.result) == 0
 
 
 def test_task_success_json(dataset, image_url):
