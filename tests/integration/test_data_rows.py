@@ -1,6 +1,7 @@
 from tempfile import NamedTemporaryFile
 import uuid
 from datetime import datetime
+import json
 
 import pytest
 import requests
@@ -695,3 +696,111 @@ def test_data_row_rulk_creation_sync_with_same_global_keys(
 
     assert len(list(dataset.data_rows())) == 1
     assert list(dataset.data_rows())[0].global_key == global_key_1
+
+
+def test_create_conversational_text(dataset):
+    content = {
+        'row_data': {
+            "messages": [{
+                "messageId": "message-0",
+                "timestampUsec": 1530718491,
+                "content": "I love iphone! i just bought new iphone! 🥰 📲",
+                "user": {
+                    "userId": "Bot 002",
+                    "name": "Bot"
+                },
+                "align": "left",
+                "canLabel": False
+            }],
+            "version": 1,
+            "type": "application/vnd.labelbox.conversational"
+        }
+    }
+    examples = [
+        {
+            **content, 'media_type': 'CONVERSATIONAL_TEXT'
+        },
+        content,
+        content['row_data']  # Old way to check for backwards compatibility
+    ]
+    dataset.create_data_rows_sync(examples)
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(examples)
+    for data_row in data_rows:
+        assert requests.get(data_row.row_data).json() == content['row_data']
+
+
+def test_invalid_media_type(dataset):
+    content = {
+        'row_data': {
+            "messages": [{
+                "messageId": "message-0",
+                "timestampUsec": 1530718491,
+                "content": "I love iphone! i just bought new iphone! 🥰 📲",
+                "user": {
+                    "userId": "Bot 002",
+                    "name": "Bot"
+                },
+                "align": "left",
+                "canLabel": False
+            }],
+            "version": 1,
+            "type": "application/vnd.labelbox.conversational"
+        }
+    }
+
+    for error_message, invalid_media_type in [[
+            "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
+    ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
+        # TODO: What error kind should this be? It looks like for global key we are
+        # using malformed query. But for FileUploads we use InvalidQueryError
+        with pytest.raises(labelbox.exceptions.InvalidQueryError):
+            dataset.create_data_rows_sync([{
+                **content, 'media_type': invalid_media_type
+            }])
+
+        task = dataset.create_data_rows([{
+            **content, 'media_type': invalid_media_type
+        }])
+        task.wait_till_done()
+        assert task.errors == {'message': error_message}
+
+
+def test_create_tiled_layer(dataset):
+    content = {
+        "row_data": {
+            "tileLayerUrl":
+                "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
+            "bounds": [[19.405662413477728, -99.21052827588443],
+                       [19.400498983095076, -99.20534818927473]],
+            "minZoom":
+                12,
+            "maxZoom":
+                20,
+            "epsg":
+                "EPSG4326",
+            "alternativeLayers": [{
+                "tileLayerUrl":
+                    "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+                "name":
+                    "Satellite"
+            }, {
+                "tileLayerUrl":
+                    "https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+                "name":
+                    "Guidance"
+            }]
+        }
+    }
+    examples = [
+        {
+            **content, 'media_type': 'TMS_SIMPLE'
+        },
+        content,
+        content['row_data']  # Old way to check for backwards compatibility
+    ]
+    dataset.create_data_rows_sync(examples)
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(examples)
+    for data_row in data_rows:
+        assert json.loads(data_row.row_data) == content['row_data']

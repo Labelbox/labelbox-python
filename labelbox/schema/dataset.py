@@ -229,8 +229,8 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
         >>>     {DataRow.row_data:"/path/to/file1.jpg"},
         >>>     "path/to/file2.jpg",
-        >>>     {"tileLayerUrl" : "http://", ...}
-        >>>     {"conversationalData" : [...], ...}
+        >>>     {DataRow.row_data: {"tileLayerUrl" : "http://", ...}}
+        >>>     {DataRow.row_data: {"type" : ..., 'version' : ..., 'messages' : [...]}}
         >>>     ])
 
         For an example showing how to upload tiled data_rows see the following notebook:
@@ -258,7 +258,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def upload_if_necessary(item):
             row_data = item['row_data']
-            if os.path.exists(row_data):
+            if isinstance(row_data, str) and os.path.exists(row_data):
                 item_url = self.client.upload_file(row_data)
                 item['row_data'] = item_url
                 if 'external_id' not in item:
@@ -341,40 +341,39 @@ class Dataset(DbObject, Updateable, Deletable):
                     "`row_data` missing when creating DataRow.")
 
             invalid_keys = set(item) - {
-                *{f.name for f in DataRow.fields()}, 'attachments'
+                *{f.name for f in DataRow.fields()}, 'attachments', 'media_type'
             }
             if invalid_keys:
                 raise InvalidAttributeError(DataRow, invalid_keys)
             return item
 
+        def formatLegacyConversationalData(item):
+            messages = item.pop("conversationalData")
+            version = item.pop("version")
+            type = item.pop("type")
+            if "externalId" in item:
+                external_id = item.pop("externalId")
+                item["external_id"] = external_id
+            if "globalKey" in item:
+                global_key = item.pop("globalKey")
+                item["globalKey"] = global_key
+            validate_conversational_data(messages)
+            one_conversation = \
+                {
+                    "type": type,
+                    "version": version,
+                    "messages": messages
+                }
+            item["row_data"] = one_conversation
+            return item
+
         def convert_item(item):
-            # Don't make any changes to tms data
             if "tileLayerUrl" in item:
                 validate_attachments(item)
                 return item
 
             if "conversationalData" in item:
-                messages = item.pop("conversationalData")
-                version = item.pop("version")
-                type = item.pop("type")
-                if "externalId" in item:
-                    external_id = item.pop("externalId")
-                    item["external_id"] = external_id
-                if "globalKey" in item:
-                    global_key = item.pop("globalKey")
-                    item["globalKey"] = global_key
-                validate_conversational_data(messages)
-                one_conversation = \
-                    {
-                        "type": type,
-                        "version": version,
-                        "messages": messages
-                    }
-                conversationUrl = self.client.upload_data(
-                    json.dumps(one_conversation),
-                    content_type="application/json",
-                    filename="conversational_data.json")
-                item["row_data"] = conversationUrl
+                formatLegacyConversationalData(item)
 
             # Convert all payload variations into the same dict format
             item = format_row(item)
@@ -386,11 +385,7 @@ class Dataset(DbObject, Updateable, Deletable):
             parse_metadata_fields(item)
             # Upload any local file paths
             item = upload_if_necessary(item)
-
-            return {
-                "data" if key == "row_data" else utils.camel_case(key): value
-                for key, value in item.items()
-            }
+            return item
 
         if not isinstance(items, Iterable):
             raise ValueError(
