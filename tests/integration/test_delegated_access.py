@@ -6,7 +6,7 @@ import pytest
 from labelbox import Client
 
 
-@pytest.mark.skipif(os.environ.get("DA_GCP_LABELBOX_API_KEY") == "",
+@pytest.mark.skipif(not os.environ.get('DA_GCP_LABELBOX_API_KEY'),
                     reason="DA_GCP_LABELBOX_API_KEY not found")
 def test_default_integration():
     """
@@ -28,7 +28,7 @@ def test_default_integration():
     ds.delete()
 
 
-@pytest.mark.skipif(os.environ.get("DA_GCP_LABELBOX_API_KEY") == "",
+@pytest.mark.skipif(not os.environ.get("DA_GCP_LABELBOX_API_KEY"),
                     reason="DA_GCP_LABELBOX_API_KEY not found")
 def test_non_default_integration():
     """
