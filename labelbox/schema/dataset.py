@@ -95,9 +95,12 @@ class Dataset(DbObject, Updateable, Deletable):
             raise InvalidQueryError(
                 "DataRow.row_data missing when creating DataRow.")
 
-        # If row data is a local file path, upload it to server.
         row_data = args[DataRow.row_data.name]
-        if os.path.exists(row_data):
+        if not isinstance(row_data, str):
+            # If the row data is an object, upload as a string
+            args[DataRow.row_data.name] = json.dumps(row_data)
+        elif os.path.exists(row_data):
+            # If row data is a local file path, upload it to server.
             args[DataRow.row_data.name] = self.client.upload_file(row_data)
         args[DataRow.dataset.name] = self
 
@@ -106,6 +109,7 @@ class Dataset(DbObject, Updateable, Deletable):
             mdo = self.client.get_data_row_metadata_ontology()
             args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
                 args[DataRow.metadata_fields.name])
+
         return self.client._create(DataRow, args)
 
     def create_data_rows_sync(self, items) -> None:

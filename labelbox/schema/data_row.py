@@ -5,6 +5,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
+from labelbox.schema.media_type import MediaType
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment
@@ -48,6 +49,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                           name="metadata",
                           graphql_name="customMetadata",
                           result_subquery="customMetadata { schemaId value }")
+    media_type = Field.Enum(MediaType, "media_type", result_subquery="")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
@@ -59,8 +61,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     supported_meta_types = supported_attachment_types = set(
         Entity.AssetAttachment.AttachmentType.__members__)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, client, field_values, **kwargs):
+        field_values.update({'mediaType': MediaType.Unknown})
+        super().__init__(client, field_values, **kwargs)
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
 
