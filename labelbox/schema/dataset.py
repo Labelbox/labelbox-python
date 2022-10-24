@@ -295,8 +295,8 @@ class Dataset(DbObject, Updateable, Deletable):
             def check_message_keys(message):
                 accepted_message_keys = set([
                     "messageId", "timestampUsec", "content", "user", "align",
-                    "canLabel"
-                ])
+                    "canLabel", "metadata_fields"
+                ])   
                 for key in message.keys():
                     if not key in accepted_message_keys:
                         raise KeyError(
