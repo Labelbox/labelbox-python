@@ -2,7 +2,7 @@ import json
 import pytest
 import requests
 from labelbox import Dataset
-from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException
+from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException, InvalidQueryError
 from labelbox.schema.dataset import MAX_DATAROW_PER_API_OPERATION
 
 
@@ -101,6 +101,33 @@ def test_upload_video_file(dataset, sample_video: str) -> None:
         response = requests.head(url, allow_redirects=True)
         assert int(response.headers['Content-Length']) == content_length
         assert response.headers['Content-Type'] == 'video/mp4'
+
+
+def test_create_pdf(dataset):
+    dataset.create_data_row(
+        row_data={
+            "pdfUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-1.pdf",
+            "textLayerUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-custom-text-layer.json"
+        })
+    dataset.create_data_row(row_data={
+        "pdfUrl":
+            "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-1.pdf",
+        "textLayerUrl":
+            "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-custom-text-layer.json"
+    },
+                            media_type="PDF")
+
+    with pytest.raises(InvalidQueryError):
+        # Wrong media type
+        dataset.create_data_row(row_data={
+            "pdfUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-1.pdf",
+            "textLayerUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-custom-text-layer.json"
+        },
+                                media_type="TEXT")
 
 
 def test_bulk_conversation(dataset, sample_bulk_conversation: list) -> None:
