@@ -353,8 +353,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def formatLegacyConversationalData(item):
             messages = item.pop("conversationalData")
-            version = item.pop("version")
-            type = item.pop("type")
+            version = item.pop("version", 1)
+            type = item.pop("type", "application/vnd.labelbox.conversational")
             if "externalId" in item:
                 external_id = item.pop("externalId")
                 item["external_id"] = external_id

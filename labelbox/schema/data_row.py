@@ -61,11 +61,14 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     supported_meta_types = supported_attachment_types = set(
         Entity.AssetAttachment.AttachmentType.__members__)
 
-    def __init__(self, client, field_values, **kwargs):
-        field_values.update({'mediaType': MediaType.Unknown})
-        super().__init__(client, field_values, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
+
+    def _set_field_values(self, field_values):
+        field_values.update({'mediaType': MediaType.Unknown})
+        super()._set_field_values(field_values)
 
     @staticmethod
     def bulk_delete(data_rows) -> None:

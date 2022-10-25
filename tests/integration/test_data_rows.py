@@ -719,10 +719,12 @@ def test_create_conversational_text(dataset):
     }
     examples = [
         {
-            **content, 'media_type': 'CONVERSATIONAL_TEXT'
+            **content, 'media_type': 'CONVERSATIONAL'
         },
         content,
-        content['row_data']  # Old way to check for backwards compatibility
+        {
+            "conversationalData": content['row_data']['messages']
+        }  # Old way to check for backwards compatibility
     ]
     dataset.create_data_rows_sync(examples)
     data_rows = list(dataset.data_rows())
@@ -754,7 +756,7 @@ def test_invalid_media_type(dataset):
             "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
     ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
         # TODO: What error kind should this be? It looks like for global key we are
-        # using malformed query. But for FileUploads we use InvalidQueryError
+        # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(labelbox.exceptions.InvalidQueryError):
             dataset.create_data_rows_sync([{
                 **content, 'media_type': invalid_media_type
