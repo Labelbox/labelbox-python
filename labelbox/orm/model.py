@@ -377,6 +377,7 @@ class Entity(metaclass=EntityMeta):
         ProjectRole: Type[labelbox.ProjectRole]
         Project: Type[labelbox.Project]
         Batch: Type[labelbox.Batch]
+        CatalogSlice: Type[labelbox.CatalogSlice]
 
     @classmethod
     def _attributes_of_type(cls, attr_type):
