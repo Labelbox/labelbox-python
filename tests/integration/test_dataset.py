@@ -160,7 +160,7 @@ def test_create_descriptor_file(dataset):
         upload_data_spy.assert_called()
         call_args, call_kwargs = upload_data_spy.call_args_list[0][
             0], upload_data_spy.call_args_list[0][1]
-        assert call_args == ('[{"data": "some text..."}]',)
+        assert call_args == ('[{"row_data": "some text..."}]',)
         assert call_kwargs == {
             'content_type': 'application/json',
             'filename': 'json_import.json'
