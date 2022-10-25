@@ -1,3 +1,4 @@
+from imp import init_builtin
 import logging
 import os
 
@@ -72,6 +73,9 @@ class Session:
                       data=None,
                       json=None,
                       timeout=DEFAULT_TIMEOUT):
+        if not cls.initialized:
+            raise labelbox.exceptions.LabelboxError("Session has not been initialized")
+
         if uri.startswith('/'):
             uri = uri.lstrip('/')
         try:
