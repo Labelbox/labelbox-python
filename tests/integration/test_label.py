@@ -46,6 +46,7 @@ def test_label_export(configured_project_with_label):
 # TODO: Skipping this test in staging due to label not updating
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or
                     os.environ['LABELBOX_TEST_ENVIRON'] == "staging" or
+                    os.environ['LABELBOX_TEST_ENVIRON'] == "local" or
                     os.environ['LABELBOX_TEST_ENVIRON'] == "custom",
                     reason="does not work for onprem")
 def test_label_update(configured_project_with_label):
