@@ -21,7 +21,6 @@ def mask_to_coco_object_annotation(
     # This is going to fill any holes into the multipolygon
     # If you need to support holes use the panoptic data format
     shapely = annotation.value.shapely.simplify(1).buffer(0)
-
     if shapely.is_empty:
         return
 
