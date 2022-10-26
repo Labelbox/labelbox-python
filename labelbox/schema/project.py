@@ -16,6 +16,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -561,7 +562,11 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
+    def create_batch(self,
+                     name: str,
+                     data_rows: List[str],
+                     priority: int = 5,
+                     consensus_settings: Optional[ConsensusSettings] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
 
         Args:
@@ -603,9 +608,14 @@ class Project(DbObject, Updateable, Deletable):
         params = {
             "projectId": self.uid,
             "batchInput": {
-                "name": name,
-                "dataRowIds": dr_ids,
-                "priority": priority
+                "name":
+                    name,
+                "dataRowIds":
+                    dr_ids,
+                "priority":
+                    priority,
+                "consensusSettings":
+                    consensus_settings.dict() if consensus_settings else None
             }
         }
 
