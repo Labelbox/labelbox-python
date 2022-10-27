@@ -605,17 +605,15 @@ class Project(DbObject, Updateable, Deletable):
             }
         """ % (method, method, query.results_query_part(Entity.Batch))
 
+        consensus_settings_dict = consensus_settings.dict(
+        ) if consensus_settings else None
         params = {
             "projectId": self.uid,
             "batchInput": {
-                "name":
-                    name,
-                "dataRowIds":
-                    dr_ids,
-                "priority":
-                    priority,
-                "consensusSettings":
-                    consensus_settings.dict() if consensus_settings else None
+                "name": name,
+                "dataRowIds": dr_ids,
+                "priority": priority,
+                "consensusSettings": consensus_settings_dict
             }
         }
 
