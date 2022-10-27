@@ -4,12 +4,12 @@ import os
 
 import requests
 import requests.exceptions
+from labelbox import utils
 
 import labelbox.exceptions
 from labelbox_dev import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
-
 
 API_VERSION = "v1"
 API_PREFIX = f"api/{API_VERSION}"
@@ -41,32 +41,38 @@ class Session:
 
     @classmethod
     def get_request(cls, uri, params=None, timeout=DEFAULT_TIMEOUT):
-        return cls._http_request("GET",
-                                  uri,
-                                  params=params,
-                                  timeout=timeout)
+        return cls._http_request("GET", uri, params=params, timeout=timeout)
 
     @classmethod
     def post_request(cls, uri, data=None, json=None, timeout=DEFAULT_TIMEOUT):
-        return cls._http_request("POST", uri, data=data, json=json, timeout=timeout)
+        return cls._http_request("POST",
+                                 uri,
+                                 data=data,
+                                 json=json,
+                                 timeout=timeout)
 
     @classmethod
     def put_request(cls, uri, data=None, json=None, timeout=DEFAULT_TIMEOUT):
-        return cls._http_request("PUT", uri, data=data, json=json, timeout=timeout)
+        return cls._http_request("PUT",
+                                 uri,
+                                 data=data,
+                                 json=json,
+                                 timeout=timeout)
 
     @classmethod
     def patch_request(cls, uri, data=None, json=None, timeout=DEFAULT_TIMEOUT):
-        return cls._http_request("PATCH", uri, data=data, json=json, timeout=timeout)
+        return cls._http_request("PATCH",
+                                 uri,
+                                 data=data,
+                                 json=json,
+                                 timeout=timeout)
 
     @classmethod
     def delete_request(cls, uri, params=None, timeout=DEFAULT_TIMEOUT):
-        return cls._http_request("DELETE",
-                                  uri,
-                                  params=params,
-                                  timeout=timeout)
+        return cls._http_request("DELETE", uri, params=params, timeout=timeout)
 
     @classmethod
-    def _http_request(cls, 
+    def _http_request(cls,
                       method,
                       uri,
                       params=None,
@@ -74,7 +80,8 @@ class Session:
                       json=None,
                       timeout=DEFAULT_TIMEOUT):
         if not cls.initialized:
-            raise labelbox.exceptions.LabelboxError("Session has not been initialized")
+            raise labelbox.exceptions.LabelboxError(
+                "Session has not been initialized")
 
         if uri.startswith('/'):
             uri = uri.lstrip('/')
@@ -102,8 +109,26 @@ class Session:
 
         try:
             r_json = response.json()
+            print(r_json)
+            print(
+                f"Response text: {response.text} Status code: {response.status_code}"
+            )
         except:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 
-        return r_json
+        if response.status_code not in [
+                requests.codes.ok, requests.codes.created
+        ]:
+            message = f"{response.status_code} {response.reason}"
+            cause = r_json['message']
+            raise labelbox.exceptions.LabelboxError(message, cause)
+
+        return {utils.snake_case(key): value for key, value in r_json.items()}
+
+    @classmethod
+    def print(cls) -> str:
+        return f"{cls.__name__}(base_api_url={cls.base_api_url}," \
+            f"api_url={cls.api_url}," \
+            f"api_key={cls.api_key}," \
+            f"initialized={cls.initialized}"
