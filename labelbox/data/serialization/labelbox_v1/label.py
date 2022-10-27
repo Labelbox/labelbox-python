@@ -213,7 +213,7 @@ class LBV1Label(BaseModel):
         elif self._has_object_annotations():
             return 'image'
         else:
-            if self._row_contains((".jpg", ".png", ".jpeg")) and self._is_url():
+            if self._row_contains((".jpg", ".png", ".PNG", ".jpeg")) and self._is_url():
                 return 'image'
             elif (self._row_contains((".txt", ".text", ".html")) and
                   self._is_url()) or not self._is_url():
