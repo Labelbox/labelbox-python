@@ -150,14 +150,14 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
 @pytest.mark.slow
 def test_data_row_large_bulk_creation(dataset, image_url):
     # Do a longer task and expect it not to be complete immediately
-    n_local = 2000
-    n_urls = 250
+    n_urls = 1000
+    n_local = 250
     with NamedTemporaryFile() as fp:
         fp.write("Test data".encode())
         fp.flush()
         task = dataset.create_data_rows([{
             DataRow.row_data: image_url
-        }] * n_local + [fp.name] * n_urls)
+        }] * n_urls + [fp.name] * n_local)
     task.wait_till_done()
     assert task.status == "COMPLETE"
     assert len(list(dataset.data_rows())) == n_local + n_urls
@@ -352,7 +352,7 @@ def test_create_data_rows_with_invalid_metadata(dataset, image_url):
         DataRow.metadata_fields: fields
     }])
     task.wait_till_done()
-    assert task.status == "COMPLETE"
+    assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
 
 
@@ -633,9 +633,10 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     }])
 
     task.wait_till_done()
-    assert task.status == "COMPLETE"
+    assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
+    assert task.errors == "Import job failed"
 
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,

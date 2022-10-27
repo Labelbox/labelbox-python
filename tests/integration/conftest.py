@@ -15,6 +15,7 @@ from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
+from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
@@ -160,7 +161,8 @@ def pdf_url(client):
 
 @pytest.fixture
 def project(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Dataset)
     yield project
     project.delete()
 
@@ -334,6 +336,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
         upload_task = LabelImport.create_from_objects(
             client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
         upload_task.wait_until_done(sleep_time_seconds=5)
+        assert upload_task.state == AnnotationImportState.FINISHED
 
     project.create_label = create_label
     project.create_label()
@@ -346,7 +349,8 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 @pytest.fixture
 def configured_project_with_complex_ontology(client, rand_gen, image_url):
-    project = client.create_project(name=rand_gen(str))
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Dataset)
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
     data_row = dataset.create_data_row(row_data=image_url)
     editor = list(

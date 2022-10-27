@@ -22,7 +22,11 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
                                 annotation: ObjectAnnotation,
                                 annotation_idx: int, image: CocoImage,
                                 category_id: int):
+
     shapely = annotation.value.shapely
+    if shapely.is_empty:
+        return
+
     xmin, ymin, xmax, ymax = shapely.bounds
     canvas = annotation.value.draw(height=image.height,
                                    width=image.width,
@@ -40,6 +44,9 @@ def mask_to_coco_segment_info(canvas: np.ndarray, annotation,
     color = id_to_rgb(annotation_idx)
     mask = annotation.value.draw(color=color)
     shapely = annotation.value.shapely
+    if shapely.is_empty:
+        return
+
     xmin, ymin, xmax, ymax = shapely.bounds
     canvas = np.where(canvas == (0, 0, 0), mask, canvas)
     return SegmentInfo(id=annotation_idx,
@@ -70,20 +77,32 @@ def process_label(label: Label,
         for annotation_idx, annotation in enumerate(annotations[class_name]):
             categories[annotation.name] = hash_category_name(annotation.name)
             if isinstance(annotation.value, Mask):
-                segment, canvas = (mask_to_coco_segment_info(
+                coco_segment_info = mask_to_coco_segment_info(
                     canvas, annotation, class_idx + 1,
-                    categories[annotation.name]))
+                    categories[annotation.name])
+
+                if coco_segment_info is None:
+                    # Filter out empty masks
+                    continue
+
+                segment, canvas = coco_segment_info
                 segments.append(segment)
                 is_thing[annotation.name] = 0
 
             elif isinstance(annotation.value, (Polygon, Rectangle)):
-                segment, canvas = vector_to_coco_segment_info(
+                coco_vector_info = vector_to_coco_segment_info(
                     canvas,
                     annotation,
                     annotation_idx=(class_idx if all_stuff else annotation_idx)
                     + 1,
                     image=image,
                     category_id=categories[annotation.name])
+
+                if coco_segment_info is None:
+                    # Filter out empty annotations
+                    continue
+
+                segment, canvas = coco_vector_info
                 segments.append(segment)
                 is_thing[annotation.name] = 1 - int(all_stuff)
 
