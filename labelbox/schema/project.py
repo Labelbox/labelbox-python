@@ -566,14 +566,14 @@ class Project(DbObject, Updateable, Deletable):
                      name: str,
                      data_rows: List[str],
                      priority: int = 5,
-                     consensus_settings: Optional[ConsensusSettings] = None):
+                     consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
 
         Args:
             name: a name for the batch, must be unique within a project
             data_rows: Either a list of `DataRows` or Data Row ids
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
-
+            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3, 'coverage_percentage': 0.1}
         """
 
         # @TODO: make this automatic?
@@ -605,15 +605,16 @@ class Project(DbObject, Updateable, Deletable):
             }
         """ % (method, method, query.results_query_part(Entity.Batch))
 
-        consensus_settings_dict = consensus_settings.dict(
-        ) if consensus_settings else None
+        if consensus_settings:
+            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+                by_alias=True)
         params = {
             "projectId": self.uid,
             "batchInput": {
                 "name": name,
                 "dataRowIds": dr_ids,
                 "priority": priority,
-                "consensusSettings": consensus_settings_dict
+                "consensusSettings": consensus_settings
             }
         }
 

@@ -32,6 +32,7 @@ class Batch(DbObject):
     created_at = Field.DateTime("created_at")
     updated_at = Field.DateTime("updated_at")
     size = Field.Int("size")
+    consensus_settings = Field.Json("consensus_settings_json")
 
     # Relationships
     created_by = Relationship.ToOne("User")
