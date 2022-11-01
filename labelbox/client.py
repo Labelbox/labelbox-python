@@ -658,7 +658,10 @@ class Client:
                 "recommended for new projects. Prefer QueueMode.Batch instead.")
 
         return self._create(Entity.Project, {
-            **kwargs, 'media_type': media_type
+            **kwargs,
+            **({
+                'media_type': media_type
+            } if media_type else {})
         })
 
     def get_roles(self) -> List[Role]:
