@@ -1,6 +1,11 @@
 # Changelog
 
 # In progress
+
+## Added
+* Add deprecation warning for queue_mode == QueueMode.Dataset when creating a new project.
+* Add deprecation warning for LPOs.
+
 ## Changed
 * Default behavior for metrics to not include subclasses in the calculation.
 * Updated `create_batch` method to accept consensus settings.
