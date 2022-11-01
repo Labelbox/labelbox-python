@@ -1,7 +1,6 @@
 import pytest
 
 from labelbox import Dataset, Project
-from labelbox.schema.queue_mode import QueueMode
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 
@@ -37,6 +36,19 @@ def test_create_batch(batch_project: Project, big_dataset: Dataset):
     batch = batch_project.create_batch("test-batch", data_rows, 3)
     assert batch.name == "test-batch"
     assert batch.size == len(data_rows)
+
+
+def test_create_batch_with_consensus_settings(batch_project: Project,
+                                              big_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
+    consensus_settings = {"coverage_percentage": 0.1, "number_of_labels": 3}
+    batch = batch_project.create_batch("batch with consensus settings",
+                                       data_rows,
+                                       3,
+                                       consensus_settings=consensus_settings)
+    assert batch.name == "batch with consensus settings"
+    assert batch.size == len(data_rows)
+    assert batch.consensus_settings == consensus_settings
 
 
 def test_archive_batch(batch_project: Project, small_dataset: Dataset):

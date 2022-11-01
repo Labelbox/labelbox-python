@@ -3,6 +3,7 @@
 # In progress
 ## Changed
 * Default behavior for metrics to not include subclasses in the calculation.
+* Updated `create_batch` method to accept consensus settings.
 
 ## Fixed
 * Polygon extraction from masks creating invalid polygons. This would cause issues in the coco converter.
