@@ -1,10 +1,12 @@
 import pytest
 
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.queue_mode import QueueMode
 
 
 def test_project_dataset(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Dataset)
     dataset = client.create_dataset(name=rand_gen(str))
 
     assert len(list(project.datasets())) == 0
@@ -17,7 +19,8 @@ def test_project_dataset(client, rand_gen):
     assert {ds.uid for ds in project.datasets()} == {dataset.uid}
     assert {pr.uid for pr in dataset.projects()} == {project.uid}
 
-    project_2 = client.create_project(name=rand_gen(str))
+    project_2 = client.create_project(name=rand_gen(str),
+                                      queue_mode=QueueMode.Dataset)
 
     # Currently it's not possible to connect a project and dataset
     # by updating dataset.

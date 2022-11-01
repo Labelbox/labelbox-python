@@ -14,14 +14,21 @@ from labelbox.data.metrics.confusion_matrix.confusion_matrix import feature_conf
 ])
 def test_overlapping_objects(tool_examples):
     for example in tool_examples:
-        metrics = feature_confusion_matrix_metric(example.ground_truths,
-                                                  example.predictions)
+        for include_subclasses, expected_attr_name in [[
+                True, 'expected'
+        ], [False, 'expected_without_subclasses']]:
+            metrics = feature_confusion_matrix_metric(
+                example.ground_truths,
+                example.predictions,
+                include_subclasses=include_subclasses)
 
-        metrics = {r.feature_name: list(r.value) for r in metrics}
-        if len(example.expected) == 0:
-            assert len(metrics) == 0
-        else:
-            assert metrics == example.expected, f"{example.predictions},{example.ground_truths}"
+            metrics = {r.feature_name: list(r.value) for r in metrics}
+            if len(getattr(example, expected_attr_name)) == 0:
+                assert len(metrics) == 0
+            else:
+                assert metrics == getattr(
+                    example, expected_attr_name
+                ), f"{example.predictions},{example.ground_truths}"
 
 
 @parametrize("tool_examples",

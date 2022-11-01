@@ -268,29 +268,10 @@ def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
     elif has_no_annotations(ground_truths, predictions):
         return None
 
-    if include_subclasses:
-        # This results in a faily drastically different value than without subclasses.
-        # If we have subclasses set to True, then this is object detection with masks
-        # Otherwise this will compute metrics on each pixel.
-        pairs = _get_mask_pairs(ground_truths, predictions)
-        return object_pair_confusion_matrix(
-            pairs, include_subclasses=include_subclasses, iou=iou)
-
-    prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
-                           axis=0)
-    ground_truth_np = np.max(
-        [ground_truth.value.draw(color=1) for ground_truth in ground_truths],
-        axis=0)
-    if prediction_np.shape != ground_truth_np.shape:
-        raise ValueError(
-            "Prediction and mask must have the same shape."
-            f" Found {prediction_np.shape}/{ground_truth_np.shape}.")
-
-    tp_mask = prediction_np == ground_truth_np == 1
-    fp_mask = (prediction_np == 1) & (ground_truth_np == 0)
-    fn_mask = (prediction_np == 0) & (ground_truth_np == 1)
-    tn_mask = prediction_np == ground_truth_np == 0
-    return [np.sum(tp_mask), np.sum(fp_mask), np.sum(fn_mask), np.sum(tn_mask)]
+    pairs = _get_mask_pairs(ground_truths, predictions)
+    return object_pair_confusion_matrix(pairs,
+                                        include_subclasses=include_subclasses,
+                                        iou=iou)
 
 
 def ner_confusion_matrix(ground_truths: List[ObjectAnnotation],
