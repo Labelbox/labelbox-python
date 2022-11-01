@@ -1,4 +1,4 @@
-import json
+from tqdm import tqdm
 from typing import TYPE_CHECKING, List, Optional, Dict
 
 from labelbox.exceptions import LabelboxError
@@ -97,6 +97,108 @@ class Organization(DbObject):
         if not invite_response:
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Entity.Invite(self.client, invite_response)
+
+    def bulk_invite_users(self, invites=List["Invite"]) -> "Invite":
+        """
+        Invite up to 1000 new members to the org. This will send each new user an email invite
+
+        Args:
+            invites (List): list of dictionaries each of which include the following keys:
+              ->  email (str): email address of the user to invite
+              ->  role (Role): Role to assign to the user
+              ->  project_roles (Optional[List[ProjectRoles]]): List of project roles to assign to the User (if they have a project based org role).
+
+        Returns:
+            {
+            "success": List["Invite"], #list of successful Invites to users
+            "fail": List["Invite"], #list of failed invites passed into function
+            "error": error #None of not any errors
+        } 
+
+        Notes:
+            1. Multiple invites can be sent for the same email. This can only be resolved in the UI for now.
+                - Future releases of the SDK will support the ability to query and revoke invites to solve this problem (and/or checking on the backend)
+            2. Some server side response are unclear (e.g. if the user invites themself `None` is returned which the SDK prints as a `LabelboxError` ) 
+            and returns a list of the succeeded and failed invitations along with the error.
+        """
+        if len(invites) > 1000:
+            raise Exception(
+                f"Length of invites cannot be more that 1000, length detected is {len(invites)}!"
+            )
+
+        data_params = list()
+        inviter_user_id = self.client.get_user().uid
+        for invite in tqdm(invites):
+            project_roles = None
+            if "email" not in invite:
+                raise KeyError(f"Each invite should have an `email` key!")
+            if "role" not in invite:
+                raise KeyError(f"Each invite should have a `role` key!")
+            if "project_roles" in invite and invite[
+                    "project_roles"] and role.name != "NONE":
+                project_roles = invite["project_roles"]
+                raise ValueError(
+                    f"Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
+                )
+
+            role = invite["role"]
+            email = invite["email"]
+            data_params.append({
+                "inviterId":
+                    inviter_user_id,
+                "inviteeEmail":
+                    email,
+                "organizationId":
+                    self.uid,
+                "organizationRoleId":
+                    role.uid,
+                "projects": [{
+                    "projectId": project_role.project.uid,
+                    "projectRoleId": project_role.role.uid
+                } for project_role in project_roles or []]
+            })
+
+        data_param = "data"
+        query_str = """mutation bulkCreateInvitesPyApi($%s: [CreateInviteInput!]){
+                    createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail inviter { %s } }}}""" % (
+            data_param, data_param, query.results_query_part(Entity.User))
+
+        start = 0
+        end = batch_size = 50
+        success_invites = list()
+        failed_invites = invites
+        error = None
+        
+        while start < end:
+            res = self.client.execute(query_str,
+                                      {data_param: data_params[start:end]})
+            invite_response = res.get('createInvites')
+
+            if not invite_response:
+                error = res
+                print(
+                    LabelboxError(
+                        f"Unable to send invite for emails from index {start} to index {end if end < len(data_params) else len(data_params)}"
+                    ))
+                break
+
+            for invite in invite_response:
+                success_invites.append(
+                    Entity.Invite(self.client, invite["invite"]))
+
+            failed_invites = failed_invites[end:]
+            start = end
+            end += batch_size
+
+            if end >= len(data_params):
+                end = len(data_params)
+                
+        response = {
+            "success": success_invites,
+            "fail": failed_invites,
+            "error": error
+        }
+        return response
 
     def invite_limit(self) -> InviteLimit:
         """ Retrieve invite limits for the org
