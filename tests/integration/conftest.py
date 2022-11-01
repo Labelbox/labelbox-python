@@ -241,6 +241,17 @@ def sample_bulk_conversation() -> list:
 
 
 @pytest.fixture
+def invites(client) -> list:
+    role = client.get_roles()['LABELER']
+    invites = list()
+
+    for i in range(100):
+        invites.append({"email": str(i) + "@labelbox.com", "role": role})
+
+    return invites
+
+
+@pytest.fixture
 def organization(client):
     # Must have at least one seat open in your org to run these tests
     org = client.get_organization()
