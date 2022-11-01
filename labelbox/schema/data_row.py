@@ -49,7 +49,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                           name="metadata",
                           graphql_name="customMetadata",
                           result_subquery="customMetadata { schemaId value }")
-    media_type = Field.Enum(MediaType, "media_type", result_subquery="")
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
@@ -67,7 +66,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.attachments.supports_sorting = False
 
     def _set_field_values(self, field_values):
-        field_values.update({'mediaType': MediaType.Unknown})
         super()._set_field_values(field_values)
 
     @staticmethod

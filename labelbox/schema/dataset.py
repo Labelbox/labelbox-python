@@ -15,6 +15,7 @@ from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 
 if TYPE_CHECKING:
@@ -102,7 +103,6 @@ class Dataset(DbObject, Updateable, Deletable):
         elif os.path.exists(row_data):
             # If row data is a local file path, upload it to server.
             args[DataRow.row_data.name] = self.client.upload_file(row_data)
-        args[DataRow.dataset.name] = self
 
         # Parse metadata fields, if they are provided
         if DataRow.metadata_fields.name in args:
@@ -110,7 +110,28 @@ class Dataset(DbObject, Updateable, Deletable):
             args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
                 args[DataRow.metadata_fields.name])
 
-        return self.client._create(DataRow, args)
+        query_str = """mutation CreateDataRowPyApi(
+            $row_data: String!,
+            $metadata_fields: [DataRowCustomMetadataUpsertInput!]!,
+            $attachments: [DataRowAttachmentInput!],
+            $media_type : MediaType,
+            $dataset: ID!
+            ){
+                createDataRow(
+                    data:
+                      {
+                        rowData: $row_data
+                        mediaType: $media_type
+                        metadataFields: $metadata_fields
+                        attachments: $attachments
+                        dataset: {connect: {id: $dataset}}
+                    }
+                   )
+                {%s}
+            }
+        """ % query.results_query_part(Entity.DataRow)
+        res = self.client.execute(query_str, {**args, 'dataset': self.uid})
+        return DataRow(self.client, res['createDataRow'])
 
     def create_data_rows_sync(self, items) -> None:
         """ Synchronously bulk upload data rows.

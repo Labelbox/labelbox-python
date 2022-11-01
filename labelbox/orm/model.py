@@ -104,8 +104,8 @@ class Field:
         return Field(Field.Type.DateTime, *args)
 
     @staticmethod
-    def Enum(enum_cls: type, *args, **kwargs):
-        return Field(Field.EnumType(enum_cls), *args, **kwargs)
+    def Enum(enum_cls: type, *args):
+        return Field(Field.EnumType(enum_cls), *args)
 
     @staticmethod
     def Json(*args):
