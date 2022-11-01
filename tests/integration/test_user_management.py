@@ -1,3 +1,4 @@
+from random import sample
 from labelbox import ProjectRole
 import pytest
 
@@ -33,6 +34,36 @@ def test_org_invite(client, organization, environ, queries):
             ), "Role should be labeler. Found {org_role} "
     assert in_list, "Invite not found"
     queries.cancel_invite(client, invite.uid)
+    assert invite_limit.remaining - organization.invite_limit().remaining == 0
+
+
+def test_multiple_org_invite(client, organization, environ, queries, invites):
+    role = client.get_roles()['LABELER']
+    invite_limit = organization.invite_limit()
+
+    if environ.value == "prod":
+        assert invite_limit.remaining > 0, "No invites available for the account associated with this key."
+    elif environ.value != "staging":
+        # Cannot run against local
+        return
+    invitations_response = organization.bulk_invite_users(invites)
+    successful_invites = invitations_response["success"]
+
+    if environ.value == "prod":
+        invite_limit_after = organization.invite_limit()
+        # Two user added
+        assert invite_limit.remaining - \
+            invite_limit_after.remaining == len(successful_invites)
+    outstanding_invites = queries.get_invites(client)
+    sample_invite = sample(successful_invites, 1)[0]
+    for org_invite in outstanding_invites:
+        if org_invite.uid == sample_invite.uid:
+            in_list = True
+            org_role = sample_invite.organization_role_name.lower()
+            assert org_role == role.name.lower(
+            ), "Role should be labeler. Found {org_role} "
+    assert in_list, "Invite not found"
+    [queries.cancel_invite(client, invite.uid) for invite in successful_invites]
     assert invite_limit.remaining - organization.invite_limit().remaining == 0
 
 
