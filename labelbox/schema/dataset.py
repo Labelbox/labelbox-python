@@ -112,7 +112,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         query_str = """mutation CreateDataRowPyApi(
             $row_data: String!,
-            $metadata_fields: [DataRowCustomMetadataUpsertInput!]!,
+            $metadata_fields: [DataRowCustomMetadataUpsertInput!],
             $attachments: [DataRowAttachmentInput!],
             $media_type : MediaType,
             $dataset: ID!

@@ -29,6 +29,56 @@ def mdo(client):
     yield mdo
 
 
+@pytest.fixture
+def conversational_content():
+    return {
+        'row_data': {
+            "messages": [{
+                "messageId": "message-0",
+                "timestampUsec": 1530718491,
+                "content": "I love iphone! i just bought new iphone! 🥰 📲",
+                "user": {
+                    "userId": "Bot 002",
+                    "name": "Bot"
+                },
+                "align": "left",
+                "canLabel": False
+            }],
+            "version": 1,
+            "type": "application/vnd.labelbox.conversational"
+        }
+    }
+
+
+@pytest.fixture
+def tile_content():
+    return {
+        "row_data": {
+            "tileLayerUrl":
+                "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
+            "bounds": [[19.405662413477728, -99.21052827588443],
+                       [19.400498983095076, -99.20534818927473]],
+            "minZoom":
+                12,
+            "maxZoom":
+                20,
+            "epsg":
+                "EPSG4326",
+            "alternativeLayers": [{
+                "tileLayerUrl":
+                    "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+                "name":
+                    "Satellite"
+            }, {
+                "tileLayerUrl":
+                    "https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+                "name":
+                    "Guidance"
+            }]
+        }
+    }
+
+
 def make_metadata_fields():
     embeddings = [0.0] * 128
     msg = "A message"
@@ -699,31 +749,14 @@ def test_data_row_rulk_creation_sync_with_same_global_keys(
     assert list(dataset.data_rows())[0].global_key == global_key_1
 
 
-def test_create_conversational_text(dataset):
-    content = {
-        'row_data': {
-            "messages": [{
-                "messageId": "message-0",
-                "timestampUsec": 1530718491,
-                "content": "I love iphone! i just bought new iphone! 🥰 📲",
-                "user": {
-                    "userId": "Bot 002",
-                    "name": "Bot"
-                },
-                "align": "left",
-                "canLabel": False
-            }],
-            "version": 1,
-            "type": "application/vnd.labelbox.conversational"
-        }
-    }
+def test_create_conversational_text(dataset, conversational_content):
     examples = [
         {
-            **content, 'media_type': 'CONVERSATIONAL'
+            **conversational_content, 'media_type': 'CONVERSATIONAL'
         },
-        content,
+        conversational_content,
         {
-            "conversationalData": content['row_data']['messages']
+            "conversationalData": conversational_content['row_data']['messages']
         }  # Old way to check for backwards compatibility
     ]
     dataset.create_data_rows_sync(examples)
@@ -733,25 +766,7 @@ def test_create_conversational_text(dataset):
         assert requests.get(data_row.row_data).json() == content['row_data']
 
 
-def test_invalid_media_type(dataset):
-    content = {
-        'row_data': {
-            "messages": [{
-                "messageId": "message-0",
-                "timestampUsec": 1530718491,
-                "content": "I love iphone! i just bought new iphone! 🥰 📲",
-                "user": {
-                    "userId": "Bot 002",
-                    "name": "Bot"
-                },
-                "align": "left",
-                "canLabel": False
-            }],
-            "version": 1,
-            "type": "application/vnd.labelbox.conversational"
-        }
-    }
-
+def test_invalid_media_type(dataset, conversational_content):
     for error_message, invalid_media_type in [[
             "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
     ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
@@ -759,51 +774,47 @@ def test_invalid_media_type(dataset):
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(labelbox.exceptions.InvalidQueryError):
             dataset.create_data_rows_sync([{
-                **content, 'media_type': invalid_media_type
+                **conversational_content, 'media_type': invalid_media_type
             }])
 
         task = dataset.create_data_rows([{
-            **content, 'media_type': invalid_media_type
+            **conversational_content, 'media_type': invalid_media_type
         }])
         task.wait_till_done()
         assert task.errors == {'message': error_message}
 
 
-def test_create_tiled_layer(dataset):
-    content = {
-        "row_data": {
-            "tileLayerUrl":
-                "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
-            "bounds": [[19.405662413477728, -99.21052827588443],
-                       [19.400498983095076, -99.20534818927473]],
-            "minZoom":
-                12,
-            "maxZoom":
-                20,
-            "epsg":
-                "EPSG4326",
-            "alternativeLayers": [{
-                "tileLayerUrl":
-                    "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
-                "name":
-                    "Satellite"
-            }, {
-                "tileLayerUrl":
-                    "https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
-                "name":
-                    "Guidance"
-            }]
-        }
-    }
+def test_create_tiled_layer(dataset, tile_content):
     examples = [
         {
-            **content, 'media_type': 'TMS_SIMPLE'
+            **tile_content, 'media_type': 'TMS_SIMPLE'
         },
-        content,
-        content['row_data']  # Old way to check for backwards compatibility
+        tile_content,
+        tile_content['row_data']  # Old way to check for backwards compatibility
     ]
     dataset.create_data_rows_sync(examples)
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(examples)
     for data_row in data_rows:
         assert json.loads(data_row.row_data) == content['row_data']
+
+
+def test_create_data_row_with_attachments(dataset):
+    attachment_value = 'attachment value'
+    dr = dataset.create_data_row(row_data="123",
+                                 attachments=[{
+                                     'type': 'TEXT',
+                                     'value': attachment_value
+                                 }])
+    attachments = list(dr.attachments())
+    assert len(attachments) == 1
+
+
+def test_create_data_row_with_media_type(dataset, image_url):
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dr = dataset.create_data_row(
+            row_data={'invalid_object': 'invalid_value'}, media_type="IMAGE")
+    assert "Found invalid contents for media type: \'IMAGE\'" in str(exc.value)
+
+    dataset.create_data_row(row_data=image_url, media_type="IMAGE")
+
