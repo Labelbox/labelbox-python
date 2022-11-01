@@ -177,7 +177,9 @@ def batch_project(client, rand_gen):
 
 @pytest.fixture
 def consensus_project(client, rand_gen):
-    project = client.create_project(name=rand_gen(str), auto_audit_percentage=0)
+    project = client.create_project(name=rand_gen(str),
+                                    auto_audit_percentage=0,
+                                    queue_mode=QueueMode.Dataset)
     yield project
     project.delete()
 
