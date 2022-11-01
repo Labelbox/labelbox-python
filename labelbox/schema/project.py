@@ -768,6 +768,10 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             bool, indicates if the operation was a success.
         """
+        logger.warning(
+            "LabelingParameterOverrides are deprecated for new projects, and will eventually be removed "
+            "completely. Prefer to use batch based queuing with priority & consensus number of labels instead."
+        )
         self.validate_labeling_parameter_overrides(data)
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
