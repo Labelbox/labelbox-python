@@ -5,7 +5,6 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.media_type import MediaType
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment
@@ -64,9 +63,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         super().__init__(*args, **kwargs)
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
-
-    def _set_field_values(self, field_values):
-        super()._set_field_values(field_values)
 
     @staticmethod
     def bulk_delete(data_rows) -> None:
