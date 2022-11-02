@@ -21,15 +21,29 @@ def check_iou(pair, mask=None):
                 annotation.value.mask.arr = np.frombuffer(
                     base64.b64decode(annotation.value.mask.url.encode('utf-8')),
                     dtype=np.uint8).reshape((32, 32, 3))
-    assert math.isclose(data_row_miou(label, prediction), pair.expected)
-    assert math.isclose(
-        miou_metric(label.annotations, prediction.annotations)[0].value,
-        pair.expected)
-    feature_ious = feature_miou_metric(label.annotations,
-                                       prediction.annotations)
-    assert len(feature_ious
-              ) == 1  # The tests run here should only have one class present.
-    assert math.isclose(feature_ious[0].value, pair.expected)
+
+    for include_subclasses, expected_attr_name in [[
+            True, 'expected'
+    ], [False, 'expected_without_subclasses']]:
+        assert math.isclose(
+            data_row_miou(label,
+                          prediction,
+                          include_subclasses=include_subclasses),
+            getattr(pair, expected_attr_name))
+        assert math.isclose(
+            miou_metric(label.annotations,
+                        prediction.annotations,
+                        include_subclasses=include_subclasses)[0].value,
+            getattr(pair, expected_attr_name))
+        feature_ious = feature_miou_metric(
+            label.annotations,
+            prediction.annotations,
+            include_subclasses=include_subclasses)
+        assert len(
+            feature_ious
+        ) == 1  # The tests run here should only have one class present.
+        assert math.isclose(feature_ious[0].value,
+                            getattr(pair, expected_attr_name))
 
 
 def check_iou_checklist(pair, mask=None):

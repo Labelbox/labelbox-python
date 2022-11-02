@@ -1,5 +1,20 @@
 # Changelog
 
+# Version 3.29.0 (2022-10-28)
+
+### Added
+* Added new base `Slice` Entity/DbObject and `CatalogSlice` class
+* Added `client.get_catalog_slice(id)` to fetch a CatalogSlice by ID
+* Added `slice.get_data_row_ids()` to fetch data row ids of the slice
+* Add deprecation warning for queue_mode == QueueMode.Dataset when creating a new project.
+* Add deprecation warning for LPOs.
+
+### Changed
+* Default behavior for metrics to not include subclasses in the calculation.
+
+### Fixed
+* Polygon extraction from masks creating invalid polygons. This would cause issues in the coco converter.
+
 # Version 3.28.0 (2022-10-14)
 
 ### Added
@@ -45,7 +60,7 @@
 * Increase scalar metric value limit to 100m
 * Added deprecation warnings when updating project `queue_mode`
 ### Fixed
-* Fix bug in `feature_confusion_matrix` and `confusion_matrix` causing FPs and FNs to be capped at 1 when there were no matching annotations 
+* Fix bug in `feature_confusion_matrix` and `confusion_matrix` causing FPs and FNs to be capped at 1 when there were no matching annotations
 
 # Version 3.26.2 (2022-09-06)
 ### Added
@@ -65,7 +80,7 @@
     * Resets model run training metadata
 * `ModelRun.get_config()`
     * Fetches model run training metadata
-    
+
 ### Changed
 * `Model.create_model_run()`
     * Add training metadata config as a model run creation param
