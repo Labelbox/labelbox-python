@@ -1,16 +1,18 @@
 # Changelog
 
-# In progress
+# Version 3.29.0 (2022-10-28)
 
-## Added
+### Added
+* Added new base `Slice` Entity/DbObject and `CatalogSlice` class
+* Added `client.get_catalog_slice(id)` to fetch a CatalogSlice by ID
+* Added `slice.get_data_row_ids()` to fetch data row ids of the slice
 * Add deprecation warning for queue_mode == QueueMode.Dataset when creating a new project.
 * Add deprecation warning for LPOs.
 
-## Changed
+### Changed
 * Default behavior for metrics to not include subclasses in the calculation.
-* Updated `create_batch` method to accept consensus settings.
 
-## Fixed
+### Fixed
 * Polygon extraction from masks creating invalid polygons. This would cause issues in the coco converter.
 
 # Version 3.28.0 (2022-10-14)
