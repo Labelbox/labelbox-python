@@ -817,4 +817,3 @@ def test_create_data_row_with_media_type(dataset, image_url):
     assert "Found invalid contents for media type: \'IMAGE\'" in str(exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
-
