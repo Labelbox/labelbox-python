@@ -763,7 +763,8 @@ def test_create_conversational_text(dataset, conversational_content):
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(examples)
     for data_row in data_rows:
-        assert requests.get(data_row.row_data).json() == content['row_data']
+        assert requests.get(
+            data_row.row_data).json() == conversational_content['row_data']
 
 
 def test_invalid_media_type(dataset, conversational_content):
@@ -796,7 +797,7 @@ def test_create_tiled_layer(dataset, tile_content):
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(examples)
     for data_row in data_rows:
-        assert json.loads(data_row.row_data) == content['row_data']
+        assert json.loads(data_row.row_data) == tile_content['row_data']
 
 
 def test_create_data_row_with_attachments(dataset):
