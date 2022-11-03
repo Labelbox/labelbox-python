@@ -188,6 +188,12 @@ def dataset(client, rand_gen):
     yield dataset
     dataset.delete()
 
+@pytest.fixture(scope='function')
+def unique_dataset(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    yield dataset
+    dataset.delete()
+
 
 @pytest.fixture
 def datarow(dataset, image_url):
