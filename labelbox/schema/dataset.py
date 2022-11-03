@@ -115,6 +115,8 @@ class Dataset(DbObject, Updateable, Deletable):
             $metadata_fields: [DataRowCustomMetadataUpsertInput!],
             $attachments: [DataRowAttachmentInput!],
             $media_type : MediaType,
+            $external_id : String,
+            $global_key : String,
             $dataset: ID!
             ){
                 createDataRow(
@@ -123,6 +125,8 @@ class Dataset(DbObject, Updateable, Deletable):
                         rowData: $row_data
                         mediaType: $media_type
                         metadataFields: $metadata_fields
+                        externalId: $external_id
+                        globalKey: $global_key
                         attachments: $attachments
                         dataset: {connect: {id: $dataset}}
                     }
