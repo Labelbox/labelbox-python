@@ -34,6 +34,7 @@ from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.slice import CatalogSlice
+from labelbox.schema.queue_mode import QueueMode
 
 from labelbox.schema.media_type import MediaType
 
@@ -615,11 +616,17 @@ class Client:
         >>> project = client.create_project(
                 name="<project_name>",
                 description="<project_description>",
-                media_type=MediaType.Image
+                media_type=MediaType.Image,
+                queue_mode=QueueMode.Batch
             )
 
         Args:
-            **kwargs: Keyword arguments with Project attribute values.
+            name (str): A name for the project
+            description (str): A short summary for the project
+            media_type (MediaType): The type of assets that this project will accept
+            queue_mode (Optional[QueueMode]): The queue mode to use
+            auto_audit_percentage (Optional[float]): The percentage of data rows that will require more than 1 label
+            auto_audit_number_of_labels (Optional[float]): Number of labels required for data rows selected for multiple labeling (auto_audit_percentage)
         Returns:
             A new Project object.
         Raises:
@@ -630,7 +637,7 @@ class Client:
         queue_mode = kwargs.get("queue_mode")
         if media_type:
             if MediaType.is_supported(media_type):
-                kwargs["media_type"] = media_type.value
+                media_type = media_type.value
             else:
                 raise TypeError(f"{media_type} is not a valid media type. Use"
                                 f" any of {MediaType.get_supported_members()}"
@@ -642,11 +649,20 @@ class Client:
 
         if not queue_mode:
             logger.warning(
-                "Default createProject behavior will soon be adjusted to prefer"
-                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the"
+                "Default createProject behavior will soon be adjusted to prefer "
+                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the "
                 "time being.")
+        elif queue_mode == QueueMode.Dataset:
+            logger.warning(
+                "QueueMode.Dataset will eventually be deprecated, and is no longer "
+                "recommended for new projects. Prefer QueueMode.Batch instead.")
 
-        return self._create(Entity.Project, kwargs)
+        return self._create(Entity.Project, {
+            **kwargs,
+            **({
+                'media_type': media_type
+            } if media_type else {})
+        })
 
     def get_roles(self) -> List[Role]:
         """

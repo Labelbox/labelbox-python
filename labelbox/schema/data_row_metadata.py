@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
 from pydantic import BaseModel, conlist, constr
 
 from labelbox.schema.ontology import SchemaId
-from labelbox.utils import camel_case
+from labelbox.utils import _CamelCaseMixin
 
 
 class DataRowMetadataKind(Enum):
@@ -34,13 +34,6 @@ DataRowMetadataSchema.update_forward_refs()
 
 Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
 String: Type[str] = constr(max_length=500)
-
-
-class _CamelCaseMixin(BaseModel):
-
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
 
 
 # Metadata base class
