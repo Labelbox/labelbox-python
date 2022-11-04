@@ -15,6 +15,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -560,14 +561,18 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self, name: str, data_rows: List[str], priority: int = 5,  wait_processing_max_seconds: int = 5):
+    def create_batch(self,
+                     name: str,
+                     data_rows: List[str],
+                     priority: int = 5,
+                     consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
 
         Args:
             name: a name for the batch, must be unique within a project
             data_rows: Either a list of `DataRows` or Data Row ids
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
-
+            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3, 'coverage_percentage': 0.1}
         """
 
         # @TODO: make this automatic?
@@ -589,10 +594,7 @@ class Project(DbObject, Updateable, Deletable):
         if not len(dr_ids):
             raise ValueError("You need at least one data row in a batch")
 
-        self._wait_until_data_rows_are_processed(
-            data_rows,
-            wait_processing_max_seconds=wait_processing_max_seconds
-        )
+        self._wait_until_data_rows_are_processed(data_rows,)
         method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
@@ -606,12 +608,16 @@ class Project(DbObject, Updateable, Deletable):
             }
         """ % (method, method, query.results_query_part(Entity.Batch))
 
+        if consensus_settings:
+            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+                by_alias=True)
         params = {
             "projectId": self.uid,
             "batchInput": {
                 "name": name,
                 "dataRowIds": dr_ids,
-                "priority": priority
+                "priority": priority,
+                "consensusSettings": consensus_settings
             }
         }
 
@@ -765,6 +771,10 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             bool, indicates if the operation was a success.
         """
+        logger.warning(
+            "LabelingParameterOverrides are deprecated for new projects, and will eventually be removed "
+            "completely. Prefer to use batch based queuing with priority & consensus number of labels instead."
+        )
         self.validate_labeling_parameter_overrides(data)
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
@@ -970,7 +980,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
 
-    def _wait_until_data_rows_are_processed(self, data_row_ids: List[str], wait_processing_max_seconds: int, sleep_interval=30):
+    def _wait_until_data_rows_are_processed(self, data_row_ids: List[str], wait_processing_max_seconds=3600, sleep_interval=30):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
         while True:
