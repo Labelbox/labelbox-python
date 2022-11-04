@@ -89,6 +89,9 @@ class Project(DbObject, Updateable, Deletable):
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
 
+    #
+    _wait_processing_max_seconds = 3600
+
     def update(self, **kwargs):
         """ Updates this project with the specified attributes
 
@@ -594,7 +597,8 @@ class Project(DbObject, Updateable, Deletable):
         if not len(dr_ids):
             raise ValueError("You need at least one data row in a batch")
 
-        self._wait_until_data_rows_are_processed(data_rows,)
+        self._wait_until_data_rows_are_processed(
+            data_rows, self._wait_processing_max_seconds)
         method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
@@ -980,7 +984,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
 
-    def _wait_until_data_rows_are_processed(self, data_row_ids: List[str], wait_processing_max_seconds=3600, sleep_interval=30):
+    def _wait_until_data_rows_are_processed(self, data_row_ids: List[str], wait_processing_max_seconds: int, sleep_interval=30):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
         while True:
@@ -992,6 +996,9 @@ class Project(DbObject, Updateable, Deletable):
             all_good = self.__check_data_rows_have_been_processed(data_row_ids)
             if all_good:
                 return
+
+            logger.debug(
+                'Some of the data rows are still being processed, waiting...')
             time.sleep(sleep_interval)
 
     def __check_data_rows_have_been_processed(self, data_row_ids: List[str]):

@@ -1,3 +1,4 @@
+from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
 from labelbox import Dataset, Project
 
@@ -144,10 +145,10 @@ def test_batch_creation_with_processing_timeout(
     data_row_ids = valid_data_rows + unprocessed_data_rows
 
     with pytest.raises(ProcessingWaitTimeout):
+        batch_project._wait_processing_max_seconds = 0
         batch_project.create_batch(
             "batch to test failed data rows",
-            data_row_ids,
-            wait_processing_max_seconds=0
+            data_row_ids
         )
 
 
