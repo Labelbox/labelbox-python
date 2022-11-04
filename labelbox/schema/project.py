@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import ndjson
 import requests
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, LabelboxError
+from labelbox.exceptions import InvalidQueryError, LabelboxError, ProcessingWaitTimeout
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
@@ -975,9 +975,9 @@ class Project(DbObject, Updateable, Deletable):
         start_time = datetime.now()
         while True:
             if (datetime.now() - start_time).total_seconds() >= wait_processing_max_seconds:
-                logger.warning(
-                    """Not all data rows have been processed, proceeding anyway""")
-                return
+                raise ProcessingWaitTimeout(
+                    "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
+                )
 
             all_good = self.__check_data_rows_have_been_processed(data_row_ids)
             if all_good:

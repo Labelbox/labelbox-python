@@ -1,5 +1,3 @@
-import warnings
-
 import pytest
 from labelbox import Dataset, Project
 from labelbox.schema.queue_mode import QueueMode
@@ -118,7 +116,7 @@ def test_batch_creation_with_processing_timeout(
     unique_dataset: Dataset
 ):
     """
-    Create a batch with zero wait time, this means that the waiting will termintate instantly
+    Create a batch with zero wait time, this means that the waiting logic will throw exception immediately
     """
     #  wait for these data rows to be processed
     valid_data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
@@ -132,18 +130,13 @@ def test_batch_creation_with_processing_timeout(
         unique_dataset.export_data_rows())]
 
     data_row_ids = valid_data_rows + unprocessed_data_rows
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        breakpoint()
+
+    with pytest.raises(ProcessingWaitTimeout):
         batch_project.create_batch(
             "batch to test failed data rows",
             data_row_ids,
             wait_processing_max_seconds=0
         )
-        assert len(w) == 1
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert "Not all data rows have been processed, proceeding anyway" in str(
-            w[-1].message)
 
 
 def test_export_data_rows(batch_project: Project, dataset: Dataset):
