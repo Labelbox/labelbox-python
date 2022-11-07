@@ -459,6 +459,13 @@ def test_data_row_update(dataset, rand_gen, image_url):
     data_row.update(external_id=external_id_2)
     assert data_row.external_id == external_id_2
 
+    data_row.update(row_data="123")
+    assert data_row.row_data == "123"
+
+    # tileLayer becomes a media attribute
+    data_row.update(row_data={'pdfUrl': "123", "tileLayerUrl": "123"})
+    assert data_row.row_data == "123"
+
 
 def test_data_row_filtering_sorting(dataset, image_url):
     task = dataset.create_data_rows([
