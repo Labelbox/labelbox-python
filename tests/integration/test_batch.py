@@ -41,8 +41,8 @@ def dataset_with_invalid_data_rows(unique_dataset: Dataset):
 def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
         {
-            "row_data": 'https://jakub-da-test-primary.s3.us-east-2.amazonaws.com/dogecoin-whitepaper.pdf',
-            "external_id": "my-pdf"
+            "row_data": 'gs://lb-test-private/mask-2.png',  # forbidden
+            "external_id": "image-without-access.jpg"
         },
     ] * 2)
     task.wait_till_done()
@@ -104,9 +104,9 @@ def test_batch_creation_for_data_rows_with_issues(
     """
     Create a batch containing both valid and invalid data rows
     """
-    valid_data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    valid_data_rows = [dr.uid for dr in list(small_dataset.data_rows())]
     invalid_data_rows = [dr.uid for dr in list(
-        dataset_with_invalid_data_rows.export_data_rows())]
+        dataset_with_invalid_data_rows.data_rows())]
     data_rows_to_add = valid_data_rows + invalid_data_rows
 
     assert len(data_rows_to_add) == 5
@@ -132,7 +132,7 @@ def test_batch_creation_with_processing_timeout(
     Create a batch with zero wait time, this means that the waiting logic will throw exception immediately
     """
     #  wait for these data rows to be processed
-    valid_data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    valid_data_rows = [dr.uid for dr in list(small_dataset.data_rows())]
     batch_project._wait_until_data_rows_are_processed(
         valid_data_rows, wait_processing_max_seconds=3600, sleep_interval=5
     )
@@ -140,16 +140,20 @@ def test_batch_creation_with_processing_timeout(
     # upload data rows for this dataset and don't wait
     upload_invalid_data_rows_for_dataset(unique_dataset)
     unprocessed_data_rows = [dr.uid for dr in list(
-        unique_dataset.export_data_rows())]
+        unique_dataset.data_rows())]
 
     data_row_ids = valid_data_rows + unprocessed_data_rows
 
+    stashed_wait_timeout = batch_project._wait_processing_max_seconds
     with pytest.raises(ProcessingWaitTimeout):
+        # emulate the situation where there are still some data rows being
+        # processed but wait timeout exceeded
         batch_project._wait_processing_max_seconds = 0
         batch_project.create_batch(
             "batch to test failed data rows",
             data_row_ids
         )
+    batch_project._wait_processing_max_seconds = stashed_wait_timeout
 
 
 def test_export_data_rows(batch_project: Project, dataset: Dataset):

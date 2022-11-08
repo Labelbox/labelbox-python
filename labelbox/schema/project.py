@@ -603,7 +603,7 @@ class Project(DbObject, Updateable, Deletable):
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
                 %s(input: $batchInput) {
-                    batch{
+                    batch {
                         %s
                     }
                     failedDataRowIds
