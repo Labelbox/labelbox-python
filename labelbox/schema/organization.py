@@ -168,7 +168,7 @@ class Organization(DbObject):
         success_invites = list()
         failed_invites = invites
         error = None
-        
+
         while start < end:
             res = self.client.execute(query_str,
                                       {data_param: data_params[start:end]})
@@ -192,7 +192,7 @@ class Organization(DbObject):
 
             if end >= len(data_params):
                 end = len(data_params)
-                
+
         response = {
             "success": success_invites,
             "fail": failed_invites,
