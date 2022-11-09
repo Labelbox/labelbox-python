@@ -9,7 +9,7 @@ from labelbox.schema.annotation_import import AnnotationImportState, MEAPredicti
 
 """
 
-
+@pytest.mark.skip()
 def test_create_from_url(client, tmp_path, object_predictions,
                          model_run_with_model_run_data_rows,
                          configured_project_without_data_rows,
@@ -57,7 +57,7 @@ def test_create_from_url(client, tmp_path, object_predictions,
     assert not mal_prediction_import.errors
     assert mal_prediction_import.statuses
 
-
+@pytest.mark.skip()
 def test_create_from_objects(model_run_with_model_run_data_rows,
                              configured_project_without_data_rows,
                              object_predictions,
@@ -91,7 +91,7 @@ def test_create_from_objects(model_run_with_model_run_data_rows,
     assert not mal_prediction_import.errors
     assert mal_prediction_import.statuses
 
-
+@pytest.mark.skip()
 def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
                                 configured_project_without_data_rows,
                                 object_predictions,
