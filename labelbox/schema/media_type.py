@@ -21,9 +21,9 @@ class MediaType(Enum):
 
     @classmethod
     def _missing_(cls, name):
-        """Handle missing null data types for projects 
+        """Handle missing null data types for projects
             created without setting allowedMediaType
-            Handle upper case names for compatibility with 
+            Handle upper case names for compatibility with
             the GraphQL"""
 
         if name is None:

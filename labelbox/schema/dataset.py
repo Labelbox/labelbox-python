@@ -15,6 +15,7 @@ from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 
 if TYPE_CHECKING:
@@ -95,18 +96,46 @@ class Dataset(DbObject, Updateable, Deletable):
             raise InvalidQueryError(
                 "DataRow.row_data missing when creating DataRow.")
 
-        # If row data is a local file path, upload it to server.
         row_data = args[DataRow.row_data.name]
-        if os.path.exists(row_data):
+        if not isinstance(row_data, str):
+            # If the row data is an object, upload as a string
+            args[DataRow.row_data.name] = json.dumps(row_data)
+        elif os.path.exists(row_data):
+            # If row data is a local file path, upload it to server.
             args[DataRow.row_data.name] = self.client.upload_file(row_data)
-        args[DataRow.dataset.name] = self
 
         # Parse metadata fields, if they are provided
         if DataRow.metadata_fields.name in args:
             mdo = self.client.get_data_row_metadata_ontology()
             args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
                 args[DataRow.metadata_fields.name])
-        return self.client._create(DataRow, args)
+
+        query_str = """mutation CreateDataRowPyApi(
+            $row_data: String!,
+            $metadata_fields: [DataRowCustomMetadataUpsertInput!],
+            $attachments: [DataRowAttachmentInput!],
+            $media_type : MediaType,
+            $external_id : String,
+            $global_key : String,
+            $dataset: ID!
+            ){
+                createDataRow(
+                    data:
+                      {
+                        rowData: $row_data
+                        mediaType: $media_type
+                        metadataFields: $metadata_fields
+                        externalId: $external_id
+                        globalKey: $global_key
+                        attachments: $attachments
+                        dataset: {connect: {id: $dataset}}
+                    }
+                   )
+                {%s}
+            }
+        """ % query.results_query_part(Entity.DataRow)
+        res = self.client.execute(query_str, {**args, 'dataset': self.uid})
+        return DataRow(self.client, res['createDataRow'])
 
     def create_data_rows_sync(self, items) -> None:
         """ Synchronously bulk upload data rows.
@@ -229,8 +258,8 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     {DataRow.row_data:"http://my_site.com/photos/img_01.jpg"},
         >>>     {DataRow.row_data:"/path/to/file1.jpg"},
         >>>     "path/to/file2.jpg",
-        >>>     {"tileLayerUrl" : "http://", ...}
-        >>>     {"conversationalData" : [...], ...}
+        >>>     {DataRow.row_data: {"tileLayerUrl" : "http://", ...}}
+        >>>     {DataRow.row_data: {"type" : ..., 'version' : ..., 'messages' : [...]}}
         >>>     ])
 
         For an example showing how to upload tiled data_rows see the following notebook:
@@ -258,7 +287,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def upload_if_necessary(item):
             row_data = item['row_data']
-            if os.path.exists(row_data):
+            if isinstance(row_data, str) and os.path.exists(row_data):
                 item_url = self.client.upload_file(row_data)
                 item['row_data'] = item_url
                 if 'external_id' not in item:
@@ -341,40 +370,39 @@ class Dataset(DbObject, Updateable, Deletable):
                     "`row_data` missing when creating DataRow.")
 
             invalid_keys = set(item) - {
-                *{f.name for f in DataRow.fields()}, 'attachments'
+                *{f.name for f in DataRow.fields()}, 'attachments', 'media_type'
             }
             if invalid_keys:
                 raise InvalidAttributeError(DataRow, invalid_keys)
             return item
 
+        def formatLegacyConversationalData(item):
+            messages = item.pop("conversationalData")
+            version = item.pop("version", 1)
+            type = item.pop("type", "application/vnd.labelbox.conversational")
+            if "externalId" in item:
+                external_id = item.pop("externalId")
+                item["external_id"] = external_id
+            if "globalKey" in item:
+                global_key = item.pop("globalKey")
+                item["globalKey"] = global_key
+            validate_conversational_data(messages)
+            one_conversation = \
+                {
+                    "type": type,
+                    "version": version,
+                    "messages": messages
+                }
+            item["row_data"] = one_conversation
+            return item
+
         def convert_item(item):
-            # Don't make any changes to tms data
             if "tileLayerUrl" in item:
                 validate_attachments(item)
                 return item
 
             if "conversationalData" in item:
-                messages = item.pop("conversationalData")
-                version = item.pop("version")
-                type = item.pop("type")
-                if "externalId" in item:
-                    external_id = item.pop("externalId")
-                    item["external_id"] = external_id
-                if "globalKey" in item:
-                    global_key = item.pop("globalKey")
-                    item["globalKey"] = global_key
-                validate_conversational_data(messages)
-                one_conversation = \
-                    {
-                        "type": type,
-                        "version": version,
-                        "messages": messages
-                    }
-                conversationUrl = self.client.upload_data(
-                    json.dumps(one_conversation),
-                    content_type="application/json",
-                    filename="conversational_data.json")
-                item["row_data"] = conversationUrl
+                formatLegacyConversationalData(item)
 
             # Convert all payload variations into the same dict format
             item = format_row(item)
@@ -386,11 +414,7 @@ class Dataset(DbObject, Updateable, Deletable):
             parse_metadata_fields(item)
             # Upload any local file paths
             item = upload_if_necessary(item)
-
-            return {
-                "data" if key == "row_data" else utils.camel_case(key): value
-                for key, value in item.items()
-            }
+            return item
 
         if not isinstance(items, Iterable):
             raise ValueError(
