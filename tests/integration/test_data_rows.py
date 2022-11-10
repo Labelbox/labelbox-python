@@ -459,12 +459,17 @@ def test_data_row_update(dataset, rand_gen, image_url):
     data_row.update(external_id=external_id_2)
     assert data_row.external_id == external_id_2
 
-    data_row.update(row_data="123")
-    assert data_row.row_data == "123"
+    in_line_content = "123"
+    data_row.update(row_data=in_line_content)
+    assert requests.get(data_row.row_data).text == in_line_content
+
+    data_row.update(row_data=image_url)
+    assert data_row.row_data == image_url
 
     # tileLayer becomes a media attribute
-    data_row.update(row_data={'pdfUrl': "123", "tileLayerUrl": "123"})
-    assert data_row.row_data == "123"
+    pdf_url = "http://somepdfurl"
+    data_row.update(row_data={'pdfUrl': pdf_url, "tileLayerUrl": "123"})
+    assert data_row.row_data == pdf_url
 
 
 def test_data_row_filtering_sorting(dataset, image_url):
