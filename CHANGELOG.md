@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.30.0 (2022-11-11)
+### Changed
+* create_data_rows, create_data_rows_sync, create_data_row, and update data rows all accept the new data row input format for row data
+* create_data_row now accepts an attachment parameter to be consistent with create_data_rows
+* Attachment text content and data row in-line text content are automatically uploaded to files on the backend
+* Conversational text data rows will be uploaded to a json file automatically on the backend to reduce the amount of i/o required in the SDK.
+* Additional details will be outlined in the docs and we will link to them here.
+
+
 # Version 3.29.0 (2022-10-28)
 
 ### Added
