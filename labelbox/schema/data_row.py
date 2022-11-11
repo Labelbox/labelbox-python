@@ -1,5 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
+import json
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
@@ -63,6 +64,14 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         super().__init__(*args, **kwargs)
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
+
+    def update(self, **kwargs):
+        # Convert row data to string if it is an object
+        # All other updates pass through
+        row_data = kwargs.get("row_data")
+        if isinstance(row_data, dict):
+            kwargs['row_data'] = json.dumps(kwargs['row_data'])
+        super().update(**kwargs)
 
     @staticmethod
     def bulk_delete(data_rows) -> None:
