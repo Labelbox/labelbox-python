@@ -33,6 +33,7 @@ class ClassificationAnswer(FeatureSchema):
     """
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
+    confidence: Optional[float] = None
 
     def dict(self, *args, **kwargs) -> Dict[str, str]:
         res = super().dict(*args, **kwargs)

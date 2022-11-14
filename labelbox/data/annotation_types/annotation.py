@@ -51,6 +51,7 @@ class ObjectAnnotation(BaseAnnotation):
     """
     value: Union[TextEntity, Geometry]
     classifications: List[ClassificationAnnotation] = []
+    confidence: Optional[float]
 
 
 class VideoObjectAnnotation(ObjectAnnotation):
