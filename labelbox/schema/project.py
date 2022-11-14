@@ -9,8 +9,10 @@ from urllib.parse import urlparse
 
 import ndjson
 import requests
+
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, LabelboxError, ProcessingWaitTimeout
+from labelbox.exceptions import (InvalidQueryError, LabelboxError,
+                                 ProcessingWaitTimeout)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
@@ -631,7 +633,10 @@ class Project(DbObject, Updateable, Deletable):
                                   experimental=True)["project"][method]
         batch = res['batch']
         batch['size'] = len(dr_ids)
-        return Entity.Batch(self.client, self.uid, batch, failed_data_row_ids=res['failedDataRowIds'])
+        return Entity.Batch(self.client,
+                            self.uid,
+                            batch,
+                            failed_data_row_ids=res['failedDataRowIds'])
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
@@ -984,11 +989,15 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
 
-    def _wait_until_data_rows_are_processed(self, data_row_ids: List[str], wait_processing_max_seconds: int, sleep_interval=30):
+    def _wait_until_data_rows_are_processed(self,
+                                            data_row_ids: List[str],
+                                            wait_processing_max_seconds: int,
+                                            sleep_interval=30):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
         while True:
-            if (datetime.now() - start_time).total_seconds() >= wait_processing_max_seconds:
+            if (datetime.now() -
+                    start_time).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
                     "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
                 )
@@ -1013,7 +1022,8 @@ class Project(DbObject, Updateable, Deletable):
         params = {}
         params[data_row_ids_param] = data_row_ids
         response = self.client.execute(query_str, params)
-        return response["queryAllDataRowsHaveBeenProcessed"]["allDataRowsHaveBeenProcessed"]
+        return response["queryAllDataRowsHaveBeenProcessed"][
+            "allDataRowsHaveBeenProcessed"]
 
 
 class ProjectMember(DbObject):

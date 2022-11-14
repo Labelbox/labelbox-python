@@ -37,7 +37,12 @@ class Batch(DbObject):
     # Relationships
     created_by = Relationship.ToOne("User")
 
-    def __init__(self, client, project_id, *args, failed_data_row_ids=None, **kwargs):
+    def __init__(self,
+                 client,
+                 project_id,
+                 *args,
+                 failed_data_row_ids=None,
+                 **kwargs):
         super().__init__(client, *args, **kwargs)
         self.project_id = project_id
         self._failed_data_row_ids = failed_data_row_ids
@@ -77,7 +82,7 @@ class Batch(DbObject):
                 batch_id_param), {
                     project_id_param: self.project_id,
                     batch_id_param: self.uid
-            },
+                },
             experimental=True)
 
     def export_data_rows(self,
@@ -146,8 +151,8 @@ class Batch(DbObject):
                 batch_id_param), {
                     project_id_param: self.project_id,
                     batch_id_param: self.uid
-        },
-            experimental=True)
+                },
+                            experimental=True)
 
     def delete_labels(self, set_labels_as_template=False) -> None:
         """ Deletes labels that were created for data rows in the batch.
@@ -172,7 +177,7 @@ class Batch(DbObject):
                     type_param:
                         "RequeueDataWithLabelAsTemplate"
                         if set_labels_as_template else "RequeueData"
-            },
+                },
             experimental=True)
         return res
 

@@ -767,7 +767,7 @@ class Client:
             for row in self.execute(
                     query_str,
                 {'externalId_in': external_ids[i:i + max_ids_per_request]
-                 })['externalIdsToDataRowIds']:
+                })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
 
@@ -1074,7 +1074,7 @@ class Client:
         result_params = {
             "jobId":
                 assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"
-                                                    ]["jobId"]
+                                                   ]["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
