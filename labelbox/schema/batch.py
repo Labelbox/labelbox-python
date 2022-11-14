@@ -37,9 +37,15 @@ class Batch(DbObject):
     # Relationships
     created_by = Relationship.ToOne("User")
 
-    def __init__(self, client, project_id, *args, **kwargs):
+    def __init__(self,
+                 client,
+                 project_id,
+                 *args,
+                 failed_data_row_ids=None,
+                 **kwargs):
         super().__init__(client, *args, **kwargs)
         self.project_id = project_id
+        self._failed_data_row_ids = failed_data_row_ids
 
     def project(self) -> 'Project':  # type: ignore
         """ Returns Project which this Batch belongs to
@@ -174,3 +180,7 @@ class Batch(DbObject):
                 },
             experimental=True)
         return res
+
+    @property
+    def failed_data_row_ids(self):
+        return (x for x in self._failed_data_row_ids)
