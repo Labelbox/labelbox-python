@@ -13,6 +13,7 @@ from .base import NDAnnotation
 class NDFeature(BaseModel):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
+    confidence: Optional[float]
 
     @root_validator()
     def must_set_one(cls, values):
@@ -28,6 +29,8 @@ class NDFeature(BaseModel):
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
+        if 'confidence' in res and res['confidence'] is None:
+            res.pop('confidence')
         return res
 
     class Config:
@@ -41,7 +44,7 @@ class FrameLocation(BaseModel):
 
 
 class VideoSupported(BaseModel):
-    #Note that frames are only allowed as top level inferences for video
+    # Note that frames are only allowed as top level inferences for video
     frames: Optional[List[FrameLocation]] = None
 
     def dict(self, *args, **kwargs):
@@ -69,8 +72,11 @@ class NDChecklistSubclass(NDFeature):
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[
-            ClassificationAnswer(name=answer.name,
-                                 feature_schema_id=answer.schema_id)
+            ClassificationAnswer(
+                name=answer.name,
+                feature_schema_id=answer.schema_id,
+                confidence=answer.confidence
+            )
             for answer in self.answer
         ])
 
@@ -78,11 +84,15 @@ class NDChecklistSubclass(NDFeature):
     def from_common(cls, checklist: Checklist, name: str,
                     feature_schema_id: Cuid) -> "NDChecklistSubclass":
         return cls(answer=[
-            NDFeature(name=answer.name, schema_id=answer.feature_schema_id)
+            NDFeature(
+                name=answer.name,
+                schema_id=answer.feature_schema_id,
+                confidence=answer.confidence
+            )
             for answer in checklist.answer
         ],
-                   name=name,
-                   schema_id=feature_schema_id)
+            name=name,
+            schema_id=feature_schema_id)
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
@@ -95,19 +105,26 @@ class NDRadioSubclass(NDFeature):
     answer: NDFeature
 
     def to_common(self) -> Radio:
-        return Radio(answer=ClassificationAnswer(
-            name=self.answer.name, feature_schema_id=self.answer.schema_id))
+        return Radio(
+            answer=ClassificationAnswer(
+                name=self.answer.name,
+                feature_schema_id=self.answer.schema_id,
+                confidence=self.answer.confidence)
+        )
 
     @classmethod
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
-        return cls(answer=NDFeature(name=radio.answer.name,
-                                    schema_id=radio.answer.feature_schema_id),
-                   name=name,
-                   schema_id=feature_schema_id)
+        return cls(answer=NDFeature(
+            name=radio.answer.name,
+            schema_id=radio.answer.feature_schema_id,
+            confidence=radio.answer.confidence
+        ),
+            name=name,
+            schema_id=feature_schema_id)
 
 
-### ====== End of subclasses
+# ====== End of subclasses
 
 
 class NDText(NDAnnotation, NDTextSubclass):
@@ -133,14 +150,18 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
             extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                ImageData]) -> "NDChecklist":
         return cls(answer=[
-            NDFeature(name=answer.name, schema_id=answer.feature_schema_id)
+            NDFeature(
+                name=answer.name,
+                schema_id=answer.feature_schema_id,
+                confidence=answer.confidence
+            )
             for answer in checklist.answer
         ],
-                   data_row={'id': data.uid},
-                   name=name,
-                   schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
-                   frames=extra.get('frames'))
+            data_row={'id': data.uid},
+            name=name,
+            schema_id=feature_schema_id,
+            uuid=extra.get('uuid'),
+            frames=extra.get('frames'))
 
 
 class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
@@ -149,13 +170,16 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     def from_common(cls, radio: Radio, name: str, feature_schema_id: Cuid,
                     extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                        ImageData]) -> "NDRadio":
-        return cls(answer=NDFeature(name=radio.answer.name,
-                                    schema_id=radio.answer.feature_schema_id),
-                   data_row={'id': data.uid},
-                   name=name,
-                   schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
-                   frames=extra.get('frames'))
+        return cls(answer=NDFeature(
+            name=radio.answer.name,
+            schema_id=radio.answer.feature_schema_id,
+            confidence=radio.answer.confidence
+        ),
+            data_row={'id': data.uid},
+            name=name,
+            schema_id=feature_schema_id,
+            uuid=extra.get('uuid'),
+            frames=extra.get('frames'))
 
 
 class NDSubclassification:
@@ -243,4 +267,7 @@ class NDClassification:
 
 NDSubclassificationType = Union[NDRadioSubclass, NDChecklistSubclass,
                                 NDTextSubclass]
-NDClassificationType = Union[NDRadio, NDChecklist, NDText]
+
+# Make sure to keep NDChecklist prior to NDRadio in the list,
+# otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
+NDClassificationType = Union[NDChecklist, NDRadio,  NDText]
