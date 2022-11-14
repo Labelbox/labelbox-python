@@ -111,10 +111,10 @@ def test_batch_creation_for_data_rows_with_issues(
     assert len(data_rows_to_add) == 5
     batch = batch_project.create_batch("batch to test failed data rows",
                                        data_rows_to_add)
+    failed_data_row_ids = [x for x in batch.failed_data_row_ids]
+    assert len(failed_data_row_ids) == 2
 
-    assert len(batch.failed_data_row_ids) == 2
-
-    failed_data_row_ids_set = set(batch.failed_data_row_ids)
+    failed_data_row_ids_set = set(failed_data_row_ids)
     invalid_data_rows_set = set(invalid_data_rows)
     assert len(failed_data_row_ids_set.intersection(invalid_data_rows_set)) == 2
 

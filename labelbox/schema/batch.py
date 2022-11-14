@@ -183,4 +183,4 @@ class Batch(DbObject):
 
     @property
     def failed_data_row_ids(self):
-        return self._failed_data_row_ids
+        return (x for x in self._failed_data_row_ids)
