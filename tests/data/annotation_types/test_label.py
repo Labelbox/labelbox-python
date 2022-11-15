@@ -167,3 +167,20 @@ def test_highly_nested():
         0].feature_schema_id == classification_schema_id
     assert label.annotations[0].classifications[
         0].value.answer.feature_schema_id == option_schema_id
+
+def test_schema_assignment_confidence():
+    name = "line_feature"
+    label = Label(
+        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        annotations=[
+            ObjectAnnotation(
+                value=Line(
+                    points=[Point(x=1, y=2), Point(x=2, y=2)],),
+                name=name,
+                confidence=0.914
+            )
+        ])
+    
+
+    assert label.annotations[0].confidence == 0.914
+
