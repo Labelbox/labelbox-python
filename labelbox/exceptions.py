@@ -129,3 +129,8 @@ class MALValidationError(LabelboxError):
 class OperationNotAllowedException(Exception):
     """Raised when user does not have permissions to a resource or has exceeded usage limit"""
     pass
+
+
+class ConfidenceNotSupportedException(Exception):
+    """Raised when confidence is specified for unsupported annotation type"""
+    pass

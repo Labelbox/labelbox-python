@@ -11,8 +11,7 @@ def video_bbox_label():
             uid="cklr9mr4m5iao0rb6cvxu4qbn",
             file_path=None,
             frames=None,
-            url=
-            "https://storage.labelbox.com/ckcz6bubudyfi0855o1dt1g9s%2F26403a22-604a-a38c-eeff-c2ed481fb40a-cat.mp4?Expires=1651677421050&KeyName=labelbox-assets-key-3&Signature=vF7gMyfHzgZdfbB8BHgd88Ws-Ms"
+            url="https://storage.labelbox.com/ckcz6bubudyfi0855o1dt1g9s%2F26403a22-604a-a38c-eeff-c2ed481fb40a-cat.mp4?Expires=1651677421050&KeyName=labelbox-assets-key-3&Signature=vF7gMyfHzgZdfbB8BHgd88Ws-Ms"
         ),
         annotations=[
             VideoObjectAnnotation(name='bbox toy',
@@ -593,7 +592,7 @@ def test_serialize_video_objects():
     manual_label = video_serialized_bbox_label()
 
     for key in label.keys():
-        #ignore uuid because we randomize if there was none
+        # ignore uuid because we randomize if there was none
         if key != "uuid":
             assert label[key] == manual_label[key]
 

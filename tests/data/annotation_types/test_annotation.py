@@ -6,6 +6,8 @@ from labelbox.data.annotation_types import (Text, Point, Line,
                                             ObjectAnnotation,
                                             VideoClassificationAnnotation,
                                             VideoObjectAnnotation, TextEntity)
+from labelbox.data.annotation_types.geometry.rectangle import Rectangle
+from labelbox.exceptions import ConfidenceNotSupportedException
 
 
 def test_annotation():
@@ -62,3 +64,27 @@ def test_video_annotations():
         VideoClassificationAnnotation(value=line, name=name)
 
     VideoObjectAnnotation(value=line, name=name, keyframe=True, frame=2)
+
+def test_confidence_for_video_is_not_supported():
+    with pytest.raises(ConfidenceNotSupportedException):
+        VideoObjectAnnotation(
+            name='bbox toy',
+            feature_schema_id='ckz38ofop0mci0z9i9w3aa9o4',
+            extra={
+                'value': 'bbox_toy',
+                'instanceURI': None,
+                'color': '#1CE6FF',
+                'feature_id': 'cl1z52xw700000fhcayaqy0ev'
+            },
+            value=Rectangle(extra={},
+                            start=Point(extra={},
+                                        x=70.0,
+                                        y=26.5),
+                            end=Point(extra={},
+                                    x=561.0,
+                                    y=348.0)),
+            classifications=[],
+            frame=24,
+            keyframe=False, 
+            confidence=0.3434
+        ),

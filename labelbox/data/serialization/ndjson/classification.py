@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union, Optional
 
 from pydantic import BaseModel, Field, root_validator
-from labelbox.data.serialization.ndjson.mixins import ConfidenceMixin
+from labelbox.data.mixins import ConfidenceMixin
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation

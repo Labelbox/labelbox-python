@@ -2,7 +2,7 @@ from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
-from labelbox.data.serialization.ndjson.mixins import ConfidenceMixin
+from labelbox.data.mixins import ConfidenceMixin
 import numpy as np
 
 from pydantic import BaseModel
