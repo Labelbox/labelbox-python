@@ -13,7 +13,7 @@ class ConfidenceMixin(BaseModel):
         if value is None:
             return value
         if not isinstance(value, (int, float)) or not 0 <= value <= 1:
-            raise ValueError('must be float within [0,1] range')
+            raise ValueError('must be a number within [0,1] range')
         return value
 
     def dict(self, *args, **kwargs):
