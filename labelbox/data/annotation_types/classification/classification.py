@@ -1,6 +1,8 @@
 from typing import Any, Dict, List, Union, Optional
 import warnings
 
+from labelbox.data.mixins import ConfidenceMixin
+
 try:
     from typing import Literal
 except:
@@ -20,7 +22,7 @@ class _TempName(BaseModel):
         return res
 
 
-class ClassificationAnswer(FeatureSchema):
+class ClassificationAnswer(FeatureSchema, ConfidenceMixin):
     """
     - Represents a classification option.
     - Because it inherits from FeatureSchema
@@ -33,7 +35,6 @@ class ClassificationAnswer(FeatureSchema):
     """
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
-    confidence: Optional[float] = None
 
     def dict(self, *args, **kwargs) -> Dict[str, str]:
         res = super().dict(*args, **kwargs)

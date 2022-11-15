@@ -12,10 +12,12 @@ def test_classification_answer():
 
     feature_schema_id = "schema_id"
     name = "my_feature"
-    answer = ClassificationAnswer(name=name)
+    confidence = 0.9
+    answer = ClassificationAnswer(name=name, confidence=confidence)
 
     assert answer.feature_schema_id is None
     assert answer.name == name
+    assert answer.confidence == confidence
 
     answer = ClassificationAnswer(feature_schema_id=feature_schema_id,
                                   name=name)
@@ -79,7 +81,7 @@ def test_subclass():
 
 
 def test_radio():
-    answer = ClassificationAnswer(name="1")
+    answer = ClassificationAnswer(name="1", confidence=0.81)
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
@@ -89,12 +91,13 @@ def test_radio():
 
     with pytest.raises(ValidationError):
         classification = Radio(answer=[answer])
-    classification = Radio(answer=answer)
+    classification = Radio(answer=answer,)
     assert classification.dict() == {
         'answer': {
             'name': answer.name,
             'feature_schema_id': None,
-            'extra': {}
+            'extra': {},
+            'confidence': 0.81
         }
     }
     classification = ClassificationAnnotation(
@@ -109,14 +112,15 @@ def test_radio():
             'answer': {
                 'name': answer.name,
                 'feature_schema_id': None,
-                'extra': {}
+                'extra': {},
+                'confidence': 0.81
             }
         }
     }
 
 
 def test_checklist():
-    answer = ClassificationAnswer(name="1")
+    answer = ClassificationAnswer(name="1", confidence=0.99)
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
@@ -131,7 +135,8 @@ def test_checklist():
         'answer': [{
             'name': answer.name,
             'feature_schema_id': None,
-            'extra': {}
+            'extra': {},
+            'confidence': 0.99
         }]
     }
     classification = ClassificationAnnotation(
@@ -147,14 +152,15 @@ def test_checklist():
             'answer': [{
                 'name': answer.name,
                 'feature_schema_id': None,
-                'extra': {}
+                'extra': {},
+                'confidence': 0.99
             }]
         },
     }
 
 
 def test_dropdown():
-    answer = ClassificationAnswer(name="1")
+    answer = ClassificationAnswer(name="1", confidence=1)
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
@@ -169,7 +175,8 @@ def test_dropdown():
         'answer': [{
             'name': '1',
             'feature_schema_id': None,
-            'extra': {}
+            'extra': {},
+            'confidence': 1
         }]
     }
     classification = ClassificationAnnotation(
@@ -184,6 +191,7 @@ def test_dropdown():
             'answer': [{
                 'name': answer.name,
                 'feature_schema_id': None,
+                'confidence': 1,
                 'extra': {}
             }]
         }
