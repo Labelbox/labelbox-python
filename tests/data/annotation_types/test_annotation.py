@@ -65,6 +65,7 @@ def test_video_annotations():
 
     VideoObjectAnnotation(value=line, name=name, keyframe=True, frame=2)
 
+
 def test_confidence_for_video_is_not_supported():
     with pytest.raises(ConfidenceNotSupportedException):
         VideoObjectAnnotation(
@@ -81,10 +82,23 @@ def test_confidence_for_video_is_not_supported():
                                         x=70.0,
                                         y=26.5),
                             end=Point(extra={},
-                                    x=561.0,
-                                    y=348.0)),
+                                      x=561.0,
+                                      y=348.0)),
             classifications=[],
             frame=24,
-            keyframe=False, 
+            keyframe=False,
             confidence=0.3434
         ),
+
+
+def test_confidence_value_range_validation():
+    name = "line_feature"
+    line = Line(points=[Point(x=1, y=2), Point(x=2, y=2)])
+
+    with pytest.raises(ValueError) as e:
+        ObjectAnnotation(
+            value=line,
+            name=name,
+            confidence=14
+        )
+    assert e.value.errors()[0]['msg'] == 'must be float within [0,1] range'
