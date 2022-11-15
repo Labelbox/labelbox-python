@@ -604,3 +604,16 @@ def test_serialize_video_objects():
     deserialized_labels = NDJsonConverter.deserialize([label])
     label = next(deserialized_labels)
     assert len(label.annotations) == 6
+
+
+def test_confidence_is_ingored():
+    label = video_bbox_label()
+    serialized_labels = NDJsonConverter.serialize([label])
+    label = next(serialized_labels)
+    label["confidence"] = 0.453
+    label['segments'][0]["confidence"] = 0.453
+
+    deserialized_labels = NDJsonConverter.deserialize([label])
+    label = next(deserialized_labels)
+    for annotation in label.annotations:
+        assert annotation.confidence is None
