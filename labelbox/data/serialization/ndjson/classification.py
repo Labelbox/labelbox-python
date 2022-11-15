@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union, Optional
 
 from pydantic import BaseModel, Field, root_validator
+from labelbox.data.serialization.ndjson.mixins import ConfidenceMixin
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation
@@ -10,10 +11,9 @@ from ...annotation_types.data import TextData, VideoData, ImageData
 from .base import NDAnnotation
 
 
-class NDFeature(BaseModel):
+class NDFeature(ConfidenceMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
-    confidence: Optional[float]
 
     @root_validator()
     def must_set_one(cls, values):
@@ -29,8 +29,6 @@ class NDFeature(BaseModel):
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
-        if 'confidence' in res and res['confidence'] is None:
-            res.pop('confidence')
         return res
 
     class Config:
