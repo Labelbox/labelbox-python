@@ -62,8 +62,8 @@ class Label(BaseModel):
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
             if isinstance(
-                    annotation,
-                (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                annotation,
+                    (VideoObjectAnnotation, VideoClassificationAnnotation)):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
 
@@ -151,7 +151,8 @@ class Label(BaseModel):
             elif isinstance(annotation, ObjectAnnotation):
                 self._assign_or_raise(annotation, tool_lookup)
                 for classification in annotation.classifications:
-                    self._assign_or_raise(classification, classification_lookup)
+                    self._assign_or_raise(
+                        classification, classification_lookup)
                     self._assign_option(classification, classification_lookup)
             else:
                 raise TypeError(

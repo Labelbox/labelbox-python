@@ -3,17 +3,19 @@ import json
 import logging
 import os
 import time
-from typing import Any, Dict, List, BinaryIO
-from tqdm import tqdm  # type: ignore
+from typing import Any, BinaryIO, Dict, List
 
 import backoff
 import ndjson
 import requests
+from tqdm import tqdm  # type: ignore
 
 import labelbox
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.annotation_import_validators import \
+    LabelsConfidencePresenceChecker
 from labelbox.schema.enums import AnnotationImportState
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
@@ -91,7 +93,7 @@ class AnnotationImport(DbObject):
         """
         pbar = tqdm(total=100,
                     bar_format="{n}% |{bar}| [{elapsed}, {rate_fmt}{postfix}]"
-                   ) if show_progress else None
+                    ) if show_progress else None
         while self.state.value == AnnotationImportState.RUNNING.value:
             logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
             time.sleep(sleep_time_seconds)
@@ -451,6 +453,13 @@ class MALPredictionImport(AnnotationImport):
         if not data_str:
             raise ValueError('annotations cannot be empty')
         data = data_str.encode('utf-8')
+
+        has_confidence = LabelsConfidencePresenceChecker.check(predictions)
+        if has_confidence:
+            logger.warning("""
+            Confidence scores are not supported in MAL Prediction Import. 
+            Corresponding confidence score values will be ingored.
+            """)
         return cls._create_mal_import_from_bytes(client, project_id, name, data,
                                                  len(data))
 
@@ -603,6 +612,13 @@ class LabelImport(AnnotationImport):
         if not data_str:
             raise ValueError('labels cannot be empty')
         data = data_str.encode('utf-8')
+        
+        has_confidence = LabelsConfidencePresenceChecker.check(labels)
+        if has_confidence:
+            logger.warning("""
+            Confidence scores are not supported in Label Import. 
+            Corresponding confidence score values will be ignored.
+            """)
         return cls._create_label_import_from_bytes(client, project_id, name,
                                                    data, len(data))
 
@@ -661,7 +677,8 @@ class LabelImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(LabelImport, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response
