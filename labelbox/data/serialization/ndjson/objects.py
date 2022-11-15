@@ -401,12 +401,12 @@ class NDObject:
             NDSubclassification.from_common(annot)
             for annot in annotation.classifications
         ]
-        optinal_kwargs = {}
+        optional_kwargs = {}
         if (annotation.confidence):
-            optinal_kwargs['confidence'] = annotation.confidence
+            optional_kwargs['confidence'] = annotation.confidence
         return obj.from_common(annotation.value, subclasses, annotation.name,
                                annotation.feature_schema_id, annotation.extra,
-                               data, **optinal_kwargs)
+                               data, **optional_kwargs)
 
     @staticmethod
     def lookup_object(

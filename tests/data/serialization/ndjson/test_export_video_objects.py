@@ -606,7 +606,7 @@ def test_serialize_video_objects():
     assert len(label.annotations) == 6
 
 
-def test_confidence_is_ingored():
+def test_confidence_is_ignored():
     label = video_bbox_label()
     serialized_labels = NDJsonConverter.serialize([label])
     label = next(serialized_labels)
