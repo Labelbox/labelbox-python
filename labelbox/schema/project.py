@@ -4,16 +4,17 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Union, Iterable, List, Optional, Any
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
 import ndjson
 import requests
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, LabelboxError
+from labelbox.exceptions import (InvalidQueryError, LabelboxError,
+                                 ProcessingWaitTimeout)
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, Deletable
+from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
@@ -89,6 +90,9 @@ class Project(DbObject, Updateable, Deletable):
     webhooks = Relationship.ToMany("Webhook", False)
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
+
+    #
+    _wait_processing_max_seconds = 3600
 
     def update(self, **kwargs):
         """ Updates this project with the specified attributes
@@ -319,7 +323,7 @@ class Project(DbObject, Updateable, Deletable):
                         return True
                     except ValueError:
                         pass
-                raise ValueError(f"""Incorrect format for: {string_date}. 
+                raise ValueError(f"""Incorrect format for: {string_date}.
                 Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
             return True
 
@@ -595,11 +599,16 @@ class Project(DbObject, Updateable, Deletable):
         if not len(dr_ids):
             raise ValueError("You need at least one data row in a batch")
 
-        method = 'createBatch'
+        self._wait_until_data_rows_are_processed(
+            data_rows, self._wait_processing_max_seconds)
+        method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
                 %s(input: $batchInput) {
-                  %s
+                    batch {
+                        %s
+                    }
+                    failedDataRowIds
                 }
               }
             }
@@ -622,9 +631,12 @@ class Project(DbObject, Updateable, Deletable):
                                   params,
                                   timeout=180.0,
                                   experimental=True)["project"][method]
-
-        res['size'] = len(dr_ids)
-        return Entity.Batch(self.client, self.uid, res)
+        batch = res['batch']
+        batch['size'] = len(dr_ids)
+        return Entity.Batch(self.client,
+                            self.uid,
+                            batch,
+                            failed_data_row_ids=res['failedDataRowIds'])
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
@@ -976,6 +988,42 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
+    def _wait_until_data_rows_are_processed(self,
+                                            data_row_ids: List[str],
+                                            wait_processing_max_seconds: int,
+                                            sleep_interval=30):
+        """ Wait until all the specified data rows are processed"""
+        start_time = datetime.now()
+        while True:
+            if (datetime.now() -
+                    start_time).total_seconds() >= wait_processing_max_seconds:
+                raise ProcessingWaitTimeout(
+                    "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
+                )
+
+            all_good = self.__check_data_rows_have_been_processed(data_row_ids)
+            if all_good:
+                return
+
+            logger.debug(
+                'Some of the data rows are still being processed, waiting...')
+            time.sleep(sleep_interval)
+
+    def __check_data_rows_have_been_processed(self, data_row_ids: List[str]):
+        data_row_ids_param = "data_row_ids"
+
+        query_str = """query CheckAllDataRowsHaveBeenProcessedPyApi($%s: [ID!]!) {
+            queryAllDataRowsHaveBeenProcessed(dataRowIds:$%s) {
+                allDataRowsHaveBeenProcessed
+           }
+        }""" % (data_row_ids_param, data_row_ids_param)
+
+        params = {}
+        params[data_row_ids_param] = data_row_ids
+        response = self.client.execute(query_str, params)
+        return response["queryAllDataRowsHaveBeenProcessed"][
+            "allDataRowsHaveBeenProcessed"]
 
 
 class ProjectMember(DbObject):

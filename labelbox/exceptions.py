@@ -133,4 +133,7 @@ class OperationNotAllowedException(Exception):
 
 class ConfidenceNotSupportedException(Exception):
     """Raised when confidence is specified for unsupported annotation type"""
-    pass
+
+
+class ProcessingWaitTimeout(Exception):
+    """Raised when waiting for the data rows to be processed takes longer than allowed"""
