@@ -16,6 +16,7 @@ class LabelsConfidencePresenceChecker:
     """
     Checks if a given list of labels contains at least one confidence score
     """
+
     @classmethod
     def check(cls, raw_labels: List[Dict[str, Any]]):
         label_list = NDJsonConverter.deserialize(raw_labels).as_list()
@@ -26,26 +27,34 @@ class LabelsConfidencePresenceChecker:
         return any([cls._check_annotation(x) for x in label.annotations])
 
     @classmethod
-    def _check_annotation(cls, annotation: Union[ClassificationAnnotation, ObjectAnnotation,
+    def _check_annotation(cls, annotation: Union[ClassificationAnnotation,
+                                                 ObjectAnnotation,
                                                  VideoObjectAnnotation,
-                                                 VideoClassificationAnnotation, ScalarMetric,
+                                                 VideoClassificationAnnotation,
+                                                 ScalarMetric,
                                                  ConfusionMatrixMetric]):
         if annotation.confidence is not None:
             return True
         if annotation.classifications:
-            return any([cls._check_classification(x) for x in annotation.classifications])
+            return any([
+                cls._check_classification(x) for x in annotation.classifications
+            ])
         return False
 
     @classmethod
-    def _check_classification(cls, classification: ClassificationAnnotation) -> bool:
-        if isinstance(classification.value,    (Checklist, Dropdown)):
-            return any(cls._check_classification_answer(x) for x in classification.value.answer)
+    def _check_classification(cls,
+                              classification: ClassificationAnnotation) -> bool:
+        if isinstance(classification.value, (Checklist, Dropdown)):
+            return any(
+                cls._check_classification_answer(x)
+                for x in classification.value.answer)
         if isinstance(classification.value, Radio):
             return cls._check_classification_answer(classification.value.answer)
         if isinstance(classification.value, Text):
             return False
         raise Exception(
-            f"Unexpected classification value type {type(classification.value)}")
+            f"Unexpected classification value type {type(classification.value)}"
+        )
 
     @classmethod
     def _check_classification_answer(cls, answer: ClassificationAnswer) -> bool:

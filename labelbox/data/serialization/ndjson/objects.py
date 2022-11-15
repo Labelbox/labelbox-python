@@ -48,23 +48,24 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
         return Point(x=self.point.x, y=self.point.y)
 
     @classmethod
-    def from_common(cls, point: Point,
-                    classifications: List[ClassificationAnnotation], name: str,
-                    feature_schema_id: Cuid, extra: Dict[str, Any],
+    def from_common(cls,
+                    point: Point,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
                     data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None
-                    ) -> "NDPoint":
+                    confidence: Optional[float] = None) -> "NDPoint":
         return cls(point={
             'x': point.x,
             'y': point.y
         },
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications,
-            confidence=confidence
-        )
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
 
 
 class NDFramePoint(VideoSupported):
@@ -100,11 +101,11 @@ class NDLine(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in line.points],
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications)
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
 class NDFrameLine(VideoSupported):
@@ -136,23 +137,24 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
         return Polygon(points=[Point(x=pt.x, y=pt.y) for pt in self.polygon])
 
     @classmethod
-    def from_common(cls, polygon: Polygon,
-                    classifications: List[ClassificationAnnotation], name: str,
-                    feature_schema_id: Cuid, extra: Dict[str, Any],
+    def from_common(cls,
+                    polygon: Polygon,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
                     data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None
-                    ) -> "NDPolygon":
+                    confidence: Optional[float] = None) -> "NDPolygon":
         return cls(polygon=[{
             'x': pt.x,
             'y': pt.y
         } for pt in polygon.points],
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications,
-            confidence=confidence
-        )
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
 
 
 class NDRectangle(NDBaseObject, ConfidenceMixin):
@@ -164,9 +166,12 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                                    y=self.bbox.top + self.bbox.height))
 
     @classmethod
-    def from_common(cls, rectangle: Rectangle,
-                    classifications: List[ClassificationAnnotation], name: str,
-                    feature_schema_id: Cuid, extra: Dict[str, Any],
+    def from_common(cls,
+                    rectangle: Rectangle,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
                     data: Union[ImageData, TextData],
                     confidence: Optional[float] = None) -> "NDRectangle":
         return cls(bbox=Bbox(top=rectangle.start.y,
@@ -180,8 +185,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                    classifications=classifications,
                    page=extra.get('page'),
                    unit=extra.get('unit'),
-                   confidence=confidence
-                   )
+                   confidence=confidence)
 
 
 class NDFrameRectangle(VideoSupported):
@@ -304,15 +308,17 @@ class NDMask(NDBaseObject, ConfidenceMixin):
             return Mask(mask=MaskData.from_2D_arr(image), color=(1, 1, 1))
 
     @classmethod
-    def from_common(cls, mask: Mask,
-                    classifications: List[ClassificationAnnotation], name: str,
-                    feature_schema_id: Cuid, extra: Dict[str, Any],
+    def from_common(cls,
+                    mask: Mask,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
                     data: Union[ImageData, TextData],
                     confidence: Optional[float] = None) -> "NDMask":
 
         if mask.mask.url is not None:
-            lbv1_mask = _URIMask(
-                instanceURI=mask.mask.url, colorRGB=mask.color)
+            lbv1_mask = _URIMask(instanceURI=mask.mask.url, colorRGB=mask.color)
         else:
             binary = np.all(mask.mask.value == mask.color, axis=-1)
             im_bytes = BytesIO()
@@ -326,8 +332,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications,
-                   confidence=confidence
-                   )
+                   confidence=confidence)
 
 
 class Location(BaseModel):
@@ -350,11 +355,11 @@ class NDTextEntity(NDBaseObject):
             start=text_entity.start,
             end=text_entity.end,
         ),
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications)
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications)
 
 
 class NDObject:
@@ -366,8 +371,8 @@ class NDObject:
             NDSubclassification.to_common(annot)
             for annot in annotation.classifications
         ]
-        confidence = annotation.confidence if hasattr(
-            annotation, 'confidence') else None
+        confidence = annotation.confidence if hasattr(annotation,
+                                                      'confidence') else None
         return ObjectAnnotation(value=common_annotation,
                                 name=annotation.name,
                                 feature_schema_id=annotation.schema_id,
@@ -377,8 +382,7 @@ class NDObject:
                                     'page': annotation.page,
                                     'unit': annotation.unit
                                 },
-                                confidence=confidence
-                                )
+                                confidence=confidence)
 
     @classmethod
     def from_common(

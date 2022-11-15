@@ -93,7 +93,7 @@ class AnnotationImport(DbObject):
         """
         pbar = tqdm(total=100,
                     bar_format="{n}% |{bar}| [{elapsed}, {rate_fmt}{postfix}]"
-                    ) if show_progress else None
+                   ) if show_progress else None
         while self.state.value == AnnotationImportState.RUNNING.value:
             logger.info(f"Sleeping for {sleep_time_seconds} seconds...")
             time.sleep(sleep_time_seconds)
@@ -612,7 +612,7 @@ class LabelImport(AnnotationImport):
         if not data_str:
             raise ValueError('labels cannot be empty')
         data = data_str.encode('utf-8')
-        
+
         has_confidence = LabelsConfidencePresenceChecker.check(labels)
         if has_confidence:
             logger.warning("""
@@ -677,8 +677,7 @@ class LabelImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                LabelImport, params)
+            raise labelbox.exceptions.ResourceNotFoundError(LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response

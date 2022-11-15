@@ -70,11 +70,9 @@ class NDChecklistSubclass(NDFeature):
 
     def to_common(self) -> Checklist:
         return Checklist(answer=[
-            ClassificationAnswer(
-                name=answer.name,
-                feature_schema_id=answer.schema_id,
-                confidence=answer.confidence
-            )
+            ClassificationAnswer(name=answer.name,
+                                 feature_schema_id=answer.schema_id,
+                                 confidence=answer.confidence)
             for answer in self.answer
         ])
 
@@ -82,15 +80,13 @@ class NDChecklistSubclass(NDFeature):
     def from_common(cls, checklist: Checklist, name: str,
                     feature_schema_id: Cuid) -> "NDChecklistSubclass":
         return cls(answer=[
-            NDFeature(
-                name=answer.name,
-                schema_id=answer.feature_schema_id,
-                confidence=answer.confidence
-            )
+            NDFeature(name=answer.name,
+                      schema_id=answer.feature_schema_id,
+                      confidence=answer.confidence)
             for answer in checklist.answer
         ],
-            name=name,
-            schema_id=feature_schema_id)
+                   name=name,
+                   schema_id=feature_schema_id)
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
@@ -104,22 +100,18 @@ class NDRadioSubclass(NDFeature):
 
     def to_common(self) -> Radio:
         return Radio(
-            answer=ClassificationAnswer(
-                name=self.answer.name,
-                feature_schema_id=self.answer.schema_id,
-                confidence=self.answer.confidence)
-        )
+            answer=ClassificationAnswer(name=self.answer.name,
+                                        feature_schema_id=self.answer.schema_id,
+                                        confidence=self.answer.confidence))
 
     @classmethod
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
-        return cls(answer=NDFeature(
-            name=radio.answer.name,
-            schema_id=radio.answer.feature_schema_id,
-            confidence=radio.answer.confidence
-        ),
-            name=name,
-            schema_id=feature_schema_id)
+        return cls(answer=NDFeature(name=radio.answer.name,
+                                    schema_id=radio.answer.feature_schema_id,
+                                    confidence=radio.answer.confidence),
+                   name=name,
+                   schema_id=feature_schema_id)
 
 
 # ====== End of subclasses
@@ -148,18 +140,16 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
             extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                ImageData]) -> "NDChecklist":
         return cls(answer=[
-            NDFeature(
-                name=answer.name,
-                schema_id=answer.feature_schema_id,
-                confidence=answer.confidence
-            )
+            NDFeature(name=answer.name,
+                      schema_id=answer.feature_schema_id,
+                      confidence=answer.confidence)
             for answer in checklist.answer
         ],
-            data_row={'id': data.uid},
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            frames=extra.get('frames'))
+                   data_row={'id': data.uid},
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   frames=extra.get('frames'))
 
 
 class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
@@ -168,16 +158,14 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     def from_common(cls, radio: Radio, name: str, feature_schema_id: Cuid,
                     extra: Dict[str, Any], data: Union[VideoData, TextData,
                                                        ImageData]) -> "NDRadio":
-        return cls(answer=NDFeature(
-            name=radio.answer.name,
-            schema_id=radio.answer.feature_schema_id,
-            confidence=radio.answer.confidence
-        ),
-            data_row={'id': data.uid},
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            frames=extra.get('frames'))
+        return cls(answer=NDFeature(name=radio.answer.name,
+                                    schema_id=radio.answer.feature_schema_id,
+                                    confidence=radio.answer.confidence),
+                   data_row={'id': data.uid},
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   frames=extra.get('frames'))
 
 
 class NDSubclassification:
@@ -262,6 +250,7 @@ class NDClassification:
             Radio: NDRadio
         }.get(type(annotation.value))
 
+
 # Make sure to keep NDChecklistSubclass prior to NDRadioSubclass in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
 NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
@@ -269,4 +258,4 @@ NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
-NDClassificationType = Union[NDChecklist, NDRadio,  NDText]
+NDClassificationType = Union[NDChecklist, NDRadio, NDText]

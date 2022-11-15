@@ -24,9 +24,9 @@ class ConfidenceMixin(BaseModel):
 
 
 class ConfidenceNotSupportedMixin:
+
     def __new__(cls, *args, **kwargs):
         if 'confidence' in kwargs:
             raise ConfidenceNotSupportedException(
-                'Confidence is not supported for this annotaiton type yet'
-            )
+                'Confidence is not supported for this annotaiton type yet')
         return super().__new__(cls)
