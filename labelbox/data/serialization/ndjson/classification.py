@@ -262,8 +262,9 @@ class NDClassification:
             Radio: NDRadio
         }.get(type(annotation.value))
 
-
-NDSubclassificationType = Union[NDRadioSubclass, NDChecklistSubclass,
+# Make sure to keep NDChecklistSubclass prior to NDRadioSubclass in the list,
+# otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
+NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
