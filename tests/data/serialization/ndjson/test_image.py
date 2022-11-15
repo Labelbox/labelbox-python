@@ -64,8 +64,7 @@ def test_mask():
             "instanceURI":
                 "https://storage.labelbox.com/ckqcx1czn06830y61gh9v02cs%2F3e729327-f038-f66c-186e-45e921ef9717-1?Expires=1626806874672&KeyName=labelbox-assets-key-3&Signature=YsUOGKrsqmAZ68vT9BlPJOaRyLY",
             "colorRGB": [255, 0, 0]
-        },
-        "confidence": 0.99
+        }
     }]
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
@@ -87,7 +86,6 @@ def test_mask_from_arr():
                   data=ImageData(uid="0" * 25))
     res = next(NDJsonConverter.serialize([label]))
     res.pop('uuid')
-    res.pop('confidence')
     assert res == {
         "classifications": [],
         "schemaId": "1" * 25,
