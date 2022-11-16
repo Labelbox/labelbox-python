@@ -14,8 +14,7 @@ import labelbox
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.schema.annotation_import_validators import \
-    LabelsConfidencePresenceChecker
+from labelbox.schema.confidence_presence_checker import LabelsConfidencePresenceChecker
 from labelbox.schema.enums import AnnotationImportState
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
