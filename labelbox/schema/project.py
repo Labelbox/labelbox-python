@@ -512,7 +512,7 @@ class Project(DbObject, Updateable, Deletable):
             ontology (Ontology): The ontology to attach to the project
         """
         if self.labeling_frontend() is not None:
-            raise ResourceConflict("Editor is already set up")
+            raise ResourceConflict("Editor is already set up. Use project.connect_ontology to change an ontology.")
 
         labeling_frontend = next(
             self.client.get_labeling_frontends(
@@ -542,6 +542,21 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
+    def connect_ontology(self, ontology) -> None:
+        """
+        Connect an ontology to the project.
+
+        Args:
+            ontology (Ontology): The ontology to attach to the project
+        """
+        query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
+            project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
+        self.client.execute(query_str, {
+            'ontologyId': ontology.uid,
+            'projectId': self.uid
+        })
+
+
     def setup(self, labeling_frontend, labeling_frontend_options) -> None:
         """ Finalizes the Project setup.
 
@@ -554,7 +569,7 @@ class Project(DbObject, Updateable, Deletable):
         """
 
         if self.labeling_frontend() is not None:
-            raise ResourceConflict("Editor is already set up")
+            raise ResourceConflict("Editor is already set up. Use project.connect_ontology to change an ontology.")
 
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
