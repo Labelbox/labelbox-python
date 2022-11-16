@@ -27,6 +27,7 @@ class AssetAttachment(DbObject):
 
     attachment_type = Field.String("attachment_type", "type")
     attachment_value = Field.String("attachment_value", "value")
+    attachment_name = Field.String("attachment_name", "name")
 
     @classmethod
     def validate_attachment_json(cls, attachment_json: Dict[str, str]) -> None:
