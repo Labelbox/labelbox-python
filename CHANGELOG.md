@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.30.1 (2022-11-16)
+### Fixed
+* Running `project.setup_editor()` multiple times no longer resets the ontology, and instead raises an error if the editor is already set up for the project
+
 # Version 3.30.0 (2022-11-11)
 ### Changed
 * create_data_rows, create_data_rows_sync, create_data_row, and update data rows all accept the new data row input format for row data
