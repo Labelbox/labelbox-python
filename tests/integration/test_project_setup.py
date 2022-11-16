@@ -6,7 +6,7 @@ import time
 import pytest
 
 from labelbox import LabelingFrontend
-from labelbox.exceptions import InvalidQueryError
+from labelbox.exceptions import InvalidQueryError, ResourceConflict
 
 
 def simple_ontology():
@@ -67,3 +67,12 @@ def test_project_editor_setup(client, project, rand_gen):
     time.sleep(3)  # Search takes a second
     assert [ontology.name for ontology in client.get_ontologies(ontology_name)
            ] == [ontology_name]
+
+def test_project_editor_setup_cant_call_multiple_times(client, project, rand_gen):
+    ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
+    ontology = client.create_ontology(ontology_name, simple_ontology())
+    project.setup_editor(ontology)
+    with pytest.raises(ResourceConflict):
+           project.setup_editor(ontology)
+
+

@@ -12,7 +12,7 @@ import requests
 
 from labelbox import utils
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout)
+                                 ProcessingWaitTimeout, ResourceConflict)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
@@ -511,6 +511,9 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
+        if self.labeling_frontend() is not None:
+            raise ResourceConflict("Editor is already set up")
+
         labeling_frontend = next(
             self.client.get_labeling_frontends(
                 where=Entity.LabelingFrontend.name == "Editor"))
@@ -549,6 +552,9 @@ class Project(DbObject, Updateable, Deletable):
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
         """
+
+        if self.labeling_frontend() is not None:
+            raise ResourceConflict("Editor is already set up")
 
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
