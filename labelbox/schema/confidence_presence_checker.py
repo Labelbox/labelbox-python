@@ -33,9 +33,10 @@ class LabelsConfidencePresenceChecker:
                                                  VideoClassificationAnnotation,
                                                  ScalarMetric,
                                                  ConfusionMatrixMetric]):
-        if annotation.confidence is not None:
+
+        if hasattr(annotation, 'confidence') and annotation.confidence is not None:
             return True
-        if annotation.classifications:
+        if hasattr(annotation, 'classifications') and annotation.classifications:
             return any([
                 cls._check_classification(x) for x in annotation.classifications
             ])
