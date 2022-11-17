@@ -31,7 +31,7 @@ def miou_metric(ground_truths: List[Union[ObjectAnnotation,
     # If both gt and preds are empty there is no metric
     if iou is None:
         return []
-    return [ScalarMetric(metric_name="iou", value=iou)]
+    return [ScalarMetric(metric_name="custom_iou", value=iou)]
 
 
 def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
@@ -62,7 +62,7 @@ def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
         if value is None:
             continue
         metrics.append(
-            ScalarMetric(metric_name="iou", feature_name=key, value=value))
+            ScalarMetric(metric_name="custom_iou", feature_name=key, value=value))
     return metrics
 
 
