@@ -35,16 +35,14 @@ class LabelsConfidencePresenceChecker:
                                                  ScalarMetric,
                                                  ConfusionMatrixMetric]):
 
-        confidence: Union[float, NoneType] = getattr(annotation, 'confidence')
+        confidence: Union[float, None] = getattr(annotation, 'confidence')
         if confidence is not None:
             return True
 
-        classifications: Union[List[ClassificationAnnotation], NoneType] = getattr(
-            annotation, 'classifications')
+        classifications: Union[List[ClassificationAnnotation],
+                               None] = getattr(annotation, 'classifications')
         if classifications:
-            return any([
-                cls._check_classification(x) for x in classifications
-            ])
+            return any([cls._check_classification(x) for x in classifications])
         return False
 
     @classmethod
