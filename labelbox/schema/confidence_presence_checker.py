@@ -1,4 +1,3 @@
-from types import NoneType
 from typing import Any, Dict, List, Union
 
 from labelbox.data.annotation_types.annotation import (
