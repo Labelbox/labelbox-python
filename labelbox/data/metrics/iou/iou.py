@@ -62,7 +62,9 @@ def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
         if value is None:
             continue
         metrics.append(
-            ScalarMetric(metric_name="custom_iou", feature_name=key, value=value))
+            ScalarMetric(metric_name="custom_iou",
+                         feature_name=key,
+                         value=value))
     return metrics
 
 

@@ -16,16 +16,9 @@ class ScalarMetricAggregation(Enum):
     SUM = "SUM"
 
 
-RESERVED_METRIC_NAMES = (
-    'true_positive_count',
-    'false_positive_count',
-    'true_negative_count',
-    'false_negative_count',
-    'precision',
-    'recall',
-    'f1',
-    'iou'
-)
+RESERVED_METRIC_NAMES = ('true_positive_count', 'false_positive_count',
+                         'true_negative_count', 'false_negative_count',
+                         'precision', 'recall', 'f1', 'iou')
 
 
 class ScalarMetric(BaseMetric):
