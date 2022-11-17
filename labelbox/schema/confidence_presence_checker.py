@@ -1,3 +1,4 @@
+from types import NoneType
 from typing import Any, Dict, List, Union
 
 from labelbox.data.annotation_types.annotation import (
@@ -34,13 +35,15 @@ class LabelsConfidencePresenceChecker:
                                                  ScalarMetric,
                                                  ConfusionMatrixMetric]):
 
-        if hasattr(annotation,
-                   'confidence') and annotation.confidence is not None:
+        confidence: Union[float, NoneType] = getattr(annotation, 'confidence')
+        if confidence is not None:
             return True
-        if hasattr(annotation,
-                   'classifications') and annotation.classifications:
+
+        classifications: Union[List[ClassificationAnnotation], NoneType] = getattr(
+            annotation, 'classifications')
+        if classifications:
             return any([
-                cls._check_classification(x) for x in annotation.classifications
+                cls._check_classification(x) for x in classifications
             ])
         return False
 
