@@ -39,7 +39,7 @@ class ScalarMetric(BaseMetric):
         if name.lower().strip() in RESERVED_METRIC_NAMES:
             raise ValueError(f"`{clean_name}` is a reserved metric name. "
                              "Please provide another value for `metric_name`.")
-        return clean_name
+        return name
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
