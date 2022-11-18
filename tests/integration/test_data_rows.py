@@ -461,7 +461,7 @@ def test_data_row_update(dataset, rand_gen, image_url):
 
     in_line_content = "123"
     data_row.update(row_data=in_line_content)
-    assert requests.get(data_row.row_data).text == in_line_content
+    assert data_row.row_data == in_line_content
 
     data_row.update(row_data=image_url)
     assert data_row.row_data == image_url
