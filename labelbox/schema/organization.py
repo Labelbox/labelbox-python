@@ -98,7 +98,7 @@ class Organization(DbObject):
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Entity.Invite(self.client, invite_response)
 
-    def bulk_invite_users(self, invites=List["Invite"]) -> Dict[str, Any]:
+    def bulk_invite_users(self, invites=List["Invite"]) -> Dict[str, Invite]:
         """
         Invite up to 1000 new members to the org. This will send each new user an email invite
 
@@ -134,14 +134,14 @@ class Organization(DbObject):
                 raise KeyError(f"Each invite should have an `email` key!")
             if "role" not in invite:
                 raise KeyError(f"Each invite should have a `role` key!")
+
+            role = invite["role"]
             if "project_roles" in invite and invite[
                     "project_roles"] and role.name != "NONE":
                 project_roles = invite["project_roles"]
                 raise ValueError(
                     f"Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
                 )
-
-            role = invite["role"]
             email = invite["email"]
             data_params.append({
                 "inviterId":
