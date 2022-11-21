@@ -1234,7 +1234,7 @@ class Client:
             global_keys: List[str],
             timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
         """
-        Gets data row ids for a list of global keys.
+        Clears global keys for the data rows tha correspond to the global keys provided.
 
         Args:
             A list of global keys
@@ -1244,11 +1244,10 @@ class Client:
             'Status' contains the outcome of this job. It can be one of
             'Success', 'Partial Success', or 'Failure'.
 
-            'Results' contains a list of data row ids successfully fetchced. It may
-            not necessarily contain all data rows requested.
+            'Results' contains a list global keys that were successfully cleared.
 
-            'Errors' contains a list of global_keys that could not be fetched, along
-            with the failure reason
+            'Errors' contains a list of global_keys correspond to the data rows that could not be 
+            modified, accessed by the user, or not found. 
         Examples:
             >>> job_result = client.get_data_row_ids_for_global_keys(["key1","key2"])
             >>> print(job_result['status'])
@@ -1307,12 +1306,9 @@ class Client:
                     _format_failed_rows(data['accessDeniedGlobalKeys'],
                                         "Denied access to modify data row matching provided global key"))
 
-                # Invalid results may contain empty string, so we must filter
-                # them prior to checking for PARTIAL_SUCCESS
-                filtered_results = list(filter(lambda r: r != '', results))
                 if not errors:
                     status = CollectionJobStatus.SUCCESS.value
-                elif errors and len(filtered_results) > 0:
+                elif errors and len(results) > 0:
                     status = CollectionJobStatus.PARTIAL_SUCCESS.value
                 else:
                     status = CollectionJobStatus.FAILURE.value
