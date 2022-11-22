@@ -1258,7 +1258,7 @@ class Client:
             [{'global_key': 'asdf', 'error': 'Data Row not found'}]
         """
 
-        def _format_global_key_er(rows: List[str],
+        def _format_failed_rows(rows: List[str],
                                 error_msg: str) -> List[Dict[str, str]]:
             return [{'global_key': r, 'error': error_msg} for r in rows]
 
@@ -1279,14 +1279,8 @@ class Client:
                 } jobStatus}}
             """
         result_params = {
-            "jobId":
-                clear_global_keys_job["clearGlobalKeys"]["jobId"]
+            "jobId": clear_global_keys_job["clearGlobalKeys"]["jobId"]
         }
-
-        def _format_failed_rows(rows: List[str],
-                                error_msg: str) -> List[Dict[str, str]]:
-            return [{'global_key': r, 'error': error_msg} for r in rows]
-
         # Poll job status until finished, then retrieve results
         sleep_time = 2
         start_time = time.time()
@@ -1300,11 +1294,14 @@ class Client:
                     _format_failed_rows(data['failedToClearGlobalKeys'],
                                         "Clearing global key failed"))
                 errors.extend(
-                    _format_failed_rows(data['notFoundGlobalKeys'],
-                                        "Failed to find data row matching provided global key"))
+                    _format_failed_rows(
+                        data['notFoundGlobalKeys'],
+                        "Failed to find data row matching provided global key"))
                 errors.extend(
-                    _format_failed_rows(data['accessDeniedGlobalKeys'],
-                                        "Denied access to modify data row matching provided global key"))
+                    _format_failed_rows(
+                        data['accessDeniedGlobalKeys'],
+                        "Denied access to modify data row matching provided global key"
+                    ))
 
                 if not errors:
                     status = CollectionJobStatus.SUCCESS.value
@@ -1325,8 +1322,7 @@ class Client:
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
                 raise labelbox.exceptions.TimeoutError(
-                    "Timed out waiting for clear_global_keys job to complete."
-                )
+                    "Timed out waiting for clear_global_keys job to complete.")
             time.sleep(sleep_time)
 
     def get_catalog_slice(self, slice_id) -> CatalogSlice:
