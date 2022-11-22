@@ -97,7 +97,7 @@ class Organization(DbObject):
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Entity.Invite(self.client, invite_response)
 
-    def bulk_invite_users(self, invites=List["Invite"]) -> Dict[str, Invite]:
+    def bulk_invite_users(self, invites=List["Invite"]) -> Dict[str, List["Invite"]]:
         """
         Invite up to 1000 new members to the org. This will send each new user an email invite
 
