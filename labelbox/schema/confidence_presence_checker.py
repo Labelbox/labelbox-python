@@ -1,15 +1,4 @@
-from typing import Any, Dict, List, Union
-
-from labelbox.data.annotation_types.annotation import (
-    ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation,
-    VideoObjectAnnotation)
-from labelbox.data.annotation_types.classification.classification import (
-    Checklist, ClassificationAnswer, Dropdown, Radio, Text)
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.annotation_types.metrics.confusion_matrix import \
-    ConfusionMatrixMetric
-from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
-from labelbox.data.serialization.ndjson.converter import NDJsonConverter
+from typing import Any, Dict, List, Set
 
 
 class LabelsConfidencePresenceChecker:
@@ -19,49 +8,23 @@ class LabelsConfidencePresenceChecker:
 
     @classmethod
     def check(cls, raw_labels: List[Dict[str, Any]]):
-        label_list = NDJsonConverter.deserialize(raw_labels).as_list()
-        return any([cls._check_label(x) for x in label_list])
+        keys = set([])
+        cls._collect_keys_from_list(raw_labels, keys)
+        return len(keys.intersection(set(["confidence"]))) == 1
 
     @classmethod
-    def _check_label(cls, label: Label):
-        return any([cls._check_annotation(x) for x in label.annotations])
+    def _collect_keys_from_list(cls, objects: List[Dict[str, Any]], keys: Set):
+        for obj in objects:
+            if isinstance(obj, (list, tuple)):
+                cls._collect_keys_from_list(obj, keys)
+            elif isinstance(obj, dict):
+                cls._collect_keys_from_object(obj, keys)
 
     @classmethod
-    def _check_annotation(cls, annotation: Union[ClassificationAnnotation,
-                                                 ObjectAnnotation,
-                                                 VideoObjectAnnotation,
-                                                 VideoClassificationAnnotation,
-                                                 ScalarMetric,
-                                                 ConfusionMatrixMetric]):
-
-        confidence: Union[float,
-                          None] = getattr(annotation, 'confidence') if hasattr(
-                              annotation, 'confidence') else None
-        if confidence is not None:
-            return True
-
-        classifications: Union[List[ClassificationAnnotation], None] = getattr(
-            annotation, 'classifications') if hasattr(
-                annotation, 'classifications') else None
-        if classifications:
-            return any([cls._check_classification(x) for x in classifications])
-        return False
-
-    @classmethod
-    def _check_classification(cls,
-                              classification: ClassificationAnnotation) -> bool:
-        if isinstance(classification.value, (Checklist, Dropdown)):
-            return any(
-                cls._check_classification_answer(x)
-                for x in classification.value.answer)
-        if isinstance(classification.value, Radio):
-            return cls._check_classification_answer(classification.value.answer)
-        if isinstance(classification.value, Text):
-            return False
-        raise Exception(
-            f"Unexpected classification value type {type(classification.value)}"
-        )
-
-    @classmethod
-    def _check_classification_answer(cls, answer: ClassificationAnswer) -> bool:
-        return answer.confidence is not None
+    def _collect_keys_from_object(cls, object: Dict[str, Any], keys: Set):
+        for key in object:
+            keys.add(key)
+            if isinstance(object[key], dict):
+                cls._collect_keys_from_object(object[key], keys)
+            if isinstance(object[key], (list, tuple)):
+                cls._collect_keys_from_list(object[key], keys)
