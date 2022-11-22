@@ -8,12 +8,12 @@ class LabelsConfidencePresenceChecker:
 
     @classmethod
     def check(cls, raw_labels: List[Dict[str, Any]]):
-        keys = set([])
+        keys: Set[str] = set([])
         cls._collect_keys_from_list(raw_labels, keys)
         return len(keys.intersection(set(["confidence"]))) == 1
 
     @classmethod
-    def _collect_keys_from_list(cls, objects: List[Dict[str, Any]], keys: Set):
+    def _collect_keys_from_list(cls, objects: List[Dict[str, Any]], keys: Set[str]):
         for obj in objects:
             if isinstance(obj, (list, tuple)):
                 cls._collect_keys_from_list(obj, keys)
@@ -21,7 +21,7 @@ class LabelsConfidencePresenceChecker:
                 cls._collect_keys_from_object(obj, keys)
 
     @classmethod
-    def _collect_keys_from_object(cls, object: Dict[str, Any], keys: Set):
+    def _collect_keys_from_object(cls, object: Dict[str, Any], keys: Set[str]):
         for key in object:
             keys.add(key)
             if isinstance(object[key], dict):
