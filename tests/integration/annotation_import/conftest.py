@@ -368,12 +368,10 @@ def model_run_predictions(polygon_inference, rectangle_inference,
 # also used for label imports
 @pytest.fixture
 def object_predictions(polygon_inference, rectangle_inference, line_inference,
-                       entity_inference, segmentation_inference,
-                       segmentation_inference_rle, segmentation_inference_png):
+                       entity_inference, segmentation_inference):
     return [
         polygon_inference, rectangle_inference, line_inference,
-        entity_inference, segmentation_inference, segmentation_inference_rle,
-        segmentation_inference_png
+        entity_inference, segmentation_inference
     ]
 
 
