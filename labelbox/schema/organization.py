@@ -1,4 +1,3 @@
-from tqdm import tqdm
 from typing import TYPE_CHECKING, List, Optional, Dict
 
 from labelbox.exceptions import LabelboxError
@@ -128,7 +127,7 @@ class Organization(DbObject):
 
         data_params = list()
         inviter_user_id = self.client.get_user().uid
-        for invite in tqdm(invites):
+        for invite in invites:
             project_roles = None
             if "email" not in invite:
                 raise KeyError(f"Each invite should have an `email` key!")
