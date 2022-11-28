@@ -38,7 +38,7 @@ class ScalarMetric(BaseMetric):
         if name is None:
             return None
         clean_name = name.lower().strip()
-        if name.lower().strip() in RESERVED_METRIC_NAMES:
+        if clean_name in RESERVED_METRIC_NAMES:
             raise ValueError(f"`{clean_name}` is a reserved metric name. "
                              "Please provide another value for `metric_name`.")
         return name
