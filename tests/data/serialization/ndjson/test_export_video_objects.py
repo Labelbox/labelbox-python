@@ -593,7 +593,7 @@ def test_serialize_video_objects():
     manual_label = video_serialized_bbox_label()
 
     for key in label.keys():
-        #ignore uuid because we randomize if there was none
+        # ignore uuid because we randomize if there was none
         if key != "uuid":
             assert label[key] == manual_label[key]
 
@@ -605,3 +605,16 @@ def test_serialize_video_objects():
     deserialized_labels = NDJsonConverter.deserialize([label])
     label = next(deserialized_labels)
     assert len(label.annotations) == 6
+
+
+def test_confidence_is_ignored():
+    label = video_bbox_label()
+    serialized_labels = NDJsonConverter.serialize([label])
+    label = next(serialized_labels)
+    label["confidence"] = 0.453
+    label['segments'][0]["confidence"] = 0.453
+
+    deserialized_labels = NDJsonConverter.deserialize([label])
+    label = next(deserialized_labels)
+    for annotation in label.annotations:
+        assert annotation.confidence is None

@@ -41,7 +41,7 @@ def dataset_with_invalid_data_rows(unique_dataset: Dataset):
 def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
         {
-            "row_data": 'gs://lb-test-private/mask-2.png',  # forbidden
+            "row_data": 'gs://invalid-bucket/example.png',  # forbidden
             "external_id": "image-without-access.jpg"
         },
     ] * 2)

@@ -7,6 +7,7 @@
     "classifications": [],
     "page": 4,
     "unit": "POINTS",
+    "confidence": 0.99,
     "bbox": {
         "top": 162.73,
         "left": 32.45,
@@ -52,6 +53,7 @@
     "classifications": [],
     "page": 7,
     "unit": "POINTS",
+    "confidence": 0.74,
     "bbox": {
         "top": 117.39,
         "left": 4.25,
