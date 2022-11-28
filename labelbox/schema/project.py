@@ -574,7 +574,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_batch(self,
                      name: str,
-                     data_rows: List[str],
+                     data_rows: List[Union[str, Entity.DataRow]],
                      priority: int = 5,
                      consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
