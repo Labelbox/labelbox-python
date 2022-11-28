@@ -4,7 +4,7 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union, Type
 from urllib.parse import urlparse
 
 import ndjson
@@ -21,6 +21,7 @@ from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.data_row import DataRow
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -574,7 +575,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_batch(self,
                      name: str,
-                     data_rows: List[Union[str, Entity.DataRow]],
+                     data_rows: List[Union[str, Type[DataRow]]],
                      priority: int = 5,
                      consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
