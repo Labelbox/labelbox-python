@@ -606,7 +606,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("You need at least one data row in a batch")
 
         self._wait_until_data_rows_are_processed(
-            data_rows, self._wait_processing_max_seconds)
+            dr_ids, self._wait_processing_max_seconds)
         method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
