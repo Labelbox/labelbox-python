@@ -4,7 +4,7 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
 import ndjson
@@ -575,7 +575,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_batch(self,
                      name: str,
-                     data_rows: List[Union[str, Type[DataRow]]],
+                     data_rows: List[Union[str, DataRow]],
                      priority: int = 5,
                      consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
