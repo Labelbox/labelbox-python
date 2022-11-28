@@ -2,6 +2,7 @@ from typing import Optional, TypedDict
 from labelbox_dev.entity import Entity
 
 from labelbox_dev.session import Session
+from labelbox_dev import utils
 
 DATASET_RESOURCE = "datasets"
 
@@ -34,7 +35,7 @@ class Dataset(Entity):
         self.from_json(json)
 
     def from_json(self, json) -> "Dataset":
-        self.json = json
+        self.json = utils.format_json_to_snake_case(json)
         self.id = json['id']
         self.name = json['name']
         self.description = json['description']

@@ -1,6 +1,7 @@
 from typing import List, Optional, TypedDict, Union
 from labelbox_dev.entity import Entity
 from labelbox_dev.session import Session
+from labelbox_dev import utils
 
 DATA_ROW_RESOURCE = "data-rows"
 
@@ -23,6 +24,7 @@ class CreateDataRowType(TypedDict):
     row_data: str
     attachments: List[AttachmentsType]
     metadata: List[MetadataType]
+    media_type: Optional[str]
 
 
 class UpdateDataRowType(TypedDict):
@@ -74,7 +76,7 @@ class DataRow(Entity):
         self.from_json(json)
 
     def from_json(self, json) -> "DataRow":
-        self.json = json
+        self.json = utils.format_json_to_snake_case(json)
         self.id = json['id']
         self.global_key = json['global_key']
         self.external_id = json['external_id']
@@ -84,16 +86,18 @@ class DataRow(Entity):
         self.dataset_id = json['dataset_id']
         self.created_by_id = json['created_by_id']
         self.organization_id = json['organization_id']
+        self.attachments = json['attachments']
+        self.metadata = json['metadata']
 
         return self
 
-    def metadata(self):
-        # TODO: Get metadata
-        pass
+    # def metadata(self):
+    #     # TODO: Get metadata
+    #     pass
 
-    def attachments(self):
-        # TODO: Get attachments
-        pass
+    # def attachments(self):
+    #     # TODO: Get attachments
+    #     pass
 
     def media_attributes(self):
         # TODO: Get media attributes
