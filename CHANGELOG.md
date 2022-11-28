@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.30.2 (2022-11-28)
+### Added
+* Added `client.clear_global_keys()` to remove global keys from their associated data rows
+
 # Version 3.30.1 (2022-11-16)
 ### Fixed
 * Running `project.setup_editor()` multiple times no longer resets the ontology, and instead raises an error if the editor is already set up for the project
