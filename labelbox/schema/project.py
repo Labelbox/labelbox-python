@@ -21,6 +21,7 @@ from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.data_row import DataRow
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -574,7 +575,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def create_batch(self,
                      name: str,
-                     data_rows: List[str],
+                     data_rows: List[Union[str, DataRow]],
                      priority: int = 5,
                      consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
@@ -606,7 +607,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("You need at least one data row in a batch")
 
         self._wait_until_data_rows_are_processed(
-            data_rows, self._wait_processing_max_seconds)
+            dr_ids, self._wait_processing_max_seconds)
         method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
               project(where: {id: $projectId}) {
