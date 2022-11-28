@@ -34,7 +34,9 @@ class ScalarMetric(BaseMetric):
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
     @validator('metric_name')
-    def validate_metric_name(cls, name: str):
+    def validate_metric_name(cls, name: Union[str, None]):
+        if name is None:
+            return None
         clean_name = name.lower().strip()
         if name.lower().strip() in RESERVED_METRIC_NAMES:
             raise ValueError(f"`{clean_name}` is a reserved metric name. "
