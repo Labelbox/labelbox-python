@@ -62,6 +62,7 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 | Text Annotation Import | [Github](annotation_import/text.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/text.ipynb) |
 | Tiled Imagery Annotation Import    | [Github](annotation_import/tiled.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/tiled.ipynb) |
 | Video Model-Assisted Labeling                    | [Github](annotation_import/video.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/video.ipynb) | 
+| PDF Annotation Import | [Github](annotation_import/pdf.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/pdf.ipynb) |
 ------
 
 ## [Project Configuration](project_configuration)

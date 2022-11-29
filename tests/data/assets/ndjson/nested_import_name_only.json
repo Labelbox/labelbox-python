@@ -1,48 +1,88 @@
 [
-    {
-      "bbox": { "height": 350, "left": 2275, "top": 1352, "width": 139 },
-      "classifications": [
-        {
-          "answer": { "name": "first answer" },
-          "name": "classification a"
-        }
-      ],
-      "dataRow": { "id": "ckrb1sf1i1g7i0ybcdc6oc8ct" },
-      "name": "box a",
-      "uuid": "f6879f59-d2b5-49c2-aceb-d9e8dc478673"
+  {
+    "bbox": {
+      "height": 350,
+      "left": 2275,
+      "top": 1352,
+      "width": 139
     },
-    {
-      "bbox": { "height": 428, "left": 2089, "top": 1251, "width": 158 },
-      "classifications": [
-        {
-          "answer": { "name": "second answer" },
-          "name": "classification b"
-        }
-      ],
-      "dataRow": { "id": "ckrb1sf1i1g7i0ybcdc6oc8ct" },
-      "name": "box b",
-      "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+    "classifications": [
+      {
+        "answer": {
+          "name": "first answer",
+          "confidence": 0.811
+        },
+        "name": "classification a"
+      }
+    ],
+    "dataRow": {
+      "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
     },
-    {
-      "bbox": { "height": 428, "left": 2089, "top": 1251, "width": 158 },
-      "classifications": [
-        {
-          "answer": [{ "name": "third answer" }],
-          "name": "classification c"
-        }
-      ],
-      "dataRow": { "id": "ckrb1sf1i1g7i0ybcdc6oc8ct" },
-      "name": "box c",
-      "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+    "name": "box a",
+    "uuid": "f6879f59-d2b5-49c2-aceb-d9e8dc478673"
+  },
+  {
+    "bbox": {
+      "height": 428,
+      "left": 2089,
+      "top": 1251,
+      "width": 158
     },
-    {
-      "bbox": { "height": 428, "left": 2089, "top": 1251, "width": 158 },
-      "classifications": [
-        { "answer": "a string", "name": "a string" }
-      ],
-      "dataRow": { "id": "ckrb1sf1i1g7i0ybcdc6oc8ct" },
-      "name": "box c",
-      "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
-    }
-  ]
-  
+    "classifications": [
+      {
+        "answer": {
+          "name": "second answer",
+          "confidence": 0.815
+        },
+        "name": "classification b"
+      }
+    ],
+    "dataRow": {
+      "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "name": "box b",
+    "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+  },
+  {
+    "bbox": {
+      "height": 428,
+      "left": 2089,
+      "top": 1251,
+      "width": 158
+    },
+    "classifications": [
+      {
+        "answer": [
+          {
+            "name": "third answer"
+          }
+        ],
+        "name": "classification c"
+      }
+    ],
+    "dataRow": {
+      "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "name": "box c",
+    "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+  },
+  {
+    "bbox": {
+      "height": 428,
+      "left": 2089,
+      "top": 1251,
+      "width": 158
+    },
+    "classifications": [
+      {
+        "answer": "a string",
+        "name": "a string"
+      }
+    ],
+    "dataRow": {
+      "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "name": "box c",
+    "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+  }
+]

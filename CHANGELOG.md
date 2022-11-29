@@ -1,6 +1,16 @@
 # Changelog
 
+# Version 3.31.0 (2022-11-28)
+### Added
+* Added `client.clear_global_keys()` to remove global keys from their associated data rows
+* Added a new attribute `confidence` to `AnnotationObject` and `ClassificationAnswer` for Model Error Analysis
+
+### Fixed
+* Fixed `project.create_batch()` to work with both data_row_ids and data_row objects
+
 # Version 3.30.1 (2022-11-16)
+### Added
+* Added step to `project.create_batch()` to wait for data rows to finish processing
 ### Fixed
 * Running `project.setup_editor()` multiple times no longer resets the ontology, and instead raises an error if the editor is already set up for the project
 
