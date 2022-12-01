@@ -1,6 +1,8 @@
 import abc
 from typing import Any, Dict, List, Optional, Union
 
+from labelbox.data.mixins import ConfidenceNotSupportedMixin, ConfidenceMixin
+
 from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
 from .geometry import Geometry, Rectangle, Point
@@ -31,7 +33,7 @@ class ClassificationAnnotation(BaseAnnotation):
     value: Union[Text, Checklist, Radio, Dropdown]
 
 
-class ObjectAnnotation(BaseAnnotation):
+class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
     """Generic localized annotation (non classifications)
 
     >>> ObjectAnnotation(
@@ -53,7 +55,7 @@ class ObjectAnnotation(BaseAnnotation):
     classifications: List[ClassificationAnnotation] = []
 
 
-class VideoObjectAnnotation(ObjectAnnotation):
+class VideoObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin):
     """Video object annotation
 
     >>> VideoObjectAnnotation(
@@ -76,6 +78,7 @@ class VideoObjectAnnotation(ObjectAnnotation):
         classifications (List[ClassificationAnnotation]) = []
         extra (Dict[str, Any])
     """
+
     frame: int
     keyframe: bool
     segment_index: Optional[int] = None

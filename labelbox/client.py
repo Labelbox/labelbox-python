@@ -1229,6 +1229,102 @@ class Client:
                 )
             time.sleep(sleep_time)
 
+    def clear_global_keys(
+            self,
+            global_keys: List[str],
+            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
+        """
+        Clears global keys for the data rows tha correspond to the global keys provided.
+
+        Args:
+            A list of global keys
+        Returns:
+            Dictionary containing 'status', 'results' and 'errors'.
+
+            'Status' contains the outcome of this job. It can be one of
+            'Success', 'Partial Success', or 'Failure'.
+
+            'Results' contains a list global keys that were successfully cleared.
+
+            'Errors' contains a list of global_keys correspond to the data rows that could not be 
+            modified, accessed by the user, or not found. 
+        Examples:
+            >>> job_result = client.get_data_row_ids_for_global_keys(["key1","key2"])
+            >>> print(job_result['status'])
+            Partial Success
+            >>> print(job_result['results'])
+            ['cl7tv9wry00hlka6gai588ozv', 'cl7tv9wxg00hpka6gf8sh81bj']
+            >>> print(job_result['errors'])
+            [{'global_key': 'asdf', 'error': 'Data Row not found'}]
+        """
+
+        def _format_failed_rows(rows: List[str],
+                                error_msg: str) -> List[Dict[str, str]]:
+            return [{'global_key': r, 'error': error_msg} for r in rows]
+
+        # Start get data rows for global keys job
+        query_str = """mutation clearGlobalKeysPyApi($globalKeys: [ID!]!) {
+            clearGlobalKeys(where: {ids: $globalKeys}) { jobId}}
+            """
+        params = {"globalKeys": global_keys}
+        clear_global_keys_job = self.execute(query_str, params)
+
+        # Query string for retrieving job status and result, if job is done
+        result_query_str = """query clearGlobalKeysResultPyApi($jobId: ID!) {
+            clearGlobalKeysResult(jobId: {id: $jobId}) { data { 
+                clearedGlobalKeys
+                failedToClearGlobalKeys
+                notFoundGlobalKeys
+                accessDeniedGlobalKeys
+                } jobStatus}}
+            """
+        result_params = {
+            "jobId": clear_global_keys_job["clearGlobalKeys"]["jobId"]
+        }
+        # Poll job status until finished, then retrieve results
+        sleep_time = 2
+        start_time = time.time()
+        while True:
+            res = self.execute(result_query_str, result_params)
+            if res["clearGlobalKeysResult"]['jobStatus'] == "COMPLETE":
+                data = res["clearGlobalKeysResult"]['data']
+                results, errors = [], []
+                results.extend(data['clearedGlobalKeys'])
+                errors.extend(
+                    _format_failed_rows(data['failedToClearGlobalKeys'],
+                                        "Clearing global key failed"))
+                errors.extend(
+                    _format_failed_rows(
+                        data['notFoundGlobalKeys'],
+                        "Failed to find data row matching provided global key"))
+                errors.extend(
+                    _format_failed_rows(
+                        data['accessDeniedGlobalKeys'],
+                        "Denied access to modify data row matching provided global key"
+                    ))
+
+                if not errors:
+                    status = CollectionJobStatus.SUCCESS.value
+                elif errors and len(results) > 0:
+                    status = CollectionJobStatus.PARTIAL_SUCCESS.value
+                else:
+                    status = CollectionJobStatus.FAILURE.value
+
+                if errors:
+                    logger.warning(
+                        "There are errors present. Please look at 'errors' in the returned dict for more details"
+                    )
+
+                return {"status": status, "results": results, "errors": errors}
+            elif res["clearGlobalKeysResult"]['jobStatus'] == "FAILED":
+                raise labelbox.exceptions.LabelboxError(
+                    "Job clearGlobalKeys failed.")
+            current_time = time.time()
+            if current_time - start_time > timeout_seconds:
+                raise labelbox.exceptions.TimeoutError(
+                    "Timed out waiting for clear_global_keys job to complete.")
+            time.sleep(sleep_time)
+
     def get_catalog_slice(self, slice_id) -> CatalogSlice:
         """
         Fetches a Catalog Slice by ID.

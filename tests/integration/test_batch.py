@@ -41,7 +41,7 @@ def dataset_with_invalid_data_rows(unique_dataset: Dataset):
 def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
         {
-            "row_data": 'gs://lb-test-private/mask-2.png',  # forbidden
+            "row_data": 'gs://invalid-bucket/example.png',  # forbidden
             "external_id": "image-without-access.jpg"
         },
     ] * 2)
@@ -56,8 +56,8 @@ def test_create_batch(batch_project: Project, big_dataset: Dataset):
 
 
 def test_create_batch_with_consensus_settings(batch_project: Project,
-                                              big_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
+                                              small_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     consensus_settings = {"coverage_percentage": 0.1, "number_of_labels": 3}
     batch = batch_project.create_batch("batch with consensus settings",
                                        data_rows,
@@ -66,6 +66,14 @@ def test_create_batch_with_consensus_settings(batch_project: Project,
     assert batch.name == "batch with consensus settings"
     assert batch.size == len(data_rows)
     assert batch.consensus_settings == consensus_settings
+
+
+def test_create_batch_with_data_row_class(batch_project: Project,
+                                          small_dataset: Dataset):
+    data_rows = list(small_dataset.export_data_rows())
+    batch = batch_project.create_batch("test-batch-data-rows", data_rows, 3)
+    assert batch.name == "test-batch-data-rows"
+    assert batch.size == len(data_rows)
 
 
 def test_archive_batch(batch_project: Project, small_dataset: Dataset):
