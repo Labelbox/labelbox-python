@@ -1,4 +1,4 @@
-from typing import List, Optional, TypedDict, Union
+from typing import Any, List, Optional, TypedDict, Union
 from labelbox_dev.entity import Entity
 from labelbox_dev.session import Session
 from labelbox_dev import utils
@@ -14,7 +14,7 @@ class AttachmentsType(TypedDict):
 
 class MetadataType(TypedDict):
     schema_id: str
-    value: Union[str, int]
+    value: Any
 
 
 class CreateDataRowType(TypedDict):
@@ -58,7 +58,6 @@ def get_by_global_keys(global_keys):
 def create(dataset_id, data_row: CreateDataRowType):
     create_data_row_input = {'dataset_id': dataset_id, 'data_row': data_row}
     # TODO: upload if row_data is local file
-    # TODO: accept metadata and attachments as part of the request
     data_row_json = Session.post_request(f"{DATA_ROW_RESOURCE}",
                                          json=create_data_row_input)
     return DataRow(data_row_json)
@@ -91,22 +90,8 @@ class DataRow(Entity):
 
         return self
 
-    # def metadata(self):
-    #     # TODO: Get metadata
-    #     pass
-
-    # def attachments(self):
-    #     # TODO: Get attachments
-    #     pass
-
-    def media_attributes(self):
-        # TODO: Get media attributes
-        pass
-
-    def delete(self) -> bool:
-        # TODO: Implement on backend
-        is_deleted = Session.delete_request(f"{DATA_ROW_RESOURCE}/{self.id}")
-        return is_deleted
+    def delete(self) -> None:
+        Session.delete_request(f"{DATA_ROW_RESOURCE}/{self.id}")
 
     def update(self, data_row_update: UpdateDataRowType) -> "DataRow":
         data_row_json = Session.patch_request(f"{DATA_ROW_RESOURCE}/{self.id}",

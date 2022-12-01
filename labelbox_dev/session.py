@@ -94,7 +94,7 @@ class Session:
                 'params': params,
                 'timeout': timeout
             }
-            print(request)
+            print(f"Request: {request}")
             response = requests.request(**request)
 
         except requests.exceptions.Timeout as e:
@@ -111,7 +111,6 @@ class Session:
 
         try:
             r_json = response.json()
-            print(r_json)
             print(
                 f"Response text: {response.text} Status code: {response.status_code}"
             )
