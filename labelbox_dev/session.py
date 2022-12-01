@@ -32,7 +32,6 @@ class Session:
         cls.base_api_url = base_api_url
         cls.api_url = f"{cls.base_api_url}/{API_PREFIX}"
         cls.headers = {
-            'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
@@ -95,7 +94,7 @@ class Session:
                 'params': params,
                 'timeout': timeout
             }
-            print(request)
+            print(f"Request: {request}")
             response = requests.request(**request)
 
         except requests.exceptions.Timeout as e:
@@ -107,9 +106,11 @@ class Session:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
 
+        if response.status_code is requests.codes.no_content:
+            return
+
         try:
             r_json = response.json()
-            print(r_json)
             print(
                 f"Response text: {response.text} Status code: {response.status_code}"
             )

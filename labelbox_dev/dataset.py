@@ -2,6 +2,7 @@ from typing import Optional, TypedDict
 from labelbox_dev.entity import Entity
 
 from labelbox_dev.session import Session
+from labelbox_dev import utils
 
 DATASET_RESOURCE = "datasets"
 
@@ -34,7 +35,7 @@ class Dataset(Entity):
         self.from_json(json)
 
     def from_json(self, json) -> "Dataset":
-        self.json = json
+        super().from_json(json)
         self.id = json['id']
         self.name = json['name']
         self.description = json['description']
@@ -46,9 +47,8 @@ class Dataset(Entity):
 
         return self
 
-    def delete(self) -> bool:
-        is_deleted = Session.delete_request(f"{DATASET_RESOURCE}/{self.id}")
-        return is_deleted
+    def delete(self) -> None:
+        Session.delete_request(f"{DATASET_RESOURCE}/{self.id}")
 
     def update(self, dataset_update: UpdateDatasetType) -> "Dataset":
         dataset_json = Session.patch_request(f"{DATASET_RESOURCE}/{self.id}",
