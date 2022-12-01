@@ -47,9 +47,8 @@ class Dataset(Entity):
 
         return self
 
-    def delete(self) -> bool:
+    def delete(self) -> None:
         Session.delete_request(f"{DATASET_RESOURCE}/{self.id}")
-        return True
 
     def update(self, dataset_update: UpdateDatasetType) -> "Dataset":
         dataset_json = Session.patch_request(f"{DATASET_RESOURCE}/{self.id}",
