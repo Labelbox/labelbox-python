@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
+from labelbox_dev import utils
 
 
 class Entity(ABC):
@@ -14,6 +15,5 @@ class Entity(ABC):
     def __str__(self):
         return "<%s %s>" % (self.__class__.__name__, self.json)
 
-    @abstractmethod
     def from_json(self, json):
-        raise NotImplementedError("Must implement the abstract method")
+        self.json = utils.format_json_to_snake_case(json)

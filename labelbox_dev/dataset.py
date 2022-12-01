@@ -35,7 +35,7 @@ class Dataset(Entity):
         self.from_json(json)
 
     def from_json(self, json) -> "Dataset":
-        self.json = utils.format_json_to_snake_case(json)
+        super().from_json(json)
         self.id = json['id']
         self.name = json['name']
         self.description = json['description']

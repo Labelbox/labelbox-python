@@ -75,7 +75,7 @@ class DataRow(Entity):
         self.from_json(json)
 
     def from_json(self, json) -> "DataRow":
-        self.json = utils.format_json_to_snake_case(json)
+        super().from_json(json)
         self.id = json['id']
         self.global_key = json['global_key']
         self.external_id = json['external_id']
