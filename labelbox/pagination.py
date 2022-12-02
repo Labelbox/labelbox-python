@@ -98,7 +98,7 @@ class PaginatedCollection:
 
         for value in self:
             if i >= n:
-              break
+                break
 
             results.append(value)
             i += 1
