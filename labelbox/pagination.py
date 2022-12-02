@@ -45,7 +45,7 @@ class PaginatedCollection:
         """
         self._fetched_all = False
         self._data: List[Dict[str, Any]] = []
-        self._data_index = 0
+        self._data_ind = 0
 
         pagination_kwargs = {
             'client': client,
@@ -62,11 +62,11 @@ class PaginatedCollection:
                 **pagination_kwargs)
 
     def __iter__(self):
-        self._data_index = 0
+        self._data_ind = 0
         return self
 
     def __next__(self):
-        if len(self._data) <= self._data_index:
+        if len(self._data) <= self._data_ind:
             if self._fetched_all:
                 raise StopIteration()
 
@@ -75,9 +75,9 @@ class PaginatedCollection:
             if len(page_data) == 0:
                 raise StopIteration()
 
-        next_value = self._data[self._data_index]
-        self._data_index += 1
-        return next_value
+        rval = self._data[self._data_ind]
+        self._data_ind += 1
+        return rval
 
     def get_one(self):
         """Iterates over self and returns first value
