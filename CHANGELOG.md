@@ -3,6 +3,7 @@
 # Version 3.32.0 (2022-12-02)
 ### Added
 * Added `HTML` Enum to `MediaType`. `HTML` is introduced as a new asset type in Labelbox.
+* Added `PaginatedCollection.get_one()` and `PaginatedCollection.get_many()` to provide easy functions to fetch single and bulk instances of data for any function returning a `PaginatedCollection`. E.g. `data_rows = dataset.data_rows().get_many(10)`
 
 # Version 3.31.0 (2022-11-28)
 ### Added
