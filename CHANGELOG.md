@@ -4,6 +4,10 @@
 ### Added
 * Added `HTML` Enum to `MediaType`. `HTML` is introduced as a new asset type in Labelbox.
 * Added `PaginatedCollection.get_one()` and `PaginatedCollection.get_many()` to provide easy functions to fetch single and bulk instances of data for any function returning a `PaginatedCollection`. E.g. `data_rows = dataset.data_rows().get_many(10)`
+* Added a validator under `ScalarMetric` to validate metric names against reserved metric names
+
+### Changed
+* In `iou.miou_metric()` and `iou.feature_miou_metric`, iou metric renamed as `custom_iou`
 
 # Version 3.31.0 (2022-11-28)
 ### Added
