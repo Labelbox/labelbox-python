@@ -21,7 +21,7 @@ project = 'Python SDK reference'
 copyright = '2021, Labelbox'
 author = 'Labelbox'
 
-release = '3.31.0'
+release = '3.32.0'
 
 # -- General configuration ---------------------------------------------------
 
