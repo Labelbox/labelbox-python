@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.32.0 (2022-12-02)
+### Added
+* Added `HTML` Enum to `MediaType`. `HTML` is introduced as a new asset type in Labelbox.
+
 # Version 3.31.0 (2022-11-28)
 ### Added
 * Added `client.clear_global_keys()` to remove global keys from their associated data rows
