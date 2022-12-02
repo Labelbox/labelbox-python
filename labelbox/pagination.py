@@ -79,6 +79,32 @@ class PaginatedCollection:
         self._data_ind += 1
         return rval
 
+    def get_one(self):
+        """Iterates over self and returns first value
+        This method is idempotent
+        """
+        for value in self:
+            return value
+
+    def get_many(self, n: int):
+        """Iterates over self and returns first n results
+        This method is idempotent
+
+        Args:
+            n (int): Number of elements to retrieve
+        """
+        results = []
+        i = 0
+
+        for value in self:
+            if i >= n:
+                break
+
+            results.append(value)
+            i += 1
+
+        return results
+
 
 class _Pagination(ABC):
 
