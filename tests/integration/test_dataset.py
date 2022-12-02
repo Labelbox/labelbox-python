@@ -21,6 +21,14 @@ def test_dataset(client, rand_gen):
     assert len(after) == len(before) + 1
     assert dataset in after
 
+    # confirm get_one returns first dataset
+    get_one_dataset = client.get_datasets().get_one()
+    assert get_one_dataset.uid == after[0].uid
+
+    # confirm get_many(1) returns first dataset
+    get_many_datasets = client.get_datasets().get_many(1)
+    assert get_many_datasets[0].uid == after[0].uid
+
     dataset = client.get_dataset(dataset.uid)
     assert dataset.name == name
 
