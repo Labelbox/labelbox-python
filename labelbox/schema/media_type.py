@@ -2,12 +2,12 @@ from enum import Enum
 
 
 class MediaType(Enum):
-    """add DOCUMENT, GEOSPATIAL_TILE, SIMPLE_TILE to match the UI choices"""
     Audio = "AUDIO"
     Conversational = "CONVERSATIONAL"
     Dicom = "DICOM"
     Document = "PDF"
     Geospatial_Tile = "TMS_GEO"
+    Html = "HTML"
     Image = "IMAGE"
     Json = "JSON"
     Pdf = "PDF"
