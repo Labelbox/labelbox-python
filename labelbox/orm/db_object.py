@@ -94,11 +94,7 @@ class DbObject(Entity):
             field.name: getattr(self, field.name) for field in self.fields()
         }
         return "<%s %s>" % (self.type_name().split(".")[-1],
-                            json.dumps(attribute_values, indent=4, default=str)
-
-
-
-                            )
+                            json.dumps(attribute_values, indent=4, default=str))
 
     def __eq__(self, other):
         return (isinstance(other, DbObject) and
