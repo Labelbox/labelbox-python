@@ -36,7 +36,7 @@ from labelbox.schema.role import Role
 from labelbox.schema.slice import CatalogSlice
 from labelbox.schema.queue_mode import QueueMode
 
-from labelbox.schema.media_type import MediaType
+from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
 logger = logging.getLogger(__name__)
 
@@ -853,8 +853,10 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self, name,
-                                             feature_schema_ids) -> Ontology:
+    def create_ontology_from_feature_schemas(self,
+                                             name,
+                                             feature_schema_ids,
+                                             media_type=None) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -862,6 +864,7 @@ class Client:
             name (str): Name of the ontology
             feature_schema_ids (List[str]): List of feature schema ids corresponding to
                 top level tools and classifications to include in the ontology
+            media_type (MediaType or None): Media type of a new ontology
         Returns:
             The created Ontology
         """
@@ -891,9 +894,9 @@ class Client:
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
         normalized = {'tools': tools, 'classifications': classifications}
-        return self.create_ontology(name, normalized)
+        return self.create_ontology(name, normalized, media_type)
 
-    def create_ontology(self, name, normalized) -> Ontology:
+    def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -910,13 +913,27 @@ class Client:
         Args:
             name (str): Name of the ontology
             normalized (dict): A normalized ontology payload. See above for details.
+            media_type (MediaType or None): Media type of a new ontology
         Returns:
             The created Ontology
         """
+
+        if media_type:
+            if MediaType.is_supported(media_type):
+                media_type = media_type.value
+            else:
+                raise get_media_type_validation_error(media_type)
+
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
                            upsertOntology(data: $data){ %s }
         } """ % query.results_query_part(Entity.Ontology)
-        params = {'data': {'name': name, 'normalized': json.dumps(normalized)}}
+        params = {
+            'data': {
+                'name': name,
+                'normalized': json.dumps(normalized),
+                'mediaType': media_type
+            }
+        }
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
@@ -1035,9 +1052,9 @@ class Client:
             )
 
         # Start assign global keys to data rows job
-        query_str = """mutation assignGlobalKeysToDataRowsPyApi($globalKeyDataRowLinks: [AssignGlobalKeyToDataRowInput!]!) { 
-            assignGlobalKeysToDataRows(data: {assignInputs: $globalKeyDataRowLinks}) { 
-                jobId 
+        query_str = """mutation assignGlobalKeysToDataRowsPyApi($globalKeyDataRowLinks: [AssignGlobalKeyToDataRowInput!]!) {
+            assignGlobalKeysToDataRows(data: {assignInputs: $globalKeyDataRowLinks}) {
+                jobId
             }
         }
         """
@@ -1172,7 +1189,7 @@ class Client:
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
-            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { 
+            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data {
                 fetchedDataRows { id }
                 notFoundGlobalKeys
                 accessDeniedGlobalKeys
@@ -1246,8 +1263,8 @@ class Client:
 
             'Results' contains a list global keys that were successfully cleared.
 
-            'Errors' contains a list of global_keys correspond to the data rows that could not be 
-            modified, accessed by the user, or not found. 
+            'Errors' contains a list of global_keys correspond to the data rows that could not be
+            modified, accessed by the user, or not found.
         Examples:
             >>> job_result = client.get_data_row_ids_for_global_keys(["key1","key2"])
             >>> print(job_result['status'])
@@ -1271,7 +1288,7 @@ class Client:
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query clearGlobalKeysResultPyApi($jobId: ID!) {
-            clearGlobalKeysResult(jobId: {id: $jobId}) { data { 
+            clearGlobalKeysResult(jobId: {id: $jobId}) { data {
                 clearedGlobalKeys
                 failedToClearGlobalKeys
                 notFoundGlobalKeys
