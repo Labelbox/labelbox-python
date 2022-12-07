@@ -55,6 +55,16 @@ def test_create_batch(batch_project: Project, big_dataset: Dataset):
     assert batch.size == len(data_rows)
 
 
+def test_create_batch_async(batch_project: Project, big_dataset: Dataset):
+    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
+    batch_project._wait_until_data_rows_are_processed(
+        data_rows, batch_project._wait_processing_max_seconds)
+    batch = batch_project._create_batch_async("big-batch", data_rows, 3)
+    assert batch.name == "big-batch"
+    assert batch.size == len(data_rows)
+
+
+@pytest.mark.skip()
 def test_create_batch_with_consensus_settings(batch_project: Project,
                                               small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
