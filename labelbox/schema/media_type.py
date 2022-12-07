@@ -4,6 +4,7 @@ from enum import Enum
 class MediaType(Enum):
     Audio = "AUDIO"
     Conversational = "CONVERSATIONAL"
+    Conversational_Tokens = "CONVERSATIONAL_TOKENS"
     Dicom = "DICOM"
     Document = "PDF"
     Geospatial_Tile = "TMS_GEO"
@@ -13,6 +14,7 @@ class MediaType(Enum):
     Pdf = "PDF"
     Simple_Tile = "TMS_SIMPLE"
     Text = "TEXT"
+    Text_Tokens = "TEXT_TOKENS"
     Tms_Geo = "TMS_GEO"
     Tms_Simple = "TMS_SIMPLE"
     Video = "VIDEO"
