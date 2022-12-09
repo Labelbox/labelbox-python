@@ -655,7 +655,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def _create_batch_async(self,
                             name: str,
-                            dr_ids: [str],
+                            dr_ids: List[str],
                             priority: int = 5,
                             consensus_settings: Optional[Dict[str,
                                                               float]] = None):
