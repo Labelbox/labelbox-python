@@ -64,7 +64,6 @@ def test_create_batch_async(batch_project: Project, big_dataset: Dataset):
     assert batch.size == len(data_rows)
 
 
-@pytest.mark.skip()
 def test_create_batch_with_consensus_settings(batch_project: Project,
                                               small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
