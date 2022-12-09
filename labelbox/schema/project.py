@@ -750,7 +750,8 @@ class Project(DbObject, Updateable, Deletable):
             elif task_status == "IN_PROGRESS":
                 timeout_seconds -= sleep_time
                 if timeout_seconds <= 0:
-                    raise LabelboxError(f"Timed out while waiting for batch to be created.")
+                    raise LabelboxError(
+                        f"Timed out while waiting for batch to be created.")
                 logger.debug("Creating batch, waiting for server...", self.uid)
                 time.sleep(sleep_time)
                 continue
