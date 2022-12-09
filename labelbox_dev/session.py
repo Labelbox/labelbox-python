@@ -1,12 +1,10 @@
-from imp import init_builtin
 import logging
 import os
-
 import requests
 import requests.exceptions
-from labelbox import utils
 
-import labelbox.exceptions
+from labelbox import utils
+from labelbox_dev.exceptions import AuthenticationError, LabelboxError, NetworkError, TimeoutError
 from labelbox_dev import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
@@ -24,8 +22,7 @@ class Session:
     def initialize(cls, base_api_url="https://api.labelbox.com", api_key=None):
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
-                raise labelbox.exceptions.AuthenticationError(
-                    "Labelbox API key not provided")
+                raise AuthenticationError("Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         logger.info("Initializing Labelbox session at '%s'", base_api_url)
         cls.api_key = api_key
@@ -79,8 +76,7 @@ class Session:
                       json=None,
                       timeout=DEFAULT_TIMEOUT):
         if not cls.initialized:
-            raise labelbox.exceptions.LabelboxError(
-                "Session has not been initialized")
+            raise LabelboxError("Session has not been initialized")
 
         if uri.startswith('/'):
             uri = uri.lstrip('/')
@@ -98,32 +94,33 @@ class Session:
             response = requests.request(**request)
 
         except requests.exceptions.Timeout as e:
-            raise labelbox.exceptions.TimeoutError(str(e))
+            raise TimeoutError(str(e))
         except requests.exceptions.RequestException as e:
             logger.error("Unknown error: %s", str(e))
-            raise labelbox.exceptions.NetworkError(e)
+            raise NetworkError(e)
         except Exception as e:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
 
         if response.status_code is requests.codes.no_content:
             return
 
         try:
+            print(response.content)
             r_json = response.json()
             print(
                 f"Response text: {response.text} Status code: {response.status_code}"
             )
         except:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s" % response.text)
+            raise LabelboxError("Failed to parse response as JSON: %s" %
+                                response.text)
 
         if response.status_code not in [
                 requests.codes.ok, requests.codes.created
         ]:
             message = f"{response.status_code} {response.reason}"
             cause = r_json['message']
-            raise labelbox.exceptions.LabelboxError(message, cause)
+            raise LabelboxError(message, cause)
 
         return {utils.snake_case(key): value for key, value in r_json.items()}
 

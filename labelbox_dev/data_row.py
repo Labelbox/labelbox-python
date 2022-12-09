@@ -1,7 +1,8 @@
 from typing import Any, List, Optional, TypedDict, Union
 from labelbox_dev.entity import Entity
 from labelbox_dev.session import Session
-from labelbox_dev import utils
+from labelbox_dev.task import DataRowImportTask
+from labelbox_dev.exceptions import LabelboxError
 
 DATA_ROW_RESOURCE = "data-rows"
 
@@ -56,16 +57,25 @@ def get_by_global_keys(global_keys):
 
 
 def create(dataset_id, data_row: CreateDataRowType):
+    # TODO: Handle row_data as local file
     create_data_row_input = {'dataset_id': dataset_id, 'data_row': data_row}
-    # TODO: upload if row_data is local file
     data_row_json = Session.post_request(f"{DATA_ROW_RESOURCE}",
                                          json=create_data_row_input)
     return DataRow(data_row_json)
 
 
 def create_many(dataset_id, data_rows: List[CreateDataRowType]):
-    # TODO: Bulk creation and handling local files
-    pass
+    # TODO: Handle row_data as local file
+    create_data_rows_input = {'dataset_id': dataset_id, 'data_rows': data_rows}
+    task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkcreate",
+                                     json=create_data_rows_input)
+    task_id = task_json.get('task_id')
+
+    if task_id is None:
+        raise LabelboxError(
+            f"Failed to retrieve task information for `data_row.create_many()` operation"
+        )
+    return DataRowImportTask.get_by_id(task_id)
 
 
 class DataRow(Entity):

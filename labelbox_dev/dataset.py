@@ -1,8 +1,6 @@
 from typing import Optional, TypedDict
 from labelbox_dev.entity import Entity
-
 from labelbox_dev.session import Session
-from labelbox_dev import utils
 
 DATASET_RESOURCE = "datasets"
 
