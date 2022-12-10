@@ -3,7 +3,7 @@ import json
 from labelbox_dev.utils import format_json_to_snake_case
 
 
-class Entity():
+class Entity:
 
     def __init__(self, json):
         self.json = json

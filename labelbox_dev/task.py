@@ -23,11 +23,15 @@ class TaskStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
 
 
+class TaskType(Enum):
+    DATA_ROW_IMPORT = "DATA_ROW_IMPORT"
+
+
 class BaseTask(Entity, ABC):
     """ Abstract class representing an asynchronous task
     """
 
-    _task_url: str
+    task_type: TaskType
 
     def __init__(self, json):
         super().__init__(json)
@@ -35,21 +39,23 @@ class BaseTask(Entity, ABC):
 
     def from_json(self, json) -> "BaseTask":
         super().from_json(json)
-        self.id = json['id']
-        self.updated_at = json['updated_at']
-        self.created_at = json['created_at']
-        self.status = json['status']
-        self.name = json['name']
-        self.completion_percentage = json['completion_percentage']
-        self.result_url = json['result_url']
+        self.id = self.json['id']
+        self.updated_at = self.json['updated_at']
+        self.created_at = self.json['created_at']
+        self.status = self.json['status']
+        self.name = self.json['name']
+        self.completion_percentage = self.json['completion_percentage']
+        self.result_url = self.json['result_url']
 
     @classmethod
     def get_by_id(cls, task_id) -> "BaseTask":
-        task_json = Session.get_request(f"{cls._task_url}/{task_id}")
+        task_json = Session.get_request(f"{TASK_RESOURCE}/{task_id}",
+                                        {'task_type': cls.task_type.name})
         return cls(task_json)
 
     def refresh(self) -> "BaseTask":
-        task_json = Session.get_request(f"{self._task_url}/{self.id}")
+        task_json = Session.get_request(f"{TASK_RESOURCE}/{self.id}",
+                                        {'task_type': self.task_type.name})
         return self.from_json(task_json)
 
     @abstractmethod
@@ -101,7 +107,7 @@ class DataRowImportTask(BulkTask):
     """ Asynchronous task representing bulk data_row create job
     """
 
-    _task_url = f"{TASK_RESOURCE}/data-row-import"
+    task_type = TaskType.DATA_ROW_IMPORT
 
     def __init__(self, json):
         super().__init__(json)
@@ -121,6 +127,7 @@ class DataRowImportTask(BulkTask):
         else:
             return download_result()
 
+    # TODO: Need to paginate results
     @property
     def results(self) -> Union[Dict[str, Any], None]:
         task_result = self.fetch_result()
@@ -128,20 +135,27 @@ class DataRowImportTask(BulkTask):
             logger.warning(
                 "Task has failed. Please look at `task.errors` for more details"
             )
-            return
+            return None
 
-        return [
+        result = {}
+        result['created_data_rows'] = [
             format_json_to_snake_case(dr)
             for dr in task_result['createdDataRows']
         ]
+        return result
 
     @property
     def errors(self) -> Union[Dict[str, Any], None]:
         task_result = self.fetch_result()
         # TODO: Improve error message from backend
-        if 'error' in task_result or ('errors' in task_result and
-                                      len(task_result['errors']) != 0):
-            return task_result
+        errors = {}
+        if 'errors' in task_result and len(task_result['errors']) != 0:
+            errors['errors'] = task_result['errors']
+        if 'failedDataRows' in task_result:
+            errors['failed_data_rows'] = task_result['failedDataRows']
+
+        if errors:
+            return errors
 
         return None
 

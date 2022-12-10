@@ -122,7 +122,7 @@ class Session:
             cause = r_json['message']
             raise LabelboxError(message, cause)
 
-        return {utils.snake_case(key): value for key, value in r_json.items()}
+        return r_json
 
     @classmethod
     def print(cls) -> str:
