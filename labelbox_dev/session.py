@@ -1,11 +1,13 @@
 import logging
 import os
+
 import requests
 import requests.exceptions
 
 from labelbox import utils
-from labelbox_dev.exceptions import AuthenticationError, LabelboxError, NetworkError, TimeoutError
 from labelbox_dev import __version__ as SDK_VERSION
+from labelbox_dev.exceptions import (AuthenticationError, LabelboxError,
+                                     NetworkError, TimeoutError)
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +108,8 @@ class Session:
             return
 
         try:
-            print(response.content)
+            logger.debug("Response: %s", response.text)
             r_json = response.json()
-            print(
-                f"Response text: {response.text} Status code: {response.status_code}"
-            )
         except:
             raise LabelboxError("Failed to parse response as JSON: %s" %
                                 response.text)
