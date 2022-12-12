@@ -699,7 +699,7 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
-    assert task.errors == "Import job failed"
+    assert task.errors == "Data rows contain empty string or duplicate global keys, which are not allowed"
 
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
