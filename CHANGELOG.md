@@ -1,5 +1,9 @@
 # Changelog
 
+# Version X.XX.X (Unreleased)
+### Added
+* Added SDK support for creating batches with up to 100k data rows
+
 # Version 3.32.0 (2022-12-02)
 ### Added
 * Added `HTML` Enum to `MediaType`. `HTML` is introduced as a new asset type in Labelbox.
