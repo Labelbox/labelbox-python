@@ -44,3 +44,9 @@ class MediaType(Enum):
             item for item in cls.__members__
             if item not in ["Unknown", "Unsupported"]
         ]
+
+
+def get_media_type_validation_error(media_type):
+    return TypeError(f"{media_type} is not a valid media type. Use"
+                     f" any of {MediaType.get_supported_members()}"
+                     " from MediaType. Example: MediaType.Image.")

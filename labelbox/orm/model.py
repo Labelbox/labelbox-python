@@ -389,7 +389,7 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def fields(cls):
-        """ Returns a generateor that yields all the Fields declared in a
+        """ Returns a generator that yields all the Fields declared in a
         concrete subclass.
         """
         for attr in cls._attributes_of_type(Field):
@@ -398,7 +398,7 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def relationships(cls):
-        """ Returns a generateor that yields all the Relationships declared in
+        """ Returns a generator that yields all the Relationships declared in
         a concrete subclass.
         """
         return cls._attributes_of_type(Relationship)

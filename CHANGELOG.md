@@ -1,5 +1,13 @@
 # Changelog
 
+# Version 3.33.0 (2022-12-13)
+### Added
+* Added SDK support for creating batches with up to 100k data rows
+* Added optional media_type to `client.create_ontology_from_feature_schemas()` and `client.create_ontology()`
+
+### Changed
+* String representation of `DbObject` subclasses are now formatted
+
 # Version 3.32.0 (2022-12-02)
 ### Added
 * Added `HTML` Enum to `MediaType`. `HTML` is introduced as a new asset type in Labelbox.
