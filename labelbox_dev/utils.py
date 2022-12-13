@@ -1,5 +1,5 @@
-import re
 import json
+import re
 
 
 def _convert(s, sep, title):

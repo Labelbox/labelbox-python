@@ -1,8 +1,7 @@
 from typing import Optional, TypedDict
-from labelbox_dev.entity import Entity
 
+from labelbox_dev.entity import Entity
 from labelbox_dev.session import Session
-from labelbox_dev import utils
 
 DATASET_RESOURCE = "datasets"
 
@@ -36,14 +35,14 @@ class Dataset(Entity):
 
     def from_json(self, json) -> "Dataset":
         super().from_json(json)
-        self.id = json['id']
-        self.name = json['name']
-        self.description = json['description']
-        self.created_at = json['created_at']
-        self.updated_at = json['updated_at']
-        self.created_by_id = json['created_by_id']
-        self.organization_id = json['organization_id']
-        self.data_row_count = json['data_row_count']
+        self.id = self.json['id']
+        self.name = self.json['name']
+        self.description = self.json['description']
+        self.created_at = self.json['created_at']
+        self.updated_at = self.json['updated_at']
+        self.created_by_id = self.json['created_by_id']
+        self.organization_id = self.json['organization_id']
+        self.data_row_count = self.json['data_row_count']
 
         return self
 

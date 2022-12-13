@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import List
-from labelbox_dev import utils
+import json
+
+from labelbox_dev.utils import format_json_to_snake_case
 
 
-class Entity(ABC):
+class Entity:
 
     def __init__(self, json):
         self.json = json
@@ -13,7 +13,8 @@ class Entity(ABC):
         return f"<{self.__class__.__name__} ID: {self.id}>"
 
     def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.json)
+        return "<%s %s>" % (self.__class__.__name__,
+                            json.dumps(self.json, indent=4, default=str))
 
     def from_json(self, json):
-        self.json = utils.format_json_to_snake_case(json)
+        self.json = format_json_to_snake_case(json)
