@@ -115,18 +115,14 @@ class DataRowImportTask(BulkTask):
 
     @lru_cache()
     def fetch_result(self) -> Dict[str, Any]:
-
-        def download_result():
-            response = requests.get(self.result_url)
-            response.raise_for_status()
-            return response.json()
-
         if self.status == TaskStatus.IN_PROGRESS.name:
             raise ResourceNotFoundError(
                 f"Task result for task '{self.id}' not found. Task is still in progress"
             )
         else:
-            return download_result()
+            response = requests.get(self.result_url)
+            response.raise_for_status()
+            return response.json()
 
     # TODO: Need to paginate results
     @property
@@ -155,10 +151,7 @@ class DataRowImportTask(BulkTask):
         if 'failedDataRows' in task_result:
             errors['failed_data_rows'] = task_result['failedDataRows']
 
-        if errors:
-            return errors
-
-        return None
+        return errors if errors else None
 
     def wait_until_done(self, timeout_seconds=300) -> "TaskStatus":
         assert self.id is not None
