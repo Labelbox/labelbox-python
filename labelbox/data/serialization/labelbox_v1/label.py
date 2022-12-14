@@ -238,7 +238,8 @@ class LBV1Label(BaseModel):
         ]) > 0
 
     def _row_contains(self, substrs) -> bool:
-        return any([substr in self.row_data for substr in substrs])
+        lower_row_data = self.row_data.lower()
+        return any([substr in lower_row_data for substr in substrs])
 
     def _is_url(self) -> bool:
         return self.row_data.startswith(

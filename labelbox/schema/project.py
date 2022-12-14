@@ -4,18 +4,21 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Union, Iterable, List, Optional, Any
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
 import ndjson
 import requests
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, LabelboxError
+from labelbox.exceptions import (InvalidQueryError, LabelboxError,
+                                 ProcessingWaitTimeout, ResourceConflict)
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, Deletable
+from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.consensus_settings import ConsensusSettings
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -88,6 +91,9 @@ class Project(DbObject, Updateable, Deletable):
     webhooks = Relationship.ToMany("Webhook", False)
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
+
+    #
+    _wait_processing_max_seconds = 3600
 
     def update(self, **kwargs):
         """ Updates this project with the specified attributes
@@ -318,7 +324,7 @@ class Project(DbObject, Updateable, Deletable):
                         return True
                     except ValueError:
                         pass
-                raise ValueError(f"""Incorrect format for: {string_date}. 
+                raise ValueError(f"""Incorrect format for: {string_date}.
                 Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
             return True
 
@@ -506,6 +512,9 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
+        if self.labeling_frontend() is not None:
+            raise ResourceConflict("Editor is already set up.")
+
         labeling_frontend = next(
             self.client.get_labeling_frontends(
                 where=Entity.LabelingFrontend.name == "Editor"))
@@ -545,6 +554,9 @@ class Project(DbObject, Updateable, Deletable):
                 to `str` using `json.dumps`.
         """
 
+        if self.labeling_frontend() is not None:
+            raise ResourceConflict("Editor is already set up.")
+
         if not isinstance(labeling_frontend_options, str):
             labeling_frontend_options = json.dumps(labeling_frontend_options)
 
@@ -561,14 +573,18 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self, name: str, data_rows: List[str], priority: int = 5):
+    def create_batch(self,
+                     name: str,
+                     data_rows: List[Union[str, DataRow]],
+                     priority: int = 5,
+                     consensus_settings: Optional[Dict[str, float]] = None):
         """Create a new batch for a project. Batches is in Beta and subject to change
 
         Args:
             name: a name for the batch, must be unique within a project
             data_rows: Either a list of `DataRows` or Data Row ids
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
-
+            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3, 'coverage_percentage': 0.1}
         """
 
         # @TODO: make this automatic?
@@ -590,32 +606,157 @@ class Project(DbObject, Updateable, Deletable):
         if not len(dr_ids):
             raise ValueError("You need at least one data row in a batch")
 
-        method = 'createBatch'
-        query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
-              project(where: {id: $projectId}) {
-                %s(input: $batchInput) {
-                  %s
-                }
-              }
-            }
-        """ % (method, method, query.results_query_part(Entity.Batch))
+        self._wait_until_data_rows_are_processed(
+            dr_ids, self._wait_processing_max_seconds)
 
+        if consensus_settings:
+            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+                by_alias=True)
+
+        if len(dr_ids) >= 10_000:
+            return self._create_batch_async(name, dr_ids, priority,
+                                            consensus_settings)
+        else:
+            return self._create_batch_sync(name, dr_ids, priority,
+                                           consensus_settings)
+
+    def _create_batch_sync(self, name, dr_ids, priority, consensus_settings):
+        method = 'createBatchV2'
+        query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
+                  project(where: {id: $projectId}) {
+                    %s(input: $batchInput) {
+                        batch {
+                            %s
+                        }
+                        failedDataRowIds
+                    }
+                  }
+                }
+            """ % (method, method, query.results_query_part(Entity.Batch))
         params = {
             "projectId": self.uid,
             "batchInput": {
                 "name": name,
                 "dataRowIds": dr_ids,
-                "priority": priority
+                "priority": priority,
+                "consensusSettings": consensus_settings
             }
         }
-
         res = self.client.execute(query_str,
                                   params,
                                   timeout=180.0,
                                   experimental=True)["project"][method]
+        batch = res['batch']
+        batch['size'] = len(dr_ids)
+        return Entity.Batch(self.client,
+                            self.uid,
+                            batch,
+                            failed_data_row_ids=res['failedDataRowIds'])
 
-        res['size'] = len(dr_ids)
-        return Entity.Batch(self.client, self.uid, res)
+    def _create_batch_async(self,
+                            name: str,
+                            dr_ids: List[str],
+                            priority: int = 5,
+                            consensus_settings: Optional[Dict[str,
+                                                              float]] = None):
+        method = 'createEmptyBatch'
+        create_empty_batch_mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateEmptyBatchInput!) {
+                                      project(where: {id: $projectId}) {
+                                        %s(input: $input) {
+                                            id
+                                        }
+                                      }
+                                    }
+                                """ % (method, method)
+
+        params = {
+            "projectId": self.uid,
+            "input": {
+                "name": name,
+                "consensusSettings": consensus_settings
+            }
+        }
+
+        res = self.client.execute(create_empty_batch_mutation_str,
+                                  params,
+                                  timeout=180.0,
+                                  experimental=True)["project"][method]
+        batch_id = res['id']
+
+        method = 'addDataRowsToBatchAsync'
+        add_data_rows_mutation_str = """mutation %sPyApi($projectId: ID!, $input: AddDataRowsToBatchInput!) {
+                                      project(where: {id: $projectId}) {
+                                        %s(input: $input) {
+                                            taskId
+                                        }
+                                      }
+                                    }
+                                """ % (method, method)
+
+        params = {
+            "projectId": self.uid,
+            "input": {
+                "batchId": batch_id,
+                "dataRowIds": dr_ids,
+                "priority": priority,
+            }
+        }
+
+        res = self.client.execute(add_data_rows_mutation_str,
+                                  params,
+                                  timeout=180.0,
+                                  experimental=True)["project"][method]
+
+        task_id = res['taskId']
+
+        timeout_seconds = 600
+        sleep_time = 2
+        get_task_query_str = """query %s($taskId: ID!) {
+                          task(where: {id: $taskId}) {
+                             status
+                        }
+                    }
+                    """ % "getTaskPyApi"
+
+        while True:
+            task_status = self.client.execute(
+                get_task_query_str, {'taskId': task_id},
+                experimental=True)['task']['status']
+
+            if task_status == "COMPLETE":
+                # obtain batch entity to return
+                get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
+                                  project(where: {id: $projectId}) {
+                                     batches(where: {id: $batchId}) {
+                                        nodes {
+                                           %s
+                                        }
+                                     }
+                                }
+                            }
+                            """ % ("getProjectBatchPyApi",
+                                   query.results_query_part(Entity.Batch))
+
+                batch = self.client.execute(
+                    get_batch_str, {
+                        "projectId": self.uid,
+                        "batchId": batch_id
+                    },
+                    timeout=180.0,
+                    experimental=True)["project"]["batches"]["nodes"][0]
+
+                # TODO async endpoints currently do not provide failed_data_row_ids in response
+                return Entity.Batch(self.client, self.uid, batch)
+            elif task_status == "IN_PROGRESS":
+                timeout_seconds -= sleep_time
+                if timeout_seconds <= 0:
+                    raise LabelboxError(
+                        f"Timed out while waiting for batch to be created.")
+                logger.debug("Creating batch, waiting for server...", self.uid)
+                time.sleep(sleep_time)
+                continue
+            else:
+                raise LabelboxError(f"Batch was not created successfully.")
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
@@ -759,6 +900,10 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             bool, indicates if the operation was a success.
         """
+        logger.warning(
+            "LabelingParameterOverrides are deprecated for new projects, and will eventually be removed "
+            "completely. Prefer to use batch based queuing with priority & consensus number of labels instead."
+        )
         self.validate_labeling_parameter_overrides(data)
         data_str = ",\n".join(
             "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
@@ -963,6 +1108,42 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
+
+    def _wait_until_data_rows_are_processed(self,
+                                            data_row_ids: List[str],
+                                            wait_processing_max_seconds: int,
+                                            sleep_interval=30):
+        """ Wait until all the specified data rows are processed"""
+        start_time = datetime.now()
+        while True:
+            if (datetime.now() -
+                    start_time).total_seconds() >= wait_processing_max_seconds:
+                raise ProcessingWaitTimeout(
+                    "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
+                )
+
+            all_good = self.__check_data_rows_have_been_processed(data_row_ids)
+            if all_good:
+                return
+
+            logger.debug(
+                'Some of the data rows are still being processed, waiting...')
+            time.sleep(sleep_interval)
+
+    def __check_data_rows_have_been_processed(self, data_row_ids: List[str]):
+        data_row_ids_param = "data_row_ids"
+
+        query_str = """query CheckAllDataRowsHaveBeenProcessedPyApi($%s: [ID!]!) {
+            queryAllDataRowsHaveBeenProcessed(dataRowIds:$%s) {
+                allDataRowsHaveBeenProcessed
+           }
+        }""" % (data_row_ids_param, data_row_ids_param)
+
+        params = {}
+        params[data_row_ids_param] = data_row_ids
+        response = self.client.execute(query_str, params)
+        return response["queryAllDataRowsHaveBeenProcessed"][
+            "allDataRowsHaveBeenProcessed"]
 
 
 class ProjectMember(DbObject):

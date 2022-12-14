@@ -1,6 +1,7 @@
 from tempfile import NamedTemporaryFile
 import uuid
 from datetime import datetime
+import json
 
 import pytest
 import requests
@@ -26,6 +27,56 @@ def mdo(client):
     mdo._raw_ontology = mdo._get_ontology()
     mdo._build_ontology()
     yield mdo
+
+
+@pytest.fixture
+def conversational_content():
+    return {
+        'row_data': {
+            "messages": [{
+                "messageId": "message-0",
+                "timestampUsec": 1530718491,
+                "content": "I love iphone! i just bought new iphone! 🥰 📲",
+                "user": {
+                    "userId": "Bot 002",
+                    "name": "Bot"
+                },
+                "align": "left",
+                "canLabel": False
+            }],
+            "version": 1,
+            "type": "application/vnd.labelbox.conversational"
+        }
+    }
+
+
+@pytest.fixture
+def tile_content():
+    return {
+        "row_data": {
+            "tileLayerUrl":
+                "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
+            "bounds": [[19.405662413477728, -99.21052827588443],
+                       [19.400498983095076, -99.20534818927473]],
+            "minZoom":
+                12,
+            "maxZoom":
+                20,
+            "epsg":
+                "EPSG4326",
+            "alternativeLayers": [{
+                "tileLayerUrl":
+                    "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+                "name":
+                    "Satellite"
+            }, {
+                "tileLayerUrl":
+                    "https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+                "name":
+                    "Guidance"
+            }]
+        }
+    }
 
 
 def make_metadata_fields():
@@ -408,6 +459,18 @@ def test_data_row_update(dataset, rand_gen, image_url):
     data_row.update(external_id=external_id_2)
     assert data_row.external_id == external_id_2
 
+    in_line_content = "123"
+    data_row.update(row_data=in_line_content)
+    assert data_row.row_data == in_line_content
+
+    data_row.update(row_data=image_url)
+    assert data_row.row_data == image_url
+
+    # tileLayer becomes a media attribute
+    pdf_url = "http://somepdfurl"
+    data_row.update(row_data={'pdfUrl': pdf_url, "tileLayerUrl": "123"})
+    assert data_row.row_data == pdf_url
+
 
 def test_data_row_filtering_sorting(dataset, image_url):
     task = dataset.create_data_rows([
@@ -636,7 +699,7 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
-    assert task.errors == "Import job failed"
+    assert task.errors == "Data rows contain empty string or duplicate global keys, which are not allowed"
 
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
@@ -696,3 +759,74 @@ def test_data_row_rulk_creation_sync_with_same_global_keys(
 
     assert len(list(dataset.data_rows())) == 1
     assert list(dataset.data_rows())[0].global_key == global_key_1
+
+
+def test_create_conversational_text(dataset, conversational_content):
+    examples = [
+        {
+            **conversational_content, 'media_type': 'CONVERSATIONAL'
+        },
+        conversational_content,
+        {
+            "conversationalData": conversational_content['row_data']['messages']
+        }  # Old way to check for backwards compatibility
+    ]
+    dataset.create_data_rows_sync(examples)
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(examples)
+    for data_row in data_rows:
+        assert requests.get(
+            data_row.row_data).json() == conversational_content['row_data']
+
+
+def test_invalid_media_type(dataset, conversational_content):
+    for error_message, invalid_media_type in [[
+            "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
+    ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
+        # TODO: What error kind should this be? It looks like for global key we are
+        # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
+        with pytest.raises(labelbox.exceptions.InvalidQueryError):
+            dataset.create_data_rows_sync([{
+                **conversational_content, 'media_type': invalid_media_type
+            }])
+
+        task = dataset.create_data_rows([{
+            **conversational_content, 'media_type': invalid_media_type
+        }])
+        task.wait_till_done()
+        assert task.errors == {'message': error_message}
+
+
+def test_create_tiled_layer(dataset, tile_content):
+    examples = [
+        {
+            **tile_content, 'media_type': 'TMS_SIMPLE'
+        },
+        tile_content,
+        tile_content['row_data']  # Old way to check for backwards compatibility
+    ]
+    dataset.create_data_rows_sync(examples)
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == len(examples)
+    for data_row in data_rows:
+        assert json.loads(data_row.row_data) == tile_content['row_data']
+
+
+def test_create_data_row_with_attachments(dataset):
+    attachment_value = 'attachment value'
+    dr = dataset.create_data_row(row_data="123",
+                                 attachments=[{
+                                     'type': 'TEXT',
+                                     'value': attachment_value
+                                 }])
+    attachments = list(dr.attachments())
+    assert len(attachments) == 1
+
+
+def test_create_data_row_with_media_type(dataset, image_url):
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dr = dataset.create_data_row(
+            row_data={'invalid_object': 'invalid_value'}, media_type="IMAGE")
+    assert "Found invalid contents for media type: \'IMAGE\'" in str(exc.value)
+
+    dataset.create_data_row(row_data=image_url, media_type="IMAGE")

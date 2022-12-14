@@ -2,12 +2,12 @@ from enum import Enum
 
 
 class MediaType(Enum):
-    """add DOCUMENT, GEOSPATIAL_TILE, SIMPLE_TILE to match the UI choices"""
     Audio = "AUDIO"
     Conversational = "CONVERSATIONAL"
     Dicom = "DICOM"
     Document = "PDF"
     Geospatial_Tile = "TMS_GEO"
+    Html = "HTML"
     Image = "IMAGE"
     Json = "JSON"
     Pdf = "PDF"
@@ -21,9 +21,9 @@ class MediaType(Enum):
 
     @classmethod
     def _missing_(cls, name):
-        """Handle missing null data types for projects 
+        """Handle missing null data types for projects
             created without setting allowedMediaType
-            Handle upper case names for compatibility with 
+            Handle upper case names for compatibility with
             the GraphQL"""
 
         if name is None:
@@ -44,3 +44,9 @@ class MediaType(Enum):
             item for item in cls.__members__
             if item not in ["Unknown", "Unsupported"]
         ]
+
+
+def get_media_type_validation_error(media_type):
+    return TypeError(f"{media_type} is not a valid media type. Use"
+                     f" any of {MediaType.get_supported_members()}"
+                     " from MediaType. Example: MediaType.Image.")

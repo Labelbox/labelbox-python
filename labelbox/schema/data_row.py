@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+import json
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
@@ -64,6 +65,14 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         self.attachments.supports_filtering = False
         self.attachments.supports_sorting = False
 
+    def update(self, **kwargs):
+        # Convert row data to string if it is an object
+        # All other updates pass through
+        row_data = kwargs.get("row_data")
+        if isinstance(row_data, dict):
+            kwargs['row_data'] = json.dumps(kwargs['row_data'])
+        super().update(**kwargs)
+
     @staticmethod
     def bulk_delete(data_rows) -> None:
         """ Deletes all the given DataRows.
@@ -72,6 +81,30 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             data_rows (list of DataRow): The DataRows to delete.
         """
         BulkDeletable._bulk_delete(data_rows, True)
+
+    def get_winning_label_id(self, project_id: str) -> Optional[str]:
+        """ Retrieves the winning label ID, i.e. the one that was marked as the
+            best for a particular data row, in a project's workflow.
+
+        Args:
+            project_id (str): ID of the project containing the data row
+        """
+        data_row_id_param = "dataRowId"
+        project_id_param = "projectId"
+        query_str = """query GetWinningLabelIdPyApi($%s: ID!, $%s: ID!) {
+            dataRow(where: { id: $%s }) {
+                labelingActivity(where: { projectId: $%s }) {
+                    selectedLabelId
+                }
+            }} """ % (data_row_id_param, project_id_param, data_row_id_param,
+                      project_id_param)
+
+        res = self.client.execute(query_str, {
+            data_row_id_param: self.uid,
+            project_id_param: project_id,
+        })
+
+        return res["dataRow"]["labelingActivity"]["selectedLabelId"]
 
     def create_attachment(self, attachment_type,
                           attachment_value) -> "AssetAttachment":

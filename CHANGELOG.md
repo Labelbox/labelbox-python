@@ -1,5 +1,56 @@
 # Changelog
 
+# Version 3.33.0 (2022-12-13)
+### Added
+* Added SDK support for creating batches with up to 100k data rows
+* Added optional media_type to `client.create_ontology_from_feature_schemas()` and `client.create_ontology()`
+
+### Changed
+* String representation of `DbObject` subclasses are now formatted
+
+# Version 3.32.0 (2022-12-02)
+### Added
+* Added `HTML` Enum to `MediaType`. `HTML` is introduced as a new asset type in Labelbox.
+* Added `PaginatedCollection.get_one()` and `PaginatedCollection.get_many()` to provide easy functions to fetch single and bulk instances of data for any function returning a `PaginatedCollection`. E.g. `data_rows = dataset.data_rows().get_many(10)`
+* Added a validator under `ScalarMetric` to validate metric names against reserved metric names
+
+### Changed
+* In `iou.miou_metric()` and `iou.feature_miou_metric`, iou metric renamed as `custom_iou`
+
+# Version 3.31.0 (2022-11-28)
+### Added
+* Added `client.clear_global_keys()` to remove global keys from their associated data rows
+* Added a new attribute `confidence` to `AnnotationObject` and `ClassificationAnswer` for Model Error Analysis
+
+### Fixed
+* Fixed `project.create_batch()` to work with both data_row_ids and data_row objects
+
+# Version 3.30.1 (2022-11-16)
+### Added
+* Added step to `project.create_batch()` to wait for data rows to finish processing
+### Fixed
+* Running `project.setup_editor()` multiple times no longer resets the ontology, and instead raises an error if the editor is already set up for the project
+
+# Version 3.30.0 (2022-11-11)
+### Changed
+* create_data_rows, create_data_rows_sync, create_data_row, and update data rows all accept the new data row input format for row data
+* create_data_row now accepts an attachment parameter to be consistent with create_data_rows
+* Conversational text data rows will be uploaded to a json file automatically on the backend to reduce the amount of i/o required in the SDK.
+
+# Version 3.29.0 (2022-11-02)
+### Added
+* Added new base `Slice` Entity/DbObject and `CatalogSlice` class
+* Added `client.get_catalog_slice(id)` to fetch a CatalogSlice by ID
+* Added `slice.get_data_row_ids()` to fetch data row ids of the slice
+* Add deprecation warning for queue_mode == QueueMode.Dataset when creating a new project.
+* Add deprecation warning for LPOs.
+
+### Changed
+* Default behavior for metrics to not include subclasses in the calculation.
+
+### Fixed
+* Polygon extraction from masks creating invalid polygons. This would cause issues in the coco converter.
+
 # Version 3.28.0 (2022-10-14)
 
 ### Added
@@ -45,7 +96,7 @@
 * Increase scalar metric value limit to 100m
 * Added deprecation warnings when updating project `queue_mode`
 ### Fixed
-* Fix bug in `feature_confusion_matrix` and `confusion_matrix` causing FPs and FNs to be capped at 1 when there were no matching annotations 
+* Fix bug in `feature_confusion_matrix` and `confusion_matrix` causing FPs and FNs to be capped at 1 when there were no matching annotations
 
 # Version 3.26.2 (2022-09-06)
 ### Added
@@ -65,7 +116,7 @@
     * Resets model run training metadata
 * `ModelRun.get_config()`
     * Fetches model run training metadata
-    
+
 ### Changed
 * `Model.create_model_run()`
     * Add training metadata config as a model run creation param

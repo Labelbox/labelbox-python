@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Union
 from enum import Enum
 
-from pydantic import confloat
+from pydantic import confloat, validator
 
 from .base import ConfidenceValue, BaseMetric
 
@@ -16,6 +16,11 @@ class ScalarMetricAggregation(Enum):
     SUM = "SUM"
 
 
+RESERVED_METRIC_NAMES = ('true_positive_count', 'false_positive_count',
+                         'true_negative_count', 'false_negative_count',
+                         'precision', 'recall', 'f1', 'iou')
+
+
 class ScalarMetric(BaseMetric):
     """ Class representing scalar metrics
 
@@ -27,6 +32,16 @@ class ScalarMetric(BaseMetric):
     metric_name: Optional[str] = None
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
+
+    @validator('metric_name')
+    def validate_metric_name(cls, name: Union[str, None]):
+        if name is None:
+            return None
+        clean_name = name.lower().strip()
+        if clean_name in RESERVED_METRIC_NAMES:
+            raise ValueError(f"`{clean_name}` is a reserved metric name. "
+                             "Please provide another value for `metric_name`.")
+        return name
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

@@ -13,7 +13,7 @@ def miou_metric(ground_truths: List[Union[ObjectAnnotation,
                                           ClassificationAnnotation]],
                 predictions: List[Union[ObjectAnnotation,
                                         ClassificationAnnotation]],
-                include_subclasses=True) -> List[ScalarMetric]:
+                include_subclasses=False) -> List[ScalarMetric]:
     """
     Computes miou between two sets of annotations.
     These annotations should relate to the same data (image/video).
@@ -31,7 +31,7 @@ def miou_metric(ground_truths: List[Union[ObjectAnnotation,
     # If both gt and preds are empty there is no metric
     if iou is None:
         return []
-    return [ScalarMetric(metric_name="iou", value=iou)]
+    return [ScalarMetric(metric_name="custom_iou", value=iou)]
 
 
 def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
@@ -62,13 +62,15 @@ def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
         if value is None:
             continue
         metrics.append(
-            ScalarMetric(metric_name="iou", feature_name=key, value=value))
+            ScalarMetric(metric_name="custom_iou",
+                         feature_name=key,
+                         value=value))
     return metrics
 
 
 def data_row_miou(ground_truth: Label,
                   prediction: Label,
-                  include_subclasses=True) -> Optional[float]:
+                  include_subclasses=False) -> Optional[float]:
     """
 
     This function is no longer supported. Use miou() for raw values or miou_metric() for the metric

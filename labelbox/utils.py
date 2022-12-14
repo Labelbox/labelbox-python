@@ -1,4 +1,5 @@
 import re
+from pydantic import BaseModel
 
 
 def _convert(s, sep, title):
@@ -23,3 +24,10 @@ def title_case(s):
 def snake_case(s):
     """ Converts a string in [snake|camel|title]case to snake_case. """
     return _convert(s, "_", lambda i: False)
+
+
+class _CamelCaseMixin(BaseModel):
+
+    class Config:
+        allow_population_by_field_name = True
+        alias_generator = camel_case

@@ -2,7 +2,7 @@ import json
 import pytest
 import requests
 from labelbox import Dataset
-from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException
+from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException, InvalidQueryError
 from labelbox.schema.dataset import MAX_DATAROW_PER_API_OPERATION
 
 
@@ -20,6 +20,14 @@ def test_dataset(client, rand_gen):
     after = list(client.get_datasets())
     assert len(after) == len(before) + 1
     assert dataset in after
+
+    # confirm get_one returns first dataset
+    get_one_dataset = client.get_datasets().get_one()
+    assert get_one_dataset.uid == after[0].uid
+
+    # confirm get_many(1) returns first dataset
+    get_many_datasets = client.get_datasets().get_many(1)
+    assert get_many_datasets[0].uid == after[0].uid
 
     dataset = client.get_dataset(dataset.uid)
     assert dataset.name == name
@@ -103,6 +111,33 @@ def test_upload_video_file(dataset, sample_video: str) -> None:
         assert response.headers['Content-Type'] == 'video/mp4'
 
 
+def test_create_pdf(dataset):
+    dataset.create_data_row(
+        row_data={
+            "pdfUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-1.pdf",
+            "textLayerUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-custom-text-layer.json"
+        })
+    dataset.create_data_row(row_data={
+        "pdfUrl":
+            "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-1.pdf",
+        "textLayerUrl":
+            "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-custom-text-layer.json"
+    },
+                            media_type="PDF")
+
+    with pytest.raises(InvalidQueryError):
+        # Wrong media type
+        dataset.create_data_row(row_data={
+            "pdfUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-1.pdf",
+            "textLayerUrl":
+                "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/sample-document-custom-text-layer.json"
+        },
+                                media_type="TEXT")
+
+
 def test_bulk_conversation(dataset, sample_bulk_conversation: list) -> None:
     """
     Tests that bulk conversations can be uploaded.
@@ -133,7 +168,7 @@ def test_create_descriptor_file(dataset):
         upload_data_spy.assert_called()
         call_args, call_kwargs = upload_data_spy.call_args_list[0][
             0], upload_data_spy.call_args_list[0][1]
-        assert call_args == ('[{"data": "some text..."}]',)
+        assert call_args == ('[{"row_data": "some text..."}]',)
         assert call_kwargs == {
             'content_type': 'application/json',
             'filename': 'json_import.json'

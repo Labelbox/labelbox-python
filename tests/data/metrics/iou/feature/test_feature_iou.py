@@ -13,7 +13,7 @@ def check_iou(pair):
         assert math.isclose(result[key], pair.expected[key])
 
     for metric in metrics:
-        assert metric.metric_name == "iou"
+        assert metric.metric_name == "custom_iou"
 
     if len(pair.expected):
         assert len(one_metrics)

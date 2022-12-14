@@ -34,8 +34,9 @@ from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.slice import CatalogSlice
+from labelbox.schema.queue_mode import QueueMode
 
-from labelbox.schema.media_type import MediaType
+from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
 logger = logging.getLogger(__name__)
 
@@ -615,11 +616,17 @@ class Client:
         >>> project = client.create_project(
                 name="<project_name>",
                 description="<project_description>",
-                media_type=MediaType.Image
+                media_type=MediaType.Image,
+                queue_mode=QueueMode.Batch
             )
 
         Args:
-            **kwargs: Keyword arguments with Project attribute values.
+            name (str): A name for the project
+            description (str): A short summary for the project
+            media_type (MediaType): The type of assets that this project will accept
+            queue_mode (Optional[QueueMode]): The queue mode to use
+            auto_audit_percentage (Optional[float]): The percentage of data rows that will require more than 1 label
+            auto_audit_number_of_labels (Optional[float]): Number of labels required for data rows selected for multiple labeling (auto_audit_percentage)
         Returns:
             A new Project object.
         Raises:
@@ -630,7 +637,7 @@ class Client:
         queue_mode = kwargs.get("queue_mode")
         if media_type:
             if MediaType.is_supported(media_type):
-                kwargs["media_type"] = media_type.value
+                media_type = media_type.value
             else:
                 raise TypeError(f"{media_type} is not a valid media type. Use"
                                 f" any of {MediaType.get_supported_members()}"
@@ -642,11 +649,20 @@ class Client:
 
         if not queue_mode:
             logger.warning(
-                "Default createProject behavior will soon be adjusted to prefer"
-                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the"
+                "Default createProject behavior will soon be adjusted to prefer "
+                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the "
                 "time being.")
+        elif queue_mode == QueueMode.Dataset:
+            logger.warning(
+                "QueueMode.Dataset will eventually be deprecated, and is no longer "
+                "recommended for new projects. Prefer QueueMode.Batch instead.")
 
-        return self._create(Entity.Project, kwargs)
+        return self._create(Entity.Project, {
+            **kwargs,
+            **({
+                'media_type': media_type
+            } if media_type else {})
+        })
 
     def get_roles(self) -> List[Role]:
         """
@@ -837,8 +853,10 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self, name,
-                                             feature_schema_ids) -> Ontology:
+    def create_ontology_from_feature_schemas(self,
+                                             name,
+                                             feature_schema_ids,
+                                             media_type=None) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -846,6 +864,7 @@ class Client:
             name (str): Name of the ontology
             feature_schema_ids (List[str]): List of feature schema ids corresponding to
                 top level tools and classifications to include in the ontology
+            media_type (MediaType or None): Media type of a new ontology
         Returns:
             The created Ontology
         """
@@ -875,9 +894,9 @@ class Client:
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
         normalized = {'tools': tools, 'classifications': classifications}
-        return self.create_ontology(name, normalized)
+        return self.create_ontology(name, normalized, media_type)
 
-    def create_ontology(self, name, normalized) -> Ontology:
+    def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -894,13 +913,27 @@ class Client:
         Args:
             name (str): Name of the ontology
             normalized (dict): A normalized ontology payload. See above for details.
+            media_type (MediaType or None): Media type of a new ontology
         Returns:
             The created Ontology
         """
+
+        if media_type:
+            if MediaType.is_supported(media_type):
+                media_type = media_type.value
+            else:
+                raise get_media_type_validation_error(media_type)
+
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
                            upsertOntology(data: $data){ %s }
         } """ % query.results_query_part(Entity.Ontology)
-        params = {'data': {'name': name, 'normalized': json.dumps(normalized)}}
+        params = {
+            'data': {
+                'name': name,
+                'normalized': json.dumps(normalized),
+                'mediaType': media_type
+            }
+        }
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
 
@@ -1019,9 +1052,9 @@ class Client:
             )
 
         # Start assign global keys to data rows job
-        query_str = """mutation assignGlobalKeysToDataRowsPyApi($globalKeyDataRowLinks: [AssignGlobalKeyToDataRowInput!]!) { 
-            assignGlobalKeysToDataRows(data: {assignInputs: $globalKeyDataRowLinks}) { 
-                jobId 
+        query_str = """mutation assignGlobalKeysToDataRowsPyApi($globalKeyDataRowLinks: [AssignGlobalKeyToDataRowInput!]!) {
+            assignGlobalKeysToDataRows(data: {assignInputs: $globalKeyDataRowLinks}) {
+                jobId
             }
         }
         """
@@ -1156,7 +1189,7 @@ class Client:
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
-            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data { 
+            dataRowsForGlobalKeysResult(jobId: {id: $jobId}) { data {
                 fetchedDataRows { id }
                 notFoundGlobalKeys
                 accessDeniedGlobalKeys
@@ -1211,6 +1244,102 @@ class Client:
                 raise labelbox.exceptions.TimeoutError(
                     "Timed out waiting for get_data_rows_for_global_keys job to complete."
                 )
+            time.sleep(sleep_time)
+
+    def clear_global_keys(
+            self,
+            global_keys: List[str],
+            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
+        """
+        Clears global keys for the data rows tha correspond to the global keys provided.
+
+        Args:
+            A list of global keys
+        Returns:
+            Dictionary containing 'status', 'results' and 'errors'.
+
+            'Status' contains the outcome of this job. It can be one of
+            'Success', 'Partial Success', or 'Failure'.
+
+            'Results' contains a list global keys that were successfully cleared.
+
+            'Errors' contains a list of global_keys correspond to the data rows that could not be
+            modified, accessed by the user, or not found.
+        Examples:
+            >>> job_result = client.get_data_row_ids_for_global_keys(["key1","key2"])
+            >>> print(job_result['status'])
+            Partial Success
+            >>> print(job_result['results'])
+            ['cl7tv9wry00hlka6gai588ozv', 'cl7tv9wxg00hpka6gf8sh81bj']
+            >>> print(job_result['errors'])
+            [{'global_key': 'asdf', 'error': 'Data Row not found'}]
+        """
+
+        def _format_failed_rows(rows: List[str],
+                                error_msg: str) -> List[Dict[str, str]]:
+            return [{'global_key': r, 'error': error_msg} for r in rows]
+
+        # Start get data rows for global keys job
+        query_str = """mutation clearGlobalKeysPyApi($globalKeys: [ID!]!) {
+            clearGlobalKeys(where: {ids: $globalKeys}) { jobId}}
+            """
+        params = {"globalKeys": global_keys}
+        clear_global_keys_job = self.execute(query_str, params)
+
+        # Query string for retrieving job status and result, if job is done
+        result_query_str = """query clearGlobalKeysResultPyApi($jobId: ID!) {
+            clearGlobalKeysResult(jobId: {id: $jobId}) { data {
+                clearedGlobalKeys
+                failedToClearGlobalKeys
+                notFoundGlobalKeys
+                accessDeniedGlobalKeys
+                } jobStatus}}
+            """
+        result_params = {
+            "jobId": clear_global_keys_job["clearGlobalKeys"]["jobId"]
+        }
+        # Poll job status until finished, then retrieve results
+        sleep_time = 2
+        start_time = time.time()
+        while True:
+            res = self.execute(result_query_str, result_params)
+            if res["clearGlobalKeysResult"]['jobStatus'] == "COMPLETE":
+                data = res["clearGlobalKeysResult"]['data']
+                results, errors = [], []
+                results.extend(data['clearedGlobalKeys'])
+                errors.extend(
+                    _format_failed_rows(data['failedToClearGlobalKeys'],
+                                        "Clearing global key failed"))
+                errors.extend(
+                    _format_failed_rows(
+                        data['notFoundGlobalKeys'],
+                        "Failed to find data row matching provided global key"))
+                errors.extend(
+                    _format_failed_rows(
+                        data['accessDeniedGlobalKeys'],
+                        "Denied access to modify data row matching provided global key"
+                    ))
+
+                if not errors:
+                    status = CollectionJobStatus.SUCCESS.value
+                elif errors and len(results) > 0:
+                    status = CollectionJobStatus.PARTIAL_SUCCESS.value
+                else:
+                    status = CollectionJobStatus.FAILURE.value
+
+                if errors:
+                    logger.warning(
+                        "There are errors present. Please look at 'errors' in the returned dict for more details"
+                    )
+
+                return {"status": status, "results": results, "errors": errors}
+            elif res["clearGlobalKeysResult"]['jobStatus'] == "FAILED":
+                raise labelbox.exceptions.LabelboxError(
+                    "Job clearGlobalKeys failed.")
+            current_time = time.time()
+            if current_time - start_time > timeout_seconds:
+                raise labelbox.exceptions.TimeoutError(
+                    "Timed out waiting for clear_global_keys job to complete.")
             time.sleep(sleep_time)
 
     def get_catalog_slice(self, slice_id) -> CatalogSlice:

@@ -5,6 +5,7 @@ from labelbox.data.annotation_types.metrics import ConfusionMatrixAggregation, S
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric, ScalarMetric
 from labelbox.data.annotation_types.collection import LabelList
 from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
+from labelbox.data.annotation_types.metrics.scalar import RESERVED_METRIC_NAMES
 
 
 def test_legacy_scalar_metric():
@@ -56,7 +57,7 @@ def test_legacy_scalar_metric():
 ])
 def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
     kwargs = {'aggregation': aggregation} if aggregation is not None else {}
-    metric = ScalarMetric(metric_name="iou",
+    metric = ScalarMetric(metric_name="custom_iou",
                           value=value,
                           feature_name=feature_name,
                           subclass_name=subclass_name,
@@ -80,7 +81,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
             'value':
                 value,
             'metric_name':
-                'iou',
+                'custom_iou',
             **({
                 'feature_name': feature_name
             } if feature_name else {}),
@@ -192,3 +193,10 @@ def test_invalid_number_of_confidence_scores():
             metric_name="too many scores",
             value={i / 20.: [0, 1, 2, 3] for i in range(20)})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("metric_name", RESERVED_METRIC_NAMES)
+def test_reserved_names(metric_name: str):
+    with pytest.raises(ValidationError) as exc_info:
+        ScalarMetric(metric_name=metric_name, value=0.5)
+    assert 'is a reserved metric name' in exc_info.value.errors()[0]['msg']
