@@ -1,4 +1,5 @@
 from typing import Any, List, Optional, TypedDict, Union
+import os
 
 from labelbox_dev.entity import Entity
 from labelbox_dev.exceptions import LabelboxError
@@ -66,14 +67,34 @@ def create_one(dataset_id, data_row: CreateDataRowType):
 
 
 def create(dataset_id,
-           data_rows: List[CreateDataRowType],
+           data_rows: List[CreateDataRowType] = [],
+           data_files: List[str] = [],
            run_async: bool = False):
-    # TODO: Handle row_data as local file
+
+    if data_rows and data_files:
+        raise LabelboxError(f"Can not provide data_rows and data_files values at the same time")
+
+    if not data_rows and not data_files:
+        raise LabelboxError(f"Please, provide data_rows or data_files value")
+
+    if data_files:
+        # TODO. upload these data files and get data_file_url
+        for data_file in data_files:
+          if not os.path.exists(data_file):
+              raise ValueError(f"Filepath {data_file} does not exist.")
+
+          with open(data_file, "r") as f:
+            data_rows.append({
+              "row_data": f.read(),
+              "external_id": data_file
+            })
+
     create_data_rows_input = {
         'dataset_id': dataset_id,
         'data_rows': data_rows,
         'run_async': run_async
     }
+
     if run_async:
         task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkcreate",
                                          json=create_data_rows_input)
