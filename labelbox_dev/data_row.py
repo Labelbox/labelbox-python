@@ -35,6 +35,26 @@ class UpdateDataRowType(TypedDict):
     external_id: Optional[str]
     row_data: Optional[str]
 
+def validate_keys(item):
+    if 'row_data' not in item:
+        raise LabelboxError("`row_data` missing when creating DataRow.")
+
+def format_data_rows(data_rows):
+    for data_row in data_rows:
+
+        validate_keys(data_row)
+
+        # handle the case when data_row.row_data is a file
+        if os.path.exists(data_row['row_data']):
+
+            # TODO. consider uploading file instead
+            with open(data_row['row_data'], "r") as f:
+                data_row['row_data'] = f.read()
+
+            if not data_row.get('external_id'):
+                data_row['external_id'] = data_row['row_data']
+
+    return data_rows
 
 def get_by_id(data_row_id: str):
     data_row_json = Session.get_request(f"{DATA_ROW_RESOURCE}/{data_row_id}")
@@ -59,35 +79,24 @@ def get_by_global_keys(global_keys):
 
 
 def create_one(dataset_id, data_row: CreateDataRowType):
-    # TODO: Handle row_data as local file
-    create_data_row_input = {'dataset_id': dataset_id, 'data_row': data_row}
+
+    data_rows = format_data_rows(data_rows)
+
+    create_data_row_input = {
+        'dataset_id': dataset_id,
+        'data_row': data_row
+    }
+
     data_row_json = Session.post_request(f"{DATA_ROW_RESOURCE}",
                                          json=create_data_row_input)
     return DataRow(data_row_json)
 
 
 def create(dataset_id,
-           data_rows: List[CreateDataRowType] = [],
-           data_files: List[str] = [],
+           data_rows: List[CreateDataRowType],
            run_async: bool = False):
 
-    if data_rows and data_files:
-        raise LabelboxError(f"Can not provide data_rows and data_files values at the same time")
-
-    if not data_rows and not data_files:
-        raise LabelboxError(f"Please, provide data_rows or data_files value")
-
-    if data_files:
-        # TODO. upload these data files and get data_file_url
-        for data_file in data_files:
-          if not os.path.exists(data_file):
-              raise ValueError(f"Filepath {data_file} does not exist.")
-
-          with open(data_file, "r") as f:
-            data_rows.append({
-              "row_data": f.read(),
-              "external_id": data_file
-            })
+    data_rows = format_data_rows(data_rows)
 
     create_data_rows_input = {
         'dataset_id': dataset_id,
