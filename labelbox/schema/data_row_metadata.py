@@ -147,7 +147,9 @@ class DataRowMetadataOntology:
             str, DataRowMetadataSchema] = self._make_normalized_name_index(
                 self.custom_fields)
 
-    def get_by_name(self, name: str) -> Union[DataRowMetadataSchema, Dict[str, DataRowMetadataSchema]]:
+    def get_by_name(
+        self, name: str
+    ) -> Union[DataRowMetadataSchema, Dict[str, DataRowMetadataSchema]]:
         """ Get metadata by name
 
         >>> mdo.get_by_name(name)
