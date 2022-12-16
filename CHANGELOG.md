@@ -4,6 +4,10 @@
 ### Added
 * Added `get_by_name()` method to MetadataOntology object to access both custom and reserved metadata by name.
 
+# Version 3.33.1 (2022-12-14)
+### Fixed
+* Fixed where batch creation limit was still limiting # of data rows. SDK should now support creating batches with up to 100k data rows
+
 # Version 3.33.0 (2022-12-13)
 ### Added
 * Added SDK support for creating batches with up to 100k data rows
