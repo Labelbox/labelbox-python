@@ -147,6 +147,29 @@ class DataRowMetadataOntology:
             str, DataRowMetadataSchema] = self._make_normalized_name_index(
                 self.custom_fields)
 
+    def get_by_name(self, name: str) -> Union[DataRowMetadataSchema, Dict[str, DataRowMetadataSchema]]:
+        """ Get metadata by name
+
+        >>> mdo.get_by_name(name)
+
+        Args:
+            name (str): Name of metadata schema
+
+        Returns:
+            Metadata schema as `DataRowMetadataSchema` or dict, in case of nested metadata
+
+        Raises:
+            KeyError: When provided name is not presented in neither reserved nor custom metadata list
+        """
+
+        # search through reserved names first
+        if name in self.reserved_by_name:
+            return self.reserved_by_name[name]
+        elif name in self.custom_by_name:
+            return self.custom_by_name[name]
+        else:
+            raise KeyError(f"There is no metadata with name {name}")
+
     @staticmethod
     def _make_name_index(
         fields: List[DataRowMetadataSchema]
@@ -224,7 +247,7 @@ class DataRowMetadataOntology:
         return fields
 
     def refresh_ontology(self):
-        """ Update the `DataRowMetadataOntology` instance with the latest 
+        """ Update the `DataRowMetadataOntology` instance with the latest
             metadata ontology schemas
         """
         self._raw_ontology = self._get_ontology()
@@ -279,7 +302,7 @@ class DataRowMetadataOntology:
 
         Returns:
             Updated metadata schema as `DataRowMetadataSchema`
-        
+
         Raises:
             KeyError: When provided name is not a valid custom metadata
         """
