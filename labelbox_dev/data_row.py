@@ -1,4 +1,5 @@
 from typing import Any, List, Optional, TypedDict, Union
+import os
 
 from labelbox_dev.entity import Entity
 from labelbox_dev.exceptions import LabelboxError
@@ -34,6 +35,28 @@ class UpdateDataRowType(TypedDict):
     external_id: Optional[str]
     row_data: Optional[str]
 
+def validate_keys(item):
+    if 'row_data' not in item:
+        raise LabelboxError("`row_data` missing when creating DataRow.")
+
+def format_data_rows(data_rows):
+    for data_row in data_rows:
+
+        validate_keys(data_row)
+
+        # handle the case when data_row.row_data is a file
+        if os.path.exists(data_row['row_data']):
+
+            filepath = data_row['row_data']
+
+            # TODO. consider uploading file to gcs instead
+            with open(data_row['row_data'], "r") as f:
+                data_row['row_data'] = f.read()
+
+            if not data_row.get('external_id'):
+                data_row['external_id'] = filepath
+
+    return data_rows
 
 def get_by_id(data_row_id: str):
     data_row_json = Session.get_request(f"{DATA_ROW_RESOURCE}/{data_row_id}")
@@ -58,8 +81,14 @@ def get_by_global_keys(global_keys):
 
 
 def create_one(dataset_id, data_row: CreateDataRowType):
-    # TODO: Handle row_data as local file
-    create_data_row_input = {'dataset_id': dataset_id, 'data_row': data_row}
+
+    data_row = format_data_rows([data_row])[0]
+
+    create_data_row_input = {
+        'dataset_id': dataset_id,
+        'data_row': data_row
+    }
+
     data_row_json = Session.post_request(f"{DATA_ROW_RESOURCE}",
                                          json=create_data_row_input)
     return DataRow(data_row_json)
@@ -68,12 +97,15 @@ def create_one(dataset_id, data_row: CreateDataRowType):
 def create(dataset_id,
            data_rows: List[CreateDataRowType],
            run_async: bool = False):
-    # TODO: Handle row_data as local file
+
+    data_rows = format_data_rows(data_rows)
+
     create_data_rows_input = {
         'dataset_id': dataset_id,
         'data_rows': data_rows,
         'run_async': run_async
     }
+
     if run_async:
         task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkcreate",
                                          json=create_data_rows_input)
