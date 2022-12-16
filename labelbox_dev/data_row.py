@@ -47,12 +47,14 @@ def format_data_rows(data_rows):
         # handle the case when data_row.row_data is a file
         if os.path.exists(data_row['row_data']):
 
-            # TODO. consider uploading file instead
+            filepath = data_row['row_data']
+
+            # TODO. consider uploading file to gcs instead
             with open(data_row['row_data'], "r") as f:
                 data_row['row_data'] = f.read()
 
             if not data_row.get('external_id'):
-                data_row['external_id'] = data_row['row_data']
+                data_row['external_id'] = filepath
 
     return data_rows
 
@@ -80,7 +82,7 @@ def get_by_global_keys(global_keys):
 
 def create_one(dataset_id, data_row: CreateDataRowType):
 
-    data_rows = format_data_rows(data_rows)
+    data_row = format_data_rows([data_row])[0]
 
     create_data_row_input = {
         'dataset_id': dataset_id,
