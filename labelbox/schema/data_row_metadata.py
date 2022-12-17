@@ -158,7 +158,7 @@ class DataRowMetadataOntology:
             name (str): Name of metadata schema
 
         Returns:
-            Metadata schema as `DataRowMetadataSchema` or dict, in case of nested metadata
+            Metadata schema as `DataRowMetadataSchema` or dict, in case of Enum metadata
 
         Raises:
             KeyError: When provided name is not presented in neither reserved nor custom metadata list
