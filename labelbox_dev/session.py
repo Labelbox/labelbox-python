@@ -92,7 +92,6 @@ class Session:
                 'params': params,
                 'timeout': timeout
             }
-            print(f"Request: {request}")
             response = requests.request(**request)
 
         except requests.exceptions.Timeout as e:
@@ -117,7 +116,7 @@ class Session:
         if response.status_code not in [
                 requests.codes.ok, requests.codes.created
         ]:
-            message = f"{response.status_code} {response.reason}"
+            message = response.text
             cause = r_json['message']
             raise LabelboxError(message, cause)
 

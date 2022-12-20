@@ -17,16 +17,6 @@ class UpdateDatasetType(TypedDict):
     description: Optional[str]
 
 
-def get_by_id(dataset_id: str):
-    dataset_json = Session.get_request(f"{DATASET_RESOURCE}/{dataset_id}")
-    return Dataset(dataset_json)
-
-
-def create(dataset: CreateDatasetType):
-    dataset_json = Session.post_request(f"{DATASET_RESOURCE}", json=dataset)
-    return Dataset(dataset_json)
-
-
 class Dataset(Entity):
 
     def __init__(self, json):
@@ -46,10 +36,20 @@ class Dataset(Entity):
 
         return self
 
-    def delete(self) -> None:
-        Session.delete_request(f"{DATASET_RESOURCE}/{self.id}")
-
     def update(self, dataset_update: UpdateDatasetType) -> "Dataset":
         dataset_json = Session.patch_request(f"{DATASET_RESOURCE}/{self.id}",
                                              json=dataset_update)
         return self.from_json(dataset_json)
+
+    def delete(self) -> None:
+        Session.delete_request(f"{DATASET_RESOURCE}/{self.id}")
+
+    @staticmethod
+    def create(dataset: CreateDatasetType):
+        dataset_json = Session.post_request(f"{DATASET_RESOURCE}", json=dataset)
+        return Dataset(dataset_json)
+
+    @staticmethod
+    def get_by_id(dataset_id: str):
+        dataset_json = Session.get_request(f"{DATASET_RESOURCE}/{dataset_id}")
+        return Dataset(dataset_json)
