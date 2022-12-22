@@ -339,17 +339,17 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     def create_label():
         """ Ad-hoc function to create a LabelImport
-
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
             client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
         upload_task.wait_until_done(sleep_time_seconds=5)
-        assert upload_task.state == AnnotationImportState.FINISHED
+        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import failed"
 
     project.create_label = create_label
     project.create_label()
-    label = next(project.labels())
+    label = project.labels().get_one()
+    assert label is not None, "Cannot fetch created label"
     yield [project, dataset, datarow, label]
 
     for label in project.labels():
