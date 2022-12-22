@@ -143,7 +143,7 @@ class AnnotationImport(DbObject):
 
     @classmethod
     def _get_ndjson_from_objects(cls, objects: List[Dict[str, Any]],
-                                 object_name: str) -> BinaryIO:
+                                 object_name: str) -> bytes:
         if not isinstance(objects, list):
             raise TypeError(
                 f"{object_name} must be in a form of list. Found {type(objects)}"
