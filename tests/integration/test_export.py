@@ -1,6 +1,7 @@
 from time import sleep
 import uuid
 
+from conftest import wait_for_data_row_processing
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
 from labelbox.schema.annotation_import import LabelImport
 
@@ -8,6 +9,8 @@ from labelbox.schema.annotation_import import LabelImport
 def test_export_annotations_nested_checklist(
         client, configured_project_with_complex_ontology):
     project, data_row = configured_project_with_complex_ontology
+    data_row = wait_for_data_row_processing(client, data_row)
+
     ontology = project.ontology().normalized
 
     tool = ontology["tools"][0]
@@ -47,9 +50,7 @@ def test_export_annotations_nested_checklist(
     task = LabelImport.create_from_objects(client, project.uid,
                                            f'label-import-{uuid.uuid4()}', data)
     task.wait_until_done()
-    # Wait for exporter to retrieve latest labels
-    sleep(10)
-    labels = project.label_generator().as_list()
+    labels = project.label_generator()
     object_annotation = [
         annot for annot in next(labels).annotations
         if isinstance(annot, ObjectAnnotation)

@@ -119,6 +119,49 @@ def get_invites(client):
     return invites
 
 
+def wait_for_data_row_processing(client, data_row):
+    """
+    Do not use. Only for testing.
+
+    Returns DataRow after waiting for it to finish processing media_attributes.
+    Some tests, specifically ones that rely on label export, rely on
+    DataRow be fully processed with media_attributes
+    """
+    data_row_id = data_row.uid
+    timeout_seconds = 60
+    while True:
+        data_row = client.get_data_row(data_row_id)
+        if data_row.media_attributes:
+            return data_row
+        timeout_seconds -= 2
+        if timeout_seconds <= 0:
+            raise TimeoutError(
+                f"Timed out waiting for DataRow '{data_row_id}' to finish processing media_attributes"
+            )
+        time.sleep(2)
+
+
+def wait_for_label_processing(project):
+    """
+    Do not use. Only for testing.
+
+    Returns Label after waiting for it to finish processing.
+    If `project.labels()` is called before label is fully processed,
+    it may return an empty set
+    """
+    timeout_seconds = 10
+    while True:
+        label = project.labels().get_one()
+        if label is not None:
+            return label
+        timeout_seconds -= 2
+        if timeout_seconds <= 0:
+            raise TimeoutError(
+                f"Timed out waiting for label for project '{project.uid}' to finish processing"
+            )
+        time.sleep(2)
+
+
 @pytest.fixture
 def queries():
     return SimpleNamespace(cancel_invite=cancel_invite,
@@ -207,7 +250,7 @@ def datarow(dataset, image_url):
         },
     ])
     task.wait_till_done()
-    dr = next(dataset.data_rows())
+    dr = dataset.data_rows().get_one()
     yield dr
     dr.delete()
 
@@ -348,8 +391,8 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     project.create_label = create_label
     project.create_label()
-    label = project.labels().get_one()
-    assert label is not None, "Cannot fetch created label"
+    label = wait_for_label_processing(project)
+
     yield [project, dataset, datarow, label]
 
     for label in project.labels():
