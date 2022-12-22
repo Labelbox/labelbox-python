@@ -348,7 +348,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     project.create_label = create_label
     project.create_label()
-    label = wait_for_label_processing(project)
+    label = wait_for_label_processing(project)[0]
 
     yield [project, dataset, datarow, label]
 
@@ -424,7 +424,6 @@ def wait_for_data_row_processing():
         timeout_seconds = 60
         while True:
             data_row = client.get_data_row(data_row_id)
-            print(f"dr {data_row}")
             if data_row.media_attributes:
                 return data_row
             timeout_seconds -= 2
@@ -442,7 +441,7 @@ def wait_for_label_processing():
     """
     Do not use. Only for testing.
 
-    Returns Label after waiting for it to finish processing.
+    Returns project's labels as a list after waiting for them to finish processing.
     If `project.labels()` is called before label is fully processed,
     it may return an empty set
     """
@@ -450,10 +449,9 @@ def wait_for_label_processing():
     def func(project):
         timeout_seconds = 10
         while True:
-            label = project.labels().get_one()
-            print(f"LABEL: {label}")
-            if label is not None:
-                return label
+            labels = list(project.labels())
+            if len(labels) > 0:
+                return labels
             timeout_seconds -= 2
             if timeout_seconds <= 0:
                 raise TimeoutError(
