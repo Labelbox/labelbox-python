@@ -43,7 +43,7 @@ def test_should_warn_user_about_unsupported_confidence():
 
 
 def test_invalid_labels_format():
-    """this test should confirm that annotations are required to be in a form of dict"""
+    """this test should confirm that annotations are required to be in a form of list"""
     id = str(uuid.uuid4())
 
     label = {

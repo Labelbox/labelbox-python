@@ -142,14 +142,16 @@ class AnnotationImport(DbObject):
         return client.execute(data=data, files=files)
 
     @classmethod
-    def _get_ndjson_from_objects(cls, data, slug):
-        if not isinstance(data, list):
+    def _get_ndjson_from_objects(cls, objects: List[Dict[str, Any]],
+                                 object_name: str) -> BinaryIO:
+        if not isinstance(objects, list):
             raise TypeError(
-                f"{slug} must be in a form of list. Found {type(data)}")
+                f"{object_name} must be in a form of list. Found {type(objects)}"
+            )
 
-        data_str = ndjson.dumps(data)
+        data_str = ndjson.dumps(objects)
         if not data_str:
-            raise ValueError(f"{slug} cannot be empty")
+            raise ValueError(f"{object_name} cannot be empty")
 
         return data_str.encode('utf-8')
 
