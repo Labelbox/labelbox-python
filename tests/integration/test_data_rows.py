@@ -7,7 +7,8 @@ import pytest
 import requests
 
 from labelbox import DataRow
-from labelbox.schema.data_row_metadata import DataRowMetadataField
+from labelbox.schema.task import Task
+from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 import labelbox.exceptions
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
@@ -19,11 +20,15 @@ EXPECTED_METADATA_SCHEMA_IDS = [
     SPLIT_SCHEMA_ID, TEST_SPLIT_ID, EMBEDDING_SCHEMA_ID, TEXT_SCHEMA_ID,
     CAPTURE_DT_SCHEMA_ID
 ].sort()
+CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
 
 
 @pytest.fixture
 def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
+    for schema in mdo.custom_fields:
+        mdo.delete_schema(schema.name)
+    mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
     mdo._raw_ontology = mdo._get_ontology()
     mdo._build_ontology()
     yield mdo
@@ -391,6 +396,81 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
         for m in metadata:
             assert mdo._parse_upsert(m)
+
+
+@pytest.mark.parametrize("test_function,metadata_obj_type",
+                         [("create_data_rows", "class"),
+                          ("create_data_rows", "dict"),
+                          ("create_data_rows_sync", "class"),
+                          ("create_data_rows_sync", "dict"),
+                          ("create_data_row", "class"),
+                          ("create_data_row", "dict")])
+def test_create_data_rows_with_named_metadata_field_class(
+        test_function, metadata_obj_type, mdo, dataset, image_url):
+
+    row_with_metadata_field = {
+        DataRow.row_data:
+            image_url,
+        DataRow.external_id:
+            "row1",
+        DataRow.metadata_fields: [
+            DataRowMetadataField(name='split', value='test'),
+            DataRowMetadataField(name='custom_text', value='hello')
+        ]
+    }
+
+    row_with_metadata_dict = {
+        DataRow.row_data:
+            image_url,
+        DataRow.external_id:
+            "row2",
+        "metadata_fields": [
+            {
+                'name': 'split',
+                'value': 'test'
+            },
+            {
+                'name': 'custom_text',
+                'value': 'hello'
+            },
+        ]
+    }
+
+    assert len(list(dataset.data_rows())) == 0
+
+    METADATA_FIELDS = {
+        "class": row_with_metadata_field,
+        "dict": row_with_metadata_dict
+    }
+
+    def create_data_row(data_rows):
+        dataset.create_data_row(data_rows[0])
+
+    CREATION_FUNCTION = {
+        "create_data_rows": dataset.create_data_rows,
+        "create_data_rows_sync": dataset.create_data_rows_sync,
+        "create_data_row": create_data_row
+    }
+    data_rows = [METADATA_FIELDS[metadata_obj_type]]
+    function_to_test = CREATION_FUNCTION[test_function]
+    task = function_to_test(data_rows)
+
+    if isinstance(task, Task):
+        task.wait_till_done()
+
+    created_rows = list(dataset.data_rows())
+    assert len(created_rows) == 1
+    assert len(created_rows[0].metadata_fields) == 2
+    assert len(created_rows[0].metadata) == 2
+
+    metadata = created_rows[0].metadata
+    assert metadata[0].schema_id == SPLIT_SCHEMA_ID
+    assert metadata[0].name == 'test'
+    assert metadata[0].value == mdo.reserved_by_name['split']['test'].uid
+    assert metadata[1].name == CUSTOM_TEXT_SCHEMA_NAME
+    assert metadata[1].value == 'hello'
+    assert metadata[1].schema_id == mdo.custom_by_name[
+        CUSTOM_TEXT_SCHEMA_NAME].uid
 
 
 def test_create_data_rows_with_invalid_metadata(dataset, image_url):

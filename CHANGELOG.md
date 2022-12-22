@@ -3,6 +3,8 @@
 # Version 3.34.0 (...)
 ### Added
 * Added `get_by_name()` method to MetadataOntology object to access both custom and reserved metadata by name.
+* Added support for adding metadata by name when creating datarows using `DataRowMetadataOntology.bulk_upsert()`.
+* Added support for adding metadata by name when creating datarows using `Dataset.create_data_rows()`, `Dataset.create_data_rows_sync()`, and `Dataset.create_data_row()`.
 
 ### Changed
 * `Dataset.create_data_rows()` max limit of DataRows increased to 150,000

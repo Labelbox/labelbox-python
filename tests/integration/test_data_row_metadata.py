@@ -18,6 +18,7 @@ EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 PRE_COMPUTED_EMBEDDINGS_ID = 'ckrzang79000008l6hb5s6za1'
+CUSTOM_TEXT_SCHEMA_NAME = 'custom_text'
 
 FAKE_NUMBER_FIELD = {
     "id": FAKE_SCHEMA_ID,
@@ -32,6 +33,7 @@ def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
     for schema in mdo.custom_fields:
         mdo.delete_schema(schema.name)
+    mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
     mdo._raw_ontology = mdo._get_ontology()
     mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
     mdo._build_ontology()
@@ -69,6 +71,25 @@ def make_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
+def make_named_metadata(dr_id) -> DataRowMetadata:
+    embeddings = [0.0] * 128
+    msg = "A message"
+    time = datetime.utcnow()
+
+    metadata = DataRowMetadata(data_row_id=dr_id,
+                               fields=[
+                                   DataRowMetadataField(name='split',
+                                                        value=TEST_SPLIT_ID),
+                                   DataRowMetadataField(name='captureDateTime',
+                                                        value=time),
+                                   DataRowMetadataField(
+                                       name=CUSTOM_TEXT_SCHEMA_NAME, value=msg),
+                                   DataRowMetadataField(name='embedding',
+                                                        value=embeddings),
+                               ])
+    return metadata
+
+
 def test_export_empty_metadata(configured_project_with_label):
     project, _, _, _ = configured_project_with_label
     # Wait for exporter to retrieve latest labels
@@ -81,7 +102,7 @@ def test_export_empty_metadata(configured_project_with_label):
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    assert len(mdo.custom_fields) == 1
+    assert len(mdo.custom_fields) == 2
 
     split = mdo.reserved_by_name["split"]["train"]
 
@@ -127,6 +148,48 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
             f for f in metadata_lookup.get(data_row_id).fields
             if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
         ]), metadata_lookup.get(data_row_id).fields
+
+
+def test_upsert_datarow_metadata_by_name(datarow, mdo):
+    metadata = [make_named_metadata(datarow.uid)]
+    errors = mdo.bulk_upsert(metadata)
+    assert len(errors) == 0
+
+    metadata_lookup = {
+        metadata.data_row_id: metadata
+        for metadata in mdo.bulk_export([datarow.uid])
+    }
+    assert len([
+        f for f in metadata_lookup.get(datarow.uid).fields
+        if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
+    ]), metadata_lookup.get(datarow.uid).fields
+
+
+def test_upsert_datarow_metadata_option_by_name(datarow, mdo):
+    metadata = DataRowMetadata(data_row_id=datarow.uid,
+                               fields=[
+                                   DataRowMetadataField(name='split',
+                                                        value='test'),
+                               ])
+    errors = mdo.bulk_upsert([metadata])
+    assert len(errors) == 0
+
+    datarows = mdo.bulk_export([datarow.uid])
+    assert len(datarows[0].fields) == 1
+    metadata = datarows[0].fields[0]
+    assert metadata.schema_id == SPLIT_SCHEMA_ID
+    assert metadata.name == 'test'
+    assert metadata.value == TEST_SPLIT_ID
+
+
+def test_upsert_datarow_metadata_option_by_incorrect_name(datarow, mdo):
+    metadata = DataRowMetadata(data_row_id=datarow.uid,
+                               fields=[
+                                   DataRowMetadataField(name='split',
+                                                        value='test1'),
+                               ])
+    with pytest.raises(KeyError):
+        mdo.bulk_upsert([metadata])
 
 
 def test_bulk_delete_datarow_metadata(datarow, mdo):
