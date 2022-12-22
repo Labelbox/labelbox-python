@@ -41,21 +41,21 @@ def test_invalid_labels_format():
     id = str(uuid.uuid4())
 
     label = {
-            "uuid": "b862c586-8614-483c-b5e6-82810f70cac0",
-            "schemaId": "ckrazcueb16og0z6609jj7y3y",
-            "dataRow": {
-                "id": "ckrazctum0z8a0ybc0b0o0g0v"
-            },
-            "bbox": {
-                "top": 1352,
-                "left": 2275,
-                "height": 350,
-                "width": 139
-            }
+        "uuid": "b862c586-8614-483c-b5e6-82810f70cac0",
+        "schemaId": "ckrazcueb16og0z6609jj7y3y",
+        "dataRow": {
+            "id": "ckrazctum0z8a0ybc0b0o0g0v"
+        },
+        "bbox": {
+            "top": 1352,
+            "left": 2275,
+            "height": 350,
+            "width": 139
         }
+    }
     with patch.object(LabelImport, '_create_label_import_from_bytes'):
         with pytest.raises(TypeError):
             LabelImport.create_from_objects(client=MagicMock(),
-                                                    project_id=id,
-                                                    name=id,
-                                                    labels=label)
+                                            project_id=id,
+                                            name=id,
+                                            labels=label)

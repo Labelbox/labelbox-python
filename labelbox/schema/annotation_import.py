@@ -144,7 +144,8 @@ class AnnotationImport(DbObject):
     @classmethod
     def _get_ndjson_from_objects(cls, data, slug):
         if not isinstance(data, list):
-            raise TypeError(f"{slug} must be in a form of list. Found {type(data)}")
+            raise TypeError(
+                f"{slug} must be in a form of list. Found {type(data)}")
 
         data_str = ndjson.dumps(data)
         if not data_str:
@@ -208,8 +209,9 @@ class MEAPredictionImport(AnnotationImport):
             raise ValueError(f"File {path} is not accessible")
 
     @classmethod
-    def create_from_objects(cls, client: "labelbox.Client", model_run_id: str,
-                            name, predictions: List[Dict[str, Any]]) -> "MEAPredictionImport":
+    def create_from_objects(
+            cls, client: "labelbox.Client", model_run_id: str, name,
+            predictions: List[Dict[str, Any]]) -> "MEAPredictionImport":
         """
         Create an MEA prediction import job from an in memory dictionary
 
