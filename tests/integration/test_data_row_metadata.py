@@ -1,10 +1,8 @@
 from datetime import datetime
-from time import sleep
 
 import pytest
 import uuid
 
-from conftest import wait_for_data_row_processing
 from labelbox import DataRow, Dataset
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DeleteDataRowMetadata, \
     DataRowMetadataOntology, _parse_metadata_schema
@@ -91,7 +89,8 @@ def make_named_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
-def test_export_empty_metadata(client, configured_project_with_label):
+def test_export_empty_metadata(client, configured_project_with_label,
+                               wait_for_data_row_processing):
     project, _, data_row, _ = configured_project_with_label
     data_row = wait_for_data_row_processing(client, data_row)
     labels = project.label_generator()

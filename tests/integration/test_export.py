@@ -1,13 +1,12 @@
-from time import sleep
 import uuid
 
-from conftest import wait_for_data_row_processing
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
 from labelbox.schema.annotation_import import LabelImport
 
 
 def test_export_annotations_nested_checklist(
-        client, configured_project_with_complex_ontology):
+        client, configured_project_with_complex_ontology,
+        wait_for_data_row_processing):
     project, data_row = configured_project_with_complex_ontology
     data_row = wait_for_data_row_processing(client, data_row)
 

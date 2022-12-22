@@ -119,49 +119,6 @@ def get_invites(client):
     return invites
 
 
-def wait_for_data_row_processing(client, data_row):
-    """
-    Do not use. Only for testing.
-
-    Returns DataRow after waiting for it to finish processing media_attributes.
-    Some tests, specifically ones that rely on label export, rely on
-    DataRow be fully processed with media_attributes
-    """
-    data_row_id = data_row.uid
-    timeout_seconds = 60
-    while True:
-        data_row = client.get_data_row(data_row_id)
-        if data_row.media_attributes:
-            return data_row
-        timeout_seconds -= 2
-        if timeout_seconds <= 0:
-            raise TimeoutError(
-                f"Timed out waiting for DataRow '{data_row_id}' to finish processing media_attributes"
-            )
-        time.sleep(2)
-
-
-def wait_for_label_processing(project):
-    """
-    Do not use. Only for testing.
-
-    Returns Label after waiting for it to finish processing.
-    If `project.labels()` is called before label is fully processed,
-    it may return an empty set
-    """
-    timeout_seconds = 10
-    while True:
-        label = project.labels().get_one()
-        if label is not None:
-            return label
-        timeout_seconds -= 2
-        if timeout_seconds <= 0:
-            raise TimeoutError(
-                f"Timed out waiting for label for project '{project.uid}' to finish processing"
-            )
-        time.sleep(2)
-
-
 @pytest.fixture
 def queries():
     return SimpleNamespace(cancel_invite=cancel_invite,
@@ -347,7 +304,7 @@ def configured_project(project, client, rand_gen, image_url):
 
 @pytest.fixture
 def configured_project_with_label(client, rand_gen, image_url, project, dataset,
-                                  datarow):
+                                  datarow, wait_for_label_processing):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
@@ -450,3 +407,58 @@ def configured_project_with_complex_ontology(client, rand_gen, image_url):
     yield [project, data_row]
     dataset.delete()
     project.delete()
+
+
+@pytest.fixture
+def wait_for_data_row_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns DataRow after waiting for it to finish processing media_attributes.
+    Some tests, specifically ones that rely on label export, rely on
+    DataRow be fully processed with media_attributes
+    """
+
+    def func(client, data_row):
+        data_row_id = data_row.uid
+        timeout_seconds = 60
+        while True:
+            data_row = client.get_data_row(data_row_id)
+            print(f"dr {data_row}")
+            if data_row.media_attributes:
+                return data_row
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for DataRow '{data_row_id}' to finish processing media_attributes"
+                )
+            time.sleep(2)
+
+    return func
+
+
+@pytest.fixture
+def wait_for_label_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns Label after waiting for it to finish processing.
+    If `project.labels()` is called before label is fully processed,
+    it may return an empty set
+    """
+
+    def func(project):
+        timeout_seconds = 10
+        while True:
+            label = project.labels().get_one()
+            print(f"LABEL: {label}")
+            if label is not None:
+                return label
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for label for project '{project.uid}' to finish processing"
+                )
+            time.sleep(2)
+
+    return func
