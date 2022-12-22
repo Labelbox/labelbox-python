@@ -79,7 +79,9 @@ Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/a
 
 | Notebook                    | Github                            | Google Colab | Learn more |
 | --------------------------- | --------------------------------- | ------------ | ---------- |
-| Image Prediction upload                    | [Github](prediction_import/image-prediction.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_import/image-prediction.ipynb) |  [Docs](https://docs.labelbox.com/docs/upload-model-predictions) |
+| Image Prediction upload                    | [Github](prediction_upload/image-prediction.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/image-prediction.ipynb) |  [Docs](https://docs.labelbox.com/docs/upload-model-predictions) |
+| Text Prediction upload | [Github](prediction_upload/text-prediction.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/text-prediction.ipynb) | [Docs](https://docs.labelbox.com/docs/upload-model-predictions) |
+
 ------
 
 
