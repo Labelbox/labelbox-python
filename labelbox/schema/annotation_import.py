@@ -143,7 +143,7 @@ class AnnotationImport(DbObject):
 
     @classmethod
     def _get_ndjson_from_objects(cls, objects: List[Dict[str, Any]],
-                                 object_name: str) -> bytes:
+                                 object_name: str) -> BinaryIO:
         if not isinstance(objects, list):
             raise TypeError(
                 f"{object_name} must be in a form of list. Found {type(objects)}"
@@ -228,7 +228,7 @@ class MEAPredictionImport(AnnotationImport):
         data = cls._get_ndjson_from_objects(predictions, 'annotations')
 
         return cls._create_mea_import_from_bytes(client, model_run_id, name,
-                                                 data, len(data))
+                                                 data, len(str(data)))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", model_run_id: str,
@@ -470,7 +470,7 @@ class MALPredictionImport(AnnotationImport):
             Corresponding confidence score values will be ignored.
             """)
         return cls._create_mal_import_from_bytes(client, project_id, name, data,
-                                                 len(data))
+                                                 len(str(data)))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
@@ -626,7 +626,7 @@ class LabelImport(AnnotationImport):
             Corresponding confidence score values will be ignored.
             """)
         return cls._create_label_import_from_bytes(client, project_id, name,
-                                                   data, len(data))
+                                                   data, len(str(data)))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
