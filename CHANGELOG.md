@@ -11,6 +11,7 @@
 ### Changed
 * `Dataset.create_data_rows()` max limit of DataRows increased to 150,000
 * Improved error handling for invalid annotation import content
+* String metadata can now be 1024 characters long (from 500)
 
 ## Fixed
 * Broken urls in detectron notebook
