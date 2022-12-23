@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.34.0 (2022-12-22)
+# Version 3.34.0 (2022-12-23)
 ### Added
 * Added `get_by_name()` method to MetadataOntology object to access both custom and reserved metadata by name.
 * Added support for adding metadata by name when creating datarows using `DataRowMetadataOntology.bulk_upsert()`.
