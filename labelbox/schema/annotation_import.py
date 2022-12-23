@@ -141,6 +141,20 @@ class AnnotationImport(DbObject):
         files = {file_name: file_data}
         return client.execute(data=data, files=files)
 
+    @classmethod
+    def _get_ndjson_from_objects(cls, objects: List[Dict[str, Any]],
+                                 object_name: str) -> BinaryIO:
+        if not isinstance(objects, list):
+            raise TypeError(
+                f"{object_name} must be in a form of list. Found {type(objects)}"
+            )
+
+        data_str = ndjson.dumps(objects)
+        if not data_str:
+            raise ValueError(f"{object_name} cannot be empty")
+
+        return data_str.encode('utf-8')
+
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
         """
@@ -197,8 +211,9 @@ class MEAPredictionImport(AnnotationImport):
             raise ValueError(f"File {path} is not accessible")
 
     @classmethod
-    def create_from_objects(cls, client: "labelbox.Client", model_run_id: str,
-                            name, predictions) -> "MEAPredictionImport":
+    def create_from_objects(
+            cls, client: "labelbox.Client", model_run_id: str, name,
+            predictions: List[Dict[str, Any]]) -> "MEAPredictionImport":
         """
         Create an MEA prediction import job from an in memory dictionary
 
@@ -210,12 +225,10 @@ class MEAPredictionImport(AnnotationImport):
         Returns:
             MEAPredictionImport
         """
-        data_str = ndjson.dumps(predictions)
-        if not data_str:
-            raise ValueError('annotations cannot be empty')
-        data = data_str.encode('utf-8')
+        data = cls._get_ndjson_from_objects(predictions, 'annotations')
+
         return cls._create_mea_import_from_bytes(client, model_run_id, name,
-                                                 data, len(data))
+                                                 data, len(str(data)))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", model_run_id: str,
@@ -448,19 +461,16 @@ class MALPredictionImport(AnnotationImport):
         Returns:
             MALPredictionImport
         """
-        data_str = ndjson.dumps(predictions)
-        if not data_str:
-            raise ValueError('annotations cannot be empty')
-        data = data_str.encode('utf-8')
+        data = cls._get_ndjson_from_objects(predictions, 'annotations')
 
         has_confidence = LabelsConfidencePresenceChecker.check(predictions)
         if has_confidence:
             logger.warning("""
-            Confidence scores are not supported in MAL Prediction Import. 
-            Corresponding confidence score values will be ingored.
+            Confidence scores are not supported in MAL Prediction Import.
+            Corresponding confidence score values will be ignored.
             """)
         return cls._create_mal_import_from_bytes(client, project_id, name, data,
-                                                 len(data))
+                                                 len(str(data)))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,
@@ -607,19 +617,16 @@ class LabelImport(AnnotationImport):
         Returns:
             LabelImport
         """
-        data_str = ndjson.dumps(labels)
-        if not data_str:
-            raise ValueError('labels cannot be empty')
-        data = data_str.encode('utf-8')
+        data = cls._get_ndjson_from_objects(labels, 'labels')
 
         has_confidence = LabelsConfidencePresenceChecker.check(labels)
         if has_confidence:
             logger.warning("""
-            Confidence scores are not supported in Label Import. 
+            Confidence scores are not supported in Label Import.
             Corresponding confidence score values will be ignored.
             """)
         return cls._create_label_import_from_bytes(client, project_id, name,
-                                                   data, len(data))
+                                                   data, len(str(data)))
 
     @classmethod
     def create_from_url(cls, client: "labelbox.Client", project_id: str,

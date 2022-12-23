@@ -33,12 +33,15 @@ class DataRowMetadataSchema(BaseModel):
 DataRowMetadataSchema.update_forward_refs()
 
 Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
-String: Type[str] = constr(max_length=500)
+String: Type[str] = constr(max_length=1024)
 
 
 # Metadata base class
 class DataRowMetadataField(_CamelCaseMixin):
-    schema_id: SchemaId
+    # One of `schema_id` or `name` must be provided. If `schema_id` is not provided, it is
+    # inferred from `name`
+    schema_id: Optional[SchemaId] = None
+    name: Optional[str] = None
     # value is of type `Any` so that we do not improperly coerce the value to the wrong tpye
     # Additional validation is performed before upload using the schema information
     value: Any
@@ -148,6 +151,44 @@ class DataRowMetadataOntology:
                 self.custom_fields)
 
     @staticmethod
+    def _lookup_in_index_by_name(reserved_index, custom_index, name):
+        # search through reserved names first
+        if name in reserved_index:
+            return reserved_index[name]
+        elif name in custom_index:
+            return custom_index[name]
+        else:
+            raise KeyError(f"There is no metadata with name {name}")
+
+    def get_by_name(
+        self, name: str
+    ) -> Union[DataRowMetadataSchema, Dict[str, DataRowMetadataSchema]]:
+        """ Get metadata by name
+
+        >>> mdo.get_by_name(name)
+
+        Args:
+            name (str): Name of metadata schema
+
+        Returns:
+            Metadata schema as `DataRowMetadataSchema` or dict, in case of Enum metadata
+
+        Raises:
+            KeyError: When provided name is not presented in neither reserved nor custom metadata list
+        """
+        return self._lookup_in_index_by_name(self.reserved_by_name,
+                                             self.custom_by_name, name)
+
+    def _get_by_name_normalized(self, name: str) -> DataRowMetadataSchema:
+        """ Get metadata by name. For options, it provides the option schema instead of list of 
+        options 
+        """
+        # using `normalized` indices to find options by name as well
+        return self._lookup_in_index_by_name(self.reserved_by_name_normalized,
+                                             self.custom_by_name_normalized,
+                                             name)
+
+    @staticmethod
     def _make_name_index(
         fields: List[DataRowMetadataSchema]
     ) -> Dict[str, Union[DataRowMetadataSchema, Dict[str,
@@ -224,7 +265,7 @@ class DataRowMetadataOntology:
         return fields
 
     def refresh_ontology(self):
-        """ Update the `DataRowMetadataOntology` instance with the latest 
+        """ Update the `DataRowMetadataOntology` instance with the latest
             metadata ontology schemas
         """
         self._raw_ontology = self._get_ontology()
@@ -279,7 +320,7 @@ class DataRowMetadataOntology:
 
         Returns:
             Updated metadata schema as `DataRowMetadataSchema`
-        
+
         Raises:
             KeyError: When provided name is not a valid custom metadata
         """
@@ -427,6 +468,8 @@ class DataRowMetadataOntology:
             else:
                 field = DataRowMetadataField(schema_id=schema.uid,
                                              value=f["value"])
+
+            field.name = schema.name
             parsed.append(field)
         return parsed
 
@@ -599,13 +642,17 @@ class DataRowMetadataOntology:
             if isinstance(metadata_field, DataRowMetadataField):
                 return metadata_field
             elif isinstance(metadata_field, dict):
-                if not all(key in metadata_field
-                           for key in ("schema_id", "value")):
+                if not "value" in metadata_field:
                     raise ValueError(
-                        f"Custom metadata field '{metadata_field}' must have 'schema_id' and 'value' keys"
+                        f"Custom metadata field '{metadata_field}' must have a 'value' key"
+                    )
+                if not "schema_id" in metadata_field and not "name" in metadata_field:
+                    raise ValueError(
+                        f"Custom metadata field '{metadata_field}' must have either 'schema_id' or 'name' key"
                     )
                 return DataRowMetadataField(
-                    schema_id=metadata_field["schema_id"],
+                    schema_id=metadata_field.get("schema_id"),
+                    name=metadata_field.get("name"),
                     value=metadata_field["value"])
             else:
                 raise ValueError(
@@ -639,10 +686,31 @@ class DataRowMetadataOntology:
         self.refresh_ontology()
         return _parse_metadata_schema(res)
 
+    def _load_option_by_name(self, metadatum: DataRowMetadataField):
+        is_value_a_valid_schema_id = metadatum.value in self.fields_by_id
+        if not is_value_a_valid_schema_id:
+            metadatum.value = self.get_by_name(
+                metadatum.name)[metadatum.value].uid
+
+    def _load_schema_id_by_name(self, metadatum: DataRowMetadataField):
+        """
+        Loads schema id by name for a metadata field including options schema id.
+        """
+        if metadatum.name is None:
+            return
+
+        if metadatum.schema_id is None:
+            schema = self._get_by_name_normalized(metadatum.name)
+            metadatum.schema_id = schema.uid
+            if schema.options:
+                self._load_option_by_name(metadatum)
+
     def _parse_upsert(
             self, metadatum: DataRowMetadataField
     ) -> List[_UpsertDataRowMetadataInput]:
         """Format for metadata upserts to GQL"""
+
+        self._load_schema_id_by_name(metadatum)
 
         if metadatum.schema_id not in self.fields_by_id:
             # Fetch latest metadata ontology if metadata can't be found
