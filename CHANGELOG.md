@@ -1,13 +1,20 @@
 # Changelog
 
-# Version 3.34.0 (...)
+# Version 3.34.0 (2022-12-22)
 ### Added
 * Added `get_by_name()` method to MetadataOntology object to access both custom and reserved metadata by name.
 * Added support for adding metadata by name when creating datarows using `DataRowMetadataOntology.bulk_upsert()`.
 * Added support for adding metadata by name when creating datarows using `Dataset.create_data_rows()`, `Dataset.create_data_rows_sync()`, and `Dataset.create_data_row()`.
+* Example notebooks for auto metrics in models
+
 
 ### Changed
 * `Dataset.create_data_rows()` max limit of DataRows increased to 150,000
+* Improved error handling for invalid annotation import content
+* String metadata can now be 1024 characters long (from 500)
+
+## Fixed
+* Broken urls in detectron notebook
 
 # Version 3.33.1 (2022-12-14)
 ### Fixed
