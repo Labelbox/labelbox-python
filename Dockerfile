@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye
+FROM python:3.9-slim-bullseye as base
 
 RUN pip install pytest pytest-cases pytest-rerunfailures
 RUN apt-get -y update
@@ -16,3 +16,6 @@ RUN pip install -r requirements.txt
 COPY . /usr/src/
 
 RUN python setup.py install
+
+FROM base as dev
+RUN pip install -r requirements-dev.txt

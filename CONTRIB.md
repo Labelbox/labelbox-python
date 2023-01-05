@@ -18,6 +18,14 @@ following packages/modules:
   fetching.
 * `utils.py` contains utility functions.
 
+## Development Environment
+
+A VSCode dev container is provided to create a reproducable environment. This
+can be used by installing the Dev Containers extension. You can use `⌘⇧P` and 
+selecting `Extensions: Show Recommended Extensions`. Next use `⌘⇧P` to select
+the `Dev Containers: Reopen in Container` option. This will load the VSCode 
+environment running in a Docker container.
+
 ## Branches
 
 * All development happens in per-feature branches prefixed by contributor's

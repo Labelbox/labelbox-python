@@ -1,0 +1,12 @@
+# Requirements for development environment. These are not needed for CI.
+
+# Requirements for development
+ipdb==0.13.11
+rich==12.6.0
+ipykernel==6.16.2
+ipywidgets==8.0.3
+pre-commit==2.21.0
+tox==4.0.16
+# Requirements for example notebooks 
+tensorflow==2.11.0
+tensorflow-io==0.29.0

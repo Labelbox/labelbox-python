@@ -1,0 +1,21 @@
+// Configuration for VS Code devcontainer. For format details, see https://aka.ms/devcontainer.json.
+{
+	"name": "Docker Compose",
+	"dockerComposeFile": [
+		"docker-compose.yml"
+	],
+
+	// name of the docker-compose service for the container that VS Code should
+	"service": "sdk",
+
+	// the path VS Code should open by default
+	"workspaceFolder": "/usr/src",
+	"customizations": {
+		"vscode": {
+			// VS code extensions to install inside the container
+			"extensions": [
+				"ms-python.python"
+			]
+		}
+	}
+}

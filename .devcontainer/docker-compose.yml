@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  sdk:
+    environment:
+    - LABELBOX_TEST_ENVIRON=local
+    - PYTHONPATH=/usr/src
+    - DA_GCP_LABELBOX_API_KEY
+    - LABELBOX_TEST_API_KEY_LOCAL
+    build: 
+      context: ..
+      target: dev
+    volumes:
+      - ..:/usr/src
+      - ~/.ssh:/root/.ssh
+    # Overrides command so things don't shut down after the process ends.
+    command: /bin/sh -c "while sleep 1000; do :; done"

@@ -1,6 +1,6 @@
 
 build:
-	docker build -t local/labelbox-python:test .
+	docker build -t local/labelbox-python:test --target base .
 
 
 test-local: build
