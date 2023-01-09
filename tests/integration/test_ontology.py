@@ -41,8 +41,8 @@ def test_feature_schema_create_read(client, rand_gen):
 
     time.sleep(3)  # Slight delay for searching
     queried_feature_schemas = list(client.get_feature_schemas(name))
-    assert [feature_schema.name for feature_schema in queried_feature_schemas
-           ] == [name]
+    assert [feature_schema.name
+            for feature_schema in queried_feature_schemas] == [name]
     queried_feature_schema = queried_feature_schemas[0]
 
     for attr in Entity.FeatureSchema.fields():
@@ -60,12 +60,12 @@ def test_ontology_create_read(client, rand_gen):
         'color': 'black',
         'classifications': [],
     }
-    feature_schema = client.create_feature_schema(feature_schema_cat_normalized)
+    feature_schema = client.create_feature_schema(
+        feature_schema_cat_normalized)
     created_ontology = client.create_ontology_from_feature_schemas(
         name=ontology_name,
         feature_schema_ids=[feature_schema.uid],
-        media_type=MediaType.Image
-    )
+        media_type=MediaType.Image)
     tool_normalized = created_ontology.normalized['tools'][0]
     for k, v in feature_schema_cat_normalized.items():
         assert tool_normalized[k] == v
@@ -81,7 +81,8 @@ def test_ontology_create_read(client, rand_gen):
 
     time.sleep(3)  # Slight delay for searching
     queried_ontologies = list(client.get_ontologies(ontology_name))
-    assert [ontology.name for ontology in queried_ontologies] == [ontology_name]
+    assert [ontology.name
+            for ontology in queried_ontologies] == [ontology_name]
     queried_ontology = queried_ontologies[0]
     for attr in Entity.Ontology.fields():
         assert _get_attr_stringify_json(created_ontology,
