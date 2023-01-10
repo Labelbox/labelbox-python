@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from labelbox import LabelingFrontend
+from labelbox import LabelingFrontend, MediaType
 from labelbox.exceptions import InvalidQueryError, ResourceConflict
 
 
@@ -53,7 +53,9 @@ def test_project_setup(project) -> None:
 
 def test_project_editor_setup(client, project, rand_gen):
     ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
-    ontology = client.create_ontology(ontology_name, simple_ontology())
+    ontology = client.create_ontology(ontology_name,
+                                      simple_ontology(),
+                                      media_type=MediaType.Image)
     now = datetime.now().astimezone(timezone.utc)
     project.setup_editor(ontology)
     assert now - project.setup_complete <= timedelta(seconds=3)
@@ -71,7 +73,9 @@ def test_project_editor_setup(client, project, rand_gen):
 def test_project_editor_setup_cant_call_multiple_times(client, project,
                                                        rand_gen):
     ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
-    ontology = client.create_ontology(ontology_name, simple_ontology())
+    ontology = client.create_ontology(ontology_name,
+                                      simple_ontology(),
+                                      media_type=MediaType.Image)
     project.setup_editor(ontology)
     with pytest.raises(ResourceConflict):
         project.setup_editor(ontology)
