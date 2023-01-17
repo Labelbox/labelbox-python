@@ -1,6 +1,6 @@
 import pytest
 
-from labelbox import OntologyBuilder
+from labelbox import OntologyBuilder, MediaType
 from labelbox.orm.model import Entity
 import json
 import time
@@ -62,7 +62,9 @@ def test_ontology_create_read(client, rand_gen):
     }
     feature_schema = client.create_feature_schema(feature_schema_cat_normalized)
     created_ontology = client.create_ontology_from_feature_schemas(
-        name=ontology_name, feature_schema_ids=[feature_schema.uid])
+        name=ontology_name,
+        feature_schema_ids=[feature_schema.uid],
+        media_type=MediaType.Image)
     tool_normalized = created_ontology.normalized['tools'][0]
     for k, v in feature_schema_cat_normalized.items():
         assert tool_normalized[k] == v
