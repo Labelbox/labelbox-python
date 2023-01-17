@@ -44,12 +44,12 @@ class Dataset(Entity):
     def delete(self) -> None:
         Session.delete_request(f"{DATASET_RESOURCE}/{self.id}")
 
-    @staticmethod
-    def create(dataset: CreateDatasetType):
-        dataset_json = Session.post_request(f"{DATASET_RESOURCE}", json=dataset)
-        return Dataset(dataset_json)
 
-    @staticmethod
-    def get_by_id(dataset_id: str):
-        dataset_json = Session.get_request(f"{DATASET_RESOURCE}/{dataset_id}")
-        return Dataset(dataset_json)
+def create(dataset: CreateDatasetType):
+    dataset_json = Session.post_request(f"{DATASET_RESOURCE}", json=dataset)
+    return Dataset(dataset_json)
+
+
+def get_by_id(dataset_id: str):
+    dataset_json = Session.get_request(f"{DATASET_RESOURCE}/{dataset_id}")
+    return Dataset(dataset_json)
