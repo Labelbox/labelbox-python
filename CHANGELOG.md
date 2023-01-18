@@ -1,6 +1,6 @@
 # Changelog
 
-# Version 3.35.0 (xxxx-xx-xx)
+# Version 3.35.0 (2023-01-18)
 ### Fixed
 * Retry 520 errors when uploading files
 
