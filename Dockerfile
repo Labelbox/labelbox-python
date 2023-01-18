@@ -1,5 +1,4 @@
-FROM python:3.7
-
+FROM python:3.7-slim-bullseye
 
 RUN pip install pytest pytest-cases pytest-rerunfailures
 RUN apt-get -y update
@@ -17,4 +16,3 @@ RUN pip install -r requirements.txt
 COPY . /usr/src/
 
 RUN python setup.py install
-
