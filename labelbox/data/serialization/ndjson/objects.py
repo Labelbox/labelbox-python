@@ -96,7 +96,8 @@ class NDLine(NDBaseObject, ConfidenceMixin):
     def from_common(cls, line: Line,
                     classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[ImageData, TextData]) -> "NDLine":
+                    data: Union[ImageData, TextData], 
+                    confidence: float) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
@@ -105,7 +106,9 @@ class NDLine(NDBaseObject, ConfidenceMixin):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   classifications=classifications)
+                   classifications=classifications,
+                   confidence=confidence
+                   )
 
 
 class NDFrameLine(VideoSupported):
@@ -340,7 +343,7 @@ class Location(BaseModel):
     end: int
 
 
-class NDTextEntity(NDBaseObject):
+class NDTextEntity(NDBaseObject, ConfidenceMixin):
     location: Location
 
     def to_common(self) -> TextEntity:
@@ -350,7 +353,9 @@ class NDTextEntity(NDBaseObject):
     def from_common(cls, text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[ImageData, TextData]) -> "NDTextEntity":
+                    data: Union[ImageData, TextData],
+                    confidence: float
+                    ) -> "NDTextEntity":
         return cls(location=Location(
             start=text_entity.start,
             end=text_entity.end,
@@ -359,7 +364,9 @@ class NDTextEntity(NDBaseObject):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   classifications=classifications)
+                   classifications=classifications,
+                   confidence=confidence
+                   )
 
 
 class NDObject:
