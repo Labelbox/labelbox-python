@@ -45,7 +45,7 @@ def test_semantic_error(client):
 def test_timeout_error(client, project):
     with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
         query_str = """query getOntology { 
-        project (where: {id: $%s}) { 
+        project (where: {id: %s}) { 
             ontology { 
                 normalized 
                 } 

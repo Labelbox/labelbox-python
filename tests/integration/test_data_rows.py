@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from labelbox import DataRow
+from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.task import Task
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 import labelbox.exceptions
@@ -20,18 +21,21 @@ EXPECTED_METADATA_SCHEMA_IDS = [
     SPLIT_SCHEMA_ID, TEST_SPLIT_ID, EMBEDDING_SCHEMA_ID, TEXT_SCHEMA_ID,
     CAPTURE_DT_SCHEMA_ID
 ].sort()
-CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
+CUSTOM_TEXT_SCHEMA_NAME = "data_row_custom_text"
 
 
 @pytest.fixture
 def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
-    for schema in mdo.custom_fields:
-        mdo.delete_schema(schema.name)
-    mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
+    try:
+        mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
+    except MalformedQueryException:
+        # Do nothing if already exists
+        pass
     mdo._raw_ontology = mdo._get_ontology()
     mdo._build_ontology()
     yield mdo
+    mdo.delete_schema(CUSTOM_TEXT_SCHEMA_NAME)
 
 
 @pytest.fixture
@@ -415,7 +419,7 @@ def test_create_data_rows_with_named_metadata_field_class(
             "row1",
         DataRow.metadata_fields: [
             DataRowMetadataField(name='split', value='test'),
-            DataRowMetadataField(name='custom_text', value='hello')
+            DataRowMetadataField(name=CUSTOM_TEXT_SCHEMA_NAME, value='hello')
         ]
     }
 
@@ -430,7 +434,7 @@ def test_create_data_rows_with_named_metadata_field_class(
                 'value': 'test'
             },
             {
-                'name': 'custom_text',
+                'name': CUSTOM_TEXT_SCHEMA_NAME,
                 'value': 'hello'
             },
         ]

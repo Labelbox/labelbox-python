@@ -4,6 +4,7 @@ import pytest
 import uuid
 
 from labelbox import DataRow, Dataset
+from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DeleteDataRowMetadata, \
     DataRowMetadataOntology, _parse_metadata_schema
 
@@ -17,7 +18,7 @@ EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 PRE_COMPUTED_EMBEDDINGS_ID = 'ckrzang79000008l6hb5s6za1'
-CUSTOM_TEXT_SCHEMA_NAME = 'custom_text'
+CUSTOM_TEXT_SCHEMA_NAME = 'datarow_metadata_custom_text'
 
 FAKE_NUMBER_FIELD = {
     "id": FAKE_SCHEMA_ID,
@@ -30,13 +31,16 @@ FAKE_NUMBER_FIELD = {
 @pytest.fixture
 def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
-    for schema in mdo.custom_fields:
-        mdo.delete_schema(schema.name)
-    mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
+    try:
+        mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
+    except MalformedQueryException:
+        # Do nothing if already exists
+        pass
     mdo._raw_ontology = mdo._get_ontology()
     mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
     mdo._build_ontology()
     yield mdo
+    mdo.delete_schema(CUSTOM_TEXT_SCHEMA_NAME)
 
 
 @pytest.fixture
@@ -101,7 +105,8 @@ def test_export_empty_metadata(client, configured_project_with_label,
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    assert len(mdo.custom_fields) == 2
+    # three are created by mdo fixture but there may be more
+    assert len(mdo.custom_fields) >= 3
 
     split = mdo.reserved_by_name["split"]["train"]
 
