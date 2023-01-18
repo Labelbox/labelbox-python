@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.9-slim-bullseye
 
 RUN pip install pytest pytest-cases pytest-rerunfailures
 RUN apt-get -y update
