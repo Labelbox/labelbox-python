@@ -96,8 +96,8 @@ class NDLine(NDBaseObject, ConfidenceMixin):
     def from_common(cls, line: Line,
                     classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[ImageData, TextData], 
-                    confidence: float) -> "NDLine":
+                    data: Union[ImageData,
+                                TextData], confidence: float) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
@@ -107,8 +107,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications,
-                   confidence=confidence
-                   )
+                   confidence=confidence)
 
 
 class NDFrameLine(VideoSupported):
@@ -353,9 +352,8 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
     def from_common(cls, text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: float
-                    ) -> "NDTextEntity":
+                    data: Union[ImageData,
+                                TextData], confidence: float) -> "NDTextEntity":
         return cls(location=Location(
             start=text_entity.start,
             end=text_entity.end,
@@ -365,8 +363,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    classifications=classifications,
-                   confidence=confidence
-                   )
+                   confidence=confidence)
 
 
 class NDObject:
