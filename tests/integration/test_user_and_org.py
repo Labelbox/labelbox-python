@@ -19,5 +19,5 @@ def test_user_and_org_projects(project):
 
     assert project.created_by() == user
     assert project.organization() == org
-    assert set(user.projects()) == user_projects.union({project})
-    assert set(org.projects()) == org_projects.union({project})
+    assert project in user_projects
+    assert project in org_projects

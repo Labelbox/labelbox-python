@@ -52,8 +52,9 @@ def test_model_run_delete(client, model_run):
     models_after = list(client.get_models())
     model_after = models_after[0]
     after = list(model_after.model_runs())
+    after_uids = {mr.uid for mr in after}
 
-    assert len(before) == len(after) + 1
+    assert model_run.uid not in after_uids
 
 
 def test_model_run_update_config(model_run_with_training_metadata):
@@ -74,11 +75,8 @@ def test_model_run_get_config(model_run_with_training_metadata):
     assert res["batch_size"] == new_config["batch_size"]
 
 
-def test_model_run_data_rows_delete(client, model_run_with_model_run_data_rows):
-    models = list(client.get_models())
-    model = models[0]
-    model_runs = list(model.model_runs())
-    model_run = model_runs[0]
+def test_model_run_data_rows_delete(model_run_with_model_run_data_rows):
+    model_run = model_run_with_model_run_data_rows
 
     before = list(model_run.model_run_data_rows())
     annotation_data_row = before[0]

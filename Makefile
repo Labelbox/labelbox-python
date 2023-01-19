@@ -21,7 +21,7 @@ test-staging: build
 		-e LABELBOX_TEST_ENVIRON="staging" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_STAGING=${LABELBOX_TEST_API_KEY_STAGING} \
-		local/labelbox-python:test pytest $(PATH_TO_TEST)
+		local/labelbox-python:test pytest -n 10 $(PATH_TO_TEST)
 
 test-prod: build
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
