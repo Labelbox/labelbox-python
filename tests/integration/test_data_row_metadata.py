@@ -18,7 +18,7 @@ EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 PRE_COMPUTED_EMBEDDINGS_ID = 'ckrzang79000008l6hb5s6za1'
-CUSTOM_TEXT_SCHEMA_NAME = 'datarow_metadata_custom_text'
+CUSTOM_TEXT_SCHEMA_NAME = 'custom_text'
 
 FAKE_NUMBER_FIELD = {
     "id": FAKE_SCHEMA_ID,
@@ -104,8 +104,8 @@ def test_export_empty_metadata(client, configured_project_with_label,
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
-    # three are created by mdo fixture but there may be more
-    assert len(mdo.custom_fields) >= 3
+    # two are created by mdo fixture but there may be more
+    assert len(mdo.custom_fields) >= 2
 
     split = mdo.reserved_by_name["split"]["train"]
 
