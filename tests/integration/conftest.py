@@ -344,7 +344,10 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
         upload_task = LabelImport.create_from_objects(
             client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
         upload_task.wait_until_done(sleep_time_seconds=5)
-        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import failed"
+        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
+        assert len(
+            upload_task.errors
+        ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
 
     project.create_label = create_label
     project.create_label()
