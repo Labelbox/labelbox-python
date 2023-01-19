@@ -40,7 +40,6 @@ def mdo(client):
     mdo._raw_ontology.append(FAKE_NUMBER_FIELD)
     mdo._build_ontology()
     yield mdo
-    mdo.delete_schema(CUSTOM_TEXT_SCHEMA_NAME)
 
 
 @pytest.fixture
