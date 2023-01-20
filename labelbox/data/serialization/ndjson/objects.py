@@ -60,12 +60,12 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
             'x': point.x,
             'y': point.y
         },
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications,
-            confidence=confidence)
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
 
 
 class NDFramePoint(VideoSupported):
@@ -93,22 +93,24 @@ class NDLine(NDBaseObject, ConfidenceMixin):
         return Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line])
 
     @classmethod
-    def from_common(cls, line: Line,
-                    classifications: List[ClassificationAnnotation], name: str,
-                    feature_schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[ImageData,
-                                TextData],
+    def from_common(cls,
+                    line: Line,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[ImageData, TextData],
                     confidence: Optional[float] = None) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
         } for pt in line.points],
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications,
-            confidence=confidence)
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
 
 
 class NDFrameLine(VideoSupported):
@@ -152,12 +154,12 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in polygon.points],
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications,
-            confidence=confidence)
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
 
 
 class NDRectangle(NDBaseObject, ConfidenceMixin):
@@ -321,8 +323,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                     confidence: Optional[float] = None) -> "NDMask":
 
         if mask.mask.url is not None:
-            lbv1_mask = _URIMask(
-                instanceURI=mask.mask.url, colorRGB=mask.color)
+            lbv1_mask = _URIMask(instanceURI=mask.mask.url, colorRGB=mask.color)
         else:
             binary = np.all(mask.mask.value == mask.color, axis=-1)
             im_bytes = BytesIO()
@@ -360,12 +361,12 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
             start=text_entity.start,
             end=text_entity.end,
         ),
-            dataRow=DataRow(id=data.uid),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
-            classifications=classifications,
-            confidence=confidence)
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
 
 
 class NDObject:
