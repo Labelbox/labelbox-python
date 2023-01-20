@@ -1,10 +1,14 @@
 import json
-
+import pytest
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
-def test_polyline_import():
-    with open('tests/data/assets/ndjson/polyline_import.json', 'r') as file:
+@pytest.mark.parametrize("filename", [
+    "tests/data/assets/ndjson/polyline_without_confidence_import.json",
+    "tests/data/assets/ndjson/polyline_import.json"
+])
+def test_polyline_import(filename: str):
+    with open(filename, 'r') as file:
         data = json.load(file)
     res = NDJsonConverter.deserialize(data).as_list()
     res = list(NDJsonConverter.serialize(res))
