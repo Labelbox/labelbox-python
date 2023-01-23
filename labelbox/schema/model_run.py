@@ -13,6 +13,8 @@ from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.schema.filters import ModelRunExportFilter
+from labelbox.schema.task import Task
+from labelbox.schema.user import User  # type: ignore
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
@@ -455,7 +457,7 @@ class ModelRun(DbObject):
     """
 
     def export_labels_v2(self, task_name: str,
-                         filter: Optional[ModelRunExportFilter]) -> str:
+                         filter: Optional[ModelRunExportFilter]) -> Task:
         mutation_name = "exportDataRows"
         create_task_query_str = """mutation exportDataRowsPyApi($input: ExportDataRowsInput!){
           %s(input: $input) {taskId}
