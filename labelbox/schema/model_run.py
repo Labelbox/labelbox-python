@@ -470,7 +470,7 @@ class ModelRun(DbObject):
                     "filters": {
                         modelRunIds: [self.uid]
                     },
-                    "params": {  
+                    "params": {
                         includeAttachments:
                             filter["attachments"]
                             if filter and "attachments" in filter else False,
@@ -478,8 +478,8 @@ class ModelRun(DbObject):
                             filter['media_attributes'] if filter and
                             'media_attributes' in filter else False,
                         includeMetadata:
-                            filter['metadata_fields']
-                            if filter and 'metadata_fields' in filter else False,
+                            filter['metadata_fields'] if filter and
+                            'metadata_fields' in filter else False,
                         globalIssues:
                             filter["global_issues"]
                             if filter and 'global_issues' in filter else False,
