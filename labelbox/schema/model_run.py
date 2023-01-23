@@ -477,6 +477,9 @@ class ModelRun(DbObject):
                         includeMetadata:
                             filter['metadata']
                             if filter and 'metadata' in filter else False,
+                        globalIssues:
+                            filter["global_issues"]
+                            if filter and 'global_issues' in filter else False,
                         # Arguments locked based on exectuion context
                         includeModelRuns:
                             True,
