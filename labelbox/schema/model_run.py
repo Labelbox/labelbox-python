@@ -12,6 +12,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
+from labelbox.schema.filters import ModelRunExportFilter
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport

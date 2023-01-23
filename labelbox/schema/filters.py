@@ -1,12 +1,9 @@
-try:
-    from typing import Optional
-except:
-    from typing_extensions import Optional
+import sys
 
-try:
-    from typing import TypedDict
-except:
-    from typing_extensions import TypedDict
+if sys.version_info >= (3, 8):
+    from typing import TypedDict, Optional
+else:
+    from typing_extensions import TypedDict, Optional
 
 
 class DataRowFilter(TypedDict):
