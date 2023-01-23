@@ -446,6 +446,64 @@ class ModelRun(DbObject):
                          self.uid)
             time.sleep(sleep_time)
 
+    """
+    Creates a model run export task with the given filter and returns the task.
+    
+    >>>    export_task = export_labels_v2("my_export_task", filter={"media_attributes": True})
+    
+    """
+
+    def export_labels_v2(self, task_name: str,
+                         filter: Optional[ModelRunExportFilter]) -> str:
+        mutation_name = "exportDataRows"
+        create_task_query_str = """mutation exportDataRowsPyApi($input: ExportDataRowsInput!){
+          %s(input: $input) {taskId}
+          """ % (mutation_name)
+        res = self.client.execute(
+            create_task_query_str,
+            {
+                "input": {
+                    "taskName": task_name,
+                    "filters": {
+                        modelRunIds: [self.uid]
+                    },
+                    "params": {
+                        includeAttachments:
+                            filter["attachments"]
+                            if filter and "attachments" in filter else False,
+                        includeMediaAttributes:
+                            filter['media_attributes'] if filter and
+                            'media_attributes' in filter else False,
+                        includeMetadata:
+                            filter['metadata']
+                            if filter and 'metadata' in filter else False,
+                        # Arguments locked based on exectuion context
+                        includeModelRuns:
+                            True,
+                        includeProjectDetails:
+                            False,
+                        includeLabels:
+                            False,
+                        includePerformanceDetails:
+                            False,
+                    },
+                }
+            },
+        )
+        task_id = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
+
 
 class ModelRunDataRow(DbObject):
     label_id = Field.String("label_id")
