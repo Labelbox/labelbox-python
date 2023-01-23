@@ -496,7 +496,7 @@ class ModelRun(DbObject):
                 }
             },
         )
-        task_id = res[mutation_name]
+        res = res[mutation_name]
         task_id = res["taskId"]
         user: User = self.client.get_user()
         tasks: List[Task] = list(
