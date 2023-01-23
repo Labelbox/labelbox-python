@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.36.0 (2023-01-23)
+### Fixed
+* `confidence` attribute is now supported for TextEntity and Line predictions
+
 # Version 3.35.0 (2023-01-18)
 ### Fixed
 * Retry 520 errors when uploading files
