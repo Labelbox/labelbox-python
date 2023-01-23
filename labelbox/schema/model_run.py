@@ -468,29 +468,29 @@ class ModelRun(DbObject):
                 "input": {
                     "taskName": task_name,
                     "filters": {
-                        modelRunIds: [self.uid]
+                        "modelRunIds": [self.uid]
                     },
                     "params": {
-                        includeAttachments:
+                        "includeAttachments":
                             filter["attachments"]
                             if filter and "attachments" in filter else False,
-                        includeMediaAttributes:
+                        "includeMediaAttributes":
                             filter['media_attributes'] if filter and
                             'media_attributes' in filter else False,
-                        includeMetadata:
+                        "includeMetadata":
                             filter['metadata_fields'] if filter and
                             'metadata_fields' in filter else False,
-                        globalIssues:
+                        "globalIssues":
                             filter["global_issues"]
                             if filter and 'global_issues' in filter else False,
                         # Arguments locked based on exectuion context
-                        includeModelRuns:
+                        "includeModelRuns":
                             True,
-                        includeProjectDetails:
+                        "includeProjectDetails":
                             False,
-                        includeLabels:
+                        "includeLabels":
                             False,
-                        includePerformanceDetails:
+                        "includePerformanceDetails":
                             False,
                     },
                 }
