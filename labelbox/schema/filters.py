@@ -1,7 +1,12 @@
 try:
-    from typing import Optional, TypedDict
+    from typing import Optional
 except:
-    from typing_extensions import Optional, TypedDict
+    from typing_extensions import Optional
+
+try:
+    from typing import TypedDict
+except:
+    from typing_extensions import TypedDict
 
 
 class DataRowFilter(TypedDict):
