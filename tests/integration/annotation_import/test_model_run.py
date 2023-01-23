@@ -114,6 +114,16 @@ def test_model_run_export_labels(model_run_with_model_run_data_rows):
     assert len(labels) == 3
 
 
+def test_model_run_export_labels_v2(model_run_with_model_run_data_rows):
+    task_name = "test_task"
+    task = model_run_with_model_run_data_rows.export_labels_v2(
+        task_name, filter={"media_attributes: true"})
+    assert task.name == task_name
+    task.wait_until_done()
+    assert task.status == "COMPLETED"
+    print(task)
+
+
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
                     reason="does not work for onprem")
 def test_model_run_status(model_run_with_model_run_data_rows):
