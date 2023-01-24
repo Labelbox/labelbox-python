@@ -355,8 +355,8 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
     def from_common(cls, text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation], name: str,
                     feature_schema_id: Cuid, extra: Dict[str, Any],
-                    data: Union[ImageData,
-                                TextData], confidence: float) -> "NDTextEntity":
+                    data: Union[ImageData,TextData], 
+                    confidence: Optional[float] = None) -> "NDTextEntity":
         return cls(location=Location(
             start=text_entity.start,
             end=text_entity.end,
