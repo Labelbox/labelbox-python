@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.36.1 (2023-01-24)
+### Fixed
+* `confidence` is now optional for TextEntity
+
 # Version 3.36.0 (2023-01-23)
 ### Fixed
 * `confidence` attribute is now supported for TextEntity and Line predictions
