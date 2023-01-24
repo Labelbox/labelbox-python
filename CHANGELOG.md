@@ -1,5 +1,17 @@
 # Changelog
 
+# Version 3.36.1 (2023-01-24)
+### Fixed
+* `confidence` is now optional for TextEntity
+
+# Version 3.36.0 (2023-01-23)
+### Fixed
+* `confidence` attribute is now supported for TextEntity and Line predictions
+
+# Version 3.35.0 (2023-01-18)
+### Fixed
+* Retry 520 errors when uploading files
+
 # Version 3.34.0 (2022-12-22)
 ### Added
 * Added `get_by_name()` method to MetadataOntology object to access both custom and reserved metadata by name.

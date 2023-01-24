@@ -377,6 +377,8 @@ class Client:
             raise labelbox.exceptions.InternalServerError(error_502)
         elif response.status_code == 503:
             raise labelbox.exceptions.InternalServerError(response.text)
+        elif response.status_code == 520:
+            raise labelbox.exceptions.InternalServerError(response.text)
 
         try:
             file_data = response.json().get("data", None)
@@ -1161,9 +1163,9 @@ class Client:
             'Status' contains the outcome of this job. It can be one of
             'Success', 'Partial Success', or 'Failure'.
 
-            'Results' contains a list of the fetched corresponding data row ids in the input order. 
-            For data rows that cannot be fetched due to an error, or data rows that do not exist, 
-            empty string is returned at the position of the respective global_key. 
+            'Results' contains a list of the fetched corresponding data row ids in the input order.
+            For data rows that cannot be fetched due to an error, or data rows that do not exist,
+            empty string is returned at the position of the respective global_key.
             More error information can be found in the 'Errors' section.
 
             'Errors' contains a list of global_keys that could not be fetched, along
