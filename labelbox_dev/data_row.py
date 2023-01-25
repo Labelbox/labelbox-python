@@ -1,11 +1,12 @@
-from typing import Any, List, Optional, TypedDict
-import json
 import os
+from typing import Any, Iterator, List, Optional, Union
 
 from labelbox_dev.entity import Entity
 from labelbox_dev.exceptions import LabelboxError
 from labelbox_dev.session import Session
 from labelbox_dev.task import BulkGetDataRowsTask, CreateDataRowsTask
+from labelbox_dev.types import TypedDict
+from labelbox_dev.pagination import IdentifierPaginator
 
 DATA_ROW_RESOURCE = "data-rows"
 
@@ -137,7 +138,10 @@ class DataRow(Entity):
         return DataRow(data_row_json)
 
     @staticmethod
-    def get_by_ids(data_row_ids, run_async: bool = False):
+    def get_by_ids(
+        data_row_ids,
+        run_async: bool = False
+    ) -> Union[Iterator["DataRow"], BulkGetDataRowsTask]:
         body = {'keys': data_row_ids, 'run_async': run_async}
 
         if run_async:
@@ -152,12 +156,14 @@ class DataRow(Entity):
                 )
             return BulkGetDataRowsTask.get_by_id(task_id)
 
-        data_rows_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkget",
-                                              json=body)
-        return [DataRow(data_row_json) for data_row_json in data_rows_json]
+        return IdentifierPaginator(f"{DATA_ROW_RESOURCE}", DataRow,
+                                   data_row_ids)
 
     @staticmethod
-    def get_by_global_keys(global_keys, run_async: bool = False):
+    def get_by_global_keys(
+        global_keys,
+        run_async: bool = False
+    ) -> Union[Iterator["DataRow"], BulkGetDataRowsTask]:
         body = {
             'keys': global_keys,
             'is_global_key': True,
@@ -175,6 +181,7 @@ class DataRow(Entity):
                 )
             return BulkGetDataRowsTask.get_by_id(task_id)
 
-        data_rows_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkget",
-                                              json=body)
-        return [DataRow(data_row_json) for data_row_json in data_rows_json]
+        return IdentifierPaginator(f"{DATA_ROW_RESOURCE}",
+                                   DataRow,
+                                   global_keys,
+                                   identifiers_key='global_keys')

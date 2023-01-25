@@ -1,5 +1,6 @@
 import logging
 import os
+from posixpath import join as join_uri
 
 import requests
 import requests.exceptions
@@ -19,6 +20,11 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 class Session:
+
+    api_key: str
+    api_url: str
+    base_api_url: str
+    initialized: bool = False
 
     @classmethod
     def initialize(cls, base_api_url="https://api.labelbox.com", api_key=None):
@@ -80,12 +86,11 @@ class Session:
         if not cls.initialized:
             raise LabelboxError("Session has not been initialized")
 
-        if uri.startswith('/'):
-            uri = uri.lstrip('/')
+        url = join_uri(cls.api_url, uri)
         try:
             request = {
                 'method': method,
-                'url': f"{cls.api_url}/{uri}",
+                'url': url,
                 'headers': cls.headers,
                 'data': data,
                 'json': json,

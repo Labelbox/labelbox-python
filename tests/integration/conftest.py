@@ -46,35 +46,45 @@ def environ() -> Environ:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
 
-def graphql_url(environ: str) -> str:
-    if environ == Environ.PROD:
-        return 'https://api.labelbox.com/graphql'
-    elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/graphql'
-    elif environ == Environ.ONPREM:
-        hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
-        if hostname is None:
-            raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
-        return f"{hostname}/api/_gql"
-    elif environ == Environ.CUSTOM:
-        graphql_api_endpoint = os.environ.get(
-            'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
-        if graphql_api_endpoint is None:
-            raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
-        return graphql_api_endpoint
-    return 'http://host.docker.internal:8080/graphql'
+@pytest.fixture(scope="session")
+def testing_api_url():
+
+    def get_testing_api_url(environ: str) -> str:
+        if environ == Environ.PROD:
+            return 'https://api.labelbox.com'
+        elif environ == Environ.STAGING:
+            return 'https://api.lb-stage.xyz'
+        elif environ == Environ.ONPREM:
+            hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
+            if hostname is None:
+                raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
+            return f"{hostname}/api"
+        elif environ == Environ.CUSTOM:
+            graphql_api_endpoint = os.environ.get(
+                'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
+            if graphql_api_endpoint is None:
+                raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
+            return graphql_api_endpoint
+        return 'http://host.docker.internal:8080'
+
+    return get_testing_api_url
 
 
-def testing_api_key(environ: str) -> str:
-    if environ == Environ.PROD:
-        return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-    elif environ == Environ.STAGING:
-        return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
-    elif environ == Environ.ONPREM:
-        return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
-    elif environ == Environ.CUSTOM:
-        return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
-    return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
+@pytest.fixture(scope="session")
+def testing_api_key():
+
+    def get_testing_api_key(environ: str) -> str:
+        if environ == Environ.PROD:
+            return os.environ["LABELBOX_TEST_API_KEY_PROD"]
+        elif environ == Environ.STAGING:
+            return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+        elif environ == Environ.ONPREM:
+            return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
+        elif environ == Environ.CUSTOM:
+            return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
+        return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
+
+    return get_testing_api_key
 
 
 def cancel_invite(client, invite_id):
@@ -128,9 +138,9 @@ def queries():
 
 class IntegrationClient(Client):
 
-    def __init__(self, environ: str) -> None:
-        api_url = graphql_url(environ)
-        api_key = testing_api_key(environ)
+    def __init__(self, base_url: str, api_key: str) -> None:
+        api_url = f'{base_url}/graphql'
+        api_key = api_key
         super().__init__(api_key, api_url, enable_experimental=True)
         self.queries = []
 
@@ -142,8 +152,10 @@ class IntegrationClient(Client):
 
 
 @pytest.fixture(scope="session")
-def client(environ: str):
-    return IntegrationClient(environ)
+def client(environ: str, testing_api_url, testing_api_key):
+    url = testing_api_url(environ)
+    api_key = testing_api_key(environ)
+    return IntegrationClient(url, api_key)
 
 
 @pytest.fixture(scope="session")
