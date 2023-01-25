@@ -97,7 +97,7 @@ class Client:
         self._data_row_metadata_ontology = None
 
     @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
+        labelbox.exceptions.InternalServerError, labelbox.exceptions.TimeoutError))
     def execute(self,
                 query=None,
                 params=None,
