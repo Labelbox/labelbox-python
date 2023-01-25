@@ -75,7 +75,8 @@ def test_assign_same_global_keys_to_data_rows(client, dataset, image_url):
     assert len(res['errors']) == 1
     assert res['errors'][0]['data_row_id'] == dr_2.uid
     assert res['errors'][0]['global_key'] == gk_1
-    assert res['errors'][0]['error'] == "Invalid Data Row or invalid global key"
+    assert res['errors'][0][
+        'error'] == "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
 
 
 def test_global_key_sanitization(dataset, image_url):
@@ -144,9 +145,9 @@ def test_global_key_with_whitespaces_validation(client, dataset, image_url):
     assert assign_errors_ids == set([dr_1.uid, dr_2.uid, dr_3.uid])
     assert assign_errors_gks == set([gk_1, gk_2, gk_3])
     assert assign_errors_msgs == set([
-        'Invalid Data Row or invalid global key',
-        'Invalid Data Row or invalid global key',
-        'Invalid Data Row or invalid global key'
+        'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',
+        'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',
+        'Invalid assignment. Either DataRow does not exist, or globalKey is invalid'
     ])
 
 

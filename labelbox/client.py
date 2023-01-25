@@ -1116,7 +1116,9 @@ class Client:
                 errors.extend(
                     _format_failed_rows(
                         rows=res['invalidGlobalKeyAssignments'],
-                        error_msg="Invalid Data Row or invalid global key"))
+                        error_msg=
+                        "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
+                    ))
                 errors.extend(
                     _format_failed_rows(rows=res['accessDeniedAssignments'],
                                         error_msg="Access denied to Data Row"))
