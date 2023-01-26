@@ -112,7 +112,8 @@ def test_long_global_key_validation(client, dataset, image_url):
     assert res['results'][0]['global_key'] == gk_1
     assert res['errors'][0]['data_row_id'] == dr_2.uid
     assert res['errors'][0]['global_key'] == gk_2
-    assert res['errors'][0]['error'] == 'Invalid Data Row or invalid global key'
+    assert res['errors'][0][
+        'error'] == 'Invalid assignment. Either DataRow does not exist, or globalKey is invalid'
 
 
 def test_global_key_with_whitespaces_validation(client, dataset, image_url):
