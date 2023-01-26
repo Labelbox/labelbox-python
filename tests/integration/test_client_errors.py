@@ -2,6 +2,7 @@ from multiprocessing.dummy import Pool
 import os
 import time
 import pytest
+from google.api_core.exceptions import RetryError
 
 from labelbox import Project, Dataset, User
 import labelbox.client
@@ -43,12 +44,12 @@ def test_semantic_error(client):
 
 
 def test_timeout_error(client, project):
-    with pytest.raises(labelbox.exceptions.TimeoutError) as excinfo:
-        query_str = """query getOntology { 
-        project (where: {id: %s}) { 
-            ontology { 
-                normalized 
-                } 
+    with pytest.raises(RetryError) as excinfo:
+        query_str = """query getOntology {
+        project (where: {id: %s}) {
+            ontology {
+                normalized
+                }
             }
         } """ % (project.uid)
 
