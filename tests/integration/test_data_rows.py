@@ -14,12 +14,10 @@ import labelbox.exceptions
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
-EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 EXPECTED_METADATA_SCHEMA_IDS = [
-    SPLIT_SCHEMA_ID, TEST_SPLIT_ID, EMBEDDING_SCHEMA_ID, TEXT_SCHEMA_ID,
-    CAPTURE_DT_SCHEMA_ID
+    SPLIT_SCHEMA_ID, TEST_SPLIT_ID, TEXT_SCHEMA_ID, CAPTURE_DT_SCHEMA_ID
 ].sort()
 CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
 
@@ -88,7 +86,6 @@ def tile_content():
 
 
 def make_metadata_fields():
-    embeddings = [0.0] * 128
     msg = "A message"
     time = datetime.utcnow()
 
@@ -96,13 +93,11 @@ def make_metadata_fields():
         DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
         DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
-        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=embeddings),
     ]
     return fields
 
 
 def make_metadata_fields_dict():
-    embeddings = [0.0] * 128
     msg = "A message"
     time = datetime.utcnow()
 
@@ -115,9 +110,6 @@ def make_metadata_fields_dict():
     }, {
         "schema_id": TEXT_SCHEMA_ID,
         "value": msg
-    }, {
-        "schema_id": EMBEDDING_SCHEMA_ID,
-        "value": embeddings
     }]
     return fields
 
@@ -312,8 +304,8 @@ def test_create_data_row_with_metadata(mdo, dataset, image_url):
     assert data_row.media_attributes is not None
     metadata_fields = data_row.metadata_fields
     metadata = data_row.metadata
-    assert len(metadata_fields) == 4
-    assert len(metadata) == 4
+    assert len(metadata_fields) == 3
+    assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
@@ -336,8 +328,8 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     assert data_row.media_attributes is not None
     metadata_fields = data_row.metadata_fields
     metadata = data_row.metadata
-    assert len(metadata_fields) == 4
-    assert len(metadata) == 4
+    assert len(metadata_fields) == 3
+    assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
@@ -347,7 +339,7 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
 def test_create_data_row_with_invalid_metadata(dataset, image_url):
     fields = make_metadata_fields()
     fields.append(
-        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
     with pytest.raises(labelbox.exceptions.MalformedQueryException):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
@@ -393,8 +385,8 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
 
         metadata_fields = row.metadata_fields
         metadata = row.metadata
-        assert len(metadata_fields) == 4
-        assert len(metadata) == 4
+        assert len(metadata_fields) == 3
+        assert len(metadata) == 3
         assert [m["schemaId"] for m in metadata_fields
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
         for m in metadata:
@@ -479,7 +471,7 @@ def test_create_data_rows_with_named_metadata_field_class(
 def test_create_data_rows_with_invalid_metadata(dataset, image_url):
     fields = make_metadata_fields()
     fields.append(
-        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
@@ -730,7 +722,7 @@ def test_create_data_rows_local_file(dataset, sample_image):
     assert task.status == "COMPLETE"
     data_row = list(dataset.data_rows())[0]
     assert data_row.external_id == "tests/integration/media/sample_image.jpg"
-    assert len(data_row.metadata_fields) == 4
+    assert len(data_row.metadata_fields) == 3
 
 
 def test_data_row_with_global_key(dataset, sample_image):
