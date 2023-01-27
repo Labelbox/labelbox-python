@@ -460,41 +460,40 @@ class ModelRun(DbObject):
                          filter: Optional[ModelRunExportFilter]) -> Task:
         mutation_name = "exportDataRows"
         create_task_query_str = """mutation exportDataRowsPyApi($input: ExportDataRowsInput!){
-          %s(input: $input) {taskId}
+          %s(input: $input) {taskId} }
           """ % (mutation_name)
+        params = {
+            "input": {
+                "taskName": task_name,
+                "filters": {
+                    "modelRunIds": [self.uid],
+                    "projectIds": []
+                },
+                "params": {
+                    "includeAttachments":
+                        filter["attachments"]
+                        if filter and "attachments" in filter else False,
+                    "includeMediaAttributes":
+                        filter['media_attributes']
+                        if filter and 'media_attributes' in filter else False,
+                    "includeMetadata":
+                        filter['metadata_fields']
+                        if filter and 'metadata_fields' in filter else False,
+                    # Arguments locked based on exectuion context
+                    "includeModelRuns":
+                        True,
+                    "includeProjectDetails":
+                        False,
+                    "includeLabels":
+                        False,
+                    "includePerformanceDetails":
+                        False,
+                },
+            }
+        }
         res = self.client.execute(
             create_task_query_str,
-            {
-                "input": {
-                    "taskName": task_name,
-                    "filters": {
-                        "modelRunIds": [self.uid]
-                    },
-                    "params": {
-                        "includeAttachments":
-                            filter["attachments"]
-                            if filter and "attachments" in filter else False,
-                        "includeMediaAttributes":
-                            filter['media_attributes'] if filter and
-                            'media_attributes' in filter else False,
-                        "includeMetadata":
-                            filter['metadata_fields'] if filter and
-                            'metadata_fields' in filter else False,
-                        "globalIssues":
-                            filter["global_issues"]
-                            if filter and 'global_issues' in filter else False,
-                        # Arguments locked based on exectuion context
-                        "includeModelRuns":
-                            True,
-                        "includeProjectDetails":
-                            False,
-                        "includeLabels":
-                            False,
-                        "includePerformanceDetails":
-                            False,
-                    },
-                }
-            },
+            params,
         )
         res = res[mutation_name]
         task_id = res["taskId"]

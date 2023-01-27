@@ -121,7 +121,6 @@ def test_model_run_export_labels_v2(model_run_with_model_run_data_rows):
     assert task.name == task_name
     task.wait_until_done()
     assert task.status == "COMPLETED"
-    print(task)
 
 
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",

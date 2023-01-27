@@ -12,7 +12,6 @@ class DataRowFilter(TypedDict):
     media_attributes: Optional[bool]
     metadata_fields: Optional[bool]
     attachments: Optional[bool]
-    global_issues: Optional[bool]
 
 
 class ProjectExportFilter(DataRowFilter):
