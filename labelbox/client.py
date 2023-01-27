@@ -1159,6 +1159,10 @@ class Client:
         """
         Gets data row ids for a list of global keys.
 
+        Deprecation Notice: This function will soon no longer return 'Deleted Data Rows'
+        as part of the 'results'. Global keys for deleted data rows will soon be placed
+        under 'Data Row not found' portion.
+
         Args:
             A list of global keys
         Returns:
@@ -1242,6 +1246,13 @@ class Client:
                     logger.warning(
                         "There are errors present. Please look at 'errors' in the returned dict for more details"
                     )
+
+                # Deprecation notice for deletedDataRowGlobalKeys portion of results
+                if len(data['deletedDataRowGlobalKeys']) > 0:
+                    logger.warning(
+                        """Deprecation Notice: This function will soon no longer return 'Deleted Data Rows' 
+                        as part of the 'results'. Global keys for deleted data rows will soon be placed under 
+                        'Data Row not found' portion.""")
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["dataRowsForGlobalKeysResult"]['jobStatus'] == "FAILED":
