@@ -786,7 +786,9 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert len(list(dataset.data_rows())) == 1
     assert list(dataset.data_rows())[0].global_key == global_key_1
 
-def test_data_row_delete_and_create_with_same_global_key(client, dataset, sample_image):
+
+def test_data_row_delete_and_create_with_same_global_key(
+        client, dataset, sample_image):
     global_key_1 = str(uuid.uuid4())
     data_row_payload = {
         DataRow.row_data: sample_image,
@@ -819,7 +821,6 @@ def test_data_row_delete_and_create_with_same_global_key(client, dataset, sample
 
     assert task.status == "COMPLETE"
     assert task.result[0]['global_key'] == global_key_1
-
 
 
 def test_data_row_bulk_creation_sync_with_unique_global_keys(
