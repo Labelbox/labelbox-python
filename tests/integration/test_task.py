@@ -3,21 +3,20 @@ import pytest
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
 
-EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
+TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 
 
 def test_task_errors(dataset, image_url):
     client = dataset.client
-    embeddings = [0.0] * 128
     task = dataset.create_data_rows([
         {
             DataRow.row_data:
                 image_url,
             DataRow.metadata_fields: [
-                DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
-                                     value=embeddings),
-                DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
-                                     value=embeddings)
+                DataRowMetadataField(schema_id=TEXT_SCHEMA_ID,
+                                     value='some msg'),
+                DataRowMetadataField(schema_id=TEXT_SCHEMA_ID,
+                                     value='some msg 2')
             ]
         },
     ])

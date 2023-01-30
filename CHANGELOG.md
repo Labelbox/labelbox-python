@@ -1,5 +1,17 @@
 # Changelog
 
+# Version 3.37.0 (2023-xx-xx)
+## Fixed
+* Retry connection timeouts
+
+# Version 3.36.1 (2023-01-24)
+### Fixed
+* `confidence` is now optional for TextEntity
+
+# Version 3.36.0 (2023-01-23)
+### Fixed
+* `confidence` attribute is now supported for TextEntity and Line predictions
+
 # Version 3.35.0 (2023-01-18)
 ### Fixed
 * Retry 520 errors when uploading files

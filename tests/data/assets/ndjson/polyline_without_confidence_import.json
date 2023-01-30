@@ -1,0 +1,25 @@
+[
+    {
+        "line": [
+            {
+                "x": 2534.353,
+                "y": 249.471
+            },
+            {
+                "x": 2429.492,
+                "y": 182.092
+            },
+            {
+                "x": 2294.322,
+                "y": 221.962
+            }
+        ],
+        "uuid": "5ad9c52f-058d-49c8-a749-3f20b84f8cd4",
+        "dataRow": {
+            "id": "cl6xnv9h61fv0085yhtoq06ht"
+        },
+        "name": "some-line",
+        "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+        "classifications": []
+    }
+]
