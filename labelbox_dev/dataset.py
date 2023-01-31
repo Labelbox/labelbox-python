@@ -1,7 +1,9 @@
-from typing import Optional, TypedDict
+from typing import Iterator, Optional
 
 from labelbox_dev.entity import Entity
+from labelbox_dev.pagination import CursorPaginator
 from labelbox_dev.session import Session
+from labelbox_dev.types import TypedDict
 
 DATASET_RESOURCE = "datasets"
 
@@ -53,3 +55,7 @@ class Dataset(Entity):
     def get_by_id(dataset_id: str):
         dataset_json = Session.get_request(f"{DATASET_RESOURCE}/{dataset_id}")
         return Dataset(dataset_json)
+
+    @staticmethod
+    def get_all() -> Iterator["Dataset"]:
+        return CursorPaginator(DATASET_RESOURCE, Dataset)
