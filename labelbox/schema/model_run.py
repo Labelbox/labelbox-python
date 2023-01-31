@@ -12,7 +12,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
-from labelbox.schema.filters import ModelRunExportFilter
+from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
 
@@ -457,7 +457,8 @@ class ModelRun(DbObject):
     """
 
     def export_labels_v2(self, task_name: str,
-                         filter: Optional[ModelRunExportFilter]) -> Task:
+                         params: Optional[ModelRunExportParams]) -> Task:
+        _params = params or {}
         mutation_name = "exportDataRows"
         create_task_query_str = """mutation exportDataRowsPyApi($input: ExportDataRowsInput!){
           %s(input: $input) {taskId} }
@@ -471,14 +472,13 @@ class ModelRun(DbObject):
                 },
                 "params": {
                     "includeAttachments":
-                        filter["attachments"]
-                        if filter and "attachments" in filter else False,
+                        _params.get('include_attachments', False),
                     "includeMediaAttributes":
-                        filter['media_attributes']
-                        if filter and 'media_attributes' in filter else False,
+                        _params.get('include_media_attributes', False),
                     "includeMetadata":
-                        filter['metadata_fields']
-                        if filter and 'metadata_fields' in filter else False,
+                        _params.get('include_metadata_fields', False),
+                    "includeDataRowDetails":
+                        _params.get('include_data_row_details', False),
                     # Arguments locked based on exectuion context
                     "includeModelRuns":
                         True,
