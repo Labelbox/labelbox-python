@@ -43,6 +43,20 @@ def test_label_export(configured_project_with_label):
     # The new exporter doesn't work with the create_label mutation
 
 
+def test_label_export_v2(configured_project_with_label):
+    project, _, _, label = configured_project_with_label
+    label_id = label.uid
+    # Wait for exporter to retrieve latest labels
+    time.sleep(10)
+    task_name = "test_label_export_v2"
+
+    task = project.export_labels_v2(task_name, filter={"project_details": True})
+    assert task.name == task_name
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    # TODO: Download result and check it
+
+
 # TODO: Skipping this test in staging due to label not updating
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or
                     os.environ['LABELBOX_TEST_ENVIRON'] == "staging" or
