@@ -310,6 +310,11 @@ class BulkImportRequest(DbObject):
         Returns:
             BulkImportRequest object
         """
+        if not isinstance(predictions, list):
+            raise TypeError(
+                f"annotations must be in a form of Iterable. Found {type(predictions)}"
+            )
+
         if validate:
             _validate_ndjson(predictions, client.get_project(project_id))
 

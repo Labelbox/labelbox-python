@@ -600,7 +600,7 @@ class Project(DbObject, Updateable, Deletable):
             else:
                 raise ValueError("You can DataRow ids or DataRow objects")
 
-        if len(dr_ids) > 25_000:
+        if len(dr_ids) > 100_000:
             raise ValueError(
                 f"Batch exceeds max size, break into smaller batches")
         if not len(dr_ids):

@@ -7,23 +7,29 @@ import pytest
 import requests
 
 from labelbox import DataRow
-from labelbox.schema.data_row_metadata import DataRowMetadataField
+from labelbox.exceptions import MalformedQueryException
+from labelbox.schema.task import Task
+from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 import labelbox.exceptions
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
-EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
 EXPECTED_METADATA_SCHEMA_IDS = [
-    SPLIT_SCHEMA_ID, TEST_SPLIT_ID, EMBEDDING_SCHEMA_ID, TEXT_SCHEMA_ID,
-    CAPTURE_DT_SCHEMA_ID
+    SPLIT_SCHEMA_ID, TEST_SPLIT_ID, TEXT_SCHEMA_ID, CAPTURE_DT_SCHEMA_ID
 ].sort()
+CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
 
 
 @pytest.fixture
 def mdo(client):
     mdo = client.get_data_row_metadata_ontology()
+    try:
+        mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
+    except MalformedQueryException:
+        # Do nothing if already exists
+        pass
     mdo._raw_ontology = mdo._get_ontology()
     mdo._build_ontology()
     yield mdo
@@ -80,7 +86,6 @@ def tile_content():
 
 
 def make_metadata_fields():
-    embeddings = [0.0] * 128
     msg = "A message"
     time = datetime.utcnow()
 
@@ -88,13 +93,11 @@ def make_metadata_fields():
         DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
         DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
-        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=embeddings),
     ]
     return fields
 
 
 def make_metadata_fields_dict():
-    embeddings = [0.0] * 128
     msg = "A message"
     time = datetime.utcnow()
 
@@ -107,9 +110,6 @@ def make_metadata_fields_dict():
     }, {
         "schema_id": TEXT_SCHEMA_ID,
         "value": msg
-    }, {
-        "schema_id": EMBEDDING_SCHEMA_ID,
-        "value": embeddings
     }]
     return fields
 
@@ -304,8 +304,8 @@ def test_create_data_row_with_metadata(mdo, dataset, image_url):
     assert data_row.media_attributes is not None
     metadata_fields = data_row.metadata_fields
     metadata = data_row.metadata
-    assert len(metadata_fields) == 4
-    assert len(metadata) == 4
+    assert len(metadata_fields) == 3
+    assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
@@ -328,8 +328,8 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     assert data_row.media_attributes is not None
     metadata_fields = data_row.metadata_fields
     metadata = data_row.metadata
-    assert len(metadata_fields) == 4
-    assert len(metadata) == 4
+    assert len(metadata_fields) == 3
+    assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
@@ -339,7 +339,7 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
 def test_create_data_row_with_invalid_metadata(dataset, image_url):
     fields = make_metadata_fields()
     fields.append(
-        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
     with pytest.raises(labelbox.exceptions.MalformedQueryException):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
@@ -385,18 +385,93 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
 
         metadata_fields = row.metadata_fields
         metadata = row.metadata
-        assert len(metadata_fields) == 4
-        assert len(metadata) == 4
+        assert len(metadata_fields) == 3
+        assert len(metadata) == 3
         assert [m["schemaId"] for m in metadata_fields
                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
         for m in metadata:
             assert mdo._parse_upsert(m)
 
 
+@pytest.mark.parametrize("test_function,metadata_obj_type",
+                         [("create_data_rows", "class"),
+                          ("create_data_rows", "dict"),
+                          ("create_data_rows_sync", "class"),
+                          ("create_data_rows_sync", "dict"),
+                          ("create_data_row", "class"),
+                          ("create_data_row", "dict")])
+def test_create_data_rows_with_named_metadata_field_class(
+        test_function, metadata_obj_type, mdo, dataset, image_url):
+
+    row_with_metadata_field = {
+        DataRow.row_data:
+            image_url,
+        DataRow.external_id:
+            "row1",
+        DataRow.metadata_fields: [
+            DataRowMetadataField(name='split', value='test'),
+            DataRowMetadataField(name=CUSTOM_TEXT_SCHEMA_NAME, value='hello')
+        ]
+    }
+
+    row_with_metadata_dict = {
+        DataRow.row_data:
+            image_url,
+        DataRow.external_id:
+            "row2",
+        "metadata_fields": [
+            {
+                'name': 'split',
+                'value': 'test'
+            },
+            {
+                'name': CUSTOM_TEXT_SCHEMA_NAME,
+                'value': 'hello'
+            },
+        ]
+    }
+
+    assert len(list(dataset.data_rows())) == 0
+
+    METADATA_FIELDS = {
+        "class": row_with_metadata_field,
+        "dict": row_with_metadata_dict
+    }
+
+    def create_data_row(data_rows):
+        dataset.create_data_row(data_rows[0])
+
+    CREATION_FUNCTION = {
+        "create_data_rows": dataset.create_data_rows,
+        "create_data_rows_sync": dataset.create_data_rows_sync,
+        "create_data_row": create_data_row
+    }
+    data_rows = [METADATA_FIELDS[metadata_obj_type]]
+    function_to_test = CREATION_FUNCTION[test_function]
+    task = function_to_test(data_rows)
+
+    if isinstance(task, Task):
+        task.wait_till_done()
+
+    created_rows = list(dataset.data_rows())
+    assert len(created_rows) == 1
+    assert len(created_rows[0].metadata_fields) == 2
+    assert len(created_rows[0].metadata) == 2
+
+    metadata = created_rows[0].metadata
+    assert metadata[0].schema_id == SPLIT_SCHEMA_ID
+    assert metadata[0].name == 'test'
+    assert metadata[0].value == mdo.reserved_by_name['split']['test'].uid
+    assert metadata[1].name == CUSTOM_TEXT_SCHEMA_NAME
+    assert metadata[1].value == 'hello'
+    assert metadata[1].schema_id == mdo.custom_by_name[
+        CUSTOM_TEXT_SCHEMA_NAME].uid
+
+
 def test_create_data_rows_with_invalid_metadata(dataset, image_url):
     fields = make_metadata_fields()
     fields.append(
-        DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID, value=[0.0] * 128))
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
@@ -647,7 +722,7 @@ def test_create_data_rows_local_file(dataset, sample_image):
     assert task.status == "COMPLETE"
     data_row = list(dataset.data_rows())[0]
     assert data_row.external_id == "tests/integration/media/sample_image.jpg"
-    assert len(data_row.metadata_fields) == 4
+    assert len(data_row.metadata_fields) == 3
 
 
 def test_data_row_with_global_key(dataset, sample_image):
@@ -699,7 +774,7 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
-    assert task.errors == "Data rows contain empty string or duplicate global keys, which are not allowed"
+    assert task.errors == "Data rows contain duplicate global keys"
 
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
@@ -710,6 +785,42 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert task.status == "COMPLETE"
     assert len(list(dataset.data_rows())) == 1
     assert list(dataset.data_rows())[0].global_key == global_key_1
+
+
+def test_data_row_delete_and_create_with_same_global_key(
+        client, dataset, sample_image):
+    global_key_1 = str(uuid.uuid4())
+    data_row_payload = {
+        DataRow.row_data: sample_image,
+        DataRow.global_key: global_key_1
+    }
+
+    # should successfully insert new datarow
+    task = dataset.create_data_rows([data_row_payload])
+    task.wait_till_done()
+
+    assert task.status == "COMPLETE"
+    assert task.result[0]['global_key'] == global_key_1
+
+    new_data_row_id = task.result[0]['id']
+
+    # same payload should fail due to duplicated global key
+    task = dataset.create_data_rows([data_row_payload])
+    task.wait_till_done()
+
+    assert task.status == "FAILED"
+    assert len(task.failed_data_rows) > 0
+    assert task.errors.startswith("Duplicate global keys found")
+
+    # delete datarow
+    client.get_data_row(new_data_row_id).delete()
+
+    # should successfully insert new datarow now
+    task = dataset.create_data_rows([data_row_payload])
+    task.wait_till_done()
+
+    assert task.status == "COMPLETE"
+    assert task.result[0]['global_key'] == global_key_1
 
 
 def test_data_row_bulk_creation_sync_with_unique_global_keys(

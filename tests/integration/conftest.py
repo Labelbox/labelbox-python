@@ -219,7 +219,7 @@ def datarow(dataset, image_url):
         },
     ])
     task.wait_till_done()
-    dr = next(dataset.data_rows())
+    dr = dataset.data_rows().get_one()
     yield dr
     dr.delete()
 
@@ -316,7 +316,7 @@ def configured_project(project, client, rand_gen, image_url):
 
 @pytest.fixture
 def configured_project_with_label(client, rand_gen, image_url, project, dataset,
-                                  datarow):
+                                  datarow, wait_for_label_processing):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
@@ -351,17 +351,20 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     def create_label():
         """ Ad-hoc function to create a LabelImport
-
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
             client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
         upload_task.wait_until_done(sleep_time_seconds=5)
-        assert upload_task.state == AnnotationImportState.FINISHED
+        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
+        assert len(
+            upload_task.errors
+        ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
 
     project.create_label = create_label
     project.create_label()
-    label = next(project.labels())
+    label = wait_for_label_processing(project)[0]
+
     yield [project, dataset, datarow, label]
 
     for label in project.labels():
@@ -419,3 +422,56 @@ def configured_project_with_complex_ontology(client, rand_gen, image_url):
     yield [project, data_row]
     dataset.delete()
     project.delete()
+
+
+@pytest.fixture
+def wait_for_data_row_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns DataRow after waiting for it to finish processing media_attributes.
+    Some tests, specifically ones that rely on label export, rely on
+    DataRow be fully processed with media_attributes
+    """
+
+    def func(client, data_row):
+        data_row_id = data_row.uid
+        timeout_seconds = 60
+        while True:
+            data_row = client.get_data_row(data_row_id)
+            if data_row.media_attributes:
+                return data_row
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for DataRow '{data_row_id}' to finish processing media_attributes"
+                )
+            time.sleep(2)
+
+    return func
+
+
+@pytest.fixture
+def wait_for_label_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns project's labels as a list after waiting for them to finish processing.
+    If `project.labels()` is called before label is fully processed,
+    it may return an empty set
+    """
+
+    def func(project):
+        timeout_seconds = 10
+        while True:
+            labels = list(project.labels())
+            if len(labels) > 0:
+                return labels
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for label for project '{project.uid}' to finish processing"
+                )
+            time.sleep(2)
+
+    return func
