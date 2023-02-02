@@ -1,3 +1,5 @@
+import sys
+
 from typing import Optional
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -14,7 +16,7 @@ class DataRowParams(TypedDict):
 
 class ProjectExportParams(DataRowParams):
     project_details: Optional[bool]
-    label_details: Optional[bool]
+    labels: Optional[bool]
     performance_details: Optional[bool]
 
 

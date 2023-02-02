@@ -384,12 +384,21 @@ class Project(DbObject, Updateable, Deletable):
 
     def export_v2(self, task_name: str,
                   params: Optional[ProjectExportParams]) -> Task:
-        _params = params or {}
+        defaultParams: ProjectExportParams = {
+            "attachments": False,
+            "media_attributes": False,
+            "metadata_fields": False,
+            "data_row_details": False,
+            "project_details": False,
+            "labels": False,
+            "performance_details": False
+        }
+        _params: ProjectExportParams = params if params is not None else defaultParams
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
-        params = {
+        query_params = {
             "input": {
                 "taskName": task_name,
                 "filters": {
@@ -415,7 +424,7 @@ class Project(DbObject, Updateable, Deletable):
         }
         res = self.client.execute(
             create_task_query_str,
-            params,
+            query_params,
         )
         res = res[mutation_name]
         task_id = res["taskId"]
