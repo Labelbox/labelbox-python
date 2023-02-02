@@ -287,11 +287,10 @@ class Project(DbObject, Updateable, Deletable):
             return LBV1Converter.deserialize_video(json_data, self.client)
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels(
-            self,
-            download=False,
-            timeout_seconds=1800,
-            **kwargs) -> Optional[Union[str, List[Dict[Any, Any]]]]:
+    def export_labels(self,
+                      download=False,
+                      timeout_seconds=1800,
+                      **kwargs) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """ Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
@@ -384,7 +383,7 @@ class Project(DbObject, Updateable, Deletable):
     """
 
     def export_v2(self, task_name: str,
-                         params: Optional[ProjectExportParams]) -> Task:
+                  params: Optional[ProjectExportParams]) -> Task:
         _params = params or {}
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
@@ -398,19 +397,19 @@ class Project(DbObject, Updateable, Deletable):
                 },
                 "params": {
                     "includeAttachments":
-                        _params.get('include_attachments', False),
+                        _params.get('attachments', False),
                     "includeMediaAttributes":
-                        _params.get('include_media_attributes', False),
+                        _params.get('media_attributes', False),
                     "includeMetadata":
-                        _params.get('include_metadata_fields', False),
+                        _params.get('metadata_fields', False),
                     "includeDataRowDetails":
-                        _params.get('include_data_row_details', False),
+                        _params.get('data_row_details', False),
                     "includeProjectDetails":
-                        _params.get('include_project_details', False),
+                        _params.get('project_details', False),
                     "includeLabels":
-                        _params.get('include_labels', False),
+                        _params.get('labels', False),
                     "includePerformanceDetails":
-                        _params.get('include_performance_details', False),
+                        _params.get('performance_details', False),
                 },
             }
         }
