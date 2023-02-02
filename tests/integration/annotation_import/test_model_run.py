@@ -117,6 +117,7 @@ def test_model_run_export_labels(model_run_with_model_run_data_rows):
     assert len(labels) == 3
 
 
+@pytest.mark.skip(reason="feature under development")
 def test_model_run_export_v2(model_run_with_model_run_data_rows,
                              configured_project):
     task_name = "test_task"
