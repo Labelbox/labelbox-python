@@ -41,6 +41,7 @@ def test_project(client, rand_gen):
     projects = list(client.get_projects())
     assert project not in projects
 
+
 @pytest.mark.skip(reason="feature under development")
 def test_project_export_v2(configured_project_with_label):
     project, _, _, label = configured_project_with_label
