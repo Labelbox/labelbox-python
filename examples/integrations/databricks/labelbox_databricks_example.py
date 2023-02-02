@@ -201,7 +201,7 @@ conditions = ["clear", "overcast", "rain", "other"]
 
 weather_classification = Classification(
     class_type=Classification.Type.RADIO,
-    instructions="what is the weather?",
+    name="what is the weather?",
     options=[Option(value=c) for c in conditions])
 ontology.add_classification(weather_classification)
 

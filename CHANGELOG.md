@@ -1,6 +1,10 @@
 # Changelog
 
 # Version 3.37.0 (2023-xx-xx)
+## Changed
+* Added `Classification.name` to specify the name of the feature
+* `Classification.instructions` is now an optional description of the feature
+
 ## Fixed
 * Retry connection timeouts
 

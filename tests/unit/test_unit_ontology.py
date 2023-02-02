@@ -145,7 +145,7 @@ def test_create_tool(tool_type) -> None:
 
 @pytest.mark.parametrize("class_type", list(Classification.Type))
 def test_create_classification(class_type) -> None:
-    c = Classification(class_type=class_type, instructions="classification")
+    c = Classification(class_type=class_type, name="classification")
     assert (c.class_type == class_type)
 
 
@@ -193,11 +193,10 @@ def test_add_ontology_tool() -> None:
 def test_add_ontology_classification() -> None:
     o = OntologyBuilder()
     o.add_classification(
-        Classification(class_type=Classification.Type.TEXT,
-                       instructions="text"))
+        Classification(class_type=Classification.Type.TEXT, name="text"))
 
     second_classification = Classification(
-        class_type=Classification.Type.CHECKLIST, instructions="checklist")
+        class_type=Classification.Type.CHECKLIST, name="checklist")
     o.add_classification(second_classification)
     assert len(o.classifications) == 2
 
@@ -206,14 +205,13 @@ def test_add_ontology_classification() -> None:
 
     with pytest.raises(InconsistentOntologyException) as exc:
         o.add_classification(
-            Classification(class_type=Classification.Type.TEXT,
-                           instructions="text"))
-    assert "Duplicate classification instructions" in str(exc.value)
+            Classification(class_type=Classification.Type.TEXT, name="text"))
+    assert "Duplicate classification name" in str(exc.value)
 
 
 def test_tool_add_classification() -> None:
     t = Tool(tool=Tool.Type.SEGMENTATION, name="segmentation")
-    c = Classification(class_type=Classification.Type.TEXT, instructions="text")
+    c = Classification(class_type=Classification.Type.TEXT, name="text")
     t.add_classification(c)
     assert t.classifications == [c]
 
@@ -223,8 +221,7 @@ def test_tool_add_classification() -> None:
 
 
 def test_classification_add_option() -> None:
-    c = Classification(class_type=Classification.Type.RADIO,
-                       instructions="radio")
+    c = Classification(class_type=Classification.Type.RADIO, name="radio")
     o = Option(value="option")
     c.add_option(o)
     assert c.options == [o]
@@ -236,7 +233,7 @@ def test_classification_add_option() -> None:
 
 def test_option_add_option() -> None:
     o = Option(value="option")
-    c = Classification(class_type=Classification.Type.TEXT, instructions="text")
+    c = Classification(class_type=Classification.Type.TEXT, name="text")
     o.add_option(c)
     assert o.options == [c]
 
@@ -248,3 +245,13 @@ def test_option_add_option() -> None:
 def test_ontology_asdict() -> None:
     assert OntologyBuilder.from_dict(
         _SAMPLE_ONTOLOGY).asdict() == _SAMPLE_ONTOLOGY
+
+
+def test_classification_without_name_shows_warning():
+    with pytest.warns(Warning):
+        Classification(class_type=Classification.Type.TEXT, instructions="text")
+
+
+def test_classification_without_name_raises_error():
+    with pytest.raises(ValueError):
+        Classification(class_type=Classification.Type.TEXT)

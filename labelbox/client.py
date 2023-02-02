@@ -957,7 +957,7 @@ class Client:
                     classifications=[
                         Classification(
                             class_type=Classification.Type.TEXT,
-                            instructions="name"
+                            name="name"
                         )
                     ]
                 )

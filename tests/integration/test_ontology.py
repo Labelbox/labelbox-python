@@ -1,9 +1,10 @@
 import pytest
 
-from labelbox import OntologyBuilder, MediaType
+from labelbox import Classification, Option, OntologyBuilder, MediaType
 from labelbox.orm.model import Entity
 import json
 import time
+import uuid
 
 
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
@@ -86,3 +87,31 @@ def test_ontology_create_read(client, rand_gen):
         assert _get_attr_stringify_json(created_ontology,
                                         attr) == _get_attr_stringify_json(
                                             queried_ontology, attr)
+
+
+def test_create_classification_with_instructions(client):
+
+    uid = uuid.uuid4()
+    name = f"classification-feature-{uid}"
+    classification = Classification(class_type=Classification.Type.RADIO,
+                                    name=name,
+                                    instructions="Human readable instructions",
+                                    options=[
+                                        Option(value="option-1",
+                                               label="Option 1"),
+                                        Option(value="option-2",
+                                               label="Option 2")
+                                    ])
+    ontology_builder = OntologyBuilder(classifications=[classification])
+
+    client.create_ontology("Classification instructions test",
+                           ontology_builder.asdict(),
+                           media_type=MediaType.Image)
+
+    feature_schema = list(client.get_feature_schemas(name))[0]
+    fetched_classification = feature_schema.normalized
+
+    assert fetched_classification['name'] == classification.name
+    assert fetched_classification['instructions'] == classification.instructions
+
+    # TODO: Cleanup, FeatureSchema deletion is not supported by SDK.

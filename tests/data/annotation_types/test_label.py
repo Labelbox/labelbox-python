@@ -47,7 +47,7 @@ def test_schema_assignment_classification():
         tools=[],
         classifications=[
             OClassification(class_type=OClassification.Type.RADIO,
-                            instructions=radio_name,
+                            name=radio_name,
                             feature_schema_id=radio_schema_id,
                             options=[
                                 Option(value=option_name,
@@ -55,7 +55,7 @@ def test_schema_assignment_classification():
                             ]),
             OClassification(
                 class_type=OClassification.Type.TEXT,
-                instructions=text_name,
+                name=text_name,
                 feature_schema_id=text_schema_id,
             )
         ])
@@ -91,7 +91,7 @@ def test_schema_assignment_subclass():
              feature_schema_id=feature_schema_id,
              classifications=[
                  OClassification(class_type=OClassification.Type.RADIO,
-                                 instructions=radio_name,
+                                 name=radio_name,
                                  feature_schema_id=classification_schema_id,
                                  options=[
                                      Option(value=option_name,
@@ -140,7 +140,7 @@ def test_highly_nested():
              classifications=[
                  OClassification(
                      class_type=OClassification.Type.RADIO,
-                     instructions=radio_name,
+                     name=radio_name,
                      feature_schema_id=classification_schema_id,
                      options=[
                          Option(value=option_name,
@@ -148,7 +148,7 @@ def test_highly_nested():
                                 options=[
                                     OClassification(
                                         class_type=OClassification.Type.RADIO,
-                                        instructions=nested_name,
+                                        name=nested_name,
                                         feature_schema_id=
                                         nested_classification_schema_id,
                                         options=[
