@@ -1,25 +1,23 @@
 import sys
 
 from typing import Optional
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
+
+from pydantic import BaseModel
 
 
-class DataRowParams(TypedDict):
-    include_data_row_details: Optional[bool]
-    include_media_attributes: Optional[bool]
-    include_metadata_fields: Optional[bool]
-    include_attachments: Optional[bool]
+class DataRowParams(BaseModel):
+    include_data_row_details: Optional[bool] = None
+    include_media_attributes: Optional[bool] = None
+    include_metadata_fields: Optional[bool] = None
+    include_attachments: Optional[bool] = None
 
 
-class ProjectExportParams(DataRowParams):
-    include_project_details: Optional[bool]
-    include_label_details: Optional[bool]
-    include_performance_details: Optional[bool]
+class ProjectExportParams(BaseModel):
+    include_project_details: Optional[bool] = None
+    include_label_details: Optional[bool] = None
+    include_performance_details: Optional[bool] = None
 
 
-class ModelRunExportParams(DataRowParams):
+class ModelRunExportParams(BaseModel):
     # TODO: Add model run fields
     pass

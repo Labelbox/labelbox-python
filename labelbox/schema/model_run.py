@@ -14,7 +14,7 @@ from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.task import Task
-from labelbox.schema.user import User  # type: ignore
+from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
@@ -450,25 +450,24 @@ class ModelRun(DbObject):
             time.sleep(sleep_time)
 
     """
-    Creates a model run export task with the given filter and returns the task.
+    Creates a model run export task with the given params and returns the task.
     
-    >>>    export_task = export_labels_v2("my_export_task", filter={"media_attributes": True})
+    >>>    export_task = export_v2("my_export_task", params={"media_attributes": True})
     
     """
 
-    def export_labels_v2(self, task_name: str,
-                         params: Optional[ModelRunExportParams]) -> Task:
+    def export_v2(self, task_name: str,
+                  params: Optional[ModelRunExportParams]) -> Task:
         _params = params or {}
-        mutation_name = "exportDataRows"
-        create_task_query_str = """mutation exportDataRowsPyApi($input: ExportDataRowsInput!){
+        mutation_name = "exportDataRowsInModelRun"
+        create_task_query_str = """mutation exportDataRowsInModelRunPyApi($input: ExportDataRowsInModelRunInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
         params = {
             "input": {
                 "taskName": task_name,
                 "filters": {
-                    "modelRunIds": [self.uid],
-                    "projectIds": []
+                    "modelRunId": self.uid
                 },
                 "params": {
                     "includeAttachments":
@@ -480,8 +479,6 @@ class ModelRun(DbObject):
                     "includeDataRowDetails":
                         _params.get('include_data_row_details', False),
                     # Arguments locked based on exectuion context
-                    "includeModelRuns":
-                        True,
                     "includeProjectDetails":
                         False,
                     "includeLabels":
