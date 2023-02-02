@@ -471,13 +471,13 @@ class ModelRun(DbObject):
                 },
                 "params": {
                     "includeAttachments":
-                        _params.get('include_attachments', False),
+                        _params.get('attachments', False),
                     "includeMediaAttributes":
-                        _params.get('include_media_attributes', False),
+                        _params.get('media_attributes', False),
                     "includeMetadata":
-                        _params.get('include_metadata_fields', False),
+                        _params.get('metadata_fields', False),
                     "includeDataRowDetails":
-                        _params.get('include_data_row_details', False),
+                        _params.get('data_row_details', False),
                     # Arguments locked based on exectuion context
                     "includeProjectDetails":
                         False,

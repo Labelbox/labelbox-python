@@ -6,10 +6,10 @@ from pydantic import BaseModel
 
 
 class DataRowParams(BaseModel):
-    include_data_row_details: Optional[bool] = None
-    include_media_attributes: Optional[bool] = None
-    include_metadata_fields: Optional[bool] = None
-    include_attachments: Optional[bool] = None
+    data_row_details: Optional[bool] = None
+    media_attributes: Optional[bool] = None
+    metadata_fields: Optional[bool] = None
+    attachments: Optional[bool] = None
 
 
 class ProjectExportParams(BaseModel):
