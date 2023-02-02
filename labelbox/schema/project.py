@@ -12,16 +12,20 @@ import requests
 
 from labelbox import utils
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict)
+                                 ProcessingWaitTimeout, ResourceConflict,
+                                 ResourceNotFoundError)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.task import Task
+from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -370,6 +374,71 @@ class Project(DbObject, Updateable, Deletable):
             logger.debug("Project '%s' label export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    """
+    Creates a project run export task with the given params and returns the task.
+    
+    >>>    export_task = export_v2("my_export_task", filter={"media_attributes": True})
+    
+    """
+
+    def export_v2(self, task_name: str,
+                  params: Optional[ProjectExportParams]) -> Task:
+        defaultParams: ProjectExportParams = {
+            "attachments": False,
+            "media_attributes": False,
+            "metadata_fields": False,
+            "data_row_details": False,
+            "project_details": False,
+            "labels": False,
+            "performance_details": False
+        }
+        _params: ProjectExportParams = params if params is not None else defaultParams
+        mutation_name = "exportDataRowsInProject"
+        create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
+          %s(input: $input) {taskId} }
+          """ % (mutation_name)
+        query_params = {
+            "input": {
+                "taskName": task_name,
+                "filters": {
+                    "projectId": self.uid
+                },
+                "params": {
+                    "includeAttachments":
+                        _params.get('attachments', False),
+                    "includeMediaAttributes":
+                        _params.get('media_attributes', False),
+                    "includeMetadata":
+                        _params.get('metadata_fields', False),
+                    "includeDataRowDetails":
+                        _params.get('data_row_details', False),
+                    "includeProjectDetails":
+                        _params.get('project_details', False),
+                    "includeLabels":
+                        _params.get('labels', False),
+                    "includePerformanceDetails":
+                        _params.get('performance_details', False),
+                },
+            }
+        }
+        res = self.client.execute(
+            create_task_query_str,
+            query_params,
+        )
+        res = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
 
     def export_issues(self, status=None) -> str:
         """ Calls the server-side Issues exporting that
