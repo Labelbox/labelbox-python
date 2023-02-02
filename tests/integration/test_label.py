@@ -1,3 +1,4 @@
+import json
 import time
 
 import pytest
@@ -43,18 +44,47 @@ def test_label_export(configured_project_with_label):
     # The new exporter doesn't work with the create_label mutation
 
 
-def test_label_export_v2(configured_project_with_label):
+def test_export_v2(configured_project_with_label):
     project, _, _, label = configured_project_with_label
     label_id = label.uid
     # Wait for exporter to retrieve latest labels
     time.sleep(10)
     task_name = "test_label_export_v2"
 
-    task = project.export_labels_v2(task_name, filter={"project_details": True})
+    # TODO: Right now we don't have a way to test this
+    include_performance_details = True
+    task = project.export_v2(
+        task_name,
+        params={
+            "include_performance_details": include_performance_details,
+            "include_labels": True
+        })
     assert task.name == task_name
     task.wait_till_done()
     assert task.status == "COMPLETE"
-    # TODO: Download result and check it
+
+    def download_result(result_url):
+        response = requests.get(result_url)
+        response.raise_for_status()
+        data = [json.loads(line) for line in response.text.splitlines()]
+        return data
+
+    task_results = download_result(task.result_url)
+
+    for task_result in task_results:
+        assert len(task_result['errors']) == 0
+        task_project = task_result['projects'][project.uid]
+        task_project_label_ids_set = set(
+            map(lambda prediction: prediction['id'], task_project['labels']))
+        assert label_id in task_project_label_ids_set
+
+        # TODO: Add back in when we have a way to test this
+        # if include_performance_details:
+        #     assert 'include_performance_details' in task_result and task_result[
+        #         'include_performance_details'] is not None
+        # else:
+        #     assert 'include_performance_details' not in task_result or task_result[
+        #         'include_performance_details'] is None
 
 
 # TODO: Skipping this test in staging due to label not updating

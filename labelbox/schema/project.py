@@ -20,7 +20,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.export_params import ModelRunExportParams
+from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -287,7 +287,7 @@ class Project(DbObject, Updateable, Deletable):
             return LBV1Converter.deserialize_video(json_data, self.client)
         return LBV1Converter.deserialize(json_data)
 
-    def export_labels_v2(
+    def export_labels(
             self,
             download=False,
             timeout_seconds=1800,
@@ -379,23 +379,22 @@ class Project(DbObject, Updateable, Deletable):
     """
     Creates a project run export task with the given params and returns the task.
     
-    >>>    export_task = export_labels_v2("my_export_task", filter={"media_attributes": True})
+    >>>    export_task = export_v2("my_export_task", filter={"media_attributes": True})
     
     """
 
-    def export_labels_v2(self, task_name: str,
-                         params: Optional[ModelRunExportParams]) -> Task:
+    def export_v2(self, task_name: str,
+                         params: Optional[ProjectExportParams]) -> Task:
         _params = params or {}
-        mutation_name = "exportDataRows"
-        create_task_query_str = """mutation exportDataRowsPyApi($input: ExportDataRowsInput!){
+        mutation_name = "exportDataRowsInProject"
+        create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
         params = {
             "input": {
                 "taskName": task_name,
                 "filters": {
-                    "modelRunIds": [],
-                    "projectIds": [self.uid]
+                    "projectId": self.uid
                 },
                 "params": {
                     "includeAttachments":
@@ -412,9 +411,6 @@ class Project(DbObject, Updateable, Deletable):
                         _params.get('include_labels', False),
                     "includePerformanceDetails":
                         _params.get('include_performance_details', False),
-                    # Arguments locked based on exectuion context
-                    "includeModelRuns":
-                        False,
                 },
             }
         }
