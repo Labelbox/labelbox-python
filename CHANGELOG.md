@@ -1,6 +1,9 @@
 # Changelog
 
 # Version 3.37.0 (2023-xx-xx)
+## Changed
+* Rename `Classification.instructions` to `Classification.name`
+
 ## Fixed
 * Retry connection timeouts
 

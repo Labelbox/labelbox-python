@@ -73,9 +73,9 @@ class Option:
         }
 
     def add_option(self, option: 'Classification') -> None:
-        if option.instructions in (o.instructions for o in self.options):
+        if option.name in (o.name for o in self.options):
             raise InconsistentOntologyException(
-                f"Duplicate nested classification '{option.instructions}' "
+                f"Duplicate nested classification '{option.name}' "
                 f"for option '{self.label}'")
         self.options.append(option)
 
@@ -91,7 +91,7 @@ class Classification:
     A classfication to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
-    To instantiate, the "class_type" and "instructions" parameters must
+    To instantiate, the "class_type" and "name" parameters must
     be passed in.
 
     The "options" parameter holds a list of Option objects. This is not
@@ -101,16 +101,17 @@ class Classification:
     Example(s):
         classification = Classification(
             class_type = Classification.Type.TEXT,
-            instructions = "Classification Example")
+            name = "Classification Example")
 
         classification_two = Classification(
             class_type = Classification.Type.RADIO,
-            instructions = "Second Example")
+            name = "Second Example")
         classification_two.add_option(Option(
             value = "Option Example"))
 
     Attributes:
         class_type: (Classification.Type)
+        name: (str)
         instructions: (str)
         required: (bool)
         options: (list)
@@ -131,7 +132,8 @@ class Classification:
     _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
 
     class_type: Type
-    instructions: str
+    name: Optional[str] = None
+    instructions: Optional[str] = None
     required: bool = False
     options: List[Option] = field(default_factory=list)
     schema_id: Optional[str] = None
@@ -145,13 +147,26 @@ class Classification:
                 "removed in a future release. Dropdown will also "
                 "no longer be able to be created in the Editor on 3/31/2022.")
 
-    @property
-    def name(self) -> str:
-        return self.instructions
+        if self.name is None:
+            msg = (
+                "When creating the Classification feature, please use “name” "
+                "for the classification schema name, which will be used when "
+                "creating annotation payload for MAL and Labelimport. "
+                "“instructions” is no longer supported to specify "
+                "classification schema name.")
+            if self.instructions is not None:
+                self.name = self.instructions
+                warnings.warn(msg)
+            else:
+                raise ValueError(msg)
+        else:
+            if self.instructions is None:
+                self.instructions = self.name
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(class_type=cls.Type(dictionary["type"]),
+                   name=dictionary["name"],
                    instructions=dictionary["instructions"],
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
@@ -163,7 +178,7 @@ class Classification:
         if self.class_type in self._REQUIRES_OPTIONS \
                 and len(self.options) < 1:
             raise InconsistentOntologyException(
-                f"Classification '{self.instructions}' requires options.")
+                f"Classification '{self.name}' requires options.")
         classification = {
             "type": self.class_type.value,
             "instructions": self.instructions,
@@ -262,10 +277,9 @@ class Tool:
         }
 
     def add_classification(self, classification: Classification) -> None:
-        if classification.instructions in (
-                c.instructions for c in self.classifications):
+        if classification.name in (c.name for c in self.classifications):
             raise InconsistentOntologyException(
-                f"Duplicate nested classification '{classification.instructions}' "
+                f"Duplicate nested classification '{classification.name}' "
                 f"for tool '{self.name}'")
         self.classifications.append(classification)
 
@@ -388,9 +402,7 @@ class OntologyBuilder:
         self.tools.append(tool)
 
     def add_classification(self, classification: Classification) -> None:
-        if classification.instructions in (
-                c.instructions for c in self.classifications):
+        if classification.name in (c.name for c in self.classifications):
             raise InconsistentOntologyException(
-                f"Duplicate classification instructions '{classification.instructions}'. "
-            )
+                f"Duplicate classification name '{classification.name}'. ")
         self.classifications.append(classification)
