@@ -375,6 +375,15 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    defaultExportParams: ProjectExportParams = {
+        "attachments": False,
+        "media_attributes": False,
+        "metadata_fields": False,
+        "data_row_details": False,
+        "project_details": False,
+        "labels": False,
+        "performance_details": False
+    }
     """
     Creates a project run export task with the given params and returns the task.
     
@@ -382,18 +391,13 @@ class Project(DbObject, Updateable, Deletable):
     
     """
 
-    def export_v2(self, task_name: str,
-                  params: Optional[ProjectExportParams]) -> Task:
-        defaultParams: ProjectExportParams = {
-            "attachments": False,
-            "media_attributes": False,
-            "metadata_fields": False,
-            "data_row_details": False,
-            "project_details": False,
-            "labels": False,
-            "performance_details": False
-        }
-        _params: ProjectExportParams = params if params is not None else defaultParams
+    def export_v2(self,
+                  task_name: Optional[str] = None,
+                  params: ProjectExportParams = defaultExportParams) -> Task:
+
+        if (task_name is None):
+            task_name = f'Export Data Rows in Project - {self.name}'
+
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
@@ -406,19 +410,19 @@ class Project(DbObject, Updateable, Deletable):
                 },
                 "params": {
                     "includeAttachments":
-                        _params.get('attachments', False),
+                        params.get('attachments', False),
                     "includeMediaAttributes":
-                        _params.get('media_attributes', False),
+                        params.get('media_attributes', False),
                     "includeMetadata":
-                        _params.get('metadata_fields', False),
+                        params.get('metadata_fields', False),
                     "includeDataRowDetails":
-                        _params.get('data_row_details', False),
+                        params.get('data_row_details', False),
                     "includeProjectDetails":
-                        _params.get('project_details', False),
+                        params.get('project_details', False),
                     "includeLabels":
-                        _params.get('labels', False),
+                        params.get('labels', False),
                     "includePerformanceDetails":
-                        _params.get('performance_details', False),
+                        params.get('performance_details', False),
                 },
             }
         }
