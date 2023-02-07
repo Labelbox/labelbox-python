@@ -2,6 +2,7 @@ import logging
 import requests
 import time
 from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List
+import ndjson
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
@@ -99,12 +100,14 @@ class Task(DbObject):
             raise ValueError(f"Job failed. Errors : {self.errors}")
         else:
             result = self._fetch_remote_json()
-            return [{
-                'id': data_row['id'],
-                'external_id': data_row.get('externalId'),
-                'row_data': data_row['rowData'],
-                'global_key': data_row.get('globalKey'),
-            } for data_row in result['createdDataRows']]
+            if 'createdDataRows' in result:
+                return [{
+                    'id': data_row['id'],
+                    'external_id': data_row.get('externalId'),
+                    'row_data': data_row['rowData'],
+                    'global_key': data_row.get('globalKey'),
+                } for data_row in result['createdDataRows']]
+            return result
 
     @property
     def failed_data_rows(self) -> Optional[Dict[str, Any]]:
@@ -124,13 +127,16 @@ class Task(DbObject):
         def download_result():
             response = requests.get(self.result_url)
             response.raise_for_status()
-            return response.json()
-
-        if self.name != 'JSON Import':
-            raise ValueError(
-                "Task result is only supported for `JSON Import` tasks."
-                " Download task.result_url manually to access the result for other tasks."
-            )
+            try:
+                return response.json()
+            except Exception as e:
+                pass
+            try:
+                return ndjson.loads(response.text)
+            except Exception as e:
+                raise ValueError(
+                    "Unable to parse JSON or NDJSON. Please contact support for more details. Download task.result_url manually to access the result for other tasks."
+                )
 
         if self.status != "IN_PROGRESS":
             return download_result()
