@@ -1,7 +1,7 @@
 import logging
 import requests
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List
+from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
 import ndjson
 
 from labelbox.exceptions import ResourceNotFoundError
@@ -93,7 +93,7 @@ class Task(DbObject):
         return None
 
     @property
-    def result(self) -> List[Dict[str, Any]]:
+    def result(self) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """ Fetch the result for an import task.
         """
         if self.status == "FAILED":
