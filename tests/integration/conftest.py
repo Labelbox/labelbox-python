@@ -386,15 +386,15 @@ def configured_project_with_complex_ontology(client, rand_gen, image_url):
 
     classifications = [
         Classification(class_type=Classification.Type.TEXT,
-                       instructions="test-text-class"),
+                       name="test-text-class"),
         Classification(class_type=Classification.Type.DROPDOWN,
-                       instructions="test-dropdown-class",
+                       name="test-dropdown-class",
                        options=options),
         Classification(class_type=Classification.Type.RADIO,
-                       instructions="test-radio-class",
+                       name="test-radio-class",
                        options=options),
         Classification(class_type=Classification.Type.CHECKLIST,
-                       instructions="test-checklist-class",
+                       name="test-checklist-class",
                        options=options)
     ]
 

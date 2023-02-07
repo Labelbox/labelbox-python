@@ -20,8 +20,7 @@ def get_feature_schema_lookup(
                 )
             if isinstance(classification, ontology.Classification):
                 classification_lookup[
-                    classification.
-                    instructions] = classification.feature_schema_id
+                    classification.name] = classification.feature_schema_id
             elif isinstance(classification, ontology.Option):
                 classification_lookup[
                     classification.value] = classification.feature_schema_id
@@ -67,7 +66,7 @@ def get_classifications(
     existing_classifications: List[ontology.Classification]
 ) -> List[ontology.Classification]:
     existing_classifications = {
-        classification.instructions: classification
+        classification.name: classification
         for classification in existing_classifications
     }
     for annotation in annotations:
@@ -79,7 +78,7 @@ def get_classifications(
         elif annotation.name not in existing_classifications:
             existing_classifications[annotation.name] = ontology.Classification(
                 class_type=classification_mapping(annotation),
-                instructions=annotation.name,
+                name=annotation.name,
                 options=_get_options(annotation, []))
     return list(existing_classifications.values())
 
