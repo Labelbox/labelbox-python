@@ -151,9 +151,9 @@ class Classification:
             msg = (
                 "When creating the Classification feature, please use “name” "
                 "for the classification schema name, which will be used when "
-                "creating annotation payload for MAL and Labelimport. "
-                "“instructions” is no longer supported to specify "
-                "classification schema name.")
+                "creating annotation payload for Model-Assisted Labeling "
+                "Import and Label Import. “instructions” is no longer "
+                "supported to specify classification schema name.")
             if self.instructions is not None:
                 self.name = self.instructions
                 warnings.warn(msg)
