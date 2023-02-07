@@ -458,7 +458,7 @@ class ModelRun(DbObject):
 
     def export_v2(self,
                   task_name: Optional[str] = None,
-                  params: Optional[ModelRunExportParams] = {}) -> Task:
+                  params: Optional[ModelRunExportParams] = None) -> Task:
         mutation_name = "exportDataRowsInModelRun"
         create_task_query_str = """mutation exportDataRowsInModelRunPyApi($input: ExportDataRowsInModelRunInput!){
           %s(input: $input) {taskId} }
@@ -466,7 +466,9 @@ class ModelRun(DbObject):
         if (task_name is None):
             task_name = f'Export Data Rows in Model Run - {self.name}'
 
-        params = {
+        _params = params or ModelRunExportParams()
+
+        queryParams = {
             "input": {
                 "taskName": task_name,
                 "filters": {
@@ -474,13 +476,13 @@ class ModelRun(DbObject):
                 },
                 "params": {
                     "includeAttachments":
-                        params.get('attachments', False),
+                        _params.get('attachments', False),
                     "includeMediaAttributes":
-                        params.get('media_attributes', False),
+                        _params.get('media_attributes', False),
                     "includeMetadata":
-                        params.get('metadata_fields', False),
+                        _params.get('metadata_fields', False),
                     "includeDataRowDetails":
-                        params.get('data_row_details', False),
+                        _params.get('data_row_details', False),
                     # Arguments locked based on exectuion context
                     "includeProjectDetails":
                         False,
@@ -493,7 +495,7 @@ class ModelRun(DbObject):
         }
         res = self.client.execute(
             create_task_query_str,
-            params,
+            queryParams,
         )
         res = res[mutation_name]
         task_id = res["taskId"]
