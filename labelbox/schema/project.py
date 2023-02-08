@@ -301,7 +301,9 @@ class Project(DbObject, Updateable, Deletable):
             timeout_seconds (float): Max waiting time, in seconds.
             start (str): Earliest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
             end (str): Latest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
-            last_activity_start (str):
+            last_activity_start (str): Will include all labels that have had any updates to
+              data rows, issues, comments, metadata, or reviews since this timestamp.
+              formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
 
         Returns:
             URL of the data file with this Project's labels. If the server didn't
@@ -363,6 +365,7 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, id_param, filter_param)
 
         start_time = time.time()
+        print(query_str)
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]

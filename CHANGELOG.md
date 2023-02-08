@@ -1,6 +1,9 @@
 # Changelog
 
 # Version 3.37.0 (2023-xx-xx)
+## Added
+* New `last_activity_start` param to `project.export_labels()` for filtering which labels are exported. See docstring for more on how this works. 
+
 ## Changed
 * Rename `Classification.instructions` to `Classification.name`
 
