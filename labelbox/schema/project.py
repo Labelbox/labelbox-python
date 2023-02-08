@@ -365,7 +365,7 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, id_param, filter_param)
 
         start_time = time.time()
-        print(query_str)
+
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
