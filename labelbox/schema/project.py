@@ -301,6 +301,10 @@ class Project(DbObject, Updateable, Deletable):
             timeout_seconds (float): Max waiting time, in seconds.
             start (str): Earliest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
             end (str): Latest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            last_activity_start (str): Will include all labels that have had any updates to
+              data rows, issues, comments, metadata, or reviews since this timestamp.
+              formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
@@ -346,6 +350,12 @@ class Project(DbObject, Updateable, Deletable):
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
                 created_at_dict, value_with_quotes=True)
 
+        if "last_activity_start" in kwargs:
+            last_activity_start = kwargs['last_activity_start']
+            _validate_datetime(last_activity_start)
+            filter_param_dict["lastActivityAt"] = "{%s}" % _string_from_dict(
+                {"start": last_activity_start}, value_with_quotes=True)
+
         if filter_param_dict:
             filter_param = """, filters: {%s }""" % (_string_from_dict(
                 filter_param_dict, value_with_quotes=False))
@@ -355,6 +365,7 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, id_param, filter_param)
 
         start_time = time.time()
+
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
