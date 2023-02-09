@@ -39,6 +39,7 @@ class Task(DbObject):
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
     result_url = Field.String("result_url", "result")
+    type = Field.String("type")
     _user: Optional["User"] = None
 
     # Relationships
@@ -100,14 +101,15 @@ class Task(DbObject):
             raise ValueError(f"Job failed. Errors : {self.errors}")
         else:
             result = self._fetch_remote_json()
-            if 'createdDataRows' in result:
-                return [{
-                    'id': data_row['id'],
-                    'external_id': data_row.get('externalId'),
-                    'row_data': data_row['rowData'],
-                    'global_key': data_row.get('globalKey'),
-                } for data_row in result['createdDataRows']]
-            return result
+            if self.type == 'export-data-rows':
+                return result
+
+            return [{
+                'id': data_row['id'],
+                'external_id': data_row.get('externalId'),
+                'row_data': data_row['rowData'],
+                'global_key': data_row.get('globalKey'),
+            } for data_row in result['createdDataRows']]
 
     @property
     def failed_data_rows(self) -> Optional[Dict[str, Any]]:
@@ -134,9 +136,13 @@ class Task(DbObject):
             try:
                 return ndjson.loads(response.text)
             except Exception as e:
-                raise ValueError(
-                    "Unable to parse JSON or NDJSON. Please contact support for more details. Download task.result_url manually to access the result for other tasks."
-                )
+                raise ValueError("Failed to parse task JSON/NDJSON result.")
+
+        if self.name != 'JSON Import' and self.type != 'export-data-rows':
+            raise ValueError(
+                "Task result is only supported for `JSON Import` and `export` tasks."
+                " Download task.result_url manually to access the result for other tasks."
+            )
 
         if self.status != "IN_PROGRESS":
             return download_result()
