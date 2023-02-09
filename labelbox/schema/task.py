@@ -1,7 +1,8 @@
 import logging
 import requests
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List
+from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
+import ndjson
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
@@ -38,6 +39,7 @@ class Task(DbObject):
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
     result_url = Field.String("result_url", "result")
+    type = Field.String("type")
     _user: Optional["User"] = None
 
     # Relationships
@@ -92,13 +94,16 @@ class Task(DbObject):
         return None
 
     @property
-    def result(self) -> List[Dict[str, Any]]:
+    def result(self) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """ Fetch the result for an import task.
         """
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
         else:
             result = self._fetch_remote_json()
+            if self.type == 'export-data-rows':
+                return result
+
             return [{
                 'id': data_row['id'],
                 'external_id': data_row.get('externalId'),
@@ -124,11 +129,18 @@ class Task(DbObject):
         def download_result():
             response = requests.get(self.result_url)
             response.raise_for_status()
-            return response.json()
+            try:
+                return response.json()
+            except Exception as e:
+                pass
+            try:
+                return ndjson.loads(response.text)
+            except Exception as e:
+                raise ValueError("Failed to parse task JSON/NDJSON result.")
 
-        if self.name != 'JSON Import':
+        if self.name != 'JSON Import' and self.type != 'export-data-rows':
             raise ValueError(
-                "Task result is only supported for `JSON Import` tasks."
+                "Task result is only supported for `JSON Import` and `export` tasks."
                 " Download task.result_url manually to access the result for other tasks."
             )
 

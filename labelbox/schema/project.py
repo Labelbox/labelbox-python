@@ -393,9 +393,14 @@ class Project(DbObject, Updateable, Deletable):
     
     """
 
-    def export_v2(self, task_name: str,
-                  params: Optional[ProjectExportParams]) -> Task:
-        defaultParams: ProjectExportParams = {
+    def export_v2(self,
+                  task_name: Optional[str] = None,
+                  params: Optional[ProjectExportParams] = None) -> Task:
+
+        if (task_name is None):
+            task_name = f'Export Data Rows in Project - {self.name}'
+
+        _params = params or ProjectExportParams({
             "attachments": False,
             "media_attributes": False,
             "metadata_fields": False,
@@ -403,8 +408,8 @@ class Project(DbObject, Updateable, Deletable):
             "project_details": False,
             "labels": False,
             "performance_details": False
-        }
-        _params: ProjectExportParams = params if params is not None else defaultParams
+        })
+
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
