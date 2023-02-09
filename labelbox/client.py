@@ -97,7 +97,8 @@ class Client:
         self._data_row_metadata_ontology = None
 
     @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
+        labelbox.exceptions.InternalServerError,
+        labelbox.exceptions.TimeoutError))
     def execute(self,
                 query=None,
                 params=None,
@@ -956,7 +957,7 @@ class Client:
                     classifications=[
                         Classification(
                             class_type=Classification.Type.TEXT,
-                            instructions="name"
+                            name="name"
                         )
                     ]
                 )
@@ -1114,8 +1115,11 @@ class Client:
                                             sanitized=False))
                 # Failed assignments
                 errors.extend(
-                    _format_failed_rows(rows=res['invalidGlobalKeyAssignments'],
-                                        error_msg="Invalid global key"))
+                    _format_failed_rows(
+                        rows=res['invalidGlobalKeyAssignments'],
+                        error_msg=
+                        "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
+                    ))
                 errors.extend(
                     _format_failed_rows(rows=res['accessDeniedAssignments'],
                                         error_msg="Access denied to Data Row"))
@@ -1154,6 +1158,10 @@ class Client:
             timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
         """
         Gets data row ids for a list of global keys.
+
+        Deprecation Notice: This function will soon no longer return 'Deleted Data Rows'
+        as part of the 'results'. Global keys for deleted data rows will soon be placed
+        under 'Data Row not found' portion.
 
         Args:
             A list of global keys
@@ -1239,6 +1247,13 @@ class Client:
                         "There are errors present. Please look at 'errors' in the returned dict for more details"
                     )
 
+                # Deprecation notice for deletedDataRowGlobalKeys portion of results
+                if len(data['deletedDataRowGlobalKeys']) > 0:
+                    logger.warning(
+                        """Deprecation Notice: This function will soon no longer return 'Deleted Data Rows' 
+                        as part of the 'results'. Global keys for deleted data rows will soon be placed under 
+                        'Data Row not found' portion.""")
+
                 return {"status": status, "results": results, "errors": errors}
             elif res["dataRowsForGlobalKeysResult"]['jobStatus'] == "FAILED":
                 raise labelbox.exceptions.LabelboxError(
@@ -1270,13 +1285,13 @@ class Client:
             'Errors' contains a list of global_keys correspond to the data rows that could not be
             modified, accessed by the user, or not found.
         Examples:
-            >>> job_result = client.get_data_row_ids_for_global_keys(["key1","key2"])
+            >>> job_result = client.clear_global_keys(["key1","key2","notfoundkey"])
             >>> print(job_result['status'])
             Partial Success
             >>> print(job_result['results'])
-            ['cl7tv9wry00hlka6gai588ozv', 'cl7tv9wxg00hpka6gf8sh81bj']
+            ['key1', 'key2']
             >>> print(job_result['errors'])
-            [{'global_key': 'asdf', 'error': 'Data Row not found'}]
+            [{'global_key': 'notfoundkey', 'error': 'Failed to find data row matching provided global key'}]
         """
 
         def _format_failed_rows(rows: List[str],

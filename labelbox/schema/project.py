@@ -12,16 +12,20 @@ import requests
 
 from labelbox import utils
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict)
+                                 ProcessingWaitTimeout, ResourceConflict,
+                                 ResourceNotFoundError)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.task import Task
+from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -297,6 +301,10 @@ class Project(DbObject, Updateable, Deletable):
             timeout_seconds (float): Max waiting time, in seconds.
             start (str): Earliest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
             end (str): Latest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            last_activity_start (str): Will include all labels that have had any updates to
+              data rows, issues, comments, metadata, or reviews since this timestamp.
+              formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
@@ -342,6 +350,12 @@ class Project(DbObject, Updateable, Deletable):
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
                 created_at_dict, value_with_quotes=True)
 
+        if "last_activity_start" in kwargs:
+            last_activity_start = kwargs['last_activity_start']
+            _validate_datetime(last_activity_start)
+            filter_param_dict["lastActivityAt"] = "{%s}" % _string_from_dict(
+                {"start": last_activity_start}, value_with_quotes=True)
+
         if filter_param_dict:
             filter_param = """, filters: {%s }""" % (_string_from_dict(
                 filter_param_dict, value_with_quotes=False))
@@ -351,6 +365,7 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, id_param, filter_param)
 
         start_time = time.time()
+
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
@@ -370,6 +385,71 @@ class Project(DbObject, Updateable, Deletable):
             logger.debug("Project '%s' label export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    """
+    Creates a project run export task with the given params and returns the task.
+    
+    >>>    export_task = export_v2("my_export_task", filter={"media_attributes": True})
+    
+    """
+
+    def export_v2(self, task_name: str,
+                  params: Optional[ProjectExportParams]) -> Task:
+        defaultParams: ProjectExportParams = {
+            "attachments": False,
+            "media_attributes": False,
+            "metadata_fields": False,
+            "data_row_details": False,
+            "project_details": False,
+            "labels": False,
+            "performance_details": False
+        }
+        _params: ProjectExportParams = params if params is not None else defaultParams
+        mutation_name = "exportDataRowsInProject"
+        create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
+          %s(input: $input) {taskId} }
+          """ % (mutation_name)
+        query_params = {
+            "input": {
+                "taskName": task_name,
+                "filters": {
+                    "projectId": self.uid
+                },
+                "params": {
+                    "includeAttachments":
+                        _params.get('attachments', False),
+                    "includeMediaAttributes":
+                        _params.get('media_attributes', False),
+                    "includeMetadata":
+                        _params.get('metadata_fields', False),
+                    "includeDataRowDetails":
+                        _params.get('data_row_details', False),
+                    "includeProjectDetails":
+                        _params.get('project_details', False),
+                    "includeLabels":
+                        _params.get('labels', False),
+                    "includePerformanceDetails":
+                        _params.get('performance_details', False),
+                },
+            }
+        }
+        res = self.client.execute(
+            create_task_query_str,
+            query_params,
+        )
+        res = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
 
     def export_issues(self, status=None) -> str:
         """ Calls the server-side Issues exporting that

@@ -14,10 +14,8 @@ FAKE_DATAROW_ID = "D" * 25
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TRAIN_SPLIT_ID = "cko8sbscr0003h2dk04w86hof"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
-EMBEDDING_SCHEMA_ID = "ckpyije740000yxdk81pbgjdc"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
-PRE_COMPUTED_EMBEDDINGS_ID = 'ckrzang79000008l6hb5s6za1'
 CUSTOM_TEXT_SCHEMA_NAME = 'custom_text'
 
 FAKE_NUMBER_FIELD = {
@@ -56,7 +54,6 @@ def big_dataset(dataset: Dataset, image_url):
 
 
 def make_metadata(dr_id) -> DataRowMetadata:
-    embeddings = [0.0] * 128
     msg = "A message"
     time = datetime.utcnow()
 
@@ -67,14 +64,11 @@ def make_metadata(dr_id) -> DataRowMetadata:
                                  value=TEST_SPLIT_ID),
             DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
             DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
-            DataRowMetadataField(schema_id=EMBEDDING_SCHEMA_ID,
-                                 value=embeddings),
         ])
     return metadata
 
 
 def make_named_metadata(dr_id) -> DataRowMetadata:
-    embeddings = [0.0] * 128
     msg = "A message"
     time = datetime.utcnow()
 
@@ -86,8 +80,6 @@ def make_named_metadata(dr_id) -> DataRowMetadata:
                                                         value=time),
                                    DataRowMetadataField(
                                        name=CUSTOM_TEXT_SCHEMA_NAME, value=msg),
-                                   DataRowMetadataField(name='embedding',
-                                                        value=embeddings),
                                ])
     return metadata
 
@@ -127,10 +119,7 @@ def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
     mdo.bulk_upsert([metadata])
     exported = mdo.bulk_export([datarow.uid])
     assert len(exported)
-    assert len([
-        field for field in exported[0].fields
-        if field.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
-    ]) == 4
+    assert len([field for field in exported[0].fields]) == 3
 
 
 @pytest.mark.slow
@@ -147,10 +136,8 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
         for metadata in mdo.bulk_export(data_row_ids)
     }
     for data_row_id in data_row_ids:
-        assert len([
-            f for f in metadata_lookup.get(data_row_id).fields
-            if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
-        ]), metadata_lookup.get(data_row_id).fields
+        assert len([f for f in metadata_lookup.get(data_row_id).fields
+                   ]), metadata_lookup.get(data_row_id).fields
 
 
 def test_upsert_datarow_metadata_by_name(datarow, mdo):
@@ -162,10 +149,8 @@ def test_upsert_datarow_metadata_by_name(datarow, mdo):
         metadata.data_row_id: metadata
         for metadata in mdo.bulk_export([datarow.uid])
     }
-    assert len([
-        f for f in metadata_lookup.get(datarow.uid).fields
-        if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
-    ]), metadata_lookup.get(datarow.uid).fields
+    assert len([f for f in metadata_lookup.get(datarow.uid).fields
+               ]), metadata_lookup.get(datarow.uid).fields
 
 
 def test_upsert_datarow_metadata_option_by_name(datarow, mdo):
@@ -220,10 +205,7 @@ def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
     mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[TEXT_SCHEMA_ID])
     ])
-    fields = [
-        f for f in mdo.bulk_export([datarow.uid])[0].fields
-        if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
-    ]
+    fields = [f for f in mdo.bulk_export([datarow.uid])[0].fields]
     assert len(fields) == (len(metadata.fields) - 1)
 
 
@@ -234,9 +216,8 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
         metadata.append(
             DataRowMetadata(data_row_id=data_row_id,
                             fields=[
-                                DataRowMetadataField(
-                                    schema_id=EMBEDDING_SCHEMA_ID,
-                                    value=[0.1] * 128),
+                                DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID,
+                                                     value=TEST_SPLIT_ID),
                                 DataRowMetadataField(schema_id=TEXT_SCHEMA_ID,
                                                      value="test-message")
                             ]))
@@ -248,19 +229,13 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
         deletes.append(
             DeleteDataRowMetadata(
                 data_row_id=data_row_id,
-                fields=[
-                    EMBEDDING_SCHEMA_ID,  #
-                    CAPTURE_DT_SCHEMA_ID
-                ]))
+                fields=[SPLIT_SCHEMA_ID, CAPTURE_DT_SCHEMA_ID]))
     errors = mdo.bulk_delete(deletes)
     assert len(errors) == 0
     for data_row_id in data_row_ids:
-        fields = [
-            f for f in mdo.bulk_export([data_row_id])[0].fields
-            if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID
-        ]
+        fields = [f for f in mdo.bulk_export([data_row_id])[0].fields]
         assert len(fields) == 1, fields
-        assert EMBEDDING_SCHEMA_ID not in [field.schema_id for field in fields]
+        assert SPLIT_SCHEMA_ID not in [field.schema_id for field in fields]
 
 
 def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
@@ -280,8 +255,7 @@ def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
         DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
     exported = mdo.bulk_export([datarow.uid])[0].fields
-    assert len(
-        [f for f in exported if f.schema_id != PRE_COMPUTED_EMBEDDINGS_ID]) == 0
+    assert len(exported) == 0
 
 
 def test_raise_enum_upsert_schema_error(datarow, mdo):
@@ -309,11 +283,10 @@ def test_upsert_non_existent_schema_id(datarow, mdo):
 
 
 def test_delete_non_existent_schema_id(datarow, mdo):
-    mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=datarow.uid,
-                              fields=[EMBEDDING_SCHEMA_ID])
+    res = mdo.bulk_delete([
+        DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
     ])
-    # No message is returned
+    assert len(res) == 0
 
 
 def test_parse_raw_metadata(mdo):

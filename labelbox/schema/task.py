@@ -81,6 +81,9 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Fetch the error associated with an import task.
         """
+        # TODO: We should handle error messages for export v2 tasks in the future.
+        if self.name != 'JSON Import':
+            return None
         if self.status == "FAILED":
             result = self._fetch_remote_json()
             return result["error"]
