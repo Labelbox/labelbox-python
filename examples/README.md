@@ -40,24 +40,11 @@ Train a model using data annotated on Labelbox
 | Panoptic Detection (Detectron2)          | [Github](coco_panoptic.ipynb)    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/integrations/detectron2/coco_panoptic.ipynb)
 ------
 
-## [Annotation Types](annotation_types)
-
-Learn more about annotation types in the [docs](https://docs.labelbox.com/docs/annotation-types-1)
-
-| Notebook                    | Github                            | Google Colab |
-| --------------------------- | --------------------------------- | ------------ |
-| Annotation Type Basics  | [Github](annotation_types/basics.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_types/basics.ipynb) |
-| Converters                 | [Github](annotation_types/converters.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_types/converters.ipynb) |
-| Label Containers           | [Github](annotation_types/label_containers.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_types/label_containers.ipynb) |
-| MAL Using Annotation Types | [Github](annotation_types/mal_using_annotation_types.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_types/mal_using_annotation_types.ipynb) |
-
-
 ## [Annotation Import (Ground Truth & MAL)](annotation_import)
 
 
 | Notebook                    | Github                            | Google Colab | Learn more |
 | --------------------------- | --------------------------------- | ------------ | ---------- |
-| Basics                    | [Github](annotation_import/basics.ipynb)            | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_import/basics.ipynb) | [Docs](https://docs.labelbox.com/docs/model-assisted-labeling) |
 | Image Annotation Import                    | [Github](annotation_import/image.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_import/image.ipynb) | 
 | Text Annotation Import | [Github](annotation_import/text.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_import/text.ipynb) |
 | Tiled Imagery Annotation Import    | [Github](annotation_import/tiled.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/annotation_import/tiled.ipynb) |
