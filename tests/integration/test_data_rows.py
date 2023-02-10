@@ -685,11 +685,23 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
 
 def test_delete_data_row_attachment(datarow, image_url):
     attachments = []
+
+    # Anonymous attachment
     to_attach = [("IMAGE", image_url), ("TEXT", "test-text"),
                  ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
     for attachment_type, attachment_value in to_attach:
         attachments.append(
             datarow.create_attachment(attachment_type, attachment_value))
+
+    # Attachment with a name
+    to_attach = [("IMAGE", image_url, "Att. Image"),
+                 ("TEXT", "test-text", "Att. Text"),
+                 ("IMAGE_OVERLAY", image_url, "Image Overlay"),
+                 ("HTML", image_url, "Att. HTML")]
+    for attachment_type, attachment_value, attachment_name in to_attach:
+        attachments.append(
+            datarow.create_attachment(attachment_type, attachment_value,
+                                      attachment_name))
 
     for attachment in attachments:
         attachment.delete()
