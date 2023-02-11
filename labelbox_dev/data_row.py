@@ -4,7 +4,7 @@ from typing import Any, Iterator, List, Optional, Union
 from labelbox_dev.entity import Entity
 from labelbox_dev.exceptions import LabelboxError
 from labelbox_dev.session import Session
-from labelbox_dev.task import BulkGetDataRowsTask, CreateDataRowsTask
+from labelbox_dev.task import GetDataRowsTask, CreateDataRowsTask, DeleteDataRowsTask, UpdateDataRowsTask
 from labelbox_dev.types import TypedDict
 from labelbox_dev.pagination import IdentifierPaginator
 
@@ -30,6 +30,13 @@ class CreateDataRowType(TypedDict):
     attachments: List[AttachmentsType]
     metadata: List[MetadataType]
     media_type: Optional[str]
+
+
+class UpdateDataRowsWithIdType(TypedDict):
+    id: str
+    global_key: Optional[str]
+    external_id: Optional[str]
+    row_data: Optional[str]
 
 
 class UpdateDataRowType(TypedDict):
@@ -125,9 +132,8 @@ class DataRow(Entity):
         return [DataRow(data_row_json) for data_row_json in data_rows]
 
     @staticmethod
-    def get_by_id(data_row_id: str):
-        data_row_json = Session.get_request(
-            f"{DATA_ROW_RESOURCE}/{data_row_id}")
+    def get_by_id(id: str):
+        data_row_json = Session.get_request(f"{DATA_ROW_RESOURCE}/{id}")
         return DataRow(data_row_json)
 
     @staticmethod
@@ -139,10 +145,10 @@ class DataRow(Entity):
 
     @staticmethod
     def get_by_ids(
-        data_row_ids,
-        run_async: bool = False
-    ) -> Union[Iterator["DataRow"], BulkGetDataRowsTask]:
-        body = {'keys': data_row_ids, 'run_async': run_async}
+            ids: List[str],
+            run_async: bool = False
+    ) -> Union[Iterator["DataRow"], GetDataRowsTask]:
+        body = {'keys': ids, 'run_async': run_async}
 
         if run_async:
             task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkget",
@@ -154,16 +160,15 @@ class DataRow(Entity):
                 raise LabelboxError(
                     f"Failed to retrieve task information for `data_row.get_by_ids()` async operation"
                 )
-            return BulkGetDataRowsTask.get_by_id(task_id)
+            return GetDataRowsTask.get_by_id(task_id)
 
-        return IdentifierPaginator(f"{DATA_ROW_RESOURCE}", DataRow,
-                                   data_row_ids)
+        return IdentifierPaginator(f"{DATA_ROW_RESOURCE}", DataRow, ids)
 
     @staticmethod
     def get_by_global_keys(
-        global_keys,
-        run_async: bool = False
-    ) -> Union[Iterator["DataRow"], BulkGetDataRowsTask]:
+            global_keys: List[str],
+            run_async: bool = False
+    ) -> Union[Iterator["DataRow"], GetDataRowsTask]:
         body = {
             'keys': global_keys,
             'is_global_key': True,
@@ -179,9 +184,59 @@ class DataRow(Entity):
                 raise LabelboxError(
                     f"Failed to retrieve task information for `data_row.get_by_global_keys()` async operation"
                 )
-            return BulkGetDataRowsTask.get_by_id(task_id)
+            return GetDataRowsTask.get_by_id(task_id)
 
         return IdentifierPaginator(f"{DATA_ROW_RESOURCE}",
                                    DataRow,
                                    global_keys,
                                    identifiers_key='global_keys')
+
+    @staticmethod
+    def update_many(data_rows: List[UpdateDataRowsWithIdType],
+                    run_async: bool = False):
+        for data_row in data_rows:
+            if 'row_data' in data_row:
+                data_row = DataRow._format_data_rows([data_row])[0]
+
+        body = {'data_rows': data_rows, 'run_async': run_async}
+        if run_async:
+            task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkupdate",
+                                             json=body)
+            task_id = task_json.get(
+                'taskId')  # TODO: change to snake_case from backend
+
+            if task_id is None:
+                raise LabelboxError(
+                    f"Failed to retrieve task information for `data_row.update_many()` async operation"
+                )
+            return UpdateDataRowsTask.get_by_id(task_id)
+
+        data_rows = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkupdate",
+                                         json=body)
+        return [DataRow(data_row_json) for data_row_json in data_rows]
+
+    @staticmethod
+    def delete_many(ids: Optional[List[str]] = None,
+                    global_keys: Optional[List[str]] = None,
+                    run_async: bool = False):
+        body = {'run_async': run_async}
+        if ids:
+            body.update({'ids': ids})
+        if global_keys:
+            body.update({'global_keys': global_keys})
+
+        if run_async:
+            task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkdelete",
+                                             json=body)
+            task_id = task_json.get(
+                'taskId')  # TODO: change to snake_case from backend
+
+            if task_id is None:
+                raise LabelboxError(
+                    f"Failed to retrieve task information for `data_row.delete_many()` async operation"
+                )
+            return DeleteDataRowsTask.get_by_id(task_id)
+
+        data_rows = Session.post_request(f"{DATA_ROW_RESOURCE}/bulkdelete",
+                                         json=body)
+        return data_rows

@@ -26,7 +26,9 @@ class TaskStatus(Enum):
 
 class TaskType(Enum):
     CREATE_DATA_ROWS = "CREATE_DATA_ROWS"
-    BULK_GET_DATA_ROWS = "BULK_GET_DATA_ROWS"
+    GET_DATA_ROWS = "GET_DATA_ROWS"
+    UPDATE_DATA_ROWS = "UPDATE_DATA_ROWS"
+    DELETE_DATA_ROWS = "DELETE_DATA_ROWS"
 
 
 class BaseTask(Entity, ABC):
@@ -130,8 +132,8 @@ class BulkTask(BaseTask, ABC):
             self.refresh()
 
 
-class BulkGetDataRowsTask(BulkTask):
-    task_type = TaskType.BULK_GET_DATA_ROWS
+class GetDataRowsTask(BulkTask):
+    task_type = TaskType.GET_DATA_ROWS
 
     def __init__(self, json):
         super().__init__(json)
@@ -221,3 +223,77 @@ class CreateDataRowsTask(BulkTask):
             errors['failed_data_rows'] = task_result['failedDataRows']
 
         return errors if errors else None
+
+
+class UpdateDataRowsTask(BulkTask):
+    """ Asynchronous task representing bulk data_rows update job
+    """
+
+    task_type = TaskType.UPDATE_DATA_ROWS
+
+    def __init__(self, json):
+        super().__init__(json)
+
+    @lru_cache()
+    def fetch_result(self) -> Dict[str, Any]:
+        if self.status == TaskStatus.IN_PROGRESS.name:
+            raise ResourceNotFoundError(
+                f"Task result for task '{self.id}' not found. Task is still in progress"
+            )
+        else:
+            response = requests.get(self.result_url)
+            response.raise_for_status()
+            return response.json()
+
+    @property
+    def results(self) -> Union[Dict[str, Any], None]:
+        task_result = self.fetch_result()
+        if self.status == TaskStatus.FAILED.name:
+            logger.warning(
+                "Task has failed. Please look at `task.errors` for more details"
+            )
+            return None
+
+        return task_result
+
+    @property
+    def errors(self) -> Union[Dict[str, Any], None]:
+        # TODO: Store errors in the backend
+        return None
+
+
+class DeleteDataRowsTask(BulkTask):
+    """ Asynchronous task representing bulk data_rows delete job
+    """
+
+    task_type = TaskType.DELETE_DATA_ROWS
+
+    def __init__(self, json):
+        super().__init__(json)
+
+    @lru_cache()
+    def fetch_result(self) -> Dict[str, Any]:
+        if self.status == TaskStatus.IN_PROGRESS.name:
+            raise ResourceNotFoundError(
+                f"Task result for task '{self.id}' not found. Task is still in progress"
+            )
+        else:
+            response = requests.get(self.result_url)
+            response.raise_for_status()
+            return response.json()
+
+    @property
+    def results(self) -> Union[Dict[str, Any], None]:
+        task_result = self.fetch_result()
+        if self.status == TaskStatus.FAILED.name:
+            logger.warning(
+                "Task has failed. Please look at `task.errors` for more details"
+            )
+            return None
+
+        return task_result
+
+    @property
+    def errors(self) -> Union[Dict[str, Any], None]:
+        # TODO: Store errors in the backend
+        return None
