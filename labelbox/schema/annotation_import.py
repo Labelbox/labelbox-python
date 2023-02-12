@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import time
-from typing import Any, BinaryIO, Dict, List
+from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
 
 import backoff
 import ndjson
@@ -16,6 +16,10 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.confidence_presence_checker import LabelsConfidencePresenceChecker
 from labelbox.schema.enums import AnnotationImportState
+from labelbox.schema.serialization import serialize_labels
+
+if TYPE_CHECKING:
+    from labelbox.types import Label
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
@@ -142,13 +146,15 @@ class AnnotationImport(DbObject):
         return client.execute(data=data, files=files)
 
     @classmethod
-    def _get_ndjson_from_objects(cls, objects: List[Dict[str, Any]],
+    def _get_ndjson_from_objects(cls, objects: Union[List[Dict[str, Any]],
+                                                     List["Label"]],
                                  object_name: str) -> BinaryIO:
         if not isinstance(objects, list):
             raise TypeError(
                 f"{object_name} must be in a form of list. Found {type(objects)}"
             )
 
+        objects = serialize_labels(objects)
         data_str = ndjson.dumps(objects)
         if not data_str:
             raise ValueError(f"{object_name} cannot be empty")
@@ -212,8 +218,9 @@ class MEAPredictionImport(AnnotationImport):
 
     @classmethod
     def create_from_objects(
-            cls, client: "labelbox.Client", model_run_id: str, name,
-            predictions: List[Dict[str, Any]]) -> "MEAPredictionImport":
+        cls, client: "labelbox.Client", model_run_id: str, name,
+        predictions: Union[List[Dict[str, Any]], List["Label"]]
+    ) -> "MEAPredictionImport":
         """
         Create an MEA prediction import job from an in memory dictionary
 
@@ -448,8 +455,9 @@ class MALPredictionImport(AnnotationImport):
 
     @classmethod
     def create_from_objects(
-            cls, client: "labelbox.Client", project_id: str, name: str,
-            predictions: List[Dict[str, Any]]) -> "MALPredictionImport":
+        cls, client: "labelbox.Client", project_id: str, name: str,
+        predictions: Union[List[Dict[str, Any]], List["Label"]]
+    ) -> "MALPredictionImport":
         """
         Create an MAL prediction import job from an in memory dictionary
 
@@ -463,12 +471,15 @@ class MALPredictionImport(AnnotationImport):
         """
         data = cls._get_ndjson_from_objects(predictions, 'annotations')
 
-        has_confidence = LabelsConfidencePresenceChecker.check(predictions)
-        if has_confidence:
-            logger.warning("""
-            Confidence scores are not supported in MAL Prediction Import.
-            Corresponding confidence score values will be ignored.
-            """)
+        if len(predictions) > 0 and isinstance(predictions[0], Dict):
+            predictions_dicts = cast(List[Dict[str, Any]], predictions)
+            has_confidence = LabelsConfidencePresenceChecker.check(
+                predictions_dicts)
+            if has_confidence:
+                logger.warning("""
+                Confidence scores are not supported in MAL Prediction Import.
+                Corresponding confidence score values will be ignored.
+                """)
         return cls._create_mal_import_from_bytes(client, project_id, name, data,
                                                  len(str(data)))
 
@@ -603,9 +614,10 @@ class LabelImport(AnnotationImport):
             raise ValueError(f"File {path} is not accessible")
 
     @classmethod
-    def create_from_objects(cls, client: "labelbox.Client", project_id: str,
-                            name: str,
-                            labels: List[Dict[str, Any]]) -> "LabelImport":
+    def create_from_objects(
+            cls, client: "labelbox.Client", project_id: str, name: str,
+            labels: Union[List[Dict[str, Any]],
+                          List["Label"]]) -> "LabelImport":
         """
         Create a label import job from an in memory dictionary
 
@@ -619,12 +631,14 @@ class LabelImport(AnnotationImport):
         """
         data = cls._get_ndjson_from_objects(labels, 'labels')
 
-        has_confidence = LabelsConfidencePresenceChecker.check(labels)
-        if has_confidence:
-            logger.warning("""
-            Confidence scores are not supported in Label Import.
-            Corresponding confidence score values will be ignored.
-            """)
+        if len(labels) > 0 and isinstance(labels[0], Dict):
+            label_dicts = cast(List[Dict[str, Any]], labels)
+            has_confidence = LabelsConfidencePresenceChecker.check(label_dicts)
+            if has_confidence:
+                logger.warning("""
+                Confidence scores are not supported in Label Import.
+                Corresponding confidence score values will be ignored.
+                """)
         return cls._create_label_import_from_bytes(client, project_id, name,
                                                    data, len(str(data)))
 

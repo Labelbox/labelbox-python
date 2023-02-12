@@ -3,6 +3,7 @@ import ndjson
 import pytest
 
 from labelbox.schema.annotation_import import AnnotationImportState, MEAPredictionImport
+from labelbox.data.serialization import NDJsonConverter
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -34,6 +35,24 @@ def test_create_from_objects(model_run_with_model_run_data_rows,
     annotation_import_test_helpers.check_running_state(annotation_import, name)
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
+    annotation_import.wait_until_done()
+
+
+def test_create_from_label_objects(model_run_with_model_run_data_rows,
+                                   object_predictions,
+                                   annotation_import_test_helpers):
+    name = str(uuid.uuid4())
+
+    predictions = list(NDJsonConverter.deserialize(object_predictions))
+
+    annotation_import = model_run_with_model_run_data_rows.add_predictions(
+        name=name, predictions=predictions)
+
+    assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
+    annotation_import_test_helpers.check_running_state(annotation_import, name)
+    normalized_predictions = NDJsonConverter.serialize(predictions)
+    annotation_import_test_helpers.assert_file_content(
+        annotation_import.input_file_url, normalized_predictions)
     annotation_import.wait_until_done()
 
 

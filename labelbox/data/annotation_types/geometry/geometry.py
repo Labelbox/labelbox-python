@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod
 
 import geojson
 import numpy as np
-from shapely import geometry as geom
 from pydantic import BaseModel
+
+from shapely import geometry as geom
 
 
 class Geometry(BaseModel, ABC):

@@ -1,4 +1,11 @@
 # Changelog
+# Version 3.38.0 (2023-xx-xx)
+
+### Added
+* All imports are available via `import labelbox as lb` and `import labelbox.types as lb_types`.
+
+## Changed
+* `LabelImport.create_from_objects()`, `MALPredictionImport.create_from_objects()`, `MEAPredictionImport.create_from_objects()`, `Project.upload_annotations()`, `ModelRun.add_predictions()` now support Python Types for annotations.
 
 # Version 3.37.0 (2023-02-08)
 ## Added
