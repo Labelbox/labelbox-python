@@ -621,16 +621,17 @@ def test_data_row_iteration(dataset, image_url) -> None:
 
 
 def test_data_row_attachments(dataset, image_url):
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments = [("IMAGE", image_url, "attachment image"), ("TEXT", "test-text", None),
+                   ("IMAGE_OVERLAY", image_url, "Overlay"), ("HTML", image_url)]
     task = dataset.create_data_rows([{
         "row_data": image_url,
         "external_id": "test-id",
         "attachments": [{
             "type": attachment_type,
-            "value": attachment_value
+            "value": attachment_value,
+            "name": attachment_name
         }]
-    } for attachment_type, attachment_value in attachments])
+    } for attachment_type, attachment_value, attachment_name in attachments])
 
     task.wait_till_done()
     assert task.status == "COMPLETE"
@@ -652,8 +653,8 @@ def test_data_row_attachments(dataset, image_url):
 
 
 def test_create_data_rows_sync_attachments(dataset, image_url):
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments = [("IMAGE", image_url, "image URL"), ("TEXT", "test-text", None),
+                   ("IMAGE_OVERLAY", image_url, "Overlay"), ("HTML", image_url, None)]
     attachments_per_data_row = 3
     dataset.create_data_rows_sync([{
         "row_data":
@@ -662,9 +663,10 @@ def test_create_data_rows_sync_attachments(dataset, image_url):
             "test-id",
         "attachments": [{
             "type": attachment_type,
-            "value": attachment_value
+            "value": attachment_value,
+            "name": attachment_name
         } for _ in range(attachments_per_data_row)]
-    } for attachment_type, attachment_value in attachments])
+    } for attachment_type, attachment_value, attachment_name in attachments])
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(attachments)
     for data_row in data_rows:
