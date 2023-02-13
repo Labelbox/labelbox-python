@@ -133,7 +133,7 @@ def test_lookup_data_rows(client, dataset):
     assert all([len(x) == 1 for x in lookup.values()])
     assert lookup[uid][0] == dr.uid
     assert lookup[uid2][0] == dr2.uid
-    #1 external id : 2 uid
+    # 1 external id : 2 uid
     dr3 = dataset.create_data_row(row_data="123", external_id=uid2)
     lookup = client.get_data_row_ids_for_external_ids([uid2])
     assert len(lookup) == 1
@@ -307,7 +307,7 @@ def test_create_data_row_with_metadata(mdo, dataset, image_url):
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
-           ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
         assert mdo._parse_upsert(m)
 
@@ -331,7 +331,7 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
-           ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
         assert mdo._parse_upsert(m)
 
@@ -388,7 +388,7 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
         assert len(metadata_fields) == 3
         assert len(metadata) == 3
         assert [m["schemaId"] for m in metadata_fields
-               ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
         for m in metadata:
             assert mdo._parse_upsert(m)
 
@@ -623,7 +623,8 @@ def test_data_row_iteration(dataset, image_url) -> None:
 def test_data_row_attachments(dataset, image_url):
     attachments = [("IMAGE", image_url, "attachment image"),
                    ("TEXT", "test-text", None),
-                   ("IMAGE_OVERLAY", image_url, "Overlay"), ("HTML", image_url)]
+                   ("IMAGE_OVERLAY", image_url, "Overlay"),
+                   ("HTML", image_url, None)]
     task = dataset.create_data_rows([{
         "row_data":
             image_url,
@@ -776,7 +777,7 @@ def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
 
     task.wait_till_done()
     assert {row.global_key for row in dataset.data_rows()
-           } == {global_key_1, global_key_2, global_key_3}
+            } == {global_key_1, global_key_2, global_key_3}
 
 
 def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
@@ -864,7 +865,7 @@ def test_data_row_bulk_creation_sync_with_unique_global_keys(
     ])
 
     assert {row.global_key for row in dataset.data_rows()
-           } == {global_key_1, global_key_2, global_key_3}
+            } == {global_key_1, global_key_2, global_key_3}
 
 
 def test_data_row_rulk_creation_sync_with_same_global_keys(
@@ -933,7 +934,8 @@ def test_create_tiled_layer(dataset, tile_content):
             **tile_content, 'media_type': 'TMS_SIMPLE'
         },
         tile_content,
-        tile_content['row_data']  # Old way to check for backwards compatibility
+        # Old way to check for backwards compatibility
+        tile_content['row_data']
     ]
     dataset.create_data_rows_sync(examples)
     data_rows = list(dataset.data_rows())
