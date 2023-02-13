@@ -307,7 +307,7 @@ def test_create_data_row_with_metadata(mdo, dataset, image_url):
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
-            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+           ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
         assert mdo._parse_upsert(m)
 
@@ -331,7 +331,7 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
     assert [m["schemaId"] for m in metadata_fields
-            ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+           ].sort() == EXPECTED_METADATA_SCHEMA_IDS
     for m in metadata:
         assert mdo._parse_upsert(m)
 
@@ -388,7 +388,7 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
         assert len(metadata_fields) == 3
         assert len(metadata) == 3
         assert [m["schemaId"] for m in metadata_fields
-                ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+               ].sort() == EXPECTED_METADATA_SCHEMA_IDS
         for m in metadata:
             assert mdo._parse_upsert(m)
 
@@ -777,7 +777,7 @@ def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
 
     task.wait_till_done()
     assert {row.global_key for row in dataset.data_rows()
-            } == {global_key_1, global_key_2, global_key_3}
+           } == {global_key_1, global_key_2, global_key_3}
 
 
 def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
@@ -865,7 +865,7 @@ def test_data_row_bulk_creation_sync_with_unique_global_keys(
     ])
 
     assert {row.global_key for row in dataset.data_rows()
-            } == {global_key_1, global_key_2, global_key_3}
+           } == {global_key_1, global_key_2, global_key_3}
 
 
 def test_data_row_rulk_creation_sync_with_same_global_keys(
