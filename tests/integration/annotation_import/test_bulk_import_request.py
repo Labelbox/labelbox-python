@@ -3,6 +3,7 @@ import ndjson
 import pytest
 import random
 
+from labelbox.data.serialization import NDJsonConverter
 from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
@@ -54,6 +55,24 @@ def test_create_from_objects(configured_project, predictions,
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
     annotation_import_test_helpers.assert_file_content(
         bulk_import_request.input_file_url, predictions)
+
+
+def test_create_from_label_objects(configured_project, predictions,
+                                   annotation_import_test_helpers):
+    name = str(uuid.uuid4())
+
+    labels = list(NDJsonConverter.deserialize(predictions))
+    bulk_import_request = configured_project.upload_annotations(
+        name=name, annotations=labels)
+
+    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.name == name
+    assert bulk_import_request.error_file_url is None
+    assert bulk_import_request.status_file_url is None
+    assert bulk_import_request.state == BulkImportRequestState.RUNNING
+    normalized_predictions = list(NDJsonConverter.serialize(labels))
+    annotation_import_test_helpers.assert_file_content(
+        bulk_import_request.input_file_url, normalized_predictions)
 
 
 def test_create_from_local_file(tmp_path, predictions, configured_project,

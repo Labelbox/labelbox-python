@@ -298,4 +298,4 @@ class LabelGenerator(PrefetchGenerator):
         return self._process(value)
 
 
-LabelCollection = Union[LabelList, LabelGenerator]
+LabelCollection = Union[LabelList, LabelGenerator, Iterable[Label]]

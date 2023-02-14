@@ -20,7 +20,7 @@ from labelbox.schema.webhook import Webhook
 from labelbox.schema.ontology import Ontology, OntologyBuilder, Classification, Option, Tool, FeatureSchema
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
-from labelbox.schema.data_row_metadata import DataRowMetadataOntology
+from labelbox.schema.data_row_metadata import DataRowMetadataOntology, DataRowMetadataField, DataRowMetadata, DeleteDataRowMetadata
 from labelbox.schema.model_run import ModelRun, DataSplit
 from labelbox.schema.benchmark import Benchmark
 from labelbox.schema.iam_integration import IAMIntegration
@@ -28,3 +28,4 @@ from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.project_resource_tag import ProjectResourceTag
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.slice import Slice, CatalogSlice
+from labelbox.schema.queue_mode import QueueMode
