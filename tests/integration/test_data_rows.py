@@ -133,7 +133,7 @@ def test_lookup_data_rows(client, dataset):
     assert all([len(x) == 1 for x in lookup.values()])
     assert lookup[uid][0] == dr.uid
     assert lookup[uid2][0] == dr2.uid
-    #1 external id : 2 uid
+    # 1 external id : 2 uid
     dr3 = dataset.create_data_row(row_data="123", external_id=uid2)
     lookup = client.get_data_row_ids_for_external_ids([uid2])
     assert len(lookup) == 1
@@ -621,16 +621,21 @@ def test_data_row_iteration(dataset, image_url) -> None:
 
 
 def test_data_row_attachments(dataset, image_url):
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments = [("IMAGE", image_url, "attachment image"),
+                   ("TEXT", "test-text", None),
+                   ("IMAGE_OVERLAY", image_url, "Overlay"),
+                   ("HTML", image_url, None)]
     task = dataset.create_data_rows([{
-        "row_data": image_url,
-        "external_id": "test-id",
+        "row_data":
+            image_url,
+        "external_id":
+            "test-id",
         "attachments": [{
             "type": attachment_type,
-            "value": attachment_value
+            "value": attachment_value,
+            "name": attachment_name
         }]
-    } for attachment_type, attachment_value in attachments])
+    } for attachment_type, attachment_value, attachment_name in attachments])
 
     task.wait_till_done()
     assert task.status == "COMPLETE"
@@ -652,8 +657,10 @@ def test_data_row_attachments(dataset, image_url):
 
 
 def test_create_data_rows_sync_attachments(dataset, image_url):
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments = [("IMAGE", image_url, "image URL"),
+                   ("TEXT", "test-text", None),
+                   ("IMAGE_OVERLAY", image_url, "Overlay"),
+                   ("HTML", image_url, None)]
     attachments_per_data_row = 3
     dataset.create_data_rows_sync([{
         "row_data":
@@ -662,9 +669,10 @@ def test_create_data_rows_sync_attachments(dataset, image_url):
             "test-id",
         "attachments": [{
             "type": attachment_type,
-            "value": attachment_value
+            "value": attachment_value,
+            "name": attachment_name
         } for _ in range(attachments_per_data_row)]
-    } for attachment_type, attachment_value in attachments])
+    } for attachment_type, attachment_value, attachment_name in attachments])
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(attachments)
     for data_row in data_rows:
@@ -685,11 +693,23 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
 
 def test_delete_data_row_attachment(datarow, image_url):
     attachments = []
+
+    # Anonymous attachment
     to_attach = [("IMAGE", image_url), ("TEXT", "test-text"),
                  ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
     for attachment_type, attachment_value in to_attach:
         attachments.append(
             datarow.create_attachment(attachment_type, attachment_value))
+
+    # Attachment with a name
+    to_attach = [("IMAGE", image_url, "Att. Image"),
+                 ("TEXT", "test-text", "Att. Text"),
+                 ("IMAGE_OVERLAY", image_url, "Image Overlay"),
+                 ("HTML", image_url, "Att. HTML")]
+    for attachment_type, attachment_value, attachment_name in to_attach:
+        attachments.append(
+            datarow.create_attachment(attachment_type, attachment_value,
+                                      attachment_name))
 
     for attachment in attachments:
         attachment.delete()
@@ -914,7 +934,8 @@ def test_create_tiled_layer(dataset, tile_content):
             **tile_content, 'media_type': 'TMS_SIMPLE'
         },
         tile_content,
-        tile_content['row_data']  # Old way to check for backwards compatibility
+        # Old way to check for backwards compatibility
+        tile_content['row_data']
     ]
     dataset.create_data_rows_sync(examples)
     data_rows = list(dataset.data_rows())
