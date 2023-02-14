@@ -899,6 +899,73 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized, media_type)
 
+    def delete_unused_feature_schema(self, feature_schema_id):
+        """
+        Deletes a feature schema if it is not used by any ontologies or annotations
+
+        Args:
+            feature_schema_id (str): The id of the feature schema to delete
+        """
+
+        if not feature_schema_id:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: The feature schema id is not passed."
+            )
+
+        root_schema_node_query = """
+            query rootSchemaNodePyApi($featureSchemaId: ID!) {
+                rootSchemaNode(where: { featureSchemaId: $featureSchemaId }) {
+                    id
+                    annotationCount
+                    ontologyCount
+                    deleted
+                }
+            }
+        """
+        root_schema_node_response = self.execute(root_schema_node_query, {'featureSchemaId': feature_schema_id})
+
+        if root_schema_node_response is None:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: The feature schema is not found."
+            )
+
+        root_schema_node = root_schema_node_response['rootSchemaNode']
+        annotation_count = root_schema_node['annotationCount']
+        ontology_count = root_schema_node['ontologyCount']
+        schema_id = root_schema_node['id']
+        deleted = root_schema_node['deleted']
+
+        if deleted:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: The feature schema is already deleted."
+            )
+        if annotation_count > 0:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: There are annotations are created using the feature schema."
+            )
+        if ontology_count > 0:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: The feature schema is used by ontologies."
+            )
+
+        delete_feature_schema_mutation = """
+            mutation deleteFeatureSchemaPyApi($schemaId: ID!){
+                deleteRootSchemaNode(where: { id: $schemaId }) {
+                    id
+                    deleted
+                }
+            }
+        """
+        deletion_response = self.execute(delete_feature_schema_mutation, {'schemaId': schema_id})
+        deleted = deletion_response['deleteRootSchemaNode']['deleted']
+
+        if deleted:
+            return True
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: The feature schema cannot be deleted."
+            )
+
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data
