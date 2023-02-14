@@ -11,35 +11,29 @@ from labelbox_dev.pagination import IdentifierPaginator
 DATA_ROW_RESOURCE = "data-rows"
 
 
-class AttachmentsType(TypedDict):
+class AttachmentsInput(TypedDict):
     type: str
     value: str
     name: str
 
 
-class MetadataType(TypedDict):
+class MetadataInput(TypedDict):
     schema_id: str
     value: Any
 
 
-class CreateDataRowType(TypedDict):
+class CreateDataRowInput(TypedDict):
     id: Optional[str]
     global_key: Optional[str]
     external_id: Optional[str]
     row_data: str
-    attachments: List[AttachmentsType]
-    metadata: List[MetadataType]
+    attachments: List[AttachmentsInput]
+    metadata: List[MetadataInput]
     media_type: Optional[str]
 
 
-class UpdateDataRowsWithIdType(TypedDict):
-    id: str
-    global_key: Optional[str]
-    external_id: Optional[str]
-    row_data: Optional[str]
-
-
-class UpdateDataRowType(TypedDict):
+class UpdateDataRowInput(TypedDict):
+    id: Optional[str]
     global_key: Optional[str]
     external_id: Optional[str]
     row_data: Optional[str]
@@ -67,7 +61,7 @@ class DataRow(Entity):
 
         return self
 
-    def update(self, data_row_update: UpdateDataRowType) -> "DataRow":
+    def update(self, data_row_update: UpdateDataRowInput) -> "DataRow":
         data_row_json = Session.patch_request(f"{DATA_ROW_RESOURCE}/{self.id}",
                                               json=data_row_update)
         return self.from_json(data_row_json)
@@ -97,7 +91,7 @@ class DataRow(Entity):
         return data_rows
 
     @staticmethod
-    def create_one(dataset_id, data_row: CreateDataRowType):
+    def create_one(dataset_id, data_row: CreateDataRowInput):
         data_row = DataRow._format_data_rows([data_row])[0]
         body = {'dataset_id': dataset_id, 'data_row': data_row}
         data_row_json = Session.post_request(f"{DATA_ROW_RESOURCE}", json=body)
@@ -105,7 +99,7 @@ class DataRow(Entity):
 
     @staticmethod
     def create(dataset_id,
-               data_rows: List[CreateDataRowType],
+               data_rows: List[CreateDataRowInput],
                run_async: bool = False):
         data_rows = DataRow._format_data_rows(data_rows)
 
@@ -192,8 +186,8 @@ class DataRow(Entity):
                                    identifiers_key='global_keys')
 
     @staticmethod
-    def update_many(data_rows: List[UpdateDataRowsWithIdType],
-                    run_async: bool = False):
+    def update_many(data_rows: List[UpdateDataRowInput],
+                    run_async: bool = False) -> UpdateDataRowsTask:
         for data_row in data_rows:
             if 'row_data' in data_row:
                 data_row = DataRow._format_data_rows([data_row])[0]
@@ -218,7 +212,7 @@ class DataRow(Entity):
     @staticmethod
     def delete_many(ids: Optional[List[str]] = None,
                     global_keys: Optional[List[str]] = None,
-                    run_async: bool = False):
+                    run_async: bool = False) -> DeleteDataRowsTask:
         body = {'run_async': run_async}
         if ids:
             body.update({'ids': ids})
