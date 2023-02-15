@@ -907,7 +907,7 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized, media_type)
 
-    def delete_feature_schema(self, feature_schema_id):
+    def delete_unused_feature_schema(self, feature_schema_id):
         """
         Deletes a feature schema if it is not used by any ontologies or annotations
 
