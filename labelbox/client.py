@@ -55,7 +55,8 @@ class Client:
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
-                 app_url="https://app.labelbox.com"):
+                 app_url="https://app.labelbox.com",
+                 rest_endpoint_url="https://api.labelbox.com/api/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -95,6 +96,13 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
         self._data_row_metadata_ontology = None
+        #
+        self.rest_endpoint_url = rest_endpoint_url
+        self.rest_endpoint_headers = {
+            "authorization": "Bearer %s" % self.api_key,
+            'X-User-Agent': 'python-sdk 0.0.0',
+            'Content-Type': 'application/json',
+        }
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -899,71 +907,28 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized, media_type)
 
-    def delete_unused_feature_schema(self, feature_schema_id):
+    def delete_feature_schema(self, feature_schema_id):
         """
         Deletes a feature schema if it is not used by any ontologies or annotations
 
         Args:
             feature_schema_id (str): The id of the feature schema to delete
+
+        Returns:
+            True if the feature schema was deleted
         """
 
-        if not feature_schema_id:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: The feature schema id is not passed."
-            )
+        endpoint = self.rest_endpoint_url + "/feature-schemas/" + feature_schema_id
+        response = requests.delete(
+            endpoint,
+            headers=self.rest_endpoint_headers,
+        )
 
-        root_schema_node_query = """
-            query rootSchemaNodePyApi($featureSchemaId: ID!) {
-                rootSchemaNode(where: { featureSchemaId: $featureSchemaId }) {
-                    id
-                    annotationCount
-                    ontologyCount
-                    deleted
-                }
-            }
-        """
-        root_schema_node_response = self.execute(root_schema_node_query, {'featureSchemaId': feature_schema_id})
-
-        if root_schema_node_response is None:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: The feature schema is not found."
-            )
-
-        root_schema_node = root_schema_node_response['rootSchemaNode']
-        annotation_count = root_schema_node['annotationCount']
-        ontology_count = root_schema_node['ontologyCount']
-        schema_id = root_schema_node['id']
-        deleted = root_schema_node['deleted']
-
-        if deleted:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: The feature schema is already deleted."
-            )
-        if annotation_count > 0:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: There are annotations are created using the feature schema."
-            )
-        if ontology_count > 0:
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: The feature schema is used by ontologies."
-            )
-
-        delete_feature_schema_mutation = """
-            mutation deleteFeatureSchemaPyApi($schemaId: ID!){
-                deleteRootSchemaNode(where: { id: $schemaId }) {
-                    id
-                    deleted
-                }
-            }
-        """
-        deletion_response = self.execute(delete_feature_schema_mutation, {'schemaId': schema_id})
-        deleted = deletion_response['deleteRootSchemaNode']['deleted']
-
-        if deleted:
+        if response.status_code == 204:
             return True
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: The feature schema cannot be deleted."
+                "Failed to delete the feature schema, message: " + response.json()['message']
             )
 
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
