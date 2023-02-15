@@ -84,11 +84,21 @@ class DataRow(Entity):
         return data_rows
 
     @staticmethod
-    def _check_sync_request_limits(request_name: str, request_count):
+    def _check_sync_request_limits(request_name, request_count):
         if request_count > MAX_SYNCHRONOUS_DATA_ROW_REQUEST:
             raise LabelboxError(
                 f"Request exceeds {MAX_SYNCHRONOUS_DATA_ROW_REQUEST} DataRows. Please use `DataRow.{request_name}_async()` instead"
             )
+
+    @staticmethod
+    def _parse_task(request_name, task_json):
+        task_id = task_json.get(
+            'taskId')  # TODO: change to snake_case from backend
+        if task_id is None:
+            raise LabelboxError(
+                f"Failed to retrieve task information for `{request_name}` async operation"
+            )
+        return task_id
 
     @staticmethod
     def create_async(dataset_id,
@@ -101,12 +111,8 @@ class DataRow(Entity):
 
         task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/create-async",
                                          json=body)
-        task_id = task_json.get(
-            'taskId')  # TODO: change to snake_case from backend
-        if task_id is None:
-            raise LabelboxError(
-                f"Failed to retrieve task information for `data_row.create()` async operation"
-            )
+        task_id = DataRow._parse_task('DataRow.create_async()', task_json)
+
         return CreateDataRowsTask.get_by_id(task_id)
 
     @staticmethod
@@ -143,12 +149,7 @@ class DataRow(Entity):
 
         task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/update-async",
                                          json=body)
-        task_id = task_json.get(
-            'taskId')  # TODO: change to snake_case from backend
-        if task_id is None:
-            raise LabelboxError(
-                f"Failed to retrieve task information for `data_row.update_many()` async operation"
-            )
+        task_id = DataRow._parse_task('DataRow.update_async()', task_json)
         return UpdateDataRowsTask.get_by_id(task_id)
 
     @staticmethod
@@ -173,12 +174,7 @@ class DataRow(Entity):
 
         task_json = Session.post_request(f"{DATA_ROW_RESOURCE}/delete-async",
                                          json=body)
-        task_id = task_json.get(
-            'taskId')  # TODO: change to snake_case from backend
-        if task_id is None:
-            raise LabelboxError(
-                f"Failed to retrieve task information for `data_row.delete_many()` async operation"
-            )
+        task_id = DataRow._parse_task('DataRow.delete_async()', task_json)
         return DeleteDataRowsTask.get_by_id(task_id)
 
     @staticmethod
