@@ -56,7 +56,7 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
                  app_url="https://app.labelbox.com",
-                 rest_endpoint_url="https://api.labelbox.com/api/api/v1"):
+                 rest_endpoint_url="https://api.labelbox.com/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
