@@ -1,15 +1,14 @@
-import json
 import logging
 import time
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional
 
 import requests
 
 from labelbox_dev.entity import Entity
-from labelbox_dev.exceptions import ResourceNotFoundError
+from labelbox_dev.exceptions import LabelboxError
 from labelbox_dev.session import Session
 from labelbox_dev.utils import format_json_to_snake_case
 
@@ -26,7 +25,8 @@ class TaskStatus(Enum):
 
 class TaskType(Enum):
     CREATE_DATA_ROWS = "CREATE_DATA_ROWS"
-    BULK_GET_DATA_ROWS = "BULK_GET_DATA_ROWS"
+    UPDATE_DATA_ROWS = "UPDATE_DATA_ROWS"
+    DELETE_DATA_ROWS = "DELETE_DATA_ROWS"
 
 
 class BaseTask(Entity, ABC):
@@ -94,6 +94,14 @@ class BulkTask(BaseTask, ABC):
     def __init__(self, json):
         super().__init__(json)
 
+    @lru_cache()
+    def fetch_result(self) -> Dict[str, Any]:
+        if self.status == TaskStatus.IN_PROGRESS.name:
+            self.wait_until_done()
+        response = requests.get(self.result_url)
+        response.raise_for_status()
+        return response.json()
+
     @property
     @abstractmethod
     def results(self):
@@ -130,49 +138,6 @@ class BulkTask(BaseTask, ABC):
             self.refresh()
 
 
-class BulkGetDataRowsTask(BulkTask):
-    task_type = TaskType.BULK_GET_DATA_ROWS
-
-    def __init__(self, json):
-        super().__init__(json)
-
-    @lru_cache()
-    def fetch_result(self) -> Dict[str, Any]:
-        if self.status == TaskStatus.IN_PROGRESS.name:
-            raise ResourceNotFoundError(
-                f"Task result for task '{self.id}' not found. Task is still in progress"
-            )
-        else:
-            response = requests.get(self.result_url)
-            response.raise_for_status()
-            return response.json()
-
-    @property
-    def results(self) -> Union[Dict[str, Any], None]:
-        task_result = self.fetch_result()
-        if self.status == TaskStatus.FAILED.name or 'results' not in task_result:
-            logger.warning(
-                "Task has failed. Please look at `task.errors` for more details"
-            )
-            return None
-
-        result = {}
-        # TODO: Format results as DataRow objects
-        result['data_rows'] = [
-            format_json_to_snake_case(dr) for dr in task_result['results']
-        ]
-        return result
-
-    @property
-    def errors(self):
-        task_result = self.fetch_result()
-        errors = {}
-        if 'errors' in task_result and len(task_result['errors']) != 0:
-            errors['errors'] = task_result['errors']
-
-        return errors if errors else None
-
-
 class CreateDataRowsTask(BulkTask):
     """ Asynchronous task representing bulk data_row create job
     """
@@ -182,26 +147,14 @@ class CreateDataRowsTask(BulkTask):
     def __init__(self, json):
         super().__init__(json)
 
-    @lru_cache()
-    def fetch_result(self) -> Dict[str, Any]:
-        if self.status == TaskStatus.IN_PROGRESS.name:
-            raise ResourceNotFoundError(
-                f"Task result for task '{self.id}' not found. Task is still in progress"
-            )
-        else:
-            response = requests.get(self.result_url)
-            response.raise_for_status()
-            return response.json()
-
     # TODO: Need to paginate results
     @property
-    def results(self) -> Union[Dict[str, Any], None]:
+    def results(self) -> Optional[Dict[str, Any]]:
         task_result = self.fetch_result()
         if self.status == TaskStatus.FAILED.name or 'createdDataRows' not in task_result:
-            logger.warning(
-                "Task has failed. Please look at `task.errors` for more details"
+            raise LabelboxError(
+                "Task has failed to produce results. Please look at `task.errors` for more details"
             )
-            return None
 
         result = {}
         result['created_data_rows'] = [
@@ -211,7 +164,7 @@ class CreateDataRowsTask(BulkTask):
         return result
 
     @property
-    def errors(self) -> Union[Dict[str, Any], None]:
+    def errors(self) -> Optional[Dict[str, Any]]:
         task_result = self.fetch_result()
         # TODO: Improve error message from backend
         errors = {}
@@ -221,3 +174,53 @@ class CreateDataRowsTask(BulkTask):
             errors['failed_data_rows'] = task_result['failedDataRows']
 
         return errors if errors else None
+
+
+class UpdateDataRowsTask(BulkTask):
+    """ Asynchronous task representing bulk data_rows update job
+    """
+
+    task_type = TaskType.UPDATE_DATA_ROWS
+
+    def __init__(self, json):
+        super().__init__(json)
+
+    @property
+    def results(self) -> Optional[Dict[str, Any]]:
+        task_result = self.fetch_result()
+        if self.status == TaskStatus.FAILED.name:
+            logger.warning(
+                "Task has failed. Please look at `task.errors` for more details"
+            )
+
+        return task_result
+
+    @property
+    def errors(self) -> Optional[Dict[str, Any]]:
+        # TODO: Store errors in the backend
+        return None
+
+
+class DeleteDataRowsTask(BulkTask):
+    """ Asynchronous task representing bulk data_rows delete job
+    """
+
+    task_type = TaskType.DELETE_DATA_ROWS
+
+    def __init__(self, json):
+        super().__init__(json)
+
+    @property
+    def results(self) -> Optional[Dict[str, Any]]:
+        task_result = self.fetch_result()
+        if self.status == TaskStatus.FAILED.name:
+            logger.warning(
+                "Task has failed. Please look at `task.errors` for more details"
+            )
+
+        return task_result
+
+    @property
+    def errors(self) -> Optional[Dict[str, Any]]:
+        # TODO: Store errors in the backend
+        return None
