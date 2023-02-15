@@ -23,7 +23,7 @@ class LabelList:
     """
 
     warnings.warn("LabelList is deprecated and will be "
-                "removed in a future release.")
+                  "removed in a future release.")
 
     def __init__(self, data: Optional[Iterable[Label]] = None):
         if data is None:
@@ -191,8 +191,8 @@ class LabelGenerator(PrefetchGenerator):
 
     def as_list(self) -> "LabelList":
         warnings.warn("This method is deprecated and will be "
-                "removed in a future release. LabeList"
-                " class will be deprecated.")
+                      "removed in a future release. LabeList"
+                      " class will be deprecated.")
         return LabelList(data=list(self))
 
     def assign_feature_schema_ids(
