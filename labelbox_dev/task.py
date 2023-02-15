@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 import requests
 
 from labelbox_dev.entity import Entity
-from labelbox_dev.exceptions import LabelboxError, ResourceNotFoundError
+from labelbox_dev.exceptions import LabelboxError
 from labelbox_dev.session import Session
 from labelbox_dev.utils import format_json_to_snake_case
 
@@ -25,7 +25,6 @@ class TaskStatus(Enum):
 
 class TaskType(Enum):
     CREATE_DATA_ROWS = "CREATE_DATA_ROWS"
-    GET_DATA_ROWS = "GET_DATA_ROWS"
     UPDATE_DATA_ROWS = "UPDATE_DATA_ROWS"
     DELETE_DATA_ROWS = "DELETE_DATA_ROWS"
 
@@ -137,38 +136,6 @@ class BulkTask(BaseTask, ABC):
             timeout_seconds -= check_frequency
             time.sleep(sleep_time_seconds)
             self.refresh()
-
-
-class GetDataRowsTask(BulkTask):
-    task_type = TaskType.GET_DATA_ROWS
-
-    def __init__(self, json):
-        super().__init__(json)
-
-    @property
-    def results(self) -> Optional[Dict[str, Any]]:
-        task_result = self.fetch_result()
-        if self.status == TaskStatus.FAILED.name or 'results' not in task_result:
-            logger.warning(
-                "Task has failed. Please look at `task.errors` for more details"
-            )
-            return None
-
-        result = {}
-        # TODO: Format results as DataRow objects
-        result['data_rows'] = [
-            format_json_to_snake_case(dr) for dr in task_result['results']
-        ]
-        return result
-
-    @property
-    def errors(self) -> Optional[Dict[str, Any]]:
-        task_result = self.fetch_result()
-        errors = {}
-        if 'errors' in task_result and len(task_result['errors']) != 0:
-            errors['errors'] = task_result['errors']
-
-        return errors if errors else None
 
 
 class CreateDataRowsTask(BulkTask):

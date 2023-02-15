@@ -72,8 +72,12 @@ class Session:
                                  timeout=timeout)
 
     @classmethod
-    def delete_request(cls, uri, params=None, timeout=DEFAULT_TIMEOUT):
-        return cls._http_request("DELETE", uri, params=params, timeout=timeout)
+    def delete_request(cls, uri, data=None, json=None, timeout=DEFAULT_TIMEOUT):
+        return cls._http_request("DELETE",
+                                 uri,
+                                 data=data,
+                                 json=json,
+                                 timeout=timeout)
 
     @classmethod
     def _http_request(cls,
@@ -97,6 +101,7 @@ class Session:
                 'params': params,
                 'timeout': timeout
             }
+            print(f"Request: {request}")
             response = requests.request(**request)
 
         except requests.exceptions.Timeout as e:
