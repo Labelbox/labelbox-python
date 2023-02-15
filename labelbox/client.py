@@ -928,8 +928,8 @@ class Client:
             return True
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: " + response.json()['message']
-            )
+                "Failed to delete the feature schema, message: " +
+                response.json()['message'])
 
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
