@@ -117,7 +117,51 @@ def test_model_run_export_labels(model_run_with_model_run_data_rows):
     assert len(labels) == 3
 
 
-@pytest.mark.skip(reason="feature under development")
+@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
+                    reason="does not work for onprem")
+def test_model_run_status(model_run_with_model_run_data_rows):
+
+    def get_model_run_status():
+        return model_run_with_model_run_data_rows.client.execute(
+            """query trainingPipelinePyApi($modelRunId: ID!) {
+            trainingPipeline(where: {id : $modelRunId}) {status, errorMessage, metadata}}
+        """, {'modelRunId': model_run_with_model_run_data_rows.uid},
+            experimental=True)['trainingPipeline']
+
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] is None
+    assert model_run_status['metadata'] is None
+    assert model_run_status['errorMessage'] is None
+
+    status = "COMPLETE"
+    metadata = {'key1': 'value1'}
+    errorMessage = "an error"
+    model_run_with_model_run_data_rows.update_status(status, metadata,
+                                                     errorMessage)
+
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] == status
+    assert model_run_status['metadata'] == metadata
+    assert model_run_status['errorMessage'] == errorMessage
+
+    extra_metadata = {'key2': 'value2'}
+    model_run_with_model_run_data_rows.update_status(status, extra_metadata)
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] == status
+    assert model_run_status['metadata'] == {**metadata, **extra_metadata}
+    assert model_run_status['errorMessage'] == errorMessage
+
+    status = ModelRun.Status.FAILED
+    model_run_with_model_run_data_rows.update_status(status, metadata,
+                                                     errorMessage)
+    model_run_status = get_model_run_status()
+    assert model_run_status['status'] == status.value
+
+    with pytest.raises(ValueError):
+        model_run_with_model_run_data_rows.update_status(
+            "INVALID", metadata, errorMessage)
+
+
 def test_model_run_export_v2(model_run_with_model_run_data_rows,
                              configured_project):
     task_name = "test_task"
@@ -162,51 +206,6 @@ def test_model_run_export_v2(model_run_with_model_run_data_rows,
             assert label_id in label_ids_set
         for prediction_id in task_prediction_ids_set:
             assert prediction_id in label_ids_set
-
-
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-                    reason="does not work for onprem")
-def test_model_run_status(model_run_with_model_run_data_rows):
-
-    def get_model_run_status():
-        return model_run_with_model_run_data_rows.client.execute(
-            """query trainingPipelinePyApi($modelRunId: ID!) {
-            trainingPipeline(where: {id : $modelRunId}) {status, errorMessage, metadata}}
-        """, {'modelRunId': model_run_with_model_run_data_rows.uid},
-            experimental=True)['trainingPipeline']
-
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] is None
-    assert model_run_status['metadata'] is None
-    assert model_run_status['errorMessage'] is None
-
-    status = "COMPLETE"
-    metadata = {'key1': 'value1'}
-    errorMessage = "an error"
-    model_run_with_model_run_data_rows.update_status(status, metadata,
-                                                     errorMessage)
-
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status
-    assert model_run_status['metadata'] == metadata
-    assert model_run_status['errorMessage'] == errorMessage
-
-    extra_metadata = {'key2': 'value2'}
-    model_run_with_model_run_data_rows.update_status(status, extra_metadata)
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status
-    assert model_run_status['metadata'] == {**metadata, **extra_metadata}
-    assert model_run_status['errorMessage'] == errorMessage
-
-    status = ModelRun.Status.FAILED
-    model_run_with_model_run_data_rows.update_status(status, metadata,
-                                                     errorMessage)
-    model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status.value
-
-    with pytest.raises(ValueError):
-        model_run_with_model_run_data_rows.update_status(
-            "INVALID", metadata, errorMessage)
 
 
 def test_model_run_split_assignment(model_run, dataset, image_url):

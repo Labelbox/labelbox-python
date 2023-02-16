@@ -406,8 +406,8 @@ class Project(DbObject, Updateable, Deletable):
             "metadata_fields": False,
             "data_row_details": False,
             "project_details": False,
-            "labels": False,
-            "performance_details": False
+            "performance_details": False,
+            "label_details": False
         })
 
         mutation_name = "exportDataRowsInProject"
@@ -431,10 +431,10 @@ class Project(DbObject, Updateable, Deletable):
                         _params.get('data_row_details', False),
                     "includeProjectDetails":
                         _params.get('project_details', False),
-                    "includeLabels":
-                        _params.get('labels', False),
                     "includePerformanceDetails":
                         _params.get('performance_details', False),
+                    "includeLabelDetails":
+                        _params.get('label_details', False)
                 },
             }
         }
