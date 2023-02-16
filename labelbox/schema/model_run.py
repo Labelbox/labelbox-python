@@ -489,6 +489,8 @@ class ModelRun(DbObject):
                         False,
                     "includePerformanceDetails":
                         False,
+                    "includeLabelDetails":
+                        False
                 },
             }
         }

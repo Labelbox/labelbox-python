@@ -406,7 +406,8 @@ class Project(DbObject, Updateable, Deletable):
             "metadata_fields": False,
             "data_row_details": False,
             "project_details": False,
-            "performance_details": False
+            "performance_details": False,
+            "label_details": False
         })
 
         mutation_name = "exportDataRowsInProject"
