@@ -106,8 +106,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         return res["dataRow"]["labelingActivity"]["selectedLabelId"]
 
-    def create_attachment(self, attachment_type,
-                          attachment_value) -> "AssetAttachment":
+    def create_attachment(self,
+                          attachment_type,
+                          attachment_value,
+                          attachment_name=None) -> "AssetAttachment":
         """ Adds an AssetAttachment to a DataRow.
             Labelers can view these attachments while labeling.
 
@@ -117,6 +119,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             attachment_type (str): Asset attachment type, must be one of:
                 VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetAttachment.AttachmentType)
             attachment_value (str): Asset attachment value.
+            attachment_name (str): (Optional) Asset attachment name.
         Returns:
             `AssetAttachment` DB object.
         Raises:
@@ -126,19 +129,23 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         attachment_type_param = "type"
         attachment_value_param = "value"
+        attachment_name_param = "name"
         data_row_id_param = "dataRowId"
+
         query_str = """mutation CreateDataRowAttachmentPyApi(
-            $%s: AttachmentType!, $%s: String!, $%s: ID!) {
+            $%s: AttachmentType!, $%s: String!, $%s: String, $%s: ID!) {
             createDataRowAttachment(data: {
-                type: $%s value: $%s dataRowId: $%s}) {%s}} """ % (
-            attachment_type_param, attachment_value_param, data_row_id_param,
-            attachment_type_param, attachment_value_param, data_row_id_param,
+                type: $%s value: $%s name: $%s dataRowId: $%s}) {%s}} """ % (
+            attachment_type_param, attachment_value_param,
+            attachment_name_param, data_row_id_param, attachment_type_param,
+            attachment_value_param, attachment_name_param, data_row_id_param,
             query.results_query_part(Entity.AssetAttachment))
 
         res = self.client.execute(
             query_str, {
                 attachment_type_param: attachment_type,
                 attachment_value_param: attachment_value,
+                attachment_name_param: attachment_name,
                 data_row_id_param: self.uid
             })
         return Entity.AssetAttachment(self.client,

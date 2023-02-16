@@ -5,3 +5,8 @@ repos:
       - id: yapf
         name: "yapf"
         args: [-i, --style, google]
+  -   repo: https://github.com/datarootsio/databooks
+      rev: 1.0.1
+      hooks:
+      -   id: databooks-meta
+          args: [examples, --overwrite]

@@ -3,6 +3,7 @@ from typing import Optional, Union, Tuple
 import cv2
 import geojson
 import numpy as np
+
 from shapely.geometry import Polygon as SPolygon
 
 from .geometry import Geometry

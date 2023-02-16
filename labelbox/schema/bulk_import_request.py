@@ -21,9 +21,11 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.enums import BulkImportRequestState
+from labelbox.schema.serialization import serialize_labels
 
 if TYPE_CHECKING:
     from labelbox import Project
+    from labelbox.types import Label
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
@@ -280,7 +282,8 @@ class BulkImportRequest(DbObject):
                             client,
                             project_id: str,
                             name: str,
-                            predictions: Iterable[Dict],
+                            predictions: Union[Iterable[Dict],
+                                               Iterable["Label"]],
                             validate=True) -> 'BulkImportRequest':
         """
         Creates a `BulkImportRequest` from an iterable of dictionaries.
@@ -314,11 +317,12 @@ class BulkImportRequest(DbObject):
             raise TypeError(
                 f"annotations must be in a form of Iterable. Found {type(predictions)}"
             )
+        ndjson_predictions = serialize_labels(predictions)
 
         if validate:
-            _validate_ndjson(predictions, client.get_project(project_id))
+            _validate_ndjson(ndjson_predictions, client.get_project(project_id))
 
-        data_str = ndjson.dumps(predictions)
+        data_str = ndjson.dumps(ndjson_predictions)
         if not data_str:
             raise ValueError('annotations cannot be empty')
 

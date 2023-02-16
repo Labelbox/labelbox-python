@@ -4,6 +4,7 @@ import cv2
 import geojson
 import numpy as np
 from pydantic import validator
+
 from shapely.geometry import Polygon as SPolygon
 
 from .geometry import Geometry

@@ -18,6 +18,7 @@ from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
+    from labelbox.types import Label
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +216,7 @@ class ModelRun(DbObject):
     def add_predictions(
         self,
         name: str,
-        predictions: Union[str, Path, Iterable[Dict]],
+        predictions: Union[str, Path, Iterable[Dict], Iterable["Label"]],
     ) -> 'MEAPredictionImport':  # type: ignore
         """ Uploads predictions to a new Editor project.
         Args:
@@ -456,14 +457,19 @@ class ModelRun(DbObject):
     
     """
 
-    def export_v2(self, task_name: str,
-                  params: Optional[ModelRunExportParams]) -> Task:
-        _params = params or {}
+    def export_v2(self,
+                  task_name: Optional[str] = None,
+                  params: Optional[ModelRunExportParams] = None) -> Task:
         mutation_name = "exportDataRowsInModelRun"
         create_task_query_str = """mutation exportDataRowsInModelRunPyApi($input: ExportDataRowsInModelRunInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
-        params = {
+        if (task_name is None):
+            task_name = f'Export Data Rows in Model Run - {self.name}'
+
+        _params = params or ModelRunExportParams()
+
+        queryParams = {
             "input": {
                 "taskName": task_name,
                 "filters": {
@@ -490,7 +496,7 @@ class ModelRun(DbObject):
         }
         res = self.client.execute(
             create_task_query_str,
-            params,
+            queryParams,
         )
         res = res[mutation_name]
         task_id = res["taskId"]
