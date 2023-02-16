@@ -360,6 +360,66 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 
 @pytest.fixture
+def configured_batch_project_with_label(client, rand_gen, image_url,
+                                        batch_project, dataset, datarow,
+                                        wait_for_label_processing):
+    """Project with a batch having one datarow
+    Project contains an ontology with 1 bbox tool
+    Additionally includes a create_label method for any needed extra labels
+    One label is already created and yielded when using fixture
+    """
+    data_rows = [dr.uid for dr in list(dataset.data_rows())]
+    batch_project.create_batch("test-batch", data_rows)
+    editor = list(
+        batch_project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+
+    ontology_builder = OntologyBuilder(tools=[
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+    ])
+    batch_project.setup(editor, ontology_builder.asdict())
+    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
+    time.sleep(2)
+
+    ontology = ontology_builder.from_project(batch_project)
+    predictions = [{
+        "uuid": str(uuid.uuid4()),
+        "schemaId": ontology.tools[0].feature_schema_id,
+        "dataRow": {
+            "id": datarow.uid
+        },
+        "bbox": {
+            "top": 20,
+            "left": 20,
+            "height": 50,
+            "width": 50
+        }
+    }]
+
+    def create_label():
+        """ Ad-hoc function to create a LabelImport
+        Creates a LabelImport task which will create a label
+        """
+        upload_task = LabelImport.create_from_objects(
+            client, batch_project.uid, f'label-import-{uuid.uuid4()}',
+            predictions)
+        upload_task.wait_until_done(sleep_time_seconds=5)
+        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
+        assert len(
+            upload_task.errors
+        ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+
+    batch_project.create_label = create_label
+    batch_project.create_label()
+    label = wait_for_label_processing(batch_project)[0]
+
+    yield [batch_project, dataset, datarow, label]
+
+    for label in batch_project.labels():
+        label.delete()
+
+
+@pytest.fixture
 def configured_project_with_complex_ontology(client, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Dataset)

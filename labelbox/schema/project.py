@@ -26,6 +26,7 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
+from labelbox.schema.task_queue import TaskQueue
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -69,6 +70,7 @@ class Project(DbObject, Updateable, Deletable):
         webhooks (Relationship): `ToMany` relationship to Webhook
         benchmarks (Relationship): `ToMany` relationship to Benchmark
         ontology (Relationship): `ToOne` relationship to Ontology
+        task_queues (Relationship): `ToMany` relationship to TaskQueue
     """
 
     name = Field.String("name")
@@ -794,54 +796,33 @@ class Project(DbObject, Updateable, Deletable):
 
         task_id = res['taskId']
 
-        timeout_seconds = 600
-        sleep_time = 2
-        get_task_query_str = """query %s($taskId: ID!) {
-                          task(where: {id: $taskId}) {
-                             status
+        status = self._wait_for_task(task_id)
+        if status != "COMPLETE":
+            raise LabelboxError(f"Batch was not created successfully.")
+
+        # obtain batch entity to return
+        get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
+                          project(where: {id: $projectId}) {
+                             batches(where: {id: $batchId}) {
+                                nodes {
+                                   %s
+                                }
+                             }
                         }
                     }
-                    """ % "getTaskPyApi"
+                    """ % ("getProjectBatchPyApi",
+                           query.results_query_part(Entity.Batch))
 
-        while True:
-            task_status = self.client.execute(
-                get_task_query_str, {'taskId': task_id},
-                experimental=True)['task']['status']
+        batch = self.client.execute(
+            get_batch_str, {
+                "projectId": self.uid,
+                "batchId": batch_id
+            },
+            timeout=180.0,
+            experimental=True)["project"]["batches"]["nodes"][0]
 
-            if task_status == "COMPLETE":
-                # obtain batch entity to return
-                get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
-                                  project(where: {id: $projectId}) {
-                                     batches(where: {id: $batchId}) {
-                                        nodes {
-                                           %s
-                                        }
-                                     }
-                                }
-                            }
-                            """ % ("getProjectBatchPyApi",
-                                   query.results_query_part(Entity.Batch))
-
-                batch = self.client.execute(
-                    get_batch_str, {
-                        "projectId": self.uid,
-                        "batchId": batch_id
-                    },
-                    timeout=180.0,
-                    experimental=True)["project"]["batches"]["nodes"][0]
-
-                # TODO async endpoints currently do not provide failed_data_row_ids in response
-                return Entity.Batch(self.client, self.uid, batch)
-            elif task_status == "IN_PROGRESS":
-                timeout_seconds -= sleep_time
-                if timeout_seconds <= 0:
-                    raise LabelboxError(
-                        f"Timed out while waiting for batch to be created.")
-                logger.debug("Creating batch, waiting for server...", self.uid)
-                time.sleep(sleep_time)
-                continue
-            else:
-                raise LabelboxError(f"Batch was not created successfully.")
+        # TODO async endpoints currently do not provide failed_data_row_ids in response
+        return Entity.Batch(self.client, self.uid, batch)
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
@@ -1126,6 +1107,99 @@ class Project(DbObject, Updateable, Deletable):
             lambda client, res: Entity.Batch(client, self.uid, res),
             cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
             experimental=True)
+
+    def task_queues(self) -> List[TaskQueue]:
+        """ Fetch all task queues that belong to this project
+
+        Returns:
+            A `List of `TaskQueue`s
+        """
+        query_str = """query GetProjectTaskQueuesPyApi($projectId: ID!) {
+              project(where: {id: $projectId}) {
+                taskQueues {
+                  %s
+                }
+              }
+            }
+        """ % (query.results_query_part(Entity.TaskQueue))
+
+        task_queue_values = self.client.execute(
+            query_str, {"projectId": self.uid},
+            timeout=180.0,
+            experimental=True)["project"]["taskQueues"]
+
+        return [
+            Entity.TaskQueue(self.client, field_values)
+            for field_values in task_queue_values
+        ]
+
+    def move_data_rows_to_task(self, data_row_ids: List[str],
+                               task_queue_id: str):
+        """
+
+        Moves data rows to the specified task queue.
+
+        Args:
+            data_row_ids: a list of data row ids to be moved
+            task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
+
+        Returns:
+            None if successful, or a raised error on failure
+
+        """
+        method = "createBulkAddRowsToQueueTask"
+        query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
+          $projectId: ID!
+          $queueId: ID
+          $dataRowIds: [ID!]!
+        ) {
+          project(where: { id: $projectId }) {
+            %s(
+              data: { queueId: $queueId, dataRowIds: $dataRowIds }
+            ) {
+              taskId
+            }
+          }
+        }
+        """ % method
+
+        task_id = self.client.execute(
+            query_str, {
+                "projectId": self.uid,
+                "queueId": task_queue_id,
+                "dataRowIds": data_row_ids
+            },
+            timeout=180.0,
+            experimental=True)["project"][method]["taskId"]
+
+        status = self._wait_for_task(task_id)
+        if status != "COMPLETE":
+            raise LabelboxError(f"Data rows were not moved successfully")
+
+    def _wait_for_task(self, task_id: str):
+        timeout_seconds = 600
+        sleep_time = 2
+        get_task_query_str = """query %s($taskId: ID!) {
+                          task(where: {id: $taskId}) {
+                             status
+                        }
+                    }
+                    """ % "getTaskPyApi"
+
+        while True:
+            task_status = self.client.execute(
+                get_task_query_str, {'taskId': task_id},
+                experimental=True)['task']['status']
+
+            if task_status == "IN_PROGRESS":
+                timeout_seconds -= sleep_time
+                if timeout_seconds <= 0:
+                    raise LabelboxError(
+                        f"Timed out while waiting for task to be completed.")
+                time.sleep(sleep_time)
+                continue
+
+            return task_status
 
     def upload_annotations(
             self,
