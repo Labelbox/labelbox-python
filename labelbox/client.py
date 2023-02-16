@@ -942,7 +942,7 @@ class Client:
             True if the ontology was deleted
         """
 
-        endpoint = self.rest_endpoint_url + "/ontologies/" + ontology_id
+        endpoint = self.rest_endpoint + "/ontologies/" + ontology_id
         response = requests.delete(
             endpoint,
             headers=self.rest_endpoint_headers,
