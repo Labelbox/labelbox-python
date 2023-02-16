@@ -64,7 +64,11 @@ run_notebook_paths = [
 ]
 
 
-@pytest.mark.notebooks
+@pytest.mark.skip(
+    'Need some more work to run reliably, e.g. figuring out how to deal with '
+    'max number of models per org, therefore skipping from CI. However, this '
+    'test can be run locally after updating notebooks to ensure notebooks '
+    'are working.')
 @pytest.mark.parametrize("notebook_path", run_notebook_paths)
 def test_notebooks_run_without_errors(notebook_path):
     run_notebook(examples_path / notebook_path)
