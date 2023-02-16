@@ -433,6 +433,8 @@ class Project(DbObject, Updateable, Deletable):
                         _params.get('project_details', False),
                     "includePerformanceDetails":
                         _params.get('performance_details', False),
+                    "includeLabelDetails":
+                        _params.get('label_details', False)
                 },
             }
         }
