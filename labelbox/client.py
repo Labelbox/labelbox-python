@@ -931,6 +931,30 @@ class Client:
                 "Failed to delete the feature schema, message: " +
                 response.json()['message'])
 
+    def delete_unused_ontology(self, ontology_id):
+        """
+        Deletes an ontology if it is not used by any annotations
+
+        Args:
+            ontology_id (str): The id of the ontology to delete
+
+        Returns:
+            True if the ontology was deleted
+        """
+
+        endpoint = self.rest_endpoint_url + "/ontologies/" + ontology_id
+        response = requests.delete(
+            endpoint,
+            headers=self.rest_endpoint_headers,
+        )
+
+        if response.status_code == 204:
+            return True
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the ontology, message: " +
+                response.json()['message'])
+
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data
