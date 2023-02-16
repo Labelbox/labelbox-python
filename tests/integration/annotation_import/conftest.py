@@ -442,10 +442,11 @@ def model_run_with_model_run_data_rows(client, configured_project,
 
 class AnnotationImportTestHelpers:
 
-    @staticmethod
-    def assert_file_content(url: str, predictions):
+    @classmethod
+    def assert_file_content(cls, url: str, predictions):
         response = requests.get(url)
-        assert response.text == ndjson.dumps(predictions)
+        predictions = cls._convert_to_plain_object(predictions)
+        assert ndjson.loads(response.text) == predictions
 
     @staticmethod
     def check_running_state(req, name, url=None):
@@ -455,6 +456,12 @@ class AnnotationImportTestHelpers:
         assert req.error_file_url is None
         assert req.status_file_url is None
         assert req.state == AnnotationImportState.RUNNING
+
+    @staticmethod
+    def _convert_to_plain_object(obj):
+        """Some Python objects e.g. tuples can't be compared with JSON serialized data, serialize to JSON and deserialize to get plain objects"""
+        json_str = ndjson.dumps(obj)
+        return ndjson.loads(json_str)
 
 
 @pytest.fixture

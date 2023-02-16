@@ -56,7 +56,7 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
                  app_url="https://app.labelbox.com",
-                 rest_endpoint_url="https://api.labelbox.com/api/v1"):
+                 rest_endpoint="https://api.labelbox.com/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -97,7 +97,7 @@ class Client:
         }
         self._data_row_metadata_ontology = None
         #
-        self.rest_endpoint_url = rest_endpoint_url
+        self.rest_endpoint = rest_endpoint
         self.rest_endpoint_headers = {
             "authorization": "Bearer %s" % self.api_key,
             'X-User-Agent': 'python-sdk 0.0.0',
@@ -918,7 +918,7 @@ class Client:
             True if the feature schema was deleted
         """
 
-        endpoint = self.rest_endpoint_url + "/feature-schemas/" + feature_schema_id
+        endpoint = self.rest_endpoint + "/feature-schemas/" + feature_schema_id
         response = requests.delete(
             endpoint,
             headers=self.rest_endpoint_headers,
