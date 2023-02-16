@@ -487,8 +487,6 @@ class ModelRun(DbObject):
                     # Arguments locked based on exectuion context
                     "includeProjectDetails":
                         False,
-                    "includeLabels":
-                        False,
                     "includePerformanceDetails":
                         False,
                 },

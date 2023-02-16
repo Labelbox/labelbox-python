@@ -431,8 +431,6 @@ class Project(DbObject, Updateable, Deletable):
                         _params.get('data_row_details', False),
                     "includeProjectDetails":
                         _params.get('project_details', False),
-                    "includeLabels":
-                        _params.get('labels', False),
                     "includePerformanceDetails":
                         _params.get('performance_details', False),
                 },
