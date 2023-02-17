@@ -694,8 +694,7 @@ class DataRowMetadataOntology:
                 raise KeyError(
                     f"There is no enum option by name '{metadatum.value}' for enum name '{metadatum.name}'"
                 )
-            metadatum.value = self.get_by_name(
-                metadatum.name)[metadatum.value].uid
+            metadatum.value = metadatum_by_name[metadatum.value].uid
 
     def _load_schema_id_by_name(self, metadatum: DataRowMetadataField):
         """
