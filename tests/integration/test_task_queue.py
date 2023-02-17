@@ -17,7 +17,7 @@ def test_move_to_task(configured_batch_project_with_label: Project):
 
     review_queue = next(
         tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
-    project.move_data_rows_to_task([data_row.uid], review_queue.uid)
+    project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
 
     timeout_seconds = 30
     sleep_time = 2

@@ -311,47 +311,9 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     One label is already created and yielded when using fixture
     """
     project.datasets.connect(dataset)
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
 
-    ontology_builder = OntologyBuilder(tools=[
-        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
-    ])
-    project.setup(editor, ontology_builder.asdict())
-    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
-    time.sleep(2)
-
-    ontology = ontology_builder.from_project(project)
-    predictions = [{
-        "uuid": str(uuid.uuid4()),
-        "schemaId": ontology.tools[0].feature_schema_id,
-        "dataRow": {
-            "id": datarow.uid
-        },
-        "bbox": {
-            "top": 20,
-            "left": 20,
-            "height": 50,
-            "width": 50
-        }
-    }]
-
-    def create_label():
-        """ Ad-hoc function to create a LabelImport
-        Creates a LabelImport task which will create a label
-        """
-        upload_task = LabelImport.create_from_objects(
-            client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
-        upload_task.wait_until_done(sleep_time_seconds=5)
-        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
-        assert len(
-            upload_task.errors
-        ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
-
-    project.create_label = create_label
-    project.create_label()
-    label = wait_for_label_processing(project)[0]
+    ontology = _setup_ontology(project)
+    label = _create_label(project, datarow, ontology, wait_for_label_processing)
 
     yield [project, dataset, datarow, label]
 
@@ -370,18 +332,18 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
     batch_project.create_batch("test-batch", data_rows)
-    editor = list(
-        batch_project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
 
-    ontology_builder = OntologyBuilder(tools=[
-        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
-    ])
-    batch_project.setup(editor, ontology_builder.asdict())
-    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
-    time.sleep(2)
+    ontology = _setup_ontology(batch_project)
+    label = _create_label(batch_project, datarow, ontology,
+                          wait_for_label_processing)
 
-    ontology = ontology_builder.from_project(batch_project)
+    yield [batch_project, dataset, datarow, label]
+
+    for label in batch_project.labels():
+        label.delete()
+
+
+def _create_label(project, datarow, ontology, wait_for_label_processing):
     predictions = [{
         "uuid": str(uuid.uuid4()),
         "schemaId": ontology.tools[0].feature_schema_id,
@@ -401,7 +363,7 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
-            client, batch_project.uid, f'label-import-{uuid.uuid4()}',
+            project.client, project.uid, f'label-import-{uuid.uuid4()}',
             predictions)
         upload_task.wait_until_done(sleep_time_seconds=5)
         assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
@@ -409,14 +371,23 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
             upload_task.errors
         ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
 
-    batch_project.create_label = create_label
-    batch_project.create_label()
-    label = wait_for_label_processing(batch_project)[0]
+    project.create_label = create_label
+    project.create_label()
+    label = wait_for_label_processing(project)[0]
+    return label
 
-    yield [batch_project, dataset, datarow, label]
 
-    for label in batch_project.labels():
-        label.delete()
+def _setup_ontology(project):
+    editor = list(
+        project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    ontology_builder = OntologyBuilder(tools=[
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+    ])
+    project.setup(editor, ontology_builder.asdict())
+    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
+    time.sleep(2)
+    return ontology_builder.from_project(project)
 
 
 @pytest.fixture

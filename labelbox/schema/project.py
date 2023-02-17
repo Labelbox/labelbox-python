@@ -796,9 +796,10 @@ class Project(DbObject, Updateable, Deletable):
 
         task_id = res['taskId']
 
-        status = self._wait_for_task(task_id)
-        if status != "COMPLETE":
-            raise LabelboxError(f"Batch was not created successfully.")
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Batch was not created successfully: " +
+                                json.dumps(task.errors))
 
         # obtain batch entity to return
         get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
@@ -1133,8 +1134,8 @@ class Project(DbObject, Updateable, Deletable):
             for field_values in task_queue_values
         ]
 
-    def move_data_rows_to_task(self, data_row_ids: List[str],
-                               task_queue_id: str):
+    def move_data_rows_to_task_queue(self, data_row_ids: List[str],
+                                     task_queue_id: str):
         """
 
         Moves data rows to the specified task queue.
@@ -1172,34 +1173,16 @@ class Project(DbObject, Updateable, Deletable):
             timeout=180.0,
             experimental=True)["project"][method]["taskId"]
 
-        status = self._wait_for_task(task_id)
-        if status != "COMPLETE":
-            raise LabelboxError(f"Data rows were not moved successfully")
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Data rows were not moved successfully: " +
+                                json.dumps(task.errors))
 
-    def _wait_for_task(self, task_id: str):
-        timeout_seconds = 600
-        sleep_time = 2
-        get_task_query_str = """query %s($taskId: ID!) {
-                          task(where: {id: $taskId}) {
-                             status
-                        }
-                    }
-                    """ % "getTaskPyApi"
+    def _wait_for_task(self, task_id: str) -> Task:
+        task = Task.get_task(self.client, task_id)
+        task.wait_till_done()
 
-        while True:
-            task_status = self.client.execute(
-                get_task_query_str, {'taskId': task_id},
-                experimental=True)['task']['status']
-
-            if task_status == "IN_PROGRESS":
-                timeout_seconds -= sleep_time
-                if timeout_seconds <= 0:
-                    raise LabelboxError(
-                        f"Timed out while waiting for task to be completed.")
-                time.sleep(sleep_time)
-                continue
-
-            return task_status
+        return task
 
     def upload_annotations(
             self,
