@@ -1,3 +1,4 @@
+import json
 import logging
 import requests
 import time
@@ -83,9 +84,16 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Fetch the error associated with an import task.
         """
+        if self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
+            if self.status == "FAILED":
+                # for these tasks, the error is embedded in the result itself
+                return json.loads(self.result_url)
+            return None
+
         # TODO: We should handle error messages for export v2 tasks in the future.
         if self.name != 'JSON Import':
             return None
+
         if self.status == "FAILED":
             result = self._fetch_remote_json()
             return result["error"]
