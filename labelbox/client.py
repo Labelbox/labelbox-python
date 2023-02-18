@@ -1428,4 +1428,7 @@ class Client:
             return True
         elif response.status_code == 404:
             raise labelbox.exceptions.ResourceNotFoundError(Ontology, ontology_id)
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get the feature schema archived status.")
 
