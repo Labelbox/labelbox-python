@@ -5,7 +5,7 @@ from enum import Enum
 from itertools import chain
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
 
-from pydantic import BaseModel, conlist, constr
+from pydantic import BaseModel, constr
 
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import _CamelCaseMixin
@@ -17,7 +17,6 @@ class DataRowMetadataKind(Enum):
     enum = "CustomMetadataEnum"
     string = "CustomMetadataString"
     option = "CustomMetadataEnumOption"
-    embedding = "CustomMetadataEmbedding"
 
 
 # Metadata schema
@@ -32,7 +31,6 @@ class DataRowMetadataSchema(BaseModel):
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
 String: Type[str] = constr(max_length=1024)
 
 
@@ -733,8 +731,6 @@ class DataRowMetadataOntology:
                 parsed = _validate_parse_text(metadatum)
             elif schema.kind == DataRowMetadataKind.number:
                 parsed = _validate_parse_number(metadatum)
-            elif schema.kind == DataRowMetadataKind.embedding:
-                parsed = _validate_parse_embedding(metadatum)
             elif schema.kind == DataRowMetadataKind.enum:
                 parsed = _validate_enum_parse(schema, metadatum)
             elif schema.kind == DataRowMetadataKind.option:
@@ -801,24 +797,6 @@ def _batch_operations(
     for batch in _batch_items(items, batch_size):
         response += batch_function(batch)
     return response
-
-
-def _validate_parse_embedding(
-        field: DataRowMetadataField
-) -> List[Dict[str, Union[SchemaId, Embedding]]]:
-
-    if isinstance(field.value, list):
-        if not (Embedding.min_items <= len(field.value) <= Embedding.max_items):
-            raise ValueError(
-                "Embedding length invalid. "
-                "Must have length within the interval "
-                f"[{Embedding.min_items},{Embedding.max_items}]. Found {len(field.value)}"
-            )
-        field.value = [float(x) for x in field.value]
-    else:
-        raise ValueError(
-            f"Expected a list for embedding. Found {type(field.value)}")
-    return [field.dict(by_alias=True)]
 
 
 def _validate_parse_number(
