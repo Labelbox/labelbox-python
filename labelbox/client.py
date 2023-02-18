@@ -35,6 +35,7 @@ from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.slice import CatalogSlice
 from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.ontology import Ontology
 
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
@@ -55,7 +56,8 @@ class Client:
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
-                 app_url="https://app.labelbox.com"):
+                 app_url="https://app.labelbox.com",
+                 rest_endpoint="https://api.labelbox.com/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -95,6 +97,12 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
         self._data_row_metadata_ontology = None
+        self.rest_endpoint = rest_endpoint
+        self.rest_endpoint_headers = {
+            "authorization": "Bearer %s" % self.api_key,
+            'X-User-Agent': 'python-sdk 0.0.0',
+            'Content-Type': 'application/json',
+        }
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -1384,3 +1392,40 @@ class Client:
         """
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
+
+    def is_feature_schema_archived(self, feature_schema_id: str, ontology_id: str) -> bool:
+        """
+        Returns true if a feature schema is archived in the specified ontology, returns false otherwise.
+
+        Args:
+            feature_schema_id (str): The ID of the feature schema
+            ontology_id (str): The ID of the ontology
+        Returns:
+            bool
+        """
+
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + ontology_id
+        response = requests.get(
+            ontology_endpoint,
+            headers=self.rest_endpoint_headers,
+        )
+
+        if response.status_code == 200:
+            feature_schema_nodes = response.json()['featureSchemaNodes']
+            tools = feature_schema_nodes['tools']
+            classifications = feature_schema_nodes['classifications']
+            relationships = feature_schema_nodes['relationships']
+            feature_schema_node_list = tools + classifications + relationships
+
+            is_feature = lambda f: f['featureSchemaId'] == feature_schema_id
+            feature_schema_node = list(filter(is_feature, feature_schema_node_list))
+            if len(feature_schema_node) > 0:
+                return feature_schema_node[0]['archived']
+            else:
+                raise labelbox.exceptions.LabelboxError(
+                    "The specified feature schema was not in the ontology.")
+
+            return True
+        elif response.status_code == 404:
+            raise labelbox.exceptions.ResourceNotFoundError(Ontology, ontology_id)
+
