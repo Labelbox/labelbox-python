@@ -965,9 +965,6 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to upsert the feature schema to the ontology, message: " + message)
 
-        print("Created feature schema")
-        print(created_feature_schema_response.json())
-
         upsert_feature_schema_to_ontology_endpoint = self.rest_endpoint + '/ontologies/' + ontology_id + "/feature-schemas/" + create_feature_schema_id
         upsert_feature_schema_to_ontology_response = requests.post(
             upsert_feature_schema_to_ontology_endpoint,
