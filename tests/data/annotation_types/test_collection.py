@@ -61,7 +61,7 @@ def test_generator(list_of_labels):
 
 def test_conversion(list_of_labels):
     generator = LabelGenerator(list_of_labels)
-    label_collection = generator.as_list()
+    label_collection = list(generator)
     assert len(label_collection) == len(list_of_labels)
     assert [x for x in label_collection] == list_of_labels
 
