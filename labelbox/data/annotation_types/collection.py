@@ -180,20 +180,11 @@ class LabelList:
 class LabelGenerator(PrefetchGenerator):
     """
     A container for interacting with a collection of labels.
-
-    Use this class if you have larger data. It is slightly harder to work with
-    than the LabelList but will be much more memory efficient.
     """
 
     def __init__(self, data: Generator[Label, None, None], *args, **kwargs):
         self._fns = {}
         super().__init__(data, *args, **kwargs)
-
-    def as_list(self) -> "LabelList":
-        warnings.warn("This method is deprecated and will be "
-                      "removed in a future release. LabeList"
-                      " class will be deprecated.")
-        return LabelList(data=list(self))
 
     def assign_feature_schema_ids(
             self,
