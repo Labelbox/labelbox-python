@@ -948,7 +948,8 @@ class Client:
         ontology_id = kwargs.get("ontology_id")
         position_number = kwargs.get("position_number")
 
-        feature_schema_id_to_create = feature_schema.get("featureSchemaId") or "new_feature_schema_id"
+        feature_schema_id_to_create = feature_schema.get(
+            "featureSchemaId") or "new_feature_schema_id"
         feature_schema_creation_endpoint = self.rest_endpoint + "/feature-schemas/" + feature_schema_id_to_create
         created_feature_schema_response = requests.put(
             feature_schema_creation_endpoint,
@@ -958,12 +959,15 @@ class Client:
 
         create_feature_schema_id = ''
         if created_feature_schema_response.status_code == 200:
-            create_feature_schema_id = created_feature_schema_response.json()['schemaId']
+            create_feature_schema_id = created_feature_schema_response.json(
+            )['schemaId']
         else:
             raw_message = created_feature_schema_response.json()['message']
-            message = raw_message[0] if isinstance(raw_message, List) else raw_message
+            message = raw_message[0] if isinstance(raw_message,
+                                                   List) else raw_message
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upsert the feature schema to the ontology, message: " + message)
+                "Failed to upsert the feature schema to the ontology, message: "
+                + message)
 
         upsert_feature_schema_to_ontology_endpoint = self.rest_endpoint + '/ontologies/' + ontology_id + "/feature-schemas/" + create_feature_schema_id
         upsert_feature_schema_to_ontology_response = requests.post(
@@ -974,10 +978,13 @@ class Client:
         if upsert_feature_schema_to_ontology_response.status_code == 201:
             return upsert_feature_schema_to_ontology_response
         else:
-            raw_message = upsert_feature_schema_to_ontology_response.json()['message']
-            message = raw_message[0] if isinstance(raw_message, List) else raw_message
+            raw_message = upsert_feature_schema_to_ontology_response.json(
+            )['message']
+            message = raw_message[0] if isinstance(raw_message,
+                                                   List) else raw_message
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upsert the feature schema to the ontology, message: " + message)
+                "Failed to upsert the feature schema to the ontology, message: "
+                + message)
 
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
