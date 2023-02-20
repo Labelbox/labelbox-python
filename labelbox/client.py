@@ -931,6 +931,57 @@ class Client:
                 "Failed to delete the feature schema, message: " +
                 response.json()['message'])
 
+    def upsert_feature_schema_to_ontology(self, **kwargs):
+        """
+        Upserts a feature schema to an ontology
+
+        Args:
+            feature_schema (FeatureSchema): The feature schema to upsert
+            ontology_id (str): The id of the ontology to upsert the feature schema to
+            position_number (int): The position number of the feature schema in the ontology
+
+        Returns:
+            The upserted feature schema
+        """
+
+        feature_schema = kwargs.get("feature_schema")
+        ontology_id = kwargs.get("ontology_id")
+        position_number = kwargs.get("position_number")
+
+        feature_schema_id_to_create = feature_schema.get("featureSchemaId") or "new_feature_schema_id"
+        feature_schema_creation_endpoint = self.rest_endpoint + "/feature-schemas/" + feature_schema_id_to_create
+        created_feature_schema_response = requests.put(
+            feature_schema_creation_endpoint,
+            headers=self.rest_endpoint_headers,
+            json={"normalized": json.dumps(feature_schema)},
+        )
+
+        create_feature_schema_id = ''
+        if created_feature_schema_response.status_code == 200:
+            create_feature_schema_id = created_feature_schema_response.json()['schemaId']
+        else:
+            raw_message = created_feature_schema_response.json()['message']
+            message = raw_message[0] if isinstance(raw_message, List) else raw_message
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to upsert the feature schema to the ontology, message: " + message)
+
+        print("Created feature schema")
+        print(created_feature_schema_response.json())
+
+        upsert_feature_schema_to_ontology_endpoint = self.rest_endpoint + '/ontologies/' + ontology_id + "/feature-schemas/" + create_feature_schema_id
+        upsert_feature_schema_to_ontology_response = requests.post(
+            upsert_feature_schema_to_ontology_endpoint,
+            headers=self.rest_endpoint_headers,
+            json={"positionNumber": position_number},
+        )
+        if upsert_feature_schema_to_ontology_response.status_code == 201:
+            return upsert_feature_schema_to_ontology_response
+        else:
+            raw_message = upsert_feature_schema_to_ontology_response.json()['message']
+            message = raw_message[0] if isinstance(raw_message, List) else raw_message
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to upsert the feature schema to the ontology, message: " + message)
+
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data
