@@ -4,8 +4,9 @@ from uuid import uuid4
 import numpy as np
 import pytest
 
-from labelbox.data.annotation_types import (LabelGenerator, ObjectAnnotation, ImageData,
-                                            MaskData, Line, Mask, Point, Label)
+from labelbox.data.annotation_types import (LabelGenerator, ObjectAnnotation,
+                                            ImageData, MaskData, Line, Mask,
+                                            Point, Label)
 from labelbox import OntologyBuilder, Tool
 
 
