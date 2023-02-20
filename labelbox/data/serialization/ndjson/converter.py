@@ -36,7 +36,7 @@ class NDJsonConverter:
         We will continue to improve the error messages and add helper functions to deal with this.
 
         Args:
-            labels: Either a list of labels or a LabelGenerator
+            labels: Either a list of Label objects or a LabelGenerator
         Returns:
             A generator for accessing the ndjson representation of the data
         """

@@ -179,7 +179,8 @@ class LabelList:
 
 class LabelGenerator(PrefetchGenerator):
     """
-    A container for interacting with a collection of labels.
+    A container for interacting with a large collection of labels. 
+    For a small number of labels, just use a list of Label objects.
     """
 
     def __init__(self, data: Generator[Label, None, None], *args, **kwargs):
