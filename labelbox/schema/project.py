@@ -266,16 +266,21 @@ class Project(DbObject, Updateable, Deletable):
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds,
                                        **kwargs)
+
         # assert that the instance this would fail is only if timeout runs out
         assert isinstance(
             json_data,
             List), "Unable to successfully get labels. Please try again"
+
         if json_data is None:
             raise TimeoutError(
                 f"Unable to download labels in {timeout_seconds} seconds."
                 "Please try again or contact support if the issue persists.")
+
         is_video = [
-            'frames' in row['Label'] for row in json_data if row['Label']
+            "frames" in row["Label"]
+            for row in json_data
+            if row["Label"] and not row["Skipped"]
         ]
 
         if len(is_video) and not all(is_video) and any(is_video):
@@ -284,7 +289,14 @@ class Project(DbObject, Updateable, Deletable):
                 "Use project.export_labels() to export projects with mixed data types. "
             )
         if len(is_video) and all(is_video):
+            # Filter skipped labels to avoid inference errors
+            json_data = [
+                label for label in self.export_labels(download=True)
+                if not label["Skipped"]
+            ]
+
             return LBV1Converter.deserialize_video(json_data, self.client)
+
         return LBV1Converter.deserialize(json_data)
 
     def export_labels(self,
