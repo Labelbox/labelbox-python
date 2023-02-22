@@ -39,6 +39,7 @@ class Task(DbObject):
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
     result_url = Field.String("result_url", "result")
+    errors_url = Field.String("errors_url", "errors")
     type = Field.String("type")
     _user: Optional["User"] = None
 
@@ -65,7 +66,9 @@ class Task(DbObject):
         check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
-                if self.errors is not None:
+                # self.errors fetches the error content.
+                # This first condition prevents us from downloading the content for v2 exports
+                if self.errors_url is not None or self.errors is not None:
                     logger.warning(
                         "There are errors present. Please look at `task.errors` for more details"
                     )
@@ -83,14 +86,15 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Fetch the error associated with an import task.
         """
-        # TODO: We should handle error messages for export v2 tasks in the future.
-        if self.name != 'JSON Import':
-            return None
-        if self.status == "FAILED":
-            result = self._fetch_remote_json()
-            return result["error"]
-        elif self.status == "COMPLETE":
-            return self.failed_data_rows
+        if self.name == 'JSON Import':
+            if self.status == "FAILED":
+                result = self._fetch_remote_json()
+                return result["error"]
+            elif self.status == "COMPLETE":
+                return self.failed_data_rows
+        elif self.type == "export-data-rows":
+            if self.errors_url:
+                return self._fetch_remote_json(url=self.errors_url)
         return None
 
     @property
@@ -122,12 +126,15 @@ class Task(DbObject):
             return None
 
     @lru_cache()
-    def _fetch_remote_json(self) -> Dict[str, Any]:
+    def _fetch_remote_json(self, url: Optional[str] = None) -> Dict[str, Any]:
         """ Function for fetching and caching the result data.
         """
+        if url is None:
+            # for backwards compatability
+            url = self.result_url
 
-        def download_result():
-            response = requests.get(self.result_url)
+        def _download_file(url):
+            response = requests.get(url)
             response.raise_for_status()
             try:
                 return response.json()
@@ -145,11 +152,11 @@ class Task(DbObject):
             )
 
         if self.status != "IN_PROGRESS":
-            return download_result()
+            return _download_file(url)
         else:
             self.wait_till_done(timeout_seconds=600)
             if self.status == "IN_PROGRESS":
                 raise ValueError(
                     "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
                 )
-            return download_result()
+            return _download_file(url)
