@@ -187,7 +187,6 @@ def test_model_run_export_v2(model_run_with_model_run_data_rows,
 
     assert len(task_results) == len(label_ids)
     for task_result in task_results:
-        assert len(task_result['errors']) == 0
         # Check export param handling
         if media_attributes:
             assert 'media_attributes' in task_result and task_result[

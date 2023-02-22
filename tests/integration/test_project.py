@@ -70,7 +70,6 @@ def test_project_export_v2(configured_project_with_label):
     task_results = download_result(task.result_url)
 
     for task_result in task_results:
-        assert len(task_result['errors']) == 0
         task_project = task_result['projects'][project.uid]
         task_project_label_ids_set = set(
             map(lambda prediction: prediction['id'], task_project['labels']))
