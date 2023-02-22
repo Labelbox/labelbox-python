@@ -484,13 +484,6 @@ class ModelRun(DbObject):
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":
                         _params.get('data_row_details', False),
-                    # Arguments locked based on exectuion context
-                    "includeProjectDetails":
-                        False,
-                    "includePerformanceDetails":
-                        False,
-                    "includeLabelDetails":
-                        False
                 },
             }
         }
