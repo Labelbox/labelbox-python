@@ -22,10 +22,9 @@ class LabelList:
     Use on smaller datasets.
     """
 
-
     def __init__(self, data: Optional[Iterable[Label]] = None):
         warnings.warn("LabelList is deprecated and will be "
-                    "removed in a future release.")
+                      "removed in a future release.")
 
         if data is None:
             self._data = []
@@ -187,6 +186,12 @@ class LabelGenerator(PrefetchGenerator):
     def __init__(self, data: Generator[Label, None, None], *args, **kwargs):
         self._fns = {}
         super().__init__(data, *args, **kwargs)
+
+    def as_list(self) -> "LabelList":
+        warnings.warn("This method is deprecated and will be "
+                      "removed in a future release. LabelList"
+                      " class will be deprecated.")
+        return LabelList(data=list(self))
 
     def assign_feature_schema_ids(
             self,

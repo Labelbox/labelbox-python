@@ -24,6 +24,7 @@ from .data import TextData
 from .data import VideoData
 
 from .label import Label
+from .collection import LabelList
 from .collection import LabelGenerator
 
 from .metrics import ScalarMetric
