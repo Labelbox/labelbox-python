@@ -1,3 +1,4 @@
+import json
 import logging
 import requests
 import time
@@ -6,7 +7,7 @@ import ndjson
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Field, Relationship, Entity
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -56,7 +57,7 @@ class Task(DbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=300) -> None:
+    def wait_till_done(self, timeout_seconds: int = 300) -> None:
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
 
@@ -95,6 +96,10 @@ class Task(DbObject):
         elif self.type == "export-data-rows":
             if self.errors_url:
                 return self._fetch_remote_json(url=self.errors_url)
+        elif self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
+            if self.status == "FAILED":
+                # for these tasks, the error is embedded in the result itself
+                return json.loads(self.result_url)
         return None
 
     @property
@@ -133,7 +138,7 @@ class Task(DbObject):
             # for backwards compatability
             url = self.result_url
 
-        def _download_file(url):
+        def download_result(url):
             response = requests.get(url)
             response.raise_for_status()
             try:
@@ -152,11 +157,25 @@ class Task(DbObject):
             )
 
         if self.status != "IN_PROGRESS":
-            return _download_file(url)
+            return download_result(url)
         else:
             self.wait_till_done(timeout_seconds=600)
             if self.status == "IN_PROGRESS":
                 raise ValueError(
                     "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
                 )
-            return _download_file(url)
+            return download_result(url)
+
+    @staticmethod
+    def get_task(client, task_id):
+        user: User = client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, {task_id: task_id})
+        task: Task = tasks[0]
+        task._user = user
+        return task

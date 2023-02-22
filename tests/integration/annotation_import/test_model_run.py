@@ -173,21 +173,15 @@ def test_model_run_export_v2(model_run_with_model_run_data_rows,
     assert task.name == task_name
     task.wait_till_done()
     assert task.status == "COMPLETE"
+    assert task.errors is None
 
-    def download_result(result_url):
-        response = requests.get(result_url)
-        response.raise_for_status()
-        data = [json.loads(line) for line in response.text.splitlines()]
-        return data
-
-    task_results = download_result(task.result_url)
+    task_results = task.result
 
     label_ids = [label.uid for label in configured_project.labels()]
     label_ids_set = set(label_ids)
 
     assert len(task_results) == len(label_ids)
     for task_result in task_results:
-        assert len(task_result['errors']) == 0
         # Check export param handling
         if media_attributes:
             assert 'media_attributes' in task_result and task_result[
