@@ -22,10 +22,11 @@ class LabelList:
     Use on smaller datasets.
     """
 
-    warnings.warn("LabelList is deprecated and will be "
-                  "removed in a future release.")
 
     def __init__(self, data: Optional[Iterable[Label]] = None):
+        warnings.warn("LabelList is deprecated and will be "
+                    "removed in a future release.")
+
         if data is None:
             self._data = []
         elif isinstance(data, Label):
