@@ -138,33 +138,37 @@ class Task(DbObject):
             # for backwards compatability
             url = self.result_url
 
-        def download_result(url):
+        def download_result(url, format: str):
             response = requests.get(url)
             response.raise_for_status()
-            try:
+            if format == 'json':
                 return response.json()
-            except Exception as e:
-                pass
-            try:
+            elif format == 'ndjson':
                 return ndjson.loads(response.text)
-            except Exception as e:
-                raise ValueError("Failed to parse task JSON/NDJSON result.")
+            else:
+                raise ValueError(
+                    "Expected the result format to be either `ndjson` or `json`."
+                )
 
-        if self.name != 'JSON Import' and self.type != 'export-data-rows':
+        if self.name == 'JSON Import':
+            format = 'json'
+        elif self.type == 'export-data-rows':
+            format = 'ndjson'
+        else:
             raise ValueError(
                 "Task result is only supported for `JSON Import` and `export` tasks."
                 " Download task.result_url manually to access the result for other tasks."
             )
 
         if self.status != "IN_PROGRESS":
-            return download_result(url)
+            return download_result(url, format)
         else:
             self.wait_till_done(timeout_seconds=600)
             if self.status == "IN_PROGRESS":
                 raise ValueError(
                     "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
                 )
-            return download_result(url)
+            return download_result(url, format)
 
     @staticmethod
     def get_task(client, task_id):
