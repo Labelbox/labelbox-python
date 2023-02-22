@@ -978,8 +978,7 @@ class Client:
             message = raw_message[0] if isinstance(raw_message,
                                                    List) else raw_message
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upsert the feature schema to the ontology, message: "
-                + message)
+                "Failed to upsert the feature schema, message: " + message)
 
     def insert_feature_schema_into_ontology(self, **kwargs):
         """
@@ -992,7 +991,7 @@ class Client:
             position (int): The position number of the feature schema in the ontology
 
         Returns:
-            The upserted feature schema
+            True if the feature schema was inserted
         """
 
         feature_schema_id = kwargs.get("feature_schema_id")
@@ -1013,7 +1012,7 @@ class Client:
             message = raw_message[0] if isinstance(raw_message,
                                                    List) else raw_message
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upsert the feature schema to the ontology, message: "
+                "Failed to insert the feature schema into the ontology, message: "
                 + message)
 
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
