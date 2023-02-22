@@ -27,6 +27,6 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.project_resource_tag import ProjectResourceTag
 from labelbox.schema.media_type import MediaType
-from labelbox.schema.slice import Slice, CatalogSlice
+from labelbox.schema.slice import Slice, CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.task_queue import TaskQueue
