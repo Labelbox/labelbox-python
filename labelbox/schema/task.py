@@ -94,9 +94,7 @@ class Task(DbObject):
             elif self.status == "COMPLETE":
                 return self.failed_data_rows
         elif self.type == "export-data-rows":
-            self.wait_till_done(timeout_seconds=600)
-            if self.errors_url:
-                return self._fetch_remote_json(remote_json_field='errors_url')
+            return self._fetch_remote_json(remote_json_field='errors_url')
         elif self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
             if self.status == "FAILED":
                 # for these tasks, the error is embedded in the result itself
@@ -140,6 +138,10 @@ class Task(DbObject):
 
         def download_result(remote_json_field: Optional[str], format: str):
             url = getattr(self, remote_json_field or 'result_url')
+
+            if url is None:
+                return None
+
             response = requests.get(url)
             response.raise_for_status()
             if format == 'json':
