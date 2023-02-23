@@ -94,8 +94,9 @@ class Task(DbObject):
             elif self.status == "COMPLETE":
                 return self.failed_data_rows
         elif self.type == "export-data-rows":
+            self.wait_till_done(timeout_seconds=600)
             if self.errors_url:
-                return self._fetch_remote_json(url=self.errors_url)
+                return self._fetch_remote_json(remote_json_field='errors_url')
         elif self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
             if self.status == "FAILED":
                 # for these tasks, the error is embedded in the result itself
@@ -131,14 +132,14 @@ class Task(DbObject):
             return None
 
     @lru_cache()
-    def _fetch_remote_json(self, url: Optional[str] = None) -> Dict[str, Any]:
+    def _fetch_remote_json(self,
+                           remote_json_field: Optional[str] = None
+                          ) -> Dict[str, Any]:
         """ Function for fetching and caching the result data.
         """
-        if url is None:
-            # for backwards compatability
-            url = self.result_url
 
-        def download_result(url, format: str):
+        def download_result(remote_json_field: Optional[str], format: str):
+            url = getattr(self, remote_json_field or 'result_url')
             response = requests.get(url)
             response.raise_for_status()
             if format == 'json':
@@ -161,14 +162,14 @@ class Task(DbObject):
             )
 
         if self.status != "IN_PROGRESS":
-            return download_result(url, format)
+            return download_result(remote_json_field, format)
         else:
             self.wait_till_done(timeout_seconds=600)
             if self.status == "IN_PROGRESS":
                 raise ValueError(
                     "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
                 )
-            return download_result(url, format)
+            return download_result(remote_json_field, format)
 
     @staticmethod
     def get_task(client, task_id):
