@@ -478,8 +478,6 @@ class ModelRun(DbObject):
                 "params": {
                     "includeAttachments":
                         _params.get('attachments', False),
-                    "includeMediaAttributes":
-                        _params.get('media_attributes', False),
                     "includeMetadata":
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":
