@@ -13,7 +13,7 @@ class DataRow(BaseModel):
     def validate_id(cls, v):
         if v is None:
             raise ValueError(
-                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`, `LabelList.add_to_dataset`, or `Label.create_data_row`. "
+                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`,or `Label.create_data_row`. "
                 "You can also manually assign the id for each `BaseData` object"
             )
         return v

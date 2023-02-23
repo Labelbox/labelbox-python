@@ -22,10 +22,10 @@ class LabelList:
     Use on smaller datasets.
     """
 
-    warnings.warn("LabelList is deprecated and will be "
-                  "removed in a future release.")
-
     def __init__(self, data: Optional[Iterable[Label]] = None):
+        warnings.warn("LabelList is deprecated and will be "
+                      "removed in a future release.")
+
         if data is None:
             self._data = []
         elif isinstance(data, Label):
@@ -179,10 +179,8 @@ class LabelList:
 
 class LabelGenerator(PrefetchGenerator):
     """
-    A container for interacting with a collection of labels.
-
-    Use this class if you have larger data. It is slightly harder to work with
-    than the LabelList but will be much more memory efficient.
+    A container for interacting with a large collection of labels. 
+    For a small number of labels, just use a list of Label objects.
     """
 
     def __init__(self, data: Generator[Label, None, None], *args, **kwargs):
@@ -191,7 +189,7 @@ class LabelGenerator(PrefetchGenerator):
 
     def as_list(self) -> "LabelList":
         warnings.warn("This method is deprecated and will be "
-                      "removed in a future release. LabeList"
+                      "removed in a future release. LabelList"
                       " class will be deprecated.")
         return LabelList(data=list(self))
 
@@ -304,4 +302,4 @@ class LabelGenerator(PrefetchGenerator):
         return self._process(value)
 
 
-LabelCollection = Union[LabelList, LabelGenerator, Iterable[Label]]
+LabelCollection = Union[LabelGenerator, Iterable[Label]]

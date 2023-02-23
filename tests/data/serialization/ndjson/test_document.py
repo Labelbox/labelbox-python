@@ -22,7 +22,7 @@ def test_pdf():
     """
     with open('tests/data/assets/ndjson/pdf_import.json', 'r') as f:
         data = json.load(f)
-    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
     f.close()
@@ -34,7 +34,7 @@ def test_pdf_with_name_only():
     """
     with open('tests/data/assets/ndjson/pdf_import_name_only.json', 'r') as f:
         data = json.load(f)
-    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
     f.close()
