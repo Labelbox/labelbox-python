@@ -9,7 +9,6 @@ else:
 
 class DataRowParams(TypedDict):
     data_row_details: Optional[bool]
-    media_attributes: Optional[bool]
     metadata_fields: Optional[bool]
     attachments: Optional[bool]
 

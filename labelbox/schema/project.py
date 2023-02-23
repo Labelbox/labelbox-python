@@ -416,7 +416,6 @@ class Project(DbObject, Updateable, Deletable):
 
         _params = params or ProjectExportParams({
             "attachments": False,
-            "media_attributes": False,
             "metadata_fields": False,
             "data_row_details": False,
             "project_details": False,
@@ -437,8 +436,6 @@ class Project(DbObject, Updateable, Deletable):
                 "params": {
                     "includeAttachments":
                         _params.get('attachments', False),
-                    "includeMediaAttributes":
-                        _params.get('media_attributes', False),
                     "includeMetadata":
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":
