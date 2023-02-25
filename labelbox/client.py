@@ -55,7 +55,8 @@ class Client:
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
-                 app_url="https://app.labelbox.com"):
+                 app_url="https://app.labelbox.com", 
+                 rest_endpoint="https://api.labelbox.com/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -95,6 +96,12 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
         self._data_row_metadata_ontology = None
+        self.rest_endpoint = rest_endpoint
+        self.rest_endpoint_headers = {
+            "authorization": "Bearer %s" % self.api_key,
+            'X-User-Agent': 'python-sdk 0.0.0',
+            'Content-Type': 'application/json',
+        }
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -1384,3 +1391,23 @@ class Client:
         """
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
+    
+    def unarchive_root_feature_schema_node(self, ontology_id: str, root_feature_schema_id: str) -> bool:
+        """
+        Returns true if the root feature schema node was successfully unarchived, false otherwise
+        Args:
+            root_feature_schema_id (str): The ID of the root level feature schema
+            ontology_id (str): The ID of the ontology
+        Returns:
+            bool
+        """
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + ontology_id + '/root-feature-schemas/' + root_feature_schema_id + '/unarchive'
+        response = requests.patch(
+            ontology_endpoint,
+            headers=self.rest_endpoint_headers,
+        )
+        if response.status_code == 200:
+            return response.json()['didUnarchive']
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed unarchive root feature schema node: ", response.text)
