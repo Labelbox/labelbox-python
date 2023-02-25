@@ -157,8 +157,7 @@ class Client:
         if query is not None:
             if params is not None:
                 params = {
-                    key: convert_value(value)
-                    for key, value in params.items()
+                    key: convert_value(value) for key, value in params.items()
                 }
             data = json.dumps({
                 'query': query,
@@ -359,18 +358,18 @@ class Client:
 
         request_data = {
             "operations":
-            json.dumps({
-                "variables": {
-                    "file": None,
-                    "contentLength": len(content),
-                    "sign": sign
-                },
-                "query":
-                """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                json.dumps({
+                    "variables": {
+                        "file": None,
+                        "contentLength": len(content),
+                        "sign": sign
+                    },
+                    "query":
+                        """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,
-            }),
+                }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
         response = requests.post(
@@ -379,7 +378,7 @@ class Client:
             data=request_data,
             files={
                 "1": (filename, content, content_type) if
-                (filename and content_type) else content
+                     (filename and content_type) else content
             })
 
         if response.status_code == 502:
@@ -667,8 +666,7 @@ class Client:
         elif queue_mode == QueueMode.Dataset:
             logger.warning(
                 "QueueMode.Dataset will eventually be deprecated, and is no longer "
-                "recommended for new projects. Prefer QueueMode.Batch instead."
-            )
+                "recommended for new projects. Prefer QueueMode.Batch instead.")
 
         return self._create(Entity.Project, {
             **kwargs,
@@ -780,7 +778,7 @@ class Client:
             for row in self.execute(
                     query_str,
                 {'externalId_in': external_ids[i:i + max_ids_per_request]
-                 })['externalIdsToDataRowIds']:
+                })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
 
@@ -1072,10 +1070,9 @@ class Client:
         }
         """
         params = {
-            'globalKeyDataRowLinks':
-            [{utils.camel_case(key): value
-              for key, value in input.items()}
-             for input in global_key_to_data_row_inputs]
+            'globalKeyDataRowLinks': [{
+                utils.camel_case(key): value for key, value in input.items()
+            } for input in global_key_to_data_row_inputs]
         }
         assign_global_keys_to_data_rows_job = self.execute(query_str, params)
 
@@ -1104,8 +1101,8 @@ class Client:
         """
         result_params = {
             "jobId":
-            assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"]
-            ["jobId"]
+                assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"
+                                                   ]["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1221,7 +1218,7 @@ class Client:
             """
         result_params = {
             "jobId":
-            data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
+                data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1343,8 +1340,7 @@ class Client:
                 errors.extend(
                     _format_failed_rows(
                         data['notFoundGlobalKeys'],
-                        "Failed to find data row matching provided global key")
-                )
+                        "Failed to find data row matching provided global key"))
                 errors.extend(
                     _format_failed_rows(
                         data['accessDeniedGlobalKeys'],
