@@ -1,4 +1,9 @@
 # Changelog
+# Version 3.39.0 (YYYY-MM-DD)
+
+## Added 
+* Upsert data rows to model runs using global keys
+
 # Version 3.38.0 (2023-02-15)
 
 ## Added

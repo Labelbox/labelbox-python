@@ -1,11 +1,9 @@
-import json
 import time
 import os
 import pytest
 
 from collections import Counter
 
-import requests
 from labelbox import DataSplit, ModelRun
 
 
@@ -97,6 +95,14 @@ def test_model_run_upsert_data_rows(dataset, model_run):
     model_run.upsert_data_rows([data_row.uid])
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
     assert n_model_run_data_rows == 1
+
+
+def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
+    global_keys = [dr.global_key for dr in data_rows]
+    assert model_run.upsert_data_rows(global_keys=global_keys)
+    model_run_data_rows = list(model_run.model_run_data_rows())
+    added_data_rows = [mdr.data_row() for mdr in model_run_data_rows]
+    assert set(added_data_rows) == set(data_rows)
 
 
 def test_model_run_upsert_data_rows_with_existing_labels(
