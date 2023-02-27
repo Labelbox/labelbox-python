@@ -1412,7 +1412,7 @@ class Client:
             headers=self.rest_endpoint_headers,
         )
         if response.status_code == 200:
-            return response.json()['didUnarchive']
+            return response.json()['unarchived']
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed unarchive root feature schema node: ", response.text)
