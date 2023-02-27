@@ -71,8 +71,7 @@ def rest_url(environ: str) -> str:
     elif environ == Environ.STAGING:
         return 'https://api.lb-stage.xyz/api/v1'
     elif environ == Environ.CUSTOM:
-        graphql_api_endpoint = os.environ.get(
-            'LABELBOX_TEST_REST_API_ENDPOINT')
+        graphql_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
         if graphql_api_endpoint is None:
             raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
         return graphql_api_endpoint
@@ -146,7 +145,10 @@ class IntegrationClient(Client):
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         rest_endpoint = rest_url(environ)
-        super().__init__(api_key, api_url, enable_experimental=True, rest_endpoint=rest_endpoint)
+        super().__init__(api_key,
+                         api_url,
+                         enable_experimental=True,
+                         rest_endpoint=rest_endpoint)
         self.queries = []
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):

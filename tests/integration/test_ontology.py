@@ -7,9 +7,9 @@ import time
 
 
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
-                         "which is not finalized yet. introduce this back when"
-                         "Relationship feature is complete and we introduce"
-                         "a Relationship object to the ontology that we can parse")
+                  "which is not finalized yet. introduce this back when"
+                  "Relationship feature is complete and we introduce"
+                  "a Relationship object to the ontology that we can parse")
 def test_from_project_ontology(project) -> None:
     o = OntologyBuilder.from_project(project)
     assert o.asdict() == project.ontology().normalized
@@ -36,7 +36,8 @@ def test_deletes_an_ontology(client):
 
 
 def test_cant_delete_an_ontology_with_project(client):
-    project = client.create_project(name="test project", media_type=MediaType.Image)
+    project = client.create_project(name="test project",
+                                    media_type=MediaType.Image)
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
     ontology = client.create_ontology_from_feature_schemas(
@@ -45,8 +46,11 @@ def test_cant_delete_an_ontology_with_project(client):
         media_type=MediaType.Image)
     project.setup_editor(ontology)
 
-    with pytest.raises(Exception,
-                       match="Failed to delete the ontology, message: Cannot delete an ontology connected to a project. The ontology is connected to projects: " + project.uid):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to delete the ontology, message: Cannot delete an ontology connected to a project. The ontology is connected to projects: "
+            + project.uid):
         client.delete_unused_ontology(ontology.uid)
 
     project.delete()
@@ -55,60 +59,51 @@ def test_cant_delete_an_ontology_with_project(client):
 
 
 def test_cant_delete_an_ontology_that_doesnt_exist(client):
-    with pytest.raises(Exception,
-                       match="Failed to delete the ontology, message: Failed to find ontology by id: doesntexist"):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to delete the ontology, message: Failed to find ontology by id: doesntexist"
+    ):
         client.delete_unused_ontology("doesntexist")
 
 
 def test_inserts_a_feature_schema_at_given_position(client):
-    tool1 = {
-        'tool': 'polygon',
-        'name': 'tool1',
-        'color': 'blue'
-    }
-    tool2 = {
-        'tool': 'polygon',
-        'name': 'tool2',
-        'color': 'blue'
-    }
-    ontology_normalized_json = {
-        "tools": [tool1, tool2],
-        "classifications": []
-    }
+    tool1 = {'tool': 'polygon', 'name': 'tool1', 'color': 'blue'}
+    tool2 = {'tool': 'polygon', 'name': 'tool2', 'color': 'blue'}
+    ontology_normalized_json = {"tools": [tool1, tool2], "classifications": []}
     ontology = client.create_ontology(name="ontology",
                                       normalized=ontology_normalized_json,
                                       media_type=MediaType.Image)
     created_feature_schema = client.upsert_feature_schema(point.asdict())
-    client.insert_feature_schema_into_ontology(created_feature_schema.normalized['featureSchemaId'], ontology.uid, 1)
+    client.insert_feature_schema_into_ontology(
+        created_feature_schema.normalized['featureSchemaId'], ontology.uid, 1)
     ontology = client.get_ontology(ontology.uid)
 
-    assert ontology.normalized['tools'][1]['schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
+    assert ontology.normalized['tools'][1][
+        'schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
 
     client.delete_unused_ontology(ontology.uid)
 
 
 def test_moves_already_added_feature_schema_in_ontology(client):
-    tool1 = {
-        'tool': 'polygon',
-        'name': 'tool1',
-        'color': 'blue'
-    }
-    ontology_normalized_json = {
-        "tools": [tool1],
-        "classifications": []
-    }
+    tool1 = {'tool': 'polygon', 'name': 'tool1', 'color': 'blue'}
+    ontology_normalized_json = {"tools": [tool1], "classifications": []}
     ontology = client.create_ontology(name="ontology",
                                       normalized=ontology_normalized_json,
                                       media_type=MediaType.Image)
     created_feature_schema = client.upsert_feature_schema(point.asdict())
     feature_schema_id = created_feature_schema.normalized['featureSchemaId']
-    client.insert_feature_schema_into_ontology(feature_schema_id, ontology.uid, 1)
+    client.insert_feature_schema_into_ontology(feature_schema_id, ontology.uid,
+                                               1)
     ontology = client.get_ontology(ontology.uid)
-    assert ontology.normalized['tools'][1]['schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
-    client.insert_feature_schema_into_ontology(feature_schema_id, ontology.uid, 0)
+    assert ontology.normalized['tools'][1][
+        'schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
+    client.insert_feature_schema_into_ontology(feature_schema_id, ontology.uid,
+                                               0)
     ontology = client.get_ontology(ontology.uid)
 
-    assert ontology.normalized['tools'][0]['schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
+    assert ontology.normalized['tools'][0][
+        'schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
 
     client.delete_unused_ontology(ontology.uid)
 

@@ -911,7 +911,8 @@ class Client:
                    >>> client.delete_unused_feature_schema("cleabc1my012ioqvu5anyaabc")
                """
 
-        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(feature_schema_id)
+        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
+            feature_schema_id)
         response = requests.delete(
             endpoint,
             headers=self.headers,
@@ -931,7 +932,8 @@ class Client:
             >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
         """
 
-        endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id)
+        endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id)
         response = requests.delete(
             endpoint,
             headers=self.headers,
@@ -954,7 +956,8 @@ class Client:
             >>> client.update_feature_schema_title("cleabc1my012ioqvu5anyaabc", "New Title")
         """
 
-        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(feature_schema_id) + '/definition'
+        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
+            feature_schema_id) + '/definition'
         response = requests.patch(
             endpoint,
             headers=self.headers,
@@ -1001,7 +1004,8 @@ class Client:
                 "Failed to upsert the feature schema, message: " +
                 str(response.json()['message']))
 
-    def insert_feature_schema_into_ontology(self, feature_schema_id: str, ontology_id: str, position: int):
+    def insert_feature_schema_into_ontology(self, feature_schema_id: str,
+                                            ontology_id: str, position: int):
         """
         Inserts a feature schema into an ontology. If the feature schema is already in the ontology,
         it will be moved to the new position.
@@ -1014,7 +1018,8 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
-            ontology_id) + "/feature-schemas/" + urllib.parse.quote(feature_schema_id)
+            ontology_id) + "/feature-schemas/" + urllib.parse.quote(
+                feature_schema_id)
         response = requests.post(
             endpoint,
             headers=self.headers,
@@ -1022,8 +1027,8 @@ class Client:
         )
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to insert the feature schema into the ontology, message: " +
-                str(response.json()['message']))
+                "Failed to insert the feature schema into the ontology, message: "
+                + str(response.json()['message']))
 
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """

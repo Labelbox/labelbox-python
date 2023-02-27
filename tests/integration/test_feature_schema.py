@@ -12,7 +12,8 @@ point = Tool(
 def test_deletes_a_feature_schema(client):
     tool = client.upsert_feature_schema(point.asdict())
 
-    assert client.delete_unused_feature_schema(tool.normalized['featureSchemaId']) is None
+    assert client.delete_unused_feature_schema(
+        tool.normalized['featureSchemaId']) is None
 
 
 def test_cant_delete_already_deleted_feature_schema(client):
@@ -21,8 +22,11 @@ def test_cant_delete_already_deleted_feature_schema(client):
 
     client.delete_unused_feature_schema(feature_schema_id) is None
 
-    with pytest.raises(Exception,
-                       match="Failed to delete the feature schema, message: Feature schema is already deleted"):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to delete the feature schema, message: Feature schema is already deleted"
+    ):
         client.delete_unused_feature_schema(feature_schema_id)
 
 
@@ -34,8 +38,11 @@ def test_cant_delete_feature_schema_with_ontology(client):
         feature_schema_ids=[feature_schema_id],
         media_type=MediaType.Image)
 
-    with pytest.raises(Exception,
-                       match="Failed to delete the feature schema, message: Feature schema cannot be deleted because it is used in ontologies"):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to delete the feature schema, message: Feature schema cannot be deleted because it is used in ontologies"
+    ):
         client.delete_unused_feature_schema(feature_schema_id)
 
     client.delete_unused_ontology(ontology.uid)
@@ -43,8 +50,11 @@ def test_cant_delete_feature_schema_with_ontology(client):
 
 
 def test_throws_an_error_if_feature_schema_to_delete_doesnt_exist(client):
-    with pytest.raises(Exception,
-                       match="Failed to delete the feature schema, message: Cannot find root schema node with feature schema id doesntexist"):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to delete the feature schema, message: Cannot find root schema node with feature schema id doesntexist"
+    ):
         client.delete_unused_feature_schema("doesntexist")
 
 
@@ -52,14 +62,16 @@ def test_updates_a_feature_schema_title(client):
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
     new_title = "new title"
-    updated_feature_schema = client.update_feature_schema_title(feature_schema_id, new_title)
+    updated_feature_schema = client.update_feature_schema_title(
+        feature_schema_id, new_title)
 
     assert updated_feature_schema.normalized['name'] == new_title
 
     client.delete_unused_feature_schema(feature_schema_id)
 
 
-def test_throws_an_error_when_updating_a_feature_schema_with_empty_title(client):
+def test_throws_an_error_when_updating_a_feature_schema_with_empty_title(
+        client):
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
 
@@ -79,7 +91,8 @@ def test_creates_a_new_feature_schema(client):
 
     assert created_feature_schema.uid is not None
 
-    client.delete_unused_feature_schema(created_feature_schema.normalized['featureSchemaId'])
+    client.delete_unused_feature_schema(
+        created_feature_schema.normalized['featureSchemaId'])
 
 
 def test_updates_a_feature_schema(client):
@@ -95,7 +108,7 @@ def test_updates_a_feature_schema(client):
         color="#ff0000",
         feature_schema_id=created_feature_schema.normalized['featureSchemaId'],
     )
-    updated_feature_schema = client.upsert_feature_schema(tool_to_update.asdict())
+    updated_feature_schema = client.upsert_feature_schema(
+        tool_to_update.asdict())
 
-    assert updated_feature_schema.normalized[
-               'name'] == "new name"
+    assert updated_feature_schema.normalized['name'] == "new name"
