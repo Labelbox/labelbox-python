@@ -904,12 +904,12 @@ class Client:
 
     def delete_unused_feature_schema(self, feature_schema_id: str):
         """
-               Deletes a feature schema if it is not used by any ontologies or annotations
-               Args:
-                   feature_schema_id (str): The id of the feature schema to delete
-               Example:
-                   >>> client.delete_unused_feature_schema("cleabc1my012ioqvu5anyaabc")
-               """
+        Deletes a feature schema if it is not used by any ontologies or annotations
+        Args:
+            feature_schema_id (str): The id of the feature schema to delete
+        Example:
+            >>> client.delete_unused_feature_schema("cleabc1my012ioqvu5anyaabc")
+        """
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)

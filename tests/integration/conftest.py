@@ -71,10 +71,10 @@ def rest_url(environ: str) -> str:
     elif environ == Environ.STAGING:
         return 'https://api.lb-stage.xyz/api/v1'
     elif environ == Environ.CUSTOM:
-        graphql_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
-        if graphql_api_endpoint is None:
+        rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
+        if rest_api_endpoint is None:
             raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
-        return graphql_api_endpoint
+        return rest_api_endpoint
     return 'http://host.docker.internal:8080/api/v1'
 
 
