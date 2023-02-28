@@ -29,7 +29,7 @@ from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, Tool, Classification
+from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
@@ -945,7 +945,7 @@ class Client:
                 str(response.json()['message']))
 
     def update_feature_schema_title(self, feature_schema_id: str,
-                                    title: str) -> Entity.FeatureSchema:
+                                    title: str) -> FeatureSchema:
         """
         Updates a title of a feature schema
         Args:
@@ -972,8 +972,7 @@ class Client:
                 "Failed to update the feature schema, message: " +
                 str(response.json()['message']))
 
-    def upsert_feature_schema(self,
-                              feature_schema: Dict) -> Entity.FeatureSchema:
+    def upsert_feature_schema(self, feature_schema: Dict) -> FeatureSchema:
         """
         Upserts a feature schema
         Args:
