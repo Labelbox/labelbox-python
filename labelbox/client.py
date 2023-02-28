@@ -902,7 +902,7 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized, media_type)
 
-    def delete_unused_feature_schema(self, feature_schema_id: str):
+    def delete_unused_feature_schema(self, feature_schema_id: str) -> None:
         """
         Deletes a feature schema if it is not used by any ontologies or annotations
         Args:
@@ -923,7 +923,7 @@ class Client:
                 "Failed to delete the feature schema, message: " +
                 str(response.json()['message']))
 
-    def delete_unused_ontology(self, ontology_id: str):
+    def delete_unused_ontology(self, ontology_id: str) -> None:
         """
         Deletes an ontology if it is not used by any annotations
         Args:
@@ -1005,7 +1005,8 @@ class Client:
                 str(response.json()['message']))
 
     def insert_feature_schema_into_ontology(self, feature_schema_id: str,
-                                            ontology_id: str, position: int):
+                                            ontology_id: str,
+                                            position: int) -> None:
         """
         Inserts a feature schema into an ontology. If the feature schema is already in the ontology,
         it will be moved to the new position.
