@@ -971,11 +971,11 @@ class Client:
                 "Failed to update the feature schema, message: " +
                 str(response.json()['message']))
 
-    def upsert_feature_schema(self, normalized: Dict):
+    def upsert_feature_schema(self, feature_schema: Dict):
         """
         Upserts a feature schema
         Args:
-            normalized: The feature schema to upsert
+            feature_schema: Dict representing the feature schema to upsert
         Returns:
             The upserted feature schema
         Example:
@@ -987,14 +987,14 @@ class Client:
             >>> client.upsert_feature_schema(tool.asdict())
         """
 
-        feature_schema_id = normalized.get(
+        feature_schema_id = feature_schema.get(
             "featureSchemaId") or "new_feature_schema_id"
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
         response = requests.put(
             endpoint,
             headers=self.headers,
-            json={"normalized": json.dumps(normalized)},
+            json={"normalized": json.dumps(feature_schema)},
         )
 
         if response.status_code == requests.codes.ok:
