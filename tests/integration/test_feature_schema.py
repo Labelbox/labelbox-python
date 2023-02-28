@@ -112,3 +112,18 @@ def test_updates_a_feature_schema(client):
         tool_to_update.asdict())
 
     assert updated_feature_schema.normalized['name'] == "new name"
+
+
+def test_does_not_include_used_feature_schema(client):
+    tool = client.upsert_feature_schema(point.asdict())
+    feature_schema_id = tool.normalized['featureSchemaId']
+    ontology = client.create_ontology_from_feature_schemas(
+        name='ontology name',
+        feature_schema_ids=[feature_schema_id],
+        media_type=MediaType.Image)
+    unused_feature_schemas = client.get_unused_feature_schemas()
+
+    assert feature_schema_id not in unused_feature_schemas
+
+    client.delete_unused_ontology(ontology.uid)
+    client.delete_unused_feature_schema(feature_schema_id)

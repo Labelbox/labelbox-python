@@ -1031,6 +1031,62 @@ class Client:
                 "Failed to insert the feature schema into the ontology, message: "
                 + str(response.json()['message']))
 
+    def get_unused_ontologies(self, after: str = None) -> List[str]:
+        """
+        Returns a list of unused ontology ids
+        Args:
+            after (str): The cursor to use for pagination
+        Returns:
+            A list of unused ontology ids
+        Example:
+            To get the first page of unused ontology ids (100 at a time)
+            >>> client.get_unused_ontologies()
+            To get the next page of unused ontology ids
+            >>> client.get_unused_ontologies("cleabc1my012ioqvu5anyaabc")
+        """
+
+        endpoint = self.rest_endpoint + "/ontologies/unused"
+        response = requests.get(
+            endpoint,
+            headers=self.headers,
+            json={"after": after},
+        )
+
+        if response.status_code == requests.codes.ok:
+            return response.json()
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get unused ontologies, message: " +
+                str(response.json()['message']))
+
+    def get_unused_feature_schemas(self, after: str = None) -> List[str]:
+        """
+        Returns a list of unused feature schema ids
+        Args:
+            after (str): The cursor to use for pagination
+        Returns:
+            A list of unused feature schema ids
+        Example:
+            To get the first page of unused feature schema ids (100 at a time)
+            >>> client.get_unused_feature_schemas()
+            To get the next page of unused feature schema ids
+            >>> client.get_unused_feature_schemas("cleabc1my012ioqvu5anyaabc")
+        """
+
+        endpoint = self.rest_endpoint + "/feature-schemas/unused"
+        response = requests.get(
+            endpoint,
+            headers=self.headers,
+            json={"after": after},
+        )
+
+        if response.status_code == requests.codes.ok:
+            return response.json()
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get unused feature schemas, message: " +
+                str(response.json()['message']))
+
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data

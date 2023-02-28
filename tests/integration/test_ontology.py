@@ -108,6 +108,25 @@ def test_moves_already_added_feature_schema_in_ontology(client):
     client.delete_unused_ontology(ontology.uid)
 
 
+def test_does_not_include_used_ontologies(client):
+    tool = client.upsert_feature_schema(point.asdict())
+    feature_schema_id = tool.normalized['featureSchemaId']
+    ontology_with_project = client.create_ontology_from_feature_schemas(
+        name='ontology name',
+        feature_schema_ids=[feature_schema_id],
+        media_type=MediaType.Image)
+    project = client.create_project(name="test project",
+                                    media_type=MediaType.Image)
+    project.setup_editor(ontology_with_project)
+    unused_ontologies = client.get_unused_ontologies()
+
+    assert ontology_with_project.uid not in unused_ontologies
+
+    project.delete()
+    client.delete_unused_ontology(ontology_with_project.uid)
+    client.delete_unused_feature_schema(feature_schema_id)
+
+
 def _get_attr_stringify_json(obj, attr):
     value = getattr(obj, attr.name)
     if attr.field_type.name.lower() == "json":
