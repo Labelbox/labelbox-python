@@ -1,8 +1,8 @@
 from typing import List, Optional, Tuple, Union
 from itertools import product
 
-from shapely.geometry import Polygon
 import numpy as np
+from shapely.geometry import Polygon
 
 from ..group import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
 from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,

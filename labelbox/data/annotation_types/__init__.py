@@ -24,7 +24,6 @@ from .data import TextData
 from .data import VideoData
 
 from .label import Label
-
 from .collection import LabelList
 from .collection import LabelGenerator
 
@@ -34,3 +33,9 @@ from .metrics import ConfusionMatrixMetric
 from .metrics import ConfusionMatrixAggregation
 from .metrics import ScalarMetricValue
 from .metrics import ConfusionMatrixMetricValue
+
+from .data.tiled_image import EPSG
+from .data.tiled_image import EPSGTransformer
+from .data.tiled_image import TiledBounds
+from .data.tiled_image import TiledImageData
+from .data.tiled_image import TileLayer

@@ -1,4 +1,21 @@
 # Changelog
+# Version 3.38.0 (2023-02-15)
+
+## Added
+* All imports are available via `import labelbox as lb` and `import labelbox.types as lb_types`.
+* Attachment_name support to create_attachment()
+* New method `Project.task_queues()` to obtain the task queues for a project.
+* New method `Project.move_data_rows_to_task_queue()` for moving data rows to a specified task queue.
+
+## Changed
+* `LabelImport.create_from_objects()`, `MALPredictionImport.create_from_objects()`, `MEAPredictionImport.create_from_objects()`, `Project.upload_annotations()`, `ModelRun.add_predictions()` now support Python Types for annotations.
+
+## Notebooks
+* Removed NDJsonConverter from example notebooks
+* Simplified imports in all notebooks
+* Fixed nested classification in examples/annotation_import/image.ipynb
+* Ontology (instructions --> name)
+
 
 # Version 3.37.0 (2023-02-08)
 ## Added

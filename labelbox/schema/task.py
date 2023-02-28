@@ -1,3 +1,4 @@
+import json
 import logging
 import requests
 import time
@@ -6,7 +7,7 @@ import ndjson
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Field, Relationship, Entity
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -39,6 +40,7 @@ class Task(DbObject):
     status = Field.String("status")
     completion_percentage = Field.Float("completion_percentage")
     result_url = Field.String("result_url", "result")
+    errors_url = Field.String("errors_url", "errors")
     type = Field.String("type")
     _user: Optional["User"] = None
 
@@ -55,7 +57,7 @@ class Task(DbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds=300) -> None:
+    def wait_till_done(self, timeout_seconds: int = 300) -> None:
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
 
@@ -65,7 +67,9 @@ class Task(DbObject):
         check_frequency = 2  # frequency of checking, in seconds
         while True:
             if self.status != "IN_PROGRESS":
-                if self.errors is not None:
+                # self.errors fetches the error content.
+                # This first condition prevents us from downloading the content for v2 exports
+                if self.errors_url is not None or self.errors is not None:
                     logger.warning(
                         "There are errors present. Please look at `task.errors` for more details"
                     )
@@ -83,14 +87,18 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Fetch the error associated with an import task.
         """
-        # TODO: We should handle error messages for export v2 tasks in the future.
-        if self.name != 'JSON Import':
-            return None
-        if self.status == "FAILED":
-            result = self._fetch_remote_json()
-            return result["error"]
-        elif self.status == "COMPLETE":
-            return self.failed_data_rows
+        if self.name == 'JSON Import':
+            if self.status == "FAILED":
+                result = self._fetch_remote_json()
+                return result["error"]
+            elif self.status == "COMPLETE":
+                return self.failed_data_rows
+        elif self.type == "export-data-rows":
+            return self._fetch_remote_json(remote_json_field='errors_url')
+        elif self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
+            if self.status == "FAILED":
+                # for these tasks, the error is embedded in the result itself
+                return json.loads(self.result_url)
         return None
 
     @property
@@ -122,34 +130,59 @@ class Task(DbObject):
             return None
 
     @lru_cache()
-    def _fetch_remote_json(self) -> Dict[str, Any]:
+    def _fetch_remote_json(self,
+                           remote_json_field: Optional[str] = None
+                          ) -> Dict[str, Any]:
         """ Function for fetching and caching the result data.
         """
 
-        def download_result():
-            response = requests.get(self.result_url)
-            response.raise_for_status()
-            try:
-                return response.json()
-            except Exception as e:
-                pass
-            try:
-                return ndjson.loads(response.text)
-            except Exception as e:
-                raise ValueError("Failed to parse task JSON/NDJSON result.")
+        def download_result(remote_json_field: Optional[str], format: str):
+            url = getattr(self, remote_json_field or 'result_url')
 
-        if self.name != 'JSON Import' and self.type != 'export-data-rows':
+            if url is None:
+                return None
+
+            response = requests.get(url)
+            response.raise_for_status()
+            if format == 'json':
+                return response.json()
+            elif format == 'ndjson':
+                return ndjson.loads(response.text)
+            else:
+                raise ValueError(
+                    "Expected the result format to be either `ndjson` or `json`."
+                )
+
+        if self.name == 'JSON Import':
+            format = 'json'
+        elif self.type == 'export-data-rows':
+            format = 'ndjson'
+        else:
             raise ValueError(
                 "Task result is only supported for `JSON Import` and `export` tasks."
                 " Download task.result_url manually to access the result for other tasks."
             )
 
         if self.status != "IN_PROGRESS":
-            return download_result()
+            return download_result(remote_json_field, format)
         else:
             self.wait_till_done(timeout_seconds=600)
             if self.status == "IN_PROGRESS":
                 raise ValueError(
                     "Job status still in `IN_PROGRESS`. The result is not available. Call task.wait_till_done() with a larger timeout or contact support."
                 )
-            return download_result()
+            return download_result(remote_json_field, format)
+
+    @staticmethod
+    def get_task(client, task_id):
+        user: User = client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, {task_id: task_id})
+        task: Task = tasks[0]
+        task._user = user
+        return task

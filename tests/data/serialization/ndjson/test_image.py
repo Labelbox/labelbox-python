@@ -23,7 +23,7 @@ def test_image():
     with open('tests/data/assets/ndjson/image_import.json', 'r') as file:
         data = json.load(file)
 
-    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     for r in res:
         r.pop('classifications', None)
@@ -35,7 +35,7 @@ def test_image_with_name_only():
               'r') as file:
         data = json.load(file)
 
-    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     for r in res:
         r.pop('classifications', None)
@@ -66,7 +66,7 @@ def test_mask():
             "colorRGB": [255, 0, 0]
         }
     }]
-    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     for r in res:
         r.pop('classifications', None)

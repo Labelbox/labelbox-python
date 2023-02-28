@@ -18,6 +18,7 @@ from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
+    from labelbox.types import Label
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +216,7 @@ class ModelRun(DbObject):
     def add_predictions(
         self,
         name: str,
-        predictions: Union[str, Path, Iterable[Dict]],
+        predictions: Union[str, Path, Iterable[Dict], Iterable["Label"]],
     ) -> 'MEAPredictionImport':  # type: ignore
         """ Uploads predictions to a new Editor project.
         Args:
@@ -477,19 +478,10 @@ class ModelRun(DbObject):
                 "params": {
                     "includeAttachments":
                         _params.get('attachments', False),
-                    "includeMediaAttributes":
-                        _params.get('media_attributes', False),
                     "includeMetadata":
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":
                         _params.get('data_row_details', False),
-                    # Arguments locked based on exectuion context
-                    "includeProjectDetails":
-                        False,
-                    "includeLabels":
-                        False,
-                    "includePerformanceDetails":
-                        False,
                 },
             }
         }

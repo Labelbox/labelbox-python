@@ -12,6 +12,6 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 def test_text_entity_import(filename: str):
     with open(filename, 'r') as file:
         data = json.load(file)
-    res = NDJsonConverter.deserialize(data).as_list()
+    res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     assert res == data

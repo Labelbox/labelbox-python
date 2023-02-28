@@ -62,9 +62,7 @@ else:
 
 # COMMAND ----------
 
-from labelbox import Client, Dataset
-from labelbox.schema.ontology import OntologyBuilder, Tool, Classification, Option
-from labelbox.schema.media_type import MediaType
+import labelbox as lb
 import labelspark
 
 API_KEY = ""
@@ -72,7 +70,7 @@ API_KEY = ""
 if not (API_KEY):
     raise ValueError("Go to Labelbox to get an API key")
 
-client = Client(API_KEY)
+client = lb.Client(API_KEY)
 
 # COMMAND ----------
 
@@ -179,30 +177,30 @@ print(f"https://app.labelbox.com/data/{demo_dataset.uid}")
 
 # Create a new project
 project_demo = client.create_project(name="Labelbox and Databricks Example",
-                                     media_type=MediaType.Image)
+                                     media_type=lb.MediaType.Image)
 project_demo.datasets.connect(demo_dataset)  # add the dataset to the queue
 
-ontology = OntologyBuilder()
+ontology = lb.OntologyBuilder()
 
 tools = [
-    Tool(tool=Tool.Type.BBOX, name="Car"),
-    Tool(tool=Tool.Type.BBOX, name="Flower"),
-    Tool(tool=Tool.Type.BBOX, name="Fruit"),
-    Tool(tool=Tool.Type.BBOX, name="Plant"),
-    Tool(tool=Tool.Type.SEGMENTATION, name="Bird"),
-    Tool(tool=Tool.Type.SEGMENTATION, name="Person"),
-    Tool(tool=Tool.Type.SEGMENTATION, name="Dog"),
-    Tool(tool=Tool.Type.SEGMENTATION, name="Gemstone"),
+    lb.Tool(tool=lb.Tool.Type.BBOX, name="Car"),
+    lb.Tool(tool=lb.Tool.Type.BBOX, name="Flower"),
+    lb.Tool(tool=lb.Tool.Type.BBOX, name="Fruit"),
+    lb.Tool(tool=lb.Tool.Type.BBOX, name="Plant"),
+    lb.Tool(tool=lb.Tool.Type.SEGMENTATION, name="Bird"),
+    lb.Tool(tool=lb.Tool.Type.SEGMENTATION, name="Person"),
+    lb.Tool(tool=lb.Tool.Type.SEGMENTATION, name="Dog"),
+    lb.Tool(tool=lb.Tool.Type.SEGMENTATION, name="Gemstone"),
 ]
 for tool in tools:
     ontology.add_tool(tool)
 
 conditions = ["clear", "overcast", "rain", "other"]
 
-weather_classification = Classification(
-    class_type=Classification.Type.RADIO,
+weather_classification = lb.Classification(
+    class_type=lb.Classification.Type.RADIO,
     instructions="what is the weather?",
-    options=[Option(value=c) for c in conditions])
+    options=[lb.Option(value=c) for c in conditions])
 ontology.add_classification(weather_classification)
 
 # Setup editor
