@@ -944,7 +944,8 @@ class Client:
                 "Failed to delete the ontology, message: " +
                 str(response.json()['message']))
 
-    def update_feature_schema_title(self, feature_schema_id: str, title: str):
+    def update_feature_schema_title(self, feature_schema_id: str,
+                                    title: str) -> Entity.FeatureSchema:
         """
         Updates a title of a feature schema
         Args:
@@ -971,7 +972,8 @@ class Client:
                 "Failed to update the feature schema, message: " +
                 str(response.json()['message']))
 
-    def upsert_feature_schema(self, feature_schema: Dict):
+    def upsert_feature_schema(self,
+                              feature_schema: Dict) -> Entity.FeatureSchema:
         """
         Upserts a feature schema
         Args:
