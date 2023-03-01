@@ -937,7 +937,10 @@ class Client:
                 'mediaType': media_type
             }
         }
-        res = self.execute(query_str, params)
+        # Timeout is set to 10 minutes, because an ontology can accept up to 25k root feature schemas, and it takes
+        # a while to create all of them. The code in api needs to be optimized, but for now we are setting a high
+        # timeout.
+        res = self.execute(query_str, params, timeout=600)
         return Entity.Ontology(self, res['upsertOntology'])
 
     def create_feature_schema(self, normalized):
