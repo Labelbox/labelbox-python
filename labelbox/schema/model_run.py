@@ -80,27 +80,30 @@ class ModelRun(DbObject):
             }})['MEALabelRegistrationTaskStatus'],
                                      timeout_seconds=timeout_seconds)
 
-    def upsert_data_rows(self, data_row_ids, timeout_seconds=3600):
+    def upsert_data_rows(self,
+                         data_row_ids=None,
+                         global_keys=None,
+                         timeout_seconds=3600):
         """ Adds data rows to a Model Run without any associated labels
         Args:
-            data_row_ids (list): data row ids to add to mea
+            data_row_ids (list): data row ids to add to model run
+            global_keys (list): global keys for data rows to add to model run
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
             ID of newly generated async task
         """
 
-        if len(data_row_ids) < 1:
-            raise ValueError("Must provide at least one data row id")
-
         mutation_name = 'createMEAModelRunDataRowRegistrationTask'
-        create_task_query_str = """mutation createMEAModelRunDataRowRegistrationTaskPyApi($modelRunId: ID!, $dataRowIds : [ID!]!) {
-          %s(where : { id : $modelRunId}, data : {dataRowIds: $dataRowIds})}
+        create_task_query_str = """mutation createMEAModelRunDataRowRegistrationTaskPyApi($modelRunId: ID!, $dataRowIds: [ID!], $globalKeys: [ID!]) {
+          %s(where : { id : $modelRunId}, data : {dataRowIds: $dataRowIds, globalKeys: $globalKeys})}
           """ % (mutation_name)
 
-        res = self.client.execute(create_task_query_str, {
-            'modelRunId': self.uid,
-            'dataRowIds': data_row_ids
-        })
+        res = self.client.execute(
+            create_task_query_str, {
+                'modelRunId': self.uid,
+                'dataRowIds': data_row_ids,
+                'globalKeys': global_keys
+            })
         task_id = res[mutation_name]
 
         status_query_str = """query MEADataRowRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){

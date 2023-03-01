@@ -1,11 +1,36 @@
 # Changelog
+
+# Version 3.40.0 (YYYY-MM-DD)
+
+## Added 
+* Upsert data rows to model runs using global keys
+
+# Version 3.39.0 (2023-02-28)
+## Added
+* New method `Project.task_queues()` to obtain the task queues for a project.
+* New method `Project.move_data_rows_to_task_queue()` for moving data rows to a specified task queue.
+* Added more descriptive error messages for metadata operations
+* Added `Task.errors_url` for async tasks that return errors as separate file (e.g. `export_v2`)
+
+## Changed
+* Updated `ProjectExportParams.labels` to `ProjectExportParams.label_details`
+* Removed `media_attributes` from `DataRowParams`
+* Added deprecation warnings for `LabelList` and removed its usage
+* Removed unused arguments in `Project.export_v2` and `ModelRun.export_v2`
+
+## Notebooks
+* Fixed `examples/label_export/images.ipynb` notebook metadata
+* Removed unused `lb_serializer` imports
+* Removed uuid generation in NDJson annotation payloads, as it is now optional
+* Removed custom embeddings usage in `examples/basics/data_row_metadata.ipynb`
+* New notebook `examples/basics/custom_embeddings.ipynb` for custom embeddings
+* Updated `examples/annotation_import/text.ipynb` to use `TextData` and specify Text media type
+
 # Version 3.38.0 (2023-02-15)
 
 ## Added
 * All imports are available via `import labelbox as lb` and `import labelbox.types as lb_types`.
 * Attachment_name support to create_attachment()
-* New method `Project.task_queues()` to obtain the task queues for a project.
-* New method `Project.move_data_rows_to_task_queue()` for moving data rows to a specified task queue.
 
 ## Changed
 * `LabelImport.create_from_objects()`, `MALPredictionImport.create_from_objects()`, `MEAPredictionImport.create_from_objects()`, `Project.upload_annotations()`, `ModelRun.add_predictions()` now support Python Types for annotations.
@@ -15,7 +40,6 @@
 * Simplified imports in all notebooks
 * Fixed nested classification in examples/annotation_import/image.ipynb
 * Ontology (instructions --> name)
-
 
 # Version 3.37.0 (2023-02-08)
 ## Added
