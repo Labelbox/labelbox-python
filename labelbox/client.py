@@ -1396,7 +1396,7 @@ class Client:
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
 
-    def unarchive_root_feature_schema_node(
+    def unarchive_feature_schema_node(
             self, ontology_id: str, root_feature_schema_id: str) -> bool:
         """
         Returns true if the root feature schema node was successfully unarchived, false otherwise
