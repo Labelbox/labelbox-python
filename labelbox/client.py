@@ -34,7 +34,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
-from labelbox.schema.slice import CatalogSlice
+from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
 
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
@@ -107,7 +107,7 @@ class Client:
                 params=None,
                 data=None,
                 files=None,
-                timeout=30.0,
+                timeout=60.0,
                 experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
@@ -1573,3 +1573,27 @@ class Client:
         """
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
+
+    def get_model_slice(self, slice_id) -> ModelSlice:
+        """
+        Fetches a Model Slice by ID.
+
+        Args:
+             slice_id (str): The ID of the Slice
+        Returns:
+            ModelSlice
+        """
+        query_str = """
+            query getSavedQueryPyApi($id: ID!) {
+                getSavedQuery(id: $id) {
+                    id
+                    name
+                    description
+                    filter
+                    createdAt
+                    updatedAt
+                }
+            }
+        """
+        res = self.execute(query_str, {"id": slice_id})
+        return Entity.ModelSlice(self, res["getSavedQuery"])
