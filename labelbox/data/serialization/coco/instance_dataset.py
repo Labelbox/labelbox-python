@@ -12,12 +12,12 @@ from ...annotation_types import ImageData, MaskData, Mask, ObjectAnnotation, Lab
 from ...annotation_types.collection import LabelCollection
 from .categories import Categories, hash_category_name
 from .annotation import COCOObjectAnnotation, RLE, get_annotation_lookup, rle_decoding
-from .image import CocoImage, get_image, get_image_id
+from .image import CocoImage, get_image, get_image_from_azure, get_image_id
 
 
 def mask_to_coco_object_annotation(
-        annotation: ObjectAnnotation, annot_idx: int, image_id: int,
-        category_id: int) -> Optional[COCOObjectAnnotation]:
+    annotation: ObjectAnnotation, annot_idx: int, image_id: int,
+    category_id: int) -> Optional[COCOObjectAnnotation]:
     # This is going to fill any holes into the multipolygon
     # If you need to support holes use the panoptic data format
     shapely = annotation.value.shapely.simplify(1).buffer(0)
@@ -90,8 +90,8 @@ def segmentations_to_common(class_annotations: COCOObjectAnnotation,
 
 
 def object_annotation_to_coco(
-        annotation: ObjectAnnotation, annot_idx: int, image_id: int,
-        category_id: int) -> Optional[COCOObjectAnnotation]:
+    annotation: ObjectAnnotation, annot_idx: int, image_id: int,
+    category_id: int) -> Optional[COCOObjectAnnotation]:
     if isinstance(annotation.value, Mask):
         return mask_to_coco_object_annotation(annotation, annot_idx, image_id,
                                               category_id)
@@ -125,6 +125,37 @@ def process_label(
                 if annotation.name not in categories:
                     categories[annotation.name] = category_id
                 annot_idx += 1
+
+    return image, coco_annotations, categories
+
+
+def process_label_from_azure(
+    label: Label,
+    idx: int,
+    azure_storage_container: str,
+) -> Tuple[np.ndarray, List[COCOObjectAnnotation], Dict[str, str]]:
+    image_id = get_image_id(label, idx)
+    image = get_image_from_azure(label, str(image_id), azure_storage_container)
+    coco_annotations = []
+    annotation_lookup = get_annotation_lookup(label.annotations)
+    categories = {}
+
+    for class_name, annotations in annotation_lookup.items():
+        for annot_idx, annotation in enumerate(annotations):
+            # Hash category name and store
+            hash_cat = hash_category_name(annotation.name)
+            categories[hash_cat] = annotation.name
+
+            # Select the conversion function for the annotation type
+            if isinstance(annotation.value, Mask):
+                conv_func = mask_to_coco_object_annotation
+            elif isinstance(annotation.value, (Polygon, Rectangle)):
+                conv_func = vector_to_coco_object_annotation
+            else:
+                continue
+
+            # Convert the annotation and append to the list
+            coco_annotations.append(conv_func(annotation, annot_idx, image_id, hash_cat))
 
     return image, coco_annotations, categories
 
@@ -212,3 +243,52 @@ class CocoInstanceDataset(BaseModel):
                             class_annotations, category_lookup[
                                 class_annotations.category_id].name))
             yield Label(data=data, annotations=annotations)
+
+    @classmethod
+    def from_azure(cls,
+                   labels: LabelCollection,
+                   image_root: Path,
+                   azure_storage_container: str,
+                   max_workers=8,):
+        all_coco_annotations = []
+        categories = {}
+        images = []
+        futures = []
+        coco_categories = {}
+
+        if max_workers:
+            with ProcessPoolExecutor(max_workers=max_workers) as exc:
+                futures = [
+                    exc.submit(process_label_from_azure, label, idx, azure_storage_container)
+                    for idx, label in enumerate(labels)
+                ]
+                results = [
+                    future.result() for future in tqdm(as_completed(futures))
+                ]
+        else:
+            results = [
+                process_label_from_azure(label, idx, azure_storage_container)
+                for idx, label in enumerate(labels)
+            ]
+        for result in results:
+            images.append(result[0])
+            all_coco_annotations.extend(result[1])
+            coco_categories.update(result[2])
+        category_mapping = {
+            category_id: idx + 1
+            for idx, category_id in enumerate(set(coco_categories.values()))
+        }
+        categories = [
+            Categories(id=idx,
+                       name=name,
+                       supercategory='all',
+                       isthing=1) for name, idx in category_mapping.items()
+        ]
+        for annot in all_coco_annotations:
+            coco_cat_name = coco_categories[annot.category_id]
+            annot.category_id = category_mapping[coco_cat_name]
+
+        return CocoInstanceDataset(info={'image_root': image_root},
+                                   images=images,
+                                   annotations=all_coco_annotations,
+                                   categories=categories)

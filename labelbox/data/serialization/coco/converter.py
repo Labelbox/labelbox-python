@@ -61,6 +61,29 @@ class COCOConverter:
                                                max_workers=max_workers).dict()
 
     @staticmethod
+    def serialize_instances_from_azure(labels: LabelCollection,
+                                       image_root: Union[Path, str],
+                                       azure_storage_container: str,
+                                       max_workers=8) -> Dict[str, Any]:
+        """
+        Convert a Labelbox LabelCollection into an mscoco dataset.
+        This function will only convert masks, polygons, and rectangles.
+        Masks will be converted into individual instances.
+
+        Args:
+            labels: A collection of labels to convert
+            image_root: Where to save images to
+            azure_storage_container: azure blobstorage container name
+            max_workers : Number of workers to process dataset with. A value of 0 will process all data in the main process
+        Returns:
+            A dictionary containing labels in the coco object format.
+        """
+        return CocoInstanceDataset.from_azure(labels=labels,
+                                              image_root=image_root,
+                                              azure_storage_container=azure_storage_container,
+                                              max_workers=max_workers,).dict()
+
+    @staticmethod
     def serialize_panoptic(labels: LabelCollection,
                            image_root: Union[Path, str],
                            mask_root: Union[Path, str],

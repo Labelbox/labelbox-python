@@ -17,3 +17,5 @@ typing-extensions
 pytest-xdist
 nbformat~=5.7.0
 nbconvert~=7.2.6
+azure-storage-blob
+loguru
