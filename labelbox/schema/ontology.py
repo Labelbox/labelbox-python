@@ -241,6 +241,7 @@ class Tool:
         BBOX = "rectangle"
         LINE = "line"
         NER = "named-entity"
+        RELATIONSHIP = "edge"
 
     tool: Type
     name: str
