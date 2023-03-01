@@ -55,7 +55,8 @@ class Client:
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
-                 app_url="https://app.labelbox.com"):
+                 app_url="https://app.labelbox.com",
+                 rest_endpoint="https://api.labelbox.com/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -95,6 +96,12 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
         self._data_row_metadata_ontology = None
+        self.rest_endpoint = rest_endpoint
+        self.rest_endpoint_headers = {
+            "authorization": "Bearer %s" % self.api_key,
+            'X-User-Agent': 'python-sdk 0.0.0',
+            'Content-Type': 'application/json',
+        }
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -149,7 +156,8 @@ class Client:
         if query is not None:
             if params is not None:
                 params = {
-                    key: convert_value(value) for key, value in params.items()
+                    key: convert_value(value)
+                    for key, value in params.items()
                 }
             data = json.dumps({
                 'query': query,
@@ -350,18 +358,18 @@ class Client:
 
         request_data = {
             "operations":
-                json.dumps({
-                    "variables": {
-                        "file": None,
-                        "contentLength": len(content),
-                        "sign": sign
-                    },
-                    "query":
-                        """mutation UploadFile($file: Upload!, $contentLength: Int!,
+            json.dumps({
+                "variables": {
+                    "file": None,
+                    "contentLength": len(content),
+                    "sign": sign
+                },
+                "query":
+                """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,
-                }),
+            }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
         response = requests.post(
@@ -370,7 +378,7 @@ class Client:
             data=request_data,
             files={
                 "1": (filename, content, content_type) if
-                     (filename and content_type) else content
+                (filename and content_type) else content
             })
 
         if response.status_code == 502:
@@ -658,7 +666,8 @@ class Client:
         elif queue_mode == QueueMode.Dataset:
             logger.warning(
                 "QueueMode.Dataset will eventually be deprecated, and is no longer "
-                "recommended for new projects. Prefer QueueMode.Batch instead.")
+                "recommended for new projects. Prefer QueueMode.Batch instead."
+            )
 
         return self._create(Entity.Project, {
             **kwargs,
@@ -770,7 +779,7 @@ class Client:
             for row in self.execute(
                     query_str,
                 {'externalId_in': external_ids[i:i + max_ids_per_request]
-                })['externalIdsToDataRowIds']:
+                 })['externalIdsToDataRowIds']:
                 result[row['externalId']].append(row['dataRowId'])
         return result
 
@@ -1062,9 +1071,10 @@ class Client:
         }
         """
         params = {
-            'globalKeyDataRowLinks': [{
-                utils.camel_case(key): value for key, value in input.items()
-            } for input in global_key_to_data_row_inputs]
+            'globalKeyDataRowLinks':
+            [{utils.camel_case(key): value
+              for key, value in input.items()}
+             for input in global_key_to_data_row_inputs]
         }
         assign_global_keys_to_data_rows_job = self.execute(query_str, params)
 
@@ -1093,8 +1103,8 @@ class Client:
         """
         result_params = {
             "jobId":
-                assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"
-                                                   ]["jobId"]
+            assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"]
+            ["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1210,7 +1220,7 @@ class Client:
             """
         result_params = {
             "jobId":
-                data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
+            data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1332,7 +1342,8 @@ class Client:
                 errors.extend(
                     _format_failed_rows(
                         data['notFoundGlobalKeys'],
-                        "Failed to find data row matching provided global key"))
+                        "Failed to find data row matching provided global key")
+                )
                 errors.extend(
                     _format_failed_rows(
                         data['accessDeniedGlobalKeys'],
@@ -1408,3 +1419,31 @@ class Client:
         """
         res = self.execute(query_str, {"id": slice_id})
         return Entity.ModelSlice(self, res["getSavedQuery"])
+
+    def remove_feature_schema_from_ontology(self, ontology_id: str,
+                                            feature_schema_id: str):
+        """
+        Removes a feature schema from an ontology.
+        If the feature schema is a root level node with associated labels, it will be archived.
+        If the feature schema is a nested node in the ontology and does not have associated labels, it will be deleted.
+        If the feature schema is a nested node in the ontology and has associated labels, it will not be deleted.
+        """
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + ontology_id + "/feature-schemas/" + feature_schema_id
+        response = requests.delete(
+            ontology_endpoint,
+            headers=self.rest_endpoint_headers,
+        )
+
+        if response.status_code == 200:
+            response_json = response.json()
+            if response_json['archived'] == True:
+                print(
+                    'Feature schema was archived from the ontology because it had associated labels.'
+                )
+            elif response_json['deleted'] == True:
+                print(
+                    'Feature schema was successfully removed from the ontology'
+                )
+        else:
+            print('Failed to remove feature schema from ontology: ' +
+                  response.text)
