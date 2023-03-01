@@ -212,6 +212,17 @@ def datarow(dataset, image_url):
     dr.delete()
 
 
+@pytest.fixture()
+def data_rows(dataset, image_url):
+    dr1 = dataset.create_data_row(row_data=image_url,
+                                  global_key=f"global-key-{uuid.uuid4()}")
+    dr2 = dataset.create_data_row(row_data=image_url,
+                                  global_key=f"global-key-{uuid.uuid4()}")
+    yield [dr1, dr2]
+    dr1.delete()
+    dr2.delete()
+
+
 @pytest.fixture
 def iframe_url(environ) -> str:
     if environ in [Environ.PROD, Environ.LOCAL]:
