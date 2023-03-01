@@ -1393,8 +1393,8 @@ class Client:
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
 
-    def is_feature_schema_archived(self, feature_schema_id: str,
-                                   ontology_id: str) -> bool:
+    def is_feature_schema_archived(self, ontology_id: str,
+                                   feature_schema_id: str) -> bool:
         """
         Returns true if a feature schema is archived in the specified ontology, returns false otherwise.
 
