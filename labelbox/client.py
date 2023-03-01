@@ -104,7 +104,7 @@ class Client:
                 params=None,
                 data=None,
                 files=None,
-                timeout=30.0,
+                timeout=60.0,
                 experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
