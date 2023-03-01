@@ -89,4 +89,4 @@ jobs:
 
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -svv --reruns 5 --reruns-delay 10
+          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 10
