@@ -4,9 +4,9 @@ from uuid import uuid4
 import numpy as np
 import pytest
 
-from labelbox.data.annotation_types import (LabelList, LabelGenerator,
-                                            ObjectAnnotation, ImageData,
-                                            MaskData, Line, Mask, Point, Label)
+from labelbox.data.annotation_types import (LabelGenerator, ObjectAnnotation,
+                                            ImageData, MaskData, Line, Mask,
+                                            Point, Label)
 from labelbox import OntologyBuilder, Tool
 
 
@@ -61,7 +61,7 @@ def test_generator(list_of_labels):
 
 def test_conversion(list_of_labels):
     generator = LabelGenerator(list_of_labels)
-    label_collection = generator.as_list()
+    label_collection = list(generator)
     assert len(label_collection) == len(list_of_labels)
     assert [x for x in label_collection] == list_of_labels
 
@@ -83,9 +83,6 @@ def test_adding_schema_ids():
     ])
     generator = LabelGenerator([label]).assign_feature_schema_ids(ontology)
     assert next(generator).annotations[0].feature_schema_id == feature_schema_id
-    labels = LabelList([label]).assign_feature_schema_ids(ontology)
-    assert next(labels).annotations[0].feature_schema_id == feature_schema_id
-    assert labels[0].annotations[0].feature_schema_id == feature_schema_id
 
 
 def test_adding_urls(signer):
@@ -97,15 +94,6 @@ def test_adding_urls(signer):
     assert label.data.url != uuid
     assert next(generator).data.url == uuid
     assert label.data.url == uuid
-
-    label = Label(data=ImageData(arr=np.random.random((32, 32,
-                                                       3)).astype(np.uint8)),
-                  annotations=[])
-    assert label.data.url != uuid
-    labels = LabelList([label]).add_url_to_data(signer(uuid))
-    assert label.data.url == uuid
-    assert next(labels).data.url == uuid
-    assert labels[0].data.url == uuid
 
 
 def test_adding_to_dataset(signer):
@@ -121,22 +109,6 @@ def test_adding_to_dataset(signer):
     assert generated_label.data.external_id != None
     assert generated_label.data.uid == dataset.uid
     assert label.data.url == uuid
-
-    dataset = FakeDataset()
-    label = Label(data=ImageData(arr=np.random.random((32, 32,
-                                                       3)).astype(np.uint8)),
-                  annotations=[])
-    assert label.data.url != uuid
-    assert label.data.external_id == None
-    assert label.data.uid != dataset.uid
-    labels = LabelList([label]).add_to_dataset(dataset, signer(uuid))
-    assert label.data.url == uuid
-    assert label.data.external_id != None
-    assert label.data.uid == dataset.uid
-    generated_label = next(labels)
-    assert generated_label.data.url == uuid
-    assert generated_label.data.external_id != None
-    assert generated_label.data.uid == dataset.uid
 
 
 def test_adding_to_masks(signer):
@@ -154,17 +126,3 @@ def test_adding_to_masks(signer):
     assert label.annotations[0].value.mask.url != uuid
     assert next(generator).annotations[0].value.mask.url == uuid
     assert label.annotations[0].value.mask.url == uuid
-
-    label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
-        annotations=[
-            ObjectAnnotation(name="1234",
-                             value=Mask(mask=MaskData(
-                                 arr=np.random.random((32, 32,
-                                                       3)).astype(np.uint8)),
-                                        color=[255, 255, 255]))
-        ])
-    assert label.annotations[0].value.mask.url != uuid
-    labels = LabelList([label]).add_url_to_masks(signer(uuid))
-    assert next(labels).annotations[0].value.mask.url == uuid
-    assert labels[0].annotations[0].value.mask.url == uuid

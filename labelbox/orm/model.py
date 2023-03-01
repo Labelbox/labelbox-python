@@ -378,6 +378,8 @@ class Entity(metaclass=EntityMeta):
         Project: Type[labelbox.Project]
         Batch: Type[labelbox.Batch]
         CatalogSlice: Type[labelbox.CatalogSlice]
+        ModelSlice: Type[labelbox.ModelSlice]
+        TaskQueue: Type[labelbox.TaskQueue]
 
     @classmethod
     def _attributes_of_type(cls, attr_type):

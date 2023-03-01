@@ -33,7 +33,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
-from labelbox.schema.slice import CatalogSlice
+from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.ontology import Ontology
 
@@ -1427,10 +1427,33 @@ class Client:
                 raise labelbox.exceptions.LabelboxError(
                     "The specified feature schema was not in the ontology.")
 
-            return True
         elif response.status_code == 404:
             raise labelbox.exceptions.ResourceNotFoundError(
                 Ontology, ontology_id)
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to get the feature schema archived status.")
+
+    def get_model_slice(self, slice_id) -> ModelSlice:
+        """
+        Fetches a Model Slice by ID.
+
+        Args:
+             slice_id (str): The ID of the Slice
+        Returns:
+            ModelSlice
+        """
+        query_str = """
+            query getSavedQueryPyApi($id: ID!) {
+                getSavedQuery(id: $id) {
+                    id
+                    name
+                    description
+                    filter
+                    createdAt
+                    updatedAt
+                }
+            }
+        """
+        res = self.execute(query_str, {"id": slice_id})
+        return Entity.ModelSlice(self, res["getSavedQuery"])
