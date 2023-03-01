@@ -1426,7 +1426,7 @@ class Client:
             feature_schema_node = list(
                 filter(is_feature, feature_schema_node_list))
             if len(feature_schema_node) > 0:
-                return feature_schema_node[0]['archived']
+                return bool(feature_schema_node[0]['archived'])
             else:
                 raise labelbox.exceptions.LabelboxError(
                     "The specified feature schema was not in the ontology.")
