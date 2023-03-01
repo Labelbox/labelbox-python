@@ -8,7 +8,7 @@ def test_metric():
     with open('tests/data/assets/ndjson/metric_import.json', 'r') as file:
         data = json.load(file)
 
-    label_list = NDJsonConverter.deserialize(data).as_list()
+    label_list = list(NDJsonConverter.deserialize(data))
     reserialized = list(NDJsonConverter.serialize(label_list))
     assert reserialized == data
 
@@ -21,7 +21,7 @@ def test_custom_scalar_metric():
               'r') as file:
         data = json.load(file)
 
-    label_list = NDJsonConverter.deserialize(data).as_list()
+    label_list = list(NDJsonConverter.deserialize(data))
     reserialized = list(NDJsonConverter.serialize(label_list))
     assert json.dumps(reserialized,
                       sort_keys=True) == json.dumps(data, sort_keys=True)
@@ -35,7 +35,7 @@ def test_custom_confusion_matrix_metric():
               'r') as file:
         data = json.load(file)
 
-    label_list = NDJsonConverter.deserialize(data).as_list()
+    label_list = list(NDJsonConverter.deserialize(data))
     reserialized = list(NDJsonConverter.serialize(label_list))
     assert json.dumps(reserialized,
                       sort_keys=True) == json.dumps(data, sort_keys=True)

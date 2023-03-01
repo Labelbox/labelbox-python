@@ -69,7 +69,7 @@ class LBV1Converter:
         Note that any metric annotations will not be written since they are not defined in the LBV1 format.
 
         Args:
-            labels: Either a LabelList or a LabelGenerator (LabelCollection)
+            labels: Either a list of Label objects or a LabelGenerator (LabelCollection)
         Returns:
             A generator for accessing the labelbox json export representation of the data
         """

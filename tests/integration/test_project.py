@@ -42,7 +42,6 @@ def test_project(client, rand_gen):
     assert project not in projects
 
 
-@pytest.mark.skip(reason="feature under development")
 def test_project_export_v2(configured_project_with_label):
     project, _, _, label = configured_project_with_label
     label_id = label.uid
@@ -61,17 +60,9 @@ def test_project_export_v2(configured_project_with_label):
     assert task.name == task_name
     task.wait_till_done()
     assert task.status == "COMPLETE"
+    assert task.errors is None
 
-    def download_result(result_url):
-        response = requests.get(result_url)
-        response.raise_for_status()
-        data = [json.loads(line) for line in response.text.splitlines()]
-        return data
-
-    task_results = download_result(task.result_url)
-
-    for task_result in task_results:
-        assert len(task_result['errors']) == 0
+    for task_result in task.result:
         task_project = task_result['projects'][project.uid]
         task_project_label_ids_set = set(
             map(lambda prediction: prediction['id'], task_project['labels']))

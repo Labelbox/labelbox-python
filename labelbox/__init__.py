@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "3.38.0"
+__version__ = "3.39.0"
 
 from labelbox.client import Client
 from labelbox.schema.project import Project
@@ -29,3 +29,4 @@ from labelbox.schema.project_resource_tag import ProjectResourceTag
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.slice import Slice, CatalogSlice
 from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.task_queue import TaskQueue

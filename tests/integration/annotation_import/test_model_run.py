@@ -1,11 +1,9 @@
-import json
 import time
 import os
 import pytest
 
 from collections import Counter
 
-import requests
 from labelbox import DataSplit, ModelRun
 
 
@@ -99,6 +97,14 @@ def test_model_run_upsert_data_rows(dataset, model_run):
     assert n_model_run_data_rows == 1
 
 
+def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
+    global_keys = [dr.global_key for dr in data_rows]
+    assert model_run.upsert_data_rows(global_keys=global_keys)
+    model_run_data_rows = list(model_run.model_run_data_rows())
+    added_data_rows = [mdr.data_row() for mdr in model_run_data_rows]
+    assert set(added_data_rows) == set(data_rows)
+
+
 def test_model_run_upsert_data_rows_with_existing_labels(
         model_run_with_model_run_data_rows):
     model_run_data_rows = list(
@@ -115,53 +121,6 @@ def test_model_run_upsert_data_rows_with_existing_labels(
 def test_model_run_export_labels(model_run_with_model_run_data_rows):
     labels = model_run_with_model_run_data_rows.export_labels(download=True)
     assert len(labels) == 3
-
-
-@pytest.mark.skip(reason="feature under development")
-def test_model_run_export_v2(model_run_with_model_run_data_rows,
-                             configured_project):
-    task_name = "test_task"
-
-    media_attributes = True
-    params = {"media_attributes": media_attributes}
-    task = model_run_with_model_run_data_rows.export_v2(task_name,
-                                                        params=params)
-    assert task.name == task_name
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-
-    def download_result(result_url):
-        response = requests.get(result_url)
-        response.raise_for_status()
-        data = [json.loads(line) for line in response.text.splitlines()]
-        return data
-
-    task_results = download_result(task.result_url)
-
-    label_ids = [label.uid for label in configured_project.labels()]
-    label_ids_set = set(label_ids)
-
-    assert len(task_results) == len(label_ids)
-    for task_result in task_results:
-        assert len(task_result['errors']) == 0
-        # Check export param handling
-        if media_attributes:
-            assert 'media_attributes' in task_result and task_result[
-                'media_attributes'] is not None
-        else:
-            assert 'media_attributes' not in task_result or task_result[
-                'media_attributes'] is None
-        model_run = task_result['models'][
-            model_run_with_model_run_data_rows.model_id]['model_runs'][
-                model_run_with_model_run_data_rows.uid]
-        task_label_ids_set = set(
-            map(lambda label: label['id'], model_run['labels']))
-        task_prediction_ids_set = set(
-            map(lambda prediction: prediction['id'], model_run['predictions']))
-        for label_id in task_label_ids_set:
-            assert label_id in label_ids_set
-        for prediction_id in task_prediction_ids_set:
-            assert prediction_id in label_ids_set
 
 
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
@@ -207,6 +166,46 @@ def test_model_run_status(model_run_with_model_run_data_rows):
     with pytest.raises(ValueError):
         model_run_with_model_run_data_rows.update_status(
             "INVALID", metadata, errorMessage)
+
+
+def test_model_run_export_v2(model_run_with_model_run_data_rows,
+                             configured_project):
+    task_name = "test_task"
+
+    media_attributes = True
+    params = {"media_attributes": media_attributes}
+    task = model_run_with_model_run_data_rows.export_v2(task_name,
+                                                        params=params)
+    assert task.name == task_name
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+
+    task_results = task.result
+
+    label_ids = [label.uid for label in configured_project.labels()]
+    label_ids_set = set(label_ids)
+
+    assert len(task_results) == len(label_ids)
+    for task_result in task_results:
+        # Check export param handling
+        if media_attributes:
+            assert 'media_attributes' in task_result and task_result[
+                'media_attributes'] is not None
+        else:
+            assert 'media_attributes' not in task_result or task_result[
+                'media_attributes'] is None
+        model_run = task_result['models'][
+            model_run_with_model_run_data_rows.model_id]['model_runs'][
+                model_run_with_model_run_data_rows.uid]
+        task_label_ids_set = set(
+            map(lambda label: label['id'], model_run['labels']))
+        task_prediction_ids_set = set(
+            map(lambda prediction: prediction['id'], model_run['predictions']))
+        for label_id in task_label_ids_set:
+            assert label_id in label_ids_set
+        for prediction_id in task_prediction_ids_set:
+            assert prediction_id in label_ids_set
 
 
 def test_model_run_split_assignment(model_run, dataset, image_url):
