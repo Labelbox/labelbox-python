@@ -1610,6 +1610,16 @@ class Client:
         If the feature schema is a root level node with associated labels, it will be archived.
         If the feature schema is a nested node in the ontology and does not have associated labels, it will be deleted.
         If the feature schema is a nested node in the ontology and has associated labels, it will not be deleted.
+
+        Args:
+            ontology_id (str): The ID of the ontology.
+            feature_schema_id (str): The ID of the feature schema.
+
+        Returns:
+            RemoveFeatureFromOntologyResult: The result of the feature schema removal.
+
+        Example:
+            >>> client.remove_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
         """
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id) + "/feature-schemas/" + urllib.parse.quote(feature_schema_id)
         response = requests.delete(
