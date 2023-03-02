@@ -1617,7 +1617,7 @@ class Client:
             headers=self.headers,
         )
 
-        if response.status_code == 200:
+        if response.status_code == requests.codes.ok:
             response_json = response.json()
             if response_json['archived'] == True:
                 print(
