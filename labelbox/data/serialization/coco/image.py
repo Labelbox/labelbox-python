@@ -49,14 +49,14 @@ def get_image(label: Label, image_root: Path, image_id: str) -> CocoImage:
 def get_image_from_azure(
     label: Label,
     image_id: str,
-    azure_storage_container=None,
+    azure_storage_container: str,
 ) -> CocoImage:
 
     conn = get_connection_string()
     client = create_blob_service_client(conn, azure_storage_container)
     file_path = extract_file_path(label.data.url)
 
-    # Get image height and width
+    # Get image height and width, avoiding download if possible
     logger.info(f"Checking size of image in: {file_path}, from blobstorage")
     # Check is done on the image if height and width exists as metadata
     image_metadata = get_blob_metadata(client, file_path)

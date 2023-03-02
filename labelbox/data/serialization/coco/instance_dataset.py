@@ -247,7 +247,6 @@ class CocoInstanceDataset(BaseModel):
     @classmethod
     def from_azure(cls,
                    labels: LabelCollection,
-                   image_root: Path,
                    azure_storage_container: str,
                    max_workers=8,):
         all_coco_annotations = []
@@ -288,7 +287,7 @@ class CocoInstanceDataset(BaseModel):
             coco_cat_name = coco_categories[annot.category_id]
             annot.category_id = category_mapping[coco_cat_name]
 
-        return CocoInstanceDataset(info={'image_root': image_root},
+        return CocoInstanceDataset(info={},
                                    images=images,
                                    annotations=all_coco_annotations,
                                    categories=categories)
