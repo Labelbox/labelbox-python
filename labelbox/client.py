@@ -99,12 +99,6 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
         self._data_row_metadata_ontology = None
-        self.rest_endpoint = rest_endpoint
-        self.rest_endpoint_headers = {
-            "authorization": "Bearer %s" % self.api_key,
-            'X-User-Agent': 'python-sdk 0.0.0',
-            'Content-Type': 'application/json',
-        }
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -1596,7 +1590,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + ontology_id
         response = requests.get(
             ontology_endpoint,
-            headers=self.rest_endpoint_headers,
+            headers=self.headers,
         )
 
         if response.status_code == 200:
