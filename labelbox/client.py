@@ -1628,5 +1628,6 @@ class Client:
                 print(
                     'Feature schema was successfully removed from the ontology')
         else:
-            print('Failed to remove feature schema from ontology: ' +
-                  response.text)
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to remove feature schema from ontology, message: " +
+                str(response.json()['message']))
