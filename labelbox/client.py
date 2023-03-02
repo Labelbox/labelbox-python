@@ -1589,7 +1589,7 @@ class Client:
             ontology_endpoint,
             headers=self.headers,
         )
-        if response.status_code == 200:
+        if response.status_code == requests.codes.ok:
             return response.json()['unarchived']
         else:
             raise labelbox.exceptions.LabelboxError(
