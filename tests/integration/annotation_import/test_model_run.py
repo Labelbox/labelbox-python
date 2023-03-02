@@ -1,5 +1,6 @@
 import time
 import os
+import uuid
 import pytest
 
 from collections import Counter
@@ -208,7 +209,8 @@ def test_model_run_export_v2(model_run_with_model_run_data_rows,
             assert prediction_id in label_ids_set
 
 
-def test_model_run_split_assignment(model_run, dataset, image_url):
+def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
+                                                    image_url):
     n_data_rows = 10
     data_rows = dataset.create_data_rows([{
         "row_data": image_url
@@ -227,3 +229,18 @@ def test_model_run_split_assignment(model_run, dataset, image_url):
             counts[data_row.data_split.value] += 1
         split = split.value if isinstance(split, DataSplit) else split
         assert counts[split] == n_data_rows
+
+
+def test_model_run_split_assignment_by_global_keys(model_run, data_rows):
+    global_keys = [data_row.global_key for data_row in data_rows]
+
+    model_run.upsert_data_rows(global_keys=global_keys)
+
+    for split in ["TRAINING", "TEST", "VALIDATION", "UNASSIGNED", *DataSplit]:
+        model_run.assign_data_rows_to_split(split=split,
+                                            global_keys=global_keys)
+        splits = [
+            data_row.data_split.value
+            for data_row in model_run.model_run_data_rows()
+        ]
+        assert len(set(splits)) == 1
