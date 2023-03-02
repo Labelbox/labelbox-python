@@ -1593,7 +1593,7 @@ class Client:
             return response.json()['unarchived']
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed unarchive root feature schema node: ", response.text)
+                "Failed unarchive root feature schema nodee, message: ", response.text)
 
     def get_model_slice(self, slice_id) -> ModelSlice:
         """
