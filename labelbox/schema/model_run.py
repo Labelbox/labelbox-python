@@ -77,7 +77,8 @@ class ModelRun(DbObject):
 
 
     def _upsert_labels_by_label_ids(self,
-        label_ids: List[str]):
+        label_ids: List[str],
+        timeout_seconds=3600):
         mutation_name = 'createMEAModelRunLabelRegistrationTask'
         create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
         %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
@@ -100,10 +101,11 @@ class ModelRun(DbObject):
                                         timeout_seconds=timeout_seconds)
 
     def _upsert_labels_by_project_id(self,
-        project_id: str):
+        project_id: str,
+        timeout_seconds=3600):
         mutation_name = 'createMEAModelRunProjectLabelRegistrationTask'
         create_task_query_str = """mutation createMEAModelRunProjectLabelRegistrationTaskPyApi($modelRunId: ID!, $projectId : ID!) {
-        %s(where : { modelRunId : $modelRunId, projectId: $projectId}}
+        %s(where : { modelRunId : $modelRunId, projectId: $projectId})}
         """ % (mutation_name)
 
         res = self.client.execute(create_task_query_str, {
