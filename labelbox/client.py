@@ -1584,7 +1584,9 @@ class Client:
         Returns:
             bool
         """
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id) + '/feature-schemas/' + urllib.parse.quote(root_feature_schema_id) + '/unarchive'
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id) + '/feature-schemas/' + urllib.parse.quote(
+                root_feature_schema_id) + '/unarchive'
         response = requests.patch(
             ontology_endpoint,
             headers=self.headers,
@@ -1593,7 +1595,8 @@ class Client:
             return response.json()['unarchived']
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed unarchive root feature schema node, message: ", response.text)
+                "Failed unarchive root feature schema node, message: ",
+                response.text)
 
     def get_model_slice(self, slice_id) -> ModelSlice:
         """
