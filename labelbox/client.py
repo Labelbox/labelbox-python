@@ -1587,7 +1587,8 @@ class Client:
             bool
         """
 
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id)
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id)
         response = requests.get(
             ontology_endpoint,
             headers=self.headers,
