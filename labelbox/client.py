@@ -1593,7 +1593,7 @@ class Client:
             headers=self.headers,
         )
 
-        if response.status_code == 200:
+        if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()['featureSchemaNodes']
             tools = feature_schema_nodes['tools']
             classifications = feature_schema_nodes['classifications']
