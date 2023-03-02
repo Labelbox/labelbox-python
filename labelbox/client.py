@@ -1584,7 +1584,7 @@ class Client:
         Returns:
             bool
         """
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + ontology_id + '/feature-schemas/' + root_feature_schema_id + '/unarchive'
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id) + '/feature-schemas/' + urllib.parse.quote(root_feature_schema_id) + '/unarchive'
         response = requests.patch(
             ontology_endpoint,
             headers=self.headers,
