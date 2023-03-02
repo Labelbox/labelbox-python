@@ -1612,7 +1612,7 @@ class Client:
         If the feature schema is a nested node in the ontology and does not have associated labels, it will be deleted.
         If the feature schema is a nested node in the ontology and has associated labels, it will not be deleted.
         """
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + ontology_id + "/feature-schemas/" + feature_schema_id
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id) + "/feature-schemas/" + urllib.parse.quote(feature_schema_id)
         response = requests.delete(
             ontology_endpoint,
             headers=self.rest_endpoint_headers,
