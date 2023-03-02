@@ -1604,8 +1604,13 @@ class Client:
         res = self.execute(query_str, {"id": slice_id})
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
+
+    class RemoveFeatureFromOntologyResult:
+        archived: bool
+        deleted: bool
+
     def remove_feature_schema_from_ontology(self, ontology_id: str,
-                                            feature_schema_id: str):
+                                            feature_schema_id: str) -> RemoveFeatureFromOntologyResult:
         """
         Removes a feature schema from an ontology.
         If the feature schema is a root level node with associated labels, it will be archived.
@@ -1624,6 +1629,7 @@ class Client:
                 print(
                     'Feature schema was archived from the ontology because it had associated labels.'
                 )
+                return response_json
             elif response_json['deleted'] == True:
                 print(
                     'Feature schema was successfully removed from the ontology')
