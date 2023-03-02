@@ -37,9 +37,10 @@ def test_create_from_objects(model_run_with_model_run_data_rows,
         annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
 
-def test_create_from_objects_all_project_labels(model_run_with_model_run_all_project_data_rows,
-                             object_predictions,
-                             annotation_import_test_helpers):
+
+def test_create_from_objects_all_project_labels(
+        model_run_with_model_run_all_project_data_rows, object_predictions,
+        annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
     annotation_import = model_run_with_model_run_all_project_data_rows.add_predictions(
@@ -50,6 +51,7 @@ def test_create_from_objects_all_project_labels(model_run_with_model_run_all_pro
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
+
 
 def test_create_from_label_objects(model_run_with_model_run_data_rows,
                                    object_predictions,
