@@ -1632,12 +1632,12 @@ class Client:
         if response.status_code == requests.codes.ok:
             response_json = response.json()
             if response_json['archived'] == True:
-                print(
+                logger.info(
                     'Feature schema was archived from the ontology because it had associated labels.'
                 )
                 return response_json
             elif response_json['deleted'] == True:
-                print(
+                logger.info(
                     'Feature schema was successfully removed from the ontology')
         else:
             raise labelbox.exceptions.LabelboxError(
