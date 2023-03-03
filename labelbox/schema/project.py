@@ -411,9 +411,6 @@ class Project(DbObject, Updateable, Deletable):
                   task_name: Optional[str] = None,
                   params: Optional[ProjectExportParams] = None) -> Task:
 
-        if (task_name is None):
-            task_name = f'Export Data Rows in Project - {self.name}'
-
         _params = params or ProjectExportParams({
             "attachments": False,
             "metadata_fields": False,
