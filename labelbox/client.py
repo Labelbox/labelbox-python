@@ -1577,7 +1577,8 @@ class Client:
     def unarchive_feature_schema_node(self, ontology_id: str,
                                       root_feature_schema_id: str) -> bool:
         """
-        Returns true if the root feature schema node was successfully unarchived, false otherwise
+        Returns true if the root feature schema node was successfully unarchived, false otherwise.
+        Only root level feature schema nodes can be unarchived.
         Args:
             root_feature_schema_id (str): The ID of the root level feature schema
             ontology_id (str): The ID of the ontology
