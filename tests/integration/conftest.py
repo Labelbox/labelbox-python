@@ -231,13 +231,16 @@ def datarow(dataset, image_url):
 
 @pytest.fixture()
 def data_rows(dataset, image_url):
-    dr1 = dataset.create_data_row(row_data=image_url,
-                                  global_key=f"global-key-{uuid.uuid4()}")
-    dr2 = dataset.create_data_row(row_data=image_url,
-                                  global_key=f"global-key-{uuid.uuid4()}")
-    yield [dr1, dr2]
-    dr1.delete()
-    dr2.delete()
+    dr1 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
+    dr2 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
+    task = dataset.create_data_rows([dr1, dr2])
+    task.wait_till_done()
+
+    drs = list(dataset.export_data_rows())
+    yield drs
+
+    for dr in drs:
+        dr.delete()
 
 
 @pytest.fixture
