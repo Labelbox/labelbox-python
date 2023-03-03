@@ -3,7 +3,7 @@
 # Version 3.40.0 (YYYY-MM-DD)
 
 ## Added 
-* Upsert data rows to model runs using global keys
+* Insert newest changelogs here
 
 # Version 3.39.0 (2023-02-28)
 ## Added
@@ -11,12 +11,14 @@
 * New method `Project.move_data_rows_to_task_queue()` for moving data rows to a specified task queue.
 * Added more descriptive error messages for metadata operations
 * Added `Task.errors_url` for async tasks that return errors as separate file (e.g. `export_v2`)
+* Upsert data rows to model runs using global keys
 
 ## Changed
 * Updated `ProjectExportParams.labels` to `ProjectExportParams.label_details`
 * Removed `media_attributes` from `DataRowParams`
 * Added deprecation warnings for `LabelList` and removed its usage
 * Removed unused arguments in `Project.export_v2` and `ModelRun.export_v2`
+* In `Project.label_generator()`, we now filter skipped labels for project with videos
 
 ## Notebooks
 * Fixed `examples/label_export/images.ipynb` notebook metadata

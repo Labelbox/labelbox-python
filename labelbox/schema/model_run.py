@@ -467,8 +467,6 @@ class ModelRun(DbObject):
         create_task_query_str = """mutation exportDataRowsInModelRunPyApi($input: ExportDataRowsInModelRunInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
-        if (task_name is None):
-            task_name = f'Export Data Rows in Model Run - {self.name}'
 
         _params = params or ModelRunExportParams()
 

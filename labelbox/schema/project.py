@@ -411,9 +411,6 @@ class Project(DbObject, Updateable, Deletable):
                   task_name: Optional[str] = None,
                   params: Optional[ProjectExportParams] = None) -> Task:
 
-        if (task_name is None):
-            task_name = f'Export Data Rows in Project - {self.name}'
-
         _params = params or ProjectExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -669,16 +666,20 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self,
-                     name: str,
-                     data_rows: List[Union[str, DataRow]],
-                     priority: int = 5,
-                     consensus_settings: Optional[Dict[str, float]] = None):
-        """Create a new batch for a project. Batches is in Beta and subject to change
+    def create_batch(
+        self,
+        name: str,
+        data_rows: Optional[List[Union[str, DataRow]]] = None,
+        priority: int = 5,
+        consensus_settings: Optional[Dict[str, float]] = None,
+        global_keys: Optional[List[str]] = None,
+    ):
+        """Create a new batch for a project. One of `global_keys` or `data_rows` must be provided but not both.
 
         Args:
             name: a name for the batch, must be unique within a project
-            data_rows: Either a list of `DataRows` or Data Row ids
+            data_rows: Either a list of `DataRows` or Data Row ids. 
+            global_keys: global keys for data rows to add to the batch. 
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
             consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3, 'coverage_percentage': 0.1}
         """
@@ -688,35 +689,45 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Project must be in batch mode")
 
         dr_ids = []
-        for dr in data_rows:
-            if isinstance(dr, Entity.DataRow):
-                dr_ids.append(dr.uid)
-            elif isinstance(dr, str):
-                dr_ids.append(dr)
-            else:
-                raise ValueError("You can DataRow ids or DataRow objects")
+        if data_rows is not None:
+            for dr in data_rows:
+                if isinstance(dr, Entity.DataRow):
+                    dr_ids.append(dr.uid)
+                elif isinstance(dr, str):
+                    dr_ids.append(dr)
+                else:
+                    raise ValueError(
+                        "`data_rows` must be DataRow ids or DataRow objects")
 
-        if len(dr_ids) > 100_000:
+        if data_rows is not None:
+            row_count = len(data_rows)
+        elif global_keys is not None:
+            row_count = len(global_keys)
+        else:
+            row_count = 0
+
+        if row_count > 100_000:
             raise ValueError(
                 f"Batch exceeds max size, break into smaller batches")
-        if not len(dr_ids):
+        if not row_count:
             raise ValueError("You need at least one data row in a batch")
 
         self._wait_until_data_rows_are_processed(
-            dr_ids, self._wait_processing_max_seconds)
+            dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
             consensus_settings = ConsensusSettings(**consensus_settings).dict(
                 by_alias=True)
 
         if len(dr_ids) >= 10_000:
-            return self._create_batch_async(name, dr_ids, priority,
+            return self._create_batch_async(name, dr_ids, global_keys, priority,
                                             consensus_settings)
         else:
-            return self._create_batch_sync(name, dr_ids, priority,
+            return self._create_batch_sync(name, dr_ids, global_keys, priority,
                                            consensus_settings)
 
-    def _create_batch_sync(self, name, dr_ids, priority, consensus_settings):
+    def _create_batch_sync(self, name, dr_ids, global_keys, priority,
+                           consensus_settings):
         method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
                   project(where: {id: $projectId}) {
@@ -734,6 +745,7 @@ class Project(DbObject, Updateable, Deletable):
             "batchInput": {
                 "name": name,
                 "dataRowIds": dr_ids,
+                "globalKeys": global_keys,
                 "priority": priority,
                 "consensusSettings": consensus_settings
             }
@@ -751,7 +763,8 @@ class Project(DbObject, Updateable, Deletable):
 
     def _create_batch_async(self,
                             name: str,
-                            dr_ids: List[str],
+                            dr_ids: Optional[List[str]] = None,
+                            global_keys: Optional[List[str]] = None,
                             priority: int = 5,
                             consensus_settings: Optional[Dict[str,
                                                               float]] = None):
@@ -794,6 +807,7 @@ class Project(DbObject, Updateable, Deletable):
             "input": {
                 "batchId": batch_id,
                 "dataRowIds": dr_ids,
+                "globalKeys": global_keys,
                 "priority": priority,
             }
         }
@@ -1260,12 +1274,15 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
 
-    def _wait_until_data_rows_are_processed(self,
-                                            data_row_ids: List[str],
-                                            wait_processing_max_seconds: int,
-                                            sleep_interval=30):
+    def _wait_until_data_rows_are_processed(
+            self,
+            data_row_ids: Optional[List[str]] = None,
+            global_keys: Optional[List[str]] = None,
+            wait_processing_max_seconds: int = _wait_processing_max_seconds,
+            sleep_interval=30):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
+
         while True:
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
@@ -1273,7 +1290,8 @@ class Project(DbObject, Updateable, Deletable):
                     "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
                 )
 
-            all_good = self.__check_data_rows_have_been_processed(data_row_ids)
+            all_good = self.__check_data_rows_have_been_processed(
+                data_row_ids, global_keys)
             if all_good:
                 return
 
@@ -1281,17 +1299,25 @@ class Project(DbObject, Updateable, Deletable):
                 'Some of the data rows are still being processed, waiting...')
             time.sleep(sleep_interval)
 
-    def __check_data_rows_have_been_processed(self, data_row_ids: List[str]):
-        data_row_ids_param = "data_row_ids"
+    def __check_data_rows_have_been_processed(
+            self,
+            data_row_ids: Optional[List[str]] = None,
+            global_keys: Optional[List[str]] = None):
 
-        query_str = """query CheckAllDataRowsHaveBeenProcessedPyApi($%s: [ID!]!) {
-            queryAllDataRowsHaveBeenProcessed(dataRowIds:$%s) {
+        if data_row_ids is not None and len(data_row_ids) > 0:
+            param_name = "dataRowIds"
+            params = {param_name: data_row_ids}
+        else:
+            param_name = "globalKeys"
+            global_keys = global_keys if global_keys is not None else []
+            params = {param_name: global_keys}
+
+        query_str = """query CheckAllDataRowsHaveBeenProcessedPyApi($%s: [ID!]) {
+            queryAllDataRowsHaveBeenProcessed(%s:$%s) {
                 allDataRowsHaveBeenProcessed
            }
-        }""" % (data_row_ids_param, data_row_ids_param)
+        }""" % (param_name, param_name, param_name)
 
-        params = {}
-        params[data_row_ids_param] = data_row_ids
         response = self.client.execute(query_str, params)
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
