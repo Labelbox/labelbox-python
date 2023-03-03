@@ -1,6 +1,6 @@
-import json
 import time
 import os
+import uuid
 
 import pytest
 import requests
@@ -244,13 +244,30 @@ def test_batches(batch_project: Project, dataset: Dataset, image_url):
     ] * 2)
     task.wait_till_done()
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    batch_one = 'batch one'
-    batch_two = 'batch two'
+    batch_one = f'batch one {uuid.uuid4()}'
+    batch_two = f'batch two {uuid.uuid4()}'
     batch_project.create_batch(batch_one, [data_rows[0]])
     batch_project.create_batch(batch_two, [data_rows[1]])
 
     names = set([batch.name for batch in list(batch_project.batches())])
     assert names == {batch_one, batch_two}
+
+
+def test_create_batch_with_global_keys_sync(batch_project: Project, data_rows):
+    global_keys = [dr.global_key for dr in data_rows]
+    batch_name = f'batch {uuid.uuid4()}'
+    batch = batch_project.create_batch(batch_name, global_keys=global_keys)
+    batch_data_rows = set(batch.export_data_rows())
+    assert batch_data_rows == set(data_rows)
+
+
+def test_create_batch_with_global_keys_async(batch_project: Project, data_rows):
+    global_keys = [dr.global_key for dr in data_rows]
+    batch_name = f'batch {uuid.uuid4()}'
+    batch = batch_project._create_batch_async(batch_name,
+                                              global_keys=global_keys)
+    batch_data_rows = set(batch.export_data_rows())
+    assert batch_data_rows == set(data_rows)
 
 
 def test_media_type(client, configured_project: Project, rand_gen):
