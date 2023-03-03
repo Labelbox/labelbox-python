@@ -43,7 +43,9 @@ def test_project(client, rand_gen):
 
 
 def test_project_export_v2(configured_project_with_label):
-    project, _, _, label = configured_project_with_label
+    project, _, data_row, label = configured_project_with_label
+    project._wait_until_data_rows_are_processed(
+        [data_row.id], wait_processing_max_seconds=3600, sleep_interval=5)
     label_id = label.uid
     # Wait for exporter to retrieve latest labels
     time.sleep(10)
