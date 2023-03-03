@@ -1600,12 +1600,13 @@ class Client:
             classifications = feature_schema_nodes['classifications']
             relationships = feature_schema_nodes['relationships']
             feature_schema_node_list = tools + classifications + relationships
-
-            is_feature = lambda f: f['featureSchemaId'] == feature_schema_id
-            feature_schema_node = list(
-                filter(is_feature, feature_schema_node_list))
-            if len(feature_schema_node) > 0:
-                return bool(feature_schema_node[0]['archived'])
+            filtered_feature_schema_nodes = [
+                feature_schema_node
+                for feature_schema_node in feature_schema_node_list
+                if feature_schema_node['featureSchemaId'] == feature_schema_id
+            ]
+            if filtered_feature_schema_nodes:
+                return bool(filtered_feature_schema_nodes[0]['archived'])
             else:
                 raise labelbox.exceptions.LabelboxError(
                     "The specified feature schema was not in the ontology.")
