@@ -55,9 +55,11 @@ class ModelRun(DbObject):
         Args:
             label_ids (list): label ids to insert
             project_id (string): project uuid, all project labels will be uploaded
+                Either label_ids OR project_id is required but NOT both
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
             ID of newly generated async task
+
         """
 
         use_label_ids = label_ids is not None and len(label_ids) > 0
@@ -71,13 +73,13 @@ class ModelRun(DbObject):
             raise ValueError("Must only one of label ids, project id")
 
         if use_label_ids:
-            return self._upsert_labels_by_label_ids(label_ids)
+            return self._upsert_labels_by_label_ids(label_ids, timeout_seconds)
         else:  # use_project_id
-            return self._upsert_labels_by_project_id(project_id)
+            return self._upsert_labels_by_project_id(project_id,
+                                                     timeout_seconds)
 
-    def _upsert_labels_by_label_ids(self,
-                                    label_ids: List[str],
-                                    timeout_seconds=3600):
+    def _upsert_labels_by_label_ids(self, label_ids: List[str],
+                                    timeout_seconds: int):
         mutation_name = 'createMEAModelRunLabelRegistrationTask'
         create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
         %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
@@ -99,9 +101,8 @@ class ModelRun(DbObject):
             }})['MEALabelRegistrationTaskStatus'],
                                      timeout_seconds=timeout_seconds)
 
-    def _upsert_labels_by_project_id(self,
-                                     project_id: str,
-                                     timeout_seconds=3600):
+    def _upsert_labels_by_project_id(self, project_id: str,
+                                     timeout_seconds: int):
         mutation_name = 'createMEAModelRunProjectLabelRegistrationTask'
         create_task_query_str = """mutation createMEAModelRunProjectLabelRegistrationTaskPyApi($modelRunId: ID!, $projectId : ID!) {
         %s(where : { modelRunId : $modelRunId, projectId: $projectId})}

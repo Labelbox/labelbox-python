@@ -441,9 +441,8 @@ def model_run_with_model_run_data_rows(client, configured_project,
 
 
 @pytest.fixture
-def model_run_with_model_run_all_project_data_rows(client, configured_project,
-                                                   model_run_predictions,
-                                                   model_run):
+def model_run_with_all_project_labels(client, configured_project,
+                                      model_run_predictions, model_run):
     configured_project.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
