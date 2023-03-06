@@ -931,7 +931,6 @@ class Client:
         Example:
             >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
         """
-
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
         response = requests.delete(
@@ -1635,10 +1634,10 @@ class Client:
                 logger.info(
                     'Feature schema was archived from the ontology because it had associated labels.'
                 )
-                return response_json
             elif response_json['deleted'] == True:
                 logger.info(
                     'Feature schema was successfully removed from the ontology')
+            return response_json
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to remove feature schema from ontology, message: " +

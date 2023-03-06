@@ -5,6 +5,12 @@ from labelbox.orm.model import Entity
 import json
 import time
 
+def test_delete_tool_feature_from_ontology(client, ontology):
+    feature_schema_to_delete = ontology.normalized['tools'][0]
+    result = client.delete_feature_schema_from_ontology(ontology.uid, feature_schema_to_delete['featureSchemaId'])  
+    assert result['deleted'] == True 
+    assert result['archived'] == False
+
 
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
                   "which is not finalized yet. introduce this back when"
@@ -21,7 +27,6 @@ point = Tool(
     color="#ff0000",
 )
 
-
 def test_deletes_an_ontology(client):
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
@@ -33,7 +38,6 @@ def test_deletes_an_ontology(client):
     assert client.delete_unused_ontology(ontology.uid) is None
 
     client.delete_unused_feature_schema(feature_schema_id)
-
 
 def test_cant_delete_an_ontology_with_project(client):
     project = client.create_project(name="test project",
