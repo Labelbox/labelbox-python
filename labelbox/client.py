@@ -43,6 +43,9 @@ logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
+class DeleteFeatureFromOntologyResult:
+    archived: bool
+    deleted: bool
 
 class Client:
     """ A Labelbox client.
@@ -1597,10 +1600,6 @@ class Client:
         res = self.execute(query_str, {"id": slice_id})
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
-    class DeleteFeatureFromOntologyResult:
-        archived: bool
-        deleted: bool
-
     def delete_feature_schema_from_ontology(
             self, ontology_id: str,
             feature_schema_id: str) -> DeleteFeatureFromOntologyResult:
@@ -1637,7 +1636,10 @@ class Client:
             elif response_json['deleted'] == True:
                 logger.info(
                     'Feature schema was successfully removed from the ontology')
-            return response_json
+            result = DeleteFeatureFromOntologyResult()
+            result.archived = bool(response_json['archived'])
+            result.deleted = bool(response_json['deleted'])
+            return result
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to remove feature schema from ontology, message: " +
