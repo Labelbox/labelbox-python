@@ -524,34 +524,26 @@ def wait_for_label_processing():
                 )
             time.sleep(2)
 
-    return func  
+    return func
+
 
 @pytest.fixture
 def ontology(client):
     ontology_builder = OntologyBuilder(
         tools=[
-            Tool(
-                tool=Tool.Type.BBOX,
-                name="Box 1",
-                color="#ff0000"
-            ),
-            Tool(
-                tool=Tool.Type.BBOX,
-                name="Box 2",
-                color="#ff0000"
-            )
+            Tool(tool=Tool.Type.BBOX, name="Box 1", color="#ff0000"),
+            Tool(tool=Tool.Type.BBOX, name="Box 2", color="#ff0000")
         ],
         classifications=[
-            Classification(
-                name="Root Class",
-                class_type=Classification.Type.RADIO,
-                options=[
-                    Option(value="1", label="Option 1"),
-                    Option(value="2", label="Option 2")
-                ]
-            )
-        ]
-    )
-    ontology = client.create_ontology('Integration Test Ontology', ontology_builder.asdict(), MediaType.Image)
+            Classification(name="Root Class",
+                           class_type=Classification.Type.RADIO,
+                           options=[
+                               Option(value="1", label="Option 1"),
+                               Option(value="2", label="Option 2")
+                           ])
+        ])
+    ontology = client.create_ontology('Integration Test Ontology',
+                                      ontology_builder.asdict(),
+                                      MediaType.Image)
     yield ontology
     client.delete_unused_ontology(ontology.uid)
