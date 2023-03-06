@@ -12,6 +12,8 @@ def test_delete_tool_feature_from_ontology(client, ontology):
         ontology.uid, feature_schema_to_delete['featureSchemaId'])
     assert result['deleted'] == True
     assert result['archived'] == False
+    updatedOntology = client.get_ontology(ontology.uid)
+    assert len(updatedOntology.normalized['tools']) == 1
 
 
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
