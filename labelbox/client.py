@@ -43,9 +43,11 @@ logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
+
 class DeleteFeatureFromOntologyResult:
     archived: bool
     deleted: bool
+
 
 class Client:
     """ A Labelbox client.
