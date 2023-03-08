@@ -434,7 +434,10 @@ class Project(DbObject, Updateable, Deletable):
             "label_details": False
         })
 
-        _filters = filters or ProjectExportFilters()
+        _filters = filters or ProjectExportFilters({
+            "last_activity_at": None,
+            "label_created_at": None
+        })
 
         def _get_timezone() -> str:
             timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
