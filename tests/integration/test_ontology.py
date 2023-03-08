@@ -5,6 +5,10 @@ from labelbox.orm.model import Entity
 import json
 import time
 
+def test_unarchive_feature_schema_node(client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    result = client.unarchive_feature_schema_node(ontology.uid, feature_schema_to_unarchive['featureSchemaId'])
+    assert result == True
 
 def test_delete_tool_feature_from_ontology(client, ontology):
     feature_schema_to_delete = ontology.normalized['tools'][0]
