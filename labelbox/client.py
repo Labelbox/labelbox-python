@@ -44,6 +44,11 @@ logger = logging.getLogger(__name__)
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
+class DeleteFeatureFromOntologyResult:
+    archived: bool
+    deleted: bool
+
+
 class Client:
     """ A Labelbox client.
 
@@ -931,7 +936,6 @@ class Client:
         Example:
             >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
         """
-
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
         response = requests.delete(
@@ -1597,3 +1601,48 @@ class Client:
         """
         res = self.execute(query_str, {"id": slice_id})
         return Entity.ModelSlice(self, res["getSavedQuery"])
+
+    def delete_feature_schema_from_ontology(
+            self, ontology_id: str,
+            feature_schema_id: str) -> DeleteFeatureFromOntologyResult:
+        """
+        Deletes or archives a feature schema from an ontology.
+        If the feature schema is a root level node with associated labels, it will be archived.
+        If the feature schema is a nested node in the ontology and does not have associated labels, it will be deleted.
+        If the feature schema is a nested node in the ontology and has associated labels, it will not be deleted.
+
+        Args:
+            ontology_id (str): The ID of the ontology.
+            feature_schema_id (str): The ID of the feature schema.
+
+        Returns:
+            DeleteFeatureFromOntologyResult: The result of the feature schema removal.
+
+        Example:
+            >>> client.remove_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
+        """
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id) + "/feature-schemas/" + urllib.parse.quote(
+                feature_schema_id)
+        response = requests.delete(
+            ontology_endpoint,
+            headers=self.headers,
+        )
+
+        if response.status_code == requests.codes.ok:
+            response_json = response.json()
+            if response_json['archived'] == True:
+                logger.info(
+                    'Feature schema was archived from the ontology because it had associated labels.'
+                )
+            elif response_json['deleted'] == True:
+                logger.info(
+                    'Feature schema was successfully removed from the ontology')
+            result = DeleteFeatureFromOntologyResult()
+            result.archived = bool(response_json['archived'])
+            result.deleted = bool(response_json['deleted'])
+            return result
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to remove feature schema from ontology, message: " +
+                str(response.json()['message']))
