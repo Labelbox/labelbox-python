@@ -13,6 +13,25 @@ def test_is_feature_schema_archived(client, ontology):
     assert result == False
 
 
+def test_is_feature_schema_archived_for_non_existing_feature_schema(
+        client, ontology):
+    with pytest.raises(
+            Exception,
+            match="The specified feature schema was not in the ontology"):
+        client.is_feature_schema_archived(ontology.uid,
+                                          'invalid-feature-schema-id')
+
+
+def test_is_feature_schema_archived_for_non_existing_ontology(client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    with pytest.raises(
+            Exception,
+            match="Resource 'Ontology' not found for params: 'invalid-ontology'"
+    ):
+        client.is_feature_schema_archived(
+            'invalid-ontology', feature_schema_to_unarchive['featureSchemaId'])
+
+
 def test_delete_tool_feature_from_ontology(client, ontology):
     feature_schema_to_delete = ontology.normalized['tools'][0]
     assert len(ontology.normalized['tools']) == 2
