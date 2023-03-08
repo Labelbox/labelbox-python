@@ -422,7 +422,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def export_v2(self,
                   task_name: Optional[str] = None,
-                  filters: ProjectExportFilters = None,
+                  filters: Optional[ProjectExportFilters] = None,
                   params: Optional[ProjectExportParams] = None) -> Task:
 
         _params = params or ProjectExportParams({
