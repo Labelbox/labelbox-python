@@ -13,6 +13,26 @@ def test_unarchive_feature_schema_node(client, ontology):
     assert result == True
 
 
+def test_unarchive_feature_schema_node_for_non_existing_feature_schema(
+        client, ontology):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to find feature schema node by id: invalid-feature-schema-id"
+    ):
+        client.unarchive_feature_schema_node(ontology.uid,
+                                             'invalid-feature-schema-id')
+
+
+def test_unarchive_feature_schema_node_for_non_existing_ontology(
+        client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    with pytest.raises(Exception,
+                       match="Failed to find ontology by id: invalid-ontology"):
+        client.unarchive_feature_schema_node(
+            'invalid-ontology', feature_schema_to_unarchive['featureSchemaId'])
+
+
 def test_delete_tool_feature_from_ontology(client, ontology):
     feature_schema_to_delete = ontology.normalized['tools'][0]
     assert len(ontology.normalized['tools']) == 2
