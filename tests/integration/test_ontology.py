@@ -6,6 +6,17 @@ import json
 import time
 
 
+def test_delete_tool_feature_from_ontology(client, ontology):
+    feature_schema_to_delete = ontology.normalized['tools'][0]
+    assert len(ontology.normalized['tools']) == 2
+    result = client.delete_feature_schema_from_ontology(
+        ontology.uid, feature_schema_to_delete['featureSchemaId'])
+    assert result.deleted == True
+    assert result.archived == False
+    updatedOntology = client.get_ontology(ontology.uid)
+    assert len(updatedOntology.normalized['tools']) == 1
+
+
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
                   "which is not finalized yet. introduce this back when"
                   "Relationship feature is complete and we introduce"
