@@ -414,14 +414,14 @@ class Project(DbObject, Updateable, Deletable):
         For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
         
         >>>     task = project.export_v2(
-        >>>     filters={
-        >>>         "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>         "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
-        >>>     },
-        >>>     params={
-        >>>         "include_performance_details": False,
-        >>>         "include_labels": True
-        >>>     })
+        >>>         filters={
+        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>         },
+        >>>         params={
+        >>>             "include_performance_details": False,
+        >>>             "include_labels": True
+        >>>         })
         >>>     task.wait_till_done()
         >>>     task.result
         """
