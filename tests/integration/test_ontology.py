@@ -6,6 +6,13 @@ import json
 import time
 
 
+def test_is_feature_schema_archived(client, ontology):
+    feature_schema_to_check = ontology.normalized['tools'][0]
+    result = client.is_feature_schema_archived(
+        ontology.uid, feature_schema_to_check['featureSchemaId'])
+    assert result == False
+
+
 def test_delete_tool_feature_from_ontology(client, ontology):
     feature_schema_to_delete = ontology.normalized['tools'][0]
     assert len(ontology.normalized['tools']) == 2
