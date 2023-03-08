@@ -4,7 +4,7 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
 import ndjson
@@ -450,7 +450,7 @@ class Project(DbObject, Updateable, Deletable):
           %s(input: $input) {taskId} }
           """ % (mutation_name)
 
-        search_query = []
+        search_query: List[Dict[str, Collection[str]]] = []
         query_params = {
             "input": {
                 "taskName": task_name,
