@@ -66,7 +66,7 @@ def test_project_export_v2(configured_project_with_label):
         filters={"last_activity_at": [None, "2050-01-01 00:00:00"]})
 
     task_from = project.export_v2(
-        filters={"last_activity_at": ["2000-01-01 00:00:00", None]})
+        filters={"label_created_at": ["2000-01-01 00:00:00", None]})
 
     assert task.name == task_name
     task.wait_till_done()

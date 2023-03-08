@@ -402,28 +402,29 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    """
-    Creates a project run export task with the given params and returns the task.
-    
-    >>>     task = project.export_v2(
-    >>>     filters={
-    >>>         "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-    >>>         "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
-    >>>     },
-    >>>     params={
-    >>>         "include_performance_details": False,
-    >>>         "include_labels": True
-    >>>     })
-    >>>     task.wait_till_done()
-    >>>     task.result
 
-    
-    """
 
     def export_v2(self,
                   task_name: Optional[str] = None,
                   filters: Optional[ProjectExportFilters] = None,
                   params: Optional[ProjectExportParams] = None) -> Task:
+        """
+        Creates a project run export task with the given params and returns the task.
+
+        For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
+        
+        >>>     task = project.export_v2(
+        >>>     filters={
+        >>>         "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>         "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>     },
+        >>>     params={
+        >>>         "include_performance_details": False,
+        >>>         "include_labels": True
+        >>>     })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
 
         _params = params or ProjectExportParams({
             "attachments": False,
@@ -450,6 +451,8 @@ class Project(DbObject, Updateable, Deletable):
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
+        
+        search_query = []
         query_params = {
             "input": {
                 "taskName": task_name,
@@ -457,7 +460,7 @@ class Project(DbObject, Updateable, Deletable):
                     "projectId": self.uid,
                     "searchQuery": {
                         "scope": None,
-                        "query": []
+                        "query": search_query
                     }
                 },
                 "params": {
@@ -477,14 +480,15 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        if _filters.get('last_activity_at') is not None:
+
+        if "last_activity_at" in _filters and  _filters['last_activity_at'] is not None:
             if timezone is None:
                 timezone = _get_timezone()
             values = _filters['last_activity_at']
             start, end = values
             if (start is not None and end is not None):
                 [_validate_datetime(date) for date in values]
-                query_params["input"]["filters"]['searchQuery']['query'].append(
+                search_query.append(
                     {
                         "type": "data_row_last_activity_at",
                         "value": {
@@ -498,7 +502,7 @@ class Project(DbObject, Updateable, Deletable):
                     })
             elif (start is not None):
                 _validate_datetime(start)
-                query_params["input"]["filters"]['searchQuery']['query'].append(
+                search_query.append(
                     {
                         "type": "data_row_last_activity_at",
                         "value": {
@@ -509,7 +513,7 @@ class Project(DbObject, Updateable, Deletable):
                     })
             elif (end is not None):
                 _validate_datetime(end)
-                query_params["input"]["filters"]['searchQuery']['query'].append(
+                search_query.append(
                     {
                         "type": "data_row_last_activity_at",
                         "value": {
@@ -519,14 +523,14 @@ class Project(DbObject, Updateable, Deletable):
                         }
                     })
 
-        if _filters.get('label_created_at') is not None:
+        if "label_created_at" in _filters and _filters["label_created_at"] is not None:
             if timezone is None:
                 timezone = _get_timezone()
             values = _filters['label_created_at']
             start, end = values
             if (start is not None and end is not None):
                 [_validate_datetime(date) for date in values]
-                query_params["input"]["filters"]['searchQuery']['query'].append(
+                search_query.append(
                     {
                         "type": "labeled_at",
                         "value": {
@@ -539,7 +543,7 @@ class Project(DbObject, Updateable, Deletable):
                     })
             elif (start is not None):
                 _validate_datetime(start)
-                query_params["input"]["filters"]['searchQuery']['query'].append(
+                search_query.append(
                     {
                         "type": "labeled_at",
                         "value": {
@@ -549,7 +553,7 @@ class Project(DbObject, Updateable, Deletable):
                     })
             elif (end is not None):
                 _validate_datetime(end)
-                query_params["input"]["filters"]['searchQuery']['query'].append(
+                search_query.append(
                     {
                         "type": "labeled_at",
                         "value": {
