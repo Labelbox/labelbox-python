@@ -1581,7 +1581,7 @@ class Client:
     def unarchive_feature_schema_node(self, ontology_id: str,
                                       root_feature_schema_id: str) -> bool:
         """
-        Returns true if the root feature schema node was successfully unarchived, false otherwise.
+        Returns true if the root feature schema node was successfully unarchived.
         Only root level feature schema nodes can be unarchived.
         Args:
             root_feature_schema_id (str): The ID of the root level feature schema
@@ -1597,10 +1597,14 @@ class Client:
             headers=self.headers,
         )
         if response.status_code == requests.codes.ok:
-            return response.json()['unarchived']
+            unarchived = bool(response.json()['unarchived'])
+            if (unarchived == False):
+                raise labelbox.exceptions.LabelboxError(
+                    "Failed unarchive the feature schema.", response.text)
+            return unarchived
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed unarchive root feature schema node, message: ",
+                "Failed unarchive the feature schema node, message: ",
                 response.text)
 
     def get_model_slice(self, slice_id) -> ModelSlice:
