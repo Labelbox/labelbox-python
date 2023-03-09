@@ -175,6 +175,18 @@ def image_url(client):
 def pdf_url(client):
     return client.upload_file('tests/assets/loremipsum.pdf')
 
+@pytest.fixture(scope="session")
+def pdf_entity_row_data(client):
+    pdf_url = client.upload_file('tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483.pdf')
+    text_layer_url = client.upload_file('tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json')
+
+    return {
+        "row_data": {
+            "pdf_url": pdf_url,
+            "text_layer_url": text_layer_url
+        },
+        "global_key": str(uuid.uuid4())
+    }    
 
 @pytest.fixture
 def project(client, rand_gen):

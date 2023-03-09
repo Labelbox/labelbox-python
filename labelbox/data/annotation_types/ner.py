@@ -33,4 +33,4 @@ class DocumentTextSelection(BaseModel):
 class DocumentEntity(BaseModel):
     """ Represents a text entity """
     name: str
-    text_selections: List[DocumentTextSelection]
+    textSelections: List[DocumentTextSelection]
