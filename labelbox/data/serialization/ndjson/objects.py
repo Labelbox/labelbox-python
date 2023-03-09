@@ -12,7 +12,7 @@ from labelbox.data.annotation_types import feature
 from labelbox.data.annotation_types.data.video import VideoData
 
 from ...annotation_types.data import ImageData, TextData, MaskData
-from ...annotation_types.ner import TextEntity
+from ...annotation_types.ner import DocumentEntity, DocumentTextSelection, TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoObjectAnnotation
@@ -372,6 +372,34 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
                    confidence=confidence)
 
 
+
+
+class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
+    name: str
+    text_selections: List[DocumentTextSelection]
+
+
+    def to_common(self) -> DocumentEntity:
+        return TextEntity(name=self.name, text_selections=self.text_selections)
+
+    @classmethod
+    def from_common(cls,
+                    document_entity: DocumentEntity,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[ImageData, TextData],
+                    confidence: Optional[float] = None) -> "NDDocumentEntity":
+        return cls(text_selections=document_entity.text_selections,
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
+
+
 class NDObject:
 
     @staticmethod
@@ -434,7 +462,8 @@ class NDObject:
                 Polygon: NDPolygon,
                 Rectangle: NDRectangle,
                 Mask: NDMask,
-                TextEntity: NDTextEntity
+                TextEntity: NDTextEntity,
+                DocumentEntity: NDDocumentEntity,
             }.get(type(annotation.value))
         if result is None:
             raise TypeError(
@@ -444,6 +473,6 @@ class NDObject:
 
 
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     NDTextEntity]
+                     NDTextEntity, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
