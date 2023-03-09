@@ -1600,7 +1600,7 @@ class Client:
             unarchived = bool(response.json()['unarchived'])
             if (unarchived == False):
                 raise labelbox.exceptions.LabelboxError(
-                    "Failed unarchive the feature schema.", response.text)
+                    "Failed unarchive the feature schema.")
             return unarchived
         else:
             raise labelbox.exceptions.LabelboxError(
