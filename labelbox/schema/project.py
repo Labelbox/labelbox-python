@@ -4,7 +4,7 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
 import ndjson
@@ -20,6 +20,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.export_filters import ProjectExportFilters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
@@ -44,6 +45,20 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_datetime(string_date: str) -> bool:
+    """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
+    if string_date:
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+            try:
+                datetime.strptime(string_date, fmt)
+                return True
+            except ValueError:
+                pass
+        raise ValueError(f"""Incorrect format for: {string_date}.
+        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
+    return True
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -337,19 +352,6 @@ class Project(DbObject, Updateable, Deletable):
                 if dictionary.get(c)
             ])
 
-        def _validate_datetime(string_date: str) -> bool:
-            """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
-            if string_date:
-                for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
-                    try:
-                        datetime.strptime(string_date, fmt)
-                        return True
-                    except ValueError:
-                        pass
-                raise ValueError(f"""Incorrect format for: {string_date}.
-                Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
-            return True
-
         sleep_time = 2
         id_param = "projectId"
         filter_param = ""
@@ -400,16 +402,27 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    """
-    Creates a project run export task with the given params and returns the task.
-    
-    >>>    export_task = export_v2("my_export_task", filter={"media_attributes": True})
-    
-    """
-
     def export_v2(self,
                   task_name: Optional[str] = None,
+                  filters: Optional[ProjectExportFilters] = None,
                   params: Optional[ProjectExportParams] = None) -> Task:
+        """
+        Creates a project run export task with the given params and returns the task.
+
+        For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
+        
+        >>>     task = project.export_v2(
+        >>>         filters={
+        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>         },
+        >>>         params={
+        >>>             "include_performance_details": False,
+        >>>             "include_labels": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
 
         _params = params or ProjectExportParams({
             "attachments": False,
@@ -420,15 +433,33 @@ class Project(DbObject, Updateable, Deletable):
             "label_details": False
         })
 
+        _filters = filters or ProjectExportFilters({
+            "last_activity_at": None,
+            "label_created_at": None
+        })
+
+        def _get_timezone() -> str:
+            timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
+            tz_res = self.client.execute(timezone_query_str)
+            return tz_res["user"]["timezone"] or "UTC"
+
+        timezone: Optional[str] = None
+
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
+
+        search_query: List[Dict[str, Collection[str]]] = []
         query_params = {
             "input": {
                 "taskName": task_name,
                 "filters": {
-                    "projectId": self.uid
+                    "projectId": self.uid,
+                    "searchQuery": {
+                        "scope": None,
+                        "query": search_query
+                    }
                 },
                 "params": {
                     "includeAttachments":
@@ -446,6 +477,84 @@ class Project(DbObject, Updateable, Deletable):
                 },
             }
         }
+
+        if "last_activity_at" in _filters and _filters[
+                'last_activity_at'] is not None:
+            if timezone is None:
+                timezone = _get_timezone()
+            values = _filters['last_activity_at']
+            start, end = values
+            if (start is not None and end is not None):
+                [_validate_datetime(date) for date in values]
+                search_query.append({
+                    "type": "data_row_last_activity_at",
+                    "value": {
+                        "operator": "BETWEEN",
+                        "timezone": timezone,
+                        "value": {
+                            "min": start,
+                            "max": end
+                        }
+                    }
+                })
+            elif (start is not None):
+                _validate_datetime(start)
+                search_query.append({
+                    "type": "data_row_last_activity_at",
+                    "value": {
+                        "operator": "GREATER_THAN_OR_EQUAL",
+                        "timezone": timezone,
+                        "value": start
+                    }
+                })
+            elif (end is not None):
+                _validate_datetime(end)
+                search_query.append({
+                    "type": "data_row_last_activity_at",
+                    "value": {
+                        "operator": "LESS_THAN_OR_EQUAL",
+                        "timezone": timezone,
+                        "value": end
+                    }
+                })
+
+        if "label_created_at" in _filters and _filters[
+                "label_created_at"] is not None:
+            if timezone is None:
+                timezone = _get_timezone()
+            values = _filters['label_created_at']
+            start, end = values
+            if (start is not None and end is not None):
+                [_validate_datetime(date) for date in values]
+                search_query.append({
+                    "type": "labeled_at",
+                    "value": {
+                        "operator": "BETWEEN",
+                        "value": {
+                            "min": start,
+                            "max": end
+                        }
+                    }
+                })
+            elif (start is not None):
+                _validate_datetime(start)
+                search_query.append({
+                    "type": "labeled_at",
+                    "value": {
+                        "operator": "GREATER_THAN_OR_EQUAL",
+                        "value": start
+                    }
+                })
+            elif (end is not None):
+                _validate_datetime(end)
+                search_query.append({
+                    "type": "labeled_at",
+                    "value": {
+                        "operator": "LESS_THAN_OR_EQUAL",
+                        "value": end
+                    }
+                })
+
         res = self.client.execute(
             create_task_query_str,
             query_params,

@@ -53,14 +53,31 @@ def test_project_export_v2(configured_project_with_label):
     include_performance_details = True
     task = project.export_v2(
         task_name,
+        filters={
+            "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+            "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        },
         params={
             "include_performance_details": include_performance_details,
             "include_labels": True
         })
+
+    task_to = project.export_v2(
+        filters={"last_activity_at": [None, "2050-01-01 00:00:00"]})
+
+    task_from = project.export_v2(
+        filters={"label_created_at": ["2000-01-01 00:00:00", None]})
+
     assert task.name == task_name
     task.wait_till_done()
     assert task.status == "COMPLETE"
     assert task.errors is None
+
+    task_to.wait_till_done()
+    assert task_to.status == "COMPLETE"
+
+    task_from.wait_till_done()
+    assert task_from.status == "COMPLETE"
 
     for task_result in task.result:
         task_project = task_result['projects'][project.uid]
