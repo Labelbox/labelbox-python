@@ -521,6 +521,8 @@ class ModelRun(DbObject):
                     "modelRunId": self.uid
                 },
                 "params": {
+                    "mediaTypeOverride":
+                        _params.get('media_type_override', None),
                     "includeAttachments":
                         _params.get('attachments', False),
                     "includeMetadata":
