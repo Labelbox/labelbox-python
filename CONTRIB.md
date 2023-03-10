@@ -63,7 +63,7 @@ Each release should follow the following steps:
 6. This will kick off a Github Actions workflow that will:
   - Build the library in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
   - Upload the distribution archives in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives)
-  with credentials for the `labelbox` PyPI user.
+ - with credentials for the `labelbox` PyPI user.
   
   ## Running Jupyter Notebooks
   
@@ -78,4 +78,4 @@ Each release should follow the following steps:
     'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
   ]
   4. Go to the root of your project and run `jupyter notebook` to start the server
-  5. 
+  
