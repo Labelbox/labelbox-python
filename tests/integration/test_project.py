@@ -59,7 +59,8 @@ def test_project_export_v2(configured_project_with_label):
         },
         params={
             "include_performance_details": include_performance_details,
-            "include_labels": True
+            "include_labels": True,
+            "media_type_override": MediaType.Image
         })
 
     task_to = project.export_v2(
