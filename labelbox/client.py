@@ -36,18 +36,13 @@ from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology import Ontology
+from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
-
-class DeleteFeatureFromOntologyResult:
-    archived: bool
-    deleted: bool
 
 
 class Client:
