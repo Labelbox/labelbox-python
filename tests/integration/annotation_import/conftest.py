@@ -440,6 +440,22 @@ def model_run_with_model_run_data_rows(client, configured_project,
     # TODO: Delete resources when that is possible ..
 
 
+@pytest.fixture
+def model_run_with_all_project_labels(client, configured_project,
+                                      model_run_predictions, model_run):
+    configured_project.enable_model_assisted_labeling()
+
+    upload_task = LabelImport.create_from_objects(
+        client, configured_project.uid, f"label-import-{uuid.uuid4()}",
+        model_run_predictions)
+    upload_task.wait_until_done()
+    model_run.upsert_labels(project_id=configured_project.uid)
+    time.sleep(3)
+    yield model_run
+    model_run.delete()
+    # TODO: Delete resources when that is possible ..
+
+
 class AnnotationImportTestHelpers:
 
     @classmethod

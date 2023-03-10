@@ -98,7 +98,7 @@ def process_label(label: Label,
                     image=image,
                     category_id=categories[annotation.name])
 
-                if coco_segment_info is None:
+                if coco_vector_info is None:
                     # Filter out empty annotations
                     continue
 

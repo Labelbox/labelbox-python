@@ -11,9 +11,19 @@ from pydantic import constr
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+import json
 
 FeatureSchemaId: Type[str] = constr(min_length=25, max_length=25)
 SchemaId: Type[str] = constr(min_length=25, max_length=25)
+
+
+class DeleteFeatureFromOntologyResult:
+    archived: bool
+    deleted: bool
+
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__.split(".")[-1],
+                            json.dumps(self.__dict__))
 
 
 class FeatureSchema(DbObject):
