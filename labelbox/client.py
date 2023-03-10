@@ -1687,15 +1687,15 @@ class Client:
                 str(response.json()['message']))
         
     def unarchive_feature_schema_node(self, ontology_id: str,
-                                      root_feature_schema_id: str) -> bool:
+                                      root_feature_schema_id: str) -> None:
         """
-        Returns true if the root feature schema node was successfully unarchived.
+        Unarchives a feature schema node in an ontology.
         Only root level feature schema nodes can be unarchived.
         Args:
-            root_feature_schema_id (str): The ID of the root level feature schema
             ontology_id (str): The ID of the ontology
+            root_feature_schema_id (str): The ID of the root level feature schema
         Returns:
-            bool
+            None
         """
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + '/feature-schemas/' + urllib.parse.quote(
@@ -1705,11 +1705,9 @@ class Client:
             headers=self.headers,
         )
         if response.status_code == requests.codes.ok:
-            unarchived = bool(response.json()['unarchived'])
-            if (unarchived == False):
+            if not bool(response.json()['unarchived']):
                 raise labelbox.exceptions.LabelboxError(
-                    "Failed unarchive the feature schema.")
-            return unarchived
+                                "Failed unarchive the feature schema.")
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed unarchive the feature schema node, message: ",
