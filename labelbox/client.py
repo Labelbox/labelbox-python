@@ -1685,7 +1685,7 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to remove feature schema from ontology, message: " +
                 str(response.json()['message']))
-        
+
     def unarchive_feature_schema_node(self, ontology_id: str,
                                       root_feature_schema_id: str) -> None:
         """
@@ -1707,7 +1707,7 @@ class Client:
         if response.status_code == requests.codes.ok:
             if not bool(response.json()['unarchived']):
                 raise labelbox.exceptions.LabelboxError(
-                                "Failed unarchive the feature schema.")
+                    "Failed unarchive the feature schema.")
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed unarchive the feature schema node, message: ",
