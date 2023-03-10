@@ -5,8 +5,9 @@
 * Added new client method unarchive_feature_schema_node
 * Added new client method delete_feature_schema_from_ontology
 
-## Added 
-* Insert newest changelogs here
+## Added
+* Support Global keys to reference data rows in `Project.create_batch()`, `ModelRun.assign_data_rows_to_split()`.
+
 
 # Version 3.39.0 (2023-02-28)
 ## Added
