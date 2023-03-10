@@ -1685,3 +1685,30 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to remove feature schema from ontology, message: " +
                 str(response.json()['message']))
+
+    def unarchive_feature_schema_node(self, ontology_id: str,
+                                      root_feature_schema_id: str) -> None:
+        """
+        Unarchives a feature schema node in an ontology.
+        Only root level feature schema nodes can be unarchived.
+        Args:
+            ontology_id (str): The ID of the ontology
+            root_feature_schema_id (str): The ID of the root level feature schema
+        Returns:
+            None
+        """
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id) + '/feature-schemas/' + urllib.parse.quote(
+                root_feature_schema_id) + '/unarchive'
+        response = requests.patch(
+            ontology_endpoint,
+            headers=self.headers,
+        )
+        if response.status_code == requests.codes.ok:
+            if not bool(response.json()['unarchived']):
+                raise labelbox.exceptions.LabelboxError(
+                    "Failed unarchive the feature schema.")
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed unarchive the feature schema node, message: ",
+                response.text)

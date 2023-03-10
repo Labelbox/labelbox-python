@@ -246,3 +246,30 @@ def test_ontology_create_read(client, rand_gen):
         assert _get_attr_stringify_json(created_ontology,
                                         attr) == _get_attr_stringify_json(
                                             queried_ontology, attr)
+
+
+def test_unarchive_feature_schema_node(client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    result = client.unarchive_feature_schema_node(
+        ontology.uid, feature_schema_to_unarchive['featureSchemaId'])
+    assert result == None
+
+
+def test_unarchive_feature_schema_node_for_non_existing_feature_schema(
+        client, ontology):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to find feature schema node by id: invalid-feature-schema-id"
+    ):
+        client.unarchive_feature_schema_node(ontology.uid,
+                                             'invalid-feature-schema-id')
+
+
+def test_unarchive_feature_schema_node_for_non_existing_ontology(
+        client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    with pytest.raises(Exception,
+                       match="Failed to find ontology by id: invalid-ontology"):
+        client.unarchive_feature_schema_node(
+            'invalid-ontology', feature_schema_to_unarchive['featureSchemaId'])
