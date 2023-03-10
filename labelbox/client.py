@@ -36,17 +36,13 @@ from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
-
-class DeleteFeatureFromOntologyResult:
-    archived: bool
-    deleted: bool
 
 
 class Client:
@@ -1577,6 +1573,49 @@ class Client:
         """
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
+
+    def is_feature_schema_archived(self, ontology_id: str,
+                                   feature_schema_id: str) -> bool:
+        """
+        Returns true if a feature schema is archived in the specified ontology, returns false otherwise.
+
+        Args:
+            feature_schema_id (str): The ID of the feature schema
+            ontology_id (str): The ID of the ontology
+        Returns:
+            bool
+        """
+
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id)
+        response = requests.get(
+            ontology_endpoint,
+            headers=self.headers,
+        )
+
+        if response.status_code == requests.codes.ok:
+            feature_schema_nodes = response.json()['featureSchemaNodes']
+            tools = feature_schema_nodes['tools']
+            classifications = feature_schema_nodes['classifications']
+            relationships = feature_schema_nodes['relationships']
+            feature_schema_node_list = tools + classifications + relationships
+            filtered_feature_schema_nodes = [
+                feature_schema_node
+                for feature_schema_node in feature_schema_node_list
+                if feature_schema_node['featureSchemaId'] == feature_schema_id
+            ]
+            if filtered_feature_schema_nodes:
+                return bool(filtered_feature_schema_nodes[0]['archived'])
+            else:
+                raise labelbox.exceptions.LabelboxError(
+                    "The specified feature schema was not in the ontology.")
+
+        elif response.status_code == 404:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Ontology, ontology_id)
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get the feature schema archived status.")
 
     def get_model_slice(self, slice_id) -> ModelSlice:
         """

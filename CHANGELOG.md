@@ -1,6 +1,9 @@
 # Changelog
 
 # Version 3.40.0 (YYYY-MM-DD)
+* Added new client method is_feature_schema_archived
+* Added new client method unarchive_feature_schema_node
+* Added new client method delete_feature_schema_from_ontology
 
 ## Added 
 * Insert newest changelogs here
