@@ -67,7 +67,7 @@ Each release should follow the following steps:
   
   ## Running Jupyter Notebooks
   
-  We have plenty of code samples in the _examples_ directory and using them for testing can help us increase our productivity. One way to use jupyter notebooks is to run the jupyter server locally (another way is to use a VSC plugin, not documented here). It works really fast.
+  We have plenty of good samples in the _examples_ directory and using them for testing can help us increase our productivity. One way to use jupyter notebooks is to run the jupyter server locally (another way is to use a VSC plugin, not documented here). It works really fast.
   
   Make sure your notebook will use your source code:
   1. `ipython profile create`
