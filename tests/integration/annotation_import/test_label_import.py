@@ -38,6 +38,41 @@ def test_create_from_objects(client, configured_project, object_predictions,
         label_import.input_file_url, object_predictions)
 
 
+def test_data_row_validation_errors(client, configured_project,
+                                    object_predictions):
+    name = str(uuid.uuid4())
+    # Set up data for validation errors
+    # Invalid: Remove 'dataRow' part entirely
+    del object_predictions[0]['dataRow']
+
+    # Invalid: Set both id and globalKey
+    object_predictions[1]['dataRow'] = {
+        'id': 'some id',
+        'globalKey': 'some global key'
+    }
+
+    # Valid
+    object_predictions[2]['dataRow'] = {
+        'id': 'some id',
+    }
+
+    # Valid
+    object_predictions[3]['dataRow'] = {
+        'globalKey': 'some global key',
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        label_import = LabelImport.create_from_objects(
+            client=client,
+            project_id=configured_project.uid,
+            name=name,
+            labels=object_predictions)
+    exception_str = str(exc_info.value)
+    assert "Found 2 annotations with errors" in exception_str
+    assert "'dataRow' is missing in" in exception_str
+    assert "Must provide only one of 'id' or 'globalKey' for 'dataRow'" in exception_str
+
+
 def test_create_from_label_objects(client, configured_project,
                                    object_predictions,
                                    annotation_import_test_helpers):
