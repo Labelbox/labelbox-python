@@ -8,6 +8,7 @@ import logging
 import mimetypes
 import os
 import time
+import urllib.parse
 
 from google.api_core import retry
 import requests
@@ -28,13 +29,14 @@ from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, Tool, Classification
+from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
-from labelbox.schema.slice import CatalogSlice
+from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
@@ -55,7 +57,8 @@ class Client:
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
-                 app_url="https://app.labelbox.com"):
+                 app_url="https://app.labelbox.com",
+                 rest_endpoint="https://api.labelbox.com/api/v1"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -88,6 +91,7 @@ class Client:
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.app_url = app_url
         self.endpoint = endpoint
+        self.rest_endpoint = rest_endpoint
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -104,7 +108,7 @@ class Client:
                 params=None,
                 data=None,
                 files=None,
-                timeout=30.0,
+                timeout=60.0,
                 experimental=False):
         """ Sends a request to the server for the execution of the
         given query.
@@ -899,6 +903,191 @@ class Client:
         normalized = {'tools': tools, 'classifications': classifications}
         return self.create_ontology(name, normalized, media_type)
 
+    def delete_unused_feature_schema(self, feature_schema_id: str) -> None:
+        """
+        Deletes a feature schema if it is not used by any ontologies or annotations
+        Args:
+            feature_schema_id (str): The id of the feature schema to delete
+        Example:
+            >>> client.delete_unused_feature_schema("cleabc1my012ioqvu5anyaabc")
+        """
+
+        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
+            feature_schema_id)
+        response = requests.delete(
+            endpoint,
+            headers=self.headers,
+        )
+
+        if response.status_code != requests.codes.no_content:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the feature schema, message: " +
+                str(response.json()['message']))
+
+    def delete_unused_ontology(self, ontology_id: str) -> None:
+        """
+        Deletes an ontology if it is not used by any annotations
+        Args:
+            ontology_id (str): The id of the ontology to delete
+        Example:
+            >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
+        """
+        endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id)
+        response = requests.delete(
+            endpoint,
+            headers=self.headers,
+        )
+
+        if response.status_code != requests.codes.no_content:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to delete the ontology, message: " +
+                str(response.json()['message']))
+
+    def update_feature_schema_title(self, feature_schema_id: str,
+                                    title: str) -> FeatureSchema:
+        """
+        Updates a title of a feature schema
+        Args:
+            feature_schema_id (str): The id of the feature schema to update
+            title (str): The new title of the feature schema
+        Returns:
+            The updated feature schema
+        Example:
+            >>> client.update_feature_schema_title("cleabc1my012ioqvu5anyaabc", "New Title")
+        """
+
+        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
+            feature_schema_id) + '/definition'
+        response = requests.patch(
+            endpoint,
+            headers=self.headers,
+            json={"title": title},
+        )
+
+        if response.status_code == requests.codes.ok:
+            return self.get_feature_schema(feature_schema_id)
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to update the feature schema, message: " +
+                str(response.json()['message']))
+
+    def upsert_feature_schema(self, feature_schema: Dict) -> FeatureSchema:
+        """
+        Upserts a feature schema
+        Args:
+            feature_schema: Dict representing the feature schema to upsert
+        Returns:
+            The upserted feature schema
+        Example:
+            Insert a new feature schema
+            >>> tool = Tool(name="tool", tool=Tool.Type.BOUNDING_BOX, color="#FF0000")
+            >>> client.upsert_feature_schema(tool.asdict())
+            Update an existing feature schema
+            >>> tool = Tool(feature_schema_id="cleabc1my012ioqvu5anyaabc", name="tool", tool=Tool.Type.BOUNDING_BOX, color="#FF0000")
+            >>> client.upsert_feature_schema(tool.asdict())
+        """
+
+        feature_schema_id = feature_schema.get(
+            "featureSchemaId") or "new_feature_schema_id"
+        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
+            feature_schema_id)
+        response = requests.put(
+            endpoint,
+            headers=self.headers,
+            json={"normalized": json.dumps(feature_schema)},
+        )
+
+        if response.status_code == requests.codes.ok:
+            return self.get_feature_schema(response.json()['schemaId'])
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to upsert the feature schema, message: " +
+                str(response.json()['message']))
+
+    def insert_feature_schema_into_ontology(self, feature_schema_id: str,
+                                            ontology_id: str,
+                                            position: int) -> None:
+        """
+        Inserts a feature schema into an ontology. If the feature schema is already in the ontology,
+        it will be moved to the new position.
+        Args:
+            feature_schema_id (str): The feature schema id to upsert
+            ontology_id (str): The id of the ontology to insert the feature schema into
+            position (int): The position number of the feature schema in the ontology
+        Example:
+            >>> client.insert_feature_schema_into_ontology("cleabc1my012ioqvu5anyaabc", "clefdvwl7abcgefgu3lyvcde", 2)
+        """
+
+        endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
+            ontology_id) + "/feature-schemas/" + urllib.parse.quote(
+                feature_schema_id)
+        response = requests.post(
+            endpoint,
+            headers=self.headers,
+            json={"position": position},
+        )
+        if response.status_code != requests.codes.created:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to insert the feature schema into the ontology, message: "
+                + str(response.json()['message']))
+
+    def get_unused_ontologies(self, after: str = None) -> List[str]:
+        """
+        Returns a list of unused ontology ids
+        Args:
+            after (str): The cursor to use for pagination
+        Returns:
+            A list of unused ontology ids
+        Example:
+            To get the first page of unused ontology ids (100 at a time)
+            >>> client.get_unused_ontologies()
+            To get the next page of unused ontology ids
+            >>> client.get_unused_ontologies("cleabc1my012ioqvu5anyaabc")
+        """
+
+        endpoint = self.rest_endpoint + "/ontologies/unused"
+        response = requests.get(
+            endpoint,
+            headers=self.headers,
+            json={"after": after},
+        )
+
+        if response.status_code == requests.codes.ok:
+            return response.json()
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get unused ontologies, message: " +
+                str(response.json()['message']))
+
+    def get_unused_feature_schemas(self, after: str = None) -> List[str]:
+        """
+        Returns a list of unused feature schema ids
+        Args:
+            after (str): The cursor to use for pagination
+        Returns:
+            A list of unused feature schema ids
+        Example:
+            To get the first page of unused feature schema ids (100 at a time)
+            >>> client.get_unused_feature_schemas()
+            To get the next page of unused feature schema ids
+            >>> client.get_unused_feature_schemas("cleabc1my012ioqvu5anyaabc")
+        """
+
+        endpoint = self.rest_endpoint + "/feature-schemas/unused"
+        response = requests.get(
+            endpoint,
+            headers=self.headers,
+            json={"after": after},
+        )
+
+        if response.status_code == requests.codes.ok:
+            return response.json()
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get unused feature schemas, message: " +
+                str(response.json()['message']))
+
     def create_ontology(self, name, normalized, media_type=None) -> Ontology:
         """
         Creates an ontology from normalized data
@@ -1384,3 +1573,142 @@ class Client:
         """
         res = self.execute(query_str, {'id': slice_id})
         return Entity.CatalogSlice(self, res['getSavedQuery'])
+
+    def is_feature_schema_archived(self, ontology_id: str,
+                                   feature_schema_id: str) -> bool:
+        """
+        Returns true if a feature schema is archived in the specified ontology, returns false otherwise.
+
+        Args:
+            feature_schema_id (str): The ID of the feature schema
+            ontology_id (str): The ID of the ontology
+        Returns:
+            bool
+        """
+
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id)
+        response = requests.get(
+            ontology_endpoint,
+            headers=self.headers,
+        )
+
+        if response.status_code == requests.codes.ok:
+            feature_schema_nodes = response.json()['featureSchemaNodes']
+            tools = feature_schema_nodes['tools']
+            classifications = feature_schema_nodes['classifications']
+            relationships = feature_schema_nodes['relationships']
+            feature_schema_node_list = tools + classifications + relationships
+            filtered_feature_schema_nodes = [
+                feature_schema_node
+                for feature_schema_node in feature_schema_node_list
+                if feature_schema_node['featureSchemaId'] == feature_schema_id
+            ]
+            if filtered_feature_schema_nodes:
+                return bool(filtered_feature_schema_nodes[0]['archived'])
+            else:
+                raise labelbox.exceptions.LabelboxError(
+                    "The specified feature schema was not in the ontology.")
+
+        elif response.status_code == 404:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Ontology, ontology_id)
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to get the feature schema archived status.")
+
+    def get_model_slice(self, slice_id) -> ModelSlice:
+        """
+        Fetches a Model Slice by ID.
+
+        Args:
+             slice_id (str): The ID of the Slice
+        Returns:
+            ModelSlice
+        """
+        query_str = """
+            query getSavedQueryPyApi($id: ID!) {
+                getSavedQuery(id: $id) {
+                    id
+                    name
+                    description
+                    filter
+                    createdAt
+                    updatedAt
+                }
+            }
+        """
+        res = self.execute(query_str, {"id": slice_id})
+        return Entity.ModelSlice(self, res["getSavedQuery"])
+
+    def delete_feature_schema_from_ontology(
+            self, ontology_id: str,
+            feature_schema_id: str) -> DeleteFeatureFromOntologyResult:
+        """
+        Deletes or archives a feature schema from an ontology.
+        If the feature schema is a root level node with associated labels, it will be archived.
+        If the feature schema is a nested node in the ontology and does not have associated labels, it will be deleted.
+        If the feature schema is a nested node in the ontology and has associated labels, it will not be deleted.
+
+        Args:
+            ontology_id (str): The ID of the ontology.
+            feature_schema_id (str): The ID of the feature schema.
+
+        Returns:
+            DeleteFeatureFromOntologyResult: The result of the feature schema removal.
+
+        Example:
+            >>> client.remove_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
+        """
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id) + "/feature-schemas/" + urllib.parse.quote(
+                feature_schema_id)
+        response = requests.delete(
+            ontology_endpoint,
+            headers=self.headers,
+        )
+
+        if response.status_code == requests.codes.ok:
+            response_json = response.json()
+            if response_json['archived'] == True:
+                logger.info(
+                    'Feature schema was archived from the ontology because it had associated labels.'
+                )
+            elif response_json['deleted'] == True:
+                logger.info(
+                    'Feature schema was successfully removed from the ontology')
+            result = DeleteFeatureFromOntologyResult()
+            result.archived = bool(response_json['archived'])
+            result.deleted = bool(response_json['deleted'])
+            return result
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to remove feature schema from ontology, message: " +
+                str(response.json()['message']))
+
+    def unarchive_feature_schema_node(self, ontology_id: str,
+                                      root_feature_schema_id: str) -> None:
+        """
+        Unarchives a feature schema node in an ontology.
+        Only root level feature schema nodes can be unarchived.
+        Args:
+            ontology_id (str): The ID of the ontology
+            root_feature_schema_id (str): The ID of the root level feature schema
+        Returns:
+            None
+        """
+        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
+            ontology_id) + '/feature-schemas/' + urllib.parse.quote(
+                root_feature_schema_id) + '/unarchive'
+        response = requests.patch(
+            ontology_endpoint,
+            headers=self.headers,
+        )
+        if response.status_code == requests.codes.ok:
+            if not bool(response.json()['unarchived']):
+                raise labelbox.exceptions.LabelboxError(
+                    "Failed unarchive the feature schema.")
+        else:
+            raise labelbox.exceptions.LabelboxError(
+                "Failed unarchive the feature schema node, message: ",
+                response.text)

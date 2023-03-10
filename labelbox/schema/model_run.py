@@ -47,26 +47,70 @@ class ModelRun(DbObject):
         COMPLETE = "COMPLETE"
         FAILED = "FAILED"
 
-    def upsert_labels(self, label_ids, timeout_seconds=3600):
+    def upsert_labels(self,
+                      label_ids: Optional[List[str]] = None,
+                      project_id: Optional[str] = None,
+                      timeout_seconds=3600):
         """ Adds data rows and labels to a Model Run
         Args:
             label_ids (list): label ids to insert
+            project_id (string): project uuid, all project labels will be uploaded
+                Either label_ids OR project_id is required but NOT both
             timeout_seconds (float): Max waiting time, in seconds.
         Returns:
             ID of newly generated async task
+
         """
 
-        if len(label_ids) < 1:
-            raise ValueError("Must provide at least one label id")
+        use_label_ids = label_ids is not None and len(label_ids) > 0
+        use_project_id = project_id is not None
 
+        if not use_label_ids and not use_project_id:
+            raise ValueError(
+                "Must provide at least one label id or a project id")
+
+        if use_label_ids and use_project_id:
+            raise ValueError("Must only one of label ids, project id")
+
+        if use_label_ids:
+            return self._upsert_labels_by_label_ids(label_ids, timeout_seconds)
+        else:  # use_project_id
+            return self._upsert_labels_by_project_id(project_id,
+                                                     timeout_seconds)
+
+    def _upsert_labels_by_label_ids(self, label_ids: List[str],
+                                    timeout_seconds: int):
         mutation_name = 'createMEAModelRunLabelRegistrationTask'
         create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
-          %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
-          """ % (mutation_name)
+        %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
+        """ % (mutation_name)
 
         res = self.client.execute(create_task_query_str, {
             'modelRunId': self.uid,
             'labelIds': label_ids
+        })
+        task_id = res[mutation_name]
+
+        status_query_str = """query MEALabelRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
+            MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
+        }
+        """
+        return self._wait_until_done(lambda: self.client.execute(
+            status_query_str, {'where': {
+                'id': task_id
+            }})['MEALabelRegistrationTaskStatus'],
+                                     timeout_seconds=timeout_seconds)
+
+    def _upsert_labels_by_project_id(self, project_id: str,
+                                     timeout_seconds: int):
+        mutation_name = 'createMEAModelRunProjectLabelRegistrationTask'
+        create_task_query_str = """mutation createMEAModelRunProjectLabelRegistrationTaskPyApi($modelRunId: ID!, $projectId : ID!) {
+        %s(where : { modelRunId : $modelRunId, projectId: $projectId})}
+        """ % (mutation_name)
+
+        res = self.client.execute(create_task_query_str, {
+            'modelRunId': self.uid,
+            'projectId': project_id
         })
         task_id = res[mutation_name]
 
@@ -291,14 +335,15 @@ class ModelRun(DbObject):
 
     @experimental
     def assign_data_rows_to_split(self,
-                                  data_row_ids: List[str],
-                                  split: Union[DataSplit, str],
+                                  data_row_ids: List[str] = None,
+                                  split: Union[DataSplit, str] = None,
+                                  global_keys: List[str] = None,
                                   timeout_seconds=120):
 
         split_value = split.value if isinstance(split, DataSplit) else split
         valid_splits = DataSplit._member_names_
 
-        if split_value not in valid_splits:
+        if split_value is None or split_value not in valid_splits:
             raise ValueError(
                 f"`split` must be one of : `{valid_splits}`. Found : `{split}`")
 
@@ -310,7 +355,8 @@ class ModelRun(DbObject):
                 'data': {
                     'assignments': [{
                         'split': split_value,
-                        'dataRowIds': data_row_ids
+                        'dataRowIds': data_row_ids,
+                        'globalKeys': global_keys,
                     }]
                 }
             },
@@ -467,8 +513,6 @@ class ModelRun(DbObject):
         create_task_query_str = """mutation exportDataRowsInModelRunPyApi($input: ExportDataRowsInModelRunInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
-        if (task_name is None):
-            task_name = f'Export Data Rows in Model Run - {self.name}'
 
         _params = params or ModelRunExportParams()
 
@@ -479,6 +523,8 @@ class ModelRun(DbObject):
                     "modelRunId": self.uid
                 },
                 "params": {
+                    "mediaTypeOverride":
+                        _params.get('media_type_override', None),
                     "includeAttachments":
                         _params.get('attachments', False),
                     "includeMetadata":

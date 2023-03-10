@@ -11,7 +11,7 @@ import requests
 
 from labelbox import Client
 from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification
+from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
@@ -63,6 +63,19 @@ def graphql_url(environ: str) -> str:
             raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
         return graphql_api_endpoint
     return 'http://host.docker.internal:8080/graphql'
+
+
+def rest_url(environ: str) -> str:
+    if environ == Environ.PROD:
+        return 'https://api.labelbox.com/api/v1'
+    elif environ == Environ.STAGING:
+        return 'https://api.lb-stage.xyz/api/v1'
+    elif environ == Environ.CUSTOM:
+        rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
+        if rest_api_endpoint is None:
+            raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
+        return rest_api_endpoint
+    return 'http://host.docker.internal:8080/api/v1'
 
 
 def testing_api_key(environ: str) -> str:
@@ -131,7 +144,11 @@ class IntegrationClient(Client):
     def __init__(self, environ: str) -> None:
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
-        super().__init__(api_key, api_url, enable_experimental=True)
+        rest_endpoint = rest_url(environ)
+        super().__init__(api_key,
+                         api_url,
+                         enable_experimental=True,
+                         rest_endpoint=rest_endpoint)
         self.queries = []
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
@@ -214,13 +231,16 @@ def datarow(dataset, image_url):
 
 @pytest.fixture()
 def data_rows(dataset, image_url):
-    dr1 = dataset.create_data_row(row_data=image_url,
-                                  global_key=f"global-key-{uuid.uuid4()}")
-    dr2 = dataset.create_data_row(row_data=image_url,
-                                  global_key=f"global-key-{uuid.uuid4()}")
-    yield [dr1, dr2]
-    dr1.delete()
-    dr2.delete()
+    dr1 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
+    dr2 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
+    task = dataset.create_data_rows([dr1, dr2])
+    task.wait_till_done()
+
+    drs = list(dataset.export_data_rows())
+    yield drs
+
+    for dr in drs:
+        dr.delete()
 
 
 @pytest.fixture
@@ -505,3 +525,25 @@ def wait_for_label_processing():
             time.sleep(2)
 
     return func
+
+
+@pytest.fixture
+def ontology(client):
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.BBOX, name="Box 1", color="#ff0000"),
+            Tool(tool=Tool.Type.BBOX, name="Box 2", color="#ff0000")
+        ],
+        classifications=[
+            Classification(name="Root Class",
+                           class_type=Classification.Type.RADIO,
+                           options=[
+                               Option(value="1", label="Option 1"),
+                               Option(value="2", label="Option 2")
+                           ])
+        ])
+    ontology = client.create_ontology('Integration Test Ontology',
+                                      ontology_builder.asdict(),
+                                      MediaType.Image)
+    yield ontology
+    client.delete_unused_ontology(ontology.uid)

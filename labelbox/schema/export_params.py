@@ -1,6 +1,8 @@
 import sys
 
 from typing import Optional
+
+from labelbox.schema.media_type import MediaType
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -11,6 +13,7 @@ class DataRowParams(TypedDict):
     data_row_details: Optional[bool]
     metadata_fields: Optional[bool]
     attachments: Optional[bool]
+    media_type_override: Optional[MediaType]
 
 
 class ProjectExportParams(DataRowParams):
