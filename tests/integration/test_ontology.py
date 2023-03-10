@@ -5,6 +5,7 @@ from labelbox.orm.model import Entity
 import json
 import time
 
+
 def test_feature_schema_is_not_archived(client, ontology):
     feature_schema_to_check = ontology.normalized['tools'][0]
     result = client.is_feature_schema_archived(
@@ -31,6 +32,7 @@ def test_is_feature_schema_archived_for_non_existing_feature_schema(
         client.is_feature_schema_archived(ontology.uid,
                                           'invalid-feature-schema-id')
 
+
 def test_is_feature_schema_archived_for_non_existing_ontology(client, ontology):
     feature_schema_to_unarchive = ontology.normalized['tools'][0]
     with pytest.raises(
@@ -39,6 +41,7 @@ def test_is_feature_schema_archived_for_non_existing_ontology(client, ontology):
     ):
         client.is_feature_schema_archived(
             'invalid-ontology', feature_schema_to_unarchive['featureSchemaId'])
+
 
 def test_delete_tool_feature_from_ontology(client, ontology):
     feature_schema_to_delete = ontology.normalized['tools'][0]
@@ -50,6 +53,7 @@ def test_delete_tool_feature_from_ontology(client, ontology):
     updatedOntology = client.get_ontology(ontology.uid)
     assert len(updatedOntology.normalized['tools']) == 1
 
+
 @pytest.mark.skip(reason="normalized ontology contains Relationship, "
                   "which is not finalized yet. introduce this back when"
                   "Relationship feature is complete and we introduce"
@@ -58,11 +62,13 @@ def test_from_project_ontology(project) -> None:
     o = OntologyBuilder.from_project(project)
     assert o.asdict() == project.ontology().normalized
 
+
 point = Tool(
     tool=Tool.Type.POINT,
     name="name",
     color="#ff0000",
 )
+
 
 def test_deletes_an_ontology(client):
     tool = client.upsert_feature_schema(point.asdict())
@@ -75,6 +81,7 @@ def test_deletes_an_ontology(client):
     assert client.delete_unused_ontology(ontology.uid) is None
 
     client.delete_unused_feature_schema(feature_schema_id)
+
 
 def test_cant_delete_an_ontology_with_project(client):
     project = client.create_project(name="test project",
@@ -98,6 +105,7 @@ def test_cant_delete_an_ontology_with_project(client):
     client.delete_unused_ontology(ontology.uid)
     client.delete_unused_feature_schema(feature_schema_id)
 
+
 def test_cant_delete_an_ontology_that_doesnt_exist(client):
     with pytest.raises(
             Exception,
@@ -105,6 +113,7 @@ def test_cant_delete_an_ontology_that_doesnt_exist(client):
             "Failed to delete the ontology, message: Failed to find ontology by id: doesntexist"
     ):
         client.delete_unused_ontology("doesntexist")
+
 
 def test_inserts_a_feature_schema_at_given_position(client):
     tool1 = {'tool': 'polygon', 'name': 'tool1', 'color': 'blue'}
@@ -122,6 +131,7 @@ def test_inserts_a_feature_schema_at_given_position(client):
         'schemaNodeId'] == created_feature_schema.normalized['schemaNodeId']
 
     client.delete_unused_ontology(ontology.uid)
+
 
 def test_moves_already_added_feature_schema_in_ontology(client):
     tool1 = {'tool': 'polygon', 'name': 'tool1', 'color': 'blue'}
@@ -145,6 +155,7 @@ def test_moves_already_added_feature_schema_in_ontology(client):
 
     client.delete_unused_ontology(ontology.uid)
 
+
 def test_does_not_include_used_ontologies(client):
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
@@ -163,11 +174,13 @@ def test_does_not_include_used_ontologies(client):
     client.delete_unused_ontology(ontology_with_project.uid)
     client.delete_unused_feature_schema(feature_schema_id)
 
+
 def _get_attr_stringify_json(obj, attr):
     value = getattr(obj, attr.name)
     if attr.field_type.name.lower() == "json":
         return json.dumps(value, sort_keys=True)
     return value
+
 
 def test_feature_schema_create_read(client, rand_gen):
     name = f"test-root-schema-{rand_gen(str)}"
@@ -196,6 +209,7 @@ def test_feature_schema_create_read(client, rand_gen):
         assert _get_attr_stringify_json(created_feature_schema,
                                         attr) == _get_attr_stringify_json(
                                             queried_feature_schema, attr)
+
 
 def test_ontology_create_read(client, rand_gen):
     ontology_name = f"test-ontology-{rand_gen(str)}"
