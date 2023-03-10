@@ -77,5 +77,6 @@ Each release should follow the following steps:
   c.InteractiveShellApp.exec_lines = [
     'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
   ]
+  ```
   4. Go to the root of your project and run `jupyter notebook` to start the server
   
