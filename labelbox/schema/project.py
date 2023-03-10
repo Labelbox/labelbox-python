@@ -814,7 +814,7 @@ class Project(DbObject, Updateable, Deletable):
                         "`data_rows` must be DataRow ids or DataRow objects")
 
         if data_rows is not None:
-            row_count = len(data_rows)
+            row_count = len(dr_ids)
         elif global_keys is not None:
             row_count = len(global_keys)
         else:

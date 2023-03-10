@@ -1,5 +1,10 @@
 # Changelog
 
+# Version 3.40.1 (2023-03-10)
+
+## Fixed
+* Fixed issue where calling create_batch() on exported data rows wasn't working
+
 # Version 3.40.0 (2023-03-10)
 
 ## Added
