@@ -155,7 +155,7 @@ class AnnotationImport(DbObject):
             )
 
         objects = serialize_labels(objects)
-        # cls.validate_data_rows(objects)
+        cls.validate_data_rows(objects)
 
         data_str = ndjson.dumps(objects)
         if not data_str:

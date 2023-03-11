@@ -8,15 +8,17 @@ from ...annotation_types.types import Cuid
 
 class DataRow(BaseModel):
     id: str = None
+    global_key: str = None
 
-    @validator('id', pre=True, always=True)
-    def validate_id(cls, v):
-        if v is None:
-            raise ValueError(
-                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`,or `Label.create_data_row`. "
-                "You can also manually assign the id for each `BaseData` object"
-            )
-        return v
+    @root_validator()
+    def must_set_one(cls, values):
+        if bool(values.get('id')) == bool(values.get('global_key')):
+            raise ValueError("Must set either id or global_key")
+        return values
+
+    class Config:
+        allow_population_by_field_name = True
+        alias_generator = camel_case
 
 
 class NDJsonBase(BaseModel):
@@ -26,6 +28,15 @@ class NDJsonBase(BaseModel):
     @validator('uuid', pre=True, always=True)
     def set_id(cls, v):
         return v or str(uuid4())
+
+    def dict(self, *args, **kwargs):
+        """ Pop missing id or missing globalKey from dataRow """
+        res = super().dict(*args, **kwargs)
+        if not self.data_row.id:
+            res['dataRow'].pop('id')
+        if not self.data_row.global_key:
+            res['dataRow'].pop('globalKey')
+        return res
 
     class Config:
         allow_population_by_field_name = True
