@@ -31,7 +31,6 @@ class NDLabel(BaseModel):
             grouped_annotations[annotation.data_row.id or
                                 annotation.data_row.global_key].append(
                                     annotation)
-        print(grouped_annotations)
         return LabelGenerator(
             data=self._generate_annotations(grouped_annotations))
 
