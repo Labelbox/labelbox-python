@@ -114,7 +114,13 @@ def ontology():
             'options': []
         }]
     }
-    named_entity = {'tool': 'named-entity', 'name': 'named-entity', 'required': False, 'color': '#A30059', 'classifications': [], }
+    named_entity = {
+        'tool': 'named-entity',
+        'name': 'named-entity',
+        'required': False,
+        'color': '#A30059',
+        'classifications': [],
+    }
 
     tools = [
         bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
@@ -160,6 +166,7 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project.delete()
     dataset.delete()
 
+
 @pytest.fixture
 def dataset_pdf_entity(client, rand_gen, pdf_entity_row_data):
     dataset = client.create_dataset(name=rand_gen(str))
@@ -169,8 +176,10 @@ def dataset_pdf_entity(client, rand_gen, pdf_entity_row_data):
     yield dataset, data_row_ids
     dataset.delete()
 
+
 @pytest.fixture
-def configured_project_pdf_entity(client, ontology, rand_gen, dataset_pdf_entity):
+def configured_project_pdf_entity(client, ontology, rand_gen,
+                                  dataset_pdf_entity):
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Dataset)
 
@@ -184,6 +193,7 @@ def configured_project_pdf_entity(client, ontology, rand_gen, dataset_pdf_entity
     project.data_row_ids = data_row_ids
     yield project
     project.delete()
+
 
 @pytest.fixture
 def configured_project_without_data_rows(client, configured_project, rand_gen):

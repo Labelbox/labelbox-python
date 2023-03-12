@@ -14,6 +14,7 @@ class DocumentTextSelection(BaseModel):
             raise ValueError("Page must be greater than 1")
         return v
 
+
 class DocumentEntity(BaseModel):
     """ Represents a text entity """
     name: str

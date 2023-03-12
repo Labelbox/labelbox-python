@@ -8,8 +8,15 @@ def test_ner():
     assert text_entity.start == start
     assert text_entity.end == end
 
+
 def test_document_entity():
-    document_entity = DocumentEntity(name="tool_name", textSelections=[DocumentTextSelection(tokenIds=["1", "2"], groupId="1", page=1)])
+    document_entity = DocumentEntity(name="tool_name",
+                                     textSelections=[
+                                         DocumentTextSelection(
+                                             tokenIds=["1", "2"],
+                                             groupId="1",
+                                             page=1)
+                                     ])
 
     assert document_entity.name == "tool_name"
     assert document_entity.textSelections[0].tokenIds == ["1", "2"]
