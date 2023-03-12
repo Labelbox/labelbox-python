@@ -1,6 +1,6 @@
-from typing import Dict, Any, List
+from typing import Dict, Any
 
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, root_validator
 
 
 class TextEntity(BaseModel):
@@ -17,20 +17,3 @@ class TextEntity(BaseModel):
                 raise ValueError(
                     "Location end must be greater or equal to start")
         return values
-
-
-class DocumentTextSelection(BaseModel):
-    tokenIds: List[str]
-    groupId: str
-    page: int
-
-    @validator("page")
-    def validate_page(cls, v):
-        if v < 1:
-            raise ValueError("Page must be greater than 1")
-        return v
-
-class DocumentEntity(BaseModel):
-    """ Represents a text entity """
-    name: str
-    textSelections: List[DocumentTextSelection]

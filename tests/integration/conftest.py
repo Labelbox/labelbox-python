@@ -188,6 +188,7 @@ def pdf_entity_row_data(client):
         "global_key": str(uuid.uuid4())
     }    
 
+
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),

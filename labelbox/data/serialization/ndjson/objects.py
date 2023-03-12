@@ -450,8 +450,7 @@ class NDObject:
         optional_kwargs = {}
         if (annotation.confidence):
             optional_kwargs['confidence'] = annotation.confidence
-        name = annotation.name or annotation.value.name
-        return obj.from_common(annotation.value, subclasses, name,
+        return obj.from_common(annotation.value, subclasses, annotation.name,
                                annotation.feature_schema_id, annotation.extra,
                                data, **optional_kwargs)
 
