@@ -2,26 +2,22 @@ from typing import Optional
 from uuid import uuid4
 from pydantic import BaseModel, root_validator, validator, Field
 
-from labelbox.utils import camel_case, is_exactly_one_set
+from labelbox.utils import _CamelCaseMixin, camel_case, is_exactly_one_set
 from ...annotation_types.types import Cuid
 
 
-class DataRow(BaseModel):
+class DataRow(_CamelCaseMixin):
     id: str = None
     global_key: str = None
 
     @root_validator()
     def must_set_one(cls, values):
-        if is_exactly_one_set(values.get('id'), values.get('global_key')):
+        if not is_exactly_one_set(values.get('id'), values.get('global_key')):
             raise ValueError("Must set either id or global_key")
         return values
 
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
 
-
-class NDJsonBase(BaseModel):
+class NDJsonBase(_CamelCaseMixin):
     uuid: str = None
     data_row: DataRow
 
@@ -37,10 +33,6 @@ class NDJsonBase(BaseModel):
         if not self.data_row.global_key:
             res['dataRow'].pop('globalKey')
         return res
-
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
 
 
 class NDAnnotation(NDJsonBase):
