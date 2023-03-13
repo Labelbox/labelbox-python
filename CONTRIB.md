@@ -63,4 +63,20 @@ Each release should follow the following steps:
 6. This will kick off a Github Actions workflow that will:
   - Build the library in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
   - Upload the distribution archives in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives)
-  with credentials for the `labelbox` PyPI user.
+ - with credentials for the `labelbox` PyPI user.
+  
+  ## Running Jupyter Notebooks
+  
+  We have plenty of good samples in the _examples_ directory and using them for testing can help us increase our productivity. One way to use jupyter notebooks is to run the jupyter server locally (another way is to use a VSC plugin, not documented here). It works really fast.
+  
+  Make sure your notebook will use your source code:
+  1. `ipython profile create`
+  2. `ipython locate` - will show where the config file is. This is the config file used by the jupyter server, since it runs via ipython
+  3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
+  ```
+  c.InteractiveShellApp.exec_lines = [
+    'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
+  ]
+  ```
+  4. Go to the root of your project and run `jupyter notebook` to start the server
+  

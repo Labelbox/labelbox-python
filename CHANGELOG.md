@@ -1,9 +1,35 @@
 # Changelog
 
-# Version 3.40.0 (YYYY-MM-DD)
+# Version 3.40.1 (2023-03-10)
 
-## Added 
-* Insert newest changelogs here
+## Fixed
+* Fixed issue where calling create_batch() on exported data rows wasn't working
+
+# Version 3.40.0 (2023-03-10)
+
+## Added
+* Support Global keys to reference data rows in `Project.create_batch()`, `ModelRun.assign_data_rows_to_split()`
+* Support upserting labels via project_id in `model_run.upsert_labels()`
+* `media_type_override` param to export_v2
+* `last_activity_at` and `label_created_at` params to export_v2
+* New client method `is_feature_schema_archived()`
+* New client method `unarchive_feature_schema_node()`
+* New client method `delete_feature_schema_from_ontology()`
+
+## Changed
+* Removed default task names for export_v2
+
+## Fixed
+* process_label() for COCO panoptic dataset
+
+## Notebooks
+* Updated `annotation_import/pdf.ipynb` with more examples
+* Added `integrations/huggingface/huggingface.ipynb`
+* Fixed broken links for detectron notebooks in README
+* Added Dataset QueueMode during project creation in `integrations/detectron2/coco_object.ipynb` 
+* Removed metadata and updated ontology in `annotation_import/text.ipynb`
+* Removed confidence scores in `annotation_import/image.ipynb`
+* Updated custom embedding tutorial links in `basics/data_row_metadata.ipynb`
 
 # Version 3.39.0 (2023-02-28)
 ## Added
@@ -71,7 +97,6 @@
 * Added support for adding metadata by name when creating datarows using `DataRowMetadataOntology.bulk_upsert()`.
 * Added support for adding metadata by name when creating datarows using `Dataset.create_data_rows()`, `Dataset.create_data_rows_sync()`, and `Dataset.create_data_row()`.
 * Example notebooks for auto metrics in models
-
 
 ### Changed
 * `Dataset.create_data_rows()` max limit of DataRows increased to 150,000

@@ -6,6 +6,43 @@ import json
 import time
 
 
+def test_feature_schema_is_not_archived(client, ontology):
+    feature_schema_to_check = ontology.normalized['tools'][0]
+    result = client.is_feature_schema_archived(
+        ontology.uid, feature_schema_to_check['featureSchemaId'])
+    assert result == False
+
+
+def test_feature_schema_is_archived(client, configured_project_with_label):
+    project, _, _, label = configured_project_with_label
+    ontology = project.ontology()
+    feature_schema_id = ontology.normalized['tools'][0]['featureSchemaId']
+    result = client.delete_feature_schema_from_ontology(ontology.uid,
+                                                        feature_schema_id)
+    assert result.archived == True and result.deleted == False
+    assert client.is_feature_schema_archived(ontology.uid,
+                                             feature_schema_id) == True
+
+
+def test_is_feature_schema_archived_for_non_existing_feature_schema(
+        client, ontology):
+    with pytest.raises(
+            Exception,
+            match="The specified feature schema was not in the ontology"):
+        client.is_feature_schema_archived(ontology.uid,
+                                          'invalid-feature-schema-id')
+
+
+def test_is_feature_schema_archived_for_non_existing_ontology(client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    with pytest.raises(
+            Exception,
+            match="Resource 'Ontology' not found for params: 'invalid-ontology'"
+    ):
+        client.is_feature_schema_archived(
+            'invalid-ontology', feature_schema_to_unarchive['featureSchemaId'])
+
+
 def test_delete_tool_feature_from_ontology(client, ontology):
     feature_schema_to_delete = ontology.normalized['tools'][0]
     assert len(ontology.normalized['tools']) == 2
@@ -209,3 +246,30 @@ def test_ontology_create_read(client, rand_gen):
         assert _get_attr_stringify_json(created_ontology,
                                         attr) == _get_attr_stringify_json(
                                             queried_ontology, attr)
+
+
+def test_unarchive_feature_schema_node(client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    result = client.unarchive_feature_schema_node(
+        ontology.uid, feature_schema_to_unarchive['featureSchemaId'])
+    assert result == None
+
+
+def test_unarchive_feature_schema_node_for_non_existing_feature_schema(
+        client, ontology):
+    with pytest.raises(
+            Exception,
+            match=
+            "Failed to find feature schema node by id: invalid-feature-schema-id"
+    ):
+        client.unarchive_feature_schema_node(ontology.uid,
+                                             'invalid-feature-schema-id')
+
+
+def test_unarchive_feature_schema_node_for_non_existing_ontology(
+        client, ontology):
+    feature_schema_to_unarchive = ontology.normalized['tools'][0]
+    with pytest.raises(Exception,
+                       match="Failed to find ontology by id: invalid-ontology"):
+        client.unarchive_feature_schema_node(
+            'invalid-ontology', feature_schema_to_unarchive['featureSchemaId'])

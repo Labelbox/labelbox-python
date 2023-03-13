@@ -430,7 +430,8 @@ class Project(DbObject, Updateable, Deletable):
             "data_row_details": False,
             "project_details": False,
             "performance_details": False,
-            "label_details": False
+            "label_details": False,
+            "media_type_override": None
         })
 
         _filters = filters or ProjectExportFilters({
@@ -451,6 +452,7 @@ class Project(DbObject, Updateable, Deletable):
           """ % (mutation_name)
 
         search_query: List[Dict[str, Collection[str]]] = []
+        media_type_override = _params.get('media_type_override', None)
         query_params = {
             "input": {
                 "taskName": task_name,
@@ -462,6 +464,9 @@ class Project(DbObject, Updateable, Deletable):
                     }
                 },
                 "params": {
+                    "mediaTypeOverride":
+                        media_type_override.value
+                        if media_type_override is not None else None,
                     "includeAttachments":
                         _params.get('attachments', False),
                     "includeMetadata":
@@ -809,7 +814,7 @@ class Project(DbObject, Updateable, Deletable):
                         "`data_rows` must be DataRow ids or DataRow objects")
 
         if data_rows is not None:
-            row_count = len(data_rows)
+            row_count = len(dr_ids)
         elif global_keys is not None:
             row_count = len(global_keys)
         else:

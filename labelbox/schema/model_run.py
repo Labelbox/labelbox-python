@@ -335,14 +335,15 @@ class ModelRun(DbObject):
 
     @experimental
     def assign_data_rows_to_split(self,
-                                  data_row_ids: List[str],
-                                  split: Union[DataSplit, str],
+                                  data_row_ids: List[str] = None,
+                                  split: Union[DataSplit, str] = None,
+                                  global_keys: List[str] = None,
                                   timeout_seconds=120):
 
         split_value = split.value if isinstance(split, DataSplit) else split
         valid_splits = DataSplit._member_names_
 
-        if split_value not in valid_splits:
+        if split_value is None or split_value not in valid_splits:
             raise ValueError(
                 f"`split` must be one of : `{valid_splits}`. Found : `{split}`")
 
@@ -354,7 +355,8 @@ class ModelRun(DbObject):
                 'data': {
                     'assignments': [{
                         'split': split_value,
-                        'dataRowIds': data_row_ids
+                        'dataRowIds': data_row_ids,
+                        'globalKeys': global_keys,
                     }]
                 }
             },
@@ -521,6 +523,8 @@ class ModelRun(DbObject):
                     "modelRunId": self.uid
                 },
                 "params": {
+                    "mediaTypeOverride":
+                        _params.get('media_type_override', None),
                     "includeAttachments":
                         _params.get('attachments', False),
                     "includeMetadata":
