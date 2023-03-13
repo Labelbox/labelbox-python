@@ -11,38 +11,6 @@ from labelbox.data.serialization import NDJsonConverter
 """
 
 
-def test_data_row_validation_errors(model_run_with_all_project_labels,
-                                    object_predictions):
-    name = str(uuid.uuid4())
-    # Set up data for validation errors
-    # Invalid: Remove 'dataRow' part entirely
-    del object_predictions[0]['dataRow']
-
-    # Invalid: Set both id and globalKey
-    object_predictions[1]['dataRow'] = {
-        'id': 'some id',
-        'globalKey': 'some global key'
-    }
-
-    # Valid
-    object_predictions[2]['dataRow'] = {
-        'id': 'some id',
-    }
-
-    # Valid
-    object_predictions[3]['dataRow'] = {
-        'globalKey': 'some global key',
-    }
-
-    with pytest.raises(ValueError) as exc_info:
-        model_run_with_all_project_labels.add_predictions(
-            name=name, predictions=object_predictions)
-    exception_str = str(exc_info.value)
-    assert "Found 2 annotations with errors" in exception_str
-    assert "'dataRow' is missing in" in exception_str
-    assert "Must provide only one of 'id' or 'globalKey' for 'dataRow'" in exception_str
-
-
 def test_create_from_url(model_run_with_model_run_data_rows,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())

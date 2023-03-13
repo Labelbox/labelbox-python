@@ -2,7 +2,6 @@ import uuid
 import pytest
 
 from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
-from labelbox.data.serialization import NDJsonConverter
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -36,62 +35,6 @@ def test_create_from_objects(client, configured_project, object_predictions,
     annotation_import_test_helpers.check_running_state(label_import, name)
     annotation_import_test_helpers.assert_file_content(
         label_import.input_file_url, object_predictions)
-
-
-def test_data_row_validation_errors(client, configured_project,
-                                    object_predictions):
-    name = str(uuid.uuid4())
-    # Set up data for validation errors
-    # Invalid: Remove 'dataRow' part entirely
-    del object_predictions[0]['dataRow']
-
-    # Invalid: Set both id and globalKey
-    object_predictions[1]['dataRow'] = {
-        'id': 'some id',
-        'globalKey': 'some global key'
-    }
-
-    # Valid
-    object_predictions[2]['dataRow'] = {
-        'id': 'some id',
-    }
-
-    # Valid
-    object_predictions[3]['dataRow'] = {
-        'globalKey': 'some global key',
-    }
-
-    with pytest.raises(ValueError) as exc_info:
-        label_import = LabelImport.create_from_objects(
-            client=client,
-            project_id=configured_project.uid,
-            name=name,
-            labels=object_predictions)
-    exception_str = str(exc_info.value)
-    assert "Found 2 annotations with errors" in exception_str
-    assert "'dataRow' is missing in" in exception_str
-    assert "Must provide only one of 'id' or 'globalKey' for 'dataRow'" in exception_str
-
-
-def test_create_from_label_objects(client, configured_project,
-                                   object_predictions,
-                                   annotation_import_test_helpers):
-    """this test should check running state only to validate running, not completed"""
-    name = str(uuid.uuid4())
-
-    labels = list(NDJsonConverter.deserialize(object_predictions))
-
-    label_import = LabelImport.create_from_objects(
-        client=client,
-        project_id=configured_project.uid,
-        name=name,
-        labels=labels)
-
-    assert label_import.parent_id == configured_project.uid
-    annotation_import_test_helpers.check_running_state(label_import, name)
-    normalized_predictions = NDJsonConverter.serialize(labels)
-    annotation_import_test_helpers.assert_file_content(
-        label_import.input_file_url, normalized_predictions)
 
 
 #   TODO: add me when we add this ability

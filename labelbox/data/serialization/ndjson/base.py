@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import uuid4
 from pydantic import BaseModel, root_validator, validator, Field
 
-from labelbox.utils import camel_case
+from labelbox.utils import camel_case, is_exactly_one_set
 from ...annotation_types.types import Cuid
 
 
@@ -12,7 +12,7 @@ class DataRow(BaseModel):
 
     @root_validator()
     def must_set_one(cls, values):
-        if bool(values.get('id')) == bool(values.get('global_key')):
+        if is_exactly_one_set(values.get('id'), values.get('global_key')):
             raise ValueError("Must set either id or global_key")
         return values
 

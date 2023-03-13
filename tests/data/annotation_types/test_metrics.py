@@ -18,6 +18,7 @@ def test_legacy_scalar_metric():
         'data': {
             'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
+            'global_key': None,
             'im_bytes': None,
             'file_path': None,
             'url': None,
@@ -68,6 +69,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
         'data': {
             'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
+            'global_key': None,
             'im_bytes': None,
             'file_path': None,
             'url': None,
@@ -124,6 +126,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
         'data': {
             'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
+            'global_key': None,
             'im_bytes': None,
             'file_path': None,
             'url': None,
