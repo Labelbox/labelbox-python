@@ -333,6 +333,9 @@ class Project(DbObject, Updateable, Deletable):
             last_activity_start (str): Will include all labels that have had any updates to
               data rows, issues, comments, metadata, or reviews since this timestamp.
               formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            last_activity_end (str): Will include all labels that do not have any updates to
+              data rows, issues, comments, metadata, or reviews after this timestamp.
+              formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
 
         Returns:
             URL of the data file with this Project's labels. If the server didn't
@@ -366,11 +369,21 @@ class Project(DbObject, Updateable, Deletable):
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
                 created_at_dict, value_with_quotes=True)
 
-        if "last_activity_start" in kwargs:
-            last_activity_start = kwargs['last_activity_start']
-            _validate_datetime(last_activity_start)
+        if "last_activity_start" in kwargs or "last_activity_end" in kwargs:
+            last_activity_start = kwargs.get('last_activity_start')
+            last_activity_end = kwargs.get('last_activity_end')
+
+            if last_activity_start:
+                _validate_datetime(str(last_activity_start))
+            if last_activity_end:
+                _validate_datetime(str(last_activity_end))
+
             filter_param_dict["lastActivityAt"] = "{%s}" % _string_from_dict(
-                {"start": last_activity_start}, value_with_quotes=True)
+                {
+                    "start": last_activity_start,
+                    "end": last_activity_end
+                },
+                value_with_quotes=True)
 
         if filter_param_dict:
             filter_param = """, filters: {%s }""" % (_string_from_dict(
