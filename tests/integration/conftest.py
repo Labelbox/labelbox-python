@@ -173,7 +173,8 @@ def image_url(client):
 
 @pytest.fixture(scope="session")
 def pdf_url(client):
-    return client.upload_file('tests/assets/loremipsum.pdf')
+    pdf_url = client.upload_file('tests/assets/loremipsum.pdf')
+    return {"row_data": {"pdf_url": pdf_url,}, "global_key": str(uuid.uuid4())}
 
 
 @pytest.fixture(scope="session")

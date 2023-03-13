@@ -178,24 +178,6 @@ def dataset_pdf_entity(client, rand_gen, pdf_entity_row_data):
 
 
 @pytest.fixture
-def configured_project_pdf_entity(client, ontology, rand_gen,
-                                  dataset_pdf_entity):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
-
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
-
-    dataset, data_row_ids = dataset_pdf_entity
-    project.datasets.connect(dataset)
-    project.data_row_ids = data_row_ids
-    yield project
-    project.delete()
-
-
-@pytest.fixture
 def configured_project_without_data_rows(client, configured_project, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),

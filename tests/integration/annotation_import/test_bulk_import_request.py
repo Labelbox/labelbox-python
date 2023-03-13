@@ -293,8 +293,8 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
     assert import_annotations.errors == []
 
 
-def test_pdf_document_entity(client, configured_project_pdf_entity,
-                             dataset_pdf_entity):
+def test_pdf_document_entity(client, configured_project_without_data_rows,
+                             dataset_pdf_entity, rand_gen):
     # for content "Metal-insulator (MI) transitions have been one of the" in OCR JSON extract tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json
     document_text_selection = DocumentTextSelection(
         groupId="2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
@@ -317,6 +317,12 @@ def test_pdf_document_entity(client, configured_project_pdf_entity,
 
     labels = []
     _, data_row_uids = dataset_pdf_entity
+    configured_project_without_data_rows.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+
     for data_row_uid in data_row_uids:
         labels.append(
             Label(data=TextData(uid=data_row_uid),
@@ -326,7 +332,7 @@ def test_pdf_document_entity(client, configured_project_pdf_entity,
 
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_pdf_entity.uid,
+        project_id=configured_project_without_data_rows.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
     import_annotations.wait_until_done()
