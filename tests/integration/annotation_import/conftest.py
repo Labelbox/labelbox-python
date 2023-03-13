@@ -11,6 +11,167 @@ from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.queue_mode import QueueMode
 
 
+@pytest.fixture()
+def audio_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3-{rand_gen(str)}",
+        "media_type":
+            "AUDIO",
+    }
+
+
+@pytest.fixture()
+def conversation_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/sample-conversation-1.json",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/sample-conversation-1.json-{rand_gen(str)}",
+        "media_type":
+            "CONVERSATIONAL",
+    }
+
+
+@pytest.fixture()
+def dicom_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm-{rand_gen(str)}",
+        "media_type":
+            "DICOM",
+    }
+
+
+@pytest.fixture()
+def geospatial_data_row(rand_gen):
+    return {
+        "row_data": {
+            "tile_layer_url":
+                "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
+            "bounds": [[19.405662413477728, -99.21052827588443],
+                       [19.400498983095076, -99.20534818927473]],
+            "min_zoom":
+                12,
+            "max_zoom":
+                20,
+            "epsg":
+                "EPSG4326",
+        },
+        "global_key":
+            f"https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/z/x/y.png-{rand_gen(str)}",
+        "media_type":
+            "TMS_GEO",
+    }
+
+
+@pytest.fixture()
+def html_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html-{rand_gen(str)}",
+    }
+
+
+@pytest.fixture()
+def image_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg",
+        "global_key":
+            f"https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-{rand_gen(str)}",
+        "media_type":
+            "IMAGE",
+    }
+
+
+@pytest.fixture()
+def document_data_row(rand_gen):
+    return {
+        "row_data": {
+            "pdf_url":
+                "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf",
+            "text_layer_url":
+                "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
+        },
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf-{rand_gen(str)}",
+        "media_type":
+            "PDF",
+    }
+
+
+@pytest.fixture()
+def text_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt",
+        "global_key":
+            f"https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt-{rand_gen(str)}",
+        "media_type":
+            "TEXT",
+    }
+
+
+@pytest.fixture()
+def video_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
+        "media_type":
+            "VIDEO",
+    }
+
+
+@pytest.fixture
+def data_row_json_by_data_type(audio_data_row, conversation_data_row,
+                               dicom_data_row, geospatial_data_row,
+                               html_data_row, image_data_row, document_data_row,
+                               text_data_row, video_data_row):
+    return {
+        'audio': audio_data_row,
+        'conversation': conversation_data_row,
+        'dicom': dicom_data_row,
+        'geospatial': geospatial_data_row,
+        'html': html_data_row,
+        'image': image_data_row,
+        'document': document_data_row,
+        'text': text_data_row,
+        'video': video_data_row,
+    }
+
+
+@pytest.fixture
+def annotations_by_data_type(polygon_inference, rectangle_inference,
+                             line_inference, entity_inference,
+                             checklist_inference, text_inference,
+                             video_checklist_inference):
+    return {
+        'audio': [checklist_inference, text_inference],
+        'conversation': [checklist_inference, text_inference, entity_inference],
+        'dicom': [line_inference],
+        'document': [
+            entity_inference, checklist_inference, text_inference,
+            rectangle_inference
+        ],
+        'html': [text_inference, checklist_inference],
+        'image': [
+            polygon_inference, rectangle_inference, line_inference,
+            checklist_inference, text_inference
+        ],
+        'text': [entity_inference, checklist_inference, text_inference],
+        'video': [video_checklist_inference]
+    }
+
+
 @pytest.fixture
 def ontology():
     bbox_tool = {
@@ -298,11 +459,13 @@ def entity_inference(prediction_id_mapping):
 @pytest.fixture
 def segmentation_inference(prediction_id_mapping):
     segmentation = prediction_id_mapping['superpixel'].copy()
-    segmentation.update(
-        {'mask': {
+    segmentation.update({
+        'mask': {
+            # TODO: Use a real URI
             'instanceURI': "sampleuri",
             'colorRGB': [0, 0, 0]
-        }})
+        }
+    })
     del segmentation['tool']
     return segmentation
 
