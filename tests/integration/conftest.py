@@ -78,6 +78,20 @@ def rest_url(environ: str) -> str:
     return 'http://host.docker.internal:8080/api/v1'
 
 
+def adv_rest_url(environ: str) -> str:
+    if environ == Environ.PROD:
+        return 'https://api.labelbox.com/adv'
+    elif environ == Environ.STAGING:
+        return 'https://api.lb-stage.xyz/adv'
+    elif environ == Environ.CUSTOM:
+        adv_rest_api_endpoint = os.environ.get(
+            'LABELBOX_TEST_ADV_REST_API_ENDPOINT')
+        if adv_rest_api_endpoint is None:
+            raise Exception(f"Missing LABELBOX_TEST_ADV_REST_API_ENDPOINT")
+        return adv_rest_api_endpoint
+    return 'http://host.docker.internal:8080/adv'
+
+
 def testing_api_key(environ: str) -> str:
     if environ == Environ.PROD:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
@@ -145,10 +159,12 @@ class IntegrationClient(Client):
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         rest_endpoint = rest_url(environ)
+        adv_rest_endpoint = adv_rest_url(environ)
         super().__init__(api_key,
                          api_url,
                          enable_experimental=True,
-                         rest_endpoint=rest_endpoint)
+                         rest_endpoint=rest_endpoint,
+                         adv_rest_endpoint=adv_rest_endpoint)
         self.queries = []
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):

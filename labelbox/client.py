@@ -21,6 +21,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.data_row_embedding import DataRowEmbedding
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.enums import CollectionJobStatus
@@ -58,7 +59,8 @@ class Client:
                  endpoint='https://api.labelbox.com/graphql',
                  enable_experimental=False,
                  app_url="https://app.labelbox.com",
-                 rest_endpoint="https://api.labelbox.com/api/v1"):
+                 rest_endpoint="https://api.labelbox.com/api/v1",
+                 adv_rest_endpoint="https://api.labelbox.com/adv"):
         """ Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
@@ -92,6 +94,7 @@ class Client:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
+        self.adv_rest_endpoint = adv_rest_endpoint
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -99,6 +102,7 @@ class Client:
             'X-User-Agent': f'python-sdk {SDK_VERSION}'
         }
         self._data_row_metadata_ontology = None
+        self._data_row_embedding = None
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -698,6 +702,17 @@ class Client:
         if self._data_row_metadata_ontology is None:
             self._data_row_metadata_ontology = DataRowMetadataOntology(self)
         return self._data_row_metadata_ontology
+
+    def get_data_row_embedding(self) -> DataRowEmbedding:
+        """
+
+        Returns:
+            DataRowEmbedding: The embedding for a data row
+
+        """
+        if self._data_row_embedding is None:
+            self._data_row_embedding = DataRowEmbedding(self)
+        return self._data_row_embedding
 
     def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.
