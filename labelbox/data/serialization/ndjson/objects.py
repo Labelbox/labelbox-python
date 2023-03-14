@@ -377,11 +377,8 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
     text_selections: List[DocumentTextSelection]
 
     def to_common(self) -> DocumentEntity:
-        return TextEntity(name=self.name, text_selections=self.text_selections)
-
-        return obj.from_common(annotation.value, subclasses, annotation.name,
-                               annotation.feature_schema_id, annotation.extra,
-                               data, **optional_kwargs)
+        return DocumentEntity(name=self.name,
+                              text_selections=self.text_selections)
 
     @classmethod
     def from_common(cls,
