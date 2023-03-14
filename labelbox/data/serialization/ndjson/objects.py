@@ -500,7 +500,8 @@ class NDObject:
         return result
 
 
+NERTextType = Union[NDConversationEntity, NDTextEntity]
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     Type[NDTextEntity], NDDocumentEntity]
+                     NERTextType, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
