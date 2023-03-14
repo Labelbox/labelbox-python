@@ -10,9 +10,10 @@ from .annotation import VideoClassificationAnnotation
 from .annotation import ObjectAnnotation
 from .annotation import VideoObjectAnnotation
 
-from .ner import TextEntity
+from .ner import ConversationEntity
 from .ner import DocumentEntity
 from .ner import DocumentTextSelection
+from .ner import TextEntity
 
 from .classification import Checklist
 from .classification import ClassificationAnswer

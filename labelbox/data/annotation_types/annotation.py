@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Type
 
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, ConfidenceMixin
 
@@ -51,7 +51,7 @@ class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
         classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
         extra (Dict[str, Any])
     """
-    value: Union[TextEntity, DocumentEntity, Geometry]
+    value: Union[Type[TextEntity], DocumentEntity, Geometry]
     classifications: List[ClassificationAnnotation] = []
 
 

@@ -1,4 +1,5 @@
 from labelbox.data.annotation_types import TextEntity, DocumentEntity, DocumentTextSelection
+from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
 
 
 def test_ner():
@@ -22,3 +23,17 @@ def test_document_entity():
     assert document_entity.text_selections[0].token_ids == ["1", "2"]
     assert document_entity.text_selections[0].group_id == "1"
     assert document_entity.text_selections[0].page == 1
+
+
+def test_conversation_entity():
+    document_entity = ConversationEntity(name="tool_name",
+                                         message_id=1,
+                                         start=0,
+                                         end=1,
+                                         confidence=0.5)
+
+    assert document_entity.name == "tool_name"
+    assert document_entity.message_id == "1"
+    assert document_entity.start == 0
+    assert document_entity.end == 1
+    assert document_entity.confidence == 0.5
