@@ -178,7 +178,7 @@ def pdf_url(client):
 
 
 @pytest.fixture(scope="session")
-def pdf_entity_row_data(client):
+def pdf_entity_data_row(client):
     pdf_url = client.upload_file(
         'tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483.pdf')
     text_layer_url = client.upload_file(

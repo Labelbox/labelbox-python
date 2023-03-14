@@ -374,10 +374,10 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
 
 class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
     name: str
-    textSelections: List[DocumentTextSelection]
+    text_selections: List[DocumentTextSelection]
 
     def to_common(self) -> DocumentEntity:
-        return TextEntity(name=self.name, textSelections=self.textSelections)
+        return TextEntity(name=self.name, text_selections=self.text_selections)
 
         return obj.from_common(annotation.value, subclasses, annotation.name,
                                annotation.feature_schema_id, annotation.extra,
@@ -393,7 +393,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
                     data: Union[ImageData, TextData],
                     confidence: Optional[float] = None) -> "NDDocumentEntity":
 
-        return cls(textSelections=document_entity.textSelections,
+        return cls(text_selections=document_entity.text_selections,
                    dataRow=DataRow(id=data.uid),
                    name=name,
                    schema_id=feature_schema_id,

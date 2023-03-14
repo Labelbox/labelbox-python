@@ -297,8 +297,8 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
                              dataset_pdf_entity, rand_gen):
     # for content "Metal-insulator (MI) transitions have been one of the" in OCR JSON extract tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json
     document_text_selection = DocumentTextSelection(
-        groupId="2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
-        tokenIds=[
+        group_id="2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+        token_ids=[
             "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
             "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
             "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
@@ -311,7 +311,7 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
         page=1)
 
     entities_annotation_document_entity = DocumentEntity(
-        name="named_entity", textSelections=[document_text_selection])
+        name="named_entity", text_selections=[document_text_selection])
     entities_annotation = ObjectAnnotation(
         name="named-entity", value=entities_annotation_document_entity)
 

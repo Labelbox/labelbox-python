@@ -11,14 +11,14 @@ def test_ner():
 
 def test_document_entity():
     document_entity = DocumentEntity(name="tool_name",
-                                     textSelections=[
+                                     text_selections=[
                                          DocumentTextSelection(
-                                             tokenIds=["1", "2"],
-                                             groupId="1",
+                                             token_ids=["1", "2"],
+                                             group_id="1",
                                              page=1)
                                      ])
 
     assert document_entity.name == "tool_name"
-    assert document_entity.textSelections[0].tokenIds == ["1", "2"]
-    assert document_entity.textSelections[0].groupId == "1"
-    assert document_entity.textSelections[0].page == 1
+    assert document_entity.text_selections[0].token_ids == ["1", "2"]
+    assert document_entity.text_selections[0].group_id == "1"
+    assert document_entity.text_selections[0].page == 1

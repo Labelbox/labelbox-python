@@ -2,10 +2,12 @@ from typing import List
 
 from pydantic import BaseModel, validator
 
+from labelbox.utils import _CamelCaseMixin
 
-class DocumentTextSelection(BaseModel):
-    tokenIds: List[str]
-    groupId: str
+
+class DocumentTextSelection(_CamelCaseMixin, BaseModel):
+    token_ids: List[str]
+    group_id: str
     page: int
 
     @validator("page")
@@ -15,7 +17,7 @@ class DocumentTextSelection(BaseModel):
         return v
 
 
-class DocumentEntity(BaseModel):
+class DocumentEntity(_CamelCaseMixin, BaseModel):
     """ Represents a text entity """
     name: str
-    textSelections: List[DocumentTextSelection]
+    text_selections: List[DocumentTextSelection]

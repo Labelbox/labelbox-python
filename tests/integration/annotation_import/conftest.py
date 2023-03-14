@@ -168,10 +168,10 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
 
 
 @pytest.fixture
-def dataset_pdf_entity(client, rand_gen, pdf_entity_row_data):
+def dataset_pdf_entity(client, rand_gen, pdf_entity_data_row):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
-    data_row = dataset.create_data_row(pdf_entity_row_data)
+    data_row = dataset.create_data_row(pdf_entity_data_row)
     data_row_ids.append(data_row.uid)
     yield dataset, data_row_ids
     dataset.delete()
