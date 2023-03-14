@@ -114,10 +114,17 @@ def ontology():
             'options': []
         }]
     }
+    named_entity = {
+        'tool': 'named-entity',
+        'name': 'named-entity',
+        'required': False,
+        'color': '#A30059',
+        'classifications': [],
+    }
 
     tools = [
         bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
-        segmentation_tool
+        segmentation_tool, named_entity
     ]
     classifications = [checklist, free_form_text, radio]
     return {"tools": tools, "classifications": classifications}
@@ -152,11 +159,21 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
     data_row_ids = []
-    data_row_ids.append(dataset.create_data_row(row_data=pdf_url).uid)
+    data_row_ids.append(dataset.create_data_row(pdf_url).uid)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
     project.delete()
+    dataset.delete()
+
+
+@pytest.fixture
+def dataset_pdf_entity(client, rand_gen, pdf_entity_data_row):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_ids = []
+    data_row = dataset.create_data_row(pdf_entity_data_row)
+    data_row_ids.append(data_row.uid)
+    yield dataset, data_row_ids
     dataset.delete()
 
 

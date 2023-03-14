@@ -11,6 +11,8 @@ from .annotation import ObjectAnnotation
 from .annotation import VideoObjectAnnotation
 
 from .ner import TextEntity
+from .ner import DocumentEntity
+from .ner import DocumentTextSelection
 
 from .classification import Checklist
 from .classification import ClassificationAnswer

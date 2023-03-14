@@ -6,6 +6,7 @@ from pydantic import BaseModel, validator
 
 import labelbox
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
+from labelbox.data.annotation_types.ner import DocumentEntity
 from labelbox.schema import ontology
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation)

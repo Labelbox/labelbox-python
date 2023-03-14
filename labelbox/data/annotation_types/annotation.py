@@ -6,7 +6,7 @@ from labelbox.data.mixins import ConfidenceNotSupportedMixin, ConfidenceMixin
 from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
 from .geometry import Geometry, Rectangle, Point
-from .ner import TextEntity
+from .ner import DocumentEntity, TextEntity
 
 
 class BaseAnnotation(FeatureSchema, abc.ABC):
@@ -51,7 +51,7 @@ class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
         classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
         extra (Dict[str, Any])
     """
-    value: Union[TextEntity, Geometry]
+    value: Union[TextEntity, DocumentEntity, Geometry]
     classifications: List[ClassificationAnnotation] = []
 
 

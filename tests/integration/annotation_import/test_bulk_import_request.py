@@ -2,6 +2,10 @@ import uuid
 import ndjson
 import pytest
 import random
+from labelbox.data.annotation_types.annotation import ObjectAnnotation
+from labelbox.data.annotation_types.label import Label
+from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.ner import DocumentEntity, DocumentTextSelection
 
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.exceptions import MALValidationError, UuidError
@@ -284,6 +288,53 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
         project_id=configured_project_pdf.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=annotations)
+    import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
+
+
+def test_pdf_document_entity(client, configured_project_without_data_rows,
+                             dataset_pdf_entity, rand_gen):
+    # for content "Metal-insulator (MI) transitions have been one of the" in OCR JSON extract tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json
+    document_text_selection = DocumentTextSelection(
+        group_id="2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+        token_ids=[
+            "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
+            "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
+            "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
+            "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
+            "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
+            "67c7c19e-4654-425d-bf17-2adb8cf02c30",
+            "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
+            "b0e94071-2187-461e-8e76-96c58738a52c"
+        ],
+        page=1)
+
+    entities_annotation_document_entity = DocumentEntity(
+        name="named_entity", text_selections=[document_text_selection])
+    entities_annotation = ObjectAnnotation(
+        name="named-entity", value=entities_annotation_document_entity)
+
+    labels = []
+    _, data_row_uids = dataset_pdf_entity
+    configured_project_without_data_rows.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+
+    for data_row_uid in data_row_uids:
+        labels.append(
+            Label(data=TextData(uid=data_row_uid),
+                  annotations=[
+                      entities_annotation,
+                  ]))
+
+    import_annotations = MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_without_data_rows.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
     import_annotations.wait_until_done()
 
     assert import_annotations.errors == []
