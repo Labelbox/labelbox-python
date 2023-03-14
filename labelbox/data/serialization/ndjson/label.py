@@ -1,6 +1,6 @@
 from itertools import groupby
 from operator import itemgetter
-from typing import Dict, Generator, List, Tuple, Union
+from typing import Dict, Generator, List, Optional, Tuple, Union
 from collections import defaultdict
 import warnings
 
@@ -17,6 +17,7 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType, NDSegments
+from .base import DataRow
 
 
 class NDLabel(BaseModel):
@@ -27,7 +28,9 @@ class NDLabel(BaseModel):
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
         for annotation in self.annotations:
-            grouped_annotations[annotation.data_row.id].append(annotation)
+            grouped_annotations[annotation.data_row.id or
+                                annotation.data_row.global_key].append(
+                                    annotation)
         return LabelGenerator(
             data=self._generate_annotations(grouped_annotations))
 
@@ -45,9 +48,11 @@ class NDLabel(BaseModel):
                                              NDConfusionMatrixMetric,
                                              NDScalarMetric, NDSegments]]]
     ) -> Generator[Label, None, None]:
-        for data_row_id, annotations in grouped_annotations.items():
+        for _, annotations in grouped_annotations.items():
             annots = []
+            data_row = annotations[0].data_row
             for annotation in annotations:
+
                 if isinstance(annotation, NDSegments):
                     annots.extend(
                         NDSegments.to_common(annotation, annotation.name,
@@ -62,22 +67,30 @@ class NDLabel(BaseModel):
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(annotation)}")
-            data = self._infer_media_type(annots)(uid=data_row_id)
-            yield Label(annotations=annots, data=data)
+            yield Label(annotations=annots,
+                        data=self._infer_media_type(data_row, annots))
 
     def _infer_media_type(
-        self, annotations: List[Union[TextEntity, VideoClassificationAnnotation,
-                                      VideoObjectAnnotation, ObjectAnnotation,
-                                      ClassificationAnnotation, ScalarMetric,
-                                      ConfusionMatrixMetric]]
+        self, data_row: DataRow,
+        annotations: List[Union[TextEntity, VideoClassificationAnnotation,
+                                VideoObjectAnnotation, ObjectAnnotation,
+                                ClassificationAnnotation, ScalarMetric,
+                                ConfusionMatrixMetric]]
     ) -> Union[TextData, VideoData, ImageData]:
+        if len(annotations) == 0:
+            raise ValueError("Missing annotations while inferring media type")
+
         types = {type(annotation) for annotation in annotations}
+        data = ImageData
         if TextEntity in types:
-            return TextData
+            data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
-            return VideoData
+            data = VideoData
+
+        if data_row.id:
+            return data(uid=data_row.id)
         else:
-            return ImageData
+            return data(global_key=data_row.global_key)
 
     @staticmethod
     def _get_consecutive_frames(

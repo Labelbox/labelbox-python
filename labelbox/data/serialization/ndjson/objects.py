@@ -60,7 +60,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
             'x': point.x,
             'y': point.y
         },
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -105,7 +105,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in line.points],
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -154,7 +154,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in polygon.points],
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -183,7 +183,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                              left=rectangle.start.x,
                              height=rectangle.end.y - rectangle.start.y,
                              width=rectangle.end.x - rectangle.start.x),
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -280,7 +280,7 @@ class NDSegments(NDBaseObject):
         segments = [NDSegment.from_common(segment) for segment in segments]
 
         return cls(segments=segments,
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'))
@@ -332,7 +332,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                 png=base64.b64encode(im_bytes.getvalue()).decode('utf-8'))
 
         return cls(mask=lbv1_mask,
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -364,7 +364,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
             start=text_entity.start,
             end=text_entity.end,
         ),
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),

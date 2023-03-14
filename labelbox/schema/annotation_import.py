@@ -14,6 +14,7 @@ import labelbox
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.utils import is_exactly_one_set
 from labelbox.schema.confidence_presence_checker import LabelsConfidencePresenceChecker
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.serialization import serialize_labels
@@ -155,6 +156,8 @@ class AnnotationImport(DbObject):
             )
 
         objects = serialize_labels(objects)
+        cls._validate_data_rows(objects)
+
         data_str = ndjson.dumps(objects)
         if not data_str:
             raise ValueError(f"{object_name} cannot be empty")
@@ -170,6 +173,37 @@ class AnnotationImport(DbObject):
                             self.name,
                             as_json=True)
         self._set_field_values(res)
+
+    @classmethod
+    def _validate_data_rows(cls, objects: List[Dict[str, Any]]):
+        """
+        Validates annotations by checking 'dataRow' is provided
+        and only one of 'id' or 'globalKey' is provided.
+
+        Shows up to `max_num_errors` errors if invalidated, to prevent
+        large number of error messages from being printed out 
+        """
+        errors = []
+        max_num_errors = 100
+        for object in objects:
+            if 'dataRow' not in object:
+                errors.append(f"'dataRow' is missing in {object}")
+            elif not is_exactly_one_set(object['dataRow'].get('id'),
+                                        object['dataRow'].get('globalKey')):
+                errors.append(
+                    f"Must provide only one of 'id' or 'globalKey' for 'dataRow' in {object}"
+                )
+
+        if errors:
+            errors_length = len(errors)
+            formatted_errors = '\n'.join(errors[:max_num_errors])
+            if errors_length > max_num_errors:
+                logger.warning(
+                    f"Found more than {max_num_errors} errors. Showing first {max_num_errors} error messages..."
+                )
+            raise ValueError(
+                f"Error while validating annotations. Found {errors_length} annotations with errors. Errors:\n{formatted_errors}"
+            )
 
     @classmethod
     def from_name(cls,

@@ -5,7 +5,7 @@ from labelbox.client import Client
 from labelbox.schema.project import Project
 from labelbox.schema.model import Model
 from labelbox.schema.bulk_import_request import BulkImportRequest
-from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport, LabelImport
+from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport, LabelImport, MEAToMALPredictionImport
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.label import Label

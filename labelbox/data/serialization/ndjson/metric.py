@@ -1,7 +1,7 @@
 from typing import Optional, Union, Type
 
 from labelbox.data.annotation_types.data import ImageData, TextData
-from labelbox.data.serialization.ndjson.base import NDJsonBase
+from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase
 from labelbox.data.annotation_types.metrics.scalar import (
     ScalarMetric, ScalarMetricAggregation, ScalarMetricValue,
     ScalarMetricConfidenceValue)
@@ -50,7 +50,7 @@ class NDConfusionMatrixMetric(BaseNDMetric):
                    feature_name=metric.feature_name,
                    subclass_name=metric.subclass_name,
                    aggregation=metric.aggregation,
-                   data_row={'id': data.uid})
+                   data_row=DataRow(id=data.uid, global_key=data.global_key))
 
 
 class NDScalarMetric(BaseNDMetric):
@@ -75,7 +75,7 @@ class NDScalarMetric(BaseNDMetric):
                    feature_name=metric.feature_name,
                    subclass_name=metric.subclass_name,
                    aggregation=metric.aggregation.value,
-                   data_row={'id': data.uid})
+                   data_row=DataRow(id=data.uid, global_key=data.global_key))
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

@@ -1,0 +1,100 @@
+[{
+    "uuid": "5ad9c52f-058d-49c8-a749-3f20b84f8cd4",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "boxy",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "page": 4,
+    "unit": "POINTS",
+    "confidence": 0.53,
+    "bbox": {
+        "top": 162.73,
+        "left": 32.45,
+        "height": 388.16999999999996,
+        "width": 101.66000000000001
+    }
+}, {
+    "uuid": "20eeef88-0294-49b4-a815-86588476bc6f",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "boxy",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "page": 7,
+    "unit": "POINTS",
+    "bbox": {
+        "top": 223.26,
+        "left": 251.42,
+        "height": 457.03999999999996,
+        "width": 186.78
+    }
+}, {
+    "uuid": "641a8944-3938-409c-b4eb-dea354ed06e5",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "boxy",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "page": 6,
+    "unit": "POINTS",
+    "confidence": 0.99,
+    "bbox": {
+        "top": 32.52,
+        "left": 218.17,
+        "height": 231.73,
+        "width": 110.56000000000003
+    }
+}, {
+    "uuid": "ebe4da7d-08b3-480a-8d15-26552b7f011c",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "boxy",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "page": 7,
+    "unit": "POINTS",
+    "confidence": 0.89,
+    "bbox": {
+        "top": 117.39,
+        "left": 4.25,
+        "height": 456.9200000000001,
+        "width": 164.83
+    }
+}, {
+    "uuid": "35c41855-575f-42cc-a2f9-1f06237e9b63",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "boxy",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "page": 8,
+    "unit": "POINTS",
+    "bbox": {
+        "top": 82.13,
+        "left": 217.28,
+        "height": 279.76,
+        "width": 82.43000000000004
+    }
+}, {
+    "uuid": "1b009654-bc17-42a2-8a71-160e7808c403",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "boxy",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "page": 3,
+    "unit": "POINTS",
+    "bbox": {
+        "top": 298.12,
+        "left": 83.34,
+        "height": 203.83000000000004,
+        "width": 0.37999999999999545
+    }
+}]
