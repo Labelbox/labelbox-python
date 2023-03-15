@@ -226,7 +226,8 @@ class NDClassification:
             value=annotation.to_common(),
             name=annotation.name,
             feature_schema_id=annotation.schema_id,
-            extra={'uuid': annotation.uuid})
+            extra={'uuid': annotation.uuid},
+            confidence=annotation.confidence)
         if getattr(annotation, 'frames', None) is None:
             return [common]
         results = []

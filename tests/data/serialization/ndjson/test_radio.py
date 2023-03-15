@@ -1,6 +1,6 @@
 import json
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer, Radio, Text
+from labelbox.data.annotation_types.classification.classification import ClassificationAnswer, Radio
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.label import Label
 
@@ -17,14 +17,16 @@ def test_serialization():
                       ClassificationAnnotation(
                           name="radio_question_geo",
                           confidence=0.5,
-                          value=Text(answer="first_radio_answer"))
+                          value=Radio(answer=ClassificationAnswer(
+                              confidence=0.6, name="first_radio_answer")))
                   ])
 
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
     assert res['confidence'] == 0.5
     assert res['name'] == "radio_question_geo"
-    assert res['answer'] == "first_radio_answer"
+    assert res['answer']['name'] == "first_radio_answer"
+    assert res['answer']['confidence'] == 0.6
     assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
 
     deserialized = NDJsonConverter.deserialize([res])
@@ -33,5 +35,5 @@ def test_serialization():
     assert annotation.confidence == 0.5
 
     annotation_value = annotation.value
-    assert type(annotation_value) is Text
-    assert annotation_value.answer == "first_radio_answer"
+    assert type(annotation_value) is Radio
+    assert annotation_value.answer.name == "first_radio_answer"
