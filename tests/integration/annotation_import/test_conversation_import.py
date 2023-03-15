@@ -10,8 +10,7 @@ from labelbox.schema.annotation_import import MALPredictionImport
 def test_conversation_entity(client, configured_project_without_data_rows,
                              dataset_conversation_entity, rand_gen):
 
-    conversation_entity_annotation = ConversationEntity(name="named-entity",
-                                                        start=0,
+    conversation_entity_annotation = ConversationEntity(start=0,
                                                         end=8,
                                                         message_id="4")
 
@@ -41,3 +40,15 @@ def test_conversation_entity(client, configured_project_without_data_rows,
     import_annotations.wait_until_done()
 
     assert import_annotations.errors == []
+
+    exported_labels = configured_project_without_data_rows.label_generator()
+    for label in exported_labels:
+        assert len(
+            label.annotations) == 1  # we have created only 1 annotation above
+        annotation = label.annotations[0]
+
+        assert type(annotation) is ConversationEntity
+        assert annotation.name == "named-entity"
+        assert annotation.value.message_id == "4"
+        assert annotation.value.start == 0
+        assert annotation.value.end == 8

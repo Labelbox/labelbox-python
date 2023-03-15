@@ -505,8 +505,8 @@ class NDObject:
 # NOTE: Deserialization of subclasses in pydantic is a known PIA, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
 # I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
 # This is a bit of a hack, but it works for now
-NERTextType = Union[NDConversationEntity, NDTextEntity]
+NDEntityType = Union[NDConversationEntity, NDTextEntity]
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     NERTextType, NDDocumentEntity]
+                     NDEntityType, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
