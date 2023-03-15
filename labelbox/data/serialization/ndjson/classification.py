@@ -120,25 +120,33 @@ class NDRadioSubclass(NDFeature):
 class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
-    def from_common(cls, text: Text, name: str, feature_schema_id: Cuid,
-                    extra: Dict[str, Any], data: Union[TextData,
-                                                       ImageData]) -> "NDText":
+    def from_common(cls,
+                    text: Text,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[TextData, ImageData],
+                    confidence: Optional[float] = None) -> "NDText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
+            confidence=confidence,
         )
 
 
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
     @classmethod
-    def from_common(
-            cls, checklist: Checklist, name: str, feature_schema_id: Cuid,
-            extra: Dict[str, Any], data: Union[VideoData, TextData,
-                                               ImageData]) -> "NDChecklist":
+    def from_common(cls,
+                    checklist: Checklist,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[VideoData, TextData, ImageData],
+                    confidence: Optional[float] = None) -> "NDChecklist":
         return cls(answer=[
             NDFeature(name=answer.name,
                       schema_id=answer.feature_schema_id,
@@ -149,15 +157,20 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   frames=extra.get('frames'))
+                   frames=extra.get('frames'),
+                   confidence=confidence)
 
 
 class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls, radio: Radio, name: str, feature_schema_id: Cuid,
-                    extra: Dict[str, Any], data: Union[VideoData, TextData,
-                                                       ImageData]) -> "NDRadio":
+    def from_common(cls,
+                    radio: Radio,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[VideoData, TextData, ImageData],
+                    confidence: Optional[float] = None) -> "NDRadio":
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
                                     confidence=radio.answer.confidence),
@@ -165,7 +178,8 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   frames=extra.get('frames'))
+                   frames=extra.get('frames'),
+                   confidence=confidence)
 
 
 class NDSubclassification:
@@ -235,7 +249,8 @@ class NDClassification:
             )
         return classify_obj.from_common(annotation.value, annotation.name,
                                         annotation.feature_schema_id,
-                                        annotation.extra, data)
+                                        annotation.extra, data,
+                                        annotation.confidence)
 
     @staticmethod
     def lookup_classification(
