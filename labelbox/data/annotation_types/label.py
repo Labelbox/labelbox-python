@@ -8,9 +8,10 @@ import labelbox
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 from .annotation import (ClassificationAnnotation, ObjectAnnotation,
-                         VideoClassificationAnnotation, VideoObjectAnnotation)
+                         VideoClassificationAnnotation, VideoObjectAnnotation,
+                         DICOMObjectAnnotation)
 from .classification import ClassificationAnswer
-from .data import VideoData, TextData, ImageData
+from .data import DicomData, VideoData, TextData, ImageData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
@@ -39,9 +40,7 @@ class Label(BaseModel):
     uid: Optional[Cuid] = None
     data: Union[VideoData, ImageData, TextData, TiledImageData]
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
-                            VideoObjectAnnotation,
-                            VideoClassificationAnnotation, ScalarMetric,
-                            ConfusionMatrixMetric]] = []
+                            ScalarMetric, ConfusionMatrixMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:
