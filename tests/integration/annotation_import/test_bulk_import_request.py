@@ -311,7 +311,7 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
         page=1)
 
     entities_annotation_document_entity = DocumentEntity(
-        name="named_entity", text_selections=[document_text_selection])
+        text_selections=[document_text_selection])
     entities_annotation = ObjectAnnotation(
         name="named-entity", value=entities_annotation_document_entity)
 

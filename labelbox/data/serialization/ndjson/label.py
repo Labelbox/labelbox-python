@@ -10,7 +10,7 @@ from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnot
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
-from ...annotation_types.ner import TextEntity
+from ...annotation_types.ner import TextEntity, ConversationEntity
 from ...annotation_types.classification import Dropdown
 from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 
@@ -52,7 +52,6 @@ class NDLabel(BaseModel):
             annots = []
             data_row = annotations[0].data_row
             for annotation in annotations:
-
                 if isinstance(annotation, NDSegments):
                     annots.extend(
                         NDSegments.to_common(annotation, annotation.name,
@@ -72,7 +71,8 @@ class NDLabel(BaseModel):
 
     def _infer_media_type(
         self, data_row: DataRow,
-        annotations: List[Union[TextEntity, VideoClassificationAnnotation,
+        annotations: List[Union[TextEntity, ConversationEntity,
+                                VideoClassificationAnnotation,
                                 VideoObjectAnnotation, ObjectAnnotation,
                                 ClassificationAnnotation, ScalarMetric,
                                 ConfusionMatrixMetric]]
@@ -82,7 +82,7 @@ class NDLabel(BaseModel):
 
         types = {type(annotation) for annotation in annotations}
         data = ImageData
-        if TextEntity in types:
+        if (TextEntity in types) or (ConversationEntity in types):
             data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
             data = VideoData
