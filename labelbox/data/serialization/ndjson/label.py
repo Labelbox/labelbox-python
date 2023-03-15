@@ -71,7 +71,8 @@ class NDLabel(BaseModel):
 
     def _infer_media_type(
         self, data_row: DataRow,
-        annotations: List[Union[TextEntity, ConversationEntity, VideoClassificationAnnotation,
+        annotations: List[Union[TextEntity, ConversationEntity,
+                                VideoClassificationAnnotation,
                                 VideoObjectAnnotation, ObjectAnnotation,
                                 ClassificationAnnotation, ScalarMetric,
                                 ConfusionMatrixMetric]]

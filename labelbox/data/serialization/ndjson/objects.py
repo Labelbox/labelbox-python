@@ -404,21 +404,23 @@ class NDConversationEntity(NDTextEntity):
     message_id: str
 
     def to_common(self) -> ConversationEntity:
-        return ConversationEntity(start=self.location.start, end=self.location.end, message_id=self.message_id)
+        return ConversationEntity(start=self.location.start,
+                                  end=self.location.end,
+                                  message_id=self.message_id)
 
     @classmethod
-    def from_common(cls,
-                    conversation_entity: ConversationEntity,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None) -> "NDConversationEntity":
-        return cls(location=Location(
-                    start=conversation_entity.start,
-                    end=conversation_entity.end),
-                    message_id=conversation_entity.message_id,
+    def from_common(
+            cls,
+            conversation_entity: ConversationEntity,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None) -> "NDConversationEntity":
+        return cls(location=Location(start=conversation_entity.start,
+                                     end=conversation_entity.end),
+                   message_id=conversation_entity.message_id,
                    dataRow=DataRow(id=data.uid),
                    name=name,
                    schema_id=feature_schema_id,
@@ -500,6 +502,9 @@ class NDObject:
         return result
 
 
+# NOTE: Deserialization of subclasses in pydantic is a known PIA, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
+# I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
+# This is a bit of a hack, but it works for now
 NERTextType = Union[NDConversationEntity, NDTextEntity]
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
                      NERTextType, NDDocumentEntity]
