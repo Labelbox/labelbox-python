@@ -10,6 +10,9 @@ from .annotation import VideoClassificationAnnotation
 from .annotation import ObjectAnnotation
 from .annotation import VideoObjectAnnotation
 
+from .ner import ConversationEntity
+from .ner import DocumentEntity
+from .ner import DocumentTextSelection
 from .ner import TextEntity
 
 from .classification import Checklist
@@ -18,6 +21,11 @@ from .classification import Dropdown
 from .classification import Radio
 from .classification import Text
 
+from .data import AudioData
+from .data import ConversationData
+from .data import DicomData
+from .data import DocumentData
+from .data import HTMLData
 from .data import ImageData
 from .data import MaskData
 from .data import TextData

@@ -2,6 +2,7 @@ from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
+from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
 from labelbox.data.mixins import ConfidenceMixin
 import numpy as np
 
@@ -12,7 +13,7 @@ from labelbox.data.annotation_types import feature
 from labelbox.data.annotation_types.data.video import VideoData
 
 from ...annotation_types.data import ImageData, TextData, MaskData
-from ...annotation_types.ner import TextEntity
+from ...annotation_types.ner import DocumentEntity, DocumentTextSelection, TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoObjectAnnotation
@@ -60,7 +61,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
             'x': point.x,
             'y': point.y
         },
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -105,7 +106,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in line.points],
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -154,7 +155,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in polygon.points],
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -183,7 +184,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                              left=rectangle.start.x,
                              height=rectangle.end.y - rectangle.start.y,
                              width=rectangle.end.x - rectangle.start.x),
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -280,7 +281,7 @@ class NDSegments(NDBaseObject):
         segments = [NDSegment.from_common(segment) for segment in segments]
 
         return cls(segments=segments,
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'))
@@ -332,7 +333,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                 png=base64.b64encode(im_bytes.getvalue()).decode('utf-8'))
 
         return cls(mask=lbv1_mask,
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -364,6 +365,62 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
             start=text_entity.start,
             end=text_entity.end,
         ),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
+
+
+class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
+    name: str
+    text_selections: List[DocumentTextSelection]
+
+    def to_common(self) -> DocumentEntity:
+        return DocumentEntity(name=self.name,
+                              text_selections=self.text_selections)
+
+    @classmethod
+    def from_common(cls,
+                    document_entity: DocumentEntity,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[ImageData, TextData],
+                    confidence: Optional[float] = None) -> "NDDocumentEntity":
+
+        return cls(text_selections=document_entity.text_selections,
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
+
+
+class NDConversationEntity(NDTextEntity):
+    message_id: str
+
+    def to_common(self) -> ConversationEntity:
+        return ConversationEntity(start=self.location.start,
+                                  end=self.location.end,
+                                  message_id=self.message_id)
+
+    @classmethod
+    def from_common(
+            cls,
+            conversation_entity: ConversationEntity,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None) -> "NDConversationEntity":
+        return cls(location=Location(start=conversation_entity.start,
+                                     end=conversation_entity.end),
+                   message_id=conversation_entity.message_id,
                    dataRow=DataRow(id=data.uid),
                    name=name,
                    schema_id=feature_schema_id,
@@ -434,7 +491,9 @@ class NDObject:
                 Polygon: NDPolygon,
                 Rectangle: NDRectangle,
                 Mask: NDMask,
-                TextEntity: NDTextEntity
+                TextEntity: NDTextEntity,
+                DocumentEntity: NDDocumentEntity,
+                ConversationEntity: NDConversationEntity,
             }.get(type(annotation.value))
         if result is None:
             raise TypeError(
@@ -443,7 +502,11 @@ class NDObject:
         return result
 
 
+# NOTE: Deserialization of subclasses in pydantic is a known PIA, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
+# I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
+# This is a bit of a hack, but it works for now
+NDEntityType = Union[NDConversationEntity, NDTextEntity]
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     NDTextEntity]
+                     NDEntityType, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine

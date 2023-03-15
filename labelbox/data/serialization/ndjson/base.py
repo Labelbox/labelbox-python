@@ -2,24 +2,22 @@ from typing import Optional
 from uuid import uuid4
 from pydantic import BaseModel, root_validator, validator, Field
 
-from labelbox.utils import camel_case
+from labelbox.utils import _CamelCaseMixin, camel_case, is_exactly_one_set
 from ...annotation_types.types import Cuid
 
 
-class DataRow(BaseModel):
+class DataRow(_CamelCaseMixin):
     id: str = None
+    global_key: str = None
 
-    @validator('id', pre=True, always=True)
-    def validate_id(cls, v):
-        if v is None:
-            raise ValueError(
-                "Data row ids are not set. Use `LabelGenerator.add_to_dataset`,or `Label.create_data_row`. "
-                "You can also manually assign the id for each `BaseData` object"
-            )
-        return v
+    @root_validator()
+    def must_set_one(cls, values):
+        if not is_exactly_one_set(values.get('id'), values.get('global_key')):
+            raise ValueError("Must set either id or global_key")
+        return values
 
 
-class NDJsonBase(BaseModel):
+class NDJsonBase(_CamelCaseMixin):
     uuid: str = None
     data_row: DataRow
 
@@ -27,9 +25,14 @@ class NDJsonBase(BaseModel):
     def set_id(cls, v):
         return v or str(uuid4())
 
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
+    def dict(self, *args, **kwargs):
+        """ Pop missing id or missing globalKey from dataRow """
+        res = super().dict(*args, **kwargs)
+        if not self.data_row.id:
+            res['dataRow'].pop('id')
+        if not self.data_row.global_key:
+            res['dataRow'].pop('globalKey')
+        return res
 
 
 class NDAnnotation(NDJsonBase):

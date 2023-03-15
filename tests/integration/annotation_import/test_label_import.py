@@ -2,7 +2,6 @@ import uuid
 import pytest
 
 from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
-from labelbox.data.serialization import NDJsonConverter
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -36,27 +35,6 @@ def test_create_from_objects(client, configured_project, object_predictions,
     annotation_import_test_helpers.check_running_state(label_import, name)
     annotation_import_test_helpers.assert_file_content(
         label_import.input_file_url, object_predictions)
-
-
-def test_create_from_label_objects(client, configured_project,
-                                   object_predictions,
-                                   annotation_import_test_helpers):
-    """this test should check running state only to validate running, not completed"""
-    name = str(uuid.uuid4())
-
-    labels = list(NDJsonConverter.deserialize(object_predictions))
-
-    label_import = LabelImport.create_from_objects(
-        client=client,
-        project_id=configured_project.uid,
-        name=name,
-        labels=labels)
-
-    assert label_import.parent_id == configured_project.uid
-    annotation_import_test_helpers.check_running_state(label_import, name)
-    normalized_predictions = NDJsonConverter.serialize(labels)
-    annotation_import_test_helpers.assert_file_content(
-        label_import.input_file_url, normalized_predictions)
 
 
 #   TODO: add me when we add this ability

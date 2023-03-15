@@ -129,8 +129,11 @@ def test_export_filtered_activity(client,
     regular_export = project.export_labels(download=True)
     assert len(regular_export) == 1
 
-    filtered_export = project.export_labels(download=True,
-                                            last_activity_start="2020-01-01")
+    filtered_export = project.export_labels(
+        download=True,
+        last_activity_start="2020-01-01",
+        last_activity_end=(datetime.datetime.now() +
+                           datetime.timedelta(days=1)).strftime("%Y-%m-%d"))
     assert len(filtered_export) == 1
 
     filtered_export_with_time = project.export_labels(
@@ -142,4 +145,9 @@ def test_export_filtered_activity(client,
         last_activity_start=(datetime.datetime.now() +
                              datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
     )
+
+    empty_export = project.export_labels(
+        download=True,
+        last_activity_end=(datetime.datetime.now() -
+                           datetime.timedelta(days=1)).strftime("%Y-%m-%d"))
     assert len(empty_export) == 0

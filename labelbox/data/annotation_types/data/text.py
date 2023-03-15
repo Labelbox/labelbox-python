@@ -93,9 +93,11 @@ class TextData(BaseData):
         text = values.get("text")
         url = values.get("url")
         uid = values.get('uid')
-        if uid == file_path == text == url == None:
+        global_key = values.get('global_key')
+        if uid == file_path == text == url == global_key == None:
             raise ValueError(
-                "One of `file_path`, `text`, `uid`, or `url` required.")
+                "One of `file_path`, `text`, `uid`, `global_key` or `url` required."
+            )
         return values
 
     def __repr__(self) -> str:

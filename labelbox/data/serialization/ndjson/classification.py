@@ -8,7 +8,7 @@ from ...annotation_types.annotation import ClassificationAnnotation, VideoClassi
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
-from .base import NDAnnotation
+from .base import DataRow, NDAnnotation
 
 
 class NDFeature(ConfidenceMixin):
@@ -125,7 +125,7 @@ class NDText(NDAnnotation, NDTextSubclass):
                                                        ImageData]) -> "NDText":
         return cls(
             answer=text.answer,
-            data_row={'id': data.uid},
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
@@ -145,7 +145,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                       confidence=answer.confidence)
             for answer in checklist.answer
         ],
-                   data_row={'id': data.uid},
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -161,7 +161,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
                                     confidence=radio.answer.confidence),
-                   data_row={'id': data.uid},
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
