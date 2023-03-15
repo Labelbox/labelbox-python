@@ -1,5 +1,15 @@
 # Changelog
 
+# Version 3.41.0 (2023-03-15)
+
+## Added
+* New data classes for creating labels: `AudioData`, `ConversationData`, `DicomData`, `DocumentData`, `HTMLData`
+* New `DocumentEntity` annotation type class
+* New parameter `last_activity_end` to `Project.export_labels()`
+
+## Notebooks
+* Updated `annotation_import/pdf.ipynb` with example use of `DocumentEntity` class
+
 # Version 3.40.1 (2023-03-10)
 
 ## Fixed
