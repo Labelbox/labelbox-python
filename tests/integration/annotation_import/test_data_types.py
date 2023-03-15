@@ -3,6 +3,7 @@ import labelbox as lb
 import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
+from labelbox.schema.annotation_import import AnnotationImportState
 
 
 # TODO: Add VideoData. Currently label import job finishes without errors but project.export_labels() returns empty list.
@@ -36,7 +37,7 @@ def test_import_data_types(client, configured_project,
         client, project_id, f'test-import-{data_type_string}', labels)
     label_import.wait_until_done()
 
-    assert label_import.state == lb.AnnotationImportState.FINISHED
+    assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
     exported_labels = configured_project.export_labels(download=True)
     objects = exported_labels[0]['Label']['objects']
