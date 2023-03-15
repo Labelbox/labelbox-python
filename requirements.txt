@@ -9,7 +9,6 @@ geojson
 numpy
 PILLOW
 opencv-python
-typeguard
 imagesize
 pyproj
 pygeotile
