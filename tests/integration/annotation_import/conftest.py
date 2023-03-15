@@ -339,6 +339,16 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
+def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_ids = []
+    data_row = dataset.create_data_row(conversation_entity_data_row)
+    data_row_ids.append(data_row.uid)
+    yield dataset, data_row_ids
+    dataset.delete()
+
+
+@pytest.fixture
 def configured_project_without_data_rows(client, configured_project, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),

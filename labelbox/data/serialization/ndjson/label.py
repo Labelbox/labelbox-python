@@ -82,7 +82,7 @@ class NDLabel(BaseModel):
 
         types = {type(annotation) for annotation in annotations}
         data = ImageData
-        if TextEntity in types or ConversationEntity:
+        if (TextEntity in types) or (ConversationEntity in types):
             data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
             data = VideoData

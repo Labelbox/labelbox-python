@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List, Optional, Union, Type
+from typing import Any, Dict, List, Optional, Union
 
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, ConfidenceMixin
 

@@ -1,6 +1,6 @@
 from ast import Bytes
 from io import BytesIO
-from typing import Any, Dict, List, Tuple, Type, Union, Optional
+from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
 from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
 from labelbox.data.mixins import ConfidenceMixin
