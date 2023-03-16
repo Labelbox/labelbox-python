@@ -27,10 +27,12 @@ class ClassificationAnnotation(BaseAnnotation):
         name (Optional[str])
         feature_schema_id (Optional[Cuid])
         value (Union[Text, Checklist, Radio, Dropdown])
+        classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
         extra (Dict[str, Any])
      """
 
     value: Union[Text, Checklist, Radio, Dropdown]
+    classifications: List[ClassificationAnnotation] = []
 
 
 class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
