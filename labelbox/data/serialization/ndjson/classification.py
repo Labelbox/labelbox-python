@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field, root_validator
 from labelbox.data.mixins import ConfidenceMixin
 
 from labelbox.utils import camel_case
-from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation
+from ...annotation_types.video import VideoClassificationAnnotation
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
