@@ -194,6 +194,13 @@ def pdf_entity_data_row(client):
     }
 
 
+@pytest.fixture(scope="session")
+def conversation_entity_data_row(client):
+    conversation_url = client.upload_file('tests/assets/conversation-1.json')
+
+    return {"row_data": conversation_url, "global_key": str(uuid.uuid1())}
+
+
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),

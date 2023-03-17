@@ -2,6 +2,7 @@ from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
+from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
 from labelbox.data.mixins import ConfidenceMixin
 import numpy as np
 
@@ -399,6 +400,35 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
                    confidence=confidence)
 
 
+class NDConversationEntity(NDTextEntity):
+    message_id: str
+
+    def to_common(self) -> ConversationEntity:
+        return ConversationEntity(start=self.location.start,
+                                  end=self.location.end,
+                                  message_id=self.message_id)
+
+    @classmethod
+    def from_common(
+            cls,
+            conversation_entity: ConversationEntity,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None) -> "NDConversationEntity":
+        return cls(location=Location(start=conversation_entity.start,
+                                     end=conversation_entity.end),
+                   message_id=conversation_entity.message_id,
+                   dataRow=DataRow(id=data.uid),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   confidence=confidence)
+
+
 class NDObject:
 
     @staticmethod
@@ -463,6 +493,7 @@ class NDObject:
                 Mask: NDMask,
                 TextEntity: NDTextEntity,
                 DocumentEntity: NDDocumentEntity,
+                ConversationEntity: NDConversationEntity,
             }.get(type(annotation.value))
         if result is None:
             raise TypeError(
@@ -471,7 +502,11 @@ class NDObject:
         return result
 
 
+# NOTE: Deserialization of subclasses in pydantic is a known PIA, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
+# I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
+# This is a bit of a hack, but it works for now
+NDEntityType = Union[NDConversationEntity, NDTextEntity]
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     NDTextEntity, NDDocumentEntity]
+                     NDEntityType, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine

@@ -19,5 +19,4 @@ class DocumentTextSelection(_CamelCaseMixin, BaseModel):
 
 class DocumentEntity(_CamelCaseMixin, BaseModel):
     """ Represents a text entity """
-    name: str
     text_selections: List[DocumentTextSelection]

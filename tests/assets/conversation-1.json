@@ -1,0 +1,235 @@
+{
+    "type":
+        "application/vnd.labelbox.conversational",
+    "version":
+        1,
+    "messages": [{
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel":
+            true,
+        "content":
+            "I'd really like to take my client out to a nice restaurant that serves indian food.",
+        "messageId":
+            "0",
+        "align":
+            "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "I show many restaurants that serve Indian food in that price range. What area would you like to travel to?",
+        "messageId":
+            "1",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel":
+            true,
+        "content":
+            "I am looking for an expensive indian restaurant in the area of centre.",
+        "messageId":
+            "2",
+        "align":
+            "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "Might I recommend Saffron Brasserie? That is an expensive Indian restaurant in the center of town. I can book a table for you, if you like.",
+        "messageId":
+            "3",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel": true,
+        "content": "Sure thing, please book for 6 people at 19:30 on Saturday.",
+        "messageId": "4",
+        "align": "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "Booking was successful. The table will be reserved for 15 minutes. Your Reference number is : RF00JUFQ.",
+        "messageId":
+            "5",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel":
+            true,
+        "content":
+            "Okay great! Thank you so much. Could you also help me find a 3 star hotel in the area. I don't need wifi either.",
+        "messageId":
+            "6",
+        "align":
+            "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "The alpha-milton guest house is in the north and is moderately priced. It has 3 stars and no internet or parking. Would you like to book a room?",
+        "messageId":
+            "7",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel": true,
+        "content": "That sounds great. Please book that now.",
+        "messageId": "8",
+        "align": "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel": false,
+        "content": "May I ask how many people are in your group?",
+        "messageId": "9",
+        "align": "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel": true,
+        "content": "I have 6 people in my group. ",
+        "messageId": "10",
+        "align": "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel": false,
+        "content": "How many days would you like to stay?",
+        "messageId": "11",
+        "align": "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel": true,
+        "content": "2 nights, starting the same day as the reservation.",
+        "messageId": "12",
+        "align": "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "I'm sorry. It looks like they're full. Would you like me to look for something else?",
+        "messageId":
+            "13",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel":
+            true,
+        "content":
+            "Yes please. Is there something else available in that area? ",
+        "messageId":
+            "14",
+        "align":
+            "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "I'm sorry, it looks like that is the only 3 star hotel in that area, would you like me to look somewhere else?",
+        "messageId":
+            "15",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel":
+            true,
+        "content":
+            "Can we try for 1 night instead of 2? I'll need the reference number please.",
+        "messageId":
+            "16",
+        "align":
+            "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel":
+            false,
+        "content":
+            "I was able to get one night, the reference number is 9XVT8M5T.",
+        "messageId":
+            "17",
+        "align":
+            "right"
+    }, {
+        "user": {
+            "userId": "0",
+            "name": "User"
+        },
+        "canLabel": true,
+        "content": "Thank you so much!",
+        "messageId": "18",
+        "align": "left"
+    }, {
+        "user": {
+            "userId": "1",
+            "name": "Bot"
+        },
+        "canLabel": false,
+        "content": "I'm glad to help, you're welcome!",
+        "messageId": "19",
+        "align": "right"
+    }]
+}
