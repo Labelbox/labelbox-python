@@ -15,7 +15,8 @@ from ...annotation_types.classification import Dropdown
 from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
-from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
+from labelbox.data.serialization.ndjson.nd_checklist import NDChecklistSubclass
+from .classification import NDClassification, NDClassificationType, NDRadioSubclass
 from .objects import NDObject, NDObjectType, NDSegments
 from .base import DataRow
 

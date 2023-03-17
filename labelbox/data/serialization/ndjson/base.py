@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import uuid4
 from pydantic import BaseModel, root_validator, validator, Field
-from labelbox.data.serialization.ndjson.classification import NDSubclassificationType
+from labelbox.data.serialization.ndjson.nd_checklist import NDSubclassificationType
 
 from labelbox.utils import _CamelCaseMixin, camel_case, is_exactly_one_set
 from ...annotation_types.types import Cuid

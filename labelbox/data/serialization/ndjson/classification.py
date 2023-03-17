@@ -8,7 +8,8 @@ from ...annotation_types.annotation import ClassificationAnnotation, VideoClassi
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
-from .base import DataRow, NDAnnotation
+from .annotation import NDAnnotation
+from .data_row import DataRow
 
 
 class NDFeature(ConfidenceMixin):

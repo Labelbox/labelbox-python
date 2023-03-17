@@ -1,7 +1,8 @@
 from typing import Optional, Union, Type
 
 from labelbox.data.annotation_types.data import ImageData, TextData
-from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase
+from labelbox.data.serialization.ndjson.nd_base import NDJsonBase
+from labelbox.data.serialization.ndjson.data_row import DataRow
 from labelbox.data.annotation_types.metrics.scalar import (
     ScalarMetric, ScalarMetricAggregation, ScalarMetricValue,
     ScalarMetricConfidenceValue)
