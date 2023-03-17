@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import uuid4
 from pydantic import BaseModel, root_validator, validator, Field
+from labelbox.data.serialization.ndjson.classification import NDSubclassificationType
 
 from labelbox.utils import _CamelCaseMixin, camel_case, is_exactly_one_set
 from ...annotation_types.types import Cuid
@@ -37,6 +38,7 @@ class NDJsonBase(_CamelCaseMixin):
 
 class NDAnnotation(NDJsonBase):
     name: Optional[str] = None
+    classifications: List[NDSubclassificationType] = []
     schema_id: Optional[Cuid] = None
     page: Optional[int] = None
     unit: Optional[str] = None

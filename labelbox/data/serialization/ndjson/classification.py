@@ -122,10 +122,11 @@ class NDText(NDAnnotation, NDTextSubclass):
     @classmethod
     def from_common(cls, text: Text, name: str, feature_schema_id: Cuid,
                     extra: Dict[str, Any], data: Union[TextData,
-                                                       ImageData]) -> "NDText":
+                                                       ImageData], classifications: List[ClassificationAnnotation]) -> "NDText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
+            classifications=classifications,
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
@@ -238,7 +239,12 @@ class NDClassification:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
-        return classify_obj.from_common(annotation.value, annotation.name,
+        
+        classification = [
+            NDSubclassification.from_common(annot)
+            for annot in annotation.classifications
+        ]
+        return classify_obj.from_common(annotation.value, classification, annotation.name,
                                         annotation.feature_schema_id,
                                         annotation.extra, data)
 

@@ -32,7 +32,7 @@ class ClassificationAnnotation(BaseAnnotation):
      """
 
     value: Union[Text, Checklist, Radio, Dropdown]
-    classifications: List[ClassificationAnnotation] = []
+    classifications: List['ClassificationAnnotation'] = []
 
 
 class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):

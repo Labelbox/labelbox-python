@@ -22,7 +22,8 @@ from .base import DataRow, NDAnnotation
 
 
 class NDBaseObject(NDAnnotation):
-    classifications: List[NDSubclassificationType] = []
+    # classifications: List[NDSubclassificationType] = []
+    pass
 
 
 class VideoSupported(BaseModel):
