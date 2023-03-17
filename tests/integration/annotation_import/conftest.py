@@ -658,7 +658,7 @@ def model_run_with_model_run_data_rows(client, configured_project,
     labels = wait_for_label_processing(configured_project)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)
-    time.sleep(3)
+    time.sleep(300)
     yield model_run
     model_run.delete()
     # TODO: Delete resources when that is possible ..
@@ -670,6 +670,11 @@ def model_run_with_all_project_labels(client, configured_project,
                                       wait_for_label_processing):
     configured_project.enable_model_assisted_labeling()
 
+    data_row_ids = configured_project.data_row_ids
+
+    configured_project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids)
+
     upload_task = LabelImport.create_from_objects(
         client, configured_project.uid, f"label-import-{uuid.uuid4()}",
         model_run_predictions)
@@ -680,7 +685,6 @@ def model_run_with_all_project_labels(client, configured_project,
     ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
     wait_for_label_processing(configured_project)
     model_run.upsert_labels(project_id=configured_project.uid)
-    time.sleep(3)
     yield model_run
     model_run.delete()
     # TODO: Delete resources when that is possible ..
