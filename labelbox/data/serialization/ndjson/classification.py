@@ -208,10 +208,15 @@ class NDClassification:
     def to_common(
         annotation: "NDClassificationType"
     ) -> Union[ClassificationAnnotation, VideoClassificationAnnotation]:
+        classifications = [
+            NDSubclassification.to_common(annot)
+            for annot in annotation.classifications
+        ]
         common = ClassificationAnnotation(
             value=annotation.to_common(),
             name=annotation.name,
             feature_schema_id=annotation.schema_id,
+            classifications=classifications,
             extra={'uuid': annotation.uuid})
         if getattr(annotation, 'frames', None) is None:
             return [common]
