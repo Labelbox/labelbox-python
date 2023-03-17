@@ -9,6 +9,8 @@ from .annotation import ClassificationAnnotation
 from .annotation import VideoClassificationAnnotation
 from .annotation import ObjectAnnotation
 from .annotation import VideoObjectAnnotation
+from .annotation import DICOMObjectAnnotation
+from .annotation import GroupKey
 
 from .ner import ConversationEntity
 from .ner import DocumentEntity
