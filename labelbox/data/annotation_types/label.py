@@ -11,11 +11,14 @@ from .annotation import (ClassificationAnnotation, ObjectAnnotation,
                          VideoClassificationAnnotation, VideoObjectAnnotation,
                          DICOMObjectAnnotation)
 from .classification import ClassificationAnswer
-from .data import DicomData, VideoData, TextData, ImageData
+from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
 from ..ontology import get_feature_schema_lookup
+
+DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
+                 ConversationData, DicomData, DocumentData, HTMLData]
 
 
 class Label(BaseModel):
@@ -38,7 +41,7 @@ class Label(BaseModel):
         extra: additional context
     """
     uid: Optional[Cuid] = None
-    data: Union[VideoData, ImageData, TextData, TiledImageData]
+    data: DataType
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             ScalarMetric, ConfusionMatrixMetric]] = []
     extra: Dict[str, Any] = {}

@@ -1,5 +1,6 @@
 import numpy as np
 
+import labelbox.types as lb_types
 from labelbox import OntologyBuilder, Tool, Classification as OClassification, Option
 from labelbox.data.annotation_types import (ClassificationAnswer, Radio, Text,
                                             ClassificationAnnotation,
@@ -181,3 +182,14 @@ def test_schema_assignment_confidence():
                   ])
 
     assert label.annotations[0].confidence == 0.914
+
+
+def test_initialize_label_no_coercion():
+    global_key = 'global-key'
+    ner_annotation = lb_types.ObjectAnnotation(
+        name="ner",
+        value=lb_types.ConversationEntity(start=0, end=8, message_id="4"))
+    label = Label(data=lb_types.ConversationData(global_key=global_key),
+                  annotations=[ner_annotation])
+    assert isinstance(label.data, lb_types.ConversationData)
+    assert label.data.global_key == global_key
