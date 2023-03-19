@@ -9,7 +9,7 @@ else:
 from typing import Tuple
 
 
-class ProjectExportFilters(TypedDict):
+class SharedExportFilters(TypedDict):
     label_created_at: Optional[Tuple[str, str]]
     """ Date range for labels created at
     Formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
@@ -26,3 +26,11 @@ class ProjectExportFilters(TypedDict):
     >>>   [None, "2050-01-01 00:00:00"]
     >>>   ["2000-01-01 00:00:00", None]
     """
+
+
+class ProjectExportFilters(SharedExportFilters):
+    pass
+
+
+class DatasetExportFilters(SharedExportFilters):
+    pass

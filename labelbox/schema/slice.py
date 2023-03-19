@@ -3,7 +3,7 @@ from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.export_params import CatalogSliceExportParams
+from labelbox.schema.export_params import CatalogExportParams
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
@@ -66,7 +66,7 @@ class CatalogSlice(Slice):
 
     def export_v2(self,
                   task_name: Optional[str] = None,
-                  params: Optional[CatalogSliceExportParams] = None) -> Task:
+                  params: Optional[CatalogExportParams] = None) -> Task:
         """
         Creates a slice export task with the given params and returns the task.
         >>>     slice = client.get_catalog_slice("SLICE_ID")
@@ -77,7 +77,7 @@ class CatalogSlice(Slice):
         >>>     task.result
         """
 
-        _params = params or CatalogSliceExportParams({
+        _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
             "data_row_details": False,

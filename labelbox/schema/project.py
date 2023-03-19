@@ -420,7 +420,7 @@ class Project(DbObject, Updateable, Deletable):
                   filters: Optional[ProjectExportFilters] = None,
                   params: Optional[ProjectExportParams] = None) -> Task:
         """
-        Creates a project run export task with the given params and returns the task.
+        Creates a project export task with the given params and returns the task.
 
         For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
         
@@ -430,8 +430,8 @@ class Project(DbObject, Updateable, Deletable):
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
         >>>         },
         >>>         params={
-        >>>             "include_performance_details": False,
-        >>>             "include_labels": True
+        >>>             "performance_details": False,
+        >>>             "label_details": True
         >>>         })
         >>>     task.wait_till_done()
         >>>     task.result

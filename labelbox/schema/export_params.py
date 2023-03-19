@@ -22,7 +22,7 @@ class ProjectExportParams(DataRowParams):
     performance_details: Optional[bool]
 
 
-class CatalogSliceExportParams(DataRowParams):
+class CatalogExportParams(DataRowParams):
     project_details: Optional[bool]
     label_details: Optional[bool]
     performance_details: Optional[bool]
