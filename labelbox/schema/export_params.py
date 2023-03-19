@@ -1,6 +1,6 @@
 import sys
 
-from typing import Optional
+from typing import Optional, List
 
 from labelbox.schema.media_type import MediaType
 if sys.version_info >= (3, 8):
@@ -20,6 +20,15 @@ class ProjectExportParams(DataRowParams):
     project_details: Optional[bool]
     label_details: Optional[bool]
     performance_details: Optional[bool]
+
+
+class CatalogSliceExportParams(DataRowParams):
+    project_details: Optional[bool]
+    label_details: Optional[bool]
+    performance_details: Optional[bool]
+    model_runs_ids: Optional[List[str]]
+    projects_ids: Optional[List[str]]
+    pass
 
 
 class ModelRunExportParams(DataRowParams):
