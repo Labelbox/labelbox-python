@@ -148,6 +148,20 @@ def test_data_row_export(dataset, image_url):
     assert set(result) == ids
 
 
+def test_dataset_export_v2(dataset, image_url):
+    n_data_rows = 5
+    ids = set()
+    for _ in range(n_data_rows):
+        ids.add(dataset.create_data_row(row_data=image_url))
+    task = dataset.export_v2(params={
+        "performance_details": False,
+        "label_details": True
+    })
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+    assert len(task.result) == n_data_rows
+
+
 def test_create_descriptor_file(dataset):
     import unittest.mock as mock
     with mock.patch.object(dataset.client,
