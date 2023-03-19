@@ -1,4 +1,5 @@
 import json
+import time
 import pytest
 import requests
 from labelbox import Dataset
@@ -153,10 +154,13 @@ def test_dataset_export_v2(dataset, image_url):
     ids = set()
     for _ in range(n_data_rows):
         ids.add(dataset.create_data_row(row_data=image_url))
+
+    time.sleep(10)
     task = dataset.export_v2(params={
         "performance_details": False,
         "label_details": True
     })
+    task.wait_till_done()
     assert task.status == "COMPLETE"
     assert task.errors is None
     assert len(task.result) == n_data_rows

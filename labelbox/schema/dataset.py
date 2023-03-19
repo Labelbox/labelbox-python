@@ -568,7 +568,7 @@ class Dataset(DbObject, Updateable, Deletable):
             "label_details": False,
             "media_type_override": None,
             "model_runs_ids": None,
-            "project_ids": None,
+            "projects_ids": None,
         })
 
         _filters = filters or DatasetExportFilters({
