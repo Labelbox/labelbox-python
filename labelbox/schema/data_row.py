@@ -238,9 +238,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             }
         }
 
-        print('export execution')
-        print(client)
-
         res = client.execute(
             create_task_query_str,
             query_params,
