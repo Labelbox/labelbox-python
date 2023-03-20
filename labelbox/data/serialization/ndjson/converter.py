@@ -6,7 +6,7 @@ from .label import NDLabel
 
 logger = logging.getLogger(__name__)
 
-IGNORE_IF_NONE = ["page", "unit"]
+IGNORE_IF_NONE = ["page", "unit", "messageId"]
 
 
 class NDJsonConverter:
