@@ -24,7 +24,8 @@ def round_dict(data):
     'tests/data/assets/ndjson/classification_import_global_key.json',
     'tests/data/assets/ndjson/metric_import_global_key.json',
     'tests/data/assets/ndjson/polyline_import_global_key.json',
-    'tests/data/assets/ndjson/text_entity_import_global_key.json'
+    'tests/data/assets/ndjson/text_entity_import_global_key.json',
+    'tests/data/assets/ndjson/conversation_entity_import_global_key.json',
 ])
 def test_many_types(filename: str):
     with open(filename, 'r') as f:
