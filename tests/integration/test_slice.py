@@ -1,6 +1,8 @@
 import pytest
 
 
+@pytest.mark.skip(
+    'Skipping until we have a way to create slices programatically')
 def test_export_v2_slice(client):
     # Since we don't have CRUD for slices, we'll just use the one that's already there
     SLICE_ID = "clfgqf1c72mk107zx6ypo9bse"
