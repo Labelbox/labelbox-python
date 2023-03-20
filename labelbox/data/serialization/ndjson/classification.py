@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Union, Optional
 
 from pydantic import BaseModel, Field, root_validator
 from labelbox.data.mixins import ConfidenceMixin
+from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation
@@ -9,12 +10,16 @@ from ...annotation_types.video import VideoClassificationAnnotation
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
-from .base import DataRow, NDAnnotation
+
+
+class NDBaseObject(NDAnnotation):
+    classifications: List['NDSubclassificationType'] = []
 
 
 class NDFeature(ConfidenceMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
+    classifications: Optional[List['NDSubclassificationType']] = []
 
     @root_validator()
     def must_set_one(cls, values):
@@ -30,6 +35,10 @@ class NDFeature(ConfidenceMixin):
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
+        if self.classifications is None or len(self.classifications) == 0:
+            res.pop('classifications')
+        else:
+            res['classifications'] = [c.dict() for c in self.classifications]
         return res
 
     class Config:
@@ -100,10 +109,16 @@ class NDRadioSubclass(NDFeature):
     answer: NDFeature
 
     def to_common(self) -> Radio:
-        return Radio(
-            answer=ClassificationAnswer(name=self.answer.name,
-                                        feature_schema_id=self.answer.schema_id,
-                                        confidence=self.answer.confidence))
+        classifications = [
+            NDSubclassification.to_common(annot)
+            for annot in self.answer.classifications
+        ]
+        return Radio(answer=ClassificationAnswer(
+            name=self.answer.name,
+            feature_schema_id=self.answer.schema_id,
+            confidence=self.answer.confidence,
+            classifications=classifications,
+        ))
 
     @classmethod
     def from_common(cls, radio: Radio, name: str,
@@ -132,6 +147,7 @@ class NDText(NDAnnotation, NDTextSubclass):
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
+            classifications=classifications,
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
@@ -166,20 +182,28 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    confidence=confidence)
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
+class NDRadio(NDBaseObject, NDRadioSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls,
-                    radio: Radio,
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[VideoData, TextData, ImageData],
-                    message_id: str,
-                    confidence: Optional[float] = None) -> "NDRadio":
+    def from_common(
+        cls,
+        radio: Radio,
+        name: str,
+        feature_schema_id: Cuid,
+        extra: Dict[str, Any],
+        data: Union[VideoData, TextData, ImageData],
+        message_id: str,
+        confidence: Optional[float] = None,
+        classifications: Optional[List[ClassificationAnnotation]] = []
+    ) -> "NDRadio":
+        cls.update_forward_refs()
+        NDFeature.update_forward_refs()
+        NDChecklistSubclass.update_forward_refs()
+        NDRadioSubclass.update_forward_refs()
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
-                                    confidence=radio.answer.confidence),
+                                    confidence=radio.answer.confidence,
+                                    classifications=classifications),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
@@ -235,7 +259,9 @@ class NDClassification:
             feature_schema_id=annotation.schema_id,
             extra={'uuid': annotation.uuid},
             message_id=annotation.message_id,
-            confidence=annotation.confidence)
+            confidence=annotation.confidence,
+        )
+
         if getattr(annotation, 'frames', None) is None:
             return [common]
         results = []
@@ -256,11 +282,18 @@ class NDClassification:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
+
+        nested_classifications = annotation.value.answer.classifications
+        classifications = [
+            NDSubclassification.from_common(annot)
+            for annot in nested_classifications
+        ]
+
         return classify_obj.from_common(annotation.value, annotation.name,
                                         annotation.feature_schema_id,
                                         annotation.extra, data,
                                         annotation.message_id,
-                                        annotation.confidence)
+                                        annotation.confidence, classifications)
 
     @staticmethod
     def lookup_classification(
