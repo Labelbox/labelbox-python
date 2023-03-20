@@ -1,8 +1,6 @@
 import json
-from labelbox.data.serialization.ndjson.classification import NDRadio
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.data.serialization.ndjson.objects import NDLine
 
 
 def test_classification():

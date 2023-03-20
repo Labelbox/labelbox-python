@@ -353,7 +353,7 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
         segments = [NDDicomSegment.from_common(segment) for segment in segments]
 
         return cls(segments=segments,
-                   dataRow=DataRow(id=data.uid),
+                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -465,7 +465,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
                     confidence: Optional[float] = None) -> "NDDocumentEntity":
 
         return cls(text_selections=document_entity.text_selections,
-                   dataRow=DataRow(id=data.uid),
+                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
@@ -494,7 +494,7 @@ class NDConversationEntity(NDTextEntity):
         return cls(location=Location(start=conversation_entity.start,
                                      end=conversation_entity.end),
                    message_id=conversation_entity.message_id,
-                   dataRow=DataRow(id=data.uid),
+                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
