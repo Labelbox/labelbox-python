@@ -1,11 +1,10 @@
 
-build:
+build-image:
 	docker build -t local/labelbox-python:test .
 
+test-local: build-image
 
-test-local: build
-
-	@# if PATH_TO_TEST we asuume you know what you are doing
+	@# if PATH_TO_TEST we assume you know what you are doing
 	@if [ -z ${PATH_TO_TEST} ]; then \
 		./scripts/ensure_local_setup.sh; \
 	fi
@@ -16,21 +15,21 @@ test-local: build
 		-e LABELBOX_TEST_API_KEY_LOCAL=${LABELBOX_TEST_API_KEY_LOCAL} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
-test-staging: build
+test-staging: build-image
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="staging" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_STAGING=${LABELBOX_TEST_API_KEY_STAGING} \
-		local/labelbox-python:test pytest -n 10 $(PATH_TO_TEST)
+		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
-test-prod: build
+test-prod: build-image
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="prod" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_PROD=${LABELBOX_TEST_API_KEY_PROD} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
-test-onprem: build
+test-onprem: build-image
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="onprem" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
@@ -38,7 +37,7 @@ test-onprem: build
 		-e LABELBOX_TEST_ONPREM_HOSTNAME=${LABELBOX_TEST_ONPREM_HOSTNAME} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
-test-custom: build
+test-custom: build-image
 	docker run -it -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="custom" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
