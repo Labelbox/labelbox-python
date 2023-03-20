@@ -1,4 +1,5 @@
 import json
+import time
 import pytest
 import requests
 from labelbox import Dataset
@@ -146,6 +147,23 @@ def test_data_row_export(dataset, image_url):
     result = list(dataset.export_data_rows())
     assert len(result) == n_data_rows
     assert set(result) == ids
+
+
+def test_dataset_export_v2(dataset, image_url):
+    n_data_rows = 5
+    ids = set()
+    for _ in range(n_data_rows):
+        ids.add(dataset.create_data_row(row_data=image_url))
+
+    time.sleep(10)
+    task = dataset.export_v2(params={
+        "performance_details": False,
+        "label_details": True
+    })
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+    assert len(task.result) == n_data_rows
 
 
 def test_create_descriptor_file(dataset):

@@ -1,14 +1,18 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Collection, Dict, List, Optional
 import json
+from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
+from labelbox.schema.export_params import CatalogExportParams
+from labelbox.schema.task import Task
+from labelbox.schema.user import User  # type: ignore
 
 if TYPE_CHECKING:
-    from labelbox import AssetAttachment
+    from labelbox import AssetAttachment, Client
 
 logger = logging.getLogger(__name__)
 
@@ -150,3 +154,105 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             })
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
+
+    @staticmethod
+    def export_v2(client: 'Client',
+                  data_rows: List['DataRow'],
+                  task_name: Optional[str] = None,
+                  params: Optional[CatalogExportParams] = None) -> Task:
+        """
+        Creates a data rows export task with the given list, params and returns the task.
+        
+        >>>     dataset = client.get_dataset(DATASET_ID)
+        >>>     task = DataRow.export_v2(
+        >>>         data_rows_ids=[data_row.uid for data_row in dataset.data_rows.list()],
+        >>>         filters={
+        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>         },
+        >>>         params={
+        >>>             "performance_details": False,
+        >>>             "label_details": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+        print('export start')
+
+        _params = params or CatalogExportParams({
+            "attachments": False,
+            "metadata_fields": False,
+            "data_row_details": False,
+            "project_details": False,
+            "performance_details": False,
+            "label_details": False,
+            "media_type_override": None,
+            "model_runs_ids": None,
+            "projects_ids": None,
+        })
+
+        mutation_name = "exportDataRowsInCatalog"
+        create_task_query_str = """mutation exportDataRowsInCatalogPyApi($input: ExportDataRowsInCatalogInput!){
+            %s(input: $input) {taskId} }
+            """ % (mutation_name)
+
+        data_rows_ids = [data_row.uid for data_row in data_rows]
+        search_query: List[Dict[str, Collection[str]]] = []
+        search_query.append({
+            "ids": data_rows_ids,
+            "operator": "is",
+            "type": "data_row_id"
+        })
+
+        print(search_query)
+        media_type_override = _params.get('media_type_override', None)
+
+        if task_name is None:
+            task_name = f"Export v2: data rows (%s)" % len(data_rows_ids)
+        query_params = {
+            "input": {
+                "taskName": task_name,
+                "filters": {
+                    "searchQuery": {
+                        "scope": None,
+                        "query": search_query
+                    }
+                },
+                "params": {
+                    "mediaTypeOverride":
+                        media_type_override.value
+                        if media_type_override is not None else None,
+                    "includeAttachments":
+                        _params.get('attachments', False),
+                    "includeMetadata":
+                        _params.get('metadata_fields', False),
+                    "includeDataRowDetails":
+                        _params.get('data_row_details', False),
+                    "includeProjectDetails":
+                        _params.get('project_details', False),
+                    "includePerformanceDetails":
+                        _params.get('performance_details', False),
+                    "includeLabelDetails":
+                        _params.get('label_details', False)
+                },
+            }
+        }
+
+        res = client.execute(
+            create_task_query_str,
+            query_params,
+        )
+        print(res)
+        res = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
