@@ -1559,8 +1559,7 @@ class Client:
         Returns:
             CatalogSlice
         """
-        query_str = """
-            query getSavedQueryPyApi($id: ID!) {
+        query_str = """query getSavedQueryPyApi($id: ID!) {
                 getSavedQuery(id: $id) {
                     id
                     name
