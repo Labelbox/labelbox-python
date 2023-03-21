@@ -13,7 +13,7 @@ from ..feature import FeatureSchema
 
 
 # TODO: Replace when pydantic adds support for unions that don't coerce types
-class _TempName(BaseModel):
+class _TempName(ConfidenceMixin, BaseModel):
     name: str
 
     def dict(self, *args, **kwargs):
@@ -43,7 +43,7 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin):
         return res
 
 
-class Radio(BaseModel):
+class Radio(ConfidenceMixin, BaseModel):
     """ A classification with only one selected option allowed
 
     >>> Radio(answer = ClassificationAnswer(name = "dog"))
@@ -62,7 +62,7 @@ class Checklist(_TempName):
     answer: List[ClassificationAnswer]
 
 
-class Text(BaseModel):
+class Text(ConfidenceMixin, BaseModel):
     """ Free form text
 
     >>> Text(answer = "some text answer")

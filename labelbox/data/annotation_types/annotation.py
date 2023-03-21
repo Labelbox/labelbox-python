@@ -16,7 +16,7 @@ class BaseAnnotation(FeatureSchema, abc.ABC):
     extra: Dict[str, Any] = {}
 
 
-class ClassificationAnnotation(BaseAnnotation):
+class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):
     """Classification annotations (non localized)
 
     >>> ClassificationAnnotation(
