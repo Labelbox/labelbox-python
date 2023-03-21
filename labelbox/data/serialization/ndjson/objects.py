@@ -198,10 +198,10 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                     extra: Dict[str, Any],
                     data: Union[ImageData, TextData],
                     confidence: Optional[float] = None) -> "NDRectangle":
-        return cls(bbox=Bbox(top=rectangle.start.y,
-                             left=rectangle.start.x,
-                             height=rectangle.end.y - rectangle.start.y,
-                             width=rectangle.end.x - rectangle.start.x),
+        return cls(bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
+                             left=min(rectangle.start.x, rectangle.end.x),
+                             height=abs(rectangle.end.y - rectangle.start.y),
+                             width=abs(rectangle.end.x - rectangle.start.x)),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
@@ -230,10 +230,10 @@ class NDFrameRectangle(VideoSupported):
     @classmethod
     def from_common(cls, frame: int, rectangle: Rectangle):
         return cls(frame=frame,
-                   bbox=Bbox(top=rectangle.start.y,
-                             left=rectangle.start.x,
-                             height=rectangle.end.y - rectangle.start.y,
-                             width=rectangle.end.x - rectangle.start.x))
+                   bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
+                             left=min(rectangle.start.x, rectangle.end.x),
+                             height=abs(rectangle.end.y - rectangle.start.y),
+                             width=abs(rectangle.end.x - rectangle.start.x)))
 
 
 class NDSegment(BaseModel):

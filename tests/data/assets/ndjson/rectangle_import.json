@@ -1,0 +1,16 @@
+[
+    {
+      "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+      },
+      "name": "bbox",
+      "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
+      "classifications": [],
+      "bbox": {
+        "top": 28.0,
+        "left": 38.0,
+        "height": 41.0,
+        "width": 43.0
+      }
+    }
+  ]
