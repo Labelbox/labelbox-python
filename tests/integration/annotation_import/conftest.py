@@ -292,6 +292,32 @@ def ontology():
 
 
 @pytest.fixture
+def wait_for_label_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns project's labels as a list after waiting for them to finish processing.
+    If `project.labels()` is called before label is fully processed,
+    it may return an empty set
+    """
+
+    def func(project):
+        timeout_seconds = 10
+        while True:
+            labels = list(project.labels())
+            if len(labels) > 0:
+                return labels
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for label for project '{project.uid}' to finish processing"
+                )
+            time.sleep(2)
+
+    return func
+
+
+@pytest.fixture
 def configured_project(client, ontology, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Dataset)
@@ -303,6 +329,7 @@ def configured_project(client, ontology, rand_gen, image_url):
     data_row_ids = []
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
+    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
@@ -321,6 +348,7 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project.setup(editor, ontology)
     data_row_ids = []
     data_row_ids.append(dataset.create_data_row(pdf_url).uid)
+    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
@@ -393,10 +421,10 @@ def polygon_inference(prediction_id_mapping):
             "y": 118.154
         }, {
             "x": 142.769,
-            "y": 404.923
+            "y": 104.923
         }, {
             "x": 57.846,
-            "y": 318.769
+            "y": 118.769
         }, {
             "x": 28.308,
             "y": 169.846
@@ -413,8 +441,8 @@ def rectangle_inference(prediction_id_mapping):
         "bbox": {
             "top": 48,
             "left": 58,
-            "height": 865,
-            "width": 1512
+            "height": 65,
+            "width": 12
         },
         'classifications': [{
             "schemaId":
@@ -615,14 +643,21 @@ def model_run_with_training_metadata(rand_gen, model):
 
 @pytest.fixture
 def model_run_with_model_run_data_rows(client, configured_project,
-                                       model_run_predictions, model_run):
+                                       model_run_predictions, model_run,
+                                       wait_for_label_processing):
     configured_project.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
         client, configured_project.uid, f"label-import-{uuid.uuid4()}",
         model_run_predictions)
     upload_task.wait_until_done()
-    label_ids = [label.uid for label in configured_project.labels()]
+    assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
+    assert len(
+        upload_task.errors
+    ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+    labels = wait_for_label_processing(configured_project)
+    label_ids = [label.uid for label in labels]
+    print(label_ids)
     model_run.upsert_labels(label_ids)
     time.sleep(3)
     yield model_run
@@ -632,13 +667,19 @@ def model_run_with_model_run_data_rows(client, configured_project,
 
 @pytest.fixture
 def model_run_with_all_project_labels(client, configured_project,
-                                      model_run_predictions, model_run):
+                                      model_run_predictions, model_run,
+                                      wait_for_label_processing):
     configured_project.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
         client, configured_project.uid, f"label-import-{uuid.uuid4()}",
         model_run_predictions)
     upload_task.wait_until_done()
+    assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
+    assert len(
+        upload_task.errors
+    ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+    wait_for_label_processing(configured_project)
     model_run.upsert_labels(project_id=configured_project.uid)
     time.sleep(3)
     yield model_run
