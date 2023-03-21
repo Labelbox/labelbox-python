@@ -657,7 +657,6 @@ def model_run_with_model_run_data_rows(client, configured_project,
     ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
     labels = wait_for_label_processing(configured_project)
     label_ids = [label.uid for label in labels]
-    print(label_ids)
     model_run.upsert_labels(label_ids)
     time.sleep(3)
     yield model_run
