@@ -6,10 +6,12 @@ from google.api_core import retry
 from pydantic import root_validator
 
 from labelbox.exceptions import InternalServerError
+from labelbox.typing_imports import Literal
+from labelbox.utils import _NoCoercionMixin
 from .base_data import BaseData
 
 
-class TextData(BaseData):
+class TextData(BaseData, _NoCoercionMixin):
     """
     Represents text data. Requires arg file_path, text, or url
 
@@ -20,6 +22,7 @@ class TextData(BaseData):
         text (str)
         url (str)
     """
+    class_name: Literal["TextData"] = "TextData"
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None

@@ -35,3 +35,26 @@ class _CamelCaseMixin(BaseModel):
     class Config:
         allow_population_by_field_name = True
         alias_generator = camel_case
+
+
+class _NoCoercionMixin:
+    """
+    When using Unions in type annotations, pydantic will try to coerce the type
+    of the object to the type of the first Union member. Which results in
+    uninteded behavior.
+
+    This mixin uses a class_name discriminator field to prevent pydantic from
+    corecing the type of the object. Add a class_name field to the class you 
+    want to discrimniate and use this mixin class to remove the discriminator
+    when serializing the object.
+
+    Example:
+        class ConversationData(BaseData, _NoCoercionMixin):
+            class_name: Literal["ConversationData"] = "ConversationData"
+
+    """
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        res.pop('class_name')
+        return res
