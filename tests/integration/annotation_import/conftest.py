@@ -300,9 +300,10 @@ def configured_project(client, ontology, rand_gen, image_url):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
-    data_row_ids = []
-    for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
-        data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
+    count = len(ontology['tools']) + len(ontology['classifications'])
+    task = dataset.create_data_rows([{'row_data': image_url}] * count)
+    task.wait_till_done()
+    data_row_ids = [data_row.uid for data_row in dataset.export_data_rows()]
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
