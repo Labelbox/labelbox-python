@@ -125,15 +125,18 @@ class Project(DbObject, Updateable, Deletable):
         Note that the queue_mode cannot be changed after a project has been created.
 
         Additionally, the quality setting cannot be changed after a project has been created. The quality mode
-            for a project is inferred through the following attributes:
-            Benchmark:
-                auto_audit_number_of_labels = 1
-                auto_audit_percentage = 1.0
-            Consensus:
-                auto_audit_number_of_labels > 1
-                auto_audit_percentage <= 1.0
-            Attempting to switch between benchmark and consensus modes is an invalid operation and will result
-            in an error.
+        for a project is inferred through the following attributes:
+
+        Benchmark:
+            auto_audit_number_of_labels = 1
+            auto_audit_percentage = 1.0
+
+        Consensus:
+            auto_audit_number_of_labels > 1
+            auto_audit_percentage <= 1.0
+
+        Attempting to switch between benchmark and consensus modes is an invalid operation and will result
+        in an error.
         """
 
         media_type = kwargs.get("media_type")
@@ -151,7 +154,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Fetch all current members for this project
 
         Returns:
-            A `PaginatedCollection of `ProjectMember`s
+            A `PaginatedCollection` of `ProjectMember`s
 
         """
         id_param = "projectId"
@@ -1245,7 +1248,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Fetch all batches that belong to this project
 
         Returns:
-            A `PaginatedCollection of `Batch`es
+            A `PaginatedCollection` of `Batch`es
         """
         id_param = "projectId"
         query_str = """query GetProjectBatchesPyApi($from: String, $first: PageSize, $%s: ID!) {
@@ -1263,7 +1266,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Fetch all task queues that belong to this project
 
         Returns:
-            A `List of `TaskQueue`s
+            A `List` of `TaskQueue`s
         """
         query_str = """query GetProjectTaskQueuesPyApi($projectId: ID!) {
               project(where: {id: $projectId}) {

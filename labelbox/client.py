@@ -1100,7 +1100,7 @@ class Client:
 
         To reuse existing feature schemas, use `create_ontology_from_feature_schemas()`
         More details can be found here:
-            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+        https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
 
         Args:
             name (str): Name of the ontology
