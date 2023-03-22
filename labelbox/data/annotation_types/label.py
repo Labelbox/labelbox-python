@@ -7,14 +7,14 @@ from pydantic import BaseModel, validator
 import labelbox
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
-from .annotation import (ClassificationAnnotation, ObjectAnnotation,
-                         VideoClassificationAnnotation, VideoObjectAnnotation,
-                         DICOMObjectAnnotation)
+from .annotation import (ClassificationAnnotation, ObjectAnnotation)
 from .classification import ClassificationAnswer
 from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
+from .video import VideoClassificationAnnotation
+from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from ..ontology import get_feature_schema_lookup
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
@@ -43,7 +43,8 @@ class Label(BaseModel):
     uid: Optional[Cuid] = None
     data: DataType
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
-                            ScalarMetric, ConfusionMatrixMetric]] = []
+                            VideoMaskAnnotation, ScalarMetric,
+                            ConfusionMatrixMetric]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:

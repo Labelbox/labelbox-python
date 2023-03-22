@@ -6,7 +6,9 @@ import warnings
 
 from pydantic import BaseModel
 
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoClassificationAnnotation, VideoObjectAnnotation, DICOMObjectAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
+from ...annotation_types.video import DICOMObjectAnnotation, VideoClassificationAnnotation
+from ...annotation_types.video import VideoObjectAnnotation, VideoMaskAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import DicomData, ImageData, TextData, VideoData
 from ...annotation_types.label import Label
@@ -16,14 +18,15 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
-from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments
+from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .base import DataRow
 
 
 class NDLabel(BaseModel):
     annotations: List[Union[NDObjectType, NDClassificationType,
                             NDConfusionMatrixMetric, NDScalarMetric,
-                            NDDicomSegments, NDSegments]]
+                            NDDicomSegments, NDSegments, NDDicomMasks,
+                            NDVideoMasks]]
 
     def to_common(self) -> LabelGenerator:
         grouped_annotations = defaultdict(list)
@@ -60,6 +63,10 @@ class NDLabel(BaseModel):
                     annots.extend(
                         NDSegments.to_common(annotation, annotation.name,
                                              annotation.schema_id))
+                elif isinstance(annotation, NDDicomMasks):
+                    annots.append(NDDicomMasks.to_common(annotation))
+                elif isinstance(annotation, NDVideoMasks):
+                    annots.append(NDVideoMasks.to_common(annotation))
                 elif isinstance(annotation, NDObjectType.__args__):
                     annots.append(NDObject.to_common(annotation))
                 elif isinstance(annotation, NDClassificationType.__args__):
@@ -152,6 +159,8 @@ class NDLabel(BaseModel):
                 (VideoClassificationAnnotation, VideoObjectAnnotation)):
                 video_annotations[annot.feature_schema_id or
                                   annot.name].append(annot)
+            elif isinstance(annot, VideoMaskAnnotation):
+                yield NDObject.from_common(annotation=annot, data=label.data)
 
         for annotation_group in video_annotations.values():
             segment_frame_ranges = cls._get_segment_frame_ranges(
@@ -183,7 +192,8 @@ class NDLabel(BaseModel):
         non_video_annotations = [
             annot for annot in label.annotations
             if not isinstance(annot, (VideoClassificationAnnotation,
-                                      VideoObjectAnnotation))
+                                      VideoObjectAnnotation,
+                                      VideoMaskAnnotation))
         ]
         for annotation in non_video_annotations:
             if isinstance(annotation, ClassificationAnnotation):

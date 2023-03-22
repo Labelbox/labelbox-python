@@ -2,7 +2,9 @@ from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
+
 from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
+from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObjectAnnotation
 from labelbox.data.mixins import ConfidenceMixin
 import numpy as np
 
@@ -16,7 +18,8 @@ from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import DocumentEntity, DocumentTextSelection, TextEntity
 from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoObjectAnnotation, DICOMObjectAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
+from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
 from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation
 
@@ -414,6 +417,56 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                    confidence=confidence)
 
 
+class NDVideoMasksFramesInstances(BaseModel):
+    frames: List[MaskFrame]
+    instances: List[MaskInstance]
+
+
+class NDVideoMasks(ConfidenceMixin, NDAnnotation):
+    masks: NDVideoMasksFramesInstances
+
+    def to_common(self) -> VideoMaskAnnotation:
+        return VideoMaskAnnotation(
+            frames=self.masks.frames,
+            instances=self.masks.instances,
+            name=self.name,
+            feature_schema_id=self.schema_id,
+        )
+
+    @classmethod
+    def from_common(cls, annotation, data):
+        return cls(
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            masks=NDVideoMasksFramesInstances(frames=annotation.frames,
+                                              instances=annotation.instances),
+            name=annotation.name,
+            schema_id=annotation.feature_schema_id,
+        )
+
+
+class NDDicomMasks(NDVideoMasks, DicomSupported):
+
+    def to_common(self) -> DICOMMaskAnnotation:
+        return DICOMMaskAnnotation(
+            frames=self.masks.frames,
+            instances=self.masks.instances,
+            name=self.name,
+            feature_schema_id=self.schema_id,
+            group_key=self.group_key,
+        )
+
+    @classmethod
+    def from_common(cls, annotation, data):
+        return cls(
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            masks=NDVideoMasksFramesInstances(frames=annotation.frames,
+                                              instances=annotation.instances),
+            name=annotation.name,
+            schema_id=annotation.feature_schema_id,
+            group_key=annotation.group_key.value,
+        )
+
+
 class Location(BaseModel):
     start: int
     end: int
@@ -526,9 +579,9 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation: Union[ObjectAnnotation,
-                               List[List[VideoObjectAnnotation]]],
-        data: Union[ImageData, TextData]
+        cls,
+        annotation: Union[ObjectAnnotation, List[List[VideoObjectAnnotation]],
+                          VideoMaskAnnotation], data: Union[ImageData, TextData]
     ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
 
@@ -548,6 +601,8 @@ class NDObject:
                 args.update(dict(group_key=group_key))
 
             return obj.from_common(**args)
+        elif (obj == NDVideoMasks or obj == NDDicomMasks):
+            return obj.from_common(annotation, data)
 
         subclasses = [
             NDSubclassification.from_common(annot)
@@ -563,7 +618,12 @@ class NDObject:
     @staticmethod
     def lookup_object(
             annotation: Union[ObjectAnnotation, List]) -> "NDObjectType":
-        if isinstance(annotation, list):
+
+        if isinstance(annotation, DICOMMaskAnnotation):
+            result = NDDicomMasks
+        elif isinstance(annotation, VideoMaskAnnotation):
+            result = NDVideoMasks
+        elif isinstance(annotation, list):
             try:
                 first_annotation = annotation[0][0]
             except IndexError:
