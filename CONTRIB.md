@@ -1,9 +1,25 @@
 # Labelbox Python SDK Contribution Guide
 
+## Contribution Guidelines
+Thank you for expressing your interest in contributing to the Labelbox SDK. 
+To ensure that your contribution aligns with our guidelines, please carefully 
+review the following considerations before proceeding:
+
+* For feature requests, we recommend consulting with Labelbox support or 
+  creating a [Github Issue](https://github.com/Labelbox/labelbox-python/issues) on our repository.
+* We can only accept general solutions that address common issues rather than solutions 
+  designed for specific use cases. Acceptable contributions include simple bug fixes and 
+  improvements to functions within the schema/ package.
+* Please ensure that any new libraries are compliant with the Apache license that governs the Labelbox SDK.
+* Ensure that you update any relevant docstrings and comments within your code
+
 ## Repository Organization
 
 The SDK source (excluding tests and support tools) is organized into the
 following packages/modules:
+* `data/` package contains code that maps annotations (labels or pre-labels) to 
+  Python objects, as well as serialization and deserialization tools for converting 
+  between NDJson and Annotation Types.
 * `orm/` package contains code that supports the general mapping of Labelbox
   data to Python objects. This includes base classes, attribute (field and
   relationship) classes, generic GraphQL queries etc.
@@ -25,58 +41,52 @@ following packages/modules:
 * Approved PRs are merged to the `develop` branch.
 * The `develop` branch is merged to `master` on each release.
 
-## Commits
+## Formatting
 
 Before making a commit, to automatically adhere to our formatting standards,
 install and activate [pre-commit](https://pre-commit.com/)
+```shell
+pip install pre-commit
+pre-commit install
+```
+After the above, running `git commit ...` will attempt to fix formatting,
+and make necessary changes to files. You will then need to stage those files again.
 
-After the above, running `git commit ...` will attempt to fix formatting. If
-there was formatted needed, you will need to re-add and re-commit before pushing.
-
-## Testing
-
-Currently, the SDK functionality is tested using integration tests. These tests
-communicate with a Labelbox server (by default the staging server) and are in
-that sense not self-contained. Besides, that they are organized like unit test
-and are based on the `pytest` library.
-
-To execute tests you will need to provide an API key for the server you're using
-for testing (staging by default) in the `LABELBOX_TEST_API_KEY` environment
-variable. For more info see [Labelbox API key docs](https://labelbox.helpdocs.io/docs/api/getting-started).
-
-To pass tests, code must be formatted. If pre-commit was not installed, 
-you will need to use the following command:
-
+You may also manually format your code by running the following:
 ```shell
 yapf tests labelbox -i --verbose --recursive --parallel --style "google"
 ```
 
+
+## Testing
+
+Currently, the SDK functionality is tested using unit and integration tests. 
+The integration tests communicate with a Labelbox server (by default the staging server) 
+and are in that sense not self-contained.
+
+Please consult "Testing" section in the README for more details on how to test.
+
+Additionally, to execute tests you will need to provide an API key for the server you're using
+for testing (staging by default) in the `LABELBOX_TEST_API_KEY` environment
+variable. For more info see [Labelbox API key docs](https://labelbox.helpdocs.io/docs/api/getting-started).
+
+
 ## Release Steps
 
-Each release should follow the following steps:
+Please consult the Labelbox team for releasing your contributions
 
-1. Update the Python SDK package version in `REPO_ROOT/setup.py`
-2. Make sure the `CHANGELOG.md` contains appropriate info
-3. Commit these changes and tag the commit in Git as `vX.Y`
-4. Merge `develop` to `master` (fast-forward only).
-5. Create a GitHub release.
-6. This will kick off a Github Actions workflow that will:
-  - Build the library in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
-  - Upload the distribution archives in the [standard way](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives)
- - with credentials for the `labelbox` PyPI user.
-  
-  ## Running Jupyter Notebooks
-  
-  We have plenty of good samples in the _examples_ directory and using them for testing can help us increase our productivity. One way to use jupyter notebooks is to run the jupyter server locally (another way is to use a VSC plugin, not documented here). It works really fast.
-  
-  Make sure your notebook will use your source code:
-  1. `ipython profile create`
-  2. `ipython locate` - will show where the config file is. This is the config file used by the jupyter server, since it runs via ipython
-  3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
-  ```
-  c.InteractiveShellApp.exec_lines = [
-    'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
-  ]
-  ```
-  4. Go to the root of your project and run `jupyter notebook` to start the server
+## Running Jupyter Notebooks
+
+We have plenty of good samples in the _examples_ directory and using them for testing can help us increase our productivity. One way to use jupyter notebooks is to run the jupyter server locally (another way is to use a VSC plugin, not documented here). It works really fast.
+
+Make sure your notebook will use your source code:
+1. `ipython profile create`
+2. `ipython locate` - will show where the config file is. This is the config file used by the jupyter server, since it runs via ipython
+3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
+```
+c.InteractiveShellApp.exec_lines = [
+  'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
+]
+```
+4. Go to the root of your project and run `jupyter notebook` to start the server
   
