@@ -143,11 +143,10 @@ class NDText(NDAnnotation, NDTextSubclass):
                     extra: Dict[str, Any],
                     data: Union[TextData, ImageData],
                     message_id: str,
-                    confidence: Optional[float] = None) -> "NDText":
+                    confidence: Optional[float] = None,) -> "NDText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
-            classifications=classifications,
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
@@ -283,17 +282,23 @@ class NDClassification:
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
 
-        nested_classifications = annotation.value.answer.classifications
+        classifications = getattr(annotation.value.answer, 'classifications', []) # classification not applicable to Text
         classifications = [
             NDSubclassification.from_common(annot)
-            for annot in nested_classifications
+            for annot in classifications
         ]
 
+        if classify_obj == NDText: # Text does not support clasifications
+            return classify_obj.from_common(annotation.value, annotation.name,
+                                            annotation.feature_schema_id,
+                                            annotation.extra, data,
+                                            annotation.message_id,
+                                            annotation.confidence)
         return classify_obj.from_common(annotation.value, annotation.name,
-                                        annotation.feature_schema_id,
-                                        annotation.extra, data,
-                                        annotation.message_id,
-                                        annotation.confidence, classifications)
+                                    annotation.feature_schema_id,
+                                    annotation.extra, data,
+                                    annotation.message_id,
+                                    annotation.confidence, classifications)
 
     @staticmethod
     def lookup_classification(
