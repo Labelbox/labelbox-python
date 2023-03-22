@@ -201,7 +201,7 @@ class Updateable:
     def update(self, **kwargs):
         """ Updates this DB object with new values. Values should be
         passed as key-value arguments with field names as keys:
-            >>> db_object.update(name="New name", title="A title")
+        >>> db_object.update(name="New name", title="A title")
 
         Kwargs:
             Key-value arguments defining which fields should be updated
