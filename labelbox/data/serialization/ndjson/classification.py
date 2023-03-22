@@ -127,6 +127,7 @@ class NDText(NDAnnotation, NDTextSubclass):
                     feature_schema_id: Cuid,
                     extra: Dict[str, Any],
                     data: Union[TextData, ImageData],
+                    message_id: str,
                     confidence: Optional[float] = None) -> "NDText":
         return cls(
             answer=text.answer,
@@ -134,6 +135,7 @@ class NDText(NDAnnotation, NDTextSubclass):
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
+            message_id=message_id,
             confidence=confidence,
         )
 
@@ -147,6 +149,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                     feature_schema_id: Cuid,
                     extra: Dict[str, Any],
                     data: Union[VideoData, TextData, ImageData],
+                    message_id: str,
                     confidence: Optional[float] = None) -> "NDChecklist":
         return cls(answer=[
             NDFeature(name=answer.name,
@@ -159,6 +162,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    frames=extra.get('frames'),
+                   message_id=message_id,
                    confidence=confidence)
 
 
@@ -171,6 +175,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                     feature_schema_id: Cuid,
                     extra: Dict[str, Any],
                     data: Union[VideoData, TextData, ImageData],
+                    message_id: str,
                     confidence: Optional[float] = None) -> "NDRadio":
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
@@ -180,6 +185,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
                    frames=extra.get('frames'),
+                   message_id=message_id,
                    confidence=confidence)
 
 
@@ -228,6 +234,7 @@ class NDClassification:
             name=annotation.name,
             feature_schema_id=annotation.schema_id,
             extra={'uuid': annotation.uuid},
+            message_id=annotation.message_id,
             confidence=annotation.confidence)
         if getattr(annotation, 'frames', None) is None:
             return [common]
@@ -252,6 +259,7 @@ class NDClassification:
         return classify_obj.from_common(annotation.value, annotation.name,
                                         annotation.feature_schema_id,
                                         annotation.extra, data,
+                                        annotation.message_id,
                                         annotation.confidence)
 
     @staticmethod

@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from labelbox.data.mixins import ConfidenceMixin
 
@@ -27,10 +27,12 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):
         name (Optional[str])
         feature_schema_id (Optional[Cuid])
         value (Union[Text, Checklist, Radio, Dropdown])
+        message_id (Optional[str]) Message id for conversational text
         extra (Dict[str, Any])
      """
 
     value: Union[Text, Checklist, Radio, Dropdown]
+    message_id: Optional[str] = None
 
 
 class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
