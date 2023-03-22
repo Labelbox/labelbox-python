@@ -1,4 +1,5 @@
 from tempfile import NamedTemporaryFile
+import time
 import uuid
 from datetime import datetime
 import json
@@ -962,3 +963,13 @@ def test_create_data_row_with_media_type(dataset, image_url):
     assert "Found invalid contents for media type: \'IMAGE\'" in str(exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
+
+
+def test_export_data_rows(client, datarow):
+    # Ensure created data rows are indexed
+    time.sleep(10)
+    task = DataRow.export_v2(client=client, data_rows=[datarow])
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+    assert len(task.result) == 1

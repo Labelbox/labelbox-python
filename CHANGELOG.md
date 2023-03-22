@@ -1,5 +1,28 @@
 # Changelog
 
+# Version 3.42.0 (2023-03-22)
+
+## Added
+* Message based classifications with annotation types for conversations
+* Video and raster segmentation annotation types
+* Global key support to `ConversationEntity`, `DocumentEntity` and `DicomSegments`   
+* DICOM polyline annotation type
+* Confidence attribute to classification annotations
+
+## Changed
+* Increased metadata string size limit to 4096 chars
+* Removed `deletedDataRowGlobalKey` from `get_data_row_ids_for_global_keys()`
+
+## Fixed
+* Annotation data type coercion by Pydantic    
+* Error message when end point coordinates are smaller than start point coordinates
+* Some typos in error messages
+
+## Notebooks
+* Refactored video notebook to include annotation types
+* Replaced data row ids with global keys in notebooks
+* Replaced `create_data_row` with `create_data_rows` in notebooks
+
 # Version 3.41.0 (2023-03-15)
 
 ## Added

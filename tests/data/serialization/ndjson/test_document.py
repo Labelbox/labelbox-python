@@ -28,20 +28,6 @@ def test_pdf():
     f.close()
 
 
-def test_pdf_document_entity():
-    """
-    Tests a pdf file with bbox annotations only
-    """
-    with open('tests/data/assets/ndjson/pdf_document_entity_import.json',
-              'r') as f:
-        data = json.load(f)
-    res = list(NDJsonConverter.deserialize(data))
-    res = list(NDJsonConverter.serialize(res))
-    assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
-
-    f.close()
-
-
 def test_pdf_with_name_only():
     """
     Tests a pdf file with bbox annotations only

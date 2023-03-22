@@ -38,6 +38,7 @@ class NDJsonBase(_CamelCaseMixin):
 class NDAnnotation(NDJsonBase):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
+    message_id: Optional[str] = None
     page: Optional[int] = None
     unit: Optional[str] = None
 

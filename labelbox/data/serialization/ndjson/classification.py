@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field, root_validator
 from labelbox.data.mixins import ConfidenceMixin
 
 from labelbox.utils import camel_case
-from ...annotation_types.annotation import ClassificationAnnotation, VideoClassificationAnnotation
+from ...annotation_types.annotation import ClassificationAnnotation
+from ...annotation_types.video import VideoClassificationAnnotation
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
@@ -120,25 +121,36 @@ class NDRadioSubclass(NDFeature):
 class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
-    def from_common(cls, text: Text, name: str, feature_schema_id: Cuid,
-                    extra: Dict[str, Any], data: Union[TextData,
-                                                       ImageData]) -> "NDText":
+    def from_common(cls,
+                    text: Text,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[TextData, ImageData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
             name=name,
             schema_id=feature_schema_id,
             uuid=extra.get('uuid'),
+            message_id=message_id,
+            confidence=confidence,
         )
 
 
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
     @classmethod
-    def from_common(
-            cls, checklist: Checklist, name: str, feature_schema_id: Cuid,
-            extra: Dict[str, Any], data: Union[VideoData, TextData,
-                                               ImageData]) -> "NDChecklist":
+    def from_common(cls,
+                    checklist: Checklist,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[VideoData, TextData, ImageData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDChecklist":
         return cls(answer=[
             NDFeature(name=answer.name,
                       schema_id=answer.feature_schema_id,
@@ -149,15 +161,22 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   frames=extra.get('frames'))
+                   frames=extra.get('frames'),
+                   message_id=message_id,
+                   confidence=confidence)
 
 
 class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls, radio: Radio, name: str, feature_schema_id: Cuid,
-                    extra: Dict[str, Any], data: Union[VideoData, TextData,
-                                                       ImageData]) -> "NDRadio":
+    def from_common(cls,
+                    radio: Radio,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[VideoData, TextData, ImageData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDRadio":
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
                                     confidence=radio.answer.confidence),
@@ -165,7 +184,9 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'),
-                   frames=extra.get('frames'))
+                   frames=extra.get('frames'),
+                   message_id=message_id,
+                   confidence=confidence)
 
 
 class NDSubclassification:
@@ -212,7 +233,9 @@ class NDClassification:
             value=annotation.to_common(),
             name=annotation.name,
             feature_schema_id=annotation.schema_id,
-            extra={'uuid': annotation.uuid})
+            extra={'uuid': annotation.uuid},
+            message_id=annotation.message_id,
+            confidence=annotation.confidence)
         if getattr(annotation, 'frames', None) is None:
             return [common]
         results = []
@@ -235,7 +258,9 @@ class NDClassification:
             )
         return classify_obj.from_common(annotation.value, annotation.name,
                                         annotation.feature_schema_id,
-                                        annotation.extra, data)
+                                        annotation.extra, data,
+                                        annotation.message_id,
+                                        annotation.confidence)
 
     @staticmethod
     def lookup_classification(

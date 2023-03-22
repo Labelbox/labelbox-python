@@ -1100,7 +1100,7 @@ class Client:
 
         To reuse existing feature schemas, use `create_ontology_from_feature_schemas()`
         More details can be found here:
-            https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
+        https://github.com/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb
 
         Args:
             name (str): Name of the ontology
@@ -1394,7 +1394,6 @@ class Client:
                 fetchedDataRows { id }
                 notFoundGlobalKeys
                 accessDeniedGlobalKeys
-                deletedDataRowGlobalKeys
                 } jobStatus}}
             """
         result_params = {
@@ -1417,9 +1416,6 @@ class Client:
                 errors.extend(
                     _format_failed_rows(data['accessDeniedGlobalKeys'],
                                         "Access denied to Data Row"))
-                errors.extend(
-                    _format_failed_rows(data['deletedDataRowGlobalKeys'],
-                                        "Data Row deleted"))
 
                 # Invalid results may contain empty string, so we must filter
                 # them prior to checking for PARTIAL_SUCCESS
@@ -1435,13 +1431,6 @@ class Client:
                     logger.warning(
                         "There are errors present. Please look at 'errors' in the returned dict for more details"
                     )
-
-                # Deprecation notice for deletedDataRowGlobalKeys portion of results
-                if len(data['deletedDataRowGlobalKeys']) > 0:
-                    logger.warning(
-                        """Deprecation Notice: This function will soon no longer return 'Deleted Data Rows' 
-                        as part of the 'results'. Global keys for deleted data rows will soon be placed under 
-                        'Data Row not found' portion.""")
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["dataRowsForGlobalKeysResult"]['jobStatus'] == "FAILED":
@@ -1559,8 +1548,7 @@ class Client:
         Returns:
             CatalogSlice
         """
-        query_str = """
-            query getSavedQueryPyApi($id: ID!) {
+        query_str = """query getSavedQueryPyApi($id: ID!) {
                 getSavedQuery(id: $id) {
                     id
                     name

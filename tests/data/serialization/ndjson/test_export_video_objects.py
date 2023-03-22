@@ -1,7 +1,7 @@
-from labelbox.data.annotation_types import Label
+from labelbox.data.annotation_types import Label, VideoObjectAnnotation
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.data.annotation_types.geometry import Rectangle, Point
-from labelbox.data.annotation_types import VideoData, VideoObjectAnnotation
+from labelbox.data.annotation_types import VideoData
 
 
 def video_bbox_label():

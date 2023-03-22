@@ -5,9 +5,8 @@ from typing import List, Optional, Union, Dict, Any
 from pydantic import BaseModel, Field
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
-                                            ObjectAnnotation,
-                                            VideoClassificationAnnotation,
-                                            VideoObjectAnnotation)
+                                            ObjectAnnotation)
+from ...annotation_types.video import VideoClassificationAnnotation, VideoObjectAnnotation
 from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from .classification import LBV1Classifications
