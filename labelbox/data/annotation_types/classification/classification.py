@@ -42,6 +42,8 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin):
         res = super().dict(*args, **kwargs)
         if res['keyframe'] is None:
             res.pop('keyframe')
+        if res['classifications'] == []:
+            res.pop('classifications')
         return res
 
 

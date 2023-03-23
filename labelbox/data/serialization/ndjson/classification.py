@@ -320,13 +320,14 @@ class NDClassification:
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
 NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
+
+NDFeature.update_forward_refs()
+NDBaseObject.update_forward_refs()
 NDChecklistSubclass.update_forward_refs()
 NDChecklist.update_forward_refs()
 NDRadioSubclass.update_forward_refs()
 NDRadio.update_forward_refs()
 NDTextSubclass.update_forward_refs()
-NDFeature.update_forward_refs()
-NDBaseObject.update_forward_refs()
 NDText.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
