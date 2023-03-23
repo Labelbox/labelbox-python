@@ -174,7 +174,6 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                     data: Union[VideoData, TextData, ImageData],
                     message_id: str,
                     confidence: Optional[float] = None) -> "NDChecklist":
-        NDChecklistSubclass.update_forward_refs()
 
         return cls(answer=[
             NDFeature(name=answer.name,
@@ -208,11 +207,6 @@ class NDRadio(NDBaseObject, NDRadioSubclass, VideoSupported):
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDRadio":
-        cls.update_forward_refs()
-        NDFeature.update_forward_refs()
-        NDChecklistSubclass.update_forward_refs()
-        NDRadioSubclass.update_forward_refs()
-
         classifications = getattr(radio.answer, 'classifications',
                                   [])  # classification not applicable to Text
         classifications = [
@@ -326,6 +320,14 @@ class NDClassification:
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
 NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
+NDChecklistSubclass.update_forward_refs()
+NDChecklist.update_forward_refs()
+NDRadioSubclass.update_forward_refs()
+NDRadio.update_forward_refs()
+NDTextSubclass.update_forward_refs()
+NDFeature.update_forward_refs()
+NDBaseObject.update_forward_refs()
+NDText.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used

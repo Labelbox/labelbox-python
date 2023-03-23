@@ -9,7 +9,6 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
 def test_serialization_with_radio_min():
-    ClassificationAnswer.update_forward_refs()
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
         data=TextData(
@@ -39,7 +38,6 @@ def test_serialization_with_radio_min():
 
 
 def test_serialization_with_radio_classification():
-    ClassificationAnswer.update_forward_refs()
     label = Label(uid="ckj7z2q0b0000jx6x0q2q7q0d",
                   data=TextData(
                       uid="bkj7z2q0b0000jx6x0q2q7q0d",

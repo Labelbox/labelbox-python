@@ -1,17 +1,12 @@
-import json
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
 from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnswer, Radio
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.label import Label
-from labelbox.data.serialization.ndjson.classification import NDFeature
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
 def test_serialization_with_classification():
-    NDFeature.update_forward_refs()
-    ClassificationAnswer.update_forward_refs()
-
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
         data=TextData(
@@ -92,9 +87,6 @@ def test_serialization_with_classification():
 
 
 def test_serialization_min():
-    NDFeature.update_forward_refs()
-    ClassificationAnswer.update_forward_refs()
-
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
         data=TextData(

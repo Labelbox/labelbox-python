@@ -109,3 +109,6 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):
 
     value: Union[Text, Checklist, Radio, Dropdown]
     message_id: Optional[str] = None
+
+
+ClassificationAnswer.update_forward_refs()
