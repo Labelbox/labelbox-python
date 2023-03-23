@@ -79,10 +79,15 @@ class NDChecklistSubclass(NDFeature):
     answer: List[NDFeature] = Field(..., alias='answers')
 
     def to_common(self) -> Checklist:
+
         return Checklist(answer=[
             ClassificationAnswer(name=answer.name,
                                  feature_schema_id=answer.schema_id,
-                                 confidence=answer.confidence)
+                                 confidence=answer.confidence,
+                                 classifications=[
+                                     NDSubclassification.to_common(annot)
+                                     for annot in answer.classifications
+                                 ])
             for answer in self.answer
         ])
 
@@ -121,6 +126,7 @@ class NDRadioSubclass(NDFeature):
         ))
 
     @classmethod
+    # @NOTE since NDXXXSubclass is used to serialize classifications, and we do not support recusions like classifcations in classifications, we do not need to deal with classifications here
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
         return cls(answer=NDFeature(name=radio.answer.name,
@@ -136,14 +142,16 @@ class NDRadioSubclass(NDFeature):
 class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
-    def from_common(cls,
-                    text: Text,
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[TextData, ImageData],
-                    message_id: str,
-                    confidence: Optional[float] = None,) -> "NDText":
+    def from_common(
+        cls,
+        text: Text,
+        name: str,
+        feature_schema_id: Cuid,
+        extra: Dict[str, Any],
+        data: Union[TextData, ImageData],
+        message_id: str,
+        confidence: Optional[float] = None,
+    ) -> "NDText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
@@ -166,10 +174,16 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                     data: Union[VideoData, TextData, ImageData],
                     message_id: str,
                     confidence: Optional[float] = None) -> "NDChecklist":
+        NDChecklistSubclass.update_forward_refs()
+
         return cls(answer=[
             NDFeature(name=answer.name,
                       schema_id=answer.feature_schema_id,
-                      confidence=answer.confidence)
+                      confidence=answer.confidence,
+                      classifications=[
+                          NDSubclassification.from_common(annot)
+                          for annot in answer.classifications
+                      ])
             for answer in checklist.answer
         ],
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
@@ -193,12 +207,18 @@ class NDRadio(NDBaseObject, NDRadioSubclass, VideoSupported):
         data: Union[VideoData, TextData, ImageData],
         message_id: str,
         confidence: Optional[float] = None,
-        classifications: Optional[List[ClassificationAnnotation]] = []
     ) -> "NDRadio":
         cls.update_forward_refs()
         NDFeature.update_forward_refs()
         NDChecklistSubclass.update_forward_refs()
         NDRadioSubclass.update_forward_refs()
+
+        classifications = getattr(radio.answer, 'classifications',
+                                  [])  # classification not applicable to Text
+        classifications = [
+            NDSubclassification.from_common(annot) for annot in classifications
+        ]
+
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
                                     confidence=radio.answer.confidence,
@@ -282,23 +302,11 @@ class NDClassification:
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
 
-        classifications = getattr(annotation.value.answer, 'classifications', []) # classification not applicable to Text
-        classifications = [
-            NDSubclassification.from_common(annot)
-            for annot in classifications
-        ]
-
-        if classify_obj == NDText: # Text does not support clasifications
-            return classify_obj.from_common(annotation.value, annotation.name,
-                                            annotation.feature_schema_id,
-                                            annotation.extra, data,
-                                            annotation.message_id,
-                                            annotation.confidence)
         return classify_obj.from_common(annotation.value, annotation.name,
-                                    annotation.feature_schema_id,
-                                    annotation.extra, data,
-                                    annotation.message_id,
-                                    annotation.confidence, classifications)
+                                        annotation.feature_schema_id,
+                                        annotation.extra, data,
+                                        annotation.message_id,
+                                        annotation.confidence)
 
     @staticmethod
     def lookup_classification(
