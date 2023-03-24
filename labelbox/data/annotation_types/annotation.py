@@ -1,14 +1,11 @@
-import abc
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Union
 
-from enum import Enum
-from typing import List, Optional, Union
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
+from labelbox.data.annotation_types.geometry.geometry import Geometry
 
 from labelbox.data.mixins import ConfidenceMixin
 
-from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnnotation, Radio, Text, Dropdown
-from .geometry import Geometry
+from labelbox.data.annotation_types.classification.classification import ClassificationAnnotation
 from .ner import DocumentEntity, TextEntity, ConversationEntity
 
 

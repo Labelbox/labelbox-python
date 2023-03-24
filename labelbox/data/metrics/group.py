@@ -4,8 +4,8 @@ Tools for grouping features and labels so that we can compute metrics on the ind
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation, Checklist, Radio, Text
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation
+from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnswer, Radio, Text
 try:
     from typing import Literal
 except ImportError:
