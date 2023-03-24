@@ -12,7 +12,7 @@ from labelbox.schema.annotation_import import AnnotationImportState, MEAPredicti
 
 @pytest.mark.skip()
 def test_create_from_url(client, tmp_path, object_predictions,
-                         model_run_with_model_run_data_rows,
+                         model_run_with_data_rows,
                          configured_project_without_data_rows,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())
@@ -21,7 +21,7 @@ def test_create_from_url(client, tmp_path, object_predictions,
 
     model_run_data_rows = [
         mrdr.data_row().uid
-        for mrdr in model_run_with_model_run_data_rows.model_run_data_rows()
+        for mrdr in model_run_with_data_rows.model_run_data_rows()
     ]
     predictions = [
         p for p in object_predictions
@@ -38,13 +38,13 @@ def test_create_from_url(client, tmp_path, object_predictions,
                                  sign=True,
                                  content_type="application/json")
 
-    annotation_import, batch, mal_prediction_import = model_run_with_model_run_data_rows.upsert_predictions_and_send_to_project(
+    annotation_import, batch, mal_prediction_import = model_run_with_data_rows.upsert_predictions_and_send_to_project(
         name=name,
         predictions=url,
         project_id=configured_project_without_data_rows.uid,
         priority=5)
 
-    assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
+    assert annotation_import.model_run_id == model_run_with_data_rows.uid
     annotation_import.wait_until_done()
     assert not annotation_import.errors
     assert annotation_import.statuses
@@ -60,26 +60,26 @@ def test_create_from_url(client, tmp_path, object_predictions,
 
 
 @pytest.mark.skip()
-def test_create_from_objects(model_run_with_model_run_data_rows,
+def test_create_from_objects(model_run_with_data_rows,
                              configured_project_without_data_rows,
                              object_predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
     model_run_data_rows = [
         mrdr.data_row().uid
-        for mrdr in model_run_with_model_run_data_rows.model_run_data_rows()
+        for mrdr in model_run_with_data_rows.model_run_data_rows()
     ]
     predictions = [
         p for p in object_predictions
         if p['dataRow']['id'] in model_run_data_rows
     ]
-    annotation_import, batch, mal_prediction_import = model_run_with_model_run_data_rows.upsert_predictions_and_send_to_project(
+    annotation_import, batch, mal_prediction_import = model_run_with_data_rows.upsert_predictions_and_send_to_project(
         name=name,
         predictions=predictions,
         project_id=configured_project_without_data_rows.uid,
         priority=5)
 
-    assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
+    assert annotation_import.model_run_id == model_run_with_data_rows.uid
     annotation_import.wait_until_done()
     assert not annotation_import.errors
     assert annotation_import.statuses
@@ -95,7 +95,7 @@ def test_create_from_objects(model_run_with_model_run_data_rows,
 
 
 @pytest.mark.skip()
-def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
+def test_create_from_local_file(tmp_path, model_run_with_data_rows,
                                 configured_project_without_data_rows,
                                 object_predictions,
                                 annotation_import_test_helpers):
@@ -106,7 +106,7 @@ def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
 
     model_run_data_rows = [
         mrdr.data_row().uid
-        for mrdr in model_run_with_model_run_data_rows.model_run_data_rows()
+        for mrdr in model_run_with_data_rows.model_run_data_rows()
     ]
     predictions = [
         p for p in object_predictions
@@ -116,13 +116,13 @@ def test_create_from_local_file(tmp_path, model_run_with_model_run_data_rows,
     with file_path.open("w") as f:
         ndjson.dump(predictions, f)
 
-    annotation_import, batch, mal_prediction_import = model_run_with_model_run_data_rows.upsert_predictions_and_send_to_project(
+    annotation_import, batch, mal_prediction_import = model_run_with_data_rows.upsert_predictions_and_send_to_project(
         name=name,
         predictions=str(file_path),
         project_id=configured_project_without_data_rows.uid,
         priority=5)
 
-    assert annotation_import.model_run_id == model_run_with_model_run_data_rows.uid
+    assert annotation_import.model_run_id == model_run_with_data_rows.uid
     annotation_import.wait_until_done()
     assert not annotation_import.errors
     assert annotation_import.statuses

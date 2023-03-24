@@ -642,9 +642,8 @@ def model_run_with_training_metadata(rand_gen, model):
 
 
 @pytest.fixture
-def model_run_with_model_run_data_rows(client, configured_project,
-                                       model_run_predictions, model_run,
-                                       wait_for_label_processing):
+def model_run_with_data_rows(client, configured_project, model_run_predictions,
+                             model_run, wait_for_label_processing):
     configured_project.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
