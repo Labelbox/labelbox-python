@@ -21,25 +21,25 @@ def test_serialization_min():
             )
         ])
 
+    expected = {
+        'name': 'checkbox_question_geo',
+        'dataRow': {
+            'id': 'bkj7z2q0b0000jx6x0q2q7q0d'
+        },
+        'answer': [{
+            'name': 'first_answer'
+        }]
+    }
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
 
-    assert res['name'] == "checkbox_question_geo"
-    assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
-
-    first_answer = res['answer'][0]
-    assert first_answer['name'] == "first_answer"
-    classifications = first_answer.get('classifications')
-    assert classifications is None
+    res.pop("uuid")
+    assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
-    annotation = res.annotations[0]
-
-    annotation_value = annotation.value
-    assert type(annotation_value) is Checklist
-    annotaion_answer = annotation_value.answer[0]
-    assert annotaion_answer.name == "first_answer"
+    res.annotations[0].extra.pop("uuid")
+    assert res.annotations == label.annotations
 
 
 def test_serialization_with_classification():
@@ -77,49 +77,55 @@ def test_serialization_with_classification():
                 ]))
         ])
 
+    expected = {
+        'confidence':
+            0.5,
+        'name':
+            'checkbox_question_geo',
+        'dataRow': {
+            'id': 'bkj7z2q0b0000jx6x0q2q7q0d'
+        },
+        'answer': [{
+            'confidence':
+                0.1,
+            'name':
+                'first_answer',
+            'classifications': [{
+                'name': 'sub_radio_question',
+                'schema_id': None,
+                'answer': {
+                    'confidence': 0.31,
+                    'name': 'first_sub_radio_answer',
+                    'schema_id': None
+                }
+            }, {
+                'name':
+                    'sub_chck_question',
+                'schema_id':
+                    None,
+                'answer': [{
+                    'confidence': 0.41,
+                    'name': 'second_subchk_answer',
+                    'schema_id': None
+                }, {
+                    'confidence': 0.42,
+                    'name': 'third_subchk_answer',
+                    'schema_id': None
+                }]
+            }]
+        }]
+    }
+
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
 
-    assert res['confidence'] == 0.5
-    assert res['name'] == "checkbox_question_geo"
-    assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
-
-    first_answer = res['answer'][0]
-    assert first_answer['name'] == "first_answer"
-    assert first_answer['confidence'] == 0.1
-    classifications = first_answer['classifications']
-    assert len(classifications) == 2
-    assert classifications[0]['name'] == "sub_radio_question"
-    assert classifications[0]['answer']['name'] == "first_sub_radio_answer"
-    assert classifications[0]['answer']['confidence'] == 0.31
-    assert classifications[1]['name'] == "sub_chck_question"
-    assert classifications[1]['answer'][0]['name'] == "second_subchk_answer"
-    assert classifications[1]['answer'][0]['confidence'] == 0.41
-    assert classifications[1]['answer'][1]['name'] == "third_subchk_answer"
-    assert classifications[1]['answer'][1]['confidence'] == 0.42
+    res.pop("uuid")
+    assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
-    annotation = res.annotations[0]
-    assert annotation.confidence == 0.5
-
-    annotation_value = annotation.value
-    assert type(annotation_value) is Checklist
-    annotaion_answer = annotation_value.answer[0]
-    assert annotaion_answer.name == "first_answer"
-    assert annotaion_answer.confidence == 0.1
-    classifications = annotaion_answer.classifications
-    assert len(classifications) == 2
-    classification_types = [type(c.value) for c in classifications]
-    assert classification_types == [Radio, Checklist]
-    answers = [
-        classifications[0].value.answer, classifications[1].value.answer[0],
-        classifications[1].value.answer[1]
-    ]
-    assert [a.name for a in answers] == [
-        "first_sub_radio_answer", "second_subchk_answer", "third_subchk_answer"
-    ]
-    assert [a.confidence for a in answers] == [0.31, 0.41, 0.42]
+    res.annotations[0].extra.pop("uuid")
+    assert res.annotations == label.annotations
 
 
 def test_serialization_with_classification_double_nested():
