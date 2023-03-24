@@ -1,11 +1,27 @@
 import time
 import os
-import uuid
 import pytest
 
 from collections import Counter
 
 from labelbox import DataSplit, ModelRun
+
+
+def _model_run_export_v2_results(model_run, task_name, params, num_retries=5):
+    """Export model run results and retry if no results are returned."""
+    while (num_retries > 0):
+        task = model_run.export_v2(task_name, params=params)
+        assert task.name == task_name
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+        assert task.errors is None
+        task_results = task.result
+        if len(task_results) == 0:
+            num_retries -= 1
+            time.sleep(5)
+        else:
+            return task_results
+    return []
 
 
 def test_model_run(client, configured_project_with_label, rand_gen):
@@ -77,8 +93,8 @@ def test_model_run_get_config(model_run_with_training_metadata):
     assert res["batch_size"] == new_config["batch_size"]
 
 
-def test_model_run_data_rows_delete(model_run_with_model_run_data_rows):
-    model_run = model_run_with_model_run_data_rows
+def test_model_run_data_rows_delete(model_run_with_data_rows):
+    model_run = model_run_with_data_rows
 
     before = list(model_run.model_run_data_rows())
     annotation_data_row = before[0]
@@ -107,32 +123,31 @@ def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
 
 
 def test_model_run_upsert_data_rows_with_existing_labels(
-        model_run_with_model_run_data_rows):
-    model_run_data_rows = list(
-        model_run_with_model_run_data_rows.model_run_data_rows())
+        model_run_with_data_rows):
+    model_run_data_rows = list(model_run_with_data_rows.model_run_data_rows())
     n_data_rows = len(model_run_data_rows)
-    model_run_with_model_run_data_rows.upsert_data_rows([
+    model_run_with_data_rows.upsert_data_rows([
         model_run_data_row.data_row().uid
         for model_run_data_row in model_run_data_rows
     ])
     assert n_data_rows == len(
-        list(model_run_with_model_run_data_rows.model_run_data_rows()))
+        list(model_run_with_data_rows.model_run_data_rows()))
 
 
-def test_model_run_export_labels(model_run_with_model_run_data_rows):
-    labels = model_run_with_model_run_data_rows.export_labels(download=True)
+def test_model_run_export_labels(model_run_with_data_rows):
+    labels = model_run_with_data_rows.export_labels(download=True)
     assert len(labels) == 3
 
 
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
                     reason="does not work for onprem")
-def test_model_run_status(model_run_with_model_run_data_rows):
+def test_model_run_status(model_run_with_data_rows):
 
     def get_model_run_status():
-        return model_run_with_model_run_data_rows.client.execute(
+        return model_run_with_data_rows.client.execute(
             """query trainingPipelinePyApi($modelRunId: ID!) {
             trainingPipeline(where: {id : $modelRunId}) {status, errorMessage, metadata}}
-        """, {'modelRunId': model_run_with_model_run_data_rows.uid},
+        """, {'modelRunId': model_run_with_data_rows.uid},
             experimental=True)['trainingPipeline']
 
     model_run_status = get_model_run_status()
@@ -143,8 +158,7 @@ def test_model_run_status(model_run_with_model_run_data_rows):
     status = "COMPLETE"
     metadata = {'key1': 'value1'}
     errorMessage = "an error"
-    model_run_with_model_run_data_rows.update_status(status, metadata,
-                                                     errorMessage)
+    model_run_with_data_rows.update_status(status, metadata, errorMessage)
 
     model_run_status = get_model_run_status()
     assert model_run_status['status'] == status
@@ -152,38 +166,28 @@ def test_model_run_status(model_run_with_model_run_data_rows):
     assert model_run_status['errorMessage'] == errorMessage
 
     extra_metadata = {'key2': 'value2'}
-    model_run_with_model_run_data_rows.update_status(status, extra_metadata)
+    model_run_with_data_rows.update_status(status, extra_metadata)
     model_run_status = get_model_run_status()
     assert model_run_status['status'] == status
     assert model_run_status['metadata'] == {**metadata, **extra_metadata}
     assert model_run_status['errorMessage'] == errorMessage
 
     status = ModelRun.Status.FAILED
-    model_run_with_model_run_data_rows.update_status(status, metadata,
-                                                     errorMessage)
+    model_run_with_data_rows.update_status(status, metadata, errorMessage)
     model_run_status = get_model_run_status()
     assert model_run_status['status'] == status.value
 
     with pytest.raises(ValueError):
-        model_run_with_model_run_data_rows.update_status(
-            "INVALID", metadata, errorMessage)
+        model_run_with_data_rows.update_status("INVALID", metadata,
+                                               errorMessage)
 
 
-def test_model_run_export_v2(model_run_with_model_run_data_rows,
-                             configured_project):
+def test_model_run_export_v2(model_run_with_data_rows, configured_project):
     task_name = "test_task"
-
     media_attributes = True
     params = {"media_attributes": media_attributes}
-    task = model_run_with_model_run_data_rows.export_v2(task_name,
-                                                        params=params)
-    assert task.name == task_name
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
-
-    task_results = task.result
-
+    task_results = _model_run_export_v2_results(model_run_with_data_rows,
+                                                task_name, params)
     label_ids = [label.uid for label in configured_project.labels()]
     label_ids_set = set(label_ids)
 
@@ -196,9 +200,8 @@ def test_model_run_export_v2(model_run_with_model_run_data_rows,
         else:
             assert 'media_attributes' not in task_result or task_result[
                 'media_attributes'] is None
-        model_run = task_result['models'][
-            model_run_with_model_run_data_rows.model_id]['model_runs'][
-                model_run_with_model_run_data_rows.uid]
+        model_run = task_result['models'][model_run_with_data_rows.model_id][
+            'model_runs'][model_run_with_data_rows.uid]
         task_label_ids_set = set(
             map(lambda label: label['id'], model_run['labels']))
         task_prediction_ids_set = set(
