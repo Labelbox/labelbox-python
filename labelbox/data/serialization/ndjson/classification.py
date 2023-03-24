@@ -97,7 +97,11 @@ class NDChecklistSubclass(NDFeature):
         return cls(answer=[
             NDFeature(name=answer.name,
                       schema_id=answer.feature_schema_id,
-                      confidence=answer.confidence)
+                      confidence=answer.confidence,
+                      classifications=[
+                          NDSubclassification.from_common(annot)
+                          for annot in answer.classifications
+                      ])
             for answer in checklist.answer
         ],
                    name=name,
@@ -126,12 +130,17 @@ class NDRadioSubclass(NDFeature):
         ))
 
     @classmethod
-    # @NOTE since NDXXXSubclass is used to serialize classifications, and we do not support recusions like classifcations in classifications, we do not need to deal with classifications here
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
+        classifications = getattr(radio.answer, 'classifications',
+                                  [])  # classification not applicable to Text
+        classifications = [
+            NDSubclassification.from_common(annot) for annot in classifications
+        ]
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
-                                    confidence=radio.answer.confidence),
+                                    confidence=radio.answer.confidence,
+                                    classifications=classifications),
                    name=name,
                    schema_id=feature_schema_id)
 
@@ -212,7 +221,6 @@ class NDRadio(NDBaseObject, NDRadioSubclass, VideoSupported):
         classifications = [
             NDSubclassification.from_common(annot) for annot in classifications
         ]
-
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,
                                     confidence=radio.answer.confidence,
