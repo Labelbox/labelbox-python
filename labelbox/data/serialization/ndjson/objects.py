@@ -17,7 +17,7 @@ from labelbox.data.annotation_types.data.video import VideoData
 from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import DocumentEntity, DocumentTextSelection, TextEntity
 from ...annotation_types.types import Cuid
-from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
+from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
 from .classification import NDSubclassification, NDSubclassificationType
@@ -212,6 +212,40 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                    classifications=classifications,
                    page=extra.get('page'),
                    unit=extra.get('unit'),
+                   confidence=confidence)
+
+
+class NDDocumentRectangle(NDRectangle):
+    page: int
+    unit: str
+
+    def to_common(self) -> DocumentRectangle:
+        return DocumentRectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
+                                 end=Point(x=self.bbox.left + self.bbox.width,
+                                           y=self.bbox.top + self.bbox.height),
+                                 page=self.page,
+                                 unit=self.unit)
+
+    @classmethod
+    def from_common(cls,
+                    rectangle: DocumentRectangle,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[ImageData, TextData],
+                    confidence: Optional[float] = None) -> "NDRectangle":
+        return cls(bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
+                             left=min(rectangle.start.x, rectangle.end.x),
+                             height=abs(rectangle.end.y - rectangle.start.y),
+                             width=abs(rectangle.end.x - rectangle.start.x)),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   classifications=classifications,
+                   page=rectangle.page,
+                   unit=rectangle.unit.value,
                    confidence=confidence)
 
 
@@ -582,7 +616,8 @@ class NDObject:
         cls,
         annotation: Union[ObjectAnnotation, List[List[VideoObjectAnnotation]],
                           VideoMaskAnnotation], data: Union[ImageData, TextData]
-    ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
+    ) -> Union[NDLine, NDPoint, NDPolygon, NDDocumentRectangle, NDRectangle,
+               NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
 
         # if it is video segments
@@ -639,6 +674,7 @@ class NDObject:
                 Point: NDPoint,
                 Polygon: NDPolygon,
                 Rectangle: NDRectangle,
+                DocumentRectangle: NDDocumentRectangle,
                 Mask: NDMask,
                 TextEntity: NDTextEntity,
                 DocumentEntity: NDDocumentEntity,
@@ -655,8 +691,8 @@ class NDObject:
 # I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
 # This is a bit of a hack, but it works for now
 NDEntityType = Union[NDConversationEntity, NDTextEntity]
-NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     NDEntityType, NDDocumentEntity]
+NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDDocumentRectangle,
+                     NDRectangle, NDMask, NDEntityType, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
 NDDicomObjectType = NDDicomLine

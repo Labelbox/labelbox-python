@@ -4,6 +4,8 @@ from .geometry import Mask
 from .geometry import Polygon
 from .geometry import Rectangle
 from .geometry import Geometry
+from .geometry import DocumentRectangle
+from .geometry import RectangleUnit
 
 from .annotation import ClassificationAnnotation
 from .annotation import ObjectAnnotation
