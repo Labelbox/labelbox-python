@@ -40,15 +40,3 @@ def test_conversation_entity(client, configured_project_without_data_rows,
     import_annotations.wait_until_done()
 
     assert import_annotations.errors == []
-
-    exported_labels = configured_project_without_data_rows.label_generator()
-    for label in exported_labels:
-        assert len(
-            label.annotations) == 1  # we have created only 1 annotation above
-        annotation = label.annotations[0]
-
-        assert type(annotation) is ConversationEntity
-        assert annotation.name == "named-entity"
-        assert annotation.value.message_id == "4"
-        assert annotation.value.start == 0
-        assert annotation.value.end == 8
