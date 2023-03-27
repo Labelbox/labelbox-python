@@ -92,25 +92,19 @@ def test_serialization_with_classification():
                 'first_answer',
             'classifications': [{
                 'name': 'sub_radio_question',
-                'schema_id': None,
                 'answer': {
                     'confidence': 0.31,
                     'name': 'first_sub_radio_answer',
-                    'schema_id': None
                 }
             }, {
                 'name':
                     'sub_chck_question',
-                'schema_id':
-                    None,
                 'answer': [{
                     'confidence': 0.41,
                     'name': 'second_subchk_answer',
-                    'schema_id': None
                 }, {
                     'confidence': 0.42,
                     'name': 'third_subchk_answer',
-                    'schema_id': None
                 }]
             }]
         }]
@@ -180,27 +174,20 @@ def test_serialization_with_classification_double_nested():
                 'first_answer',
             'classifications': [{
                 'name': 'sub_radio_question',
-                'schema_id': None,
                 'answer': {
                     'confidence':
                         0.31,
                     'name':
                         'first_sub_radio_answer',
-                    'schema_id':
-                        None,
                     'classifications': [{
                         'name':
                             'sub_chck_question',
-                        'schema_id':
-                            None,
                         'answer': [{
                             'confidence': 0.41,
                             'name': 'second_subchk_answer',
-                            'schema_id': None
                         }, {
                             'confidence': 0.42,
                             'name': 'third_subchk_answer',
-                            'schema_id': None
                         }]
                     }]
                 }
@@ -265,30 +252,21 @@ def test_serialization_with_classification_double_nested_2():
             'classifications': [{
                 'name':
                     'sub_chck_question',
-                'schema_id':
-                    None,
                 'answer': [{
                     'confidence':
                         0.41,
                     'name':
                         'second_subchk_answer',
-                    'schema_id':
-                        None,
                     'classifications': [{
-                        'name':
-                            'checkbox_question_geo',
-                        'schema_id':
-                            None,
+                        'name': 'checkbox_question_geo',
                         'answer': [{
                             'confidence': 0.1,
                             'name': 'first_answer',
-                            'schema_id': None
                         }]
                     }]
                 }, {
                     'confidence': 0.42,
                     'name': 'third_subchk_answer',
-                    'schema_id': None
                 }]
             }]
         },

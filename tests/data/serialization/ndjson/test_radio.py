@@ -22,19 +22,25 @@ def test_serialization_with_radio_min():
                     answer=ClassificationAnswer(name="first_radio_answer",)))
         ])
 
+    expected = {
+        'name': 'radio_question_geo',
+        'answer': {
+            'name': 'first_radio_answer'
+        },
+        'dataRow': {
+            'id': 'bkj7z2q0b0000jx6x0q2q7q0d'
+        }
+    }
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
-    assert res['name'] == "radio_question_geo"
-    assert res['answer']['name'] == "first_radio_answer"
-    assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
+
+    res.pop("uuid")
+    assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
-    annotation = res.annotations[0]
-
-    annotation_value = annotation.value
-    assert type(annotation_value) is Radio
-    assert annotation_value.answer.name == "first_radio_answer"
+    res.annotations[0].extra.pop("uuid")
+    assert res.annotations == label.annotations
 
 
 def test_serialization_with_radio_classification():
@@ -58,29 +64,32 @@ def test_serialization_with_radio_classification():
                               ])))
                   ])
 
+    expected = {
+        'confidence': 0.5,
+        'name': 'radio_question_geo',
+        'answer': {
+            'confidence':
+                0.6,
+            'name':
+                'first_radio_answer',
+            'classifications': [{
+                'name': 'sub_radio_question',
+                'answer': {
+                    'name': 'first_sub_radio_answer',
+                }
+            }]
+        },
+        'dataRow': {
+            'id': 'bkj7z2q0b0000jx6x0q2q7q0d'
+        }
+    }
+
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
-    assert res['confidence'] == 0.5
-    assert res['name'] == "radio_question_geo"
-    assert res['answer']['name'] == "first_radio_answer"
-    assert res['answer']['confidence'] == 0.6
-    assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
-
-    classification = res['answer']['classifications'][0]
-    assert classification['name'] == "sub_radio_question"
-    assert classification['answer']['name'] == "first_sub_radio_answer"
+    res.pop("uuid")
+    assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
-    annotation = res.annotations[0]
-    assert annotation.confidence == 0.5
-
-    annotation_value = annotation.value
-    assert type(annotation_value) is Radio
-    assert annotation_value.answer.name == "first_radio_answer"
-    assert annotation_value.answer.confidence == 0.6
-
-    classification = annotation_value.answer.classifications[0]
-    assert type(classification) is ClassificationAnnotation
-    assert classification.name == "sub_radio_question"
-    assert classification.value.answer.name == "first_sub_radio_answer"
+    res.annotations[0].extra.pop("uuid")
+    assert res.annotations == label.annotations

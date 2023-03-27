@@ -23,9 +23,6 @@ from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, 
 from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation, NDJsonBase
 
-# class NDBaseObject(NDAnnotation):
-#     classifications: List[NDSubclassificationType] = []
-
 
 class VideoSupported(BaseModel):
     # support for video for objects are per-frame basis
