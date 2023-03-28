@@ -21,7 +21,7 @@ from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
 from .classification import NDSubclassification, NDSubclassificationType
-from .base import DataRow, NDAnnotation
+from .base import DataRow, NDAnnotation, NDJsonBase
 
 
 class NDBaseObject(NDAnnotation):
@@ -456,15 +456,13 @@ class NDVideoMasksFramesInstances(BaseModel):
     instances: List[MaskInstance]
 
 
-class NDVideoMasks(ConfidenceMixin, NDAnnotation):
+class NDVideoMasks(NDJsonBase, ConfidenceMixin):
     masks: NDVideoMasksFramesInstances
 
     def to_common(self) -> VideoMaskAnnotation:
         return VideoMaskAnnotation(
             frames=self.masks.frames,
             instances=self.masks.instances,
-            name=self.name,
-            feature_schema_id=self.schema_id,
         )
 
     @classmethod
@@ -473,8 +471,6 @@ class NDVideoMasks(ConfidenceMixin, NDAnnotation):
             data_row=DataRow(id=data.uid, global_key=data.global_key),
             masks=NDVideoMasksFramesInstances(frames=annotation.frames,
                                               instances=annotation.instances),
-            name=annotation.name,
-            schema_id=annotation.feature_schema_id,
         )
 
 
@@ -484,8 +480,6 @@ class NDDicomMasks(NDVideoMasks, DicomSupported):
         return DICOMMaskAnnotation(
             frames=self.masks.frames,
             instances=self.masks.instances,
-            name=self.name,
-            feature_schema_id=self.schema_id,
             group_key=self.group_key,
         )
 
@@ -495,8 +489,6 @@ class NDDicomMasks(NDVideoMasks, DicomSupported):
             data_row=DataRow(id=data.uid, global_key=data.global_key),
             masks=NDVideoMasksFramesInstances(frames=annotation.frames,
                                               instances=annotation.instances),
-            name=annotation.name,
-            schema_id=annotation.feature_schema_id,
             group_key=annotation.group_key.value,
         )
 

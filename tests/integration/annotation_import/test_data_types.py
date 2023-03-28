@@ -21,12 +21,44 @@ checklist_annotation = lb_types.ClassificationAnnotation(
 text_annotation = lb_types.ClassificationAnnotation(
     name="text", value=lb_types.Text(answer="sample text"))
 
+video_mask_annotation = lb_types.VideoMaskAnnotation(frames=[
+    lb_types.MaskFrame(
+        index=10,
+        instance_uri=
+        "https://storage.googleapis.com/labelbox-datasets/video-sample-data/mask_example.png"
+    )
+],
+                                                     instances=[
+                                                         lb_types.MaskInstance(
+                                                             color_rgb=(255,
+                                                                        255,
+                                                                        255),
+                                                             name=
+                                                             "segmentation_mask"
+                                                         )
+                                                     ])
+
+test_params = [[
+    'html', lb_types.HTMLData,
+    [radio_annotation, checklist_annotation, text_annotation]
+],
+               [
+                   'audio', lb_types.AudioData,
+                   [radio_annotation, checklist_annotation, text_annotation]
+               ], ['video', lb_types.VideoData, [video_mask_annotation]]]
+
 
 def get_annotation_comparison_dicts_from_labels(labels):
     labels_ndjson = list(NDJsonConverter.serialize(labels))
     for annotation in labels_ndjson:
         annotation.pop('uuid')
         annotation.pop('dataRow')
+
+        if 'masks' in annotation:
+            for frame in annotation['masks']['frames']:
+                frame.pop('instanceURI')
+            for instance in annotation['masks']['instances']:
+                instance.pop('colorRGB')
     return labels_ndjson
 
 
@@ -35,33 +67,45 @@ def get_annotation_comparison_dicts_from_export(export_result, data_row_id,
     exported_data_row = [
         dr for dr in export_result if dr['data_row']['id'] == data_row_id
     ][0]
-    exported_annotations = exported_data_row['projects'][project_id]['labels'][
-        0]['annotations']
-    flat_exported_annotations = list(
-        itertools.chain(*exported_annotations.values()))
-
+    exported_label = exported_data_row['projects'][project_id]['labels'][0]
+    exported_annotations = exported_label['annotations']
     converted_annotations = []
-    for annotation in flat_exported_annotations:
-        if annotation['name'] == 'radio':
-            converted_annotations.append({
-                'name': annotation['name'],
-                'answer': {
-                    'name': annotation['radio_answer']['name']
-                }
-            })
-        elif annotation['name'] == 'checklist':
-            converted_annotations.append({
-                'name':
-                    annotation['name'],
-                'answer': [{
-                    'name': answer['name']
-                } for answer in annotation['checklist_answers']]
-            })
-        elif annotation['name'] == 'text':
-            converted_annotations.append({
-                'name': annotation['name'],
-                'answer': annotation['text_answer']['content']
-            })
+    if exported_label['label_kind'] == 'Video':
+        frames = []
+        instances = []
+        for frame_id, frame in exported_annotations['frames'].items():
+            frames.append({'index': int(frame_id)})
+            for object in frame['objects'].values():
+                instances.append({'name': object['name']})
+        converted_annotations.append(
+            {'masks': {
+                'frames': frames,
+                'instances': instances,
+            }})
+    else:
+        exported_annotations = list(
+            itertools.chain(*exported_annotations.values()))
+        for annotation in exported_annotations:
+            if annotation['name'] == 'radio':
+                converted_annotations.append({
+                    'name': annotation['name'],
+                    'answer': {
+                        'name': annotation['radio_answer']['name']
+                    }
+                })
+            elif annotation['name'] == 'checklist':
+                converted_annotations.append({
+                    'name':
+                        annotation['name'],
+                    'answer': [{
+                        'name': answer['name']
+                    } for answer in annotation['checklist_answers']]
+                })
+            elif annotation['name'] == 'text':
+                converted_annotations.append({
+                    'name': annotation['name'],
+                    'answer': annotation['text_answer']['content']
+                })
     return converted_annotations
 
 
@@ -105,16 +149,7 @@ def test_import_data_types(client, configured_project,
     data_row.delete()
 
 
-@pytest.mark.parametrize('data_type, data_class, annotations', [
-    [
-        'html', lb_types.HTMLData,
-        [radio_annotation, checklist_annotation, text_annotation]
-    ],
-    [
-        'audio', lb_types.AudioData,
-        [radio_annotation, checklist_annotation, text_annotation]
-    ],
-])
+@pytest.mark.parametrize('data_type, data_class, annotations', test_params)
 def test_import_label_annotations(client, configured_project,
                                   data_row_json_by_data_type, data_type,
                                   data_class, annotations):
@@ -153,16 +188,7 @@ def test_import_label_annotations(client, configured_project,
     data_row.delete()
 
 
-@pytest.mark.parametrize('data_type, data_class, annotations', [
-    [
-        'html', lb_types.HTMLData,
-        [radio_annotation, checklist_annotation, text_annotation]
-    ],
-    [
-        'audio', lb_types.AudioData,
-        [radio_annotation, checklist_annotation, text_annotation]
-    ],
-])
+@pytest.mark.parametrize('data_type, data_class, annotations', test_params)
 def test_import_mal_annotations(client, configured_project_without_data_rows,
                                 data_row_json_by_data_type, data_type,
                                 data_class, annotations, rand_gen):
