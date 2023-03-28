@@ -1,5 +1,7 @@
 import abc
 from typing import Any, Dict, List, Optional, Union
+from pydantic import PrivateAttr, validator
+from uuid import UUID, uuid4
 
 from labelbox.data.mixins import ConfidenceMixin
 
@@ -12,7 +14,13 @@ from .ner import DocumentEntity, TextEntity, ConversationEntity
 class BaseAnnotation(FeatureSchema, abc.ABC):
     """ Base annotation class. Shouldn't be directly instantiated
     """
+    _uuid: UUID = PrivateAttr()
     extra: Dict[str, Any] = {}
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        extra_uuid = data.get("extra", {}).get("uuid")
+        self._uuid = data.get("_uuid") or extra_uuid or uuid4()
 
 
 class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):

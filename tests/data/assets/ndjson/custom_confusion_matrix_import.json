@@ -1,3 +1,55 @@
-[{"uuid" : "a22bbf6e-b2da-4abe-9a11-df84759f7672","dataRow" : {"id": "ckrmdnqj4000007msh9p2a27r"}, "metricValue" : [1,1,2,3], "metricName" : "50%_iou", "featureName" : "sample_class", "subclassName" : "sample_subclass", "aggregation" : "CONFUSION_MATRIX"},
- {"uuid" : "a22bbf6e-b2da-4abe-9a11-df84759f7672","dataRow" : {"id": "ckrmdnqj4000007msh9p2a27r"}, "metricValue" : [0,1,2,5], "metricName" : "50%_iou", "featureName" : "sample_class", "aggregation" : "CONFUSION_MATRIX"},
- {"uuid" : "a22bbf6e-b2da-4abe-9a11-df84759f7672","dataRow" : {"id": "ckrmdnqj4000007msh9p2a27r"}, "metricValue" : {"0.1" : [0,1,2,3], "0.2" : [5,3,4,3]}, "metricName" : "50%_iou", "aggregation" : "CONFUSION_MATRIX"}]
+[
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7672",
+        "dataRow": {
+            "id": "ckrmdnqj4000007msh9p2a27r"
+        },
+        "metricValue": [
+            1,
+            1,
+            2,
+            3
+        ],
+        "metricName": "50%_iou",
+        "featureName": "sample_class",
+        "subclassName": "sample_subclass",
+        "aggregation": "CONFUSION_MATRIX"
+    },
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7673",
+        "dataRow": {
+            "id": "ckrmdnqj4000007msh9p2a27r"
+        },
+        "metricValue": [
+            0,
+            1,
+            2,
+            5
+        ],
+        "metricName": "50%_iou",
+        "featureName": "sample_class",
+        "aggregation": "CONFUSION_MATRIX"
+    },
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7674",
+        "dataRow": {
+            "id": "ckrmdnqj4000007msh9p2a27r"
+        },
+        "metricValue": {
+            "0.1": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "0.2": [
+                5,
+                3,
+                4,
+                3
+            ]
+        },
+        "metricName": "50%_iou",
+        "aggregation": "CONFUSION_MATRIX"
+    }
+]

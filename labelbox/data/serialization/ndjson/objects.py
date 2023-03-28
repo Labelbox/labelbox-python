@@ -1,4 +1,3 @@
-from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
@@ -290,6 +289,7 @@ class NDSegment(BaseModel):
     @staticmethod
     def segment_with_uuid(keyframe: Union[NDFrameRectangle, NDFramePoint,
                                           NDFrameLine], uuid: str):
+        keyframe._uuid = uuid
         keyframe.extra = {'uuid': uuid}
         return keyframe
 
@@ -346,11 +346,10 @@ class NDSegments(NDBaseObject):
         result = []
         for idx, segment in enumerate(self.segments):
             result.extend(
-                NDSegment.to_common(segment,
-                                    name=name,
-                                    feature_schema_id=feature_schema_id,
-                                    segment_index=idx,
-                                    uuid=self.uuid))
+                segment.to_common(name=name,
+                                  feature_schema_id=feature_schema_id,
+                                  segment_index=idx,
+                                  uuid=self.uuid))
         return result
 
     @classmethod
@@ -374,12 +373,11 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
         result = []
         for idx, segment in enumerate(self.segments):
             result.extend(
-                NDDicomSegment.to_common(segment,
-                                         name=name,
-                                         feature_schema_id=feature_schema_id,
-                                         segment_index=idx,
-                                         uuid=self.uuid,
-                                         group_key=self.group_key))
+                segment.to_common(name=name,
+                                  feature_schema_id=feature_schema_id,
+                                  segment_index=idx,
+                                  uuid=self.uuid,
+                                  group_key=self.group_key))
         return result
 
     @classmethod
