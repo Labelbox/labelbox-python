@@ -1,4 +1,3 @@
-from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
@@ -57,6 +56,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     point: Point,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -71,7 +71,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -102,6 +102,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     line: Line,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -116,7 +117,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -165,6 +166,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     polygon: Polygon,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -179,7 +181,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -194,6 +196,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     rectangle: Rectangle,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -208,7 +211,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    page=extra.get('page'),
                    unit=extra.get('unit'),
@@ -228,6 +231,7 @@ class NDDocumentRectangle(NDRectangle):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     rectangle: DocumentRectangle,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -242,7 +246,7 @@ class NDDocumentRectangle(NDRectangle):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    page=rectangle.page,
                    unit=rectangle.unit.value,
@@ -290,6 +294,7 @@ class NDSegment(BaseModel):
     @staticmethod
     def segment_with_uuid(keyframe: Union[NDFrameRectangle, NDFramePoint,
                                           NDFrameLine], uuid: str):
+        keyframe._uuid = uuid
         keyframe.extra = {'uuid': uuid}
         return keyframe
 
@@ -346,11 +351,10 @@ class NDSegments(NDBaseObject):
         result = []
         for idx, segment in enumerate(self.segments):
             result.extend(
-                NDSegment.to_common(segment,
-                                    name=name,
-                                    feature_schema_id=feature_schema_id,
-                                    segment_index=idx,
-                                    uuid=self.uuid))
+                segment.to_common(name=name,
+                                  feature_schema_id=feature_schema_id,
+                                  segment_index=idx,
+                                  uuid=self.uuid))
         return result
 
     @classmethod
@@ -374,12 +378,11 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
         result = []
         for idx, segment in enumerate(self.segments):
             result.extend(
-                NDDicomSegment.to_common(segment,
-                                         name=name,
-                                         feature_schema_id=feature_schema_id,
-                                         segment_index=idx,
-                                         uuid=self.uuid,
-                                         group_key=self.group_key))
+                segment.to_common(name=name,
+                                  feature_schema_id=feature_schema_id,
+                                  segment_index=idx,
+                                  uuid=self.uuid,
+                                  group_key=self.group_key))
         return result
 
     @classmethod
@@ -425,6 +428,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     mask: Mask,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -446,7 +450,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -506,6 +510,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -520,7 +525,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -535,6 +540,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     document_entity: DocumentEntity,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -547,7 +553,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
                    dataRow=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -563,6 +569,7 @@ class NDConversationEntity(NDTextEntity):
     @classmethod
     def from_common(
             cls,
+            uuid: str,
             conversation_entity: ConversationEntity,
             classifications: List[ClassificationAnnotation],
             name: str,
@@ -638,7 +645,8 @@ class NDObject:
         optional_kwargs = {}
         if (annotation.confidence):
             optional_kwargs['confidence'] = annotation.confidence
-        return obj.from_common(annotation.value, subclasses, annotation.name,
+        return obj.from_common(str(annotation._uuid), annotation.value,
+                               subclasses, annotation.name,
                                annotation.feature_schema_id, annotation.extra,
                                data, **optional_kwargs)
 

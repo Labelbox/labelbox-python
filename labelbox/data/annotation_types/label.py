@@ -7,7 +7,8 @@ from pydantic import BaseModel, validator
 import labelbox
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
-from .annotation import (ClassificationAnnotation, ObjectAnnotation)
+from .annotation import ClassificationAnnotation, ObjectAnnotation
+from .relationship import RelationshipAnnotation
 from .classification import ClassificationAnswer
 from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData
 from .geometry import Mask
@@ -44,7 +45,8 @@ class Label(BaseModel):
     data: DataType
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoMaskAnnotation, ScalarMetric,
-                            ConfusionMatrixMetric]] = []
+                            ConfusionMatrixMetric,
+                            RelationshipAnnotation]] = []
     extra: Dict[str, Any] = {}
 
     def object_annotations(self) -> List[ObjectAnnotation]:

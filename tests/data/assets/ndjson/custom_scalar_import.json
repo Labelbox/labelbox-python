@@ -1,3 +1,35 @@
-[{"uuid" : "a22bbf6e-b2da-4abe-9a11-df84759f7672","dataRow" : {"id": "ckrmdnqj4000007msh9p2a27r"}, "metricValue" : 0.1, "metricName" : "custom_iou", "featureName" : "sample_class", "subclassName" : "sample_subclass", "aggregation" : "SUM"},
- {"uuid" : "a22bbf6e-b2da-4abe-9a11-df84759f7672","dataRow" : {"id": "ckrmdnqj4000007msh9p2a27r"}, "metricValue" : 0.1, "metricName" : "custom_iou", "featureName" : "sample_class", "aggregation" : "SUM"},
- {"uuid" : "a22bbf6e-b2da-4abe-9a11-df84759f7672","dataRow" : {"id": "ckrmdnqj4000007msh9p2a27r"}, "metricValue" : { "0.1" : 0.1, "0.2" : 0.5}, "metricName" : "custom_iou", "aggregation" : "SUM"}]
+[
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7672",
+        "dataRow": {
+            "id": "ckrmdnqj4000007msh9p2a27r"
+        },
+        "metricValue": 0.1,
+        "metricName": "custom_iou",
+        "featureName": "sample_class",
+        "subclassName": "sample_subclass",
+        "aggregation": "SUM"
+    },
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7673",
+        "dataRow": {
+            "id": "ckrmdnqj4000007msh9p2a27r"
+        },
+        "metricValue": 0.1,
+        "metricName": "custom_iou",
+        "featureName": "sample_class",
+        "aggregation": "SUM"
+    },
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7674",
+        "dataRow": {
+            "id": "ckrmdnqj4000007msh9p2a27r"
+        },
+        "metricValue": {
+            "0.1": 0.1,
+            "0.2": 0.5
+        },
+        "metricName": "custom_iou",
+        "aggregation": "SUM"
+    }
+]
