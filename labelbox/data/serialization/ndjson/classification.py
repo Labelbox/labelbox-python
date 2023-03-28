@@ -29,16 +29,14 @@ class NDFeature(ConfidenceMixin):
         res = super().dict(*args, **kwargs)
         if 'name' in res and res['name'] is None:
             res.pop('name')
-        #NOTE some glitch exists and not matter what I tried with using our CamelCaseMixin or by_alias is the CUID field defition,
-        # the schemaId field is always snake cased. So I am just removing it here.
-        if 'schema_id' in res and res['schema_id'] is None:
-            res.pop('schema_id')
         if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
         if self.classifications is None or len(self.classifications) == 0:
             res.pop('classifications')
         else:
-            res['classifications'] = [c.dict() for c in self.classifications]
+            res['classifications'] = [
+                c.dict(*args, **kwargs) for c in self.classifications
+            ]
         return res
 
     class Config:
@@ -331,6 +329,8 @@ NDChecklistSubclass.update_forward_refs()
 NDChecklist.update_forward_refs()
 NDRadioSubclass.update_forward_refs()
 NDRadio.update_forward_refs()
+NDText.update_forward_refs()
+NDTextSubclass.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used

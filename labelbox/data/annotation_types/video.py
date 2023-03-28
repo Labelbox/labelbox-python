@@ -2,13 +2,10 @@ from enum import Enum
 from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, validator
-<<<<<<< HEAD
-from labelbox.data.annotation_types.annotation import FeatureSchema, ClassificationAnnotation, ObjectAnnotation
-=======
->>>>>>> 174eb238 (Add support for serialization and de-serialization of nested annotations for radio)
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
-from labelbox.data.annotation_types.base_annotation import BaseAnnotation
+from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
 
