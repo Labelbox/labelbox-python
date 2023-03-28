@@ -12,7 +12,7 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 
 
-class NDFeature(ConfidenceMixin):
+class NDAnswer(ConfidenceMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = []
@@ -61,7 +61,7 @@ class VideoSupported(BaseModel):
         return res
 
 
-class NDTextSubclass(NDFeature):
+class NDTextSubclass(NDAnswer):
     answer: str
 
     def to_common(self) -> Text:
@@ -73,8 +73,8 @@ class NDTextSubclass(NDFeature):
         return cls(answer=text.answer, name=name, schema_id=feature_schema_id)
 
 
-class NDChecklistSubclass(NDFeature):
-    answer: List[NDFeature] = Field(..., alias='answers')
+class NDChecklistSubclass(NDAnswer):
+    answer: List[NDAnswer] = Field(..., alias='answers')
 
     def to_common(self) -> Checklist:
 
@@ -93,13 +93,13 @@ class NDChecklistSubclass(NDFeature):
     def from_common(cls, checklist: Checklist, name: str,
                     feature_schema_id: Cuid) -> "NDChecklistSubclass":
         return cls(answer=[
-            NDFeature(name=answer.name,
-                      schema_id=answer.feature_schema_id,
-                      confidence=answer.confidence,
-                      classifications=[
-                          NDSubclassification.from_common(annot)
-                          for annot in answer.classifications
-                      ])
+            NDAnswer(name=answer.name,
+                     schema_id=answer.feature_schema_id,
+                     confidence=answer.confidence,
+                     classifications=[
+                         NDSubclassification.from_common(annot)
+                         for annot in answer.classifications
+                     ])
             for answer in checklist.answer
         ],
                    name=name,
@@ -112,8 +112,8 @@ class NDChecklistSubclass(NDFeature):
         return res
 
 
-class NDRadioSubclass(NDFeature):
-    answer: NDFeature
+class NDRadioSubclass(NDAnswer):
+    answer: NDAnswer
 
     def to_common(self) -> Radio:
         return Radio(answer=ClassificationAnswer(
@@ -129,14 +129,13 @@ class NDRadioSubclass(NDFeature):
     @classmethod
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
-        return cls(answer=NDFeature(
-            name=radio.answer.name,
-            schema_id=radio.answer.feature_schema_id,
-            confidence=radio.answer.confidence,
-            classifications=[
-                NDSubclassification.from_common(annot)
-                for annot in radio.answer.classifications
-            ]),
+        return cls(answer=NDAnswer(name=radio.answer.name,
+                                   schema_id=radio.answer.feature_schema_id,
+                                   confidence=radio.answer.confidence,
+                                   classifications=[
+                                       NDSubclassification.from_common(annot)
+                                       for annot in radio.answer.classifications
+                                   ]),
                    name=name,
                    schema_id=feature_schema_id)
 
@@ -181,13 +180,13 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                     confidence: Optional[float] = None) -> "NDChecklist":
 
         return cls(answer=[
-            NDFeature(name=answer.name,
-                      schema_id=answer.feature_schema_id,
-                      confidence=answer.confidence,
-                      classifications=[
-                          NDSubclassification.from_common(annot)
-                          for annot in answer.classifications
-                      ])
+            NDAnswer(name=answer.name,
+                     schema_id=answer.feature_schema_id,
+                     confidence=answer.confidence,
+                     classifications=[
+                         NDSubclassification.from_common(annot)
+                         for annot in answer.classifications
+                     ])
             for answer in checklist.answer
         ],
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
@@ -212,14 +211,13 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDRadio":
-        return cls(answer=NDFeature(
-            name=radio.answer.name,
-            schema_id=radio.answer.feature_schema_id,
-            confidence=radio.answer.confidence,
-            classifications=[
-                NDSubclassification.from_common(annot)
-                for annot in radio.answer.classifications
-            ]),
+        return cls(answer=NDAnswer(name=radio.answer.name,
+                                   schema_id=radio.answer.feature_schema_id,
+                                   confidence=radio.answer.confidence,
+                                   classifications=[
+                                       NDSubclassification.from_common(annot)
+                                       for annot in radio.answer.classifications
+                                   ]),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
@@ -324,7 +322,7 @@ class NDClassification:
 NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
 
-NDFeature.update_forward_refs()
+NDAnswer.update_forward_refs()
 NDChecklistSubclass.update_forward_refs()
 NDChecklist.update_forward_refs()
 NDRadioSubclass.update_forward_refs()
