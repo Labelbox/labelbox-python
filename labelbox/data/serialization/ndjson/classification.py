@@ -136,10 +136,9 @@ class NDRadioSubclass(NDFeature):
     @classmethod
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
-        classifications = getattr(radio.answer, 'classifications',
-                                  [])  # classification not applicable to Text
         classifications = [
-            NDSubclassification.from_common(annot) for annot in classifications
+            NDSubclassification.from_common(annot)
+            for annot in radio.answer.classifications
         ]
         return cls(answer=NDFeature(name=radio.answer.name,
                                     schema_id=radio.answer.feature_schema_id,

@@ -1,7 +1,6 @@
 import abc
 from typing import Any, Dict
 
-# from .classification import Checklist, Dropdown, Radio, Text
 from .feature import FeatureSchema
 
 
