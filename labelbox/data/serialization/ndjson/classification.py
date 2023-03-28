@@ -122,28 +122,27 @@ class NDRadioSubclass(NDFeature):
     answer: NDFeature
 
     def to_common(self) -> Radio:
-        classifications = [
-            NDSubclassification.to_common(annot)
-            for annot in self.answer.classifications
-        ]
         return Radio(answer=ClassificationAnswer(
             name=self.answer.name,
             feature_schema_id=self.answer.schema_id,
             confidence=self.answer.confidence,
-            classifications=classifications,
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.answer.classifications
+            ],
         ))
 
     @classmethod
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
-        classifications = [
-            NDSubclassification.from_common(annot)
-            for annot in radio.answer.classifications
-        ]
-        return cls(answer=NDFeature(name=radio.answer.name,
-                                    schema_id=radio.answer.feature_schema_id,
-                                    confidence=radio.answer.confidence,
-                                    classifications=classifications),
+        return cls(answer=NDFeature(
+            name=radio.answer.name,
+            schema_id=radio.answer.feature_schema_id,
+            confidence=radio.answer.confidence,
+            classifications=[
+                NDSubclassification.from_common(annot)
+                for annot in radio.answer.classifications
+            ]),
                    name=name,
                    schema_id=feature_schema_id)
 
@@ -219,15 +218,14 @@ class NDRadio(NDBaseObject, NDRadioSubclass, VideoSupported):
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDRadio":
-        classifications = getattr(radio.answer, 'classifications',
-                                  [])  # classification not applicable to Text
-        classifications = [
-            NDSubclassification.from_common(annot) for annot in classifications
-        ]
-        return cls(answer=NDFeature(name=radio.answer.name,
-                                    schema_id=radio.answer.feature_schema_id,
-                                    confidence=radio.answer.confidence,
-                                    classifications=classifications),
+        return cls(answer=NDFeature(
+            name=radio.answer.name,
+            schema_id=radio.answer.feature_schema_id,
+            confidence=radio.answer.confidence,
+            classifications=[
+                NDSubclassification.from_common(annot)
+                for annot in radio.answer.classifications
+            ]),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
