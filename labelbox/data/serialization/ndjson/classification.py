@@ -12,10 +12,6 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 
 
-class NDBaseObject(NDAnnotation):
-    classifications: List['NDSubclassificationType'] = []
-
-
 class NDFeature(ConfidenceMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
@@ -205,7 +201,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    confidence=confidence)
 
 
-class NDRadio(NDBaseObject, NDRadioSubclass, VideoSupported):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
 
     @classmethod
     def from_common(
@@ -331,13 +327,10 @@ NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
 
 NDFeature.update_forward_refs()
-NDBaseObject.update_forward_refs()
 NDChecklistSubclass.update_forward_refs()
 NDChecklist.update_forward_refs()
 NDRadioSubclass.update_forward_refs()
 NDRadio.update_forward_refs()
-NDTextSubclass.update_forward_refs()
-NDText.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
