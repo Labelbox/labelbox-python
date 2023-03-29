@@ -63,7 +63,7 @@ class NDLabel(BaseModel):
         annotations: Dict[str, ObjectAnnotation] = {}
 
     def to_common(self) -> LabelGenerator:
-        annotation_groups = defaultdict(lambda: NDLabel._AnnotationGroupTuple())
+        annotation_groups = defaultdict(NDLabel._AnnotationGroupTuple)
 
         for ndjson in self.annotations:
             key = ndjson.data_row.id or ndjson.data_row.global_key
