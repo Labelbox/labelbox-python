@@ -31,11 +31,28 @@ class NDLabel(BaseModel):
                             NDVideoMasks, NDRelationship]]
 
     class _RelationshipTuple(BaseModel):
+        """This object holds information about the relationship"""
         ndjson: NDRelationship
         source: str
         target: str
 
     class _AnnotationGroupTuple(BaseModel):
+        """Stores all the annotations and relationships per datarow
+
+        Args:
+            data_row (DataRow)
+                Reference to the associated DataRow object
+            ndjson_objects (Dict[str,
+                             Union[NDObjectType, NDClassificationType,
+                                   NDConfusionMatrixMetric, NDScalarMetric,
+                                   NDDicomSegments, NDSegments, NDDicomMasks,
+                                   NDVideoMasks, NDRelationship]])
+                Maps UUIDs to NDJSON objects
+            relationships List["NDLabel._RelationshipTuple"]
+                List containing all the relationships
+            annotations Dict[str, ObjectAnnotation]
+                Maps UUIDs to annotation objects
+        """
         data_row: DataRow = None
         ndjson_objects: Dict[str,
                              Union[NDObjectType, NDClassificationType,
@@ -59,6 +76,9 @@ class NDLabel(BaseModel):
                         source=ndjson.relationship.source,
                         target=ndjson.relationship.target))
             else:
+                # if this is the first object in this group, we
+                # take note of the DataRow this group belongs to
+                # and store it in the _AnnotationGroupTuple
                 if not group.ndjson_objects:
                     group.data_row = ndjson.data_row
 
@@ -85,6 +105,9 @@ class NDLabel(BaseModel):
     ) -> Generator[Label, None, None]:
         for _, group in annotation_groups.items():
             annotations = []
+            # first, we iterate through all the NDJSON objects and store the
+            # deserialized objects in the _AnnotationGroupTuple
+            # object *if* the object can be used in a relationship
             for uuid, ndjson in group.ndjson_objects.items():
                 if isinstance(ndjson, NDDicomSegments):
                     annotations.extend(
@@ -110,6 +133,9 @@ class NDLabel(BaseModel):
                 else:
                     raise TypeError(f"Unsupported annotation. {type(ndjson)}")
 
+            # after all the annotations have been discovered, we can now create
+            # the relationship objects and use references to the objects
+            # involved
             for relationship in group.relationships:
                 try:
                     source, target = group.annotations[
