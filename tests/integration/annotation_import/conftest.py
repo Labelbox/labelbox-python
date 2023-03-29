@@ -229,6 +229,13 @@ def ontology():
         'color': '#A30059',
         'classifications': []
     }
+    raster_segmentation_tool = {
+        'required': False,
+        'name': 'segmentation_mask',
+        'tool': 'raster-segmentation',
+        'color': '#ff0000',
+        'classifications': []
+    }
     checklist = {
         'required':
             False,
@@ -285,7 +292,7 @@ def ontology():
 
     tools = [
         bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
-        segmentation_tool, named_entity
+        segmentation_tool, raster_segmentation_tool, named_entity
     ]
     classifications = [checklist, free_form_text, radio]
     return {"tools": tools, "classifications": classifications}

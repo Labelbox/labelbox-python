@@ -1,8 +1,8 @@
 from typing import Optional
 from uuid import uuid4
-from pydantic import BaseModel, root_validator, validator, Field
+from pydantic import root_validator, validator
 
-from labelbox.utils import _CamelCaseMixin, camel_case, is_exactly_one_set
+from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
 from ...annotation_types.types import Cuid
 
 

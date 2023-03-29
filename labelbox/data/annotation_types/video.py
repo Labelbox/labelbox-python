@@ -1,11 +1,12 @@
 from enum import Enum
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, validator
-from labelbox.data.annotation_types.annotation import BaseAnnotation, ClassificationAnnotation, ObjectAnnotation
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
-from typing import List, Optional, Tuple
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
+from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin
-
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
 
 
@@ -96,15 +97,14 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
         return v
 
 
-class MaskInstance(_CamelCaseMixin, BaseModel):
+class MaskInstance(_CamelCaseMixin, FeatureSchema):
     color_rgb: Tuple[int, int, int]
     name: str
 
 
-class VideoMaskAnnotation(BaseAnnotation):
+class VideoMaskAnnotation(BaseModel):
     """Video mask annotation
        >>> VideoMaskAnnotation(
-       >>>     name="video_mask",
        >>>     frames=[
        >>>         MaskFrame(index=1, instance_uri='https://storage.labelbox.com/cjhfn5y6s0pk507024nz1ocys%2F1d60856c-59b7-3060-2754-83f7e93e0d01-1?Expires=1666901963361&KeyName=labelbox-assets-key-3&Signature=t-2s2DB4YjFuWEFak0wxYqfBfZA'),
        >>>         MaskFrame(index=5, instance_uri='https://storage.labelbox.com/cjhfn5y6s0pk507024nz1ocys1%2F1d60856c-59b7-3060-2754-83f7e93e0d01-1?Expires=1666901963361&KeyName=labelbox-assets-key-3&Signature=t-2s2DB4YjFuWEFak0wxYqfBfZA'),

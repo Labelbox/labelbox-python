@@ -100,7 +100,7 @@ def test_radio():
             'name': answer.name,
             'feature_schema_id': None,
             'extra': {},
-            'confidence': 0.81
+            'confidence': 0.81,
         }
     }
     classification = ClassificationAnnotation(
