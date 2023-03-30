@@ -26,8 +26,8 @@ class CatalogExportParams(DataRowParams):
     project_details: Optional[bool]
     label_details: Optional[bool]
     performance_details: Optional[bool]
-    model_runs_ids: Optional[List[str]]
-    projects_ids: Optional[List[str]]
+    model_run_ids: Optional[List[str]]
+    project_ids: Optional[List[str]]
     pass
 
 
