@@ -146,22 +146,21 @@ class NDRadioSubclass(NDAnswer):
 class NDText(NDAnnotation, NDTextSubclass):
 
     @classmethod
-    def from_common(
-        cls,
-        text: Text,
-        name: str,
-        feature_schema_id: Cuid,
-        extra: Dict[str, Any],
-        data: Union[TextData, ImageData],
-        message_id: str,
-        confidence: Optional[float] = None,
-    ) -> "NDText":
+    def from_common(cls,
+                    uuid: str,
+                    text: Text,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[TextData, ImageData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
             name=name,
             schema_id=feature_schema_id,
-            uuid=extra.get('uuid'),
+            uuid=uuid,
             message_id=message_id,
             confidence=confidence,
         )
@@ -171,6 +170,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     checklist: Checklist,
                     name: str,
                     feature_schema_id: Cuid,
@@ -192,7 +192,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    frames=extra.get('frames'),
                    message_id=message_id,
                    confidence=confidence)
@@ -203,6 +203,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     @classmethod
     def from_common(
         cls,
+        uuid: str,
         radio: Radio,
         name: str,
         feature_schema_id: Cuid,
@@ -221,7 +222,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    frames=extra.get('frames'),
                    message_id=message_id,
                    confidence=confidence)
@@ -296,8 +297,8 @@ class NDClassification:
             raise TypeError(
                 f"Unable to convert object to MAL format. `{type(annotation.value)}`"
             )
-
-        return classify_obj.from_common(annotation.value, annotation.name,
+        return classify_obj.from_common(str(annotation._uuid), annotation.value,
+                                        annotation.name,
                                         annotation.feature_schema_id,
                                         annotation.extra, data,
                                         annotation.message_id,

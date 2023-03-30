@@ -64,7 +64,7 @@ def test_invalid_labels_format():
             "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
         },
         "schemaId": "ckrb1sfjx099a0y914hl319ie",
-        "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+        "uuid": "3a83db52-75e0-49af-a171-234ce604502a"
     }
 
     with patch.object(MALPredictionImport, '_create_mal_import_from_bytes'):
