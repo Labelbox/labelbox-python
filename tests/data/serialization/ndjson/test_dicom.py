@@ -8,7 +8,7 @@ Polyline test data
 """
 
 dicom_polyline_annotations = [
-    lb_types.DICOMObjectAnnotation(uuid="dicom-object-uid",
+    lb_types.DICOMObjectAnnotation(uuid="78a8a027-9089-420c-8348-6099eb77e4aa",
                                    name="dicom_polyline",
                                    frame=2,
                                    value=lb_types.Line(points=[

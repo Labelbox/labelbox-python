@@ -9,6 +9,10 @@ from .geometry import RectangleUnit
 
 from .annotation import ClassificationAnnotation
 from .annotation import ObjectAnnotation
+
+from .relationship import RelationshipAnnotation
+from .relationship import Relationship
+
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation
 from .video import DICOMObjectAnnotation
