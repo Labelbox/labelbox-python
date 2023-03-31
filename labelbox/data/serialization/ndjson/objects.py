@@ -583,7 +583,7 @@ class NDConversationEntity(NDTextEntity):
                    dataRow=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
