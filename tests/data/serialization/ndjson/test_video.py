@@ -4,6 +4,8 @@ from labelbox.data.annotation_types.classification.classification import Checkli
 from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
+from labelbox.data.annotation_types.geometry.point import Point
+
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.video import VideoObjectAnnotation
 import ndjson
@@ -97,7 +99,7 @@ def test_video_classification_global_subclassifications():
     assert annotations == label.annotations
 
 
-def test_video_classification_nesting():
+def test_video_classification_nesting_bbox():
     bbox_annotation = [
         VideoObjectAnnotation(
             name="bbox_video",
@@ -215,6 +217,133 @@ def test_video_classification_nesting():
                     'left': 146.0,
                     'height': 243.0,
                     'width': 236.0
+                },
+                'classifications': []
+            }]
+        }]
+    }]
+
+    label = Label(data=VideoData(global_key="sample-video-4.mp4",),
+                  annotations=bbox_annotation)
+
+    serialized = NDJsonConverter.serialize([label])
+    res = [x for x in serialized]
+    for annotations in res:
+        annotations.pop("uuid")
+    assert res == expected
+
+    deserialized = NDJsonConverter.deserialize(res)
+    res = next(deserialized)
+    annotations = res.annotations
+    for annotation in annotations:
+        annotation.extra.pop("uuid")
+    assert annotations == label.annotations
+
+
+def test_video_classification_point():
+    bbox_annotation = [
+        VideoObjectAnnotation(
+            name="bbox_video",
+            keyframe=True,
+            frame=13,
+            segment_index=0,
+            value=Point(x=46.0, y=8.0),
+            classifications=[
+                ClassificationAnnotation(
+                    name='radio_question_nested',
+                    value=Radio(answer=ClassificationAnswer(
+                        name='first_radio_question',
+                        classifications=[
+                            ClassificationAnnotation(name='sub_question_radio',
+                                                     value=Checklist(answer=[
+                                                         ClassificationAnswer(
+                                                             name='sub_answer')
+                                                     ]))
+                        ])),
+                )
+            ]),
+        VideoObjectAnnotation(
+            name="bbox_video",
+            keyframe=True,
+            frame=15,
+            segment_index=0,
+            value=Point(x=56.0, y=18.0),
+            classifications=[
+                ClassificationAnnotation(
+                    name='nested_checklist_question',
+                    value=Checklist(answer=[
+                        ClassificationAnswer(
+                            name='first_checklist_answer',
+                            classifications=[
+                                ClassificationAnnotation(
+                                    name='sub_checklist_question',
+                                    value=Radio(answer=ClassificationAnswer(
+                                        name='first_sub_checklist_answer')))
+                            ])
+                    ]))
+            ]),
+        VideoObjectAnnotation(
+            name="bbox_video",
+            keyframe=True,
+            frame=19,
+            segment_index=0,
+            value=Point(x=66.0, y=28.0),
+        )
+    ]
+    expected = [{
+        'dataRow': {
+            'globalKey': 'sample-video-4.mp4'
+        },
+        'name':
+            'bbox_video',
+        'classifications': [],
+        'segments': [{
+            'keyframes': [{
+                'frame':
+                    13,
+                'point': {
+                    'x': 46.0,
+                    'y': 8.0,
+                },
+                'classifications': [{
+                    'name': 'radio_question_nested',
+                    'answer': {
+                        'name':
+                            'first_radio_question',
+                        'classifications': [{
+                            'name': 'sub_question_radio',
+                            'answer': [{
+                                'name': 'sub_answer'
+                            }]
+                        }]
+                    }
+                }]
+            }, {
+                'frame':
+                    15,
+                'point': {
+                    'x': 56.0,
+                    'y': 18.0,
+                },
+                'classifications': [{
+                    'name':
+                        'nested_checklist_question',
+                    'answer': [{
+                        'name':
+                            'first_checklist_answer',
+                        'classifications': [{
+                            'name': 'sub_checklist_question',
+                            'answer': {
+                                'name': 'first_sub_checklist_answer'
+                            }
+                        }]
+                    }]
+                }]
+            }, {
+                'frame': 19,
+                'point': {
+                    'x': 66.0,
+                    'y': 28.0,
                 },
                 'classifications': []
             }]

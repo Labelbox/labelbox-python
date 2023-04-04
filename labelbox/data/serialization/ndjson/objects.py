@@ -78,20 +78,32 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
 
 class NDFramePoint(VideoSupported):
     point: _Point
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
-        return VideoObjectAnnotation(frame=self.frame,
-                                     segment_index=segment_index,
-                                     keyframe=True,
-                                     name=name,
-                                     feature_schema_id=feature_schema_id,
-                                     value=Point(x=self.point.x,
-                                                 y=self.point.y))
+        return VideoObjectAnnotation(
+            frame=self.frame,
+            segment_index=segment_index,
+            keyframe=True,
+            name=name,
+            feature_schema_id=feature_schema_id,
+            value=Point(x=self.point.x, y=self.point.y),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications  # NDRadioSubclass
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, point: Point):
-        return cls(frame=frame, point=_Point(x=point.x, y=point.y))
+    def from_common(
+        cls,
+        frame: int,
+        point: Point,
+        classifications: List[NDSubclassificationType],
+    ):
+        return cls(frame=frame,
+                   point=_Point(x=point.x, y=point.y),
+                   classifications=classifications)
 
 
 class NDLine(NDBaseObject, ConfidenceMixin):
