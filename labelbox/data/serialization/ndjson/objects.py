@@ -136,6 +136,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
 
 class NDFrameLine(VideoSupported):
     line: List[_Point]
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -145,15 +146,25 @@ class NDFrameLine(VideoSupported):
             keyframe=True,
             name=name,
             feature_schema_id=feature_schema_id,
-            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]))
+            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, line: Line):
+    def from_common(
+        cls,
+        frame: int,
+        line: Line,
+        classifications: List[NDSubclassificationType],
+    ):
         return cls(frame=frame,
                    line=[{
                        'x': pt.x,
                        'y': pt.y
-                   } for pt in line.points])
+                   } for pt in line.points],
+                   classifications=classifications)
 
 
 class NDDicomLine(NDFrameLine):
