@@ -238,10 +238,6 @@ class NDLabel(BaseModel):
                 yield NDClassification.from_common(annotation, label.data)
 
             elif isinstance(annotation_group[0], VideoObjectAnnotation):
-                warnings.warn(
-                    """Nested classifications are not currently supported
-                    for video object annotations
-                    and will not import alongside the object annotations.""")
                 segments = []
                 for start_frame, end_frame in segment_frame_ranges:
                     segment = []

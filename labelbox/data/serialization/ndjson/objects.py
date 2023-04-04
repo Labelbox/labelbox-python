@@ -19,7 +19,7 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
-from .classification import NDSubclassification, NDSubclassificationType
+from .classification import NDClassification, NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation, NDJsonBase
 
 
@@ -255,6 +255,7 @@ class NDDocumentRectangle(NDRectangle):
 
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -266,15 +267,25 @@ class NDFrameRectangle(VideoSupported):
             feature_schema_id=feature_schema_id,
             value=Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
                             end=Point(x=self.bbox.left + self.bbox.width,
-                                      y=self.bbox.top + self.bbox.height)))
+                                      y=self.bbox.top + self.bbox.height)),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications  # NDRadioSubclass
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, rectangle: Rectangle):
+    def from_common(
+        cls,
+        frame: int,
+        rectangle: Rectangle,
+        classifications: List[NDSubclassificationType],
+    ):
         return cls(frame=frame,
                    bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
                              left=min(rectangle.start.x, rectangle.end.x),
                              height=abs(rectangle.end.y - rectangle.start.y),
-                             width=abs(rectangle.end.x - rectangle.start.x)))
+                             width=abs(rectangle.end.x - rectangle.start.x)),
+                   classifications=classifications)
 
 
 class NDSegment(BaseModel):
@@ -305,7 +316,8 @@ class NDSegment(BaseModel):
                 keyframe.to_common(name=name,
                                    feature_schema_id=feature_schema_id,
                                    segment_index=segment_index), uuid)
-            for keyframe in self.keyframes
+            for keyframe in
+            self.keyframes  # NDFrameRectangle, NDFramePoint, NDFrameLine
         ]
 
     @classmethod
@@ -313,8 +325,11 @@ class NDSegment(BaseModel):
         nd_frame_object_type = cls.lookup_segment_object_type(segment)
 
         return cls(keyframes=[
-            nd_frame_object_type.from_common(object_annotation.frame,
-                                             object_annotation.value)
+            nd_frame_object_type.from_common(
+                object_annotation.frame, object_annotation.value, [
+                    NDSubclassification.from_common(annot)
+                    for annot in object_annotation.classifications
+                ])
             for object_annotation in segment
         ])
 
