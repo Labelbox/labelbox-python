@@ -35,8 +35,7 @@ polyline_annotation_ndjson = {
         'axial',
     'segments': [{
         'keyframes': [{
-            'frame':
-                2,
+            'frame': 2,
             'line': [
                 {
                     'x': 680.0,
@@ -50,7 +49,8 @@ polyline_annotation_ndjson = {
                     'x': 190.0,
                     'y': 220.0
                 },
-            ]
+            ],
+            'classifications': [],
         }]
     }],
 }
