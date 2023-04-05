@@ -184,16 +184,40 @@ def ontology():
         'color':
             '#a23030',
         'classifications': [{
-            'required': False,
-            'instructions': 'nested',
-            'name': 'nested',
-            'type': 'radio',
+            'required':
+                False,
+            'instructions':
+                'nested',
+            'name':
+                'nested',
+            'type':
+                'radio',
             'options': [{
-                'label': 'radio_option_1',
-                'value': 'radio_value_1'
+                'label':
+                    'radio_option_1',
+                'value':
+                    'radio_value_1',
+                'options': [{
+                    'required':
+                        False,
+                    'instructions':
+                        'nested_checkbox',
+                    'name':
+                        'nested_checkbox',
+                    'type':
+                        'checklist',
+                    'options': [{
+                        'label': 'nested_checkbox_option_1',
+                        'value': 'nested_checkbox_value_1'
+                    }, {
+                        'label': 'nested_checkbox_option_2',
+                        'value': 'nested_checkbox_value_2'
+                    }]
+                }]
             }]
         }]
     }
+
     polygon_tool = {
         'required': False,
         'name': 'polygon',
@@ -374,6 +398,16 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
+def video_data(client, rand_gen, video_data_row):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_ids = []
+    data_row = dataset.create_data_row(video_data_row)
+    data_row_ids.append(data_row.uid)
+    yield dataset, data_row_ids
+    dataset.delete()
+
+
+@pytest.fixture
 def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
@@ -384,14 +418,14 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, configured_project, rand_gen):
+def configured_project_without_data_rows(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
-    project.setup_editor(configured_project.ontology())
+    project.setup(editor, ontology)
     yield project
     project.delete()
 

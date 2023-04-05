@@ -82,17 +82,17 @@ class NDFramePoint(VideoSupported):
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
-        return VideoObjectAnnotation(
-            frame=self.frame,
-            segment_index=segment_index,
-            keyframe=True,
-            name=name,
-            feature_schema_id=feature_schema_id,
-            value=Point(x=self.point.x, y=self.point.y),
-            classifications=[
-                NDSubclassification.to_common(annot)
-                for annot in self.classifications  # NDRadioSubclass
-            ])
+        return VideoObjectAnnotation(frame=self.frame,
+                                     segment_index=segment_index,
+                                     keyframe=True,
+                                     name=name,
+                                     feature_schema_id=feature_schema_id,
+                                     value=Point(x=self.point.x,
+                                                 y=self.point.y),
+                                     classifications=[
+                                         NDSubclassification.to_common(annot)
+                                         for annot in self.classifications
+                                     ])
 
     @classmethod
     def from_common(
@@ -293,7 +293,7 @@ class NDFrameRectangle(VideoSupported):
                                       y=self.bbox.top + self.bbox.height)),
             classifications=[
                 NDSubclassification.to_common(annot)
-                for annot in self.classifications  # NDRadioSubclass
+                for annot in self.classifications
             ])
 
     @classmethod
@@ -339,8 +339,7 @@ class NDSegment(BaseModel):
                 keyframe.to_common(name=name,
                                    feature_schema_id=feature_schema_id,
                                    segment_index=segment_index), uuid)
-            for keyframe in
-            self.keyframes  # NDFrameRectangle, NDFramePoint, NDFrameLine
+            for keyframe in self.keyframes
         ]
 
     @classmethod
