@@ -19,7 +19,7 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
-from .classification import NDSubclassification, NDSubclassificationType
+from .classification import NDClassification, NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation, NDJsonBase
 
 
@@ -78,6 +78,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
 
 class NDFramePoint(VideoSupported):
     point: _Point
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -87,11 +88,22 @@ class NDFramePoint(VideoSupported):
                                      name=name,
                                      feature_schema_id=feature_schema_id,
                                      value=Point(x=self.point.x,
-                                                 y=self.point.y))
+                                                 y=self.point.y),
+                                     classifications=[
+                                         NDSubclassification.to_common(annot)
+                                         for annot in self.classifications
+                                     ])
 
     @classmethod
-    def from_common(cls, frame: int, point: Point):
-        return cls(frame=frame, point=_Point(x=point.x, y=point.y))
+    def from_common(
+        cls,
+        frame: int,
+        point: Point,
+        classifications: List[NDSubclassificationType],
+    ):
+        return cls(frame=frame,
+                   point=_Point(x=point.x, y=point.y),
+                   classifications=classifications)
 
 
 class NDLine(NDBaseObject, ConfidenceMixin):
@@ -124,6 +136,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
 
 class NDFrameLine(VideoSupported):
     line: List[_Point]
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -133,15 +146,25 @@ class NDFrameLine(VideoSupported):
             keyframe=True,
             name=name,
             feature_schema_id=feature_schema_id,
-            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]))
+            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, line: Line):
+    def from_common(
+        cls,
+        frame: int,
+        line: Line,
+        classifications: List[NDSubclassificationType],
+    ):
         return cls(frame=frame,
                    line=[{
                        'x': pt.x,
                        'y': pt.y
-                   } for pt in line.points])
+                   } for pt in line.points],
+                   classifications=classifications)
 
 
 class NDDicomLine(NDFrameLine):
@@ -255,6 +278,7 @@ class NDDocumentRectangle(NDRectangle):
 
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -266,15 +290,25 @@ class NDFrameRectangle(VideoSupported):
             feature_schema_id=feature_schema_id,
             value=Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
                             end=Point(x=self.bbox.left + self.bbox.width,
-                                      y=self.bbox.top + self.bbox.height)))
+                                      y=self.bbox.top + self.bbox.height)),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, rectangle: Rectangle):
+    def from_common(
+        cls,
+        frame: int,
+        rectangle: Rectangle,
+        classifications: List[NDSubclassificationType],
+    ):
         return cls(frame=frame,
                    bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
                              left=min(rectangle.start.x, rectangle.end.x),
                              height=abs(rectangle.end.y - rectangle.start.y),
-                             width=abs(rectangle.end.x - rectangle.start.x)))
+                             width=abs(rectangle.end.x - rectangle.start.x)),
+                   classifications=classifications)
 
 
 class NDSegment(BaseModel):
@@ -313,8 +347,11 @@ class NDSegment(BaseModel):
         nd_frame_object_type = cls.lookup_segment_object_type(segment)
 
         return cls(keyframes=[
-            nd_frame_object_type.from_common(object_annotation.frame,
-                                             object_annotation.value)
+            nd_frame_object_type.from_common(
+                object_annotation.frame, object_annotation.value, [
+                    NDSubclassification.from_common(annot)
+                    for annot in object_annotation.classifications
+                ])
             for object_annotation in segment
         ])
 

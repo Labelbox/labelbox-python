@@ -3,15 +3,20 @@ import ndjson
 import pytest
 import random
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
+from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnnotation, ClassificationAnswer, Radio
+from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.geometry.point import Point
+from labelbox.data.annotation_types.geometry.rectangle import Rectangle, RectangleUnit
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.ner import DocumentEntity, DocumentTextSelection
+from labelbox.data.annotation_types.video import VideoObjectAnnotation
 
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
-from labelbox.schema.annotation_import import MALPredictionImport
+from labelbox.schema.annotation_import import LabelImport, MALPredictionImport
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -330,6 +335,69 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
                       entities_annotation,
                   ]))
 
+    import_annotations = MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_without_data_rows.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
+    import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
+
+
+def test_nested_video_object_annotations(client,
+                                         configured_project_without_data_rows,
+                                         video_data, rand_gen):
+    bbox_annotation = [
+        VideoObjectAnnotation(
+            name="bbox",
+            keyframe=True,
+            frame=13,
+            segment_index=0,
+            value=Rectangle(
+                start=Point(x=146.0, y=98.0),  # Top left
+                end=Point(x=382.0, y=341.0),  # Bottom right
+            ),
+            classifications=[
+                ClassificationAnnotation(
+                    name='nested',
+                    value=Radio(answer=ClassificationAnswer(
+                        name='radio_option_1',
+                        classifications=[
+                            ClassificationAnnotation(
+                                name='nested_checkbox',
+                                value=Checklist(answer=[
+                                    ClassificationAnswer(
+                                        name='nested_checkbox_option_1'),
+                                    ClassificationAnswer(
+                                        name='nested_checkbox_option_2')
+                                ]))
+                        ])),
+                )
+            ]),
+        VideoObjectAnnotation(
+            name="bbox",
+            keyframe=True,
+            frame=19,
+            segment_index=0,
+            value=Rectangle(
+                start=Point(x=146.0, y=98.0),  # Top left
+                end=Point(x=382.0, y=341.0),  # Bottom right
+            ))
+    ]
+
+    labels = []
+    _, data_row_uids = video_data
+    configured_project_without_data_rows.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+
+    for data_row_uid in data_row_uids:
+        labels.append(
+            Label(data=VideoData(uid=data_row_uid),
+                  annotations=bbox_annotation))
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
         project_id=configured_project_without_data_rows.uid,
