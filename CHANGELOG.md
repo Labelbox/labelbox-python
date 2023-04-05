@@ -1,5 +1,25 @@
 # Changelog
 
+# Version 3.43.0 (2023-04-05)
+
+## Added
+* Nested object classifications to `VideoObjectAnnotation`
+* Relationship Annotation Types
+* Added `project_ids` and `model_run_ids` to params in all export_v2 functions
+
+## Fixed
+* VideoMaskAnnotation annotation import
+
+## Notebooks
+* Added DICOM annotation import notebook
+* Added audio annotation import notebook
+* Added HTML annotation import notebook
+* Added relationship examples to annotation import notebooks
+* Added global video classification example
+* Added nested classification examples
+* Added video mask example
+* Added global key and LPOs to queue management notebook
+
 # Version 3.42.0 (2023-03-22)
 
 ## Added
