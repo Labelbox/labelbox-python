@@ -85,8 +85,8 @@ class CatalogSlice(Slice):
             "performance_details": False,
             "label_details": False,
             "media_type_override": None,
-            "model_runs_ids": None,
-            "projects_ids": None,
+            "model_run_ids": None,
+            "project_ids": None,
         })
 
         mutation_name = "exportDataRowsInSlice"
@@ -118,9 +118,9 @@ class CatalogSlice(Slice):
                     "includeLabelDetails":
                         _params.get('label_details', False),
                     "projectIds":
-                        _params.get('projects_ids', None),
+                        _params.get('project_ids', None),
                     "modelRunIds":
-                        _params.get('model_runs_ids', None),
+                        _params.get('model_run_ids', None),
                 },
             }
         }

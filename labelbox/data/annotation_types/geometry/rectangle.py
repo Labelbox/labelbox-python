@@ -1,4 +1,5 @@
 from typing import Optional, Union, Tuple
+from enum import Enum
 
 import cv2
 import geojson
@@ -78,3 +79,29 @@ class Rectangle(Geometry):
     def from_xyhw(cls, x: float, y: float, h: float, w: float) -> "Rectangle":
         """Create Rectangle from x,y, height width format"""
         return cls(start=Point(x=x, y=y), end=Point(x=x + w, y=y + h))
+
+
+class RectangleUnit(Enum):
+    INCHES = 'INCHES'
+    PIXELS = 'PIXELS'
+    POINTS = 'POINTS'
+
+
+class DocumentRectangle(Rectangle):
+    """Represents a 2d rectangle on a Document
+
+    >>> Rectangle(
+    >>>     start=Point(x=0, y=0),
+    >>>     end=Point(x=1, y=1),
+    >>>     page=4,
+    >>>     unit=RectangleUnits.POINTS
+    >>> )
+
+    Args:
+        start (Point): Top left coordinate of the rectangle
+        end (Point): Bottom right coordinate of the rectangle
+        page (int): Page number of the document
+        unit (RectangleUnits): Units of the rectangle
+    """
+    page: int
+    unit: RectangleUnit

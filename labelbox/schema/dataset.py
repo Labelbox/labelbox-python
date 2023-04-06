@@ -567,8 +567,8 @@ class Dataset(DbObject, Updateable, Deletable):
             "performance_details": False,
             "label_details": False,
             "media_type_override": None,
-            "model_runs_ids": None,
-            "projects_ids": None,
+            "model_run_ids": None,
+            "project_ids": None,
         })
 
         _filters = filters or DatasetExportFilters({
@@ -622,7 +622,11 @@ class Dataset(DbObject, Updateable, Deletable):
                     "includePerformanceDetails":
                         _params.get('performance_details', False),
                     "includeLabelDetails":
-                        _params.get('label_details', False)
+                        _params.get('label_details', False),
+                    "projectIds":
+                        _params.get('project_ids', None),
+                    "modelRunIds":
+                        _params.get('model_run_ids', None),
                 },
             }
         }

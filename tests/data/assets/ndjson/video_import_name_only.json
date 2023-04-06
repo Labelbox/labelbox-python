@@ -1,106 +1,166 @@
-[
-    {
-        "answer": {"name": "answer 1"},
-        "name": "question 1",
-        "dataRow": {"id": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
-        "uuid": "f6879f59-d2b5-49c2-aceb-d9e8dc478673",
-        "frames": [{"start": 30, "end": 35}, {"start": 50, "end": 51}]
+[{
+    "answer": {
+        "name": "answer 1"
     },
-    {
-        "answer": [{"name": "answer 2"}],
-        "name": "question 2",
-        "dataRow": {"id": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
-        "uuid": "d009925d-91a3-4f67-abd9-753453f5a584",
-        "frames": [{"start": 0, "end": 5}]
+    "name": "question 1",
+    "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
     },
-    {
-        "answer": "a value",
-        "name": "question 3",
-        "dataRow": {"id": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
-        "uuid": "d009925d-91a3-4f67-abd9-753453f5a584"
+    "uuid": "f6879f59-d2b5-49c2-aceb-d9e8dc478673",
+    "frames": [{
+        "start": 30,
+        "end": 35
+    }, {
+        "start": 50,
+        "end": 51
+    }]
+}, {
+    "answer": [{
+        "name": "answer 2"
+    }],
+    "name": "question 2",
+    "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
     },
-    {
-        "classifications": [],
-        "name": "segment 1",
-        "dataRow": {"id": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
-        "uuid": "6f7c835a-0139-4896-b73f-66a6baa89e94",
-        "segments": [
-            {
-                "keyframes": [
-                    {
-                        "frame": 1,
-                        "line": [{"x": 10.0, "y": 10.0}, {"x": 100.0, "y": 100.0}, {"x": 50.0, "y": 30.0}]
-                    },
-                    {
-                        "frame": 5,
-                        "line": [{"x": 15.0, "y": 10.0}, {"x": 50.0, "y": 100.0}, {"x": 50.0, "y": 30.0}]
-                    }
-                ]
+    "uuid": "d009925d-91a3-4f67-abd9-753453f5a584",
+    "frames": [{
+        "start": 0,
+        "end": 5
+    }]
+}, {
+    "answer": "a value",
+    "name": "question 3",
+    "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "uuid": "e5f32456-bd67-4520-8d3b-cbeb2204bad3"
+}, {
+    "classifications": [],
+    "name":
+        "segment 1",
+    "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "uuid":
+        "6f7c835a-0139-4896-b73f-66a6baa89e94",
+    "segments": [{
+        "keyframes": [{
+            "frame": 1,
+            "line": [{
+                "x": 10.0,
+                "y": 10.0
+            }, {
+                "x": 100.0,
+                "y": 100.0
+            }, {
+                "x": 50.0,
+                "y": 30.0
+            }],
+            "classifications": []
+        }, {
+            "frame": 5,
+            "line": [{
+                "x": 15.0,
+                "y": 10.0
+            }, {
+                "x": 50.0,
+                "y": 100.0
+            }, {
+                "x": 50.0,
+                "y": 30.0
+            }],
+            "classifications": []
+        }]
+    }, {
+        "keyframes": [{
+            "frame": 8,
+            "line": [{
+                "x": 100.0,
+                "y": 10.0
+            }, {
+                "x": 50.0,
+                "y": 100.0
+            }, {
+                "x": 50.0,
+                "y": 30.0
+            }],
+            "classifications": []
+        }]
+    }]
+}, {
+    "classifications": [],
+    "name":
+        "segment 2",
+    "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "uuid":
+        "f963be22-227b-4efe-9be4-2738ed822216",
+    "segments": [{
+        "keyframes": [{
+            "frame": 1,
+            "point": {
+                "x": 10.0,
+                "y": 10.0
             },
-            {
-                "keyframes": [
-                    {
-                        "frame": 8,
-                        "line": [{"x": 100.0, "y": 10.0}, {"x": 50.0, "y": 100.0}, {"x": 50.0, "y": 30.0}]
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "classifications": [],
-        "name": "segment 2",
-        "dataRow": {"id": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
-        "uuid": "f963be22-227b-4efe-9be4-2738ed822216",
-        "segments": [
-            {
-                "keyframes": [
-                    {
-                        "frame": 1,
-                        "point": {"x": 10.0, "y": 10.0}
-                    }
-                ]
+            "classifications": []
+        }]
+    }, {
+        "keyframes": [{
+            "frame": 5,
+            "point": {
+                "x": 50.0,
+                "y": 50.0
             },
-            {
-                "keyframes": [
-                    {
-                        "frame": 5,
-                        "point": {"x": 50.0, "y": 50.0}
-                    },
-                    {
-                        "frame": 10,
-                        "point": {"x": 10.0, "y": 50.0}
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "classifications": [],
-        "name": "segment 3",
-        "dataRow": {"id": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
-        "uuid": "13b2ee0e-2355-4336-8b83-d74d09e3b1e7",
-        "segments": [
-            {
-                "keyframes": [
-                    {
-                        "frame": 1,
-                        "bbox": {"top": 10.0, "left": 5.0, "height": 100.0, "width": 150.0}
-                    },
-                    {
-                        "frame": 5,
-                        "bbox": {"top": 30.0, "left": 5.0, "height": 50.0, "width": 150.0}
-                    }
-                ]
+            "classifications": []
+        }, {
+            "frame": 10,
+            "point": {
+                "x": 10.0,
+                "y": 50.0
             },
-            {
-                "keyframes": [
-                    {
-                        "frame": 10,
-                        "bbox": {"top": 300.0, "left": 200.0, "height": 400.0, "width": 150.0}
-                    }
-                ]
-            }
-        ]
-    }
-]
+            "classifications": []
+        }]
+    }]
+}, {
+    "classifications": [],
+    "name":
+        "segment 3",
+    "dataRow": {
+        "id": "ckrb1sf1i1g7i0ybcdc6oc8ct"
+    },
+    "uuid":
+        "13b2ee0e-2355-4336-8b83-d74d09e3b1e7",
+    "segments": [{
+        "keyframes": [{
+            "frame": 1,
+            "bbox": {
+                "top": 10.0,
+                "left": 5.0,
+                "height": 100.0,
+                "width": 150.0
+            },
+            "classifications": []
+        }, {
+            "frame": 5,
+            "bbox": {
+                "top": 30.0,
+                "left": 5.0,
+                "height": 50.0,
+                "width": 150.0
+            },
+            "classifications": []
+        }]
+    }, {
+        "keyframes": [{
+            "frame": 10,
+            "bbox": {
+                "top": 300.0,
+                "left": 200.0,
+                "height": 400.0,
+                "width": 150.0
+            },
+            "classifications": []
+        }]
+    }]
+}]

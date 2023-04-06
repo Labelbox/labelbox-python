@@ -1,0 +1,42 @@
+[
+    {
+        "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
+        "dataRow": {
+            "id": "clf98gj90000qp38ka34yhptl"
+        },
+        "name": "cat",
+        "classifications": [],
+        "bbox": {
+            "top": 200.0,
+            "left": 100.0,
+            "height": 100.0,
+            "width": 100.0
+        }
+    },
+    {
+        "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
+        "dataRow": {
+            "id": "clf98gj90000qp38ka34yhptl"
+        },
+        "name": "dog",
+        "classifications": [],
+        "bbox": {
+            "top": 500.0,
+            "left": 400.0,
+            "height": 200.0,
+            "width": 200.0
+        }
+    },
+    {
+        "uuid": "0e6354eb-9adb-47e5-8e52-217ed016d948",
+        "dataRow": {
+            "id": "clf98gj90000qp38ka34yhptl"
+        },
+        "name": "is chasing",
+        "relationship": {
+            "source": "9b1e1249-36b4-4665-b60a-9060e0d18660",
+            "target": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
+            "type": "unidirectional"
+        }
+    }
+]

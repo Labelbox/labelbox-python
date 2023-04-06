@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 import warnings
+from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 
 from labelbox.data.mixins import ConfidenceMixin
 
@@ -35,11 +36,14 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin):
     """
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
+    classifications: List['ClassificationAnnotation'] = []
 
     def dict(self, *args, **kwargs) -> Dict[str, str]:
         res = super().dict(*args, **kwargs)
         if res['keyframe'] is None:
             res.pop('keyframe')
+        if res['classifications'] == []:
+            res.pop('classifications')
         return res
 
 
@@ -87,3 +91,26 @@ class Dropdown(_TempName):
         super().__init__(**data)
         warnings.warn("Dropdown classification is deprecated and will be "
                       "removed in a future release")
+
+
+class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):
+    """Classification annotations (non localized)
+
+    >>> ClassificationAnnotation(
+    >>>     value=Text(answer="my caption message"),
+    >>>     feature_schema_id="my-feature-schema-id"
+    >>> )
+
+    Args:
+        name (Optional[str])
+        classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
+        feature_schema_id (Optional[Cuid])
+        value (Union[Text, Checklist, Radio, Dropdown])
+        extra (Dict[str, Any])
+     """
+
+    value: Union[Text, Checklist, Radio, Dropdown]
+    message_id: Optional[str] = None
+
+
+ClassificationAnswer.update_forward_refs()
