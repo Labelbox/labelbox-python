@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
 from pydantic import BaseModel, conlist, constr
 
 from labelbox.schema.ontology import SchemaId
-from labelbox.utils import _CamelCaseMixin
+from labelbox.utils import _CamelCaseMixin, format_iso_datetime
 
 
 class DataRowMetadataKind(Enum):
@@ -462,9 +462,9 @@ class DataRowMetadataOntology:
                 field = DataRowMetadataField(schema_id=schema.parent,
                                              value=schema.uid)
             elif schema.kind == DataRowMetadataKind.datetime:
-                field = DataRowMetadataField(
-                    schema_id=schema.uid,
-                    value=datetime.fromisoformat(f["value"][:-1] + "+00:00"))
+                field = DataRowMetadataField(schema_id=schema.uid,
+                                             value=datetime.fromisoformat(
+                                                 f["value"]))
             else:
                 field = DataRowMetadataField(schema_id=schema.uid,
                                              value=f["value"])
@@ -831,8 +831,6 @@ def _validate_parse_number(
 def _validate_parse_datetime(
         field: DataRowMetadataField) -> List[Dict[str, Union[SchemaId, str]]]:
     if isinstance(field.value, str):
-        if field.value.endswith("Z"):
-            field.value = field.value[:-1]
         field.value = datetime.fromisoformat(field.value)
     elif not isinstance(field.value, datetime):
         raise TypeError(
@@ -841,7 +839,7 @@ def _validate_parse_datetime(
 
     return [{
         "schemaId": field.schema_id,
-        "value": field.value.isoformat() + "Z",  # needs to be UTC
+        "value": format_iso_datetime(field.value)
     }]
 
 

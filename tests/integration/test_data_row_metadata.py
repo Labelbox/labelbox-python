@@ -431,3 +431,38 @@ def test_delete_schema(mdo):
     mdo.refresh_ontology()
     assert status
     assert metadata_name not in mdo.custom_by_name
+
+
+@pytest.mark.parametrize('datetime_str',
+                         ['2011-11-04T00:05:23Z', '2011-05-07T14:34:14+00:00'])
+def test_upsert_datarow_date_metadata(datarow, mdo, datetime_str):
+    metadata = [
+        DataRowMetadata(data_row_id=datarow.uid,
+                        fields=[
+                            DataRowMetadataField(name='captureDateTime',
+                                                 value=datetime_str),
+                        ])
+    ]
+    errors = mdo.bulk_upsert(metadata)
+    assert len(errors) == 0
+
+    metadata = mdo.bulk_export([datarow.uid])
+    assert metadata[0].fields[0].value == datetime.fromisoformat(datetime_str)
+
+
+@pytest.mark.parametrize('datetime_str',
+                         ['2011-11-04T00:05:23Z', '2011-05-07T14:34:14+00:00'])
+def test_create_data_row_with_metadata(dataset, image_url, datetime_str):
+    client = dataset.client
+    assert len(list(dataset.data_rows())) == 0
+
+    metadata_fields = [
+        DataRowMetadataField(name='captureDateTime', value=datetime_str)
+    ]
+
+    data_row = dataset.create_data_row(row_data=image_url,
+                                       metadata_fields=metadata_fields)
+
+    retrieved_data_row = client.get_data_row(data_row.uid)
+    assert retrieved_data_row.metadata[0].value == datetime.fromisoformat(
+        datetime_str)
