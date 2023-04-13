@@ -192,6 +192,7 @@ def test_model_run_export_v2(model_run_with_data_rows, configured_project):
     label_ids_set = set(label_ids)
 
     assert len(task_results) == len(label_ids)
+
     for task_result in task_results:
         # Check export param handling
         if media_attributes:
@@ -200,8 +201,9 @@ def test_model_run_export_v2(model_run_with_data_rows, configured_project):
         else:
             assert 'media_attributes' not in task_result or task_result[
                 'media_attributes'] is None
-        model_run = task_result['models'][model_run_with_data_rows.model_id][
-            'model_runs'][model_run_with_data_rows.uid]
+        model_run = task_result['experiments'][
+            model_run_with_data_rows.model_id]['runs'][
+                model_run_with_data_rows.uid]
         task_label_ids_set = set(
             map(lambda label: label['id'], model_run['labels']))
         task_prediction_ids_set = set(
