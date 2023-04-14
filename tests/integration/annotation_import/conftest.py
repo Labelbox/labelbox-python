@@ -6,6 +6,10 @@ import requests
 import ndjson
 
 from typing import Type
+from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnnotation, ClassificationAnswer, Radio
+from labelbox.data.annotation_types.geometry.point import Point
+from labelbox.data.annotation_types.geometry.rectangle import Rectangle
+from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.queue_mode import QueueMode
@@ -116,18 +120,6 @@ def text_data_row(rand_gen):
             f"https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt-{rand_gen(str)}",
         "media_type":
             "TEXT",
-    }
-
-
-@pytest.fixture()
-def video_data_row(rand_gen):
-    return {
-        "row_data":
-            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
-        "global_key":
-            f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
-        "media_type":
-            "VIDEO",
     }
 
 
@@ -398,16 +390,6 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
-def video_data(client, rand_gen, video_data_row):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_ids = []
-    data_row = dataset.create_data_row(video_data_row)
-    data_row_ids.append(data_row.uid)
-    yield dataset, data_row_ids
-    dataset.delete()
-
-
-@pytest.fixture
 def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
@@ -428,6 +410,49 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
     project.setup(editor, ontology)
     yield project
     project.delete()
+
+
+@pytest.fixture
+def bbox_video_annotation_objects():
+    bbox_annotation = [
+        VideoObjectAnnotation(
+            name="bbox",
+            keyframe=True,
+            frame=13,
+            segment_index=0,
+            value=Rectangle(
+                start=Point(x=146.0, y=98.0),  # Top left
+                end=Point(x=382.0, y=341.0),  # Bottom right
+            ),
+            classifications=[
+                ClassificationAnnotation(
+                    name='nested',
+                    value=Radio(answer=ClassificationAnswer(
+                        name='radio_option_1',
+                        classifications=[
+                            ClassificationAnnotation(
+                                name='nested_checkbox',
+                                value=Checklist(answer=[
+                                    ClassificationAnswer(
+                                        name='nested_checkbox_option_1'),
+                                    ClassificationAnswer(
+                                        name='nested_checkbox_option_2')
+                                ]))
+                        ])),
+                )
+            ]),
+        VideoObjectAnnotation(
+            name="bbox",
+            keyframe=True,
+            frame=19,
+            segment_index=0,
+            value=Rectangle(
+                start=Point(x=146.0, y=98.0),  # Top left
+                end=Point(x=382.0, y=341.0),  # Bottom right
+            ))
+    ]
+
+    return bbox_annotation
 
 
 @pytest.fixture
