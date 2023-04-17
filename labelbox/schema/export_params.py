@@ -2,6 +2,8 @@ import sys
 
 from typing import Optional, List
 
+EXPORT_LIMIT = 30
+
 from labelbox.schema.media_type import MediaType
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -34,3 +36,18 @@ class CatalogExportParams(DataRowParams):
 class ModelRunExportParams(DataRowParams):
     # TODO: Add model run fields
     pass
+
+
+def validate_array_length(array, max_length, array_name):
+    if len(array) > max_length:
+        raise ValueError(f"{array_name} cannot exceed {max_length} items")
+
+
+def validate_catalog_export_params(params: CatalogExportParams):
+    if "model_run_ids" in params and params["model_run_ids"] is not None:
+        validate_array_length(params["model_run_ids"], EXPORT_LIMIT,
+                              "model_run_ids")
+
+    if "project_ids" in params and params["project_ids"] is not None:
+        validate_array_length(params["project_ids"], EXPORT_LIMIT,
+                              "project_ids")
