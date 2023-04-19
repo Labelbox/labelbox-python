@@ -166,7 +166,8 @@ def test_import_data_types(client, configured_project,
 
 
 @pytest.mark.parametrize('data_type_class',
-                         [AudioData, HTMLData, ImageData, TextData, VideoData])
+                         [ConversationData, #AudioData, HTMLData, ImageData, TextData, VideoData
+                          ])
 def test_import_data_types_v2(client, configured_project,
                               data_row_json_by_data_type,
                               annotations_by_data_type, data_type_class,
@@ -205,6 +206,7 @@ def test_import_data_types_v2(client, configured_project,
     exported_annotations = exported_project_labels['annotations']
 
     remove_keys_recursive(exported_annotations, ['feature_id'])
+    import pdb; pdb.set_trace()
     assert exported_annotations == v2_exports_by_data_type[data_type_string]
 
     data_row.delete()

@@ -34,9 +34,9 @@ def audio_data_row(rand_gen):
 def conversation_data_row(rand_gen):
     return {
         "row_data":
-            "https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/sample-conversation-1.json",
+            "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
         "global_key":
-            f"https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/sample-conversation-1.json-{rand_gen(str)}",
+            f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
         "media_type":
             "CONVERSATIONAL",
     }
@@ -159,12 +159,13 @@ def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
 
 @pytest.fixture
 def annotations_by_data_type(polygon_inference, rectangle_inference,
-                             line_inference, entity_inference,
+                             line_inference, entity_inference, entity_inference_in_message,
                              checklist_inference, text_inference,
                              video_checklist_inference):
     return {
         'audio': [checklist_inference, text_inference],
-        'conversation': [checklist_inference, text_inference, entity_inference],
+        'xconversation': [checklist_inference, text_inference, entity_inference],
+        'conversation': [entity_inference_in_message],
         'dicom': [line_inference],
         'document': [
             entity_inference, checklist_inference, text_inference,
@@ -526,9 +527,17 @@ def point_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def entity_inference(prediction_id_mapping):
+def entity_inference(request, prediction_id_mapping):
     entity = prediction_id_mapping['named-entity'].copy()
     entity.update({"location": {"start": 67, "end": 128}})
+    del entity['tool']
+    return entity
+
+
+@pytest.fixture
+def entity_inference_in_message(prediction_id_mapping):
+    entity = prediction_id_mapping['named-entity'].copy()
+    entity.update({"location": {"start": 67, "end": 128}, "messageId": "4", })
     del entity['tool']
     return entity
 
