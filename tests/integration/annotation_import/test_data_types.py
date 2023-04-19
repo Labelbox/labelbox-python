@@ -1,4 +1,5 @@
 import itertools
+import time
 import pytest
 import uuid
 
@@ -195,13 +196,21 @@ def test_import_data_types_v2(client, configured_project,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    task = configured_project.export_v2(params={
-        "performance_details": False,
-        "label_details": True
-    })
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
+    num_retries = 5
+    task = None
+    while (num_retries > 0):
+        task = configured_project.export_v2(params={
+            "performance_details": False,
+            "label_details": True
+        })
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+        assert task.errors is None
+        if len(task.result) == 0:
+            num_retries -= 1
+            time.sleep(5)
+        else:
+            break
 
     exported_data = task.result[0]
 
