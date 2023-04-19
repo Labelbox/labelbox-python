@@ -1,3 +1,4 @@
+import glob
 import uuid
 
 import pytest
@@ -13,6 +14,12 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.queue_mode import QueueMode
+
+pytest_plugins = [
+    fixture_file.replace("tests/", "").replace("/", ".").replace(".py", "")
+    for fixture_file in glob.glob(
+        "tests/integration/annotation_import/fixtures/[!__]*.py",)
+]
 
 
 @pytest.fixture()
@@ -138,6 +145,19 @@ def data_row_json_by_data_type(audio_data_row, conversation_data_row,
         'document': document_data_row,
         'text': text_data_row,
         'video': video_data_row,
+    }
+
+
+@pytest.fixture
+def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
+                            expected_export_v2_html, expected_export_v2_text,
+                            expected_export_v2_video):
+    return {
+        'image': expected_export_v2_image,
+        'audio': expected_export_v2_audio,
+        'html': expected_export_v2_html,
+        'text': expected_export_v2_text,
+        'video': expected_export_v2_video,
     }
 
 
