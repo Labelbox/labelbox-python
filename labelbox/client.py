@@ -546,7 +546,7 @@ class Client:
         # Also convert Labelbox object values to their UIDs.
         data = {
             db_object_type.attribute(attr) if isinstance(attr, str) else attr:
-                value.uid if isinstance(value, DbObject) else value
+            value.uid if isinstance(value, DbObject) else value
             for attr, value in data.items()
         }
 

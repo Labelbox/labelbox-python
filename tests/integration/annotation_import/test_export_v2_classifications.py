@@ -178,4 +178,6 @@ def test_export_v2_video(client, configured_project_without_data_rows,
     classification = classifications[0]['radio_answer']
     assert (classification['name'] == 'radio_option_1')
     subclassifications = classification['classifications']
-    assert (len(subclassifications) > 0)
+    # NOTE predictions services does not support nested classifications at the moment, see
+    # https://labelbox.atlassian.net/browse/AL-5588
+    assert (len(subclassifications) == 0)
