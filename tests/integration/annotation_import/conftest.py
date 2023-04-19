@@ -1,3 +1,4 @@
+import glob
 import uuid
 
 import pytest
@@ -13,6 +14,12 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.queue_mode import QueueMode
+
+pytest_plugins = [
+    fixture_file.replace("tests/", "").replace("/", ".").replace(".py", "")
+    for fixture_file in glob.glob(
+        "tests/integration/annotation_import/fixtures/[!__]*.py",)
+]
 
 
 @pytest.fixture()
