@@ -119,18 +119,6 @@ def text_data_row(rand_gen):
     }
 
 
-@pytest.fixture()
-def video_data_row(rand_gen):
-    return {
-        "row_data":
-            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
-        "global_key":
-            f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
-        "media_type":
-            "VIDEO",
-    }
-
-
 @pytest.fixture
 def data_row_json_by_data_type(audio_data_row, conversation_data_row,
                                dicom_data_row, geospatial_data_row,
@@ -146,6 +134,19 @@ def data_row_json_by_data_type(audio_data_row, conversation_data_row,
         'document': document_data_row,
         'text': text_data_row,
         'video': video_data_row,
+    }
+
+
+@pytest.fixture
+def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
+                            expected_export_v2_html, expected_export_v2_text,
+                            expected_export_v2_video):
+    return {
+        'image': expected_export_v2_image,
+        'audio': expected_export_v2_audio,
+        'html': expected_export_v2_html,
+        'text': expected_export_v2_text,
+        'video': expected_export_v2_video,
     }
 
 
@@ -392,16 +393,6 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
     data_row = dataset.create_data_row(document_data_row)
-    data_row_ids.append(data_row.uid)
-    yield dataset, data_row_ids
-    dataset.delete()
-
-
-@pytest.fixture
-def video_data(client, rand_gen, video_data_row):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_ids = []
-    data_row = dataset.create_data_row(video_data_row)
     data_row_ids.append(data_row.uid)
     yield dataset, data_row_ids
     dataset.delete()
@@ -751,3 +742,31 @@ class AnnotationImportTestHelpers:
 @pytest.fixture
 def annotation_import_test_helpers() -> Type[AnnotationImportTestHelpers]:
     return AnnotationImportTestHelpers()
+
+
+class ExportV2Helpers:
+
+    @classmethod
+    def run_export_v2_task(cls, project, num_retries=5, params={}):
+        task = None
+        params = params if params else {
+            "performance_details": False,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = project.export_v2(params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+
+@pytest.fixture
+def export_v2_test_helpers() -> Type[ExportV2Helpers]:
+    return ExportV2Helpers()

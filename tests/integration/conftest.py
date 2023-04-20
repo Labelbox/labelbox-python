@@ -572,3 +572,25 @@ def ontology(client):
                                       MediaType.Image)
     yield ontology
     client.delete_unused_ontology(ontology.uid)
+
+
+@pytest.fixture
+def video_data(client, rand_gen, video_data_row):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_ids = []
+    data_row = dataset.create_data_row(video_data_row)
+    data_row_ids.append(data_row.uid)
+    yield dataset, data_row_ids
+    dataset.delete()
+
+
+@pytest.fixture()
+def video_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
+        "media_type":
+            "VIDEO",
+    }
