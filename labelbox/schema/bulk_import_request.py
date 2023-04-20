@@ -736,8 +736,8 @@ class NDRadio(VideoSupported, NDBase):
 #A union with custom construction logic to improve error messages
 class NDClassification(
         SpecialUnion,
-        Type[Union[NDText, NDRadio,  # type: ignore
-                   NDChecklist]]):
+        Type[Union[  # type: ignore
+            NDText, NDRadio, NDChecklist]]):
     ...
 
 
@@ -900,16 +900,21 @@ class NDMask(NDBaseTool):
 #A union with custom construction logic to improve error messages
 class NDTool(
         SpecialUnion,
-        Type[Union[NDMask,  # type: ignore
-                   NDTextEntity, NDPoint, NDRectangle, NDPolyline,
-                   NDPolygon,]]):
+        Type[Union[  # type: ignore
+            NDMask,
+            NDTextEntity,
+            NDPoint,
+            NDRectangle,
+            NDPolyline,
+            NDPolygon,
+        ]]):
     ...
 
 
 class NDAnnotation(
         SpecialUnion,
-        Type[Union[NDTool,  # type: ignore
-                   NDClassification]]):
+        Type[Union[  # type: ignore
+            NDTool, NDClassification]]):
 
     @classmethod
     def build(cls: Any, data) -> "NDBase":
