@@ -32,5 +32,4 @@ class CatalogExportParams(DataRowParams):
 
 
 class ModelRunExportParams(DataRowParams):
-    # TODO: Add model run fields
-    pass
+    predictions: Optional[bool]
