@@ -112,8 +112,9 @@ class Organization(DbObject):
             """query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
         }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
-        return InviteLimit(
-            **{utils.snake_case(k): v for k, v in res['invitesLimit'].items()})
+        return InviteLimit(**{
+            utils.snake_case(k): v for k, v in res['invitesLimit'].items()
+        })
 
     def remove_user(self, user: "User") -> None:
         """

@@ -699,9 +699,9 @@ class Project(DbObject, Updateable, Deletable):
             # python isoformat doesn't accept Z as utc timezone
             result["lastActivityTime"] = datetime.fromisoformat(
                 result["lastActivityTime"].replace('Z', '+00:00'))
-            return LabelerPerformance(
-                **
-                {utils.snake_case(key): value for key, value in result.items()})
+            return LabelerPerformance(**{
+                utils.snake_case(key): value for key, value in result.items()
+            })
 
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labelerPerformance"],
