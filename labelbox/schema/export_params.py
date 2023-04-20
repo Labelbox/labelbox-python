@@ -38,7 +38,7 @@ class ModelRunExportParams(DataRowParams):
     pass
 
 
-def validate_array_length(array, max_length, array_name):
+def _validate_array_length(array, max_length, array_name):
     if len(array) > max_length:
         raise ValueError(f"{array_name} cannot exceed {max_length} items")
 
