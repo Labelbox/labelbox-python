@@ -158,3 +158,24 @@ def expected_export_v2_video():
         }]
     }
     return expected_annotations
+
+
+@pytest.fixture()
+def expected_export_v2_conversation():
+    expected_annotations = {
+        'objects': [{
+            'name': 'named-entity',
+            'annotation_kind': 'ConversationalTextEntity',
+            'classifications': [],
+            'conversational_location': {
+                'message_id': '0',
+                'location': {
+                    'start': 0,
+                    'end': 8
+                }
+            }
+        }],
+        'classifications': [],
+        'relationships': []
+    }
+    return expected_annotations

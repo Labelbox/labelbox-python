@@ -165,9 +165,11 @@ def test_import_data_types(client, configured_project,
     data_row.delete()
 
 
-@pytest.mark.parametrize('data_type_class',
-                         [ConversationData, #AudioData, HTMLData, ImageData, TextData, VideoData
-                          ])
+@pytest.mark.parametrize(
+    'data_type_class',
+    [  #AudioData, HTMLData, ImageData, TextData, VideoData, 
+        ConversationData
+    ])
 def test_import_data_types_v2(client, configured_project,
                               data_row_json_by_data_type,
                               annotations_by_data_type, data_type_class,
@@ -190,7 +192,6 @@ def test_import_data_types_v2(client, configured_project,
                        annotations=annotations)
         for annotations in annotations_list
     ]
-
     label_import = lb.LabelImport.create_from_objects(
         client, project_id, f'test-import-{data_type_string}', labels)
     label_import.wait_until_done()
@@ -198,15 +199,22 @@ def test_import_data_types_v2(client, configured_project,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    res = export_v2_test_helpers.run_export_v2_task(configured_project)
-    exported_data = res[0]
+    task = configured_project.export_v2(params={
+        "performance_details": False,
+        "label_details": True
+    })
+    task.wait_till_done()
+    assert task.errors is None
+    assert task.status == "COMPLETE"
+
+    exported_data = task.result[0]
+
     assert (exported_data['data_row']['id'] == data_row.uid)
     exported_project = exported_data['projects'][project_id]
     exported_project_labels = exported_project['labels'][0]
     exported_annotations = exported_project_labels['annotations']
 
     remove_keys_recursive(exported_annotations, ['feature_id'])
-    import pdb; pdb.set_trace()
     assert exported_annotations == v2_exports_by_data_type[data_type_string]
 
     data_row.delete()
