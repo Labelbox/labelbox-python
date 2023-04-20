@@ -9,6 +9,7 @@ import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
+from utils import remove_keys_recursive
 
 radio_annotation = lb_types.ClassificationAnnotation(
     name="radio",
@@ -48,19 +49,6 @@ test_params = [[
                    'audio', lb_types.AudioData,
                    [radio_annotation, checklist_annotation, text_annotation]
                ], ['video', lb_types.VideoData, [video_mask_annotation]]]
-
-
-def remove_keys_recursive(d, keys):
-    for k in keys:
-        if k in d:
-            del d[k]
-    for k, v in d.items():
-        if isinstance(v, dict):
-            remove_keys_recursive(v, keys)
-        elif isinstance(v, list):
-            for i in v:
-                if isinstance(i, dict):
-                    remove_keys_recursive(i, keys)
 
 
 def get_annotation_comparison_dicts_from_labels(labels):
