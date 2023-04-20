@@ -185,7 +185,7 @@ def test_model_run_status(model_run_with_data_rows):
 def test_model_run_export_v2(model_run_with_data_rows, configured_project):
     task_name = "test_task"
     media_attributes = True
-    params = {"media_attributes": media_attributes}
+    params = {"media_attributes": media_attributes, "predictions": True}
     task_results = _model_run_export_v2_results(model_run_with_data_rows,
                                                 task_name, params)
     label_ids = [label.uid for label in configured_project.labels()]
