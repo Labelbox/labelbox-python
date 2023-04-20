@@ -169,7 +169,7 @@ def test_import_data_types(client, configured_project,
 def test_import_data_types_v2(client, configured_project,
                               data_row_json_by_data_type,
                               annotations_by_data_type, data_type_class,
-                              v2_exports_by_data_type):
+                              v2_exports_by_data_type, export_v2_test_helpers):
 
     project_id = configured_project.uid
 
@@ -196,24 +196,8 @@ def test_import_data_types_v2(client, configured_project,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    num_retries = 5
-    task = None
-    while (num_retries > 0):
-        task = configured_project.export_v2(params={
-            "performance_details": False,
-            "label_details": True
-        })
-        task.wait_till_done()
-        assert task.status == "COMPLETE"
-        assert task.errors is None
-        if len(task.result) == 0:
-            num_retries -= 1
-            time.sleep(5)
-        else:
-            break
-
-    exported_data = task.result[0]
-
+    res = export_v2_test_helpers.run_export_v2_task(configured_project)
+    exported_data = res[0]
     assert (exported_data['data_row']['id'] == data_row.uid)
     exported_project = exported_data['projects'][project_id]
     exported_project_labels = exported_project['labels'][0]

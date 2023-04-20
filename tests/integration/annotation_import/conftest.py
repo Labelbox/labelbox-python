@@ -742,3 +742,31 @@ class AnnotationImportTestHelpers:
 @pytest.fixture
 def annotation_import_test_helpers() -> Type[AnnotationImportTestHelpers]:
     return AnnotationImportTestHelpers()
+
+
+class ExportV2Helpers:
+
+    @classmethod
+    def run_export_v2_task(cls, project, num_retries=5, params={}):
+        task = None
+        params = params if params else {
+            "performance_details": False,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = project.export_v2(params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+
+@pytest.fixture
+def export_v2_test_helpers() -> Type[ExportV2Helpers]:
+    return ExportV2Helpers()
