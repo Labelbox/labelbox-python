@@ -175,7 +175,22 @@ def expected_export_v2_conversation():
                 }
             }
         }],
-        'classifications': [],
+        'classifications': [{
+            'name':
+                'checklist_index',
+            'message_id':
+                '0',
+            'conversational_checklist_answers': [{
+                'name': 'option1_index',
+                'classifications': []
+            }]
+        }, {
+            'name': 'text_index',
+            'message_id': '0',
+            'conversational_text_answer': {
+                'content': 'free form text...'
+            }
+        }],
         'relationships': []
     }
     return expected_annotations

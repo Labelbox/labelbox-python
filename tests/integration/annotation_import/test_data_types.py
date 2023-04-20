@@ -5,6 +5,7 @@ import uuid
 
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.schema.data_row import DataRow
 import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
@@ -180,22 +181,26 @@ def test_import_data_types_v2(client, configured_project,
     data_type_string = data_type_class.__name__[:-4].lower()
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     dataset = next(configured_project.datasets())
-    data_row = dataset.create_data_row(data_row_ndjson)
+    task = dataset.create_data_rows([data_row_ndjson])
+    task.wait_till_done()
+    assert task.errors is None
+    assert task.status == "COMPLETE"
 
+    data_row_data = task.result[0]
+    import pdb; pdb.set_trace()
     annotations_ndjson = annotations_by_data_type[data_type_string]
     annotations_list = [
         label.annotations
         for label in NDJsonConverter.deserialize(annotations_ndjson)
     ]
     labels = [
-        lb_types.Label(data=data_type_class(uid=data_row.uid),
+        lb_types.Label(data=data_type_class(uid=data_row_data['id']),
                        annotations=annotations)
         for annotations in annotations_list
     ]
     label_import = lb.LabelImport.create_from_objects(
         client, project_id, f'test-import-{data_type_string}', labels)
     label_import.wait_until_done()
-
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
@@ -209,16 +214,14 @@ def test_import_data_types_v2(client, configured_project,
 
     exported_data = task.result[0]
 
-    assert (exported_data['data_row']['id'] == data_row.uid)
+    assert (exported_data['data_row']['id'] == data_row_data['id'])
     exported_project = exported_data['projects'][project_id]
     exported_project_labels = exported_project['labels'][0]
     exported_annotations = exported_project_labels['annotations']
 
     remove_keys_recursive(exported_annotations, ['feature_id'])
     assert exported_annotations == v2_exports_by_data_type[data_type_string]
-
-    data_row.delete()
-
+    import pdb; pdb.set_trace()
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
 def test_import_label_annotations(client, configured_project,

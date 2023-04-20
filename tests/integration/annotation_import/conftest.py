@@ -37,8 +37,6 @@ def conversation_data_row(rand_gen):
             "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
         "global_key":
             f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
-        "media_type":
-            "CONVERSATIONAL",
     }
 
 
