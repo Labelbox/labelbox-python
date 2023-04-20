@@ -45,7 +45,7 @@ def _validate_array_length(array, max_length, array_name):
 
 def validate_catalog_export_params(params: CatalogExportParams):
     if "model_run_ids" in params and params["model_run_ids"] is not None:
-        validate_array_length(params["model_run_ids"], EXPORT_LIMIT,
+        _validate_array_length(params["model_run_ids"], EXPORT_LIMIT,
                               "model_run_ids")
 
     if "project_ids" in params and params["project_ids"] is not None:
