@@ -1,3 +1,4 @@
+import time
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
 import labelbox.types as lb_types
@@ -31,13 +32,21 @@ def test_export_v2_video(client, configured_project_without_data_rows,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    task = project.export_v2(params={
-        "performance_details": False,
-        "label_details": True
-    })
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
+    num_retries = 5
+    task = None
+    while (num_retries > 0):
+        task = project.export_v2(params={
+            "performance_details": False,
+            "label_details": True
+        })
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+        assert task.errors is None
+        if len(task.result) == 0:
+            num_retries -= 1
+            time.sleep(5)
+        else:
+            break
 
     export_data = task.result
     data_row_export = export_data[0]['data_row']
