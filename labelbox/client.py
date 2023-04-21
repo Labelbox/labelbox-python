@@ -1646,7 +1646,7 @@ class Client:
             DeleteFeatureFromOntologyResult: The result of the feature schema removal.
 
         Example:
-            >>> client.remove_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
+            >>> client.delete_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
         """
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
