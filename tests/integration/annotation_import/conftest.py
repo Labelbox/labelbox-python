@@ -1,4 +1,3 @@
-import glob
 import uuid
 
 import pytest
@@ -589,34 +588,6 @@ def line_inference(prediction_id_mapping):
     return line
 
 
-"""
-polyline_annotation_ndjson = {
-  'name': 'line_dicom',
-  'groupKey': 'axial', # should be 'axial', 'sagittal', or 'coronal'
-  'segments': [
-    {
-    'keyframes': [{
-        'frame': 1,
-        'line': [
-            {'x': 10, 'y': 10},
-            {'x': 200, 'y': 20},
-            {'x': 250, 'y': 250},
-        ]
-    }]},
-    {
-    'keyframes' : [{
-        'frame': 20,
-        'line': [
-            {'x': 10, 'y': 10},
-            {'x': 200, 'y': 10},
-            {'x': 300, 'y': 300},
-        ]
-    }]}
-    ],
-}
-"""
-
-
 @pytest.fixture
 def line_inference_v2(prediction_id_mapping):
     line = prediction_id_mapping['line'].copy()
@@ -651,7 +622,7 @@ def point_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def entity_inference(request, prediction_id_mapping):
+def entity_inference(prediction_id_mapping):
     entity = prediction_id_mapping['named-entity'].copy()
     entity.update({"location": {"start": 67, "end": 128}})
     del entity['tool']

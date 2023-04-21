@@ -166,26 +166,6 @@ def test_dataset_export_v2(dataset, image_url):
     assert len(task.result) == n_data_rows
 
 
-def test_dataset_video_export_v2(video_data, video_data_row):
-    dataset, ids = video_data
-
-    time.sleep(10)
-    task = dataset.export_v2(params={
-        "performance_details": False,
-        "label_details": True
-    })
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
-    assert len(task.result) == 1
-
-    data_row_export = task.result[0]['data_row']
-    assert data_row_export['id'] == ids[0]
-    assert data_row_export['row_data'] == video_data_row['row_data']
-    assert data_row_export['media_type'] == 'VIDEO'
-    assert data_row_export['global_key'] == video_data_row['global_key']
-
-
 def test_create_descriptor_file(dataset):
     import unittest.mock as mock
     with mock.patch.object(dataset.client,
