@@ -140,7 +140,8 @@ def data_row_json_by_data_type(audio_data_row, conversation_data_row,
 def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
                             expected_export_v2_html, expected_export_v2_text,
                             expected_export_v2_video,
-                            expected_export_v2_conversation):
+                            expected_export_v2_conversation,
+                            expected_export_v2_dicom):
     return {
         'image': expected_export_v2_image,
         'audio': expected_export_v2_audio,
@@ -148,22 +149,24 @@ def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
         'text': expected_export_v2_text,
         'video': expected_export_v2_video,
         'conversation': expected_export_v2_conversation,
+        'dicom': expected_export_v2_dicom,
     }
 
 
 @pytest.fixture
 def annotations_by_data_type(polygon_inference, rectangle_inference,
-                             line_inference, entity_inference,
-                             entity_inference_index, checklist_inference_index,
-                             text_inference_index, checklist_inference,
-                             text_inference, video_checklist_inference):
+                             line_inference_v2, line_inference,
+                             entity_inference, entity_inference_index,
+                             checklist_inference_index, text_inference_index,
+                             checklist_inference, text_inference,
+                             video_checklist_inference):
     return {
         'audio': [checklist_inference, text_inference],
         'conversation': [
             checklist_inference_index, text_inference_index,
             entity_inference_index
         ],
-        'dicom': [line_inference],
+        'dicom': [line_inference_v2],
         'document': [
             entity_inference, checklist_inference, text_inference,
             rectangle_inference
@@ -550,6 +553,59 @@ def line_inference(prediction_id_mapping):
             "x": 150.692,
             "y": 160.154
         }]})
+    del line['tool']
+    return line
+
+
+"""
+polyline_annotation_ndjson = {
+  'name': 'line_dicom',
+  'groupKey': 'axial', # should be 'axial', 'sagittal', or 'coronal'
+  'segments': [
+    {
+    'keyframes': [{
+        'frame': 1,
+        'line': [
+            {'x': 10, 'y': 10},
+            {'x': 200, 'y': 20},
+            {'x': 250, 'y': 250},
+        ]
+    }]},
+    {
+    'keyframes' : [{
+        'frame': 20,
+        'line': [
+            {'x': 10, 'y': 10},
+            {'x': 200, 'y': 10},
+            {'x': 300, 'y': 300},
+        ]
+    }]}
+    ],
+}
+"""
+
+
+@pytest.fixture
+def line_inference_v2(prediction_id_mapping):
+    line = prediction_id_mapping['line'].copy()
+    line_data = {
+        "groupKey":
+            "axial",
+        "segments": [{
+            "keyframes": [{
+                "frame":
+                    1,
+                "line": [{
+                    "x": 147.692,
+                    "y": 118.154
+                }, {
+                    "x": 150.692,
+                    "y": 160.154
+                }]
+            }]
+        },]
+    }
+    line.update(line_data)
     del line['tool']
     return line
 

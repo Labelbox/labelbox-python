@@ -10,8 +10,7 @@ import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
-from integration.conftest import wait_for_data_row_processing
-from utils import remove_keys_recursive
+from utils import remove_keys_recursive, rename_cuid_key_recursive
 
 radio_annotation = lb_types.ClassificationAnnotation(
     name="radio",
@@ -196,7 +195,7 @@ def test_import_data_types_v2(client, configured_project,
     exported_annotations = exported_project_labels['annotations']
 
     remove_keys_recursive(exported_annotations, ['feature_id'])
-
+    rename_cuid_key_recursive(exported_annotations)
     assert exported_annotations == v2_exports_by_data_type[data_type_string]
 
     data_row = client.get_data_row(data_row.uid)
