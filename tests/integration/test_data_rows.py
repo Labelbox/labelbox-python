@@ -965,9 +965,10 @@ def test_create_data_row_with_media_type(dataset, image_url):
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
 
 
-def test_export_data_rows(client, datarow):
+def test_export_data_rows(client, datarow, wait_for_data_row_processing):
     # Ensure created data rows are indexed
-    time.sleep(10)
+    datarow = wait_for_data_row_processing(client, datarow)
+
     task = DataRow.export_v2(client=client, data_rows=[datarow])
     task.wait_till_done()
     assert task.status == "COMPLETE"
