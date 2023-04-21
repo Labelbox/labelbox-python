@@ -137,7 +137,7 @@ def data_row_json_by_data_type(audio_data_row, conversation_data_row,
 
 
 @pytest.fixture
-def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
+def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
                             expected_export_v2_html, expected_export_v2_text,
                             expected_export_v2_video,
                             expected_export_v2_conversation,
@@ -155,11 +155,34 @@ def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
 
 @pytest.fixture
 def annotations_by_data_type(polygon_inference, rectangle_inference,
-                             line_inference_v2, line_inference,
-                             entity_inference, entity_inference_index,
-                             checklist_inference_index, text_inference_index,
+                             line_inference, entity_inference,
                              checklist_inference, text_inference,
                              video_checklist_inference):
+    return {
+        'audio': [checklist_inference, text_inference],
+        'conversation': [checklist_inference, text_inference, entity_inference],
+        'dicom': [line_inference],
+        'document': [
+            entity_inference, checklist_inference, text_inference,
+            rectangle_inference
+        ],
+        'html': [text_inference, checklist_inference],
+        'image': [
+            polygon_inference, rectangle_inference, line_inference,
+            checklist_inference, text_inference
+        ],
+        'text': [entity_inference, checklist_inference, text_inference],
+        'video': [video_checklist_inference]
+    }
+
+
+@pytest.fixture
+def annotations_by_data_type_v2(polygon_inference, rectangle_inference,
+                                line_inference_v2, line_inference,
+                                entity_inference, entity_inference_index,
+                                checklist_inference_index, text_inference_index,
+                                checklist_inference, text_inference,
+                                video_checklist_inference):
     return {
         'audio': [checklist_inference, text_inference],
         'conversation': [
