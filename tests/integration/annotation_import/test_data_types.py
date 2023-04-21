@@ -153,13 +153,10 @@ def test_import_data_types(client, configured_project,
     data_row.delete()
 
 
-@pytest.mark.parametrize(
-    'data_type_class',
-    [
-        # AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
-        DocumentData,
-        #  DicomData
-    ])
+@pytest.mark.parametrize('data_type_class', [
+    AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
+    DocumentData, DicomData
+])
 def test_import_data_types_v2(client, configured_project,
                               data_row_json_by_data_type,
                               annotations_by_data_type_v2, data_type_class,

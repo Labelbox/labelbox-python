@@ -141,7 +141,8 @@ def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
                             expected_export_v2_html, expected_export_v2_text,
                             expected_export_v2_video,
                             expected_export_v2_conversation,
-                            expected_export_v2_dicom):
+                            expected_export_v2_dicom,
+                            expected_export_v2_document):
     return {
         'image': expected_export_v2_image,
         'audio': expected_export_v2_audio,
@@ -150,6 +151,7 @@ def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
         'video': expected_export_v2_video,
         'conversation': expected_export_v2_conversation,
         'dicom': expected_export_v2_dicom,
+        'document': expected_export_v2_document,
     }
 
 
@@ -177,12 +179,12 @@ def annotations_by_data_type(polygon_inference, rectangle_inference,
 
 
 @pytest.fixture
-def annotations_by_data_type_v2(polygon_inference, rectangle_inference,
-                                line_inference_v2, line_inference,
-                                entity_inference, entity_inference_index,
-                                checklist_inference_index, text_inference_index,
-                                checklist_inference, text_inference,
-                                video_checklist_inference):
+def annotations_by_data_type_v2(
+        polygon_inference, rectangle_inference, rectangle_inference_document,
+        line_inference_v2, line_inference, entity_inference,
+        entity_inference_index, entity_inference_document,
+        checklist_inference_index, text_inference_index, checklist_inference,
+        text_inference, video_checklist_inference):
     return {
         'audio': [checklist_inference, text_inference],
         'conversation': [
@@ -191,8 +193,8 @@ def annotations_by_data_type_v2(polygon_inference, rectangle_inference,
         ],
         'dicom': [line_inference_v2],
         'document': [
-            entity_inference, checklist_inference, text_inference,
-            rectangle_inference
+            entity_inference_document, checklist_inference, text_inference,
+            rectangle_inference_document
         ],
         'html': [text_inference, checklist_inference],
         'image': [
@@ -566,6 +568,13 @@ def rectangle_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def rectangle_inference_document(rectangle_inference):
+    rectangle = rectangle_inference.copy()
+    rectangle.update({"page": 1, "unit": "POINTS"})
+    return rectangle
+
+
+@pytest.fixture
 def line_inference(prediction_id_mapping):
     line = prediction_id_mapping['line'].copy()
     line.update(
@@ -660,6 +669,30 @@ def entity_inference_index(prediction_id_mapping):
         "messageId": "0",
     })
 
+    del entity['tool']
+    return entity
+
+
+@pytest.fixture
+def entity_inference_document(prediction_id_mapping):
+    entity = prediction_id_mapping['named-entity'].copy()
+    document_selections = {
+        "textSelections": [{
+            "tokenIds": [
+                "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
+                "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
+                "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
+                "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
+                "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
+                "67c7c19e-4654-425d-bf17-2adb8cf02c30",
+                "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
+                "b0e94071-2187-461e-8e76-96c58738a52c"
+            ],
+            "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+            "page": 1,
+        }]
+    }
+    entity.update(document_selections)
     del entity['tool']
     return entity
 

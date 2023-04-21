@@ -255,3 +255,65 @@ def expected_export_v2_dicom():
         }
     }
     return expected_annotations
+
+
+@pytest.fixture()
+def expected_export_v2_document():
+    expected_annotations = {
+        'objects': [{
+            'name': 'named-entity',
+            'annotation_kind': 'DocumentEntityToken',
+            'classifications': [],
+            'location': {
+                'groups': [{
+                    'id':
+                        '2f4336f4-a07e-4e0a-a9e1-5629b03b719b',
+                    'page_number':
+                        1,
+                    'tokens': [
+                        '3f984bf3-1d61-44f5-b59a-9658a2e3440f',
+                        '3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8',
+                        '6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80',
+                        '87a43d32-af76-4a1d-b262-5c5f4d5ace3a',
+                        'e8606e8a-dfd9-4c49-a635-ad5c879c75d0',
+                        '67c7c19e-4654-425d-bf17-2adb8cf02c30',
+                        '149c5e80-3e07-49a7-ab2d-29ddfe6a38fa',
+                        'b0e94071-2187-461e-8e76-96c58738a52c'
+                    ],
+                    'text':
+                        'Metal-insulator (MI) transitions have been one of the'
+                }]
+            }
+        }, {
+            'name': 'bbox',
+            'annotation_kind': 'DocumentBoundingBox',
+            'classifications': [{
+                'name': 'nested',
+                'radio_answer': {
+                    'name': 'radio_option_1',
+                    'classifications': []
+                }
+            }],
+            'page_number': 1,
+            'bounding_box': {
+                'top': 48.0,
+                'left': 58.0,
+                'height': 65.0,
+                'width': 12.0
+            }
+        }],
+        'classifications': [{
+            'name': 'checklist',
+            'checklist_answers': [{
+                'name': 'option1',
+                'classifications': []
+            }]
+        }, {
+            'name': 'text',
+            'text_answer': {
+                'content': 'free form text...'
+            }
+        }],
+        'relationships': []
+    }
+    return expected_annotations
