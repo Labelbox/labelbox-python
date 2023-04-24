@@ -27,6 +27,7 @@ from labelbox.schema.user import User
 logger = logging.getLogger(__name__)
 
 MAX_DATAROW_PER_API_OPERATION = 150_000
+MAX_DATAROW_IDS_PER_EXPORT_V2 = 2_000
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -549,7 +550,8 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task = dataset.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
         >>>         },
         >>>         params={
         >>>             "performance_details": False,
@@ -574,7 +576,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         _filters = filters or DatasetExportFilters({
             "last_activity_at": None,
-            "label_created_at": None
+            "label_created_at": None,
+            "data_row_ids": None,
         })
 
         def _get_timezone() -> str:
@@ -708,6 +711,22 @@ class Dataset(DbObject, Updateable, Deletable):
                         "value": end
                     }
                 })
+
+        if "data_row_ids" in _filters and _filters["data_row_ids"] is not None:
+            data_row_ids = _filters["data_row_ids"]
+            if not isinstance(data_row_ids, list):
+                raise ValueError(
+                    f"Dataset.export_v2() expects a list for the data_row_ids parameter."
+                )
+            if len(data_row_ids) > MAX_DATAROW_IDS_PER_EXPORT_V2:
+                raise ValueError(
+                    f"Dataset.export_v2() supports a max of {MAX_DATAROW_IDS_PER_EXPORT_V2} data rows."
+                )
+            search_query.append({
+                "ids": data_row_ids,
+                "operator": "is",
+                "type": "data_row_id"
+            })
 
         res = self.client.execute(
             create_task_query_str,

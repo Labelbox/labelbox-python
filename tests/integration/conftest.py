@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 import requests
 
-from labelbox import Client
+from labelbox import Client, MediaType
 from labelbox import LabelingFrontend
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
@@ -254,6 +254,29 @@ def datarow(dataset, image_url):
     dr.delete()
 
 
+# can be used with
+# @pytest.mark.parametrize('datarows', [<count of data rows>], indirect=True)
+# if omitted, count defaults to 1
+@pytest.fixture
+def datarows(dataset, image_url, request):
+    count = 1
+    if hasattr(request, 'param'):
+        count = request.param
+
+    datarows = [
+        dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
+        for _ in range(count)
+    ]
+
+    task = dataset.create_data_rows(datarows)
+    task.wait_till_done()
+    datarows = dataset.data_rows().get_many(count)
+    yield datarows
+
+    for datarow in datarows:
+        datarow.delete()
+
+
 @pytest.fixture()
 def data_rows(dataset, image_url):
     dr1 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
@@ -394,6 +417,30 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
                           wait_for_label_processing)
 
     yield [batch_project, dataset, datarow, label]
+
+    for label in batch_project.labels():
+        label.delete()
+
+
+@pytest.fixture
+def configured_batch_project_with_multiple_datarows(batch_project, dataset,
+                                                    datarows,
+                                                    wait_for_label_processing):
+    """Project with a batch having multiple datarows
+    Project contains an ontology with 1 bbox tool
+    Additionally includes a create_label method for any needed extra labels
+    """
+    global_keys = [dr.global_key for dr in datarows]
+
+    batch_name = f'batch {uuid.uuid4()}'
+    batch_project.create_batch(batch_name, global_keys=global_keys)
+
+    ontology = _setup_ontology(batch_project)
+    for datarow in datarows:
+        _create_label(batch_project, datarow, ontology,
+                      wait_for_label_processing)
+
+    yield [batch_project, dataset, datarows]
 
     for label in batch_project.labels():
         label.delete()

@@ -46,6 +46,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+MAX_DATAROW_IDS_PER_EXPORT_V2 = 2_000
+
 
 def _validate_datetime(string_date: str) -> bool:
     """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
@@ -430,7 +432,8 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task = project.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
         >>>         },
         >>>         params={
         >>>             "performance_details": False,
@@ -452,7 +455,8 @@ class Project(DbObject, Updateable, Deletable):
 
         _filters = filters or ProjectExportFilters({
             "last_activity_at": None,
-            "label_created_at": None
+            "label_created_at": None,
+            "data_row_ids": None,
         })
 
         def _get_timezone() -> str:
@@ -575,6 +579,22 @@ class Project(DbObject, Updateable, Deletable):
                         "value": end
                     }
                 })
+
+        if "data_row_ids" in _filters and _filters["data_row_ids"] is not None:
+            data_row_ids = _filters["data_row_ids"]
+            if not isinstance(data_row_ids, list):
+                raise ValueError(
+                    f"Project.export_v2() expects a list for the data_row_ids parameter."
+                )
+            if len(data_row_ids) > MAX_DATAROW_IDS_PER_EXPORT_V2:
+                raise ValueError(
+                    f"Project.export_v2() supports a max of {MAX_DATAROW_IDS_PER_EXPORT_V2} data rows."
+                )
+            search_query.append({
+                "ids": data_row_ids,
+                "operator": "is",
+                "type": "data_row_id"
+            })
 
         res = self.client.execute(
             create_task_query_str,

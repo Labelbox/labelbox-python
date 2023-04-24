@@ -97,6 +97,41 @@ def test_project_export_v2(configured_project_with_label):
     assert task_from.status == "COMPLETE"
 
 
+@pytest.mark.parametrize("datarows", [3], indirect=True)
+def test_project_export_v2_datarow_list(
+        configured_batch_project_with_multiple_datarows):
+    batch_project, _, datarows = configured_batch_project_with_multiple_datarows
+    data_row_ids = [dr.uid for dr in datarows]
+    batch_project._wait_until_data_rows_are_processed(
+        data_row_ids, wait_processing_max_seconds=3600, sleep_interval=5)
+
+    datarow_filter_size = 2
+
+    task_name = "test_export_v2_datarow_list"
+    task = batch_project.export_v2(
+        task_name,
+        filters={
+            "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+            "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+            "data_row_ids": data_row_ids[:datarow_filter_size]
+        },
+        params={
+            "include_performance_details": True,
+            "data_row_details": True,
+            "media_type_override": MediaType.Image
+        })
+
+    assert task.name == task_name
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+    # only 2 datarows should be exported
+    assert len(task.result) == datarow_filter_size
+    # only filtered datarows should be exported
+    assert set([dr['data_row']['id'] for dr in task.result
+               ]) == set(data_row_ids[:datarow_filter_size])
+
+
 def test_update_project_resource_tags(client, rand_gen):
 
     def delete_tag(tag_id: str):
