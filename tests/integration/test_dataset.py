@@ -149,21 +149,42 @@ def test_data_row_export(dataset, image_url):
     assert set(result) == ids
 
 
-def test_dataset_export_v2(dataset, image_url):
+def test_dataset_export_v2(export_v2_test_helpers, dataset, image_url):
     n_data_rows = 5
-    ids = set()
+    datarows = set()
     for _ in range(n_data_rows):
-        ids.add(dataset.create_data_row(row_data=image_url))
+        datarows.add(dataset.create_data_row(row_data=image_url))
 
     time.sleep(10)
-    task = dataset.export_v2(params={
-        "performance_details": False,
-        "label_details": True
-    })
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
-    assert len(task.result) == n_data_rows
+
+    params = {"performance_details": False, "label_details": False}
+
+    task_results = export_v2_test_helpers.run_dataset_export_v2_task(
+        dataset, params=params)
+    assert len(task_results) == n_data_rows
+
+
+def test_dataset_export_v2_datarow_list(export_v2_test_helpers, dataset,
+                                        image_url):
+    n_data_rows = 5
+    datarow_filter_size = 2
+    datarows = set()
+    for _ in range(n_data_rows):
+        datarows.add(dataset.create_data_row(row_data=image_url))
+
+    data_row_ids = [dr.uid for dr in datarows]
+
+    params = {"performance_details": False, "label_details": False}
+    filters = {"data_row_ids": data_row_ids[:datarow_filter_size]}
+
+    task_results = export_v2_test_helpers.run_dataset_export_v2_task(
+        dataset, filters=filters, params=params)
+
+    # only 2 datarows should be exported
+    assert len(task_results) == datarow_filter_size
+    # only filtered datarows should be exported
+    assert set([dr['data_row']['id'] for dr in task_results
+               ]) == set(data_row_ids[:datarow_filter_size])
 
 
 def test_create_descriptor_file(dataset):

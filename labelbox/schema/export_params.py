@@ -30,7 +30,6 @@ class CatalogExportParams(DataRowParams):
     performance_details: Optional[bool]
     model_run_ids: Optional[List[str]]
     project_ids: Optional[List[str]]
-    pass
 
 
 class ModelRunExportParams(DataRowParams):

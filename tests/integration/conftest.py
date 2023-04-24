@@ -5,6 +5,7 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
+from typing import Type
 
 import pytest
 import requests
@@ -641,3 +642,65 @@ def video_data_row(rand_gen):
         "media_type":
             "VIDEO",
     }
+
+
+class ExportV2Helpers:
+
+    @classmethod
+    def run_project_export_v2_task(cls,
+                                   project,
+                                   num_retries=5,
+                                   task_name=None,
+                                   filters={},
+                                   params={}):
+        task = None
+        params = params if params else {
+            "performance_details": False,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = project.export_v2(task_name=task_name,
+                                     filters=filters,
+                                     params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+    @classmethod
+    def run_dataset_export_v2_task(cls,
+                                   dataset,
+                                   num_retries=5,
+                                   task_name=None,
+                                   filters={},
+                                   params={}):
+        task = None
+        params = params if params else {
+            "performance_details": False,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = dataset.export_v2(task_name=task_name,
+                                     filters=filters,
+                                     params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+
+@pytest.fixture
+def export_v2_test_helpers() -> Type[ExportV2Helpers]:
+    return ExportV2Helpers()

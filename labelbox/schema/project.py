@@ -63,6 +63,107 @@ def _validate_datetime(string_date: str) -> bool:
     return True
 
 
+def _build_filters(client, filters):
+    search_query: List[Dict[str, Collection[str]]] = []
+    timezone: Optional[str] = None
+
+    def _get_timezone() -> str:
+        timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
+        tz_res = client.execute(timezone_query_str)
+        return tz_res["user"]["timezone"] or "UTC"
+
+    last_activity_at = filters.get("last_activity_at")
+    if last_activity_at:
+        if timezone is None:
+            timezone = _get_timezone()
+        start, end = last_activity_at
+        if (start is not None and end is not None):
+            [_validate_datetime(date) for date in last_activity_at]
+            search_query.append({
+                "type": "data_row_last_activity_at",
+                "value": {
+                    "operator": "BETWEEN",
+                    "timezone": timezone,
+                    "value": {
+                        "min": start,
+                        "max": end
+                    }
+                }
+            })
+        elif (start is not None):
+            _validate_datetime(start)
+            search_query.append({
+                "type": "data_row_last_activity_at",
+                "value": {
+                    "operator": "GREATER_THAN_OR_EQUAL",
+                    "timezone": timezone,
+                    "value": start
+                }
+            })
+        elif (end is not None):
+            _validate_datetime(end)
+            search_query.append({
+                "type": "data_row_last_activity_at",
+                "value": {
+                    "operator": "LESS_THAN_OR_EQUAL",
+                    "timezone": timezone,
+                    "value": end
+                }
+            })
+
+    label_created_at = filters.get("label_created_at")
+    if label_created_at:
+        if timezone is None:
+            timezone = _get_timezone()
+        start, end = label_created_at
+        if (start is not None and end is not None):
+            [_validate_datetime(date) for date in label_created_at]
+            search_query.append({
+                "type": "labeled_at",
+                "value": {
+                    "operator": "BETWEEN",
+                    "value": {
+                        "min": start,
+                        "max": end
+                    }
+                }
+            })
+        elif (start is not None):
+            _validate_datetime(start)
+            search_query.append({
+                "type": "labeled_at",
+                "value": {
+                    "operator": "GREATER_THAN_OR_EQUAL",
+                    "value": start
+                }
+            })
+        elif (end is not None):
+            _validate_datetime(end)
+            search_query.append({
+                "type": "labeled_at",
+                "value": {
+                    "operator": "LESS_THAN_OR_EQUAL",
+                    "value": end
+                }
+            })
+
+    data_row_ids = filters.get("data_row_ids")
+    if data_row_ids:
+        if not isinstance(data_row_ids, list):
+            raise ValueError("`data_row_ids` filter expects a list.")
+        if len(data_row_ids) > MAX_DATAROW_IDS_PER_EXPORT_V2:
+            raise ValueError(
+                f"`data_row_ids` filter only supports a max of {MAX_DATAROW_IDS_PER_EXPORT_V2} items."
+            )
+        search_query.append({
+            "ids": data_row_ids,
+            "operator": "is",
+            "type": "data_row_id"
+        })
+
+    return search_query
+
+
 class Project(DbObject, Updateable, Deletable):
     """ A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
@@ -459,19 +560,11 @@ class Project(DbObject, Updateable, Deletable):
             "data_row_ids": None,
         })
 
-        def _get_timezone() -> str:
-            timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
-            tz_res = self.client.execute(timezone_query_str)
-            return tz_res["user"]["timezone"] or "UTC"
-
-        timezone: Optional[str] = None
-
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
           %s(input: $input) {taskId} }
           """ % (mutation_name)
 
-        search_query: List[Dict[str, Collection[str]]] = []
         media_type_override = _params.get('media_type_override', None)
         query_params = {
             "input": {
@@ -480,7 +573,7 @@ class Project(DbObject, Updateable, Deletable):
                     "projectId": self.uid,
                     "searchQuery": {
                         "scope": None,
-                        "query": search_query
+                        "query": None,
                     }
                 },
                 "params": {
@@ -503,98 +596,8 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        if "last_activity_at" in _filters and _filters[
-                'last_activity_at'] is not None:
-            if timezone is None:
-                timezone = _get_timezone()
-            values = _filters['last_activity_at']
-            start, end = values
-            if (start is not None and end is not None):
-                [_validate_datetime(date) for date in values]
-                search_query.append({
-                    "type": "data_row_last_activity_at",
-                    "value": {
-                        "operator": "BETWEEN",
-                        "timezone": timezone,
-                        "value": {
-                            "min": start,
-                            "max": end
-                        }
-                    }
-                })
-            elif (start is not None):
-                _validate_datetime(start)
-                search_query.append({
-                    "type": "data_row_last_activity_at",
-                    "value": {
-                        "operator": "GREATER_THAN_OR_EQUAL",
-                        "timezone": timezone,
-                        "value": start
-                    }
-                })
-            elif (end is not None):
-                _validate_datetime(end)
-                search_query.append({
-                    "type": "data_row_last_activity_at",
-                    "value": {
-                        "operator": "LESS_THAN_OR_EQUAL",
-                        "timezone": timezone,
-                        "value": end
-                    }
-                })
-
-        if "label_created_at" in _filters and _filters[
-                "label_created_at"] is not None:
-            if timezone is None:
-                timezone = _get_timezone()
-            values = _filters['label_created_at']
-            start, end = values
-            if (start is not None and end is not None):
-                [_validate_datetime(date) for date in values]
-                search_query.append({
-                    "type": "labeled_at",
-                    "value": {
-                        "operator": "BETWEEN",
-                        "value": {
-                            "min": start,
-                            "max": end
-                        }
-                    }
-                })
-            elif (start is not None):
-                _validate_datetime(start)
-                search_query.append({
-                    "type": "labeled_at",
-                    "value": {
-                        "operator": "GREATER_THAN_OR_EQUAL",
-                        "value": start
-                    }
-                })
-            elif (end is not None):
-                _validate_datetime(end)
-                search_query.append({
-                    "type": "labeled_at",
-                    "value": {
-                        "operator": "LESS_THAN_OR_EQUAL",
-                        "value": end
-                    }
-                })
-
-        if "data_row_ids" in _filters and _filters["data_row_ids"] is not None:
-            data_row_ids = _filters["data_row_ids"]
-            if not isinstance(data_row_ids, list):
-                raise ValueError(
-                    f"Project.export_v2() expects a list for the data_row_ids parameter."
-                )
-            if len(data_row_ids) > MAX_DATAROW_IDS_PER_EXPORT_V2:
-                raise ValueError(
-                    f"Project.export_v2() supports a max of {MAX_DATAROW_IDS_PER_EXPORT_V2} data rows."
-                )
-            search_query.append({
-                "ids": data_row_ids,
-                "operator": "is",
-                "type": "data_row_id"
-            })
+        search_query = _build_filters(self.client, _filters)
+        query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
         res = self.client.execute(
             create_task_query_str,
