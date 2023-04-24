@@ -1,8 +1,15 @@
+import glob
 from datetime import datetime
 from random import randint
 from string import ascii_letters
 
 import pytest
+
+pytest_plugins = [
+    fixture_file.replace("tests/", "").replace("/", ".").replace(".py", "")
+    for fixture_file in glob.glob(
+        "tests/integration/annotation_import/fixtures/[!__]*.py",)
+]
 
 
 @pytest.fixture
