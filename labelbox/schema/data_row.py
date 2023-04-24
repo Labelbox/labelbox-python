@@ -7,7 +7,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.export_params import CatalogExportParams
+from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
 
@@ -177,7 +177,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        print('export start')
 
         _params = params or CatalogExportParams({
             "attachments": False,
@@ -190,6 +189,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             "model_run_ids": None,
             "project_ids": None,
         })
+
+        validate_catalog_export_params(_params)
 
         mutation_name = "exportDataRowsInCatalog"
         create_task_query_str = """mutation exportDataRowsInCatalogPyApi($input: ExportDataRowsInCatalogInput!){
