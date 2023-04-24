@@ -5,11 +5,12 @@ import uuid
 
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.schema.data_row import DataRow
 import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
-from utils import remove_keys_recursive
+from utils import remove_keys_recursive, rename_cuid_key_recursive
 
 radio_annotation = lb_types.ClassificationAnnotation(
     name="radio",
@@ -152,12 +153,15 @@ def test_import_data_types(client, configured_project,
     data_row.delete()
 
 
-@pytest.mark.parametrize('data_type_class',
-                         [AudioData, HTMLData, ImageData, TextData, VideoData])
+@pytest.mark.parametrize('data_type_class', [
+    AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
+    DocumentData, DicomData
+])
 def test_import_data_types_v2(client, configured_project,
                               data_row_json_by_data_type,
-                              annotations_by_data_type, data_type_class,
-                              v2_exports_by_data_type, export_v2_test_helpers):
+                              annotations_by_data_type_v2, data_type_class,
+                              exports_v2_by_data_type, export_v2_test_helpers,
+                              wait_for_data_row_processing):
 
     project_id = configured_project.uid
 
@@ -165,8 +169,9 @@ def test_import_data_types_v2(client, configured_project,
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     dataset = next(configured_project.datasets())
     data_row = dataset.create_data_row(data_row_ndjson)
+    data_row = wait_for_data_row_processing(client, data_row)
 
-    annotations_ndjson = annotations_by_data_type[data_type_string]
+    annotations_ndjson = annotations_by_data_type_v2[data_type_string]
     annotations_list = [
         label.annotations
         for label in NDJsonConverter.deserialize(annotations_ndjson)
@@ -176,24 +181,25 @@ def test_import_data_types_v2(client, configured_project,
                        annotations=annotations)
         for annotations in annotations_list
     ]
-
     label_import = lb.LabelImport.create_from_objects(
         client, project_id, f'test-import-{data_type_string}', labels)
     label_import.wait_until_done()
-
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    res = export_v2_test_helpers.run_export_v2_task(configured_project)
-    exported_data = res[0]
+    result = export_v2_test_helpers.run_export_v2_task(configured_project)
+    exported_data = result[0]
+
     assert (exported_data['data_row']['id'] == data_row.uid)
     exported_project = exported_data['projects'][project_id]
     exported_project_labels = exported_project['labels'][0]
     exported_annotations = exported_project_labels['annotations']
 
     remove_keys_recursive(exported_annotations, ['feature_id'])
-    assert exported_annotations == v2_exports_by_data_type[data_type_string]
+    rename_cuid_key_recursive(exported_annotations)
+    assert exported_annotations == exports_v2_by_data_type[data_type_string]
 
+    data_row = client.get_data_row(data_row.uid)
     data_row.delete()
 
 

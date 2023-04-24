@@ -27,11 +27,9 @@ def audio_data_row(rand_gen):
 def conversation_data_row(rand_gen):
     return {
         "row_data":
-            "https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/sample-conversation-1.json",
+            "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
         "global_key":
-            f"https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/sample-conversation-1.json-{rand_gen(str)}",
-        "media_type":
-            "CONVERSATIONAL",
+            f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
     }
 
 
@@ -138,15 +136,21 @@ def data_row_json_by_data_type(audio_data_row, conversation_data_row,
 
 
 @pytest.fixture
-def v2_exports_by_data_type(expected_export_v2_image, expected_export_v2_audio,
+def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
                             expected_export_v2_html, expected_export_v2_text,
-                            expected_export_v2_video):
+                            expected_export_v2_video,
+                            expected_export_v2_conversation,
+                            expected_export_v2_dicom,
+                            expected_export_v2_document):
     return {
         'image': expected_export_v2_image,
         'audio': expected_export_v2_audio,
         'html': expected_export_v2_html,
         'text': expected_export_v2_text,
         'video': expected_export_v2_video,
+        'conversation': expected_export_v2_conversation,
+        'dicom': expected_export_v2_dicom,
+        'document': expected_export_v2_document,
     }
 
 
@@ -162,6 +166,34 @@ def annotations_by_data_type(polygon_inference, rectangle_inference,
         'document': [
             entity_inference, checklist_inference, text_inference,
             rectangle_inference
+        ],
+        'html': [text_inference, checklist_inference],
+        'image': [
+            polygon_inference, rectangle_inference, line_inference,
+            checklist_inference, text_inference
+        ],
+        'text': [entity_inference, checklist_inference, text_inference],
+        'video': [video_checklist_inference]
+    }
+
+
+@pytest.fixture
+def annotations_by_data_type_v2(
+        polygon_inference, rectangle_inference, rectangle_inference_document,
+        line_inference_v2, line_inference, entity_inference,
+        entity_inference_index, entity_inference_document,
+        checklist_inference_index, text_inference_index, checklist_inference,
+        text_inference, video_checklist_inference):
+    return {
+        'audio': [checklist_inference, text_inference],
+        'conversation': [
+            checklist_inference_index, text_inference_index,
+            entity_inference_index
+        ],
+        'dicom': [line_inference_v2],
+        'document': [
+            entity_inference_document, checklist_inference, text_inference,
+            rectangle_inference_document
         ],
         'html': [text_inference, checklist_inference],
         'image': [
@@ -281,11 +313,41 @@ def ontology():
             'value': 'optionn'
         }]
     }
+    checklist_index = {
+        'required':
+            False,
+        'instructions':
+            'checklist_index',
+        'name':
+            'checklist_index',
+        'type':
+            'checklist',
+        'scope':
+            'index',
+        'options': [{
+            'label': 'option1_index',
+            'value': 'option1_index'
+        }, {
+            'label': 'option2_index',
+            'value': 'option2_index'
+        }, {
+            'label': 'optionN_index',
+            'value': 'optionn_index'
+        }]
+    }
     free_form_text = {
         'required': False,
         'instructions': 'text',
         'name': 'text',
         'type': 'text',
+        'options': []
+    }
+    free_form_text_index = {
+        'required': False,
+        'instructions': 'text_index',
+        'name': 'text_index',
+        'type': 'text',
+        'scope': 'index',
         'options': []
     }
     radio = {
@@ -316,10 +378,18 @@ def ontology():
     }
 
     tools = [
-        bbox_tool, polygon_tool, polyline_tool, point_tool, entity_tool,
-        segmentation_tool, raster_segmentation_tool, named_entity
+        bbox_tool,
+        polygon_tool,
+        polyline_tool,
+        point_tool,
+        entity_tool,
+        segmentation_tool,
+        raster_segmentation_tool,
+        named_entity,
     ]
-    classifications = [checklist, free_form_text, radio]
+    classifications = [
+        checklist, checklist_index, free_form_text, free_form_text_index, radio
+    ]
     return {"tools": tools, "classifications": classifications}
 
 
@@ -431,7 +501,8 @@ def prediction_id_mapping(configured_project):
         if 'tool' in tool:
             tool_type = tool['tool']
         else:
-            tool_type = tool['type']
+            tool_type = tool[
+                'type'] if 'scope' not in tool else f"{tool['type']}_{tool['scope']}"  # so 'checklist' of 'checklist_index'
         result[tool_type] = {
             "uuid": str(uuid.uuid4()),
             "schemaId": tool['featureSchemaId'],
@@ -496,6 +567,13 @@ def rectangle_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def rectangle_inference_document(rectangle_inference):
+    rectangle = rectangle_inference.copy()
+    rectangle.update({"page": 1, "unit": "POINTS"})
+    return rectangle
+
+
+@pytest.fixture
 def line_inference(prediction_id_mapping):
     line = prediction_id_mapping['line'].copy()
     line.update(
@@ -506,6 +584,31 @@ def line_inference(prediction_id_mapping):
             "x": 150.692,
             "y": 160.154
         }]})
+    del line['tool']
+    return line
+
+
+@pytest.fixture
+def line_inference_v2(prediction_id_mapping):
+    line = prediction_id_mapping['line'].copy()
+    line_data = {
+        "groupKey":
+            "axial",
+        "segments": [{
+            "keyframes": [{
+                "frame":
+                    1,
+                "line": [{
+                    "x": 147.692,
+                    "y": 118.154
+                }, {
+                    "x": 150.692,
+                    "y": 160.154
+                }]
+            }]
+        },]
+    }
+    line.update(line_data)
     del line['tool']
     return line
 
@@ -522,6 +625,45 @@ def point_inference(prediction_id_mapping):
 def entity_inference(prediction_id_mapping):
     entity = prediction_id_mapping['named-entity'].copy()
     entity.update({"location": {"start": 67, "end": 128}})
+    del entity['tool']
+    return entity
+
+
+@pytest.fixture
+def entity_inference_index(prediction_id_mapping):
+    entity = prediction_id_mapping['named-entity'].copy()
+    entity.update({
+        "location": {
+            "start": 0,
+            "end": 8
+        },
+        "messageId": "0",
+    })
+
+    del entity['tool']
+    return entity
+
+
+@pytest.fixture
+def entity_inference_document(prediction_id_mapping):
+    entity = prediction_id_mapping['named-entity'].copy()
+    document_selections = {
+        "textSelections": [{
+            "tokenIds": [
+                "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
+                "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
+                "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
+                "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
+                "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
+                "67c7c19e-4654-425d-bf17-2adb8cf02c30",
+                "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
+                "b0e94071-2187-461e-8e76-96c58738a52c"
+            ],
+            "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+            "page": 1,
+        }]
+    }
+    entity.update(document_selections)
     del entity['tool']
     return entity
 
@@ -580,9 +722,30 @@ def checklist_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def checklist_inference_index(prediction_id_mapping):
+    checklist = prediction_id_mapping['checklist_index'].copy()
+    checklist.update({
+        'answers': [{
+            'schemaId': checklist['tool']['options'][0]['featureSchemaId']
+        }],
+        "messageId": "0",
+    })
+    del checklist['tool']
+    return checklist
+
+
+@pytest.fixture
 def text_inference(prediction_id_mapping):
     text = prediction_id_mapping['text'].copy()
     text.update({'answer': "free form text..."})
+    del text['tool']
+    return text
+
+
+@pytest.fixture
+def text_inference_index(prediction_id_mapping):
+    text = prediction_id_mapping['text_index'].copy()
+    text.update({'answer': "free form text...", "messageId": "0"})
     del text['tool']
     return text
 
