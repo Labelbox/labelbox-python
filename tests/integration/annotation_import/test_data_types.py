@@ -187,7 +187,8 @@ def test_import_data_types_v2(client, configured_project,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    result = export_v2_test_helpers.run_export_v2_task(configured_project)
+    result = export_v2_test_helpers.run_project_export_v2_task(
+        configured_project)
     exported_data = result[0]
 
     assert (exported_data['data_row']['id'] == data_row.uid)

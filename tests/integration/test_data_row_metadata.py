@@ -114,10 +114,10 @@ def test_get_datarow_metadata_ontology(mdo):
         ])
 
 
-def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
-    metadata = make_metadata(datarow.uid)
+def test_bulk_upsert_datarow_metadata(data_row, mdo: DataRowMetadataOntology):
+    metadata = make_metadata(data_row.uid)
     mdo.bulk_upsert([metadata])
-    exported = mdo.bulk_export([datarow.uid])
+    exported = mdo.bulk_export([data_row.uid])
     assert len(exported)
     assert len([field for field in exported[0].fields]) == 3
 
@@ -140,21 +140,21 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
                    ]), metadata_lookup.get(data_row_id).fields
 
 
-def test_upsert_datarow_metadata_by_name(datarow, mdo):
-    metadata = [make_named_metadata(datarow.uid)]
+def test_upsert_datarow_metadata_by_name(data_row, mdo):
+    metadata = [make_named_metadata(data_row.uid)]
     errors = mdo.bulk_upsert(metadata)
     assert len(errors) == 0
 
     metadata_lookup = {
         metadata.data_row_id: metadata
-        for metadata in mdo.bulk_export([datarow.uid])
+        for metadata in mdo.bulk_export([data_row.uid])
     }
-    assert len([f for f in metadata_lookup.get(datarow.uid).fields
-               ]), metadata_lookup.get(datarow.uid).fields
+    assert len([f for f in metadata_lookup.get(data_row.uid).fields
+               ]), metadata_lookup.get(data_row.uid).fields
 
 
-def test_upsert_datarow_metadata_option_by_name(datarow, mdo):
-    metadata = DataRowMetadata(data_row_id=datarow.uid,
+def test_upsert_datarow_metadata_option_by_name(data_row, mdo):
+    metadata = DataRowMetadata(data_row_id=data_row.uid,
                                fields=[
                                    DataRowMetadataField(name='split',
                                                         value='test'),
@@ -162,7 +162,7 @@ def test_upsert_datarow_metadata_option_by_name(datarow, mdo):
     errors = mdo.bulk_upsert([metadata])
     assert len(errors) == 0
 
-    datarows = mdo.bulk_export([datarow.uid])
+    datarows = mdo.bulk_export([data_row.uid])
     assert len(datarows[0].fields) == 1
     metadata = datarows[0].fields[0]
     assert metadata.schema_id == SPLIT_SCHEMA_ID
@@ -170,8 +170,8 @@ def test_upsert_datarow_metadata_option_by_name(datarow, mdo):
     assert metadata.value == TEST_SPLIT_ID
 
 
-def test_upsert_datarow_metadata_option_by_incorrect_name(datarow, mdo):
-    metadata = DataRowMetadata(data_row_id=datarow.uid,
+def test_upsert_datarow_metadata_option_by_incorrect_name(data_row, mdo):
+    metadata = DataRowMetadata(data_row_id=data_row.uid,
                                fields=[
                                    DataRowMetadataField(name='split',
                                                         value='test1'),
@@ -180,32 +180,32 @@ def test_upsert_datarow_metadata_option_by_incorrect_name(datarow, mdo):
         mdo.bulk_upsert([metadata])
 
 
-def test_bulk_delete_datarow_metadata(datarow, mdo):
+def test_bulk_delete_datarow_metadata(data_row, mdo):
     """test bulk deletes for all fields"""
-    metadata = make_metadata(datarow.uid)
+    metadata = make_metadata(data_row.uid)
     mdo.bulk_upsert([metadata])
-    assert len(mdo.bulk_export([datarow.uid])[0].fields)
+    assert len(mdo.bulk_export([data_row.uid])[0].fields)
     upload_ids = [m.schema_id for m in metadata.fields[:-2]]
     mdo.bulk_delete(
-        [DeleteDataRowMetadata(data_row_id=datarow.uid, fields=upload_ids)])
+        [DeleteDataRowMetadata(data_row_id=data_row.uid, fields=upload_ids)])
     remaining_ids = set(
-        [f.schema_id for f in mdo.bulk_export([datarow.uid])[0].fields])
+        [f.schema_id for f in mdo.bulk_export([data_row.uid])[0].fields])
     assert not len(remaining_ids.intersection(set(upload_ids)))
 
 
-def test_bulk_partial_delete_datarow_metadata(datarow, mdo):
+def test_bulk_partial_delete_datarow_metadata(data_row, mdo):
     """Delete a single from metadata"""
-    n_fields = len(mdo.bulk_export([datarow.uid])[0].fields)
-    metadata = make_metadata(datarow.uid)
+    n_fields = len(mdo.bulk_export([data_row.uid])[0].fields)
+    metadata = make_metadata(data_row.uid)
     mdo.bulk_upsert([metadata])
 
     assert len(mdo.bulk_export(
-        [datarow.uid])[0].fields) == (n_fields + len(metadata.fields))
+        [data_row.uid])[0].fields) == (n_fields + len(metadata.fields))
 
     mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[TEXT_SCHEMA_ID])
+        DeleteDataRowMetadata(data_row_id=data_row.uid, fields=[TEXT_SCHEMA_ID])
     ])
-    fields = [f for f in mdo.bulk_export([datarow.uid])[0].fields]
+    fields = [f for f in mdo.bulk_export([data_row.uid])[0].fields]
     assert len(fields) == (len(metadata.fields) - 1)
 
 
@@ -238,30 +238,31 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
         assert SPLIT_SCHEMA_ID not in [field.schema_id for field in fields]
 
 
-def test_bulk_delete_datarow_enum_metadata(datarow: DataRow, mdo):
+def test_bulk_delete_datarow_enum_metadata(data_row: DataRow, mdo):
     """test bulk deletes for non non fields"""
-    metadata = make_metadata(datarow.uid)
+    metadata = make_metadata(data_row.uid)
     metadata.fields = [
         m for m in metadata.fields if m.schema_id == SPLIT_SCHEMA_ID
     ]
     mdo.bulk_upsert([metadata])
 
-    exported = mdo.bulk_export([datarow.uid])[0].fields
+    exported = mdo.bulk_export([data_row.uid])[0].fields
     assert len(exported) == len(
         set([x.schema_id for x in metadata.fields] +
             [x.schema_id for x in exported]))
 
     mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
+        DeleteDataRowMetadata(data_row_id=data_row.uid,
+                              fields=[SPLIT_SCHEMA_ID])
     ])
-    exported = mdo.bulk_export([datarow.uid])[0].fields
+    exported = mdo.bulk_export([data_row.uid])[0].fields
     assert len(exported) == 0
 
 
-def test_raise_enum_upsert_schema_error(datarow, mdo):
+def test_raise_enum_upsert_schema_error(data_row, mdo):
     """Setting an option id as the schema id will raise a Value Error"""
 
-    metadata = DataRowMetadata(data_row_id=datarow.uid,
+    metadata = DataRowMetadata(data_row_id=data_row.uid,
                                fields=[
                                    DataRowMetadataField(schema_id=TEST_SPLIT_ID,
                                                         value=SPLIT_SCHEMA_ID),
@@ -270,9 +271,9 @@ def test_raise_enum_upsert_schema_error(datarow, mdo):
         mdo.bulk_upsert([metadata])
 
 
-def test_upsert_non_existent_schema_id(datarow, mdo):
+def test_upsert_non_existent_schema_id(data_row, mdo):
     """Raise error on non-existent schema id"""
-    metadata = DataRowMetadata(data_row_id=datarow.uid,
+    metadata = DataRowMetadata(data_row_id=data_row.uid,
                                fields=[
                                    DataRowMetadataField(
                                        schema_id=INVALID_SCHEMA_ID,
@@ -282,9 +283,10 @@ def test_upsert_non_existent_schema_id(datarow, mdo):
         mdo.bulk_upsert([metadata])
 
 
-def test_delete_non_existent_schema_id(datarow, mdo):
+def test_delete_non_existent_schema_id(data_row, mdo):
     res = mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=datarow.uid, fields=[SPLIT_SCHEMA_ID])
+        DeleteDataRowMetadata(data_row_id=data_row.uid,
+                              fields=[SPLIT_SCHEMA_ID])
     ])
     assert len(res) == 0
 
@@ -435,9 +437,9 @@ def test_delete_schema(mdo):
 
 @pytest.mark.parametrize('datetime_str',
                          ['2011-11-04T00:05:23Z', '2011-05-07T14:34:14+00:00'])
-def test_upsert_datarow_date_metadata(datarow, mdo, datetime_str):
+def test_upsert_datarow_date_metadata(data_row, mdo, datetime_str):
     metadata = [
-        DataRowMetadata(data_row_id=datarow.uid,
+        DataRowMetadata(data_row_id=data_row.uid,
                         fields=[
                             DataRowMetadataField(name='captureDateTime',
                                                  value=datetime_str),
@@ -446,7 +448,7 @@ def test_upsert_datarow_date_metadata(datarow, mdo, datetime_str):
     errors = mdo.bulk_upsert(metadata)
     assert len(errors) == 0
 
-    metadata = mdo.bulk_export([datarow.uid])
+    metadata = mdo.bulk_export([data_row.uid])
     assert metadata[0].fields[0].value == datetime.fromisoformat(datetime_str)
 
 
