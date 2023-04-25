@@ -42,14 +42,12 @@ def test_project(client, rand_gen):
     assert project not in projects
 
 
-def test_project_export_v2(export_v2_test_helpers,
-                           configured_project_with_label):
+def test_project_export_v2(client, export_v2_test_helpers,
+                           configured_project_with_label,
+                           wait_for_data_row_processing):
     project, _, data_row, label = configured_project_with_label
-    project._wait_until_data_rows_are_processed(
-        [data_row.uid], wait_processing_max_seconds=3600, sleep_interval=5)
+    data_row = wait_for_data_row_processing(client, data_row)
     label_id = label.uid
-    # Wait for exporter to retrieve latest labels
-    time.sleep(10)
 
     task_name = "test_label_export_v2"
 
@@ -90,15 +88,13 @@ def test_project_export_v2(export_v2_test_helpers,
     export_v2_test_helpers.run_project_export_v2_task(project, filters=filters)
 
 
-@pytest.mark.parametrize("datarows", [3], indirect=True)
+@pytest.mark.parametrize("data_rows", [3], indirect=True)
 def test_project_export_v2_datarow_list(
         export_v2_test_helpers,
         configured_batch_project_with_multiple_datarows):
-    batch_project, _, datarows = configured_batch_project_with_multiple_datarows
-    data_row_ids = [dr.uid for dr in datarows]
-    batch_project._wait_until_data_rows_are_processed(
-        data_row_ids, wait_processing_max_seconds=3600, sleep_interval=5)
+    batch_project, _, data_rows = configured_batch_project_with_multiple_datarows
 
+    data_row_ids = [dr.uid for dr in data_rows]
     datarow_filter_size = 2
 
     filters = {
@@ -293,6 +289,7 @@ def test_batches(batch_project: Project, dataset: Dataset, image_url):
     assert names == {batch_one, batch_two}
 
 
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_create_batch_with_global_keys_sync(batch_project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
@@ -301,6 +298,7 @@ def test_create_batch_with_global_keys_sync(batch_project: Project, data_rows):
     assert batch_data_rows == set(data_rows)
 
 
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_create_batch_with_global_keys_async(batch_project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'

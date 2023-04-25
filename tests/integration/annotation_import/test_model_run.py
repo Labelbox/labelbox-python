@@ -114,6 +114,7 @@ def test_model_run_upsert_data_rows(dataset, model_run):
     assert n_model_run_data_rows == 1
 
 
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     assert model_run.upsert_data_rows(global_keys=global_keys)
@@ -236,6 +237,7 @@ def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
         assert counts[split] == n_data_rows
 
 
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_model_run_split_assignment_by_global_keys(model_run, data_rows):
     global_keys = [data_row.global_key for data_row in data_rows]
 

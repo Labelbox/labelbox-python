@@ -242,7 +242,7 @@ def unique_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def datarow(dataset, image_url):
+def data_row(dataset, image_url):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
@@ -256,10 +256,10 @@ def datarow(dataset, image_url):
 
 
 # can be used with
-# @pytest.mark.parametrize('datarows', [<count of data rows>], indirect=True)
+# @pytest.mark.parametrize('data_rows', [<count of data rows>], indirect=True)
 # if omitted, count defaults to 1
 @pytest.fixture
-def datarows(dataset, image_url, request):
+def data_rows(dataset, image_url, request):
     count = 1
     if hasattr(request, 'param'):
         count = request.param
@@ -276,20 +276,6 @@ def datarows(dataset, image_url, request):
 
     for datarow in datarows:
         datarow.delete()
-
-
-@pytest.fixture()
-def data_rows(dataset, image_url):
-    dr1 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
-    dr2 = dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
-    task = dataset.create_data_rows([dr1, dr2])
-    task.wait_till_done()
-
-    drs = list(dataset.export_data_rows())
-    yield drs
-
-    for dr in drs:
-        dr.delete()
 
 
 @pytest.fixture
@@ -384,7 +370,7 @@ def configured_project(project, client, rand_gen, image_url):
 
 @pytest.fixture
 def configured_project_with_label(client, rand_gen, image_url, project, dataset,
-                                  datarow, wait_for_label_processing):
+                                  data_row, wait_for_label_processing):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
@@ -393,9 +379,10 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     project.datasets.connect(dataset)
 
     ontology = _setup_ontology(project)
-    label = _create_label(project, datarow, ontology, wait_for_label_processing)
+    label = _create_label(project, data_row, ontology,
+                          wait_for_label_processing)
 
-    yield [project, dataset, datarow, label]
+    yield [project, dataset, data_row, label]
 
     for label in project.labels():
         label.delete()
@@ -403,7 +390,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 @pytest.fixture
 def configured_batch_project_with_label(client, rand_gen, image_url,
-                                        batch_project, dataset, datarow,
+                                        batch_project, dataset, data_row,
                                         wait_for_label_processing):
     """Project with a batch having one datarow
     Project contains an ontology with 1 bbox tool
@@ -414,10 +401,10 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
     batch_project.create_batch("test-batch", data_rows)
 
     ontology = _setup_ontology(batch_project)
-    label = _create_label(batch_project, datarow, ontology,
+    label = _create_label(batch_project, data_row, ontology,
                           wait_for_label_processing)
 
-    yield [batch_project, dataset, datarow, label]
+    yield [batch_project, dataset, data_row, label]
 
     for label in batch_project.labels():
         label.delete()
@@ -425,34 +412,34 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
 
 @pytest.fixture
 def configured_batch_project_with_multiple_datarows(batch_project, dataset,
-                                                    datarows,
+                                                    data_rows,
                                                     wait_for_label_processing):
     """Project with a batch having multiple datarows
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     """
-    global_keys = [dr.global_key for dr in datarows]
+    global_keys = [dr.global_key for dr in data_rows]
 
     batch_name = f'batch {uuid.uuid4()}'
     batch_project.create_batch(batch_name, global_keys=global_keys)
 
     ontology = _setup_ontology(batch_project)
-    for datarow in datarows:
+    for datarow in data_rows:
         _create_label(batch_project, datarow, ontology,
                       wait_for_label_processing)
 
-    yield [batch_project, dataset, datarows]
+    yield [batch_project, dataset, data_rows]
 
     for label in batch_project.labels():
         label.delete()
 
 
-def _create_label(project, datarow, ontology, wait_for_label_processing):
+def _create_label(project, data_row, ontology, wait_for_label_processing):
     predictions = [{
         "uuid": str(uuid.uuid4()),
         "schemaId": ontology.tools[0].feature_schema_id,
         "dataRow": {
-            "id": datarow.uid
+            "id": data_row.uid
         },
         "bbox": {
             "top": 20,

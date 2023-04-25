@@ -18,16 +18,14 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.export_filters import DatasetExportFilters, SharedExportFilters
+from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
-from labelbox.schema.project import _validate_datetime, _build_filters
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
 MAX_DATAROW_PER_API_OPERATION = 150_000
-MAX_DATAROW_IDS_PER_EXPORT_V2 = 2_000
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -589,7 +587,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         if task_name is None:
             task_name = f"Export v2: dataset - {self.name}"
-        query_params = {
+        query_params: Dict[str, Any] = {
             "input": {
                 "taskName": task_name,
                 "filters": {
@@ -622,7 +620,7 @@ class Dataset(DbObject, Updateable, Deletable):
             }
         }
 
-        search_query = _build_filters(self.client, _filters)
+        search_query = build_filters(self.client, _filters)
         search_query.append({
             "ids": [self.uid],
             "operator": "is",

@@ -4,7 +4,7 @@ import time
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
 import ndjson
@@ -20,7 +20,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.export_filters import ProjectExportFilters
+from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
@@ -45,123 +45,6 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
-
-MAX_DATAROW_IDS_PER_EXPORT_V2 = 2_000
-
-
-def _validate_datetime(string_date: str) -> bool:
-    """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
-    if string_date:
-        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
-            try:
-                datetime.strptime(string_date, fmt)
-                return True
-            except ValueError:
-                pass
-        raise ValueError(f"""Incorrect format for: {string_date}.
-        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
-    return True
-
-
-def _build_filters(client, filters):
-    search_query: List[Dict[str, Collection[str]]] = []
-    timezone: Optional[str] = None
-
-    def _get_timezone() -> str:
-        timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
-        tz_res = client.execute(timezone_query_str)
-        return tz_res["user"]["timezone"] or "UTC"
-
-    last_activity_at = filters.get("last_activity_at")
-    if last_activity_at:
-        if timezone is None:
-            timezone = _get_timezone()
-        start, end = last_activity_at
-        if (start is not None and end is not None):
-            [_validate_datetime(date) for date in last_activity_at]
-            search_query.append({
-                "type": "data_row_last_activity_at",
-                "value": {
-                    "operator": "BETWEEN",
-                    "timezone": timezone,
-                    "value": {
-                        "min": start,
-                        "max": end
-                    }
-                }
-            })
-        elif (start is not None):
-            _validate_datetime(start)
-            search_query.append({
-                "type": "data_row_last_activity_at",
-                "value": {
-                    "operator": "GREATER_THAN_OR_EQUAL",
-                    "timezone": timezone,
-                    "value": start
-                }
-            })
-        elif (end is not None):
-            _validate_datetime(end)
-            search_query.append({
-                "type": "data_row_last_activity_at",
-                "value": {
-                    "operator": "LESS_THAN_OR_EQUAL",
-                    "timezone": timezone,
-                    "value": end
-                }
-            })
-
-    label_created_at = filters.get("label_created_at")
-    if label_created_at:
-        if timezone is None:
-            timezone = _get_timezone()
-        start, end = label_created_at
-        if (start is not None and end is not None):
-            [_validate_datetime(date) for date in label_created_at]
-            search_query.append({
-                "type": "labeled_at",
-                "value": {
-                    "operator": "BETWEEN",
-                    "value": {
-                        "min": start,
-                        "max": end
-                    }
-                }
-            })
-        elif (start is not None):
-            _validate_datetime(start)
-            search_query.append({
-                "type": "labeled_at",
-                "value": {
-                    "operator": "GREATER_THAN_OR_EQUAL",
-                    "value": start
-                }
-            })
-        elif (end is not None):
-            _validate_datetime(end)
-            search_query.append({
-                "type": "labeled_at",
-                "value": {
-                    "operator": "LESS_THAN_OR_EQUAL",
-                    "value": end
-                }
-            })
-
-    data_row_ids = filters.get("data_row_ids")
-    if data_row_ids:
-        if not isinstance(data_row_ids, list):
-            raise ValueError("`data_row_ids` filter expects a list.")
-        if len(data_row_ids) > MAX_DATAROW_IDS_PER_EXPORT_V2:
-            raise ValueError(
-                f"`data_row_ids` filter only supports a max of {MAX_DATAROW_IDS_PER_EXPORT_V2} items."
-            )
-        search_query.append({
-            "ids": data_row_ids,
-            "operator": "is",
-            "type": "data_row_id"
-        })
-
-    return search_query
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -471,7 +354,7 @@ class Project(DbObject, Updateable, Deletable):
                 "start": kwargs.get("start", ""),
                 "end": kwargs.get("end", "")
             }
-            [_validate_datetime(date) for date in created_at_dict.values()]
+            [validate_datetime(date) for date in created_at_dict.values()]
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
                 created_at_dict, value_with_quotes=True)
 
@@ -480,9 +363,9 @@ class Project(DbObject, Updateable, Deletable):
             last_activity_end = kwargs.get('last_activity_end')
 
             if last_activity_start:
-                _validate_datetime(str(last_activity_start))
+                validate_datetime(str(last_activity_start))
             if last_activity_end:
-                _validate_datetime(str(last_activity_end))
+                validate_datetime(str(last_activity_end))
 
             filter_param_dict["lastActivityAt"] = "{%s}" % _string_from_dict(
                 {
@@ -566,14 +449,14 @@ class Project(DbObject, Updateable, Deletable):
           """ % (mutation_name)
 
         media_type_override = _params.get('media_type_override', None)
-        query_params = {
+        query_params: Dict[str, Any] = {
             "input": {
                 "taskName": task_name,
                 "filters": {
                     "projectId": self.uid,
                     "searchQuery": {
                         "scope": None,
-                        "query": None,
+                        "query": [],
                     }
                 },
                 "params": {
@@ -596,7 +479,7 @@ class Project(DbObject, Updateable, Deletable):
             }
         }
 
-        search_query = _build_filters(self.client, _filters)
+        search_query = build_filters(self.client, _filters)
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
         res = self.client.execute(

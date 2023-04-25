@@ -1,5 +1,3 @@
-import json
-import time
 import pytest
 import requests
 from labelbox import Dataset
@@ -149,30 +147,22 @@ def test_data_row_export(dataset, image_url):
     assert set(result) == ids
 
 
-def test_dataset_export_v2(export_v2_test_helpers, dataset, image_url):
-    n_data_rows = 5
-    datarows = set()
-    for _ in range(n_data_rows):
-        datarows.add(dataset.create_data_row(row_data=image_url))
-
-    time.sleep(10)
-
+@pytest.mark.parametrize('data_rows', [5], indirect=True)
+def test_dataset_export_v2(export_v2_test_helpers, dataset, data_rows):
+    data_row_ids = [dr.uid for dr in data_rows]
     params = {"performance_details": False, "label_details": False}
-
     task_results = export_v2_test_helpers.run_dataset_export_v2_task(
         dataset, params=params)
-    assert len(task_results) == n_data_rows
+    assert len(task_results) == 5
+    assert set([dr['data_row']['id'] for dr in task_results
+               ]) == set(data_row_ids)
 
 
+@pytest.mark.parametrize('data_rows', [5], indirect=True)
 def test_dataset_export_v2_datarow_list(export_v2_test_helpers, dataset,
-                                        image_url):
-    n_data_rows = 5
+                                        data_rows):
     datarow_filter_size = 2
-    datarows = set()
-    for _ in range(n_data_rows):
-        datarows.add(dataset.create_data_row(row_data=image_url))
-
-    data_row_ids = [dr.uid for dr in datarows]
+    data_row_ids = [dr.uid for dr in data_rows]
 
     params = {"performance_details": False, "label_details": False}
     filters = {"data_row_ids": data_row_ids[:datarow_filter_size]}
