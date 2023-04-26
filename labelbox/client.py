@@ -216,7 +216,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"].get("code")
+            return error["extensions"].get("exception").get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -279,6 +279,8 @@ class Client:
 
             if get_error_status_code(internal_server_error) == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
+            elif get_error_status_code(internal_server_error) == 426:
+                raise labelbox.exceptions.OperationNotAllowedException(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
