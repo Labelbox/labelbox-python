@@ -642,7 +642,9 @@ class ExportV2Helpers:
                                    params={}):
         task = None
         params = params if params else {
+            "project_details": True,
             "performance_details": False,
+            "data_row_details": True,
             "label_details": True
         }
         while (num_retries > 0):

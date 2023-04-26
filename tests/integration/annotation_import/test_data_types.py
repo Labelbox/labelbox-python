@@ -1,3 +1,4 @@
+import datetime
 import itertools
 import time
 import pytest
@@ -153,6 +154,14 @@ def test_import_data_types(client, configured_project,
     data_row.delete()
 
 
+def validate_iso_format(date_string: str):
+    parsed_t = datetime.datetime.fromisoformat(
+        date_string)  #this will blow up if the string is not in iso format
+    assert parsed_t.hour is not None
+    assert parsed_t.minute is not None
+    assert parsed_t.second is not None
+
+
 @pytest.mark.parametrize('data_type_class', [
     AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
     DocumentData, DicomData
@@ -187,9 +196,27 @@ def test_import_data_types_v2(client, configured_project,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
+    for label in configured_project.labels():  #trigger review creation
+        label.create_review(score=1.0)
+
+    #TODO need to migrate project to the new BATCH mode and change this code
+    # to be similar to tests/integration/test_task_queue.py
+
     result = export_v2_test_helpers.run_project_export_v2_task(
         configured_project)
     exported_data = result[0]
+
+    # timestamp fields are in iso format
+    validate_iso_format(exported_data['data_row']['details']['created_at'])
+    validate_iso_format(exported_data['data_row']['details']['updated_at'])
+    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+                        ['label_details']['created_at'])
+    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+                        ['label_details']['updated_at'])
+    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+                        ['label_details']['reviews'][0]['reviewed_at'])
+    # to be added once we have switched to the new BATCH mode
+    # validate_iso_format(exported_data['projects'][project_id]['project_details']['workflow_history'][0]['created_at'])
 
     assert (exported_data['data_row']['id'] == data_row.uid)
     exported_project = exported_data['projects'][project_id]
