@@ -1,3 +1,4 @@
+import datetime
 import itertools
 import time
 import pytest
@@ -6,6 +7,7 @@ import uuid
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.media_type import MediaType
 import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
@@ -153,6 +155,18 @@ def test_import_data_types(client, configured_project,
     data_row.delete()
 
 
+def validate_iso_format(date_string: str):
+    parsed_t = datetime.datetime.fromisoformat(
+        date_string)  #this will blow up if the string is not in iso format
+    assert parsed_t.hour is not None
+    assert parsed_t.minute is not None
+    assert parsed_t.second is not None
+
+
+def to_pascal_case(name: str) -> str:
+    return "".join([word.capitalize() for word in name.split("_")])
+
+
 @pytest.mark.parametrize('data_type_class', [
     AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
     DocumentData, DicomData
@@ -166,6 +180,12 @@ def test_import_data_types_v2(client, configured_project,
     project_id = configured_project.uid
 
     data_type_string = data_type_class.__name__[:-4].lower()
+
+    media_type = to_pascal_case(data_type_string)
+    if media_type == 'Conversation':
+        media_type = 'Conversational'
+    configured_project.update(media_type=MediaType[media_type])
+
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     dataset = next(configured_project.datasets())
     data_row = dataset.create_data_row(data_row_ndjson)
@@ -187,9 +207,27 @@ def test_import_data_types_v2(client, configured_project,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
+    for label in configured_project.labels():  #trigger review creation
+        label.create_review(score=1.0)
+
+    #TODO need to migrate project to the new BATCH mode and change this code
+    # to be similar to tests/integration/test_task_queue.py
+
     result = export_v2_test_helpers.run_project_export_v2_task(
         configured_project)
     exported_data = result[0]
+
+    # timestamp fields are in iso format
+    validate_iso_format(exported_data['data_row']['details']['created_at'])
+    validate_iso_format(exported_data['data_row']['details']['updated_at'])
+    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+                        ['label_details']['created_at'])
+    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+                        ['label_details']['updated_at'])
+    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+                        ['label_details']['reviews'][0]['reviewed_at'])
+    # to be added once we have switched to the new BATCH mode
+    # validate_iso_format(exported_data['projects'][project_id]['project_details']['workflow_history'][0]['created_at'])
 
     assert (exported_data['data_row']['id'] == data_row.uid)
     exported_project = exported_data['projects'][project_id]

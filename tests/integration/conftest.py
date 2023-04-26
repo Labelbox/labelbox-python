@@ -534,6 +534,8 @@ def configured_project_with_complex_ontology(client, rand_gen, image_url):
     project.delete()
 
 
+# NOTE this is nice heuristics, also there is this logic _wait_until_data_rows_are_processed in Project
+#    in case we still have flakiness in the future, we can use it
 @pytest.fixture
 def wait_for_data_row_processing():
     """
@@ -642,7 +644,9 @@ class ExportV2Helpers:
                                    params={}):
         task = None
         params = params if params else {
+            "project_details": True,
             "performance_details": False,
+            "data_row_details": True,
             "label_details": True
         }
         while (num_retries > 0):
