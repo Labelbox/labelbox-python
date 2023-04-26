@@ -44,7 +44,7 @@ def expected_export_v2_image():
             }
         }, {
             'name': 'polyline',
-            'annotation_kind': 'ImageLine',
+            'annotation_kind': 'ImagePolyline',
             'classifications': [],
             'line': [{
                 'x': 147.692,
