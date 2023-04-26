@@ -7,6 +7,7 @@ import uuid
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.media_type import MediaType
 import labelbox.types as lb_types
 from labelbox.data.annotation_types.data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData
 from labelbox.data.serialization import NDJsonConverter
@@ -162,6 +163,10 @@ def validate_iso_format(date_string: str):
     assert parsed_t.second is not None
 
 
+def to_pascal_case(name: str) -> str:
+    return "".join([word.capitalize() for word in name.split("_")])
+
+
 @pytest.mark.parametrize('data_type_class', [
     AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
     DocumentData, DicomData
@@ -175,6 +180,12 @@ def test_import_data_types_v2(client, configured_project,
     project_id = configured_project.uid
 
     data_type_string = data_type_class.__name__[:-4].lower()
+
+    media_type = to_pascal_case(data_type_string)
+    if media_type == 'Conversation':
+        media_type = 'Conversational'
+    configured_project.update(media_type=MediaType[media_type])
+
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     dataset = next(configured_project.datasets())
     data_row = dataset.create_data_row(data_row_ndjson)
