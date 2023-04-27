@@ -469,16 +469,6 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
-def video_data(client, rand_gen, video_data_row):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_ids = []
-    data_row = dataset.create_data_row(video_data_row)
-    data_row_ids.append(data_row.uid)
-    yield dataset, data_row_ids
-    dataset.delete()
-
-
-@pytest.fixture
 def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
