@@ -17,3 +17,4 @@ pytest-xdist
 nbformat~=5.7.0
 nbconvert~=7.2.6
 typeguard==2.13.3
+backports-datetime-fromisoformat~=2.0

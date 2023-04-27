@@ -114,6 +114,7 @@ def test_model_run_upsert_data_rows(dataset, model_run):
     assert n_model_run_data_rows == 1
 
 
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     assert model_run.upsert_data_rows(global_keys=global_keys)
@@ -185,13 +186,14 @@ def test_model_run_status(model_run_with_data_rows):
 def test_model_run_export_v2(model_run_with_data_rows, configured_project):
     task_name = "test_task"
     media_attributes = True
-    params = {"media_attributes": media_attributes}
+    params = {"media_attributes": media_attributes, "predictions": True}
     task_results = _model_run_export_v2_results(model_run_with_data_rows,
                                                 task_name, params)
     label_ids = [label.uid for label in configured_project.labels()]
     label_ids_set = set(label_ids)
 
     assert len(task_results) == len(label_ids)
+
     for task_result in task_results:
         # Check export param handling
         if media_attributes:
@@ -200,8 +202,9 @@ def test_model_run_export_v2(model_run_with_data_rows, configured_project):
         else:
             assert 'media_attributes' not in task_result or task_result[
                 'media_attributes'] is None
-        model_run = task_result['models'][model_run_with_data_rows.model_id][
-            'model_runs'][model_run_with_data_rows.uid]
+        model_run = task_result['experiments'][
+            model_run_with_data_rows.model_id]['runs'][
+                model_run_with_data_rows.uid]
         task_label_ids_set = set(
             map(lambda label: label['id'], model_run['labels']))
         task_prediction_ids_set = set(
@@ -234,6 +237,7 @@ def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
         assert counts[split] == n_data_rows
 
 
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_model_run_split_assignment_by_global_keys(model_run, data_rows):
     global_keys = [data_row.global_key for data_row in data_rows]
 

@@ -8,7 +8,8 @@ RUN apt install -y libsm6 \
                 libfontconfig1 \
                 libxrender1 \
                 libgl1-mesa-glx \
-                libgeos-dev
+                libgeos-dev \
+                gcc
 
 WORKDIR /usr/src/
 COPY requirements.txt /usr/src/

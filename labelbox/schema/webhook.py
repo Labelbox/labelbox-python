@@ -36,6 +36,7 @@ class Webhook(DbObject, Updateable):
         REVIEW_CREATED = "REVIEW_CREATED"
         REVIEW_UPDATED = "REVIEW_UPDATED"
         REVIEW_DELETED = "REVIEW_DELETED"
+        WORKFLOW_ACTION = "WORKFLOW_ACTION"
 
     # For backwards compatibility
     for topic in Status:

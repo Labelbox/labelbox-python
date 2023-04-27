@@ -115,8 +115,8 @@ def make_metadata_fields_dict():
     return fields
 
 
-def test_get_data_row(datarow, client):
-    assert client.get_data_row(datarow.uid)
+def test_get_data_row(data_row, client):
+    assert client.get_data_row(data_row.uid)
 
 
 def test_lookup_data_rows(client, dataset):
@@ -692,7 +692,7 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
     assert len(list(dataset.data_rows())) == n_local + n_urls
 
 
-def test_delete_data_row_attachment(datarow, image_url):
+def test_delete_data_row_attachment(data_row, image_url):
     attachments = []
 
     # Anonymous attachment
@@ -700,7 +700,7 @@ def test_delete_data_row_attachment(datarow, image_url):
                  ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
     for attachment_type, attachment_value in to_attach:
         attachments.append(
-            datarow.create_attachment(attachment_type, attachment_value))
+            data_row.create_attachment(attachment_type, attachment_value))
 
     # Attachment with a name
     to_attach = [("IMAGE", image_url, "Att. Image"),
@@ -709,13 +709,13 @@ def test_delete_data_row_attachment(datarow, image_url):
                  ("HTML", image_url, "Att. HTML")]
     for attachment_type, attachment_value, attachment_name in to_attach:
         attachments.append(
-            datarow.create_attachment(attachment_type, attachment_value,
-                                      attachment_name))
+            data_row.create_attachment(attachment_type, attachment_value,
+                                       attachment_name))
 
     for attachment in attachments:
         attachment.delete()
 
-    assert len(list(datarow.attachments())) == 0
+    assert len(list(data_row.attachments())) == 0
 
 
 def test_create_data_rows_result(client, dataset, image_url):
@@ -965,10 +965,11 @@ def test_create_data_row_with_media_type(dataset, image_url):
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
 
 
-def test_export_data_rows(client, datarow):
+def test_export_data_rows(client, data_row, wait_for_data_row_processing):
     # Ensure created data rows are indexed
-    time.sleep(10)
-    task = DataRow.export_v2(client=client, data_rows=[datarow])
+    data_row = wait_for_data_row_processing(client, data_row)
+
+    task = DataRow.export_v2(client=client, data_rows=[data_row])
     task.wait_till_done()
     assert task.status == "COMPLETE"
     assert task.errors is None
