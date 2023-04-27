@@ -755,7 +755,7 @@ class Project(DbObject, Updateable, Deletable):
             consensus_settings = ConsensusSettings(**consensus_settings).dict(
                 by_alias=True)
 
-        if len(dr_ids) >= 10_000:
+        if len(dr_ids) >= 1_000:
             return self._create_batch_async(name, dr_ids, global_keys, priority,
                                             consensus_settings)
         else:
