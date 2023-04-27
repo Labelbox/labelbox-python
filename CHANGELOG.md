@@ -1,5 +1,13 @@
 # Changelog
 
+# Version 3.45.0 (2023-04-27)
+## Changed
+* Reduce threshold for async batch creation to 1000 data rows
+
+## Notebooks
+* Added subclassifications to ontology notebook
+* Added conversational and pdf predictions notebooks
+
 # Version 3.44.0 (2023-04-26)
 
 ## Added
