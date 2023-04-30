@@ -569,6 +569,7 @@ class Dataset(DbObject, Updateable, Deletable):
             "media_type_override": None,
             "model_run_ids": None,
             "project_ids": None,
+            "interpolated_frames": False,
         })
         validate_catalog_export_params(_params)
 
@@ -612,6 +613,8 @@ class Dataset(DbObject, Updateable, Deletable):
                         _params.get('performance_details', False),
                     "includeLabelDetails":
                         _params.get('label_details', False),
+                    "includeInterpolatedFrames":
+                        _params.get('interpolated_frames', False),
                     "projectIds":
                         _params.get('project_ids', None),
                     "modelRunIds":

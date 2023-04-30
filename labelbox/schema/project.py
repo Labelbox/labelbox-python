@@ -434,7 +434,8 @@ class Project(DbObject, Updateable, Deletable):
             "project_details": False,
             "performance_details": False,
             "label_details": False,
-            "media_type_override": None
+            "media_type_override": None,
+            "interpolated_frames": False,
         })
 
         _filters = filters or ProjectExportFilters({
@@ -474,7 +475,9 @@ class Project(DbObject, Updateable, Deletable):
                     "includePerformanceDetails":
                         _params.get('performance_details', False),
                     "includeLabelDetails":
-                        _params.get('label_details', False)
+                        _params.get('label_details', False),
+                    "includeInterpolatedFrames":
+                        _params.get('interpolated_frames', False),
                 },
             }
         }

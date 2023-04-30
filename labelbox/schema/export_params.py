@@ -22,6 +22,7 @@ class ProjectExportParams(DataRowParams):
     project_details: Optional[bool]
     label_details: Optional[bool]
     performance_details: Optional[bool]
+    interpolated_frames: Optional[bool]
 
 
 class CatalogExportParams(DataRowParams):
@@ -30,6 +31,7 @@ class CatalogExportParams(DataRowParams):
     performance_details: Optional[bool]
     model_run_ids: Optional[List[str]]
     project_ids: Optional[List[str]]
+    interpolated_frames: Optional[bool]
 
 
 class ModelRunExportParams(DataRowParams):
