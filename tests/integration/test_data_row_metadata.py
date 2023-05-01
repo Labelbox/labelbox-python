@@ -122,11 +122,14 @@ def test_bulk_upsert_datarow_metadata(datarow, mdo: DataRowMetadataOntology):
     assert len(exported)
     assert len([field for field in exported[0].fields]) == 3
 
-def test_bulk_upsert_datarow_metadata_by_globalkey(data_rows, mdo: DataRowMetadataOntology):
+
+def test_bulk_upsert_datarow_metadata_by_globalkey(
+        data_rows, mdo: DataRowMetadataOntology):
     global_keys = [data_row.global_key for data_row in data_rows]
     metadata = [make_metadata(gk=global_key) for global_key in global_keys]
     errors = mdo.bulk_upsert(metadata)
     assert len(errors) == 0
+
 
 @pytest.mark.slow
 def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
