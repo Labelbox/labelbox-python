@@ -1,5 +1,5 @@
 name = "labelbox"
-__version__ = "3.43.0"
+__version__ = "3.45.0"
 
 from backports.datetime_fromisoformat import MonkeyPatch
 

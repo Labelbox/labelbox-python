@@ -3,7 +3,7 @@ from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.export_params import CatalogExportParams
+from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
@@ -88,6 +88,7 @@ class CatalogSlice(Slice):
             "model_run_ids": None,
             "project_ids": None,
         })
+        validate_catalog_export_params(_params)
 
         mutation_name = "exportDataRowsInSlice"
         create_task_query_str = """mutation exportDataRowsInSlicePyApi($input: ExportDataRowsInSliceInput!){

@@ -216,7 +216,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"].get("code")
+            return error["extensions"].get("exception").get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -279,6 +279,8 @@ class Client:
 
             if get_error_status_code(internal_server_error) == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
+            elif get_error_status_code(internal_server_error) == 426:
+                raise labelbox.exceptions.OperationNotAllowedException(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
@@ -546,7 +548,7 @@ class Client:
         # Also convert Labelbox object values to their UIDs.
         data = {
             db_object_type.attribute(attr) if isinstance(attr, str) else attr:
-            value.uid if isinstance(value, DbObject) else value
+                value.uid if isinstance(value, DbObject) else value
             for attr, value in data.items()
         }
 
@@ -1646,7 +1648,7 @@ class Client:
             DeleteFeatureFromOntologyResult: The result of the feature schema removal.
 
         Example:
-            >>> client.remove_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
+            >>> client.delete_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
         """
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(

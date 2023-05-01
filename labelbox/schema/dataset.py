@@ -18,9 +18,8 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.export_filters import DatasetExportFilters, SharedExportFilters
-from labelbox.schema.export_params import CatalogExportParams
-from labelbox.schema.project import _validate_datetime
+from labelbox.schema.export_filters import DatasetExportFilters, build_filters
+from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
@@ -549,7 +548,8 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task = dataset.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
         >>>         },
         >>>         params={
         >>>             "performance_details": False,
@@ -570,41 +570,30 @@ class Dataset(DbObject, Updateable, Deletable):
             "model_run_ids": None,
             "project_ids": None,
         })
+        validate_catalog_export_params(_params)
 
         _filters = filters or DatasetExportFilters({
             "last_activity_at": None,
-            "label_created_at": None
+            "label_created_at": None,
+            "data_row_ids": None,
         })
-
-        def _get_timezone() -> str:
-            timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
-            tz_res = self.client.execute(timezone_query_str)
-            return tz_res["user"]["timezone"] or "UTC"
-
-        timezone: Optional[str] = None
 
         mutation_name = "exportDataRowsInCatalog"
         create_task_query_str = """mutation exportDataRowsInCatalogPyApi($input: ExportDataRowsInCatalogInput!){
             %s(input: $input) {taskId} }
             """ % (mutation_name)
 
-        search_query: List[Dict[str, Collection[str]]] = []
-        search_query.append({
-            "ids": [self.uid],
-            "operator": "is",
-            "type": "dataset"
-        })
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:
             task_name = f"Export v2: dataset - {self.name}"
-        query_params = {
+        query_params: Dict[str, Any] = {
             "input": {
                 "taskName": task_name,
                 "filters": {
                     "searchQuery": {
                         "scope": None,
-                        "query": search_query
+                        "query": None,
                     }
                 },
                 "params": {
@@ -631,82 +620,13 @@ class Dataset(DbObject, Updateable, Deletable):
             }
         }
 
-        if "last_activity_at" in _filters and _filters[
-                'last_activity_at'] is not None:
-            if timezone is None:
-                timezone = _get_timezone()
-            values = _filters['last_activity_at']
-            start, end = values
-            if (start is not None and end is not None):
-                [_validate_datetime(date) for date in values]
-                search_query.append({
-                    "type": "data_row_last_activity_at",
-                    "value": {
-                        "operator": "BETWEEN",
-                        "timezone": timezone,
-                        "value": {
-                            "min": start,
-                            "max": end
-                        }
-                    }
-                })
-            elif (start is not None):
-                _validate_datetime(start)
-                search_query.append({
-                    "type": "data_row_last_activity_at",
-                    "value": {
-                        "operator": "GREATER_THAN_OR_EQUAL",
-                        "timezone": timezone,
-                        "value": start
-                    }
-                })
-            elif (end is not None):
-                _validate_datetime(end)
-                search_query.append({
-                    "type": "data_row_last_activity_at",
-                    "value": {
-                        "operator": "LESS_THAN_OR_EQUAL",
-                        "timezone": timezone,
-                        "value": end
-                    }
-                })
-
-        if "label_created_at" in _filters and _filters[
-                "label_created_at"] is not None:
-            if timezone is None:
-                timezone = _get_timezone()
-            values = _filters['label_created_at']
-            start, end = values
-            if (start is not None and end is not None):
-                [_validate_datetime(date) for date in values]
-                search_query.append({
-                    "type": "labeled_at",
-                    "value": {
-                        "operator": "BETWEEN",
-                        "value": {
-                            "min": start,
-                            "max": end
-                        }
-                    }
-                })
-            elif (start is not None):
-                _validate_datetime(start)
-                search_query.append({
-                    "type": "labeled_at",
-                    "value": {
-                        "operator": "GREATER_THAN_OR_EQUAL",
-                        "value": start
-                    }
-                })
-            elif (end is not None):
-                _validate_datetime(end)
-                search_query.append({
-                    "type": "labeled_at",
-                    "value": {
-                        "operator": "LESS_THAN_OR_EQUAL",
-                        "value": end
-                    }
-                })
+        search_query = build_filters(self.client, _filters)
+        search_query.append({
+            "ids": [self.uid],
+            "operator": "is",
+            "type": "dataset"
+        })
+        query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
         res = self.client.execute(
             create_task_query_str,

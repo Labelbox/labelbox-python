@@ -531,6 +531,8 @@ class ModelRun(DbObject):
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":
                         _params.get('data_row_details', False),
+                    "includePredictions":
+                        _params.get('predictions', False),
                 },
             }
         }

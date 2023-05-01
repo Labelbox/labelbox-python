@@ -1,5 +1,31 @@
 # Changelog
 
+# Version 3.45.0 (2023-04-27)
+## Changed
+* Reduce threshold for async batch creation to 1000 data rows
+
+## Notebooks
+* Added subclassifications to ontology notebook
+* Added conversational and pdf predictions notebooks
+
+# Version 3.44.0 (2023-04-26)
+
+## Added
+* `predictions` param for optionally exporting predictions in model run export v2
+* Limits on `model_run_ids` and `project_ids` on catalog export v2 params
+* `WORKFLOW_ACTION` webhook topic
+* Added `data_row_ids` filter for dataset and project export v2
+
+## Fixed
+* ISO timestamp parsing for datetime metadata
+* Docstring typo for `client.delete_feature_schema_from_ontology()`
+
+## Notebooks
+* Removed mention of embeddings metadata fields
+* Fixed broken colab link on `examples/extras/classification-confusion-matrix.ipynb`
+* Added free text classification example to video annotation import notebook
+* Updated prediction_upload notebooks with Annotation Type examples
+
 # Version 3.43.0 (2023-04-05)
 
 ## Added

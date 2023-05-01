@@ -347,45 +347,9 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
 
 def test_nested_video_object_annotations(client,
                                          configured_project_without_data_rows,
-                                         video_data, rand_gen):
-    bbox_annotation = [
-        VideoObjectAnnotation(
-            name="bbox",
-            keyframe=True,
-            frame=13,
-            segment_index=0,
-            value=Rectangle(
-                start=Point(x=146.0, y=98.0),  # Top left
-                end=Point(x=382.0, y=341.0),  # Bottom right
-            ),
-            classifications=[
-                ClassificationAnnotation(
-                    name='nested',
-                    value=Radio(answer=ClassificationAnswer(
-                        name='radio_option_1',
-                        classifications=[
-                            ClassificationAnnotation(
-                                name='nested_checkbox',
-                                value=Checklist(answer=[
-                                    ClassificationAnswer(
-                                        name='nested_checkbox_option_1'),
-                                    ClassificationAnswer(
-                                        name='nested_checkbox_option_2')
-                                ]))
-                        ])),
-                )
-            ]),
-        VideoObjectAnnotation(
-            name="bbox",
-            keyframe=True,
-            frame=19,
-            segment_index=0,
-            value=Rectangle(
-                start=Point(x=146.0, y=98.0),  # Top left
-                end=Point(x=382.0, y=341.0),  # Bottom right
-            ))
-    ]
-
+                                         video_data,
+                                         bbox_video_annotation_objects,
+                                         rand_gen):
     labels = []
     _, data_row_uids = video_data
     configured_project_without_data_rows.create_batch(
@@ -397,7 +361,7 @@ def test_nested_video_object_annotations(client,
     for data_row_uid in data_row_uids:
         labels.append(
             Label(data=VideoData(uid=data_row_uid),
-                  annotations=bbox_annotation))
+                  annotations=bbox_video_annotation_objects))
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
         project_id=configured_project_without_data_rows.uid,
