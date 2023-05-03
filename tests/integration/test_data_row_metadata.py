@@ -53,11 +53,12 @@ def big_dataset(dataset: Dataset, image_url):
     yield dataset
 
 
-def make_metadata(dr_id) -> DataRowMetadata:
+def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
     msg = "A message"
     time = datetime.utcnow()
 
     metadata = DataRowMetadata(
+        global_key=gk,
         data_row_id=dr_id,
         fields=[
             DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID,
@@ -120,6 +121,14 @@ def test_bulk_upsert_datarow_metadata(data_row, mdo: DataRowMetadataOntology):
     exported = mdo.bulk_export([data_row.uid])
     assert len(exported)
     assert len([field for field in exported[0].fields]) == 3
+
+
+def test_bulk_upsert_datarow_metadata_by_globalkey(
+        data_rows, mdo: DataRowMetadataOntology):
+    global_keys = [data_row.global_key for data_row in data_rows]
+    metadata = [make_metadata(gk=global_key) for global_key in global_keys]
+    errors = mdo.bulk_upsert(metadata)
+    assert len(errors) == 0
 
 
 @pytest.mark.slow
