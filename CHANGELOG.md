@@ -1,5 +1,13 @@
 # Changelog
 
+# Version 3.46.0 (2023-05-03)
+## Added
+* Global key support to DataRow Metadata `bulk_upsert()` function
+
+## Notebooks
+* Removed dataset based projects from project setup notebook 
+* Updated all links to annotation import and prediction notebooks in examples README
+
 # Version 3.45.0 (2023-04-27)
 ## Changed
 * Reduce threshold for async batch creation to 1000 data rows
