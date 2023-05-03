@@ -48,7 +48,8 @@ class DataRowMetadataField(_CamelCaseMixin):
 
 
 class DataRowMetadata(_CamelCaseMixin):
-    data_row_id: str
+    global_key: Optional[str]
+    data_row_id: Optional[str]
     fields: List[DataRowMetadataField]
 
 
@@ -58,7 +59,8 @@ class DeleteDataRowMetadata(_CamelCaseMixin):
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
-    data_row_id: str
+    global_key: Optional[str]
+    data_row_id: Optional[str]
     error: Optional[str] = None
     fields: List[Union[DataRowMetadataField, SchemaId]]
 
@@ -75,7 +77,8 @@ class _UpsertDataRowMetadataInput(_CamelCaseMixin):
 
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
-    data_row_id: str
+    global_key: Optional[str]
+    data_row_id: Optional[str]
     fields: List[_UpsertDataRowMetadataInput]
 
 
@@ -476,11 +479,12 @@ class DataRowMetadataOntology:
     def bulk_upsert(
             self, metadata: List[DataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
-        """Upsert datarow metadata
-
+        """Upsert metadata to a list of data rows
+        
+        You may specify data row by either data_row_id or global_key
 
         >>> metadata = DataRowMetadata(
-        >>>                 data_row_id="datarow-id",
+        >>>                 data_row_id="datarow-id", # Alternatively, set global_key="global-key"
         >>>                 fields=[
         >>>                        DataRowMetadataField(schema_id="schema-id", value="my-message"),
         >>>                        ...
@@ -504,6 +508,7 @@ class DataRowMetadataOntology:
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
                 upsertDataRowCustomMetadata(data: $metadata){
+                    globalKey
                     dataRowId
                     error
                     fields {
@@ -515,7 +520,8 @@ class DataRowMetadataOntology:
             res = self._client.execute(
                 query, {"metadata": upserts})['upsertDataRowCustomMetadata']
             return [
-                DataRowMetadataBatchResponse(data_row_id=r['dataRowId'],
+                DataRowMetadataBatchResponse(global_key=r['globalKey'],
+                                             data_row_id=r['dataRowId'],
                                              error=r['error'],
                                              fields=self.parse_metadata(
                                                  [r])[0].fields) for r in res
@@ -525,6 +531,7 @@ class DataRowMetadataOntology:
         for m in metadata:
             items.append(
                 _UpsertBatchDataRowMetadata(
+                    global_key=m.global_key,
                     data_row_id=m.data_row_id,
                     fields=list(
                         chain.from_iterable(
