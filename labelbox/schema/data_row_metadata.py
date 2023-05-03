@@ -479,12 +479,11 @@ class DataRowMetadataOntology:
     def bulk_upsert(
             self, metadata: List[DataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
-        """Upsert datarow metadata
+        """Upsert metadata to a list of data rows
 
 
         >>> metadata = DataRowMetadata(
-        >>>                 global_key="global-key",
-        >>>                 data_row_id="datarow-id",
+        >>>                 data_row_id="datarow-id", # Alternatively, set global_key="global-key"
         >>>                 fields=[
         >>>                        DataRowMetadataField(schema_id="schema-id", value="my-message"),
         >>>                        ...
