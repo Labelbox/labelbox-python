@@ -480,7 +480,8 @@ class DataRowMetadataOntology:
             self, metadata: List[DataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
         """Upsert metadata to a list of data rows
-
+        
+        You may specify data row by either data_row_id or global_key
 
         >>> metadata = DataRowMetadata(
         >>>                 data_row_id="datarow-id", # Alternatively, set global_key="global-key"
