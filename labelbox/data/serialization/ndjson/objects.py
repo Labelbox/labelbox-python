@@ -1,7 +1,9 @@
-from ast import Bytes
 from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
+
+from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
+from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObjectAnnotation
 from labelbox.data.mixins import ConfidenceMixin
 import numpy as np
 
@@ -12,12 +14,13 @@ from labelbox.data.annotation_types import feature
 from labelbox.data.annotation_types.data.video import VideoData
 
 from ...annotation_types.data import ImageData, TextData, MaskData
-from ...annotation_types.ner import TextEntity
+from ...annotation_types.ner import DocumentEntity, DocumentTextSelection, TextEntity
 from ...annotation_types.types import Cuid
-from ...annotation_types.geometry import Rectangle, Polygon, Line, Point, Mask
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation, VideoObjectAnnotation
-from .classification import NDSubclassification, NDSubclassificationType
-from .base import DataRow, NDAnnotation
+from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, Line, Point, Mask
+from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
+from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
+from .classification import NDClassification, NDSubclassification, NDSubclassificationType
+from .base import DataRow, NDAnnotation, NDJsonBase
 
 
 class NDBaseObject(NDAnnotation):
@@ -27,6 +30,10 @@ class NDBaseObject(NDAnnotation):
 class VideoSupported(BaseModel):
     # support for video for objects are per-frame basis
     frame: int
+
+
+class DicomSupported(BaseModel):
+    group_key: str
 
 
 class _Point(BaseModel):
@@ -49,6 +56,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     point: Point,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -60,16 +68,17 @@ class NDPoint(NDBaseObject, ConfidenceMixin):
             'x': point.x,
             'y': point.y
         },
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
 
 class NDFramePoint(VideoSupported):
     point: _Point
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -79,11 +88,22 @@ class NDFramePoint(VideoSupported):
                                      name=name,
                                      feature_schema_id=feature_schema_id,
                                      value=Point(x=self.point.x,
-                                                 y=self.point.y))
+                                                 y=self.point.y),
+                                     classifications=[
+                                         NDSubclassification.to_common(annot)
+                                         for annot in self.classifications
+                                     ])
 
     @classmethod
-    def from_common(cls, frame: int, point: Point):
-        return cls(frame=frame, point=_Point(x=point.x, y=point.y))
+    def from_common(
+        cls,
+        frame: int,
+        point: Point,
+        classifications: List[NDSubclassificationType],
+    ):
+        return cls(frame=frame,
+                   point=_Point(x=point.x, y=point.y),
+                   classifications=classifications)
 
 
 class NDLine(NDBaseObject, ConfidenceMixin):
@@ -94,6 +114,7 @@ class NDLine(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     line: Line,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -105,16 +126,17 @@ class NDLine(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in line.points],
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
 
 class NDFrameLine(VideoSupported):
     line: List[_Point]
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -124,15 +146,39 @@ class NDFrameLine(VideoSupported):
             keyframe=True,
             name=name,
             feature_schema_id=feature_schema_id,
-            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]))
+            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, line: Line):
+    def from_common(
+        cls,
+        frame: int,
+        line: Line,
+        classifications: List[NDSubclassificationType],
+    ):
         return cls(frame=frame,
                    line=[{
                        'x': pt.x,
                        'y': pt.y
-                   } for pt in line.points])
+                   } for pt in line.points],
+                   classifications=classifications)
+
+
+class NDDicomLine(NDFrameLine):
+
+    def to_common(self, name: str, feature_schema_id: Cuid, segment_index: int,
+                  group_key: str) -> DICOMObjectAnnotation:
+        return DICOMObjectAnnotation(
+            frame=self.frame,
+            segment_index=segment_index,
+            keyframe=True,
+            name=name,
+            feature_schema_id=feature_schema_id,
+            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]),
+            group_key=group_key)
 
 
 class NDPolygon(NDBaseObject, ConfidenceMixin):
@@ -143,6 +189,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     polygon: Polygon,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -154,10 +201,10 @@ class NDPolygon(NDBaseObject, ConfidenceMixin):
             'x': pt.x,
             'y': pt.y
         } for pt in polygon.points],
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -172,6 +219,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     rectangle: Rectangle,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -179,22 +227,58 @@ class NDRectangle(NDBaseObject, ConfidenceMixin):
                     extra: Dict[str, Any],
                     data: Union[ImageData, TextData],
                     confidence: Optional[float] = None) -> "NDRectangle":
-        return cls(bbox=Bbox(top=rectangle.start.y,
-                             left=rectangle.start.x,
-                             height=rectangle.end.y - rectangle.start.y,
-                             width=rectangle.end.x - rectangle.start.x),
-                   dataRow=DataRow(id=data.uid),
+        return cls(bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
+                             left=min(rectangle.start.x, rectangle.end.x),
+                             height=abs(rectangle.end.y - rectangle.start.y),
+                             width=abs(rectangle.end.x - rectangle.start.x)),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    page=extra.get('page'),
                    unit=extra.get('unit'),
                    confidence=confidence)
 
 
+class NDDocumentRectangle(NDRectangle):
+    page: int
+    unit: str
+
+    def to_common(self) -> DocumentRectangle:
+        return DocumentRectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
+                                 end=Point(x=self.bbox.left + self.bbox.width,
+                                           y=self.bbox.top + self.bbox.height),
+                                 page=self.page,
+                                 unit=self.unit)
+
+    @classmethod
+    def from_common(cls,
+                    uuid: str,
+                    rectangle: DocumentRectangle,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[ImageData, TextData],
+                    confidence: Optional[float] = None) -> "NDRectangle":
+        return cls(bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
+                             left=min(rectangle.start.x, rectangle.end.x),
+                             height=abs(rectangle.end.y - rectangle.start.y),
+                             width=abs(rectangle.end.x - rectangle.start.x)),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=uuid,
+                   classifications=classifications,
+                   page=rectangle.page,
+                   unit=rectangle.unit.value,
+                   confidence=confidence)
+
+
 class NDFrameRectangle(VideoSupported):
     bbox: Bbox
+    classifications: List[NDSubclassificationType] = []
 
     def to_common(self, name: str, feature_schema_id: Cuid,
                   segment_index: int) -> VideoObjectAnnotation:
@@ -206,15 +290,25 @@ class NDFrameRectangle(VideoSupported):
             feature_schema_id=feature_schema_id,
             value=Rectangle(start=Point(x=self.bbox.left, y=self.bbox.top),
                             end=Point(x=self.bbox.left + self.bbox.width,
-                                      y=self.bbox.top + self.bbox.height)))
+                                      y=self.bbox.top + self.bbox.height)),
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications
+            ])
 
     @classmethod
-    def from_common(cls, frame: int, rectangle: Rectangle):
+    def from_common(
+        cls,
+        frame: int,
+        rectangle: Rectangle,
+        classifications: List[NDSubclassificationType],
+    ):
         return cls(frame=frame,
-                   bbox=Bbox(top=rectangle.start.y,
-                             left=rectangle.start.x,
-                             height=rectangle.end.y - rectangle.start.y,
-                             width=rectangle.end.x - rectangle.start.x))
+                   bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
+                             left=min(rectangle.start.x, rectangle.end.x),
+                             height=abs(rectangle.end.y - rectangle.start.y),
+                             width=abs(rectangle.end.x - rectangle.start.x)),
+                   classifications=classifications)
 
 
 class NDSegment(BaseModel):
@@ -234,6 +328,7 @@ class NDSegment(BaseModel):
     @staticmethod
     def segment_with_uuid(keyframe: Union[NDFrameRectangle, NDFramePoint,
                                           NDFrameLine], uuid: str):
+        keyframe._uuid = uuid
         keyframe.extra = {'uuid': uuid}
         return keyframe
 
@@ -252,10 +347,38 @@ class NDSegment(BaseModel):
         nd_frame_object_type = cls.lookup_segment_object_type(segment)
 
         return cls(keyframes=[
-            nd_frame_object_type.from_common(object_annotation.frame,
-                                             object_annotation.value)
+            nd_frame_object_type.from_common(
+                object_annotation.frame, object_annotation.value, [
+                    NDSubclassification.from_common(annot)
+                    for annot in object_annotation.classifications
+                ])
             for object_annotation in segment
         ])
+
+
+class NDDicomSegment(NDSegment):
+    keyframes: List[NDDicomLine]
+
+    @staticmethod
+    def lookup_segment_object_type(segment: List) -> "NDDicomObjectType":
+        """Used for determining which object type the annotation contains
+        returns the object type"""
+        segment_class = type(segment[0].value)
+        if segment_class == Line:
+            return NDDicomLine
+        else:
+            raise ValueError('DICOM segments only support Line objects')
+
+    def to_common(self, name: str, feature_schema_id: Cuid, uuid: str,
+                  segment_index: int, group_key: str):
+        return [
+            self.segment_with_uuid(
+                keyframe.to_common(name=name,
+                                   feature_schema_id=feature_schema_id,
+                                   segment_index=segment_index,
+                                   group_key=group_key), uuid)
+            for keyframe in self.keyframes
+        ]
 
 
 class NDSegments(NDBaseObject):
@@ -265,11 +388,10 @@ class NDSegments(NDBaseObject):
         result = []
         for idx, segment in enumerate(self.segments):
             result.extend(
-                NDSegment.to_common(segment,
-                                    name=name,
-                                    feature_schema_id=feature_schema_id,
-                                    segment_index=idx,
-                                    uuid=self.uuid))
+                segment.to_common(name=name,
+                                  feature_schema_id=feature_schema_id,
+                                  segment_index=idx,
+                                  uuid=self.uuid))
         return result
 
     @classmethod
@@ -280,10 +402,39 @@ class NDSegments(NDBaseObject):
         segments = [NDSegment.from_common(segment) for segment in segments]
 
         return cls(segments=segments,
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
                    uuid=extra.get('uuid'))
+
+
+class NDDicomSegments(NDBaseObject, DicomSupported):
+    segments: List[NDDicomSegment]
+
+    def to_common(self, name: str, feature_schema_id: Cuid):
+        result = []
+        for idx, segment in enumerate(self.segments):
+            result.extend(
+                segment.to_common(name=name,
+                                  feature_schema_id=feature_schema_id,
+                                  segment_index=idx,
+                                  uuid=self.uuid,
+                                  group_key=self.group_key))
+        return result
+
+    @classmethod
+    def from_common(cls, segments: List[DICOMObjectAnnotation], data: VideoData,
+                    name: str, feature_schema_id: Cuid, extra: Dict[str, Any],
+                    group_key: str) -> "NDDicomSegments":
+
+        segments = [NDDicomSegment.from_common(segment) for segment in segments]
+
+        return cls(segments=segments,
+                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=extra.get('uuid'),
+                   group_key=group_key)
 
 
 class _URIMask(BaseModel):
@@ -314,6 +465,7 @@ class NDMask(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     mask: Mask,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -332,12 +484,54 @@ class NDMask(NDBaseObject, ConfidenceMixin):
                 png=base64.b64encode(im_bytes.getvalue()).decode('utf-8'))
 
         return cls(mask=lbv1_mask,
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
+
+
+class NDVideoMasksFramesInstances(BaseModel):
+    frames: List[MaskFrame]
+    instances: List[MaskInstance]
+
+
+class NDVideoMasks(NDJsonBase, ConfidenceMixin):
+    masks: NDVideoMasksFramesInstances
+
+    def to_common(self) -> VideoMaskAnnotation:
+        return VideoMaskAnnotation(
+            frames=self.masks.frames,
+            instances=self.masks.instances,
+        )
+
+    @classmethod
+    def from_common(cls, annotation, data):
+        return cls(
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            masks=NDVideoMasksFramesInstances(frames=annotation.frames,
+                                              instances=annotation.instances),
+        )
+
+
+class NDDicomMasks(NDVideoMasks, DicomSupported):
+
+    def to_common(self) -> DICOMMaskAnnotation:
+        return DICOMMaskAnnotation(
+            frames=self.masks.frames,
+            instances=self.masks.instances,
+            group_key=self.group_key,
+        )
+
+    @classmethod
+    def from_common(cls, annotation, data):
+        return cls(
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            masks=NDVideoMasksFramesInstances(frames=annotation.frames,
+                                              instances=annotation.instances),
+            group_key=annotation.group_key.value,
+        )
 
 
 class Location(BaseModel):
@@ -353,6 +547,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
 
     @classmethod
     def from_common(cls,
+                    uuid: str,
                     text_entity: TextEntity,
                     classifications: List[ClassificationAnnotation],
                     name: str,
@@ -364,10 +559,68 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin):
             start=text_entity.start,
             end=text_entity.end,
         ),
-                   dataRow=DataRow(id=data.uid),
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
-                   uuid=extra.get('uuid'),
+                   uuid=uuid,
+                   classifications=classifications,
+                   confidence=confidence)
+
+
+class NDDocumentEntity(NDBaseObject, ConfidenceMixin):
+    name: str
+    text_selections: List[DocumentTextSelection]
+
+    def to_common(self) -> DocumentEntity:
+        return DocumentEntity(name=self.name,
+                              text_selections=self.text_selections)
+
+    @classmethod
+    def from_common(cls,
+                    uuid: str,
+                    document_entity: DocumentEntity,
+                    classifications: List[ClassificationAnnotation],
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[ImageData, TextData],
+                    confidence: Optional[float] = None) -> "NDDocumentEntity":
+
+        return cls(text_selections=document_entity.text_selections,
+                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=uuid,
+                   classifications=classifications,
+                   confidence=confidence)
+
+
+class NDConversationEntity(NDTextEntity):
+    message_id: str
+
+    def to_common(self) -> ConversationEntity:
+        return ConversationEntity(start=self.location.start,
+                                  end=self.location.end,
+                                  message_id=self.message_id)
+
+    @classmethod
+    def from_common(
+            cls,
+            uuid: str,
+            conversation_entity: ConversationEntity,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None) -> "NDConversationEntity":
+        return cls(location=Location(start=conversation_entity.start,
+                                     end=conversation_entity.end),
+                   message_id=conversation_entity.message_id,
+                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=uuid,
                    classifications=classifications,
                    confidence=confidence)
 
@@ -396,20 +649,31 @@ class NDObject:
 
     @classmethod
     def from_common(
-        cls, annotation: Union[ObjectAnnotation,
-                               List[List[VideoObjectAnnotation]]],
-        data: Union[ImageData, TextData]
-    ) -> Union[NDLine, NDPoint, NDPolygon, NDRectangle, NDMask, NDTextEntity]:
+        cls,
+        annotation: Union[ObjectAnnotation, List[List[VideoObjectAnnotation]],
+                          VideoMaskAnnotation], data: Union[ImageData, TextData]
+    ) -> Union[NDLine, NDPoint, NDPolygon, NDDocumentRectangle, NDRectangle,
+               NDMask, NDTextEntity]:
         obj = cls.lookup_object(annotation)
 
         # if it is video segments
-        if (obj == NDSegments):
-            return obj.from_common(
-                annotation,
-                data,
-                name=annotation[0][0].name,
-                feature_schema_id=annotation[0][0].feature_schema_id,
-                extra=annotation[0][0].extra)
+        if (obj == NDSegments or obj == NDDicomSegments):
+
+            first_video_annotation = annotation[0][0]
+            args = dict(
+                segments=annotation,
+                data=data,
+                name=first_video_annotation.name,
+                feature_schema_id=first_video_annotation.feature_schema_id,
+                extra=first_video_annotation.extra)
+
+            if isinstance(first_video_annotation, DICOMObjectAnnotation):
+                group_key = first_video_annotation.group_key.value
+                args.update(dict(group_key=group_key))
+
+            return obj.from_common(**args)
+        elif (obj == NDVideoMasks or obj == NDDicomMasks):
+            return obj.from_common(annotation, data)
 
         subclasses = [
             NDSubclassification.from_common(annot)
@@ -418,23 +682,40 @@ class NDObject:
         optional_kwargs = {}
         if (annotation.confidence):
             optional_kwargs['confidence'] = annotation.confidence
-        return obj.from_common(annotation.value, subclasses, annotation.name,
+        return obj.from_common(str(annotation._uuid), annotation.value,
+                               subclasses, annotation.name,
                                annotation.feature_schema_id, annotation.extra,
                                data, **optional_kwargs)
 
     @staticmethod
     def lookup_object(
             annotation: Union[ObjectAnnotation, List]) -> "NDObjectType":
-        if isinstance(annotation, list):
-            result = NDSegments
+
+        if isinstance(annotation, DICOMMaskAnnotation):
+            result = NDDicomMasks
+        elif isinstance(annotation, VideoMaskAnnotation):
+            result = NDVideoMasks
+        elif isinstance(annotation, list):
+            try:
+                first_annotation = annotation[0][0]
+            except IndexError:
+                raise ValueError("Annotation list cannot be empty")
+
+            if isinstance(first_annotation, DICOMObjectAnnotation):
+                result = NDDicomSegments
+            else:
+                result = NDSegments
         else:
             result = {
                 Line: NDLine,
                 Point: NDPoint,
                 Polygon: NDPolygon,
                 Rectangle: NDRectangle,
+                DocumentRectangle: NDDocumentRectangle,
                 Mask: NDMask,
-                TextEntity: NDTextEntity
+                TextEntity: NDTextEntity,
+                DocumentEntity: NDDocumentEntity,
+                ConversationEntity: NDConversationEntity,
             }.get(type(annotation.value))
         if result is None:
             raise TypeError(
@@ -443,7 +724,12 @@ class NDObject:
         return result
 
 
-NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDRectangle, NDMask,
-                     NDTextEntity]
+# NOTE: Deserialization of subclasses in pydantic is a known PIA, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
+# I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
+# This is a bit of a hack, but it works for now
+NDEntityType = Union[NDConversationEntity, NDTextEntity]
+NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDDocumentRectangle,
+                     NDRectangle, NDMask, NDEntityType, NDDocumentEntity]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
+NDDicomObjectType = NDDicomLine

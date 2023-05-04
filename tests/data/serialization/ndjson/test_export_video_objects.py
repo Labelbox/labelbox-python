@@ -1,7 +1,7 @@
-from labelbox.data.annotation_types import Label
+from labelbox.data.annotation_types import Label, VideoObjectAnnotation
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.data.annotation_types.geometry import Rectangle, Point
-from labelbox.data.annotation_types import VideoData, VideoObjectAnnotation
+from labelbox.data.annotation_types import VideoData
 
 
 def video_bbox_label():
@@ -537,7 +537,8 @@ def video_serialized_bbox_label():
                     'left': 70.0,
                     'height': 249.0,
                     'width': 384.0
-                }
+                },
+                'classifications': []
             }, {
                 'frame': 5,
                 'bbox': {
@@ -545,7 +546,8 @@ def video_serialized_bbox_label():
                     'left': 70.0,
                     'height': 316.0,
                     'width': 277.0
-                }
+                },
+                'classifications': []
             }]
         }, {
             'keyframes': [{
@@ -555,7 +557,8 @@ def video_serialized_bbox_label():
                     'left': 70.0,
                     'height': 216.0,
                     'width': 213.0
-                }
+                },
+                'classifications': []
             }, {
                 'frame': 15,
                 'bbox': {
@@ -563,7 +566,8 @@ def video_serialized_bbox_label():
                     'left': 70.0,
                     'height': 274.0,
                     'width': 288.0
-                }
+                },
+                'classifications': []
             }, {
                 'frame': 21,
                 'bbox': {
@@ -571,7 +575,8 @@ def video_serialized_bbox_label():
                     'left': 70.0,
                     'height': 317.0,
                     'width': 464.0
-                }
+                },
+                'classifications': []
             }, {
                 'frame': 29,
                 'bbox': {
@@ -579,7 +584,8 @@ def video_serialized_bbox_label():
                     'left': 70.0,
                     'height': 329.0,
                     'width': 536.0
-                }
+                },
+                'classifications': []
             }]
         }]
     }

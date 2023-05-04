@@ -153,10 +153,12 @@ class VideoData(BaseData):
         url = values.get("url")
         frames = values.get("frames")
         uid = values.get("uid")
+        global_key = values.get("global_key")
 
-        if uid == file_path == frames == url == None:
+        if uid == file_path == frames == url == global_key == None:
             raise ValueError(
-                "One of `file_path`, `frames`, `uid`, or `url` required.")
+                "One of `file_path`, `frames`, `uid`, `global_key` or `url` required."
+            )
         return values
 
     def __repr__(self) -> str:

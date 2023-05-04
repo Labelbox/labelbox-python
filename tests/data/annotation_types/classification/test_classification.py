@@ -51,7 +51,8 @@ def test_subclass():
         'extra': {},
         'value': {
             'answer': answer
-        }
+        },
+        'message_id': None,
     }
     classification = ClassificationAnnotation(
         value=Text(answer=answer),
@@ -64,7 +65,8 @@ def test_subclass():
         'value': {
             'answer': answer
         },
-        'name': name
+        'name': name,
+        'message_id': None,
     }
     classification = ClassificationAnnotation(
         value=Text(answer=answer),
@@ -76,7 +78,8 @@ def test_subclass():
         'extra': {},
         'value': {
             'answer': answer
-        }
+        },
+        'message_id': None,
     }
 
 
@@ -97,7 +100,7 @@ def test_radio():
             'name': answer.name,
             'feature_schema_id': None,
             'extra': {},
-            'confidence': 0.81
+            'confidence': 0.81,
         }
     }
     classification = ClassificationAnnotation(
@@ -115,7 +118,8 @@ def test_radio():
                 'extra': {},
                 'confidence': 0.81
             }
-        }
+        },
+        'message_id': None,
     }
 
 
@@ -156,6 +160,7 @@ def test_checklist():
                 'confidence': 0.99
             }]
         },
+        'message_id': None,
     }
 
 
@@ -194,5 +199,6 @@ def test_dropdown():
                 'confidence': 1,
                 'extra': {}
             }]
-        }
+        },
+        'message_id': None,
     }

@@ -38,23 +38,21 @@ CHANGELOGS_FILE="$SDK_PATH/CHANGELOG.md"
 
 old_version=$(cat $SDK_PATH/labelbox/__init__.py | grep __version__ | cut -d '=' -f2 | tr -d ' ' | tr -d '"')
 
-echo "New version: $new_version"
-echo "Old version: $old_version"
-
+printf "Starting release process! $old_version --> $new_version\n"
 escaped_old_version=$(echo "$old_version" | sed "s/\./\\\./g")
 escaped_new_version=$(echo "$new_version" | sed "s/\./\\\./g")
 
 sed -i "" "s/$escaped_old_version/$escaped_new_version/" $INIT_FILE
-echo "Updated '$INIT_FILE'"
+printf "Updated '$INIT_FILE'\n"
 
 sed -i "" "s/$escaped_old_version/$escaped_new_version/" $READTHEDOCS_CONF_FILE
-echo "Updated '$READTHEDOCS_CONF_FILE'"
-echo "Successfully updated SDK version locally!"
+printf "Updated '$READTHEDOCS_CONF_FILE'\n"
+printf "Successfully updated SDK version locally!\n"
 
-echo "\nOpening CHANGELOGS file in text editor"
+printf "Opening CHANGELOGS file in text editor\n"
 open -e $CHANGELOGS_FILE
 
-echo "\nPlease open a PR to finish the release process using the following git commands:"
-echo "\ngit add --all"
-echo "git commit -m 'Preparing for $new_version release'"
-echo "git push origin prep_$new_version"
+printf "Please open a PR to finish the release process using the following git commands:\n"
+printf "git add --all\n"
+printf "git commit -m 'Preparing for $new_version release'\n"
+printf "git push origin prep_$new_version\n"

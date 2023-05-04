@@ -20,7 +20,7 @@ def test_image(file_path):
         payload = json.load(f)
 
         collection = LBV1Converter.deserialize(payload)
-        collection_as_list = collection.as_list()
+        collection_as_list = list(collection)
 
         assert len(collection_as_list) == 2
 

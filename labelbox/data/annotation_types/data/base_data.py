@@ -11,5 +11,6 @@ class BaseData(BaseModel, ABC):
     """
     external_id: Optional[str] = None
     uid: Optional[str] = None
+    global_key: Optional[str] = None
     media_attributes: Optional[Dict[str, Any]] = None
     metadata: Optional[List[Dict[str, Any]]] = None

@@ -4,15 +4,15 @@ Tools for grouping features and labels so that we can compute metrics on the ind
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation, Checklist, Radio, Text
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
+from labelbox.data.annotation_types.annotation import ClassificationAnnotation
+from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnswer, Radio, Text
 try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
 
 from ..annotation_types.feature import FeatureSchema
-from ..annotation_types import ObjectAnnotation, ClassificationAnnotation, Label, LabelList
+from ..annotation_types import ObjectAnnotation, ClassificationAnnotation, Label
 
 
 def get_identifying_key(
@@ -79,8 +79,8 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
     return all_schemas, all_names
 
 
-def get_label_pairs(labels_a: LabelList,
-                    labels_b: LabelList,
+def get_label_pairs(labels_a: list,
+                    labels_b: list,
                     match_on="uid",
                     filter_mismatch=False) -> Dict[str, Tuple[Label, Label]]:
     """
@@ -91,8 +91,8 @@ def get_label_pairs(labels_a: LabelList,
     If this assumption fails, then the user has to determine their own matching strategy.
 
     Args:
-        labels_a (LabelList): A collection of labels to match with labels_b
-        labels_b (LabelList): A collection of labels to match with labels_a
+        labels_a (list): A collection of labels to match with labels_b
+        labels_b (list): A collection of labels to match with labels_a
         match_on ('uid' or 'external_id'): The data row key to match labels by. Can either be uid or external id.
         filter_mismatch (bool): Whether or not to ignore mismatches
 

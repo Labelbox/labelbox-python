@@ -6,10 +6,12 @@ from google.api_core import retry
 from pydantic import root_validator
 
 from labelbox.exceptions import InternalServerError
+from labelbox.typing_imports import Literal
+from labelbox.utils import _NoCoercionMixin
 from .base_data import BaseData
 
 
-class TextData(BaseData):
+class TextData(BaseData, _NoCoercionMixin):
     """
     Represents text data. Requires arg file_path, text, or url
 
@@ -20,6 +22,7 @@ class TextData(BaseData):
         text (str)
         url (str)
     """
+    class_name: Literal["TextData"] = "TextData"
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None
@@ -93,9 +96,11 @@ class TextData(BaseData):
         text = values.get("text")
         url = values.get("url")
         uid = values.get('uid')
-        if uid == file_path == text == url == None:
+        global_key = values.get('global_key')
+        if uid == file_path == text == url == global_key == None:
             raise ValueError(
-                "One of `file_path`, `text`, `uid`, or `url` required.")
+                "One of `file_path`, `text`, `uid`, `global_key` or `url` required."
+            )
         return values
 
     def __repr__(self) -> str:

@@ -4,6 +4,7 @@ import geojson
 import numpy as np
 import cv2
 from pydantic import validator
+
 from shapely.geometry import LineString as SLineString
 
 from .point import Point

@@ -1,4 +1,5 @@
 from tempfile import NamedTemporaryFile
+import time
 import uuid
 from datetime import datetime
 import json
@@ -114,8 +115,8 @@ def make_metadata_fields_dict():
     return fields
 
 
-def test_get_data_row(datarow, client):
-    assert client.get_data_row(datarow.uid)
+def test_get_data_row(data_row, client):
+    assert client.get_data_row(data_row.uid)
 
 
 def test_lookup_data_rows(client, dataset):
@@ -133,7 +134,7 @@ def test_lookup_data_rows(client, dataset):
     assert all([len(x) == 1 for x in lookup.values()])
     assert lookup[uid][0] == dr.uid
     assert lookup[uid2][0] == dr2.uid
-    #1 external id : 2 uid
+    # 1 external id : 2 uid
     dr3 = dataset.create_data_row(row_data="123", external_id=uid2)
     lookup = client.get_data_row_ids_for_external_ids([uid2])
     assert len(lookup) == 1
@@ -621,16 +622,21 @@ def test_data_row_iteration(dataset, image_url) -> None:
 
 
 def test_data_row_attachments(dataset, image_url):
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments = [("IMAGE", image_url, "attachment image"),
+                   ("TEXT", "test-text", None),
+                   ("IMAGE_OVERLAY", image_url, "Overlay"),
+                   ("HTML", image_url, None)]
     task = dataset.create_data_rows([{
-        "row_data": image_url,
-        "external_id": "test-id",
+        "row_data":
+            image_url,
+        "external_id":
+            "test-id",
         "attachments": [{
             "type": attachment_type,
-            "value": attachment_value
+            "value": attachment_value,
+            "name": attachment_name
         }]
-    } for attachment_type, attachment_value in attachments])
+    } for attachment_type, attachment_value, attachment_name in attachments])
 
     task.wait_till_done()
     assert task.status == "COMPLETE"
@@ -652,8 +658,10 @@ def test_data_row_attachments(dataset, image_url):
 
 
 def test_create_data_rows_sync_attachments(dataset, image_url):
-    attachments = [("IMAGE", image_url), ("TEXT", "test-text"),
-                   ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
+    attachments = [("IMAGE", image_url, "image URL"),
+                   ("TEXT", "test-text", None),
+                   ("IMAGE_OVERLAY", image_url, "Overlay"),
+                   ("HTML", image_url, None)]
     attachments_per_data_row = 3
     dataset.create_data_rows_sync([{
         "row_data":
@@ -662,9 +670,10 @@ def test_create_data_rows_sync_attachments(dataset, image_url):
             "test-id",
         "attachments": [{
             "type": attachment_type,
-            "value": attachment_value
+            "value": attachment_value,
+            "name": attachment_name
         } for _ in range(attachments_per_data_row)]
-    } for attachment_type, attachment_value in attachments])
+    } for attachment_type, attachment_value, attachment_name in attachments])
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(attachments)
     for data_row in data_rows:
@@ -683,18 +692,30 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
     assert len(list(dataset.data_rows())) == n_local + n_urls
 
 
-def test_delete_data_row_attachment(datarow, image_url):
+def test_delete_data_row_attachment(data_row, image_url):
     attachments = []
+
+    # Anonymous attachment
     to_attach = [("IMAGE", image_url), ("TEXT", "test-text"),
                  ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
     for attachment_type, attachment_value in to_attach:
         attachments.append(
-            datarow.create_attachment(attachment_type, attachment_value))
+            data_row.create_attachment(attachment_type, attachment_value))
+
+    # Attachment with a name
+    to_attach = [("IMAGE", image_url, "Att. Image"),
+                 ("TEXT", "test-text", "Att. Text"),
+                 ("IMAGE_OVERLAY", image_url, "Image Overlay"),
+                 ("HTML", image_url, "Att. HTML")]
+    for attachment_type, attachment_value, attachment_name in to_attach:
+        attachments.append(
+            data_row.create_attachment(attachment_type, attachment_value,
+                                       attachment_name))
 
     for attachment in attachments:
         attachment.delete()
 
-    assert len(list(datarow.attachments())) == 0
+    assert len(list(data_row.attachments())) == 0
 
 
 def test_create_data_rows_result(client, dataset, image_url):
@@ -914,7 +935,8 @@ def test_create_tiled_layer(dataset, tile_content):
             **tile_content, 'media_type': 'TMS_SIMPLE'
         },
         tile_content,
-        tile_content['row_data']  # Old way to check for backwards compatibility
+        # Old way to check for backwards compatibility
+        tile_content['row_data']
     ]
     dataset.create_data_rows_sync(examples)
     data_rows = list(dataset.data_rows())
@@ -941,3 +963,14 @@ def test_create_data_row_with_media_type(dataset, image_url):
     assert "Found invalid contents for media type: \'IMAGE\'" in str(exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
+
+
+def test_export_data_rows(client, data_row, wait_for_data_row_processing):
+    # Ensure created data rows are indexed
+    data_row = wait_for_data_row_processing(client, data_row)
+
+    task = DataRow.export_v2(client=client, data_rows=[data_row])
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+    assert len(task.result) == 1

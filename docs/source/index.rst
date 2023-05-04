@@ -118,6 +118,12 @@ Task
    :members:
    :show-inheritance:
 
+Task Queue
+---------------------------
+.. automodule:: labelbox.schema.task_queue
+   :members:
+   :show-inheritance:
+
 User
 ---------------------------
 

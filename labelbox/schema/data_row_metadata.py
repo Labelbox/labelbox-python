@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
 from pydantic import BaseModel, conlist, constr
 
 from labelbox.schema.ontology import SchemaId
-from labelbox.utils import _CamelCaseMixin
+from labelbox.utils import _CamelCaseMixin, format_iso_datetime
 
 
 class DataRowMetadataKind(Enum):
@@ -33,7 +33,7 @@ class DataRowMetadataSchema(BaseModel):
 DataRowMetadataSchema.update_forward_refs()
 
 Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
-String: Type[str] = constr(max_length=1024)
+String: Type[str] = constr(max_length=4096)
 
 
 # Metadata base class
@@ -48,7 +48,8 @@ class DataRowMetadataField(_CamelCaseMixin):
 
 
 class DataRowMetadata(_CamelCaseMixin):
-    data_row_id: str
+    global_key: Optional[str]
+    data_row_id: Optional[str]
     fields: List[DataRowMetadataField]
 
 
@@ -58,7 +59,8 @@ class DeleteDataRowMetadata(_CamelCaseMixin):
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
-    data_row_id: str
+    global_key: Optional[str]
+    data_row_id: Optional[str]
     error: Optional[str] = None
     fields: List[Union[DataRowMetadataField, SchemaId]]
 
@@ -75,7 +77,8 @@ class _UpsertDataRowMetadataInput(_CamelCaseMixin):
 
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
-    data_row_id: str
+    global_key: Optional[str]
+    data_row_id: Optional[str]
     fields: List[_UpsertDataRowMetadataInput]
 
 
@@ -158,7 +161,7 @@ class DataRowMetadataOntology:
         elif name in custom_index:
             return custom_index[name]
         else:
-            raise KeyError(f"There is no metadata with name {name}")
+            raise KeyError(f"There is no metadata with name '{name}'")
 
     def get_by_name(
         self, name: str
@@ -462,9 +465,9 @@ class DataRowMetadataOntology:
                 field = DataRowMetadataField(schema_id=schema.parent,
                                              value=schema.uid)
             elif schema.kind == DataRowMetadataKind.datetime:
-                field = DataRowMetadataField(
-                    schema_id=schema.uid,
-                    value=datetime.fromisoformat(f["value"][:-1] + "+00:00"))
+                field = DataRowMetadataField(schema_id=schema.uid,
+                                             value=datetime.fromisoformat(
+                                                 f["value"]))
             else:
                 field = DataRowMetadataField(schema_id=schema.uid,
                                              value=f["value"])
@@ -476,11 +479,12 @@ class DataRowMetadataOntology:
     def bulk_upsert(
             self, metadata: List[DataRowMetadata]
     ) -> List[DataRowMetadataBatchResponse]:
-        """Upsert datarow metadata
-
+        """Upsert metadata to a list of data rows
+        
+        You may specify data row by either data_row_id or global_key
 
         >>> metadata = DataRowMetadata(
-        >>>                 data_row_id="datarow-id",
+        >>>                 data_row_id="datarow-id", # Alternatively, set global_key="global-key"
         >>>                 fields=[
         >>>                        DataRowMetadataField(schema_id="schema-id", value="my-message"),
         >>>                        ...
@@ -504,6 +508,7 @@ class DataRowMetadataOntology:
         ) -> List[DataRowMetadataBatchResponse]:
             query = """mutation UpsertDataRowMetadataBetaPyApi($metadata: [DataRowCustomMetadataBatchUpsertInput!]!) {
                 upsertDataRowCustomMetadata(data: $metadata){
+                    globalKey
                     dataRowId
                     error
                     fields {
@@ -515,7 +520,8 @@ class DataRowMetadataOntology:
             res = self._client.execute(
                 query, {"metadata": upserts})['upsertDataRowCustomMetadata']
             return [
-                DataRowMetadataBatchResponse(data_row_id=r['dataRowId'],
+                DataRowMetadataBatchResponse(global_key=r['globalKey'],
+                                             data_row_id=r['dataRowId'],
                                              error=r['error'],
                                              fields=self.parse_metadata(
                                                  [r])[0].fields) for r in res
@@ -525,11 +531,12 @@ class DataRowMetadataOntology:
         for m in metadata:
             items.append(
                 _UpsertBatchDataRowMetadata(
+                    global_key=m.global_key,
                     data_row_id=m.data_row_id,
                     fields=list(
                         chain.from_iterable(
-                            self._parse_upsert(m) for m in m.fields))).dict(
-                                by_alias=True))
+                            self._parse_upsert(f, m.data_row_id)
+                            for f in m.fields))).dict(by_alias=True))
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
@@ -689,8 +696,12 @@ class DataRowMetadataOntology:
     def _load_option_by_name(self, metadatum: DataRowMetadataField):
         is_value_a_valid_schema_id = metadatum.value in self.fields_by_id
         if not is_value_a_valid_schema_id:
-            metadatum.value = self.get_by_name(
-                metadatum.name)[metadatum.value].uid
+            metadatum_by_name = self.get_by_name(metadatum.name)
+            if metadatum.value not in metadatum_by_name:
+                raise KeyError(
+                    f"There is no enum option by name '{metadatum.value}' for enum name '{metadatum.name}'"
+                )
+            metadatum.value = metadatum_by_name[metadatum.value].uid
 
     def _load_schema_id_by_name(self, metadatum: DataRowMetadataField):
         """
@@ -706,7 +717,9 @@ class DataRowMetadataOntology:
                 self._load_option_by_name(metadatum)
 
     def _parse_upsert(
-            self, metadatum: DataRowMetadataField
+            self,
+            metadatum: DataRowMetadataField,
+            data_row_id: Optional[str] = None
     ) -> List[_UpsertDataRowMetadataInput]:
         """Format for metadata upserts to GQL"""
 
@@ -720,21 +733,27 @@ class DataRowMetadataOntology:
                     f"Schema Id `{metadatum.schema_id}` not found in ontology")
 
         schema = self.fields_by_id[metadatum.schema_id]
-
-        if schema.kind == DataRowMetadataKind.datetime:
-            parsed = _validate_parse_datetime(metadatum)
-        elif schema.kind == DataRowMetadataKind.string:
-            parsed = _validate_parse_text(metadatum)
-        elif schema.kind == DataRowMetadataKind.number:
-            parsed = _validate_parse_number(metadatum)
-        elif schema.kind == DataRowMetadataKind.embedding:
-            parsed = _validate_parse_embedding(metadatum)
-        elif schema.kind == DataRowMetadataKind.enum:
-            parsed = _validate_enum_parse(schema, metadatum)
-        elif schema.kind == DataRowMetadataKind.option:
-            raise ValueError("An Option id should not be set as the Schema id")
-        else:
-            raise ValueError(f"Unknown type: {schema}")
+        try:
+            if schema.kind == DataRowMetadataKind.datetime:
+                parsed = _validate_parse_datetime(metadatum)
+            elif schema.kind == DataRowMetadataKind.string:
+                parsed = _validate_parse_text(metadatum)
+            elif schema.kind == DataRowMetadataKind.number:
+                parsed = _validate_parse_number(metadatum)
+            elif schema.kind == DataRowMetadataKind.embedding:
+                parsed = _validate_parse_embedding(metadatum)
+            elif schema.kind == DataRowMetadataKind.enum:
+                parsed = _validate_enum_parse(schema, metadatum)
+            elif schema.kind == DataRowMetadataKind.option:
+                raise ValueError(
+                    "An Option id should not be set as the Schema id")
+            else:
+                raise ValueError(f"Unknown type: {schema}")
+        except ValueError as e:
+            error_str = f"Could not validate metadata [{metadatum}]"
+            if data_row_id:
+                error_str += f", data_row_id='{data_row_id}'"
+            raise ValueError(f"{error_str}. Reason: {e}")
 
         return [_UpsertDataRowMetadataInput(**p) for p in parsed]
 
@@ -819,17 +838,15 @@ def _validate_parse_number(
 def _validate_parse_datetime(
         field: DataRowMetadataField) -> List[Dict[str, Union[SchemaId, str]]]:
     if isinstance(field.value, str):
-        if field.value.endswith("Z"):
-            field.value = field.value[:-1]
         field.value = datetime.fromisoformat(field.value)
     elif not isinstance(field.value, datetime):
         raise TypeError(
-            f"value for datetime fields must be either a string or datetime object. Found {type(field.value)}"
+            f"Value for datetime fields must be either a string or datetime object. Found {type(field.value)}"
         )
 
     return [{
         "schemaId": field.schema_id,
-        "value": field.value.isoformat() + "Z",  # needs to be UTC
+        "value": format_iso_datetime(field.value)
     }]
 
 
@@ -842,7 +859,7 @@ def _validate_parse_text(
 
     if len(field.value) > String.max_length:
         raise ValueError(
-            f"string fields cannot exceed {String.max_length} characters.")
+            f"String fields cannot exceed {String.max_length} characters.")
 
     return [field.dict(by_alias=True)]
 

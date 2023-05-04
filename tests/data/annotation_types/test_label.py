@@ -1,5 +1,6 @@
 import numpy as np
 
+import labelbox.types as lb_types
 from labelbox import OntologyBuilder, Tool, Classification as OClassification, Option
 from labelbox.data.annotation_types import (ClassificationAnswer, Radio, Text,
                                             ClassificationAnnotation,
@@ -47,7 +48,7 @@ def test_schema_assignment_classification():
         tools=[],
         classifications=[
             OClassification(class_type=OClassification.Type.RADIO,
-                            instructions=radio_name,
+                            name=radio_name,
                             feature_schema_id=radio_schema_id,
                             options=[
                                 Option(value=option_name,
@@ -55,7 +56,7 @@ def test_schema_assignment_classification():
                             ]),
             OClassification(
                 class_type=OClassification.Type.TEXT,
-                instructions=text_name,
+                name=text_name,
                 feature_schema_id=text_schema_id,
             )
         ])
@@ -91,7 +92,7 @@ def test_schema_assignment_subclass():
              feature_schema_id=feature_schema_id,
              classifications=[
                  OClassification(class_type=OClassification.Type.RADIO,
-                                 instructions=radio_name,
+                                 name=radio_name,
                                  feature_schema_id=classification_schema_id,
                                  options=[
                                      Option(value=option_name,
@@ -140,7 +141,7 @@ def test_highly_nested():
              classifications=[
                  OClassification(
                      class_type=OClassification.Type.RADIO,
-                     instructions=radio_name,
+                     name=radio_name,
                      feature_schema_id=classification_schema_id,
                      options=[
                          Option(value=option_name,
@@ -148,7 +149,7 @@ def test_highly_nested():
                                 options=[
                                     OClassification(
                                         class_type=OClassification.Type.RADIO,
-                                        instructions=nested_name,
+                                        name=nested_name,
                                         feature_schema_id=
                                         nested_classification_schema_id,
                                         options=[
@@ -181,3 +182,14 @@ def test_schema_assignment_confidence():
                   ])
 
     assert label.annotations[0].confidence == 0.914
+
+
+def test_initialize_label_no_coercion():
+    global_key = 'global-key'
+    ner_annotation = lb_types.ObjectAnnotation(
+        name="ner",
+        value=lb_types.ConversationEntity(start=0, end=8, message_id="4"))
+    label = Label(data=lb_types.ConversationData(global_key=global_key),
+                  annotations=[ner_annotation])
+    assert isinstance(label.data, lb_types.ConversationData)
+    assert label.data.global_key == global_key

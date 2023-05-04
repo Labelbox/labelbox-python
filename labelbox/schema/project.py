@@ -12,16 +12,22 @@ import requests
 
 from labelbox import utils
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict)
+                                 ProcessingWaitTimeout, ResourceConflict,
+                                 ResourceNotFoundError)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
+from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.task import Task
+from labelbox.schema.user import User
+from labelbox.schema.task_queue import TaskQueue
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -65,6 +71,7 @@ class Project(DbObject, Updateable, Deletable):
         webhooks (Relationship): `ToMany` relationship to Webhook
         benchmarks (Relationship): `ToMany` relationship to Benchmark
         ontology (Relationship): `ToOne` relationship to Ontology
+        task_queues (Relationship): `ToMany` relationship to TaskQueue
     """
 
     name = Field.String("name")
@@ -104,15 +111,18 @@ class Project(DbObject, Updateable, Deletable):
         Note that the queue_mode cannot be changed after a project has been created.
 
         Additionally, the quality setting cannot be changed after a project has been created. The quality mode
-            for a project is inferred through the following attributes:
-            Benchmark:
-                auto_audit_number_of_labels = 1
-                auto_audit_percentage = 1.0
-            Consensus:
-                auto_audit_number_of_labels > 1
-                auto_audit_percentage <= 1.0
-            Attempting to switch between benchmark and consensus modes is an invalid operation and will result
-            in an error.
+        for a project is inferred through the following attributes:
+
+        Benchmark:
+            auto_audit_number_of_labels = 1
+            auto_audit_percentage = 1.0
+
+        Consensus:
+            auto_audit_number_of_labels > 1
+            auto_audit_percentage <= 1.0
+
+        Attempting to switch between benchmark and consensus modes is an invalid operation and will result
+        in an error.
         """
 
         media_type = kwargs.get("media_type")
@@ -130,7 +140,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Fetch all current members for this project
 
         Returns:
-            A `PaginatedCollection of `ProjectMember`s
+            A `PaginatedCollection` of `ProjectMember`s
 
         """
         id_param = "projectId"
@@ -262,16 +272,21 @@ class Project(DbObject, Updateable, Deletable):
         json_data = self.export_labels(download=True,
                                        timeout_seconds=timeout_seconds,
                                        **kwargs)
+
         # assert that the instance this would fail is only if timeout runs out
         assert isinstance(
             json_data,
             List), "Unable to successfully get labels. Please try again"
+
         if json_data is None:
             raise TimeoutError(
                 f"Unable to download labels in {timeout_seconds} seconds."
                 "Please try again or contact support if the issue persists.")
+
         is_video = [
-            'frames' in row['Label'] for row in json_data if row['Label']
+            "frames" in row["Label"]
+            for row in json_data
+            if row["Label"] and not row["Skipped"]
         ]
 
         if len(is_video) and not all(is_video) and any(is_video):
@@ -280,7 +295,14 @@ class Project(DbObject, Updateable, Deletable):
                 "Use project.export_labels() to export projects with mixed data types. "
             )
         if len(is_video) and all(is_video):
+            # Filter skipped labels to avoid inference errors
+            json_data = [
+                label for label in self.export_labels(download=True)
+                if not label["Skipped"]
+            ]
+
             return LBV1Converter.deserialize_video(json_data, self.client)
+
         return LBV1Converter.deserialize(json_data)
 
     def export_labels(self,
@@ -297,6 +319,13 @@ class Project(DbObject, Updateable, Deletable):
             timeout_seconds (float): Max waiting time, in seconds.
             start (str): Earliest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
             end (str): Latest date for labels, formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            last_activity_start (str): Will include all labels that have had any updates to
+              data rows, issues, comments, metadata, or reviews since this timestamp.
+              formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+            last_activity_end (str): Will include all labels that do not have any updates to
+              data rows, issues, comments, metadata, or reviews after this timestamp.
+              formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
+
         Returns:
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
@@ -315,19 +344,6 @@ class Project(DbObject, Updateable, Deletable):
                 if dictionary.get(c)
             ])
 
-        def _validate_datetime(string_date: str) -> bool:
-            """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
-            if string_date:
-                for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
-                    try:
-                        datetime.strptime(string_date, fmt)
-                        return True
-                    except ValueError:
-                        pass
-                raise ValueError(f"""Incorrect format for: {string_date}.
-                Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
-            return True
-
         sleep_time = 2
         id_param = "projectId"
         filter_param = ""
@@ -338,9 +354,25 @@ class Project(DbObject, Updateable, Deletable):
                 "start": kwargs.get("start", ""),
                 "end": kwargs.get("end", "")
             }
-            [_validate_datetime(date) for date in created_at_dict.values()]
+            [validate_datetime(date) for date in created_at_dict.values()]
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
                 created_at_dict, value_with_quotes=True)
+
+        if "last_activity_start" in kwargs or "last_activity_end" in kwargs:
+            last_activity_start = kwargs.get('last_activity_start')
+            last_activity_end = kwargs.get('last_activity_end')
+
+            if last_activity_start:
+                validate_datetime(str(last_activity_start))
+            if last_activity_end:
+                validate_datetime(str(last_activity_end))
+
+            filter_param_dict["lastActivityAt"] = "{%s}" % _string_from_dict(
+                {
+                    "start": last_activity_start,
+                    "end": last_activity_end
+                },
+                value_with_quotes=True)
 
         if filter_param_dict:
             filter_param = """, filters: {%s }""" % (_string_from_dict(
@@ -351,6 +383,7 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, id_param, filter_param)
 
         start_time = time.time()
+
         while True:
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
@@ -370,6 +403,102 @@ class Project(DbObject, Updateable, Deletable):
             logger.debug("Project '%s' label export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    def export_v2(self,
+                  task_name: Optional[str] = None,
+                  filters: Optional[ProjectExportFilters] = None,
+                  params: Optional[ProjectExportParams] = None) -> Task:
+        """
+        Creates a project export task with the given params and returns the task.
+
+        For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
+        
+        >>>     task = project.export_v2(
+        >>>         filters={
+        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
+        >>>         },
+        >>>         params={
+        >>>             "performance_details": False,
+        >>>             "label_details": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+
+        _params = params or ProjectExportParams({
+            "attachments": False,
+            "metadata_fields": False,
+            "data_row_details": False,
+            "project_details": False,
+            "performance_details": False,
+            "label_details": False,
+            "media_type_override": None
+        })
+
+        _filters = filters or ProjectExportFilters({
+            "last_activity_at": None,
+            "label_created_at": None,
+            "data_row_ids": None,
+        })
+
+        mutation_name = "exportDataRowsInProject"
+        create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
+          %s(input: $input) {taskId} }
+          """ % (mutation_name)
+
+        media_type_override = _params.get('media_type_override', None)
+        query_params: Dict[str, Any] = {
+            "input": {
+                "taskName": task_name,
+                "filters": {
+                    "projectId": self.uid,
+                    "searchQuery": {
+                        "scope": None,
+                        "query": [],
+                    }
+                },
+                "params": {
+                    "mediaTypeOverride":
+                        media_type_override.value
+                        if media_type_override is not None else None,
+                    "includeAttachments":
+                        _params.get('attachments', False),
+                    "includeMetadata":
+                        _params.get('metadata_fields', False),
+                    "includeDataRowDetails":
+                        _params.get('data_row_details', False),
+                    "includeProjectDetails":
+                        _params.get('project_details', False),
+                    "includePerformanceDetails":
+                        _params.get('performance_details', False),
+                    "includeLabelDetails":
+                        _params.get('label_details', False)
+                },
+            }
+        }
+
+        search_query = build_filters(self.client, _filters)
+        query_params["input"]["filters"]["searchQuery"]["query"] = search_query
+
+        res = self.client.execute(
+            create_task_query_str,
+            query_params,
+        )
+        res = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
 
     def export_issues(self, status=None) -> str:
         """ Calls the server-side Issues exporting that
@@ -476,9 +605,9 @@ class Project(DbObject, Updateable, Deletable):
             # python isoformat doesn't accept Z as utc timezone
             result["lastActivityTime"] = datetime.fromisoformat(
                 result["lastActivityTime"].replace('Z', '+00:00'))
-            return LabelerPerformance(
-                **
-                {utils.snake_case(key): value for key, value in result.items()})
+            return LabelerPerformance(**{
+                utils.snake_case(key): value for key, value in result.items()
+            })
 
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labelerPerformance"],
@@ -573,16 +702,20 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def create_batch(self,
-                     name: str,
-                     data_rows: List[Union[str, DataRow]],
-                     priority: int = 5,
-                     consensus_settings: Optional[Dict[str, float]] = None):
-        """Create a new batch for a project. Batches is in Beta and subject to change
+    def create_batch(
+        self,
+        name: str,
+        data_rows: Optional[List[Union[str, DataRow]]] = None,
+        priority: int = 5,
+        consensus_settings: Optional[Dict[str, float]] = None,
+        global_keys: Optional[List[str]] = None,
+    ):
+        """Create a new batch for a project. One of `global_keys` or `data_rows` must be provided but not both.
 
         Args:
             name: a name for the batch, must be unique within a project
-            data_rows: Either a list of `DataRows` or Data Row ids
+            data_rows: Either a list of `DataRows` or Data Row ids. 
+            global_keys: global keys for data rows to add to the batch. 
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
             consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3, 'coverage_percentage': 0.1}
         """
@@ -592,35 +725,45 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Project must be in batch mode")
 
         dr_ids = []
-        for dr in data_rows:
-            if isinstance(dr, Entity.DataRow):
-                dr_ids.append(dr.uid)
-            elif isinstance(dr, str):
-                dr_ids.append(dr)
-            else:
-                raise ValueError("You can DataRow ids or DataRow objects")
+        if data_rows is not None:
+            for dr in data_rows:
+                if isinstance(dr, Entity.DataRow):
+                    dr_ids.append(dr.uid)
+                elif isinstance(dr, str):
+                    dr_ids.append(dr)
+                else:
+                    raise ValueError(
+                        "`data_rows` must be DataRow ids or DataRow objects")
 
-        if len(dr_ids) > 100_000:
+        if data_rows is not None:
+            row_count = len(dr_ids)
+        elif global_keys is not None:
+            row_count = len(global_keys)
+        else:
+            row_count = 0
+
+        if row_count > 100_000:
             raise ValueError(
                 f"Batch exceeds max size, break into smaller batches")
-        if not len(dr_ids):
+        if not row_count:
             raise ValueError("You need at least one data row in a batch")
 
         self._wait_until_data_rows_are_processed(
-            dr_ids, self._wait_processing_max_seconds)
+            dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
             consensus_settings = ConsensusSettings(**consensus_settings).dict(
                 by_alias=True)
 
-        if len(dr_ids) >= 10_000:
-            return self._create_batch_async(name, dr_ids, priority,
+        if len(dr_ids) >= 1_000:
+            return self._create_batch_async(name, dr_ids, global_keys, priority,
                                             consensus_settings)
         else:
-            return self._create_batch_sync(name, dr_ids, priority,
+            return self._create_batch_sync(name, dr_ids, global_keys, priority,
                                            consensus_settings)
 
-    def _create_batch_sync(self, name, dr_ids, priority, consensus_settings):
+    def _create_batch_sync(self, name, dr_ids, global_keys, priority,
+                           consensus_settings):
         method = 'createBatchV2'
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
                   project(where: {id: $projectId}) {
@@ -638,6 +781,7 @@ class Project(DbObject, Updateable, Deletable):
             "batchInput": {
                 "name": name,
                 "dataRowIds": dr_ids,
+                "globalKeys": global_keys,
                 "priority": priority,
                 "consensusSettings": consensus_settings
             }
@@ -655,7 +799,8 @@ class Project(DbObject, Updateable, Deletable):
 
     def _create_batch_async(self,
                             name: str,
-                            dr_ids: List[str],
+                            dr_ids: Optional[List[str]] = None,
+                            global_keys: Optional[List[str]] = None,
                             priority: int = 5,
                             consensus_settings: Optional[Dict[str,
                                                               float]] = None):
@@ -698,6 +843,7 @@ class Project(DbObject, Updateable, Deletable):
             "input": {
                 "batchId": batch_id,
                 "dataRowIds": dr_ids,
+                "globalKeys": global_keys,
                 "priority": priority,
             }
         }
@@ -709,54 +855,34 @@ class Project(DbObject, Updateable, Deletable):
 
         task_id = res['taskId']
 
-        timeout_seconds = 600
-        sleep_time = 2
-        get_task_query_str = """query %s($taskId: ID!) {
-                          task(where: {id: $taskId}) {
-                             status
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Batch was not created successfully: " +
+                                json.dumps(task.errors))
+
+        # obtain batch entity to return
+        get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
+                          project(where: {id: $projectId}) {
+                             batches(where: {id: $batchId}) {
+                                nodes {
+                                   %s
+                                }
+                             }
                         }
                     }
-                    """ % "getTaskPyApi"
+                    """ % ("getProjectBatchPyApi",
+                           query.results_query_part(Entity.Batch))
 
-        while True:
-            task_status = self.client.execute(
-                get_task_query_str, {'taskId': task_id},
-                experimental=True)['task']['status']
+        batch = self.client.execute(
+            get_batch_str, {
+                "projectId": self.uid,
+                "batchId": batch_id
+            },
+            timeout=180.0,
+            experimental=True)["project"]["batches"]["nodes"][0]
 
-            if task_status == "COMPLETE":
-                # obtain batch entity to return
-                get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
-                                  project(where: {id: $projectId}) {
-                                     batches(where: {id: $batchId}) {
-                                        nodes {
-                                           %s
-                                        }
-                                     }
-                                }
-                            }
-                            """ % ("getProjectBatchPyApi",
-                                   query.results_query_part(Entity.Batch))
-
-                batch = self.client.execute(
-                    get_batch_str, {
-                        "projectId": self.uid,
-                        "batchId": batch_id
-                    },
-                    timeout=180.0,
-                    experimental=True)["project"]["batches"]["nodes"][0]
-
-                # TODO async endpoints currently do not provide failed_data_row_ids in response
-                return Entity.Batch(self.client, self.uid, batch)
-            elif task_status == "IN_PROGRESS":
-                timeout_seconds -= sleep_time
-                if timeout_seconds <= 0:
-                    raise LabelboxError(
-                        f"Timed out while waiting for batch to be created.")
-                logger.debug("Creating batch, waiting for server...", self.uid)
-                time.sleep(sleep_time)
-                continue
-            else:
-                raise LabelboxError(f"Batch was not created successfully.")
+        # TODO async endpoints currently do not provide failed_data_row_ids in response
+        return Entity.Batch(self.client, self.uid, batch)
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
@@ -1028,7 +1154,7 @@ class Project(DbObject, Updateable, Deletable):
         """ Fetch all batches that belong to this project
 
         Returns:
-            A `PaginatedCollection of `Batch`es
+            A `PaginatedCollection` of `Batch`es
         """
         id_param = "projectId"
         query_str = """query GetProjectBatchesPyApi($from: String, $first: PageSize, $%s: ID!) {
@@ -1041,6 +1167,81 @@ class Project(DbObject, Updateable, Deletable):
             lambda client, res: Entity.Batch(client, self.uid, res),
             cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
             experimental=True)
+
+    def task_queues(self) -> List[TaskQueue]:
+        """ Fetch all task queues that belong to this project
+
+        Returns:
+            A `List` of `TaskQueue`s
+        """
+        query_str = """query GetProjectTaskQueuesPyApi($projectId: ID!) {
+              project(where: {id: $projectId}) {
+                taskQueues {
+                  %s
+                }
+              }
+            }
+        """ % (query.results_query_part(Entity.TaskQueue))
+
+        task_queue_values = self.client.execute(
+            query_str, {"projectId": self.uid},
+            timeout=180.0,
+            experimental=True)["project"]["taskQueues"]
+
+        return [
+            Entity.TaskQueue(self.client, field_values)
+            for field_values in task_queue_values
+        ]
+
+    def move_data_rows_to_task_queue(self, data_row_ids: List[str],
+                                     task_queue_id: str):
+        """
+
+        Moves data rows to the specified task queue.
+
+        Args:
+            data_row_ids: a list of data row ids to be moved
+            task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
+
+        Returns:
+            None if successful, or a raised error on failure
+
+        """
+        method = "createBulkAddRowsToQueueTask"
+        query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
+          $projectId: ID!
+          $queueId: ID
+          $dataRowIds: [ID!]!
+        ) {
+          project(where: { id: $projectId }) {
+            %s(
+              data: { queueId: $queueId, dataRowIds: $dataRowIds }
+            ) {
+              taskId
+            }
+          }
+        }
+        """ % method
+
+        task_id = self.client.execute(
+            query_str, {
+                "projectId": self.uid,
+                "queueId": task_queue_id,
+                "dataRowIds": data_row_ids
+            },
+            timeout=180.0,
+            experimental=True)["project"][method]["taskId"]
+
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Data rows were not moved successfully: " +
+                                json.dumps(task.errors))
+
+    def _wait_for_task(self, task_id: str) -> Task:
+        task = Task.get_task(self.client, task_id)
+        task.wait_till_done()
+
+        return task
 
     def upload_annotations(
             self,
@@ -1109,12 +1310,15 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError(
                 f'Invalid annotations given of type: {type(annotations)}')
 
-    def _wait_until_data_rows_are_processed(self,
-                                            data_row_ids: List[str],
-                                            wait_processing_max_seconds: int,
-                                            sleep_interval=30):
+    def _wait_until_data_rows_are_processed(
+            self,
+            data_row_ids: Optional[List[str]] = None,
+            global_keys: Optional[List[str]] = None,
+            wait_processing_max_seconds: int = _wait_processing_max_seconds,
+            sleep_interval=30):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
+
         while True:
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
@@ -1122,7 +1326,8 @@ class Project(DbObject, Updateable, Deletable):
                     "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
                 )
 
-            all_good = self.__check_data_rows_have_been_processed(data_row_ids)
+            all_good = self.__check_data_rows_have_been_processed(
+                data_row_ids, global_keys)
             if all_good:
                 return
 
@@ -1130,17 +1335,25 @@ class Project(DbObject, Updateable, Deletable):
                 'Some of the data rows are still being processed, waiting...')
             time.sleep(sleep_interval)
 
-    def __check_data_rows_have_been_processed(self, data_row_ids: List[str]):
-        data_row_ids_param = "data_row_ids"
+    def __check_data_rows_have_been_processed(
+            self,
+            data_row_ids: Optional[List[str]] = None,
+            global_keys: Optional[List[str]] = None):
 
-        query_str = """query CheckAllDataRowsHaveBeenProcessedPyApi($%s: [ID!]!) {
-            queryAllDataRowsHaveBeenProcessed(dataRowIds:$%s) {
+        if data_row_ids is not None and len(data_row_ids) > 0:
+            param_name = "dataRowIds"
+            params = {param_name: data_row_ids}
+        else:
+            param_name = "globalKeys"
+            global_keys = global_keys if global_keys is not None else []
+            params = {param_name: global_keys}
+
+        query_str = """query CheckAllDataRowsHaveBeenProcessedPyApi($%s: [ID!]) {
+            queryAllDataRowsHaveBeenProcessed(%s:$%s) {
                 allDataRowsHaveBeenProcessed
            }
-        }""" % (data_row_ids_param, data_row_ids_param)
+        }""" % (param_name, param_name, param_name)
 
-        params = {}
-        params[data_row_ids_param] = data_row_ids
         response = self.client.execute(query_str, params)
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]

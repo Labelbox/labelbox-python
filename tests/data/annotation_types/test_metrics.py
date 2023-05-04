@@ -3,7 +3,6 @@ import pytest
 
 from labelbox.data.annotation_types.metrics import ConfusionMatrixAggregation, ScalarMetricAggregation
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric, ScalarMetric
-from labelbox.data.annotation_types.collection import LabelList
 from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
 from labelbox.data.annotation_types.metrics.scalar import RESERVED_METRIC_NAMES
 
@@ -19,6 +18,7 @@ def test_legacy_scalar_metric():
         'data': {
             'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
+            'global_key': None,
             'im_bytes': None,
             'file_path': None,
             'url': None,
@@ -34,7 +34,6 @@ def test_legacy_scalar_metric():
         'uid': None
     }
     assert label.dict() == expected
-    assert next(LabelList([label])).dict() == expected
 
 
 # TODO: Test with confidence
@@ -70,6 +69,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
         'data': {
             'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
+            'global_key': None,
             'im_bytes': None,
             'file_path': None,
             'url': None,
@@ -96,7 +96,6 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
     }
 
     assert label.dict() == expected
-    assert next(LabelList([label])).dict() == expected
 
 
 @pytest.mark.parametrize('feature_name,subclass_name,aggregation,value', [
@@ -127,6 +126,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
         'data': {
             'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
+            'global_key': None,
             'im_bytes': None,
             'file_path': None,
             'url': None,
@@ -152,7 +152,6 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
         'uid': None
     }
     assert label.dict() == expected
-    assert next(LabelList([label])).dict() == expected
 
 
 def test_name_exists():

@@ -219,13 +219,15 @@ class LBV1Mask(LBV1ObjectBase):
                     extra: Dict[str, Any]) -> "LBV1Mask":
         if mask.mask.url is None:
             raise ValueError(
-                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, `LabelList.add_url_to_masks`, or `Label.add_url_to_masks`."
+                "Mask does not have a url. Use `LabelGenerator.add_url_to_masks`, or `Label.add_url_to_masks`."
             )
         return cls(instanceURI=mask.mask.url,
                    classifications=classifications,
                    schema_id=feature_schema_id,
                    title=title,
-                   **{k: v for k, v in extra.items() if k != 'instanceURI'})
+                   **{
+                       k: v for k, v in extra.items() if k != 'instanceURI'
+                   })
 
 
 class _TextPoint(BaseModel):
@@ -262,9 +264,18 @@ class LBV1TextEntity(LBV1ObjectBase):
 
 
 class LBV1Objects(BaseModel):
-    objects: List[Union[LBV1Line, LBV1Point, LBV1Polygon, LBV1Rectangle,
-                        LBV1TextEntity, LBV1Mask, LBV1TIPoint, LBV1TILine,
-                        LBV1TIPolygon, LBV1TIRectangle,]]
+    objects: List[Union[
+        LBV1Line,
+        LBV1Point,
+        LBV1Polygon,
+        LBV1Rectangle,
+        LBV1TextEntity,
+        LBV1Mask,
+        LBV1TIPoint,
+        LBV1TILine,
+        LBV1TIPolygon,
+        LBV1TIRectangle,
+    ]]
 
     def to_common(self) -> List[ObjectAnnotation]:
         objects = [

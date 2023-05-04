@@ -6,7 +6,7 @@ from .label import NDLabel
 
 logger = logging.getLogger(__name__)
 
-IGNORE_IF_NONE = ["page", "unit"]
+IGNORE_IF_NONE = ["page", "unit", "messageId"]
 
 
 class NDJsonConverter:
@@ -36,7 +36,7 @@ class NDJsonConverter:
         We will continue to improve the error messages and add helper functions to deal with this.
 
         Args:
-            labels: Either a LabelList or a LabelGenerator
+            labels: Either a list of Label objects or a LabelGenerator
         Returns:
             A generator for accessing the ndjson representation of the data
         """

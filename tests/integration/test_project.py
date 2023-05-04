@@ -1,5 +1,6 @@
 import time
 import os
+import uuid
 
 import pytest
 import requests
@@ -39,6 +40,77 @@ def test_project(client, rand_gen):
     project.delete()
     projects = list(client.get_projects())
     assert project not in projects
+
+
+def test_project_export_v2(client, export_v2_test_helpers,
+                           configured_project_with_label,
+                           wait_for_data_row_processing):
+    project, _, data_row, label = configured_project_with_label
+    data_row = wait_for_data_row_processing(client, data_row)
+    label_id = label.uid
+
+    task_name = "test_label_export_v2"
+
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+    }
+
+    # TODO: Right now we don't have a way to test this
+    include_performance_details = True
+    params = {
+        "include_performance_details": include_performance_details,
+        "include_labels": True,
+        "media_type_override": MediaType.Image
+    }
+
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters, params=params)
+
+    for task_result in task_results:
+        task_project = task_result['projects'][project.uid]
+        task_project_label_ids_set = set(
+            map(lambda prediction: prediction['id'], task_project['labels']))
+        assert label_id in task_project_label_ids_set
+
+        # TODO: Add back in when we have a way to test this
+        # if include_performance_details:
+        #     assert 'include_performance_details' in task_result and task_result[
+        #         'include_performance_details'] is not None
+        # else:
+        #     assert 'include_performance_details' not in task_result or task_result[
+        #         'include_performance_details'] is None
+
+    filters = {"last_activity_at": [None, "2050-01-01 00:00:00"]}
+    export_v2_test_helpers.run_project_export_v2_task(project, filters=filters)
+
+    filters = {"label_created_at": ["2000-01-01 00:00:00", None]}
+    export_v2_test_helpers.run_project_export_v2_task(project, filters=filters)
+
+
+@pytest.mark.parametrize("data_rows", [3], indirect=True)
+def test_project_export_v2_datarow_list(
+        export_v2_test_helpers,
+        configured_batch_project_with_multiple_datarows):
+    batch_project, _, data_rows = configured_batch_project_with_multiple_datarows
+
+    data_row_ids = [dr.uid for dr in data_rows]
+    datarow_filter_size = 2
+
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "data_row_ids": data_row_ids[:datarow_filter_size]
+    }
+    params = {"data_row_details": True, "media_type_override": MediaType.Image}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        batch_project, filters=filters, params=params)
+
+    # only 2 datarows should be exported
+    assert len(task_results) == datarow_filter_size
+    # only filtered datarows should be exported
+    assert set([dr['data_row']['id'] for dr in task_results
+               ]) == set(data_row_ids[:datarow_filter_size])
 
 
 def test_update_project_resource_tags(client, rand_gen):
@@ -208,13 +280,32 @@ def test_batches(batch_project: Project, dataset: Dataset, image_url):
     ] * 2)
     task.wait_till_done()
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    batch_one = 'batch one'
-    batch_two = 'batch two'
+    batch_one = f'batch one {uuid.uuid4()}'
+    batch_two = f'batch two {uuid.uuid4()}'
     batch_project.create_batch(batch_one, [data_rows[0]])
     batch_project.create_batch(batch_two, [data_rows[1]])
 
     names = set([batch.name for batch in list(batch_project.batches())])
     assert names == {batch_one, batch_two}
+
+
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
+def test_create_batch_with_global_keys_sync(batch_project: Project, data_rows):
+    global_keys = [dr.global_key for dr in data_rows]
+    batch_name = f'batch {uuid.uuid4()}'
+    batch = batch_project.create_batch(batch_name, global_keys=global_keys)
+    batch_data_rows = set(batch.export_data_rows())
+    assert batch_data_rows == set(data_rows)
+
+
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
+def test_create_batch_with_global_keys_async(batch_project: Project, data_rows):
+    global_keys = [dr.global_key for dr in data_rows]
+    batch_name = f'batch {uuid.uuid4()}'
+    batch = batch_project._create_batch_async(batch_name,
+                                              global_keys=global_keys)
+    batch_data_rows = set(batch.export_data_rows())
+    assert batch_data_rows == set(data_rows)
 
 
 def test_media_type(client, configured_project: Project, rand_gen):

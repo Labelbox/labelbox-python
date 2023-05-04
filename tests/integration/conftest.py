@@ -5,13 +5,14 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
+from typing import Type
 
 import pytest
 import requests
 
-from labelbox import Client
+from labelbox import Client, MediaType
 from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification
+from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
@@ -46,45 +47,48 @@ def environ() -> Environ:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
 
 
-@pytest.fixture(scope="session")
-def testing_api_url():
-
-    def get_testing_api_url(environ: str) -> str:
-        if environ == Environ.PROD:
-            return 'https://api.labelbox.com'
-        elif environ == Environ.STAGING:
-            return 'https://api.lb-stage.xyz'
-        elif environ == Environ.ONPREM:
-            hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
-            if hostname is None:
-                raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
-            return f"{hostname}/api"
-        elif environ == Environ.CUSTOM:
-            graphql_api_endpoint = os.environ.get(
-                'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
-            if graphql_api_endpoint is None:
-                raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
-            return graphql_api_endpoint
-        return 'http://host.docker.internal:8080'
-
-    return get_testing_api_url
+def graphql_url(environ: str) -> str:
+    if environ == Environ.PROD:
+        return 'https://api.labelbox.com/graphql'
+    elif environ == Environ.STAGING:
+        return 'https://api.lb-stage.xyz/graphql'
+    elif environ == Environ.ONPREM:
+        hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
+        if hostname is None:
+            raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
+        return f"{hostname}/api/_gql"
+    elif environ == Environ.CUSTOM:
+        graphql_api_endpoint = os.environ.get(
+            'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
+        if graphql_api_endpoint is None:
+            raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
+        return graphql_api_endpoint
+    return 'http://host.docker.internal:8080/graphql'
 
 
-@pytest.fixture(scope="session")
-def testing_api_key():
+def rest_url(environ: str) -> str:
+    if environ == Environ.PROD:
+        return 'https://api.labelbox.com/api/v1'
+    elif environ == Environ.STAGING:
+        return 'https://api.lb-stage.xyz/api/v1'
+    elif environ == Environ.CUSTOM:
+        rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
+        if rest_api_endpoint is None:
+            raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
+        return rest_api_endpoint
+    return 'http://host.docker.internal:8080/api/v1'
 
-    def get_testing_api_key(environ: str) -> str:
-        if environ == Environ.PROD:
-            return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-        elif environ == Environ.STAGING:
-            return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
-        elif environ == Environ.ONPREM:
-            return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
-        elif environ == Environ.CUSTOM:
-            return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
-        return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
-    return get_testing_api_key
+def testing_api_key(environ: str) -> str:
+    if environ == Environ.PROD:
+        return os.environ["LABELBOX_TEST_API_KEY_PROD"]
+    elif environ == Environ.STAGING:
+        return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    elif environ == Environ.ONPREM:
+        return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
+    elif environ == Environ.CUSTOM:
+        return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
+    return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
 def cancel_invite(client, invite_id):
@@ -138,10 +142,14 @@ def queries():
 
 class IntegrationClient(Client):
 
-    def __init__(self, base_url: str, api_key: str) -> None:
-        api_url = f'{base_url}/graphql'
-        api_key = api_key
-        super().__init__(api_key, api_url, enable_experimental=True)
+    def __init__(self, environ: str) -> None:
+        api_url = graphql_url(environ)
+        api_key = testing_api_key(environ)
+        rest_endpoint = rest_url(environ)
+        super().__init__(api_key,
+                         api_url,
+                         enable_experimental=True,
+                         rest_endpoint=rest_endpoint)
         self.queries = []
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
@@ -168,7 +176,32 @@ def image_url(client):
 
 @pytest.fixture(scope="session")
 def pdf_url(client):
-    return client.upload_file('tests/assets/loremipsum.pdf')
+    pdf_url = client.upload_file('tests/assets/loremipsum.pdf')
+    return {"row_data": {"pdf_url": pdf_url,}, "global_key": str(uuid.uuid4())}
+
+
+@pytest.fixture(scope="session")
+def pdf_entity_data_row(client):
+    pdf_url = client.upload_file(
+        'tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483.pdf')
+    text_layer_url = client.upload_file(
+        'tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json'
+    )
+
+    return {
+        "row_data": {
+            "pdf_url": pdf_url,
+            "text_layer_url": text_layer_url
+        },
+        "global_key": str(uuid.uuid4())
+    }
+
+
+@pytest.fixture(scope="session")
+def conversation_entity_data_row(client):
+    conversation_url = client.upload_file('tests/assets/conversation-1.json')
+
+    return {"row_data": conversation_url, "global_key": str(uuid.uuid1())}
 
 
 @pytest.fixture
@@ -211,7 +244,7 @@ def unique_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def datarow(dataset, image_url):
+def data_row(dataset, image_url):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
@@ -222,6 +255,29 @@ def datarow(dataset, image_url):
     dr = dataset.data_rows().get_one()
     yield dr
     dr.delete()
+
+
+# can be used with
+# @pytest.mark.parametrize('data_rows', [<count of data rows>], indirect=True)
+# if omitted, count defaults to 1
+@pytest.fixture
+def data_rows(dataset, image_url, request):
+    count = 1
+    if hasattr(request, 'param'):
+        count = request.param
+
+    datarows = [
+        dict(row_data=image_url, global_key=f"global-key-{uuid.uuid4()}")
+        for _ in range(count)
+    ]
+
+    task = dataset.create_data_rows(datarows)
+    task.wait_till_done()
+    datarows = dataset.data_rows().get_many(count)
+    yield datarows
+
+    for datarow in datarows:
+        datarow.delete()
 
 
 @pytest.fixture
@@ -316,30 +372,76 @@ def configured_project(project, client, rand_gen, image_url):
 
 @pytest.fixture
 def configured_project_with_label(client, rand_gen, image_url, project, dataset,
-                                  datarow, wait_for_label_processing):
+                                  data_row, wait_for_label_processing):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
     project.datasets.connect(dataset)
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
 
-    ontology_builder = OntologyBuilder(tools=[
-        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
-    ])
-    project.setup(editor, ontology_builder.asdict())
-    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
-    time.sleep(2)
+    ontology = _setup_ontology(project)
+    label = _create_label(project, data_row, ontology,
+                          wait_for_label_processing)
 
-    ontology = ontology_builder.from_project(project)
+    yield [project, dataset, data_row, label]
+
+    for label in project.labels():
+        label.delete()
+
+
+@pytest.fixture
+def configured_batch_project_with_label(client, rand_gen, image_url,
+                                        batch_project, dataset, data_row,
+                                        wait_for_label_processing):
+    """Project with a batch having one datarow
+    Project contains an ontology with 1 bbox tool
+    Additionally includes a create_label method for any needed extra labels
+    One label is already created and yielded when using fixture
+    """
+    data_rows = [dr.uid for dr in list(dataset.data_rows())]
+    batch_project.create_batch("test-batch", data_rows)
+
+    ontology = _setup_ontology(batch_project)
+    label = _create_label(batch_project, data_row, ontology,
+                          wait_for_label_processing)
+
+    yield [batch_project, dataset, data_row, label]
+
+    for label in batch_project.labels():
+        label.delete()
+
+
+@pytest.fixture
+def configured_batch_project_with_multiple_datarows(batch_project, dataset,
+                                                    data_rows,
+                                                    wait_for_label_processing):
+    """Project with a batch having multiple datarows
+    Project contains an ontology with 1 bbox tool
+    Additionally includes a create_label method for any needed extra labels
+    """
+    global_keys = [dr.global_key for dr in data_rows]
+
+    batch_name = f'batch {uuid.uuid4()}'
+    batch_project.create_batch(batch_name, global_keys=global_keys)
+
+    ontology = _setup_ontology(batch_project)
+    for datarow in data_rows:
+        _create_label(batch_project, datarow, ontology,
+                      wait_for_label_processing)
+
+    yield [batch_project, dataset, data_rows]
+
+    for label in batch_project.labels():
+        label.delete()
+
+
+def _create_label(project, data_row, ontology, wait_for_label_processing):
     predictions = [{
         "uuid": str(uuid.uuid4()),
         "schemaId": ontology.tools[0].feature_schema_id,
         "dataRow": {
-            "id": datarow.uid
+            "id": data_row.uid
         },
         "bbox": {
             "top": 20,
@@ -354,7 +456,8 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
-            client, project.uid, f'label-import-{uuid.uuid4()}', predictions)
+            project.client, project.uid, f'label-import-{uuid.uuid4()}',
+            predictions)
         upload_task.wait_until_done(sleep_time_seconds=5)
         assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
         assert len(
@@ -364,11 +467,20 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     project.create_label = create_label
     project.create_label()
     label = wait_for_label_processing(project)[0]
+    return label
 
-    yield [project, dataset, datarow, label]
 
-    for label in project.labels():
-        label.delete()
+def _setup_ontology(project):
+    editor = list(
+        project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    ontology_builder = OntologyBuilder(tools=[
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+    ])
+    project.setup(editor, ontology_builder.asdict())
+    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
+    time.sleep(2)
+    return ontology_builder.from_project(project)
 
 
 @pytest.fixture
@@ -398,15 +510,15 @@ def configured_project_with_complex_ontology(client, rand_gen, image_url):
 
     classifications = [
         Classification(class_type=Classification.Type.TEXT,
-                       instructions="test-text-class"),
+                       name="test-text-class"),
         Classification(class_type=Classification.Type.DROPDOWN,
-                       instructions="test-dropdown-class",
+                       name="test-dropdown-class",
                        options=options),
         Classification(class_type=Classification.Type.RADIO,
-                       instructions="test-radio-class",
+                       name="test-radio-class",
                        options=options),
         Classification(class_type=Classification.Type.CHECKLIST,
-                       instructions="test-checklist-class",
+                       name="test-checklist-class",
                        options=options)
     ]
 
@@ -424,6 +536,8 @@ def configured_project_with_complex_ontology(client, rand_gen, image_url):
     project.delete()
 
 
+# NOTE this is nice heuristics, also there is this logic _wait_until_data_rows_are_processed in Project
+#    in case we still have flakiness in the future, we can use it
 @pytest.fixture
 def wait_for_data_row_processing():
     """
@@ -475,3 +589,111 @@ def wait_for_label_processing():
             time.sleep(2)
 
     return func
+
+
+@pytest.fixture
+def ontology(client):
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.BBOX, name="Box 1", color="#ff0000"),
+            Tool(tool=Tool.Type.BBOX, name="Box 2", color="#ff0000")
+        ],
+        classifications=[
+            Classification(name="Root Class",
+                           class_type=Classification.Type.RADIO,
+                           options=[
+                               Option(value="1", label="Option 1"),
+                               Option(value="2", label="Option 2")
+                           ])
+        ])
+    ontology = client.create_ontology('Integration Test Ontology',
+                                      ontology_builder.asdict(),
+                                      MediaType.Image)
+    yield ontology
+    client.delete_unused_ontology(ontology.uid)
+
+
+@pytest.fixture
+def video_data(client, rand_gen, video_data_row):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_ids = []
+    data_row = dataset.create_data_row(video_data_row)
+    data_row_ids.append(data_row.uid)
+    yield dataset, data_row_ids
+    dataset.delete()
+
+
+@pytest.fixture()
+def video_data_row(rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
+        "media_type":
+            "VIDEO",
+    }
+
+
+class ExportV2Helpers:
+
+    @classmethod
+    def run_project_export_v2_task(cls,
+                                   project,
+                                   num_retries=5,
+                                   task_name=None,
+                                   filters={},
+                                   params={}):
+        task = None
+        params = params if params else {
+            "project_details": True,
+            "performance_details": False,
+            "data_row_details": True,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = project.export_v2(task_name=task_name,
+                                     filters=filters,
+                                     params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+    @classmethod
+    def run_dataset_export_v2_task(cls,
+                                   dataset,
+                                   num_retries=5,
+                                   task_name=None,
+                                   filters={},
+                                   params={}):
+        task = None
+        params = params if params else {
+            "performance_details": False,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = dataset.export_v2(task_name=task_name,
+                                     filters=filters,
+                                     params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+
+@pytest.fixture
+def export_v2_test_helpers() -> Type[ExportV2Helpers]:
+    return ExportV2Helpers()

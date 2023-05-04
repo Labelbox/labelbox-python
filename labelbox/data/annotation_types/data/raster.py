@@ -163,9 +163,10 @@ class RasterData(BaseModel, ABC):
         url = values.get("url")
         arr = values.get("arr")
         uid = values.get('uid')
-        if uid == file_path == im_bytes == url == None and arr is None:
+        global_key = values.get('global_key')
+        if uid == file_path == im_bytes == url == global_key == None and arr is None:
             raise ValueError(
-                "One of `file_path`, `im_bytes`, `url`, `uid` or `arr` required."
+                "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
             )
         if arr is not None:
             if arr.dtype != np.uint8:

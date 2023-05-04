@@ -1,4 +1,4 @@
-from typing import Generator, List, Union, Any, TYPE_CHECKING
+from typing import Collection, Dict, Generator, List, Optional, Union, Any, TYPE_CHECKING
 import os
 import json
 import logging
@@ -17,9 +17,11 @@ from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
-
-if TYPE_CHECKING:
-    from labelbox import Task, User, DataRow
+from labelbox.schema.data_row import DataRow
+from labelbox.schema.export_filters import DatasetExportFilters, build_filters
+from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.task import Task
+from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -534,3 +536,112 @@ class Dataset(DbObject, Updateable, Deletable):
             logger.debug("Dataset '%s' data row export, waiting for server...",
                          self.uid)
             time.sleep(sleep_time)
+
+    def export_v2(self,
+                  task_name: Optional[str] = None,
+                  filters: Optional[DatasetExportFilters] = None,
+                  params: Optional[CatalogExportParams] = None) -> Task:
+        """
+        Creates a dataset export task with the given params and returns the task.
+        
+        >>>     dataset = client.get_dataset(DATASET_ID)
+        >>>     task = dataset.export_v2(
+        >>>         filters={
+        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
+        >>>         },
+        >>>         params={
+        >>>             "performance_details": False,
+        >>>             "label_details": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+
+        _params = params or CatalogExportParams({
+            "attachments": False,
+            "metadata_fields": False,
+            "data_row_details": False,
+            "project_details": False,
+            "performance_details": False,
+            "label_details": False,
+            "media_type_override": None,
+            "model_run_ids": None,
+            "project_ids": None,
+        })
+        validate_catalog_export_params(_params)
+
+        _filters = filters or DatasetExportFilters({
+            "last_activity_at": None,
+            "label_created_at": None,
+            "data_row_ids": None,
+        })
+
+        mutation_name = "exportDataRowsInCatalog"
+        create_task_query_str = """mutation exportDataRowsInCatalogPyApi($input: ExportDataRowsInCatalogInput!){
+            %s(input: $input) {taskId} }
+            """ % (mutation_name)
+
+        media_type_override = _params.get('media_type_override', None)
+
+        if task_name is None:
+            task_name = f"Export v2: dataset - {self.name}"
+        query_params: Dict[str, Any] = {
+            "input": {
+                "taskName": task_name,
+                "filters": {
+                    "searchQuery": {
+                        "scope": None,
+                        "query": None,
+                    }
+                },
+                "params": {
+                    "mediaTypeOverride":
+                        media_type_override.value
+                        if media_type_override is not None else None,
+                    "includeAttachments":
+                        _params.get('attachments', False),
+                    "includeMetadata":
+                        _params.get('metadata_fields', False),
+                    "includeDataRowDetails":
+                        _params.get('data_row_details', False),
+                    "includeProjectDetails":
+                        _params.get('project_details', False),
+                    "includePerformanceDetails":
+                        _params.get('performance_details', False),
+                    "includeLabelDetails":
+                        _params.get('label_details', False),
+                    "projectIds":
+                        _params.get('project_ids', None),
+                    "modelRunIds":
+                        _params.get('model_run_ids', None),
+                },
+            }
+        }
+
+        search_query = build_filters(self.client, _filters)
+        search_query.append({
+            "ids": [self.uid],
+            "operator": "is",
+            "type": "dataset"
+        })
+        query_params["input"]["filters"]["searchQuery"]["query"] = search_query
+
+        res = self.client.execute(
+            create_task_query_str,
+            query_params,
+        )
+        res = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
