@@ -3,6 +3,7 @@ from typing import Any, Dict, Generator, Iterable, Union
 import logging
 
 import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 from copy import deepcopy
 from requests.exceptions import HTTPError
@@ -91,7 +92,7 @@ class LBV1VideoIterator(PrefetchGenerator):
         value = deepcopy(value)
         if 'frames' in value['Label']:
             req = self._request(value)
-            value['Label'] = ndjson.loads(req)
+            value['Label'] = parser.loads(req)
         return value
 
     @retry.Retry(predicate=retry.if_exception_type(HTTPError))

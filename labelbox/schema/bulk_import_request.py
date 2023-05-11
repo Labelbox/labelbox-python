@@ -8,6 +8,7 @@ from pathlib import Path
 import pydantic
 import backoff
 import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 from pydantic import BaseModel, root_validator, validator
 from typing_extensions import Literal
@@ -172,7 +173,7 @@ class BulkImportRequest(DbObject):
         """
         response = requests.get(url)
         response.raise_for_status()
-        return ndjson.loads(response.text)
+        return parser.loads(response.text)
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
@@ -258,7 +259,7 @@ class BulkImportRequest(DbObject):
                 "Validation is turned on. The file will be downloaded locally and processed before uploading."
             )
             res = requests.get(url)
-            data = ndjson.loads(res.text)
+            data = parser.loads(res.text)
             _validate_ndjson(data, client.get_project(project_id))
 
         query_str = """mutation createBulkImportRequestPyApi(

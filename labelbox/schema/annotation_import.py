@@ -7,6 +7,7 @@ from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
 
 import backoff
 import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 from tqdm import tqdm  # type: ignore
 
@@ -132,7 +133,7 @@ class AnnotationImport(DbObject):
 
         response = requests.get(url)
         response.raise_for_status()
-        return ndjson.loads(response.text)
+        return parser.loads(response.text)
 
     @classmethod
     def _create_from_bytes(cls, client, variables, query_str, file_name,

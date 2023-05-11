@@ -6,6 +6,7 @@ import time
 import logging
 import requests
 import ndjson
+from labelbox.data.serialization.ndjson import parser
 from enum import Enum
 
 from labelbox.pagination import PaginatedCollection
@@ -489,7 +490,7 @@ class ModelRun(DbObject):
                 else:
                     response = requests.get(url)
                     response.raise_for_status()
-                    return ndjson.loads(response.content)
+                    return parser.loads(response.content)
 
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:

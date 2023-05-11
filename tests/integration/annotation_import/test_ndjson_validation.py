@@ -1,5 +1,6 @@
 import pytest
 import ndjson
+from labelbox.data.serialization.ndjson import parser
 from pytest_cases import parametrize, fixture_ref
 
 from labelbox.exceptions import MALValidationError
