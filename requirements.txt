@@ -18,3 +18,4 @@ nbformat~=5.7.0
 nbconvert~=7.2.6
 typeguard==2.13.3
 backports-datetime-fromisoformat~=2.0
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
