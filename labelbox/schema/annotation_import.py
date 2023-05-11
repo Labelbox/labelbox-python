@@ -159,7 +159,7 @@ class AnnotationImport(DbObject):
         objects = serialize_labels(objects)
         cls._validate_data_rows(objects)
 
-        data_str = ndjson.dumps(objects)
+        data_str = parser.dumps(objects)
         if not data_str:
             raise ValueError(f"{object_name} cannot be empty")
 

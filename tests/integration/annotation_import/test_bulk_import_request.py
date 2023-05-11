@@ -160,7 +160,7 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
 @pytest.mark.slow
 def test_wait_till_done(rectangle_inference, configured_project):
     name = str(uuid.uuid4())
-    url = configured_project.client.upload_data(content=ndjson.dumps(
+    url = configured_project.client.upload_data(content=parser.dumps(
         [rectangle_inference]),
                                                 sign=True)
     bulk_import_request = configured_project.upload_annotations(name=name,

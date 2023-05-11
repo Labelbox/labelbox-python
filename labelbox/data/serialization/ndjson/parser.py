@@ -1,18 +1,16 @@
-from collections.abc import Callable
-from io import FileIO, StringIO
 import json
-from typing import Any, Iterable, Union
 
 
 class NdjsonDecoder(json.JSONDecoder):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self.parse_array = self._parse_array
 
     # def _parse_array(self, *args, **kwargs):
     #     return list(self.scan_once(*args, **kwargs))
-    
-    def decode(self, s: str, *args, **kwargs) -> Any:
+
+    def decode(self, s: str, *args, **kwargs):
         lines = ','.join(s.splitlines())
         text = f"[{lines}]"  # NOTE: this is a hack to make json.loads work for ndjson
         return super().decode(text, *args, **kwargs)
@@ -21,6 +19,7 @@ class NdjsonDecoder(json.JSONDecoder):
 def loads(ndjson_string, **kwargs) -> list:
     kwargs.setdefault('cls', NdjsonDecoder)
     return json.loads(ndjson_string, **kwargs)
+
 
 def dumps(obj, **kwargs) -> str:
     lines = map(lambda obj: json.dumps(obj, **kwargs), obj)

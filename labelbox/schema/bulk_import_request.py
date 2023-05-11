@@ -323,7 +323,7 @@ class BulkImportRequest(DbObject):
         if validate:
             _validate_ndjson(ndjson_predictions, client.get_project(project_id))
 
-        data_str = ndjson.dumps(ndjson_predictions)
+        data_str = parser.dumps(ndjson_predictions)
         if not data_str:
             raise ValueError('annotations cannot be empty')
 

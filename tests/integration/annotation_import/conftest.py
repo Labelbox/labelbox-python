@@ -899,7 +899,7 @@ class AnnotationImportTestHelpers:
     @staticmethod
     def _convert_to_plain_object(obj):
         """Some Python objects e.g. tuples can't be compared with JSON serialized data, serialize to JSON and deserialize to get plain objects"""
-        json_str = ndjson.dumps(obj)
+        json_str = parser.dumps(obj)
         return parser.loads(json_str)
 
 
