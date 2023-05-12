@@ -41,8 +41,8 @@ def bbox_video_annotation_objects():
             frame=19,
             segment_index=0,
             value=Rectangle(
-                start=Point(x=146.0, y=98.0),  # Top left
-                end=Point(x=382.0, y=341.0),  # Bottom right
+                start=Point(x=186.0, y=98.0),  # Top left
+                end=Point(x=490.0, y=341.0),  # Bottom right
             ))
     ]
 

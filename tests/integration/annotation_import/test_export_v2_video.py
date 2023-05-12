@@ -35,10 +35,12 @@ def test_export_v2_video(client, configured_project_without_data_rows,
     num_retries = 5
     task = None
     while (num_retries > 0):
-        task = project.export_v2(params={
-            "performance_details": False,
-            "label_details": True
-        })
+        task = project.export_v2(
+            params={
+                "performance_details": False,
+                "label_details": True,
+                "interpolated_frames": True
+            })
         task.wait_till_done()
         assert task.status == "COMPLETE"
         assert task.errors is None
@@ -167,6 +169,32 @@ def test_export_v2_video(client, configured_project_without_data_rows,
         if value not in export_frames_ids:
             all_frames_exported.append(value)
     assert (len(all_frames_exported) == 0)
+
+    # BEGINNING OF THE VIDEO INTERPOLATION ASSERTIONS
+    first_frame_id = bbox_video_annotation_objects[0].frame
+    last_frame_id = bbox_video_annotation_objects[-1].frame
+
+    # Generate list of frames with frames in between, e.g. 13, 14, 15, 16, 17, 18, 19
+    expected_frame_ids = list(range(first_frame_id, last_frame_id + 1))
+
+    assert export_frames_ids == expected_frame_ids
+
+    exported_objects_dict = export_frames[str(first_frame_id)]['objects']
+
+    # Get the label ID
+    first_exported_label_id = list(exported_objects_dict.keys())[0]
+
+    # Since the bounding box moves to the right, the interpolated frame content should start a little bit more far to the right
+    assert export_frames[str(first_frame_id + 1)]['objects'][
+        first_exported_label_id]['bounding_box']['left'] > export_frames[
+            str(first_frame_id
+               )]['objects'][first_exported_label_id]['bounding_box']['left']
+    # But it shouldn't be further than the last frame
+    assert export_frames[str(first_frame_id + 1)]['objects'][
+        first_exported_label_id]['bounding_box']['left'] < export_frames[
+            str(last_frame_id
+               )]['objects'][first_exported_label_id]['bounding_box']['left']
+    # END OF THE VIDEO INTERPOLATION ASSERTIONS
 
     frame_with_nested_classifications = export_frames['13']
     annotation = None
