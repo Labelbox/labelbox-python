@@ -90,7 +90,7 @@ def test_create_from_local_file(tmp_path, predictions, configured_project,
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
-        ndjson.dump(predictions, f)
+        parser.dump(predictions, f)
 
     bulk_import_request = configured_project.upload_annotations(
         name=name, annotations=str(file_path), validate=False)
@@ -143,7 +143,7 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
     repeat_uuid[1]['uuid'] = uid
 
     with file_path.open("w") as f:
-        ndjson.dump(repeat_uuid, f)
+        parser.dump(repeat_uuid, f)
 
     with pytest.raises(UuidError):
         configured_project.upload_annotations(name="name",

@@ -225,7 +225,7 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
     repeat_uuid[1]['uuid'] = 'test_uuid'
 
     with file_path.open("w") as f:
-        ndjson.dump(repeat_uuid, f)
+        parser.dump(repeat_uuid, f)
 
     with pytest.raises(MALValidationError):
         configured_project.upload_annotations(name="name",

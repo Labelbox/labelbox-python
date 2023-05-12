@@ -5,10 +5,6 @@ class NdjsonDecoder(json.JSONDecoder):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.parse_array = self._parse_array
-
-    # def _parse_array(self, *args, **kwargs):
-    #     return list(self.scan_once(*args, **kwargs))
 
     def decode(self, s: str, *args, **kwargs):
         lines = ','.join(s.splitlines())
@@ -24,6 +20,11 @@ def loads(ndjson_string, **kwargs) -> list:
 def dumps(obj, **kwargs):
     lines = map(lambda obj: json.dumps(obj, **kwargs), obj)
     return '\n'.join(lines)
+
+
+def dump(obj, io, **kwargs):
+    lines = dumps(obj, **kwargs)
+    io.write(lines)
 
 
 def reader(io_handle, **kwargs):
