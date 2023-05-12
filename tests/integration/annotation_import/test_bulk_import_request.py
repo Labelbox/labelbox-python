@@ -1,5 +1,4 @@
 import uuid
-import ndjson
 from labelbox.data.serialization.ndjson import parser
 import pytest
 import random

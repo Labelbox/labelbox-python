@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
-import ndjson
 from labelbox.data.serialization.ndjson import parser
 import requests
 

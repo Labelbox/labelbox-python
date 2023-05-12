@@ -3,7 +3,7 @@ import uuid
 import pytest
 import time
 import requests
-import ndjson
+
 from labelbox.data.serialization.ndjson import parser
 
 from typing import Type

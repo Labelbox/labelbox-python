@@ -2,7 +2,7 @@ import ast
 import random
 import time
 from io import StringIO
-import ndjson
+
 from labelbox.data.serialization.ndjson import parser
 
 

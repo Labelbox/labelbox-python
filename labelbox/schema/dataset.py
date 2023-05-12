@@ -4,7 +4,7 @@ import json
 import logging
 from collections.abc import Iterable
 import time
-import ndjson
+
 from labelbox.data.serialization.ndjson import parser
 from itertools import islice
 

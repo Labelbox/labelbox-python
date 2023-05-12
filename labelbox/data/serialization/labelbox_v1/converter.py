@@ -2,7 +2,6 @@ from labelbox.data.serialization.labelbox_v1.objects import LBV1Mask
 from typing import Any, Dict, Generator, Iterable, Union
 import logging
 
-import ndjson
 from labelbox.data.serialization.ndjson import parser
 import requests
 from copy import deepcopy

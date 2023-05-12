@@ -5,7 +5,6 @@ import os
 import time
 import logging
 import requests
-import ndjson
 from labelbox.data.serialization.ndjson import parser
 from enum import Enum
 

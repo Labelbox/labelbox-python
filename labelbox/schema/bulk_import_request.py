@@ -7,7 +7,6 @@ import logging
 from pathlib import Path
 import pydantic
 import backoff
-import ndjson
 from labelbox.data.serialization.ndjson import parser
 import requests
 from pydantic import BaseModel, root_validator, validator
