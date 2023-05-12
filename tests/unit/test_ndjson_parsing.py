@@ -1,6 +1,4 @@
 import ast
-import random
-import time
 from io import StringIO
 
 from labelbox.data.serialization.ndjson import parser
@@ -8,8 +6,18 @@ from labelbox.data.serialization.ndjson import parser
 
 def test_loads(ndjson_content):
     expected_line, expected_objects = ndjson_content
-
     parsed_line = parser.loads(expected_line)
+
+    assert parsed_line == expected_objects
+    assert parser.dumps(parsed_line) == expected_line
+
+
+def test_loads_bytes(ndjson_content):
+    expected_line, expected_objects = ndjson_content
+
+    bytes_line = expected_line.encode('utf-8')
+    parsed_line = parser.loads(bytes_line)
+
     assert parsed_line == expected_objects
     assert parser.dumps(parsed_line) == expected_line
 
