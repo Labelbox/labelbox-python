@@ -367,7 +367,7 @@ class BulkImportRequest(DbObject):
 
         with file.open('rb') as f:
             if validate_file:
-                reader = ndjson.reader(f)
+                reader = parser.reader(f)
                 # ensure that the underlying json load call is valid
                 # https://github.com/rhgrant10/ndjson/blob/ff2f03c56b21f28f7271b27da35ca4a8bf9a05d0/ndjson/api.py#L53
                 # by iterating through the file so we only store
