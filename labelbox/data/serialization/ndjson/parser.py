@@ -21,7 +21,7 @@ def loads(ndjson_string, **kwargs) -> list:
     return json.loads(ndjson_string, **kwargs)
 
 
-def dumps(obj, **kwargs) -> str:
+def dumps(obj, **kwargs):
     lines = map(lambda obj: json.dumps(obj, **kwargs), obj)
     return '\n'.join(lines)
 

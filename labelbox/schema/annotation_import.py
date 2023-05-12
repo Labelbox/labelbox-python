@@ -162,7 +162,9 @@ class AnnotationImport(DbObject):
         if not data_str:
             raise ValueError(f"{object_name} cannot be empty")
 
-        return data_str.encode('utf-8')
+        return data_str.encode(
+            'utf-8'
+        )  # NOTICE this method returns bytes, NOT BinaryIO... should have done  io.BytesIO(...) but not going to change this at the moment since it works and fools mypy
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
