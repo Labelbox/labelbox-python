@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 
 from labelbox import utils
@@ -244,7 +244,7 @@ class Project(DbObject, Updateable, Deletable):
                 download_url = res["downloadUrl"]
                 response = requests.get(download_url)
                 response.raise_for_status()
-                return ndjson.loads(response.text)
+                return parser.loads(response.text)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 

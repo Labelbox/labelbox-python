@@ -21,8 +21,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "backoff==1.10.0", "requests>=2.22.0", "google-api-core>=1.22.1",
-        "pydantic>=1.8,<2.0", "tqdm", "ndjson",
-        "backports-datetime-fromisoformat~=2.0"
+        "pydantic>=1.8,<2.0", "tqdm", "backports-datetime-fromisoformat~=2.0"
     ],
     extras_require={
         'data': [

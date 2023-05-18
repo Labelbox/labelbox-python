@@ -1,5 +1,5 @@
 import uuid
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import pytest
 
 from labelbox.schema.annotation_import import AnnotationImportState, MEAPredictionImport
@@ -99,7 +99,7 @@ def test_create_from_local_file(tmp_path, model_run_with_data_rows,
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
-        ndjson.dump(object_predictions, f)
+        parser.dump(object_predictions, f)
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=str(file_path))

@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 import pydantic
 import backoff
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 from pydantic import BaseModel, root_validator, validator
 from typing_extensions import Literal
@@ -172,7 +172,7 @@ class BulkImportRequest(DbObject):
         """
         response = requests.get(url)
         response.raise_for_status()
-        return ndjson.loads(response.text)
+        return parser.loads(response.text)
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.
@@ -258,7 +258,7 @@ class BulkImportRequest(DbObject):
                 "Validation is turned on. The file will be downloaded locally and processed before uploading."
             )
             res = requests.get(url)
-            data = ndjson.loads(res.text)
+            data = parser.loads(res.text)
             _validate_ndjson(data, client.get_project(project_id))
 
         query_str = """mutation createBulkImportRequestPyApi(
@@ -322,7 +322,7 @@ class BulkImportRequest(DbObject):
         if validate:
             _validate_ndjson(ndjson_predictions, client.get_project(project_id))
 
-        data_str = ndjson.dumps(ndjson_predictions)
+        data_str = parser.dumps(ndjson_predictions)
         if not data_str:
             raise ValueError('annotations cannot be empty')
 
@@ -366,7 +366,7 @@ class BulkImportRequest(DbObject):
 
         with file.open('rb') as f:
             if validate_file:
-                reader = ndjson.reader(f)
+                reader = parser.reader(f)
                 # ensure that the underlying json load call is valid
                 # https://github.com/rhgrant10/ndjson/blob/ff2f03c56b21f28f7271b27da35ca4a8bf9a05d0/ndjson/api.py#L53
                 # by iterating through the file so we only store

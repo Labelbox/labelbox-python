@@ -4,7 +4,7 @@ from labelbox.orm import query
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.exceptions import LabelboxError, ResourceNotFoundError
 from io import StringIO
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 import logging
 import time
@@ -118,7 +118,7 @@ class Batch(DbObject):
                 download_url = res["downloadUrl"]
                 response = requests.get(download_url)
                 response.raise_for_status()
-                reader = ndjson.reader(StringIO(response.text))
+                reader = parser.reader(StringIO(response.text))
                 return (
                     Entity.DataRow(self.client, result) for result in reader)
             elif res["status"] == "FAILED":

@@ -9,7 +9,7 @@ from labelbox.data.annotation_types.geometry.point import Point
 
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.video import VideoObjectAnnotation
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.schema.annotation_import import MALPredictionImport
