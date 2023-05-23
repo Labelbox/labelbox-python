@@ -11,7 +11,7 @@ opencv-python
 imagesize
 pyproj
 pygeotile
-typing-extensions
+typing-extensions==4.5.0
 pytest-xdist
 nbformat~=5.7.0
 nbconvert~=7.2.6
