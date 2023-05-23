@@ -3,7 +3,8 @@ import uuid
 import pytest
 import time
 import requests
-import ndjson
+
+from labelbox.data.serialization.ndjson import parser
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -884,7 +885,7 @@ class AnnotationImportTestHelpers:
     def assert_file_content(cls, url: str, predictions):
         response = requests.get(url)
         predictions = cls._convert_to_plain_object(predictions)
-        assert ndjson.loads(response.text) == predictions
+        assert parser.loads(response.text) == predictions
 
     @staticmethod
     def check_running_state(req, name, url=None):
@@ -898,8 +899,8 @@ class AnnotationImportTestHelpers:
     @staticmethod
     def _convert_to_plain_object(obj):
         """Some Python objects e.g. tuples can't be compared with JSON serialized data, serialize to JSON and deserialize to get plain objects"""
-        json_str = ndjson.dumps(obj)
-        return ndjson.loads(json_str)
+        json_str = parser.dumps(obj)
+        return parser.loads(json_str)
 
 
 @pytest.fixture

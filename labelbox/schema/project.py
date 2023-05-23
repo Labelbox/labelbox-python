@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 
 from labelbox import utils
@@ -244,7 +244,7 @@ class Project(DbObject, Updateable, Deletable):
                 download_url = res["downloadUrl"]
                 response = requests.get(download_url)
                 response.raise_for_status()
-                return ndjson.loads(response.text)
+                return parser.loads(response.text)
             elif res["status"] == "FAILED":
                 raise LabelboxError("Data row export failed.")
 
@@ -434,7 +434,8 @@ class Project(DbObject, Updateable, Deletable):
             "project_details": False,
             "performance_details": False,
             "label_details": False,
-            "media_type_override": None
+            "media_type_override": None,
+            "interpolated_frames": False,
         })
 
         _filters = filters or ProjectExportFilters({
@@ -474,7 +475,9 @@ class Project(DbObject, Updateable, Deletable):
                     "includePerformanceDetails":
                         _params.get('performance_details', False),
                     "includeLabelDetails":
-                        _params.get('label_details', False)
+                        _params.get('label_details', False),
+                    "includeInterpolatedFrames":
+                        _params.get('interpolated_frames', False),
                 },
             }
         }

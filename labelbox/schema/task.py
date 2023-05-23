@@ -3,7 +3,7 @@ import logging
 import requests
 import time
 from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
@@ -147,7 +147,7 @@ class Task(DbObject):
             if format == 'json':
                 return response.json()
             elif format == 'ndjson':
-                return ndjson.loads(response.text)
+                return parser.loads(response.text)
             else:
                 raise ValueError(
                     "Expected the result format to be either `ndjson` or `json`."

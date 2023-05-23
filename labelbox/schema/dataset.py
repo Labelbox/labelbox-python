@@ -4,7 +4,8 @@ import json
 import logging
 from collections.abc import Iterable
 import time
-import ndjson
+
+from labelbox.data.serialization.ndjson import parser
 from itertools import islice
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -521,7 +522,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 download_url = res["downloadUrl"]
                 response = requests.get(download_url)
                 response.raise_for_status()
-                reader = ndjson.reader(StringIO(response.text))
+                reader = parser.reader(StringIO(response.text))
                 return (
                     Entity.DataRow(self.client, result) for result in reader)
             elif res["status"] == "FAILED":
@@ -569,6 +570,7 @@ class Dataset(DbObject, Updateable, Deletable):
             "media_type_override": None,
             "model_run_ids": None,
             "project_ids": None,
+            "interpolated_frames": False,
         })
         validate_catalog_export_params(_params)
 
@@ -612,6 +614,8 @@ class Dataset(DbObject, Updateable, Deletable):
                         _params.get('performance_details', False),
                     "includeLabelDetails":
                         _params.get('label_details', False),
+                    "includeInterpolatedFrames":
+                        _params.get('interpolated_frames', False),
                     "projectIds":
                         _params.get('project_ids', None),
                     "modelRunIds":

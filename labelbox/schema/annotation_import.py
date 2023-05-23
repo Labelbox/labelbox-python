@@ -6,7 +6,7 @@ import time
 from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
 
 import backoff
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import requests
 from tqdm import tqdm  # type: ignore
 
@@ -132,7 +132,7 @@ class AnnotationImport(DbObject):
 
         response = requests.get(url)
         response.raise_for_status()
-        return ndjson.loads(response.text)
+        return parser.loads(response.text)
 
     @classmethod
     def _create_from_bytes(cls, client, variables, query_str, file_name,
@@ -158,11 +158,13 @@ class AnnotationImport(DbObject):
         objects = serialize_labels(objects)
         cls._validate_data_rows(objects)
 
-        data_str = ndjson.dumps(objects)
+        data_str = parser.dumps(objects)
         if not data_str:
             raise ValueError(f"{object_name} cannot be empty")
 
-        return data_str.encode('utf-8')
+        return data_str.encode(
+            'utf-8'
+        )  # NOTICE this method returns bytes, NOT BinaryIO... should have done  io.BytesIO(...) but not going to change this at the moment since it works and fools mypy
 
     def refresh(self) -> None:
         """Synchronizes values of all fields with the database.

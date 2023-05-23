@@ -1,5 +1,5 @@
 import uuid
-import ndjson
+from labelbox.data.serialization.ndjson import parser
 import pytest
 
 from labelbox.schema.annotation_import import AnnotationImportState, MEAPredictionImport
