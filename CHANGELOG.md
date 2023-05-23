@@ -1,5 +1,18 @@
 # Changelog
 
+# Version 3.47.0 (2023-05-23)
+## Added
+* Support for interpolated frames to export v2
+
+## Changed
+* Removed ndjson library and replaced it with a custom ndjson parser
+
+## Notebooks
+* Removed confidence scores in annotations - video notebook
+* Removed raster seg masks from video prediction
+* Added export v2 example
+* Added SAM and Labelbox connector notebook
+
 # Version 3.46.0 (2023-05-03)
 ## Added
 * Global key support to DataRow Metadata `bulk_upsert()` function
