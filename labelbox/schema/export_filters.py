@@ -9,6 +9,7 @@ else:
     from typing_extensions import TypedDict
 
 MAX_DATA_ROW_IDS_PER_EXPORT_V2 = 2_000
+ISO_8061_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
 class SharedExportFilters(TypedDict):
@@ -45,18 +46,30 @@ class DatasetExportFilters(SharedExportFilters):
 
 
 def validate_datetime(string_date: str) -> bool:
-    """helper function validate that datetime is as follows: YYYY-MM-DD for the export"""
+    """helper function validate that datetime is as follows: "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss" or ISO 8061 format "YYYY-MM-DDThh:mm:ss±hhmm" (Example: "2023-05-23T14:30:00+0530")"""
     if string_date:
-        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", ISO_8061_FORMAT):
             try:
                 datetime.strptime(string_date, fmt)
                 return True
             except ValueError:
                 pass
         raise ValueError(f"""Incorrect format for: {string_date}.
-        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\"""")
+        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\" or ISO 8061 format \"YYYY-MM-DDThh:mm:ss±hhmm\"""")
     return True
 
+def covert_to_utc_if_iso8061(string_date: str, timezone: Optional[str]) -> Tuple[str, str]:
+    """helper function to convert datetime to UTC if it is in ISO_8061_FORMAT and set timezone to UTC"""
+    # check if the string_date is in "%Y-%m-%dT%H:%M:%S%z" format
+    try:
+        date_obj = datetime.strptime(string_date, ISO_8061_FORMAT)
+        # convert the datetime object to UTC
+        date_obj_utc = date_obj.astimezone(tz=timezone.utc) 
+        string_date = date_obj_utc.strftime(ISO_8061_FORMAT)
+        timezone = "UTC"
+    except ValueError:
+        pass
+    return string_date, timezone
 
 def build_filters(client, filters):
     search_query: List[Dict[str, Collection[str]]] = []
@@ -69,11 +82,12 @@ def build_filters(client, filters):
 
     last_activity_at = filters.get("last_activity_at")
     if last_activity_at:
-        if timezone is None:
-            timezone = _get_timezone()
+        timezone = _get_timezone()
         start, end = last_activity_at
         if (start is not None and end is not None):
             [validate_datetime(date) for date in last_activity_at]
+            start, timezone = covert_to_utc_if_iso8061(start, timezone)
+            end, timezone = covert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "data_row_last_activity_at",
                 "value": {
@@ -87,6 +101,7 @@ def build_filters(client, filters):
             })
         elif (start is not None):
             validate_datetime(start)
+            start, timezone = covert_to_utc_if_iso8061(start, timezone)
             search_query.append({
                 "type": "data_row_last_activity_at",
                 "value": {
@@ -97,6 +112,7 @@ def build_filters(client, filters):
             })
         elif (end is not None):
             validate_datetime(end)
+            end, timezone = covert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "data_row_last_activity_at",
                 "value": {
@@ -113,10 +129,13 @@ def build_filters(client, filters):
         start, end = label_created_at
         if (start is not None and end is not None):
             [validate_datetime(date) for date in label_created_at]
+            start, timezone = covert_to_utc_if_iso8061(start, timezone)
+            end, timezone = covert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "labeled_at",
                 "value": {
                     "operator": "BETWEEN",
+                    "timezone": timezone,
                     "value": {
                         "min": start,
                         "max": end
@@ -129,6 +148,7 @@ def build_filters(client, filters):
                 "type": "labeled_at",
                 "value": {
                     "operator": "GREATER_THAN_OR_EQUAL",
+                    "timezone": timezone,
                     "value": start
                 }
             })
@@ -138,6 +158,7 @@ def build_filters(client, filters):
                 "type": "labeled_at",
                 "value": {
                     "operator": "LESS_THAN_OR_EQUAL",
+                    "timezone": timezone,
                     "value": end
                 }
             })
