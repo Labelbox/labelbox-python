@@ -1,5 +1,9 @@
 # Changelog
 
+# Version 3.47.1 (2023-05-24)
+## Fixed
+* Loading of the ndjson parser when optional [data] libraries (geojson etc.) are not installed
+
 # Version 3.47.0 (2023-05-23)
 ## Added
 * Support for interpolated frames to export v2
