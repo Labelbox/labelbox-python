@@ -1,7 +1,7 @@
 import ast
 from io import StringIO
 
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 
 
 def test_loads(ndjson_content):
