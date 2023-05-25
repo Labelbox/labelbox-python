@@ -55,21 +55,25 @@ def validate_datetime(string_date: str) -> bool:
             except ValueError:
                 pass
         raise ValueError(f"""Incorrect format for: {string_date}.
-        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\" or ISO 8061 format \"YYYY-MM-DDThh:mm:ss±hhmm\"""")
+        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\" or ISO 8061 format \"YYYY-MM-DDThh:mm:ss±hhmm\""""
+                        )
     return True
 
-def covert_to_utc_if_iso8061(string_date: str, timezone: Optional[str]) -> Tuple[str, str]:
+
+def covert_to_utc_if_iso8061(string_date: str,
+                             timezone: Optional[str]) -> Tuple[str, str]:
     """helper function to convert datetime to UTC if it is in ISO_8061_FORMAT and set timezone to UTC"""
     # check if the string_date is in "%Y-%m-%dT%H:%M:%S%z" format
     try:
         date_obj = datetime.strptime(string_date, ISO_8061_FORMAT)
-        # convert the datetime object to UTC
-        date_obj_utc = date_obj.astimezone(tz=timezone.utc) 
+        # convert the datetime object to UTC timezone
+        date_obj_utc = date_obj.astimezone(tz=timezone.utc)
         string_date = date_obj_utc.strftime(ISO_8061_FORMAT)
         timezone = "UTC"
     except ValueError:
         pass
     return string_date, timezone
+
 
 def build_filters(client, filters):
     search_query: List[Dict[str, Collection[str]]] = []
