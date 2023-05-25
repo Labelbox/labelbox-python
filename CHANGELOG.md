@@ -1,5 +1,8 @@
 # Changelog
 
+# Version 3.47.1 (2023-05-24)
+* Rerelease from master branch
+
 # Version 3.47.0 (2023-05-23)
 ## Added
 * Support for interpolated frames to export v2
