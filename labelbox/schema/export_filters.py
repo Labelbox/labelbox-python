@@ -2,7 +2,7 @@ import sys
 
 from datetime import datetime
 from typing import Collection, Dict, Tuple, List, Optional
-
+import pytz
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -67,7 +67,7 @@ def covert_to_utc_if_iso8061(string_date: str,
     try:
         date_obj = datetime.strptime(string_date, ISO_8061_FORMAT)
         # convert the datetime object to UTC timezone
-        date_obj_utc = date_obj.astimezone(tz=timezone.utc)
+        date_obj_utc = date_obj.astimezone(pytz.utc)
         string_date = date_obj_utc.strftime(ISO_8061_FORMAT)
         timezone = "UTC"
     except ValueError:
