@@ -61,7 +61,7 @@ def validate_datetime(string_date: str) -> bool:
 
 
 def covert_to_utc_if_iso8061(string_date: str,
-                             timezone: Optional[str]) -> Tuple[str, str]:
+                             timezone: Optional[str]):
     """helper function to convert datetime to UTC if it is in ISO_8061_FORMAT and set timezone to UTC"""
     # check if the string_date is in "%Y-%m-%dT%H:%M:%S%z" format
     try:
