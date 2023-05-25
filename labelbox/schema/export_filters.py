@@ -46,7 +46,8 @@ class DatasetExportFilters(SharedExportFilters):
 
 
 def validate_datetime(string_date: str) -> bool:
-    """helper function validate that datetime is as follows: "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss" or ISO 8061 format "YYYY-MM-DDThh:mm:ss±hhmm" (Example: "2023-05-23T14:30:00+0530")"""
+    """helper function validate that datetime is as follows: "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss" 
+    or ISO 8061 format "YYYY-MM-DDThh:mm:ss±hhmm" (Example: "2023-05-23T14:30:00+0530")"""
     if string_date:
         for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", ISO_8061_FORMAT):
             try:
