@@ -1,5 +1,5 @@
 import uuid
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 import pytest
 import random
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
