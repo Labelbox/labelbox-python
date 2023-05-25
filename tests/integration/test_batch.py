@@ -1,6 +1,10 @@
 from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
 from labelbox import Dataset, Project
+from typing import Tuple
+from labelbox.schema.data_row import DataRow
+from labelbox.schema.label import Label
+from labelbox.schema.media_type import MediaType
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 
@@ -205,3 +209,26 @@ def test_delete_labels_with_templates(batch_project: Project,
     res = batch.delete_labels(labels_as_template=True)
     exported_data_rows = list(batch.export_data_rows())
     assert len(exported_data_rows) == 5
+
+
+def test_export_v2(configured_batch_project_with_label: Tuple[Project, Dataset,
+                                                              DataRow, Label],
+                   export_v2_test_helpers):
+    project, *_ = configured_batch_project_with_label
+
+    batch = list(project.batches())[0]
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+    }
+    params = {
+        "include_performance_details": True,
+        "include_labels": True,
+        "media_type_override": MediaType.Image
+    }
+    task_name = "test_batch_export_v2"
+
+    task_results = export_v2_test_helpers.run_batch_export_v2_task(
+        batch, task_name=task_name, filters=filters, params=params)
+
+    assert (batch.size == len(task_results))

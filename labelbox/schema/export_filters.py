@@ -28,6 +28,9 @@ class SharedExportFilters(TypedDict):
     >>>   [None, "2050-01-01 00:00:00"]
     >>>   ["2000-01-01 00:00:00", None]
     """
+
+
+class ProjectExportFilters(SharedExportFilters):
     data_row_ids: Optional[List[str]]
     """ Datarow ids to export
     Only allows MAX_DATAROW_IDS_PER_EXPORT_V2 datarows
@@ -36,11 +39,16 @@ class SharedExportFilters(TypedDict):
     """
 
 
-class ProjectExportFilters(SharedExportFilters):
-    pass
-
-
 class DatasetExportFilters(SharedExportFilters):
+    data_row_ids: Optional[List[str]]
+    """ Datarow ids to export
+    Only allows MAX_DATAROW_IDS_PER_EXPORT_V2 datarows
+    Example:
+    >>>   ["clgo3lyax0000veeezdbu3ws4", "clgo3lzjl0001veeer6y6z8zp", ...]
+    """
+
+
+class BatchExportFilters(SharedExportFilters):
     pass
 
 
@@ -155,5 +163,4 @@ def build_filters(client, filters):
             "operator": "is",
             "type": "data_row_id"
         })
-
     return search_query

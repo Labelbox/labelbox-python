@@ -665,6 +665,35 @@ class ExportV2Helpers:
         return task.result
 
     @classmethod
+    def run_batch_export_v2_task(cls,
+                                 batch,
+                                 num_retries=5,
+                                 task_name=None,
+                                 filters={},
+                                 params={}):
+        task = None
+        params = params if params else {
+            "project_details": True,
+            "performance_details": False,
+            "data_row_details": True,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = batch.export_v2(task_name=task_name,
+                                   filters=filters,
+                                   params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+    @classmethod
     def run_dataset_export_v2_task(cls,
                                    dataset,
                                    num_retries=5,
