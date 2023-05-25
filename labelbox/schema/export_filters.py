@@ -60,16 +60,16 @@ def validate_datetime(string_date: str) -> bool:
     return True
 
 
-def covert_to_utc_if_iso8061(string_date: str, timezone: Optional[str]):
+def covert_to_utc_if_iso8061(string_date: str, timezone_str: Optional[str]):
     """helper function to convert datetime to UTC if it is in ISO_8061_FORMAT and set timezone to UTC"""
     try:
         date_obj = datetime.strptime(string_date, ISO_8061_FORMAT)
         date_obj_utc = date_obj.replace(tzinfo=timezone.utc)
         string_date = date_obj_utc.strftime(ISO_8061_FORMAT)
-        timezone = "UTC"
+        timezone_str = "UTC"
     except ValueError:
         pass
-    return string_date, timezone
+    return string_date, timezone_str
 
 
 def build_filters(client, filters):
