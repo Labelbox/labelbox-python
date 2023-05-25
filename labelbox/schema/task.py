@@ -3,7 +3,7 @@ import logging
 import requests
 import time
 from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject

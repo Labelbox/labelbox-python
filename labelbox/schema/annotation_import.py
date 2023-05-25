@@ -6,7 +6,7 @@ import time
 from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
 
 import backoff
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 import requests
 from tqdm import tqdm  # type: ignore
 

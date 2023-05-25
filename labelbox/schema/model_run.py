@@ -5,7 +5,7 @@ import os
 import time
 import logging
 import requests
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 from enum import Enum
 
 from labelbox.pagination import PaginatedCollection

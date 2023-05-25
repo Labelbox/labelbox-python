@@ -4,7 +4,7 @@ from labelbox.orm import query
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.exceptions import LabelboxError, ResourceNotFoundError
 from io import StringIO
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 import requests
 import logging
 import time

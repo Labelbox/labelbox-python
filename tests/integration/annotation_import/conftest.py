@@ -4,7 +4,7 @@ import pytest
 import time
 import requests
 
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
