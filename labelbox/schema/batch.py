@@ -1,4 +1,4 @@
-from typing import Generator, TYPE_CHECKING, Any, Optional, Dict, List
+from typing import Generator, TYPE_CHECKING
 
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm import query
@@ -9,11 +9,6 @@ from labelbox import parser
 import requests
 import logging
 import time
-from labelbox.schema.export_filters import BatchExportFilters, ProjectExportFilters, build_filters
-from labelbox.schema.export_params import ProjectExportParams
-from labelbox.schema.task import Task
-
-from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import Project
@@ -190,107 +185,3 @@ class Batch(DbObject):
     @property
     def failed_data_row_ids(self):
         return (x for x in self._failed_data_row_ids)
-
-    def export_v2(self,
-                  task_name: Optional[str] = None,
-                  filters: Optional[BatchExportFilters] = None,
-                  params: Optional[ProjectExportParams] = None) -> Task:
-        """
-        Creates a batch export task with the given params and returns the task.
-        
-        >>>     batches = project.batches() 
-        >>>     task = batches[0].export_v2(
-        >>>         filters={
-        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>         },
-        >>>         params={
-        >>>             "performance_details": False,
-        >>>             "label_details": True
-        >>>         })
-        >>>     task.wait_till_done()
-        >>>     task.result
-        """
-
-        _params = params or ProjectExportParams({
-            "attachments": False,
-            "metadata_fields": False,
-            "data_row_details": False,
-            "project_details": False,
-            "performance_details": False,
-            "label_details": False,
-            "media_type_override": None,
-            "interpolated_frames": False,
-        })
-
-        _filters = filters or BatchExportFilters({
-            "last_activity_at": None,
-            "label_created_at": None,
-        })
-
-        mutation_name = "exportDataRowsInProject"
-        create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
-            %s(input: $input) {taskId} }
-            """ % (mutation_name)
-
-        media_type_override = _params.get('media_type_override', None)
-
-        if task_name is None:
-            task_name = f"Export v2: dataset - {self.name}"
-        query_params: Dict[str, Any] = {
-            "input": {
-                "taskName": task_name,
-                "filters": {
-                    "projectId": self.project_id,
-                    "searchQuery": {
-                        "scope": None,
-                        "query": None,
-                    }
-                },
-                "params": {
-                    "mediaTypeOverride":
-                        media_type_override.value
-                        if media_type_override is not None else None,
-                    "includeAttachments":
-                        _params.get('attachments', False),
-                    "includeMetadata":
-                        _params.get('metadata_fields', False),
-                    "includeDataRowDetails":
-                        _params.get('data_row_details', False),
-                    "includeProjectDetails":
-                        _params.get('project_details', False),
-                    "includePerformanceDetails":
-                        _params.get('performance_details', False),
-                    "includeLabelDetails":
-                        _params.get('label_details', False),
-                    "includeInterpolatedFrames":
-                        _params.get('interpolated_frames', False),
-                },
-            }
-        }
-
-        search_query = build_filters(self.client, _filters)
-        search_query.append({
-            "ids": [self.uid],
-            "operator": "is",
-            "type": "batch"
-        })
-        query_params["input"]["filters"]["searchQuery"]["query"] = search_query
-
-        res = self.client.execute(
-            create_task_query_str,
-            query_params,
-        )
-        res = res[mutation_name]
-        task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
-        return task

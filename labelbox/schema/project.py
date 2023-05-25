@@ -442,6 +442,7 @@ class Project(DbObject, Updateable, Deletable):
             "last_activity_at": None,
             "label_created_at": None,
             "data_row_ids": None,
+            "batch_id": None,
         })
 
         mutation_name = "exportDataRowsInProject"
