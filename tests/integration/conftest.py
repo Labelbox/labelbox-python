@@ -661,7 +661,6 @@ class ExportV2Helpers:
                 time.sleep(5)
             else:
                 break
-            print(f"#############Yaminisaket task result: {task.result}")
         return task.result
 
     @classmethod
