@@ -60,7 +60,7 @@ def validate_datetime(datetime_str: str) -> bool:
     return True
 
 
-def covnert_to_utc_if_iso8061(datetime_str: str, timezone_str: Optional[str]):
+def convert_to_utc_if_iso8061(datetime_str: str, timezone_str: Optional[str]):
     """helper function to convert datetime to UTC if it is in ISO_8061_FORMAT and set timezone to UTC"""
     try:
         date_obj = datetime.strptime(datetime_str, ISO_8061_FORMAT)
@@ -87,8 +87,8 @@ def build_filters(client, filters):
         start, end = last_activity_at
         if (start is not None and end is not None):
             [validate_datetime(date) for date in last_activity_at]
-            start, timezone = covnert_to_utc_if_iso8061(start, timezone)
-            end, timezone = covnert_to_utc_if_iso8061(end, timezone)
+            start, timezone = convert_to_utc_if_iso8061(start, timezone)
+            end, timezone = convert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "data_row_last_activity_at",
                 "value": {
@@ -102,7 +102,7 @@ def build_filters(client, filters):
             })
         elif (start is not None):
             validate_datetime(start)
-            start, timezone = covnert_to_utc_if_iso8061(start, timezone)
+            start, timezone = convert_to_utc_if_iso8061(start, timezone)
             search_query.append({
                 "type": "data_row_last_activity_at",
                 "value": {
@@ -113,7 +113,7 @@ def build_filters(client, filters):
             })
         elif (end is not None):
             validate_datetime(end)
-            end, timezone = covnert_to_utc_if_iso8061(end, timezone)
+            end, timezone = convert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "data_row_last_activity_at",
                 "value": {
@@ -129,8 +129,8 @@ def build_filters(client, filters):
         start, end = label_created_at
         if (start is not None and end is not None):
             [validate_datetime(date) for date in label_created_at]
-            start, timezone = covnert_to_utc_if_iso8061(start, timezone)
-            end, timezone = covnert_to_utc_if_iso8061(end, timezone)
+            start, timezone = convert_to_utc_if_iso8061(start, timezone)
+            end, timezone = convert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "labeled_at",
                 "value": {
@@ -144,7 +144,7 @@ def build_filters(client, filters):
             })
         elif (start is not None):
             validate_datetime(start)
-            start, timezone = covnert_to_utc_if_iso8061(start, timezone)
+            start, timezone = convert_to_utc_if_iso8061(start, timezone)
             search_query.append({
                 "type": "labeled_at",
                 "value": {
@@ -155,7 +155,7 @@ def build_filters(client, filters):
             })
         elif (end is not None):
             validate_datetime(end)
-            end, timezone = covnert_to_utc_if_iso8061(end, timezone)
+            end, timezone = convert_to_utc_if_iso8061(end, timezone)
             search_query.append({
                 "type": "labeled_at",
                 "value": {
