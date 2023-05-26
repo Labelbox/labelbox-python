@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 import time
 
-from labelbox.data.serialization.ndjson import parser
+from labelbox import parser
 from itertools import islice
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
