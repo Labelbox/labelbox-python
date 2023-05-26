@@ -178,5 +178,4 @@ def build_filters(client, filters):
             "operator": "is",
             "type": "data_row_id"
         })
-
     return search_query
