@@ -1,10 +1,6 @@
 from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
 from labelbox import Dataset, Project
-from typing import Tuple
-from labelbox.schema.data_row import DataRow
-from labelbox.schema.label import Label
-from labelbox.schema.media_type import MediaType
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 

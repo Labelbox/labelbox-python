@@ -48,8 +48,8 @@ def test_project(client, rand_gen):
 def test_batch_project_export_v2(
         configured_batch_project_with_label: Tuple[Project, Dataset, DataRow,
                                                    Label],
-        export_v2_test_helpers):
-    project, *_ = configured_batch_project_with_label
+        export_v2_test_helpers, dataset: Dataset, image_url: str):
+    project, dataset, *_ = configured_batch_project_with_label
 
     batch = list(project.batches())[0]
     filters = {
@@ -63,6 +63,19 @@ def test_batch_project_export_v2(
         "media_type_override": MediaType.Image
     }
     task_name = "test_batch_export_v2"
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch_one = f'batch one {uuid.uuid4()}'
+
+    # This test creates two batches, only one batch should be exporter
+    # Creatin second batch that will not be used in the export due to the filter: batch_id
+    project.create_batch(batch_one, data_rows)
 
     task_results = export_v2_test_helpers.run_project_export_v2_task(
         project, task_name=task_name, filters=filters, params=params)
