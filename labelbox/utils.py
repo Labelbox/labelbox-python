@@ -1,7 +1,6 @@
 import datetime
 import re
 
-import datetime
 from dateutil.tz import tzoffset
 from dateutil.parser import isoparse as dateutil_parse
 from dateutil.utils import default_tzinfo
@@ -90,10 +89,11 @@ def format_iso_datetime(dt: datetime.datetime) -> str:
     return dt.strftime(ISO_DATETIME_FORMAT)
 
 
-def format_iso_default_utc(date_string: str) -> datetime.datetime:
+def format_iso_from_string(date_string: str) -> datetime.datetime:
     """
     Converts a string even if offset is missing: 2011-11-04T00:05:23Z or 2011-11-04T00:05:23+00:00 or 2011-11-04T00:05:23
     to a datetime object.
     For missing offsets, the default offset is UTC.
     """
+    # return datetime.datetime.fromisoformat(date_string)
     return default_tzinfo(dateutil_parse(date_string), DFLT_TZ)
