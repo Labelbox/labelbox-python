@@ -5,7 +5,6 @@ from enum import Enum
 from itertools import chain
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
 
-from dateutil.parser import isoparse
 from pydantic import BaseModel, conlist, constr
 
 from labelbox.schema.ontology import SchemaId
