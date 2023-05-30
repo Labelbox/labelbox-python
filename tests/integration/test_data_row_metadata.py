@@ -445,7 +445,7 @@ def test_delete_schema(mdo):
 
 
 @pytest.mark.parametrize('datetime_str',
-                         ['2011-11-04T00:05:23Z', '2011-05-07T14:34:14+00:00'])
+                         ['2011-11-04T00:05:23Z', '2011-11-04T00:05:23+00:00'])
 def test_upsert_datarow_date_metadata(data_row, mdo, datetime_str):
     metadata = [
         DataRowMetadata(data_row_id=data_row.uid,
@@ -458,11 +458,11 @@ def test_upsert_datarow_date_metadata(data_row, mdo, datetime_str):
     assert len(errors) == 0
 
     metadata = mdo.bulk_export([data_row.uid])
-    assert metadata[0].fields[0].value == datetime.fromisoformat(datetime_str)
+    assert f"{metadata[0].fields[0].value}" == "2011-11-04 00:05:23+00:00"
 
 
 @pytest.mark.parametrize('datetime_str',
-                         ['2011-11-04T00:05:23Z', '2011-05-07T14:34:14+00:00'])
+                         ['2011-11-04T00:05:23Z', '2011-11-04T00:05:23+00:00'])
 def test_create_data_row_with_metadata(dataset, image_url, datetime_str):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
@@ -475,5 +475,4 @@ def test_create_data_row_with_metadata(dataset, image_url, datetime_str):
                                        metadata_fields=metadata_fields)
 
     retrieved_data_row = client.get_data_row(data_row.uid)
-    assert retrieved_data_row.metadata[0].value == datetime.fromisoformat(
-        datetime_str)
+    assert f"{retrieved_data_row.metadata[0].value}" == "2011-11-04 00:05:23+00:00"
