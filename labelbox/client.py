@@ -429,7 +429,7 @@ class Client:
     def get_project(self, project_id):
         """ Gets a single Project with the given ID.
 
-            >>> project = client.get_project("<project_id>")
+        >>> project = client.get_project("<project_id>")
 
         Args:
             project_id (str): Unique ID of the Project.
@@ -444,7 +444,7 @@ class Client:
     def get_dataset(self, dataset_id) -> Dataset:
         """ Gets a single Dataset with the given ID.
 
-            >>> dataset = client.get_dataset("<dataset_id>")
+        >>> dataset = client.get_dataset("<dataset_id>")
 
         Args:
             dataset_id (str): Unique ID of the Dataset.
@@ -459,15 +459,14 @@ class Client:
     def get_user(self) -> User:
         """ Gets the current User database object.
 
-            >>> user = client.get_user()
+        >>> user = client.get_user()
         """
         return self._get_single(Entity.User, None)
 
     def get_organization(self) -> Organization:
         """ Gets the Organization DB object of the current user.
 
-            >>> organization = client.get_organization()
-
+        >>> organization = client.get_organization()
         """
         return self._get_single(Entity.Organization, None)
 
@@ -494,7 +493,7 @@ class Client:
     def get_projects(self, where=None) -> List[Project]:
         """ Fetches all the projects the user has access to.
 
-            >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
+        >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -507,7 +506,7 @@ class Client:
     def get_datasets(self, where=None) -> List[Dataset]:
         """ Fetches one or more datasets.
 
-            >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
+        >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -520,7 +519,7 @@ class Client:
     def get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
         """ Fetches all the labeling frontends.
 
-            >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
+        >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -564,9 +563,6 @@ class Client:
 
         Attribute values are passed as keyword arguments.
 
-        >>> project = client.get_project("<project_uid>")
-        >>> dataset = client.create_dataset(name="<dataset_name>", projects=project)
-
         Args:
             iam_integration (IAMIntegration) : Uses the default integration.
                 Optionally specify another integration or set as None to not use delegated access
@@ -576,6 +572,11 @@ class Client:
         Raises:
             InvalidAttributeError: If the Dataset type does not contain
                 any of the attribute names given in kwargs.
+        Examples:
+            Create a dataset
+            >>> dataset = client.create_dataset(name="<dataset_name>")
+            Create a dataset with description
+            >>> dataset = client.create_dataset(name="<dataset_name>", description="<dataset_description>")
         """
         dataset = self._create(Entity.Dataset, kwargs)
 
@@ -704,7 +705,7 @@ class Client:
     def get_model(self, model_id) -> Model:
         """ Gets a single Model with the given ID.
 
-            >>> model = client.get_model("<model_id>")
+        >>> model = client.get_model("<model_id>")
 
         Args:
             model_id (str): Unique ID of the Model.
@@ -719,7 +720,7 @@ class Client:
     def get_models(self, where=None) -> List[Model]:
         """ Fetches all the models the user has access to.
 
-            >>> models = client.get_models(where=(Model.name == "<model_name>"))
+        >>> models = client.get_models(where=(Model.name == "<model_name>"))
 
         Args:
             where (Comparison, LogicalOperation or None): The `where` clause
@@ -1176,7 +1177,7 @@ class Client:
     def get_model_run(self, model_run_id: str) -> ModelRun:
         """ Gets a single ModelRun with the given ID.
 
-            >>> model_run = client.get_model_run("<model_run_id>")
+        >>> model_run = client.get_model_run("<model_run_id>")
 
         Args:
             model_run_id (str): Unique ID of the ModelRun.
