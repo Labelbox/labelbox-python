@@ -64,12 +64,15 @@ class NDTextSubclass(NDAnswer):
     answer: str
 
     def to_common(self) -> Text:
-        return Text(answer=self.answer)
+        return Text(answer=self.answer, confidence=self.confidence)
 
     @classmethod
     def from_common(cls, text: Text, name: str,
                     feature_schema_id: Cuid) -> "NDTextSubclass":
-        return cls(answer=text.answer, name=name, schema_id=feature_schema_id)
+        return cls(answer=text.answer,
+                   name=name,
+                   schema_id=feature_schema_id,
+                   confidence=text.confidence)
 
 
 class NDChecklistSubclass(NDAnswer):
@@ -161,7 +164,7 @@ class NDText(NDAnnotation, NDTextSubclass):
             schema_id=feature_schema_id,
             uuid=uuid,
             message_id=message_id,
-            confidence=confidence,
+            confidence=text.confidence,
         )
 
 
@@ -273,7 +276,6 @@ class NDClassification:
             feature_schema_id=annotation.schema_id,
             extra={'uuid': annotation.uuid},
             message_id=annotation.message_id,
-            confidence=annotation.confidence,
         )
 
         if getattr(annotation, 'frames', None) is None:
