@@ -37,6 +37,31 @@ def test_create_from_objects(model_run_with_data_rows, object_predictions,
     annotation_import.wait_until_done()
 
 
+def test_create_from_objects_with_confidence(predictions_with_confidence,
+                                             model_run_with_data_rows,
+                                             annotation_import_test_helpers):
+    name = str(uuid.uuid4())
+
+    object_prediction_data_rows = [
+        object_prediction["dataRow"]["id"]
+        for object_prediction in predictions_with_confidence
+    ]
+    # MUST have all data rows in the model run
+    model_run_with_data_rows.upsert_data_rows(
+        data_row_ids=object_prediction_data_rows)
+
+    annotation_import = model_run_with_data_rows.add_predictions(
+        name=name, predictions=predictions_with_confidence)
+
+    assert annotation_import.model_run_id == model_run_with_data_rows.uid
+    annotation_import_test_helpers.check_running_state(annotation_import, name)
+    annotation_import_test_helpers.assert_file_content(
+        annotation_import.input_file_url, predictions_with_confidence)
+    annotation_import.wait_until_done()
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
+
+
 def test_create_from_objects_all_project_labels(
         model_run_with_all_project_labels, object_predictions,
         annotation_import_test_helpers):
