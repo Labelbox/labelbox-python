@@ -795,7 +795,7 @@ class Project(DbObject, Updateable, Deletable):
                                   timeout=180.0,
                                   experimental=True)["project"][method]
         batch = res['batch']
-        batch['size'] = len(dr_ids)
+        batch['size'] = res['batch']['size']
         return Entity.Batch(self.client,
                             self.uid,
                             batch,

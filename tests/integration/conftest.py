@@ -661,7 +661,6 @@ class ExportV2Helpers:
                 time.sleep(5)
             else:
                 break
-
         return task.result
 
     @classmethod

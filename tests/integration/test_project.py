@@ -128,6 +128,40 @@ def test_project_export_v2(client, export_v2_test_helpers,
     export_v2_test_helpers.run_project_export_v2_task(project, filters=filters)
 
 
+def test_project_export_v2_with_iso_date_filters(client, export_v2_test_helpers,
+                                                 configured_project_with_label,
+                                                 wait_for_data_row_processing):
+    project, _, data_row, label = configured_project_with_label
+    data_row = wait_for_data_row_processing(client, data_row)
+    label_id = label.uid
+
+    task_name = "test_label_export_v2_with_iso_date_filters"
+
+    filters = {
+        "last_activity_at": [
+            "2000-01-01T00:00:00+0230", "2050-01-01T00:00:00+0230"
+        ],
+        "label_created_at": [
+            "2000-01-01T00:00:00+0230", "2050-01-01T00:00:00+0230"
+        ]
+    }
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters)
+    assert label_id == task_results[0]['projects'][
+        project.uid]['labels'][0]['id']
+
+    filters = {"last_activity_at": [None, "2050-01-01T00:00:00+0230"]}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters)
+    assert label_id == task_results[0]['projects'][
+        project.uid]['labels'][0]['id']
+
+    filters = {"label_created_at": ["2050-01-01T00:00:00+0230", None]}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters)
+    assert len(task_results) == 0
+
+
 @pytest.mark.parametrize("data_rows", [3], indirect=True)
 def test_project_export_v2_datarow_list(
         export_v2_test_helpers,
