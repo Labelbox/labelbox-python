@@ -37,7 +37,11 @@ class SharedExportFilters(TypedDict):
 
 
 class ProjectExportFilters(SharedExportFilters):
-    pass
+    batch_id: Optional[str]
+    """ Batch id to export
+    Example:
+    >>> "clgo3lyax0000veeezdbu3ws4"
+    """
 
 
 class DatasetExportFilters(SharedExportFilters):
@@ -177,5 +181,13 @@ def build_filters(client, filters):
             "ids": data_row_ids,
             "operator": "is",
             "type": "data_row_id"
+        })
+
+    batch_id = filters.get("batch_id")
+    if batch_id:
+        search_query.append({
+            "ids": [batch_id],
+            "operator": "is",
+            "type": "batch"
         })
     return search_query
