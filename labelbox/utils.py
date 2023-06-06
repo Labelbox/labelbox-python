@@ -86,7 +86,7 @@ def format_iso_datetime(dt: datetime.datetime) -> str:
     Formats a datetime object into the format: 2011-11-04T00:05:23Z
     Note that datetime.isoformat() outputs 2011-11-04T00:05:23+00:00
     """
-    return dt.strftime(ISO_DATETIME_FORMAT)
+    return dt.astimezone(datetime.timezone.utc).strftime(ISO_DATETIME_FORMAT)
 
 
 def format_iso_from_string(date_string: str) -> datetime.datetime:
