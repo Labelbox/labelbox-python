@@ -1,10 +1,6 @@
 name = "labelbox"
 __version__ = "3.47.1"
 
-from backports.datetime_fromisoformat import MonkeyPatch
-
-MonkeyPatch.patch_fromisoformat()
-
 from labelbox.client import Client
 from labelbox.schema.project import Project
 from labelbox.schema.model import Model
