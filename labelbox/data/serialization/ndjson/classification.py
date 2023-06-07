@@ -276,6 +276,7 @@ class NDClassification:
             feature_schema_id=annotation.schema_id,
             extra={'uuid': annotation.uuid},
             message_id=annotation.message_id,
+            confidence=annotation.confidence,
         )
 
         if getattr(annotation, 'frames', None) is None:
