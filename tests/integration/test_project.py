@@ -55,7 +55,7 @@ def test_batch_project_export_v2(
     filters = {
         "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        "batch_id": batch.uid,
+        "batch_ids": [batch.uid],
     }
     params = {
         "include_performance_details": True,
