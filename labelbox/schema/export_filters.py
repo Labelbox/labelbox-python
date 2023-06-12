@@ -37,10 +37,10 @@ class SharedExportFilters(TypedDict):
 
 
 class ProjectExportFilters(SharedExportFilters):
-    batch_id: Optional[str]
-    """ Batch id to export
+    batch_ids: Optional[List[str]]
+    """ Batch ids to export
     Example:
-    >>> "clgo3lyax0000veeezdbu3ws4"
+    >>> ["clgo3lyax0000veeezdbu3ws4"]
     """
 
 
@@ -183,11 +183,18 @@ def build_filters(client, filters):
             "type": "data_row_id"
         })
 
-    batch_id = filters.get("batch_id")
-    if batch_id:
+    batch_ids = filters.get("batch_ids")
+    if batch_ids:
+        if not isinstance(batch_ids, list):
+            raise ValueError("`batch_ids` filter expects a list.")
+        if len(batch_ids) > MAX_DATA_ROW_IDS_PER_EXPORT_V2:
+            raise ValueError(
+                f"`batch_ids` filter only supports a max of {MAX_DATA_ROW_IDS_PER_EXPORT_V2} items."
+            )
         search_query.append({
-            "ids": [batch_id],
+            "ids": batch_ids,
             "operator": "is",
             "type": "batch"
         })
+
     return search_query
