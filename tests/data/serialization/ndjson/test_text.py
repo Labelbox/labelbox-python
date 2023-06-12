@@ -21,7 +21,7 @@ def test_serialization():
 
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
-    assert res['confidence'] == 0.5
+    assert 'confidence' not in res  # because confidence needs to be set on the annotation itself
     assert res['name'] == "radio_question_geo"
     assert res['answer'] == "first_radio_answer"
     assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
@@ -29,23 +29,6 @@ def test_serialization():
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
     annotation = res.annotations[0]
-    assert annotation.confidence == 0.5
-
-    annotation_value = annotation.value
-    assert type(annotation_value) is Text
-    assert annotation_value.answer == "first_radio_answer"
-
-    serialized = NDJsonConverter.serialize([label])
-    res = next(serialized)
-    assert res['confidence'] == 0.5
-    assert res['name'] == "radio_question_geo"
-    assert res['answer'] == "first_radio_answer"
-    assert res['dataRow']['id'] == "bkj7z2q0b0000jx6x0q2q7q0d"
-
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-    annotation = res.annotations[0]
-    assert annotation.confidence == 0.5
 
     annotation_value = annotation.value
     assert type(annotation_value) is Text
