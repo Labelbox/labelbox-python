@@ -901,12 +901,7 @@ class NDMask(NDBaseTool):
 class NDTool(
         SpecialUnion,
         Type[Union[  # type: ignore
-            NDMask,
-            NDTextEntity,
-            NDPoint,
-            NDRectangle,
-            NDPolyline,
-            NDPolygon,
+            NDMask, NDTextEntity, NDPoint, NDRectangle, NDPolyline, NDPolygon,
         ]]):
     ...
 

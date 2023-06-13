@@ -19,8 +19,9 @@ class NDAnswer(ConfidenceMixin):
 
     @root_validator()
     def must_set_one(cls, values):
-        if ('schema_id' not in values or values['schema_id']
-                is None) and ('name' not in values or values['name'] is None):
+        if ('schema_id' not in values or
+                values['schema_id'] is None) and ('name' not in values or
+                                                  values['name'] is None):
             raise ValueError("Schema id or name are not set. Set either one.")
         return values
 

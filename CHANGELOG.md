@@ -1,4 +1,19 @@
 # Changelog
+# Version 3.48.0 (2023-06-13)
+## Added
+* Support for ISO format to exports V2 date filters
+* Support to specify confidence for free-text annotations
+
+## Changed
+* Removed backports library and replaced it with python dateutil package to parse iso strings
+
+## Notebooks
+* Added predictions to model run example
+* Added notebook to run yolov8 and sam on video and upload to LB
+* Updated google colab notebooks to reflect raster segmentation tool being released on 6/13
+* Updated radio NDJSON annotations format to support confidence
+* Added confidence to all free-text annotations (ndjson)
+* Fixed issues with cv2 library rooting from the Geospatial notebook used a png map with a signed URL with an expired token
 
 # Version 3.47.1 (2023-05-24)
 ## Fixed
