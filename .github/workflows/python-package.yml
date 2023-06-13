@@ -53,7 +53,7 @@ jobs:
 
       - name: yapf
         id: yapf
-        uses: AlexanderMelde/yapf-action@master
+        uses: google/yapf@v0.44.0
         with:
           args: --verbose --recursive --parallel --style "google"
       - name: dependencies
