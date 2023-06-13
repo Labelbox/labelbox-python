@@ -91,25 +91,27 @@ def test_unmatched(pair):
     check_iou(pair)
 
 
-@parametrize("pair",
-             strings_to_fixtures([
-                 "empty_radio_label",
-                 "matching_radio",
-                 "empty_radio_prediction",
-             ]))
+@parametrize(
+    "pair",
+    strings_to_fixtures([
+        "empty_radio_label",
+        "matching_radio",
+        "empty_radio_prediction",
+    ]))
 def test_radio(pair):
     check_iou(pair)
 
 
-@parametrize("pair",
-             strings_to_fixtures([
-                 "matching_checklist",
-                 "partially_matching_checklist_1",
-                 "partially_matching_checklist_2",
-                 "partially_matching_checklist_3",
-                 "empty_checklist_label",
-                 "empty_checklist_prediction",
-             ]))
+@parametrize(
+    "pair",
+    strings_to_fixtures([
+        "matching_checklist",
+        "partially_matching_checklist_1",
+        "partially_matching_checklist_2",
+        "partially_matching_checklist_3",
+        "empty_checklist_label",
+        "empty_checklist_prediction",
+    ]))
 def test_checklist(pair):
     check_iou_checklist(pair)
 
@@ -120,9 +122,10 @@ def test_text(pair):
     check_iou(pair)
 
 
-@parametrize("pair",
-             strings_to_fixtures(
-                 ["test_box_with_wrong_subclass", "test_box_with_subclass"]))
+@parametrize(
+    "pair",
+    strings_to_fixtures(
+        ["test_box_with_wrong_subclass", "test_box_with_subclass"]))
 def test_vector_with_subclass(pair):
     check_iou(pair)
 
@@ -132,8 +135,9 @@ def test_others(pair):
     check_iou(pair)
 
 
-@parametrize("pair",
-             strings_to_fixtures(
-                 ["matching_ner", "no_matching_ner", "partial_matching_ner"]))
+@parametrize(
+    "pair",
+    strings_to_fixtures(
+        ["matching_ner", "no_matching_ner", "partial_matching_ner"]))
 def test_ner(pair):
     check_iou(pair)
