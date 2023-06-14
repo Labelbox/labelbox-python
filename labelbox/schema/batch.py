@@ -1,4 +1,5 @@
 from typing import Generator, TYPE_CHECKING
+
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm import query
 from labelbox.orm.model import Entity, Field, Relationship

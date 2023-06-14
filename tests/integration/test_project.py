@@ -1,5 +1,6 @@
 import time
 import os
+from typing import Tuple
 import uuid
 
 import pytest
@@ -7,6 +8,8 @@ import requests
 
 from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
+from labelbox.schema.data_row import DataRow
+from labelbox.schema.label import Label
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 
@@ -40,6 +43,43 @@ def test_project(client, rand_gen):
     project.delete()
     projects = list(client.get_projects())
     assert project not in projects
+
+
+def test_batch_project_export_v2(
+        configured_batch_project_with_label: Tuple[Project, Dataset, DataRow,
+                                                   Label],
+        export_v2_test_helpers, dataset: Dataset, image_url: str):
+    project, dataset, *_ = configured_batch_project_with_label
+
+    batch = list(project.batches())[0]
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "batch_ids": [batch.uid],
+    }
+    params = {
+        "include_performance_details": True,
+        "include_labels": True,
+        "media_type_override": MediaType.Image
+    }
+    task_name = "test_batch_export_v2"
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch_one = f'batch one {uuid.uuid4()}'
+
+    # This test creates two batches, only one batch should be exporter
+    # Creatin second batch that will not be used in the export due to the filter: batch_id
+    project.create_batch(batch_one, data_rows)
+
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters, params=params)
+    assert (batch.size == len(task_results))
 
 
 def test_project_export_v2(client, export_v2_test_helpers,
@@ -86,6 +126,40 @@ def test_project_export_v2(client, export_v2_test_helpers,
 
     filters = {"label_created_at": ["2000-01-01 00:00:00", None]}
     export_v2_test_helpers.run_project_export_v2_task(project, filters=filters)
+
+
+def test_project_export_v2_with_iso_date_filters(client, export_v2_test_helpers,
+                                                 configured_project_with_label,
+                                                 wait_for_data_row_processing):
+    project, _, data_row, label = configured_project_with_label
+    data_row = wait_for_data_row_processing(client, data_row)
+    label_id = label.uid
+
+    task_name = "test_label_export_v2_with_iso_date_filters"
+
+    filters = {
+        "last_activity_at": [
+            "2000-01-01T00:00:00+0230", "2050-01-01T00:00:00+0230"
+        ],
+        "label_created_at": [
+            "2000-01-01T00:00:00+0230", "2050-01-01T00:00:00+0230"
+        ]
+    }
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters)
+    assert label_id == task_results[0]['projects'][
+        project.uid]['labels'][0]['id']
+
+    filters = {"last_activity_at": [None, "2050-01-01T00:00:00+0230"]}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters)
+    assert label_id == task_results[0]['projects'][
+        project.uid]['labels'][0]['id']
+
+    filters = {"label_created_at": ["2050-01-01T00:00:00+0230", None]}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters)
+    assert len(task_results) == 0
 
 
 @pytest.mark.parametrize("data_rows", [3], indirect=True)

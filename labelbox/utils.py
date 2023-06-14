@@ -1,10 +1,16 @@
 import datetime
 import re
+
+from dateutil.tz import tzoffset
+from dateutil.parser import isoparse as dateutil_parse
+from dateutil.utils import default_tzinfo
+
 from urllib.parse import urlparse
 from pydantic import BaseModel
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
 ISO_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+DFLT_TZ = tzoffset("UTC", 0000)
 
 
 def _convert(s, sep, title):
@@ -80,4 +86,14 @@ def format_iso_datetime(dt: datetime.datetime) -> str:
     Formats a datetime object into the format: 2011-11-04T00:05:23Z
     Note that datetime.isoformat() outputs 2011-11-04T00:05:23+00:00
     """
-    return dt.strftime(ISO_DATETIME_FORMAT)
+    return dt.astimezone(datetime.timezone.utc).strftime(ISO_DATETIME_FORMAT)
+
+
+def format_iso_from_string(date_string: str) -> datetime.datetime:
+    """
+    Converts a string even if offset is missing: 2011-11-04T00:05:23Z or 2011-11-04T00:05:23+00:00 or 2011-11-04T00:05:23
+    to a datetime object.
+    For missing offsets, the default offset is UTC.
+    """
+    # return datetime.datetime.fromisoformat(date_string)
+    return default_tzinfo(dateutil_parse(date_string), DFLT_TZ)

@@ -208,6 +208,57 @@ def annotations_by_data_type_v2(
 
 @pytest.fixture
 def ontology():
+    bbox_tool_with_nested_text = {
+        'required':
+            False,
+        'name':
+            'bbox_tool_with_nested_text',
+        'tool':
+            'rectangle',
+        'color':
+            '#a23030',
+        'classifications': [{
+            'required':
+                False,
+            'instructions':
+                'nested',
+            'name':
+                'nested',
+            'type':
+                'radio',
+            'options': [{
+                'label':
+                    'radio_option_1',
+                'value':
+                    'radio_value_1',
+                'options': [{
+                    'required':
+                        False,
+                    'instructions':
+                        'nested_checkbox',
+                    'name':
+                        'nested_checkbox',
+                    'type':
+                        'checklist',
+                    'options': [{
+                        'label': 'nested_checkbox_option_1',
+                        'value': 'nested_checkbox_value_1',
+                        'options': []
+                    }, {
+                        'label': 'nested_checkbox_option_2',
+                        'value': 'nested_checkbox_value_2'
+                    }]
+                }, {
+                    'required': False,
+                    'instructions': 'nested_text',
+                    'name': 'nested_text',
+                    'type': 'text',
+                    'options': []
+                }]
+            },]
+        }]
+    }
+
     bbox_tool = {
         'required':
             False,
@@ -242,13 +293,14 @@ def ontology():
                         'checklist',
                     'options': [{
                         'label': 'nested_checkbox_option_1',
-                        'value': 'nested_checkbox_value_1'
+                        'value': 'nested_checkbox_value_1',
+                        'options': []
                     }, {
                         'label': 'nested_checkbox_option_2',
                         'value': 'nested_checkbox_value_2'
                     }]
                 }]
-            }]
+            },]
         }]
     }
 
@@ -380,6 +432,7 @@ def ontology():
 
     tools = [
         bbox_tool,
+        bbox_tool_with_nested_text,
         polygon_tool,
         polyline_tool,
         point_tool,
@@ -430,6 +483,7 @@ def configured_project(client, ontology, rand_gen, image_url):
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
     data_row_ids = []
+
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids)
@@ -492,6 +546,10 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
     project.delete()
 
 
+# This function allows to convert an ontology feature to actual annotation
+# At the moment it expects only one feature per tool type and this creates unnecessary coupling between differet tests
+# In an example of a 'rectangle' we have extended to support multiple instances of the same tool type
+# TODO: we will support this approach in the future for all tools
 @pytest.fixture
 def prediction_id_mapping(configured_project):
     # Maps tool types to feature schema ids
@@ -504,15 +562,31 @@ def prediction_id_mapping(configured_project):
         else:
             tool_type = tool[
                 'type'] if 'scope' not in tool else f"{tool['type']}_{tool['scope']}"  # so 'checklist' of 'checklist_index'
-        result[tool_type] = {
-            "uuid": str(uuid.uuid4()),
-            "schemaId": tool['featureSchemaId'],
-            "name": tool['name'],
-            "dataRow": {
-                "id": configured_project.data_row_ids[idx],
-            },
-            'tool': tool
-        }
+
+        # TODO: remove this once we have a better way to associate multiple tools instances with a single tool type
+        if tool_type == 'rectangle':
+            value = {
+                "uuid": str(uuid.uuid4()),
+                "schemaId": tool['featureSchemaId'],
+                "name": tool['name'],
+                "dataRow": {
+                    "id": configured_project.data_row_ids[idx],
+                },
+                'tool': tool
+            }
+            if tool_type not in result:
+                result[tool_type] = []
+            result[tool_type].append(value)
+        else:
+            result[tool_type] = {
+                "uuid": str(uuid.uuid4()),
+                "schemaId": tool['featureSchemaId'],
+                "name": tool['name'],
+                "dataRow": {
+                    "id": configured_project.data_row_ids[idx],
+                },
+                'tool': tool
+            }
     return result
 
 
@@ -538,9 +612,18 @@ def polygon_inference(prediction_id_mapping):
     return polygon
 
 
+def find_tool_by_name(tool_instances, name):
+    for tool in tool_instances:
+        if tool['name'] == name:
+            return tool
+    return None
+
+
 @pytest.fixture
 def rectangle_inference(prediction_id_mapping):
-    rectangle = prediction_id_mapping['rectangle'].copy()
+    tool_instance = find_tool_by_name(prediction_id_mapping['rectangle'],
+                                      'bbox')
+    rectangle = tool_instance.copy()
     rectangle.update({
         "bbox": {
             "top": 48,
@@ -563,6 +646,53 @@ def rectangle_inference(prediction_id_mapping):
             }
         }]
     })
+    del rectangle['tool']
+    return rectangle
+
+
+@pytest.fixture
+def rectangle_inference_with_confidence(prediction_id_mapping):
+    tool_instance = find_tool_by_name(prediction_id_mapping['rectangle'],
+                                      'bbox_tool_with_nested_text')
+    rectangle = tool_instance.copy()
+    rectangle.update({
+        "bbox": {
+            "top": 48,
+            "left": 58,
+            "height": 65,
+            "width": 12
+        },
+        'classifications': [{
+            "schemaId":
+                rectangle['tool']['classifications'][0]['featureSchemaId'],
+            "name":
+                rectangle['tool']['classifications'][0]['name'],
+            "answer": {
+                "schemaId":
+                    rectangle['tool']['classifications'][0]['options'][0]
+                    ['featureSchemaId'],
+                "name":
+                    rectangle['tool']['classifications'][0]['options'][0]
+                    ['value'],
+                "classifications": [{
+                    "schemaId":
+                        rectangle['tool']['classifications'][0]['options'][0]
+                        ['options'][1]['featureSchemaId'],
+                    "name":
+                        rectangle['tool']['classifications'][0]['options'][0]
+                        ['options'][1]['name'],
+                    "answer":
+                        'nested answer'
+                }],
+            }
+        }]
+    })
+
+    rectangle.update({"confidence": 0.9})
+    rectangle["classifications"][0]["answer"]["confidence"] = 0.8
+    rectangle["classifications"][0]["answer"]["classifications"][0][
+        "confidence"] = 0.7
+
     del rectangle['tool']
     return rectangle
 
@@ -744,6 +874,13 @@ def text_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def text_inference_with_confidence(text_inference):
+    text = text_inference.copy()
+    text.update({'confidence': 0.9})
+    return text
+
+
+@pytest.fixture
 def text_inference_index(prediction_id_mapping):
     text = prediction_id_mapping['text_index'].copy()
     text.update({'answer': "free form text...", "messageId": "0"})
@@ -797,6 +934,12 @@ def classification_predictions(checklist_inference, text_inference):
 @pytest.fixture
 def predictions(object_predictions, classification_predictions):
     return object_predictions + classification_predictions
+
+
+@pytest.fixture
+def predictions_with_confidence(text_inference_with_confidence,
+                                rectangle_inference_with_confidence):
+    return [text_inference_with_confidence, rectangle_inference_with_confidence]
 
 
 @pytest.fixture
@@ -895,6 +1038,14 @@ class AnnotationImportTestHelpers:
         assert req.error_file_url is None
         assert req.status_file_url is None
         assert req.state == AnnotationImportState.RUNNING
+
+    @staticmethod
+    def download_and_assert_status(status_file_url):
+        response = requests.get(status_file_url)
+        assert response.status_code == 200
+        for line in parser.loads(response.content):
+            status = line['status']
+            assert status.upper() == 'SUCCESS'
 
     @staticmethod
     def _convert_to_plain_object(obj):
