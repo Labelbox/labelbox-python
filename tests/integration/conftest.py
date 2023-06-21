@@ -398,6 +398,7 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
     One label is already created and yielded when using fixture
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
+    batch_project._wait_until_data_rows_are_processed(data_row_ids=data_rows)
     batch_project.create_batch("test-batch", data_rows)
 
     ontology = _setup_ontology(batch_project)
@@ -420,6 +421,7 @@ def configured_batch_project_with_multiple_datarows(batch_project, dataset,
     """
     global_keys = [dr.global_key for dr in data_rows]
 
+    batch_project._wait_until_data_rows_are_processed(global_keys=global_keys)
     batch_name = f'batch {uuid.uuid4()}'
     batch_project.create_batch(batch_name, global_keys=global_keys)
 
