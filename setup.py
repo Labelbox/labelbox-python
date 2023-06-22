@@ -29,6 +29,8 @@ setuptools.setup(
             "typeguard", "imagesize", "pyproj", "pygeotile",
             "typing-extensions", "packaging"
         ],
+        ':python_version<"3.8"': ['numpy<=1.21.6'],
+        ':python_version>="3.8"': ['numpy>=1.23.0'],
     },
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
