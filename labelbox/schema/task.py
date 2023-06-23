@@ -129,6 +129,16 @@ class Task(DbObject):
         else:
             return None
 
+    @property
+    def created_data_rows(self) -> Optional[Dict[str, Any]]:
+        """ Fetch data rows which successfully created for an import task.
+        """
+        result = self._fetch_remote_json()
+        if len(result.get("createdDataRows", [])) > 0:
+            return result["createdDataRows"]
+        else:
+            return None
+
     @lru_cache()
     def _fetch_remote_json(self,
                            remote_json_field: Optional[str] = None
