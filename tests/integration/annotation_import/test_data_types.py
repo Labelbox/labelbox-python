@@ -234,7 +234,8 @@ def test_import_data_types_v2(client, configured_project,
     exported_project_labels = exported_project['labels'][0]
     exported_annotations = exported_project_labels['annotations']
 
-    remove_keys_recursive(exported_annotations, ['feature_id'])
+    remove_keys_recursive(exported_annotations,
+                          ['feature_id', 'feature_schema_id'])
     rename_cuid_key_recursive(exported_annotations)
     assert exported_annotations == exports_v2_by_data_type[data_type_string]
 

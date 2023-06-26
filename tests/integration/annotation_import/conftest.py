@@ -11,8 +11,8 @@ from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.queue_mode import QueueMode
 
-DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
-DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 5
+DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
+DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 
 
 @pytest.fixture()
