@@ -20,8 +20,12 @@ setuptools.setup(
     url="https://labelbox.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "backoff==1.10.0", "requests>=2.22.0", "google-api-core>=1.22.1",
-        "pydantic>=1.8,<2.0", "tqdm", "python-dateutil>=2.8.2,<2.9.0",
+        "backoff==1.10.0",
+        "requests>=2.22.0",
+        "google-api-core>=1.22.1",
+        "pydantic>=1.8,<2.0",
+        "tqdm",
+        "python-dateutil>=2.8.2,<2.9.0",
         'numpy==1.21.6; python_version<"3.8"',
         'numpy~=1.23.5; python_version>="3.8"',
     ],
@@ -31,7 +35,6 @@ setuptools.setup(
             "typeguard", "imagesize", "pyproj", "pygeotile",
             "typing-extensions", "packaging"
         ],
-
     },
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
