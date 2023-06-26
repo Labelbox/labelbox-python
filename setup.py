@@ -21,7 +21,9 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "backoff==1.10.0", "requests>=2.22.0", "google-api-core>=1.22.1",
-        "pydantic>=1.8,<2.0", "tqdm", "python-dateutil>=2.8.2,<2.9.0"
+        "pydantic>=1.8,<2.0", "tqdm", "python-dateutil>=2.8.2,<2.9.0",
+        'numpy==1.21.6; python_version<"3.8"',
+        'numpy~=1.23.5; python_version>="3.8"',
     ],
     extras_require={
         'data': [
@@ -29,8 +31,7 @@ setuptools.setup(
             "typeguard", "imagesize", "pyproj", "pygeotile",
             "typing-extensions", "packaging"
         ],
-        ':python_version<"3.8"': ['numpy<=1.21.6'],
-        ':python_version>="3.8"': ['numpy>=1.23.0'],
+
     },
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
