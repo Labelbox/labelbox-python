@@ -1,4 +1,15 @@
 # Changelog
+# Version 3.49.0 (2023-06-27)
+
+## Changed
+* Improved batch creation logic when more than 1000 global keys provided
+
+
+## Notebooks
+* Added example on how to access mark in export v2
+* Removed NDJSON library from `examples/basics/custom_embeddings.ipynb`
+* Removed `queue_mode` property from `create_project()` method call.
+
 # Version 3.48.0 (2023-06-13)
 ## Added
 * Support for ISO format to exports V2 date filters
@@ -37,7 +48,7 @@
 * Global key support to DataRow Metadata `bulk_upsert()` function
 
 ## Notebooks
-* Removed dataset based projects from project setup notebook 
+* Removed dataset based projects from project setup notebook
 * Updated all links to annotation import and prediction notebooks in examples README
 
 # Version 3.45.0 (2023-04-27)
@@ -91,7 +102,7 @@
 ## Added
 * Message based classifications with annotation types for conversations
 * Video and raster segmentation annotation types
-* Global key support to `ConversationEntity`, `DocumentEntity` and `DicomSegments`   
+* Global key support to `ConversationEntity`, `DocumentEntity` and `DicomSegments`
 * DICOM polyline annotation type
 * Confidence attribute to classification annotations
 
@@ -100,7 +111,7 @@
 * Removed `deletedDataRowGlobalKey` from `get_data_row_ids_for_global_keys()`
 
 ## Fixed
-* Annotation data type coercion by Pydantic    
+* Annotation data type coercion by Pydantic
 * Error message when end point coordinates are smaller than start point coordinates
 * Some typos in error messages
 
@@ -145,7 +156,7 @@
 * Updated `annotation_import/pdf.ipynb` with more examples
 * Added `integrations/huggingface/huggingface.ipynb`
 * Fixed broken links for detectron notebooks in README
-* Added Dataset QueueMode during project creation in `integrations/detectron2/coco_object.ipynb` 
+* Added Dataset QueueMode during project creation in `integrations/detectron2/coco_object.ipynb`
 * Removed metadata and updated ontology in `annotation_import/text.ipynb`
 * Removed confidence scores in `annotation_import/image.ipynb`
 * Updated custom embedding tutorial links in `basics/data_row_metadata.ipynb`
@@ -190,7 +201,7 @@
 
 # Version 3.37.0 (2023-02-08)
 ## Added
-* New `last_activity_start` param to `project.export_labels()` for filtering which labels are exported. See docstring for more on how this works. 
+* New `last_activity_start` param to `project.export_labels()` for filtering which labels are exported. See docstring for more on how this works.
 
 ## Changed
 * Rename `Classification.instructions` to `Classification.name`
