@@ -27,7 +27,8 @@ setuptools.setup(
         "tqdm",
         "python-dateutil>=2.8.2,<2.9.0",
         'numpy==1.21.6; python_version<"3.8"',
-        'numpy~=1.23.5; python_version>="3.8"',
+        'numpy~=1.23.5; python_version=="3.8"',
+        'numpy~=1.25.0; python_version>"3.8"',
     ],
     extras_require={
         'data': [
