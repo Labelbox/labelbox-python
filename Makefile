@@ -9,28 +9,28 @@ test-local: build-image
 		./scripts/ensure_local_setup.sh; \
 	fi
 
-	docker run -it -v ${PWD}:/usr/src -w /usr/src \
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="local" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_LOCAL=${LABELBOX_TEST_API_KEY_LOCAL} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
 test-staging: build-image
-	docker run -it -v ${PWD}:/usr/src -w /usr/src \
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="staging" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_STAGING=${LABELBOX_TEST_API_KEY_STAGING} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
 test-prod: build-image
-	docker run -it -v ${PWD}:/usr/src -w /usr/src \
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="prod" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_PROD=${LABELBOX_TEST_API_KEY_PROD} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
 test-onprem: build-image
-	docker run -it -v ${PWD}:/usr/src -w /usr/src \
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="onprem" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_ONPREM=${LABELBOX_TEST_API_KEY_ONPREM} \
@@ -38,7 +38,7 @@ test-onprem: build-image
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
 test-custom: build-image
-	docker run -it -v ${PWD}:/usr/src -w /usr/src \
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="custom" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_CUSTOM=${LABELBOX_TEST_API_KEY_CUSTOM} \

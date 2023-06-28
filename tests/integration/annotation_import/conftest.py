@@ -11,6 +11,9 @@ from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.queue_mode import QueueMode
 
+DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
+DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
+
 
 @pytest.fixture()
 def audio_data_row(rand_gen):
@@ -486,7 +489,10 @@ def configured_project(client, ontology, rand_gen, image_url):
 
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
-    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids)
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids,
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project
@@ -505,7 +511,10 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project.setup(editor, ontology)
     data_row_ids = []
     data_row_ids.append(dataset.create_data_row(pdf_url).uid)
-    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids)
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids,
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     project.datasets.connect(dataset)
     project.data_row_ids = data_row_ids
     yield project

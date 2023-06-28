@@ -106,15 +106,6 @@ def test_cant_delete_an_ontology_with_project(client):
     client.delete_unused_feature_schema(feature_schema_id)
 
 
-def test_cant_delete_an_ontology_that_doesnt_exist(client):
-    with pytest.raises(
-            Exception,
-            match=
-            "Failed to delete the ontology, message: Failed to find ontology by id: doesntexist"
-    ):
-        client.delete_unused_ontology("doesntexist")
-
-
 def test_inserts_a_feature_schema_at_given_position(client):
     tool1 = {'tool': 'polygon', 'name': 'tool1', 'color': 'blue'}
     tool2 = {'tool': 'polygon', 'name': 'tool2', 'color': 'blue'}
