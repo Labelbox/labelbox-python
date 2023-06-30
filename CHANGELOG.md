@@ -1,9 +1,12 @@
 # Changelog
+# Version 3.49.1 (2023-06-29)
+## Fixed
+* Removed numpy version lock that caused Python version >3.8 to download incompatible numpy version
+
 # Version 3.49.0 (2023-06-27)
 
 ## Changed
 * Improved batch creation logic when more than 1000 global keys provided
-
 
 ## Notebooks
 * Added example on how to access mark in export v2
