@@ -16,3 +16,4 @@ shapely
 tqdm
 typeguard==2.13.3
 typing-extensions==4.5.0
+numpy
