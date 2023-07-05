@@ -477,10 +477,16 @@ def wait_for_label_processing():
 
 
 @pytest.fixture
-def configured_project(client, ontology, rand_gen, image_url):
+def initial_dataset(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    yield dataset
+
+
+@pytest.fixture
+def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
+    dataset = initial_dataset
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
-    dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -493,11 +499,14 @@ def configured_project(client, ontology, rand_gen, image_url):
         data_row_ids=data_row_ids,
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
         sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-    project.datasets.connect(dataset)
+    project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
     project.data_row_ids = data_row_ids
     yield project
     project.delete()
-    dataset.delete()
 
 
 @pytest.fixture
@@ -515,9 +524,13 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
         data_row_ids=data_row_ids,
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
         sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-    project.datasets.connect(dataset)
+    project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
     project.data_row_ids = data_row_ids
-    yield project
+    yield project, dataset
     project.delete()
     dataset.delete()
 
@@ -562,7 +575,8 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
 @pytest.fixture
 def prediction_id_mapping(configured_project):
     # Maps tool types to feature schema ids
-    ontology = configured_project.ontology().normalized
+    project = configured_project
+    ontology = project.ontology().normalized
     result = {}
 
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
@@ -579,7 +593,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": configured_project.data_row_ids[idx],
+                    "id": project.data_row_ids[idx],
                 },
                 'tool': tool
             }
@@ -592,7 +606,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": configured_project.data_row_ids[idx],
+                    "id": project.data_row_ids[idx],
                 },
                 'tool': tool
             }

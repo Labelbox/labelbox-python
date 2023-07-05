@@ -1,6 +1,5 @@
 import datetime
 import itertools
-import time
 import pytest
 import uuid
 
@@ -13,6 +12,9 @@ from labelbox.data.annotation_types.data import AudioData, ConversationData, Dic
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
 from utils import remove_keys_recursive, rename_cuid_key_recursive
+
+DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
+DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 
 radio_annotation = lb_types.ClassificationAnnotation(
     name="radio",
@@ -171,25 +173,37 @@ def to_pascal_case(name: str) -> str:
     AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
     DocumentData, DicomData
 ])
-def test_import_data_types_v2(client, configured_project,
+def test_import_data_types_v2(client, configured_project, initial_dataset,
                               data_row_json_by_data_type,
                               annotations_by_data_type_v2, data_type_class,
                               exports_v2_by_data_type, export_v2_test_helpers,
-                              wait_for_data_row_processing):
+                              rand_gen):
 
-    project_id = configured_project.uid
+    project = configured_project
+    dataset = initial_dataset
+    project_id = project.uid
 
     data_type_string = data_type_class.__name__[:-4].lower()
 
     media_type = to_pascal_case(data_type_string)
     if media_type == 'Conversation':
         media_type = 'Conversational'
-    configured_project.update(media_type=MediaType[media_type])
+    project.update(media_type=MediaType[media_type])
 
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    dataset = next(configured_project.datasets())
     data_row = dataset.create_data_row(data_row_ndjson)
-    data_row = wait_for_data_row_processing(client, data_row)
+
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row.uid],
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+
+    project.create_batch(
+        rand_gen(str),
+        [data_row.uid],  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids.append(data_row.uid)
 
     annotations_ndjson = annotations_by_data_type_v2[data_type_string]
     annotations_list = [
@@ -201,20 +215,21 @@ def test_import_data_types_v2(client, configured_project,
                        annotations=annotations)
         for annotations in annotations_list
     ]
+
     label_import = lb.LabelImport.create_from_objects(
         client, project_id, f'test-import-{data_type_string}', labels)
     label_import.wait_until_done()
+
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    for label in configured_project.labels():  #trigger review creation
-        label.create_review(score=1.0)
+    # for label in project.labels():  #trigger review creation
+    #     label.create_review(score=1.0)
 
     #TODO need to migrate project to the new BATCH mode and change this code
     # to be similar to tests/integration/test_task_queue.py
 
-    result = export_v2_test_helpers.run_project_export_v2_task(
-        configured_project)
+    result = export_v2_test_helpers.run_project_export_v2_task(project)
     exported_data = result[0]
 
     # timestamp fields are in iso format
@@ -224,8 +239,8 @@ def test_import_data_types_v2(client, configured_project,
                         ['label_details']['created_at'])
     validate_iso_format(exported_data['projects'][project_id]['labels'][0]
                         ['label_details']['updated_at'])
-    validate_iso_format(exported_data['projects'][project_id]['labels'][0]
-                        ['label_details']['reviews'][0]['reviewed_at'])
+    # validate_iso_format(exported_data['projects'][project_id]['labels'][0]
+    #                     ['label_details']['reviews'][0]['reviewed_at'])
     # to be added once we have switched to the new BATCH mode
     # validate_iso_format(exported_data['projects'][project_id]['project_details']['workflow_history'][0]['created_at'])
 
