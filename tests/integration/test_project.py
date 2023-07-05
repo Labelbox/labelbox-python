@@ -19,7 +19,7 @@ def test_project(client, rand_gen):
     data = {
         "name": rand_gen(str),
         "description": rand_gen(str),
-        "queue_mode": QueueMode.Dataset
+        "queue_mode": QueueMode.Batch
     }
     project = client.create_project(**data)
     assert project.name == data["name"]
@@ -342,7 +342,7 @@ def test_queued_data_row_export(configured_project):
 
 def test_queue_mode(configured_project: Project):
     # ensures default queue mode is dataset
-    assert configured_project.queue_mode == QueueMode.Dataset
+    assert configured_project.queue_mode == QueueMode.Batch
 
 
 def test_batches(batch_project: Project, dataset: Dataset, image_url):

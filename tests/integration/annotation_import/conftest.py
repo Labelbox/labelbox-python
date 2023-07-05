@@ -479,7 +479,7 @@ def wait_for_label_processing():
 @pytest.fixture
 def configured_project(client, ontology, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch)
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
@@ -503,7 +503,7 @@ def configured_project(client, ontology, rand_gen, image_url):
 @pytest.fixture
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch)
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(

@@ -6,7 +6,7 @@ from labelbox.schema.queue_mode import QueueMode
 
 def test_project_dataset(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch)
     dataset = client.create_dataset(name=rand_gen(str))
 
     assert len(list(project.datasets())) == 0
@@ -20,7 +20,7 @@ def test_project_dataset(client, rand_gen):
     assert {pr.uid for pr in dataset.projects()} == {project.uid}
 
     project_2 = client.create_project(name=rand_gen(str),
-                                      queue_mode=QueueMode.Dataset)
+                                      queue_mode=QueueMode.Batch)
 
     # Currently it's not possible to connect a project and dataset
     # by updating dataset.

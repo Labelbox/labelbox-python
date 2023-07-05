@@ -214,7 +214,7 @@ def conversation_entity_data_row(client):
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch)
     yield project
     project.delete()
 
@@ -231,7 +231,7 @@ def batch_project(client, rand_gen):
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     auto_audit_percentage=0,
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch)
     yield project
     project.delete()
 
@@ -501,7 +501,7 @@ def _setup_ontology(project):
 @pytest.fixture
 def configured_project_with_complex_ontology(client, rand_gen, image_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch)
     dataset = client.create_dataset(name=rand_gen(str), projects=project)
     data_row = dataset.create_data_row(row_data=image_url)
     editor = list(

@@ -9,13 +9,13 @@ from labelbox.schema.queue_mode import QueueMode
 def test_relationship_sorting(client):
     a = client.create_project(name="a",
                               description="b",
-                              queue_mode=QueueMode.Dataset)
+                              queue_mode=QueueMode.Batch)
     b = client.create_project(name="b",
                               description="c",
-                              queue_mode=QueueMode.Dataset)
+                              queue_mode=QueueMode.Batch)
     c = client.create_project(name="c",
                               description="a",
-                              queue_mode=QueueMode.Dataset)
+                              queue_mode=QueueMode.Batch)
 
     dataset = client.create_dataset(name="Dataset")
     a.datasets.connect(dataset)

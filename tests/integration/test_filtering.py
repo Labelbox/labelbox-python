@@ -8,9 +8,9 @@ from labelbox.schema.queue_mode import QueueMode
 # Avoid assertions using equality to prevent intermittent failures due to
 # other builds simultaneously adding projects to test org
 def test_where(client):
-    p_a = client.create_project(name="a", queue_mode=QueueMode.Dataset)
-    p_b = client.create_project(name="b", queue_mode=QueueMode.Dataset)
-    p_c = client.create_project(name="c", queue_mode=QueueMode.Dataset)
+    p_a = client.create_project(name="a", queue_mode=QueueMode.Batch)
+    p_b = client.create_project(name="b", queue_mode=QueueMode.Batch)
+    p_c = client.create_project(name="c", queue_mode=QueueMode.Batch)
 
     def _get(f, where=None):
         date_where = Project.created_at >= p_a.created_at
