@@ -13,11 +13,13 @@ from io import StringIO
 import requests
 
 from labelbox import utils
+from labelbox import pagination
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
+from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
@@ -63,6 +65,66 @@ class Dataset(DbObject, Updateable, Deletable):
     organization = Relationship.ToOne("Organization", False)
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
+
+
+    def data_rows(self,
+                  filter_deleted: bool = True,
+                  batch_size:int=pagination._PAGE_SIZE,
+                  after:str=None) -> PaginatedCollection:
+        """ 
+        Custom relationship method to paginate via cursor for better performance.
+
+        Params:
+            filter_deleted (bool): Filter out deleted data rows, by default we will not fetch deleted data rows
+            batch_size (int): Number of data rows to fetch per request
+            after (str): Cursor (data row id) to start from, if none, will start from the beginning
+
+        NOTE: 
+        """
+
+"""
+query DatasetDataRowsPyApi($datasetId: ID!, $cursor: ID!) {
+	datasetDataRowsPyApi(id: $datasetId, after: $cursor, first: 100) {
+		nodes{
+			createdAt
+			externalId
+			globalKey
+			mediaAttributes
+			customMetadata {
+				schemaId
+				value
+			}
+			metadataFields {
+				schemaId
+				name
+				value
+				kind
+			}
+			rowData
+			id
+			updatedAt
+
+		}
+		pageInfo {
+			hasNextPage
+			startCursor
+		}
+	}
+}
+
+"""
+    id_param = "projectId"
+    query_str = """query DatasetDataRowsPyApi($datasetId: ID!, $cursor: ID!, $batchSize: Int!) {)  {
+        datasetDataRowsPyApi(id: %s, after: %s, first: %s}) {id
+        batches(after: $from, first: $first) { nodes { %s } pageInfo { hasNextPage startCursor }}}}
+    """ % (id_param, id_param, query.results_query_part(Entity.DataRow))
+
+    return PaginatedCollection(
+        self.client,
+        query_str, {id_param: self.uid}, ['project', 'batches', 'nodes'],
+        lambda client, res: Entity.Batch(client, self.uid, res),
+        cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
+        experimental=True)
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
