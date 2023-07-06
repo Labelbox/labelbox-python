@@ -246,10 +246,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             }
         }
 
-        res = client.execute(
-            create_task_query_str,
-            query_params,
-        )
+        res = client.execute(create_task_query_str,
+                             query_params,
+                             error_log_key="errors")
         print(res)
         res = res[mutation_name]
         task_id = res["taskId"]

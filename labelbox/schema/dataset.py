@@ -632,10 +632,9 @@ class Dataset(DbObject, Updateable, Deletable):
         })
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
-        res = self.client.execute(
-            create_task_query_str,
-            query_params,
-        )
+        res = self.client.execute(create_task_query_str,
+                                  query_params,
+                                  error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
         user: User = self.client.get_user()
