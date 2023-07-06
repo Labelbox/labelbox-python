@@ -82,49 +82,24 @@ class Dataset(DbObject, Updateable, Deletable):
         NOTE: 
         """
 
-"""
-query DatasetDataRowsPyApi($datasetId: ID!, $cursor: ID!) {
-	datasetDataRowsPyApi(id: $datasetId, after: $cursor, first: 100) {
-		nodes{
-			createdAt
-			externalId
-			globalKey
-			mediaAttributes
-			customMetadata {
-				schemaId
-				value
-			}
-			metadataFields {
-				schemaId
-				name
-				value
-				kind
-			}
-			rowData
-			id
-			updatedAt
+        query_str = """
+            query DatasetDataRowsPyApi($datasetId: ID!, $from: ID, $first: Int)  {
+                datasetDataRows(id: $datasetId, from: $from, first: $first}) 
+                    { 
+                        nodes { %s } 
+                        pageInfo { hasNextPage startCursor }
+                    }
+                }
+            }
+        """ % (query.results_query_part(Entity.DataRow))
 
-		}
-		pageInfo {
-			hasNextPage
-			startCursor
-		}
-	}
-}
-
-"""
-    id_param = "projectId"
-    query_str = """query DatasetDataRowsPyApi($datasetId: ID!, $cursor: ID!, $batchSize: Int!) {)  {
-        datasetDataRowsPyApi(id: %s, after: %s, first: %s}) {id
-        batches(after: $from, first: $first) { nodes { %s } pageInfo { hasNextPage startCursor }}}}
-    """ % (id_param, id_param, query.results_query_part(Entity.DataRow))
-
-    return PaginatedCollection(
-        self.client,
-        query_str, {id_param: self.uid}, ['project', 'batches', 'nodes'],
-        lambda client, res: Entity.Batch(client, self.uid, res),
-        cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
-        experimental=True)
+        return PaginatedCollection(
+            client = self.client,
+            query = query_str,
+            params={'datasetId': self.uid, 'after': after, 'first': batch_size},
+            dereferencing=['datasetDataRows', 'nodes'],
+            obj_class=Entity.DataRow,
+            cursor_path=['datasetDataRows', 'nodes', 'pageInfo', 'startCursor'],)
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
