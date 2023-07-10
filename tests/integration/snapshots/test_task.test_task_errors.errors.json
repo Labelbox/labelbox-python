@@ -1,0 +1,1 @@
+"Failed to validate the metadata '[{\"schemaId\":\"cko8s9r5v0001h2dk9elqdidh\",\"value\":\"some msg\"},{\"schemaId\":\"cko8s9r5v0001h2dk9elqdidh\",\"value\":\"some msg 2\"}]': A schemaId can only be specified once per DataRow for CustomMetadataString"

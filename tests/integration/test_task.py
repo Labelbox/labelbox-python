@@ -1,12 +1,14 @@
+import json
 import pytest
 import collections.abc
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
+from tests.utils import INTEGRATION_SNAPSHOT_DIRECTORY
 
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 
 
-def test_task_errors(dataset, image_url):
+def test_task_errors(dataset, image_url, snapshot):
     client = dataset.client
     task = dataset.create_data_rows([
         {
@@ -25,15 +27,17 @@ def test_task_errors(dataset, image_url):
     task.wait_till_done()
     assert task.status == "FAILED"
     assert len(task.failed_data_rows) > 0
-
-    failedDataRows = task.failed_data_rows[0]['failedDataRows']
-    assert len(failedDataRows) == 1
-    # Both metadata fields should be present in error as duplicates are not allowed
-    assert len(failedDataRows[0]['metadataFields']) == 2
+    snapshot.snapshot_dir = INTEGRATION_SNAPSHOT_DIRECTORY
+    # RowData is dynamic, so we need to remove it from the snapshot
+    task.failed_data_rows[0]['failedDataRows'][0]['rowData'] = ''
+    snapshot.assert_match(json.dumps(task.failed_data_rows),
+                          'test_task.test_task_errors.failed_data_rows.json')
     assert task.errors is not None
+    snapshot.assert_match(json.dumps(task.errors),
+                          'test_task.test_task_errors.errors.json')
 
 
-def test_task_success_json(dataset, image_url):
+def test_task_success_json(dataset, image_url, snapshot):
     client = dataset.client
     task = dataset.create_data_rows([
         {
@@ -52,8 +56,11 @@ def test_task_success_json(dataset, image_url):
     assert 'id' in task_result and isinstance(task_result['id'], str)
     assert 'row_data' in task_result and isinstance(task_result['row_data'],
                                                     str)
-    assert 'global_key' in task_result and task_result['global_key'] is None
-    assert 'external_id' in task_result and task_result['external_id'] is None
+    snapshot.snapshot_dir = INTEGRATION_SNAPSHOT_DIRECTORY
+    task_result['id'] = 'DUMMY_ID'
+    task_result['row_data'] = 'https://dummy.url'
+    snapshot.assert_match(json.dumps(task_result),
+                          'test_task.test_task_success_json.json')
     assert len(task.result)
 
 
