@@ -66,40 +66,40 @@ class Dataset(DbObject, Updateable, Deletable):
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-
     def data_rows(self,
-                  filter_deleted: bool = True,
-                  batch_size:int=pagination._PAGE_SIZE,
-                  after:str=None) -> PaginatedCollection:
+                  batch_size: int = pagination._PAGE_SIZE,
+                  from_cursor: str = None) -> PaginatedCollection:
         """ 
         Custom relationship method to paginate via cursor for better performance.
 
         Params:
-            filter_deleted (bool): Filter out deleted data rows, by default we will not fetch deleted data rows
             batch_size (int): Number of data rows to fetch per request
             after (str): Cursor (data row id) to start from, if none, will start from the beginning
 
         NOTE: 
         """
 
-        query_str = """
-            query DatasetDataRowsPyApi($datasetId: ID!, $from: ID, $first: Int)  {
-                datasetDataRows(id: $datasetId, from: $from, first: $first}) 
-                    { 
-                        nodes { %s } 
-                        pageInfo { hasNextPage startCursor }
-                    }
-                }
-            }
-        """ % (query.results_query_part(Entity.DataRow))
+        query_str = """query DatasetDataRowsPyApi($id: ID!, $from: ID, $first: PageSize)  {
+                        datasetDataRows(id: $id, from: $from, first: $first) 
+                            { 
+                                nodes { %s } 
+                                pageInfo { hasNextPage startCursor }
+                            }
+                        }
+                    """ % (query.results_query_part(Entity.DataRow))
 
         return PaginatedCollection(
-            client = self.client,
-            query = query_str,
-            params={'datasetId': self.uid, 'after': after, 'first': batch_size},
+            client=self.client,
+            query=query_str,
+            params={
+                'id': self.uid,
+                'from': from_cursor,
+                'first': batch_size,
+            },
             dereferencing=['datasetDataRows', 'nodes'],
             obj_class=Entity.DataRow,
-            cursor_path=['datasetDataRows', 'nodes', 'pageInfo', 'startCursor'],)
+            cursor_path=['datasetDataRows', 'pageInfo', 'startCursor'],
+        )
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
