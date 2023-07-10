@@ -79,7 +79,7 @@ class Dataset(DbObject, Updateable, Deletable):
         NOTE: 
         """
 
-        query_str = """query DatasetDataRowsPyApi($id: ID!, $from: ID, $first: PageSize)  {
+        query_str = """query DatasetDataRowsPyApi($id: ID!, $from: ID, $first: Int)  {
                         datasetDataRows(id: $id, from: $from, first: $first) 
                             { 
                                 nodes { %s } 

@@ -244,7 +244,6 @@ class Relationship:
         self.filter_deleted = filter_deleted
         self.cache = cache
         self.deprecation_warning = deprecation_warning
-        self.graphql_name = graphql_name
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (
