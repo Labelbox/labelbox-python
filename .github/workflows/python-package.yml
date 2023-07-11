@@ -75,7 +75,7 @@ jobs:
           mypy -p labelbox --pretty --show-error-codes
       - name: Install package and test dependencies
         run: |
-          pip install tox==3.18.1
+          pip install tox==3.18.1 pytest-snapshot
 
       # TODO: replace tox.ini with what the Makefile does
       # to make sure local testing is
