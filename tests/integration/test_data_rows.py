@@ -12,6 +12,7 @@ from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.task import Task
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 import labelbox.exceptions
+from utils import INTEGRATION_SNAPSHOT_DIRECTORY
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
@@ -781,7 +782,8 @@ def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
            } == {global_key_1, global_key_2, global_key_3}
 
 
-def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
+def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
+                                                      snapshot):
     global_key_1 = str(uuid.uuid4())
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
@@ -796,6 +798,17 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image):
     assert len(task.failed_data_rows) > 0
     assert len(list(dataset.data_rows())) == 0
     assert task.errors == "Data rows contain duplicate global keys"
+
+    # Dynamic values, resetting to make snapshot
+    task.failed_data_rows[0]['failedDataRows'][0]['rowData'] = ''
+    task.failed_data_rows[0]['failedDataRows'][1]['rowData'] = ''
+    task.failed_data_rows[0]['failedDataRows'][0]['globalKey'] = ''
+    task.failed_data_rows[0]['failedDataRows'][1]['globalKey'] = ''
+    snapshot.snapshot_dir = INTEGRATION_SNAPSHOT_DIRECTORY
+    snapshot.assert_match(
+        json.dumps(task.failed_data_rows),
+        'test_data_rows.test_data_row_bulk_creation_with_same_global_keys.failed_data_rows.json'
+    )
 
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
