@@ -117,21 +117,41 @@ def get_annotation_comparison_dicts_from_export(export_result, data_row_id,
     return converted_annotations
 
 
+def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
+    data_row = dataset.create_data_row(data_row_ndjson)
+
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row.uid],
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+
+    project.create_batch(
+        batch_name,
+        [data_row.uid],  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids.append(data_row.uid)
+
+    return data_row
+
+
 # TODO: Add VideoData. Currently label import job finishes without errors but project.export_labels() returns empty list.
 @pytest.mark.parametrize('data_type_class', [
     AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData,
     TextData
 ])
-def test_import_data_types(client, configured_project,
-                           data_row_json_by_data_type, annotations_by_data_type,
-                           data_type_class):
+def test_import_data_types(client, configured_project, initial_dataset,
+                           rand_gen, data_row_json_by_data_type,
+                           annotations_by_data_type, data_type_class):
 
+    project = configured_project
     project_id = configured_project.uid
+    dataset = initial_dataset
 
     data_type_string = data_type_class.__name__[:-4].lower()
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    dataset = next(configured_project.datasets())
-    data_row = dataset.create_data_row(data_row_ndjson)
+    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
+                                           rand_gen(str))
 
     annotations_ndjson = annotations_by_data_type[data_type_string]
     annotations_list = [
@@ -150,7 +170,7 @@ def test_import_data_types(client, configured_project,
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
-    exported_labels = configured_project.export_labels(download=True)
+    exported_labels = project.export_labels(download=True)
     objects = exported_labels[0]['Label']['objects']
     classifications = exported_labels[0]['Label']['classifications']
     assert len(objects) + len(classifications) == len(labels)
@@ -167,6 +187,8 @@ def validate_iso_format(date_string: str):
 
 def to_pascal_case(name: str) -> str:
     return "".join([word.capitalize() for word in name.split("_")])
+
+    data_row = dataset.create_data_row(data_row_ndjson)
 
 
 @pytest.mark.parametrize('data_type_class', [
@@ -191,19 +213,8 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
     project.update(media_type=MediaType[media_type])
 
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    data_row = dataset.create_data_row(data_row_ndjson)
-
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=[data_row.uid],
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-
-    project.create_batch(
-        rand_gen(str),
-        [data_row.uid],  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids.append(data_row.uid)
+    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
+                                           rand_gen(str))
 
     annotations_ndjson = annotations_by_data_type_v2[data_type_string]
     annotations_list = [
@@ -259,21 +270,23 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
 
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
-def test_import_label_annotations(client, configured_project,
+def test_import_label_annotations(client, configured_project, initial_dataset,
                                   data_row_json_by_data_type, data_type,
-                                  data_class, annotations):
+                                  data_class, annotations, rand_gen):
 
-    dataset = next(configured_project.datasets())
+    project = configured_project
+    dataset = initial_dataset
+
     data_row_json = data_row_json_by_data_type[data_type]
-    data_row = dataset.create_data_row(data_row_json)
+    data_row = create_data_row_for_project(project, dataset, data_row_json,
+                                           rand_gen(str))
 
     labels = [
         lb_types.Label(data=data_class(uid=data_row.uid),
                        annotations=annotations)
     ]
 
-    label_import = lb.LabelImport.create_from_objects(client,
-                                                      configured_project.uid,
+    label_import = lb.LabelImport.create_from_objects(client, project.uid,
                                                       f'test-import-html',
                                                       labels)
     label_import.wait_until_done()
@@ -287,7 +300,7 @@ def test_import_label_annotations(client, configured_project,
         "project_details": False,
         "performance_details": False
     }
-    export_task = configured_project.export_v2(params=export_params)
+    export_task = project.export_v2(params=export_params)
     export_task.wait_till_done()
     assert export_task.errors is None
     expected_annotations = get_annotation_comparison_dicts_from_labels(labels)

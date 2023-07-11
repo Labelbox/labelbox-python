@@ -12,7 +12,7 @@ def test_parse_batch():
 
 
 def test_parse_data_set():
-    assert QueueMode("DATA_SET") == QueueMode.Batch
+    assert QueueMode("DATA_SET") == QueueMode.Dataset
 
 
 def test_fails_for_unknown():

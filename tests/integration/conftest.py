@@ -364,9 +364,27 @@ def project_pack(client):
 
 
 @pytest.fixture
-def configured_project(project, client, rand_gen, image_url):
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
-    dataset.create_data_row(row_data=image_url)
+def initial_dataset(client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    yield dataset
+
+
+@pytest.fixture
+def configured_project(project, initial_dataset, client, rand_gen, image_url):
+    dataset = initial_dataset
+    data_row_id = dataset.create_data_row(row_data=image_url).uid
+
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row_id],
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+    project.create_batch(
+        rand_gen(str),
+        [data_row_id],  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = [data_row_id]
+
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -412,6 +430,7 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
         sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     batch_project.create_batch("test-batch", data_rows)
+    batch_project.data_row_ids = data_rows
 
     ontology = _setup_ontology(batch_project)
     label = _create_label(batch_project, data_row, ontology,
@@ -499,11 +518,25 @@ def _setup_ontology(project):
 
 
 @pytest.fixture
-def configured_project_with_complex_ontology(client, rand_gen, image_url):
+def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
+                                             image_url):
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
-    dataset = client.create_dataset(name=rand_gen(str), projects=project)
+    dataset = initial_dataset
     data_row = dataset.create_data_row(row_data=image_url)
+    data_row_ids = [data_row.uid]
+
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids,
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+    project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = data_row_ids
+
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
