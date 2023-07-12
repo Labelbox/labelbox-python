@@ -518,8 +518,8 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
-    data_row_ids = []
-    data_row_ids.append(dataset.create_data_row(pdf_url).uid)
+    data_row = dataset.create_data_row(pdf_url)
+    data_row_ids = [data_row.uid]
     project._wait_until_data_rows_are_processed(
         data_row_ids=data_row_ids,
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
@@ -530,7 +530,7 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
         5  # priority between 1(Highest) - 5(lowest)
     )
     project.data_row_ids = data_row_ids
-    yield project, dataset
+    yield project
     project.delete()
     dataset.delete()
 

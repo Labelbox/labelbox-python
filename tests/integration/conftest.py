@@ -403,8 +403,12 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
-    project.datasets.connect(dataset)
 
+    project.create_batch(
+        rand_gen(str),
+        [data_row.uid],  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
     ontology = _setup_ontology(project)
     label = _create_label(project, data_row, ontology,
                           wait_for_label_processing)
