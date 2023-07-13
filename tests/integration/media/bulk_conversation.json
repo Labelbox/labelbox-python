@@ -3,7 +3,7 @@
         "externalId": "Convo-123",
         "attachments": [
             {
-                "type": "TEXT",
+                "type": "RAW_TEXT",
                 "value": "IOWA, Zone 2232, June 2022 [Text string]"
             },
             {
@@ -64,7 +64,7 @@
         "externalId": "Convo-456",
         "attachments": [
             {
-                "type": "TEXT",
+                "type": "RAW_TEXT",
                 "value": "IOWA, Zone 1234567, July 2022 [Text string]"
             },
             {
