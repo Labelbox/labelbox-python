@@ -534,7 +534,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 multiple `DataRows` for it.
         """
         DataRow = Entity.DataRow
-        where = dict([(DataRow.external_id, external_id)])
+        where = DataRow.external_id == external_id
 
         data_rows = self.data_rows(where=where)
         # Get at most `limit` data_rows.
