@@ -67,7 +67,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def data_rows(self,
                   from_cursor: str = None,
-                  where: Dict[str, str] = None) -> PaginatedCollection:
+                  where: Dict[str, str] = None,
+                  order_by=None) -> PaginatedCollection:
         """ 
         Custom method to paginate data_rows via cursor.
 
@@ -85,14 +86,27 @@ class Dataset(DbObject, Updateable, Deletable):
         """
 
         page_size = 500  # hardcode to avoid overloading the server
-        empty_string = ''
-        where_clause = ', $where: DatasetDataRowWhereInput' if where else empty_string
-        where_vars = ', where: $where' if where else empty_string
         datarow_selections = query.results_query_part(Entity.DataRow)
 
+        empty_string = ''
+        if where is not None:
+            where_clause = ', $where: DatasetDataRowWhereInput'
+            where_vars = ', where: $where'
+        else:
+            where_clause = empty_string
+            where_vars = empty_string
+
+        if order_by is not None:
+            query.check_order_by_clause(Entity.DataRow, order_by)
+            order_by_clause = ', $orderBy: DataRowOrderByInput'
+            order_by_vars = ', orderBy: $orderBy'
+            order_by_str = f"{order_by[0].graphql_name}_{order_by[1].name.upper()}"
+        else:
+            order_by_str = empty_string
+
         template = Template(
-            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int $where_clause)  {
-                        datasetDataRows(id: $$id, from: $$from, first: $$first $where_vars) 
+            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int $where_clause $order_by_clause)  {
+                        datasetDataRows(id: $$id, from: $$from, first: $$first $where_vars $order_by_vars) {
                             { 
                                 nodes { $datarow_selections }
                                 pageInfo { hasNextPage startCursor }
@@ -101,6 +115,8 @@ class Dataset(DbObject, Updateable, Deletable):
                     """)
         query_str = template.substitute(where_clause=where_clause,
                                         where_vars=where_vars,
+                                        order_by_clause=order_by_clause,
+                                        order_by_vars=order_by_vars,
                                         datarow_selections=datarow_selections)
         params = {
             'id': self.uid,
@@ -109,9 +125,9 @@ class Dataset(DbObject, Updateable, Deletable):
         }
         if where:
             params['where'] = where
+        if order_by:
+            params['orderBy'] = order_by_str
 
-        import pdb
-        pdb.set_trace()
         return PaginatedCollection(
             client=self.client,
             query=query_str,
