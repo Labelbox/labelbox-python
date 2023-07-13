@@ -19,6 +19,7 @@ def test_conversation_entity(client, configured_project_without_data_rows,
 
     labels = []
     _, data_row_uids = dataset_conversation_entity
+
     configured_project_without_data_rows.create_batch(
         rand_gen(str),
         data_row_uids,  # sample of data row objects
