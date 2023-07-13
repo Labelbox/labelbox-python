@@ -145,7 +145,8 @@ class _CursorPagination(_Pagination):
         return not self.next_cursor
 
     def fetch_results(self) -> Dict[str, Any]:
-        self.params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
+        page_size = self.params.get('first', _PAGE_SIZE)
+        self.params.update({'from': self.next_cursor, 'first': page_size})
         return self.client.execute(self.query,
                                    self.params,
                                    experimental=self.experimental)

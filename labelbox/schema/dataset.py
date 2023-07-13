@@ -1,4 +1,4 @@
-from typing import Collection, Dict, Generator, List, Optional, Union, Any, TYPE_CHECKING
+from typing import Dict, Generator, List, Optional, Union, Any
 import os
 import json
 import logging
@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
-from labelbox import utils
 from labelbox import pagination
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
@@ -66,19 +65,21 @@ class Dataset(DbObject, Updateable, Deletable):
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-    def data_rows(self,
-                  batch_size: int = pagination._PAGE_SIZE,
-                  from_cursor: str = None) -> PaginatedCollection:
+    def data_rows(self, from_cursor: str = None) -> PaginatedCollection:
         """ 
-        Custom relationship method to paginate via cursor for better performance.
+        Custom method to paginate data_rows via cursor.
 
         Params:
-            batch_size (int): Number of data rows to fetch per request
             after (str): Cursor (data row id) to start from, if none, will start from the beginning
 
         NOTE: 
+            Order of retrieval is newest data row first.
+            Deleted data rows are not retrieved.
+            Failed data rows are not retrieved.
+            Data rows in progress *maybe* retrieved.
         """
 
+        page_size = 500  # hardcode to avoid overloading the server
         query_str = """query DatasetDataRowsPyApi($id: ID!, $from: ID, $first: Int)  {
                         datasetDataRows(id: $id, from: $from, first: $first) 
                             { 
@@ -94,7 +95,7 @@ class Dataset(DbObject, Updateable, Deletable):
             params={
                 'id': self.uid,
                 'from': from_cursor,
-                'first': batch_size,
+                'first': page_size,
             },
             dereferencing=['datasetDataRows', 'nodes'],
             obj_class=Entity.DataRow,
