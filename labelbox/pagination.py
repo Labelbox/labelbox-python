@@ -22,7 +22,7 @@ class PaginatedCollection:
     def __init__(self,
                  client: "Client",
                  query: str,
-                 params: Dict[str, str],
+                 params: Dict[str, Union[str, int]],
                  dereferencing: Union[List[str], Dict[str, Any]],
                  obj_class: Union[Type["DbObject"], Callable[[Any, Any], Any]],
                  cursor_path: Optional[List[str]] = None,
