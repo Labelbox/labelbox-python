@@ -3,6 +3,7 @@ import os
 import json
 import logging
 from collections.abc import Iterable
+from string import Template
 import time
 
 from labelbox import parser
@@ -41,7 +42,6 @@ class Dataset(DbObject, Updateable, Deletable):
         row_count (int): The number of rows in the dataset. Fetch the dataset again to update since this is cached.
 
         projects (Relationship): `ToMany` relationship to Project
-        data_rows (Relationship): `ToMany` relationship to DataRow
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
 
@@ -65,12 +65,17 @@ class Dataset(DbObject, Updateable, Deletable):
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-    def data_rows(self, from_cursor: str = None) -> PaginatedCollection:
+    def data_rows(self,
+                  from_cursor: str = None,
+                  where: Dict[str, str] = None) -> PaginatedCollection:
         """ 
         Custom method to paginate data_rows via cursor.
 
         Params:
             after (str): Cursor (data row id) to start from, if none, will start from the beginning
+            where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.    
+                example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
+
 
         NOTE: 
             Order of retrieval is newest data row first.
@@ -80,23 +85,37 @@ class Dataset(DbObject, Updateable, Deletable):
         """
 
         page_size = 500  # hardcode to avoid overloading the server
-        query_str = """query DatasetDataRowsPyApi($id: ID!, $from: ID, $first: Int)  {
-                        datasetDataRows(id: $id, from: $from, first: $first) 
+        empty_string = ''
+        where_clause = ', $where: DatasetDataRowWhereInput' if where else empty_string
+        where_vars = ', where: $where' if where else empty_string
+        datarow_selections = query.results_query_part(Entity.DataRow)
+
+        template = Template(
+            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int $where_clause)  {
+                        datasetDataRows(id: $$id, from: $$from, first: $$first $where_vars) 
                             { 
-                                nodes { %s } 
+                                nodes { $datarow_selections }
                                 pageInfo { hasNextPage startCursor }
                             }
                         }
-                    """ % (query.results_query_part(Entity.DataRow))
+                    """)
+        query_str = template.substitute(where_clause=where_clause,
+                                        where_vars=where_vars,
+                                        datarow_selections=datarow_selections)
+        params = {
+            'id': self.uid,
+            'from': from_cursor,
+            'first': page_size,
+        }
+        if where:
+            params['where'] = where
 
+        import pdb
+        pdb.set_trace()
         return PaginatedCollection(
             client=self.client,
             query=query_str,
-            params={
-                'id': self.uid,
-                'from': from_cursor,
-                'first': page_size,
-            },
+            params=params,
             dereferencing=['datasetDataRows', 'nodes'],
             obj_class=Entity.DataRow,
             cursor_path=['datasetDataRows', 'pageInfo', 'startCursor'],
@@ -494,12 +513,12 @@ class Dataset(DbObject, Updateable, Deletable):
             A list of `DataRow` with the given ID.
 
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+         data_rows(   labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
         DataRow = Entity.DataRow
-        where = DataRow.external_id == external_id
+        where = dict([(DataRow.external_id, external_id)])
 
         data_rows = self.data_rows(where=where)
         # Get at most `limit` data_rows.
