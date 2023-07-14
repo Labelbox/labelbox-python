@@ -576,12 +576,6 @@ def test_data_row_filtering_sorting(dataset, image_url):
     row2 = row2[0]
     assert row2.external_id == "row2"
 
-    # Test sorting
-    assert list(
-        dataset.data_rows(order_by=DataRow.external_id.asc)) == [row1, row2]
-    assert list(
-        dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
-
 
 def test_data_row_deletion(dataset, image_url):
     task = dataset.create_data_rows([{

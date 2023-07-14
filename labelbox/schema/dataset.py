@@ -15,6 +15,7 @@ import requests
 
 from labelbox import pagination
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
+from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
@@ -59,16 +60,16 @@ class Dataset(DbObject, Updateable, Deletable):
         deprecation_warning=
         "This method does not return any data for batch-based projects and it will be deprecated on or around November 1, 2023."
     )
-    data_rows = Relationship.ToMany("DataRow", False)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
 
-    def data_rows(self,
-                  from_cursor: str = None,
-                  where: Dict[str, str] = None,
-                  order_by=None) -> PaginatedCollection:
+    def data_rows(
+        self,
+        from_cursor: str = None,
+        where: Comparison = None,
+    ) -> PaginatedCollection:
         """ 
         Custom method to paginate data_rows via cursor.
 
@@ -89,25 +90,19 @@ class Dataset(DbObject, Updateable, Deletable):
         datarow_selections = query.results_query_part(Entity.DataRow)
 
         empty_string = ''
+
+        where_clause = empty_string
+        where_vars = empty_string
+        where_param = None
         if where is not None:
             where_clause = ', $where: DatasetDataRowWhereInput'
             where_vars = ', where: $where'
-        else:
-            where_clause = empty_string
-            where_vars = empty_string
-
-        if order_by is not None:
-            query.check_order_by_clause(Entity.DataRow, order_by)
-            order_by_clause = ', $orderBy: DataRowOrderByInput'
-            order_by_vars = ', orderBy: $orderBy'
-            order_by_str = f"{order_by[0].graphql_name}_{order_by[1].name.upper()}"
-        else:
-            order_by_str = empty_string
+            where_param = query.where_as_dict(Entity.DataRow, where)
 
         template = Template(
-            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int $where_clause $order_by_clause)  {
-                        datasetDataRows(id: $$id, from: $$from, first: $$first $where_vars $order_by_vars) {
-                            { 
+            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int$where_clause)  {
+                        datasetDataRows(id: $$id, from: $$from, first: $$first$where_vars)
+                            {
                                 nodes { $datarow_selections }
                                 pageInfo { hasNextPage startCursor }
                             }
@@ -115,18 +110,15 @@ class Dataset(DbObject, Updateable, Deletable):
                     """)
         query_str = template.substitute(where_clause=where_clause,
                                         where_vars=where_vars,
-                                        order_by_clause=order_by_clause,
-                                        order_by_vars=order_by_vars,
                                         datarow_selections=datarow_selections)
+
         params = {
             'id': self.uid,
             'from': from_cursor,
             'first': page_size,
         }
-        if where:
-            params['where'] = where
-        if order_by:
-            params['orderBy'] = order_by_str
+        if where is not None:
+            params['where'] = where_param
 
         return PaginatedCollection(
             client=self.client,
@@ -529,7 +521,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A list of `DataRow` with the given ID.
 
         Raises:
-         data_rows(   labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+         labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -538,11 +530,11 @@ class Dataset(DbObject, Updateable, Deletable):
 
         data_rows = self.data_rows(where=where)
         # Get at most `limit` data_rows.
-        data_rows = list(islice(data_rows, limit))
+        at_most_data_rows = list(islice(data_rows, limit))
 
-        if not len(data_rows):
+        if not len(at_most_data_rows):
             raise ResourceNotFoundError(DataRow, where)
-        return data_rows
+        return at_most_data_rows
 
     def data_row_for_external_id(self, external_id) -> "DataRow":
         """ Convenience method for getting a single `DataRow` belonging to this
