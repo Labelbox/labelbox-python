@@ -4,7 +4,7 @@ import pytest
 import time
 import requests
 
-from labelbox import parser
+from labelbox import parser, MediaType
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -486,7 +486,8 @@ def initial_dataset(client, rand_gen):
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     dataset = initial_dataset
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -546,10 +547,12 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
-def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
+def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
+                                wait_for_data_row_processing):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
     data_row = dataset.create_data_row(conversation_entity_data_row)
+    data_row = wait_for_data_row_processing(client, data_row)
     data_row_ids.append(data_row.uid)
     yield dataset, data_row_ids
     dataset.delete()

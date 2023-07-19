@@ -268,7 +268,8 @@ def data_row(dataset, image_url):
 # @pytest.mark.parametrize('data_rows', [<count of data rows>], indirect=True)
 # if omitted, count defaults to 1
 @pytest.fixture
-def data_rows(dataset, image_url, request):
+def data_rows(dataset, image_url, request, wait_for_data_row_processing,
+              client):
     count = 1
     if hasattr(request, 'param'):
         count = request.param
@@ -281,6 +282,9 @@ def data_rows(dataset, image_url, request):
     task = dataset.create_data_rows(datarows)
     task.wait_till_done()
     datarows = dataset.data_rows().get_many(count)
+    for dr in dataset.data_rows():
+        wait_for_data_row_processing(client, dr)
+
     yield datarows
 
     for datarow in datarows:

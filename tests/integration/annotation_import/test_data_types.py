@@ -149,6 +149,10 @@ def test_import_data_types(client, configured_project, initial_dataset,
     dataset = initial_dataset
 
     data_type_string = data_type_class.__name__[:-4].lower()
+    media_type = to_pascal_case(data_type_string)
+    if media_type == 'Conversation':
+        media_type = 'Conversational'
+    project.update(media_type=MediaType[media_type])
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
                                            rand_gen(str))
