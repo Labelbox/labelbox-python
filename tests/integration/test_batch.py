@@ -1,8 +1,14 @@
+import logging
+import time
+
 from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
 from labelbox import Dataset, Project
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+
+
+logging.basicConfig(level=logging.WARN)
 
 
 @pytest.fixture
@@ -48,6 +54,7 @@ def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task.wait_till_done()
 
 
+# OK
 def test_create_batch(batch_project: Project, big_dataset: Dataset):
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
     batch = batch_project.create_batch("test-batch", data_rows, 3)
@@ -55,6 +62,7 @@ def test_create_batch(batch_project: Project, big_dataset: Dataset):
     assert batch.size == len(data_rows)
 
 
+# OK
 def test_create_batch_async(batch_project: Project, big_dataset: Dataset):
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
     batch = batch_project._create_batch_async("big-batch",
@@ -64,6 +72,7 @@ def test_create_batch_async(batch_project: Project, big_dataset: Dataset):
     assert batch.size == len(data_rows)
 
 
+# OK
 def test_create_batch_with_consensus_settings(batch_project: Project,
                                               small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
@@ -77,6 +86,7 @@ def test_create_batch_with_consensus_settings(batch_project: Project,
     assert batch.consensus_settings == consensus_settings
 
 
+# OK
 def test_create_batch_with_data_row_class(batch_project: Project,
                                           small_dataset: Dataset):
     data_rows = list(small_dataset.export_data_rows())
@@ -85,6 +95,7 @@ def test_create_batch_with_data_row_class(batch_project: Project,
     assert batch.size == len(data_rows)
 
 
+# OK
 def test_archive_batch(batch_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     batch = batch_project.create_batch("batch to archive", data_rows)
@@ -94,6 +105,7 @@ def test_archive_batch(batch_project: Project, small_dataset: Dataset):
     assert len(exported_data_rows) == 0
 
 
+# OK
 def test_delete(batch_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     batch = batch_project.create_batch("batch to delete", data_rows)
@@ -102,6 +114,7 @@ def test_delete(batch_project: Project, small_dataset: Dataset):
     assert len(list(batch_project.batches())) == 0
 
 
+# OK
 def test_batch_project(batch_project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     batch = batch_project.create_batch("batch to test project relationship",
@@ -113,6 +126,7 @@ def test_batch_project(batch_project: Project, small_dataset: Dataset):
     assert project_from_batch.name == batch_project.name
 
 
+# OK
 def test_batch_creation_for_data_rows_with_issues(
         batch_project: Project, small_dataset: Dataset,
         dataset_with_invalid_data_rows: Dataset):
@@ -136,6 +150,7 @@ def test_batch_creation_for_data_rows_with_issues(
     assert len(failed_data_row_ids_set.intersection(invalid_data_rows_set)) == 2
 
 
+# OK
 def test_batch_creation_with_processing_timeout(batch_project: Project,
                                                 small_dataset: Dataset,
                                                 unique_dataset: Dataset):
@@ -161,6 +176,7 @@ def test_batch_creation_with_processing_timeout(batch_project: Project,
     batch_project._wait_processing_max_seconds = stashed_wait_timeout
 
 
+# NOK
 def test_export_data_rows(batch_project: Project, dataset: Dataset):
     n_data_rows = 5
     task = dataset.create_data_rows([
