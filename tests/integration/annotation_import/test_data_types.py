@@ -120,11 +120,6 @@ def get_annotation_comparison_dicts_from_export(export_result, data_row_id,
 def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     data_row = dataset.create_data_row(data_row_ndjson)
 
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=[data_row.uid],
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-
     project.create_batch(
         batch_name,
         [data_row.uid],  # sample of data row objects
@@ -237,9 +232,6 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    # for label in project.labels():  #trigger review creation
-    #     label.create_review(score=1.0)
-
     #TODO need to migrate project to the new BATCH mode and change this code
     # to be similar to tests/integration/test_task_queue.py
 
@@ -253,10 +245,6 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
                         ['label_details']['created_at'])
     validate_iso_format(exported_data['projects'][project_id]['labels'][0]
                         ['label_details']['updated_at'])
-    # validate_iso_format(exported_data['projects'][project_id]['labels'][0]
-    #                     ['label_details']['reviews'][0]['reviewed_at'])
-    # to be added once we have switched to the new BATCH mode
-    # validate_iso_format(exported_data['projects'][project_id]['project_details']['workflow_history'][0]['created_at'])
 
     assert (exported_data['data_row']['id'] == data_row.uid)
     exported_project = exported_data['projects'][project_id]

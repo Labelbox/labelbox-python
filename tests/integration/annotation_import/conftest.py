@@ -481,6 +481,7 @@ def wait_for_label_processing():
 def initial_dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
+    dataset.delete()
 
 
 @pytest.fixture
@@ -498,10 +499,6 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_row_ids,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
@@ -516,7 +513,7 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+                                    media_type=MediaType.Pdf)
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
@@ -524,10 +521,6 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project.setup(editor, ontology)
     data_row = dataset.create_data_row(pdf_url)
     data_row_ids = [data_row.uid]
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_row_ids,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects

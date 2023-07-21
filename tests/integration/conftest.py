@@ -224,15 +224,6 @@ def project(client, rand_gen):
 
 
 @pytest.fixture
-def batch_project(client, rand_gen):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
-    yield project
-    project.delete()
-
-
-@pytest.fixture
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     auto_audit_percentage=0,
@@ -386,10 +377,6 @@ def configured_project(project, initial_dataset, client, rand_gen, image_url):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
 
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=[data_row_id],
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     project.create_batch(
         rand_gen(str),
         [data_row_id],  # sample of data row objects
@@ -432,8 +419,8 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 
 @pytest.fixture
-def configured_batch_project_with_label(client, rand_gen, image_url,
-                                        batch_project, dataset, data_row,
+def configured_batch_project_with_label(client, rand_gen, image_url, project,
+                                        dataset, data_row,
                                         wait_for_label_processing):
     """Project with a batch having one datarow
     Project contains an ontology with 1 bbox tool
@@ -441,26 +428,25 @@ def configured_batch_project_with_label(client, rand_gen, image_url,
     One label is already created and yielded when using fixture
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
-    batch_project._wait_until_data_rows_are_processed(
+    project._wait_until_data_rows_are_processed(
         data_row_ids=data_rows,
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
         sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-    batch_project.create_batch("test-batch", data_rows)
-    batch_project.data_row_ids = data_rows
+    project.create_batch("test-batch", data_rows)
+    project.data_row_ids = data_rows
 
-    ontology = _setup_ontology(batch_project)
-    label = _create_label(batch_project, data_row, ontology,
+    ontology = _setup_ontology(project)
+    label = _create_label(project, data_row, ontology,
                           wait_for_label_processing)
 
-    yield [batch_project, dataset, data_row, label]
+    yield [project, dataset, data_row, label]
 
-    for label in batch_project.labels():
+    for label in project.labels():
         label.delete()
 
 
 @pytest.fixture
-def configured_batch_project_with_multiple_datarows(batch_project, dataset,
-                                                    data_rows,
+def configured_batch_project_with_multiple_datarows(project, dataset, data_rows,
                                                     wait_for_label_processing):
     """Project with a batch having multiple datarows
     Project contains an ontology with 1 bbox tool
@@ -468,21 +454,16 @@ def configured_batch_project_with_multiple_datarows(batch_project, dataset,
     """
     global_keys = [dr.global_key for dr in data_rows]
 
-    batch_project._wait_until_data_rows_are_processed(
-        global_keys=global_keys,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     batch_name = f'batch {uuid.uuid4()}'
-    batch_project.create_batch(batch_name, global_keys=global_keys)
+    project.create_batch(batch_name, global_keys=global_keys)
 
-    ontology = _setup_ontology(batch_project)
+    ontology = _setup_ontology(project)
     for datarow in data_rows:
-        _create_label(batch_project, datarow, ontology,
-                      wait_for_label_processing)
+        _create_label(project, datarow, ontology, wait_for_label_processing)
 
-    yield [batch_project, dataset, data_rows]
+    yield [project, dataset, data_rows]
 
-    for label in batch_project.labels():
+    for label in project.labels():
         label.delete()
 
 
@@ -543,10 +524,6 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     data_row = dataset.create_data_row(row_data=image_url)
     data_row_ids = [data_row.uid]
 
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_row_ids,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
