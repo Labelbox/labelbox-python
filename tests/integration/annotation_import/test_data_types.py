@@ -190,8 +190,6 @@ def validate_iso_format(date_string: str):
 def to_pascal_case(name: str) -> str:
     return "".join([word.capitalize() for word in name.split("_")])
 
-    data_row = dataset.create_data_row(data_row_ndjson)
-
 
 def set_project_media_type_from_data_type(project, data_type_class):
     data_type_string = data_type_class.__name__[:-4].lower()
@@ -281,6 +279,7 @@ def test_import_label_annotations(client, configured_project, initial_dataset,
 
     project = configured_project
     dataset = initial_dataset
+    set_project_media_type_from_data_type(project, data_class)
 
     data_row_json = data_row_json_by_data_type[data_type]
     data_row = create_data_row_for_project(project, dataset, data_row_json,
@@ -323,6 +322,9 @@ def test_import_mal_annotations(client, configured_project_without_data_rows,
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_json = data_row_json_by_data_type[data_type]
     data_row = dataset.create_data_row(data_row_json)
+
+    set_project_media_type_from_data_type(configured_project_without_data_rows,
+                                          data_class)
 
     configured_project_without_data_rows.create_batch(
         rand_gen(str),

@@ -113,9 +113,9 @@ def document_data_row(rand_gen):
 def text_data_row(rand_gen):
     return {
         "row_data":
-            "https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt",
+            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
         "global_key":
-            f"https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt-{rand_gen(str)}",
+            f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{rand_gen(str)}",
         "media_type":
             "TEXT",
     }
@@ -486,9 +486,10 @@ def initial_dataset(client, rand_gen):
 @pytest.fixture
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     dataset = initial_dataset
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+    )
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -555,6 +556,7 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
     data_row_ids = []
     data_row = dataset.create_data_row(conversation_entity_data_row)
     data_row = wait_for_data_row_processing(client, data_row)
+
     data_row_ids.append(data_row.uid)
     yield dataset, data_row_ids
     dataset.delete()
@@ -564,8 +566,7 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
 def configured_project_without_data_rows(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+                                    queue_mode=QueueMode.Batch)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]

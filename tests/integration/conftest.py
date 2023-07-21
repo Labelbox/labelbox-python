@@ -204,11 +204,14 @@ def pdf_entity_data_row(client):
     }
 
 
-@pytest.fixture(scope="session")
-def conversation_entity_data_row(client):
-    conversation_url = client.upload_file('tests/assets/conversation-1.json')
-
-    return {"row_data": conversation_url, "global_key": str(uuid.uuid1())}
+@pytest.fixture()
+def conversation_entity_data_row(client, rand_gen):
+    return {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
+    }
 
 
 @pytest.fixture
@@ -676,10 +679,11 @@ def ontology(client):
 
 
 @pytest.fixture
-def video_data(client, rand_gen, video_data_row):
+def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
     data_row = dataset.create_data_row(video_data_row)
+    data_row = wait_for_data_row_processing(client, data_row)
     data_row_ids.append(data_row.uid)
     yield dataset, data_row_ids
     dataset.delete()
