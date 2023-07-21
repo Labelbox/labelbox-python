@@ -214,7 +214,8 @@ def conversation_entity_data_row(client):
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     yield project
     project.delete()
 
@@ -222,7 +223,8 @@ def project(client, rand_gen):
 @pytest.fixture
 def batch_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     yield project
     project.delete()
 
@@ -231,7 +233,8 @@ def batch_project(client, rand_gen):
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     auto_audit_percentage=0,
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     yield project
     project.delete()
 
@@ -360,7 +363,9 @@ def project_based_user(client, rand_gen):
 @pytest.fixture
 def project_pack(client):
     projects = [
-        client.create_project(name=f"user-proj-{idx}") for idx in range(2)
+        client.create_project(name=f"user-proj-{idx}",
+                              queue_mode=QueueMode.Batch,
+                              media_type=MediaType.Image) for idx in range(2)
     ]
     yield projects
     for proj in projects:
@@ -529,7 +534,8 @@ def _setup_ontology(project):
 def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
                                              image_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     dataset = initial_dataset
     data_row = dataset.create_data_row(row_data=image_url)
     data_row_ids = [data_row.uid]

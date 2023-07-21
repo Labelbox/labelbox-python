@@ -160,7 +160,8 @@ def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
 
 @pytest.fixture
 def annotations_by_data_type(polygon_inference, rectangle_inference,
-                             line_inference, entity_inference,
+                             rectangle_inference_document, line_inference,
+                             entity_inference, entity_inference_document,
                              checklist_inference, text_inference,
                              video_checklist_inference):
     return {
@@ -168,8 +169,8 @@ def annotations_by_data_type(polygon_inference, rectangle_inference,
         'conversation': [checklist_inference, text_inference, entity_inference],
         'dicom': [line_inference],
         'document': [
-            entity_inference, checklist_inference, text_inference,
-            rectangle_inference
+            entity_inference_document, checklist_inference, text_inference,
+            rectangle_inference_document
         ],
         'html': [text_inference, checklist_inference],
         'image': [
@@ -513,7 +514,8 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 @pytest.fixture
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
@@ -562,7 +564,8 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
 def configured_project_without_data_rows(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]

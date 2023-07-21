@@ -148,11 +148,9 @@ def test_import_data_types(client, configured_project, initial_dataset,
     project_id = configured_project.uid
     dataset = initial_dataset
 
+    set_project_media_type_from_data_type(project, data_type_class)
+
     data_type_string = data_type_class.__name__[:-4].lower()
-    media_type = to_pascal_case(data_type_string)
-    if media_type == 'Conversation':
-        media_type = 'Conversational'
-    project.update(media_type=MediaType[media_type])
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
                                            rand_gen(str))
@@ -195,6 +193,14 @@ def to_pascal_case(name: str) -> str:
     data_row = dataset.create_data_row(data_row_ndjson)
 
 
+def set_project_media_type_from_data_type(project, data_type_class):
+    data_type_string = data_type_class.__name__[:-4].lower()
+    media_type = to_pascal_case(data_type_string)
+    if media_type == 'Conversation':
+        media_type = 'Conversational'
+    project.update(media_type=MediaType[media_type])
+
+
 @pytest.mark.parametrize('data_type_class', [
     AudioData, HTMLData, ImageData, TextData, VideoData, ConversationData,
     DocumentData, DicomData
@@ -209,17 +215,12 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
     dataset = initial_dataset
     project_id = project.uid
 
+    set_project_media_type_from_data_type(project, data_type_class)
+
     data_type_string = data_type_class.__name__[:-4].lower()
-
-    media_type = to_pascal_case(data_type_string)
-    if media_type == 'Conversation':
-        media_type = 'Conversational'
-    project.update(media_type=MediaType[media_type])
-
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
     data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
                                            rand_gen(str))
-
     annotations_ndjson = annotations_by_data_type_v2[data_type_string]
     annotations_list = [
         label.annotations
