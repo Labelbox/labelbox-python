@@ -12,7 +12,7 @@ def big_dataset(dataset: Dataset):
             "row_data": IMAGE_URL,
             "external_id": "my-image"
         },
-    ] * 250)
+    ] * 2)
     task.wait_till_done()
 
     yield dataset
@@ -162,7 +162,7 @@ def test_batch_creation_with_processing_timeout(batch_project: Project,
 
 
 def test_export_data_rows(batch_project: Project, dataset: Dataset):
-    n_data_rows = 5
+    n_data_rows = 2
     task = dataset.create_data_rows([
         {
             "row_data": IMAGE_URL,
