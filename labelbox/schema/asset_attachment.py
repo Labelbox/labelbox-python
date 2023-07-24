@@ -15,10 +15,13 @@ class AssetAttachment(DbObject):
     """
 
     class AttachmentType(Enum):
+
         @classmethod
         def __missing__(cls, value: object):
             if str(value) == "TEXT":
-                warnings.warn("The TEXT attachment type is deprecated. Use RAW_TEXT instead.")
+                warnings.warn(
+                    "The TEXT attachment type is deprecated. Use RAW_TEXT instead."
+                )
                 return cls.RAW_TEXT
             return value
 
