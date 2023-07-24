@@ -22,6 +22,13 @@ test-staging: build-image
 		-e LABELBOX_TEST_API_KEY_STAGING=${LABELBOX_TEST_API_KEY_STAGING} \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
+test-staging-eu: build-image
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
+		-e LABELBOX_TEST_ENVIRON="staging-eu" \
+		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
+		-e LABELBOX_TEST_API_KEY_STAGING_EU=${LABELBOX_TEST_API_KEY_STAGING_EU} \
+		local/labelbox-python:test pytest $(PATH_TO_TEST)
+
 test-prod: build-image
 	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="prod" \

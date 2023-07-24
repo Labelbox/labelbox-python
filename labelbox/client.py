@@ -109,7 +109,8 @@ class Client:
                 data=None,
                 files=None,
                 timeout=60.0,
-                experimental=False):
+                experimental=False,
+                error_log_key="message"):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -267,7 +268,7 @@ class Client:
                                                "extensions", "code")
         if malformed_request_error is not None:
             raise labelbox.exceptions.MalformedQueryException(
-                malformed_request_error["message"])
+                malformed_request_error[error_log_key])
 
         # A lot of different error situations are now labeled serverside
         # as INTERNAL_SERVER_ERROR, when they are actually client errors.

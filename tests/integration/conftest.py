@@ -32,6 +32,7 @@ class Environ(Enum):
     STAGING = 'staging'
     ONPREM = 'onprem'
     CUSTOM = 'custom'
+    STAGING_EU = 'staging-eu'
 
 
 @pytest.fixture(scope="session")
@@ -54,6 +55,8 @@ def graphql_url(environ: str) -> str:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
         return 'https://api.lb-stage.xyz/graphql'
+    elif environ == Environ.STAGING_EU:
+        return 'https://api.eu-de.lb-stage.xyz/graphql'
     elif environ == Environ.ONPREM:
         hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
         if hostname is None:
@@ -73,6 +76,8 @@ def rest_url(environ: str) -> str:
         return 'https://api.labelbox.com/api/v1'
     elif environ == Environ.STAGING:
         return 'https://api.lb-stage.xyz/api/v1'
+    elif environ == Environ.STAGING_EU:
+        return 'https://api.eu-de.lb-stage.xyz/api/v1'
     elif environ == Environ.CUSTOM:
         rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
         if rest_api_endpoint is None:
@@ -86,6 +91,8 @@ def testing_api_key(environ: str) -> str:
         return os.environ["LABELBOX_TEST_API_KEY_PROD"]
     elif environ == Environ.STAGING:
         return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
+    elif environ == Environ.STAGING_EU:
+        return os.environ["LABELBOX_TEST_API_KEY_STAGING_EU"]
     elif environ == Environ.ONPREM:
         return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
     elif environ == Environ.CUSTOM:

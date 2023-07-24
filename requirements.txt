@@ -4,7 +4,6 @@ google-api-core>=1.22.1
 imagesize
 nbconvert~=7.2.6
 nbformat~=5.7.0
-numpy~=1.21.6
 opencv-python
 PILLOW
 pydantic>=1.8,<2.0
@@ -17,3 +16,4 @@ shapely
 tqdm
 typeguard==2.13.3
 typing-extensions==4.5.0
+numpy
