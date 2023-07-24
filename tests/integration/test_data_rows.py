@@ -831,7 +831,8 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
         assert task.status == "COMPLETE"
         assert len(task.failed_data_rows) == 1
         assert len(task.created_data_rows) == 1
-        assert "Duplicate global key found" in task.failed_data_rows[0]['message']
+        assert "Duplicate global key found" in task.failed_data_rows[0][
+            'message']
     else:
         assert task.status == "FAILED"
         assert len(task.failed_data_rows) > 0
@@ -885,7 +886,8 @@ def test_data_row_delete_and_create_with_same_global_key(
     if is_adv_enabled:
         assert task.status == "COMPLETE"
         assert len(task.failed_data_rows) == 1
-        assert "Duplicate global key found" in task.failed_data_rows[0]['message']
+        assert "Duplicate global key found" in task.failed_data_rows[0][
+            'message']
     else:
         assert task.status == "FAILED"
         assert len(task.failed_data_rows) > 0
@@ -975,10 +977,9 @@ def test_create_conversational_text(dataset, conversational_content):
 # https://labelbox.atlassian.net/browse/AL-6158
 def test_invalid_media_type(dataset, conversational_content):
 
-    for error_message, invalid_media_type in [
-        ["Found invalid contents for media type: 'IMAGE'", 'IMAGE'],
-        ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']
-    ]:
+    for error_message, invalid_media_type in [[
+            "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
+    ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
         # TODO: What error kind should this be? It looks like for global key we are
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(labelbox.exceptions.InvalidQueryError):
