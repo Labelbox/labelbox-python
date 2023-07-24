@@ -1,5 +1,3 @@
-import time
-
 import pytest
 import requests
 from labelbox import Dataset

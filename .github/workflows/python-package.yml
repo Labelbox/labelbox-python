@@ -75,7 +75,7 @@ jobs:
           mypy -p labelbox --pretty --show-error-codes
       - name: Install package and test dependencies
         run: |
-          pip install tox==3.18.1
+          pip install tox==3.18.1 pytest-snapshot
 
       # TODO: replace tox.ini with what the Makefile does
       # to make sure local testing is
@@ -89,4 +89,4 @@ jobs:
 
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -n 10 -svv --reruns 3 --reruns-delay 3
+          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 8

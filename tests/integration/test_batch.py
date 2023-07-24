@@ -1,14 +1,8 @@
-import logging
-import time
-
 from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
 from labelbox import Dataset, Project
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
-
-
-logging.basicConfig(level=logging.WARN)
 
 
 @pytest.fixture
