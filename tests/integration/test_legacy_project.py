@@ -6,12 +6,15 @@ from labelbox.schema.queue_mode import QueueMode
 
 
 def test_project_dataset(client, rand_gen):
-    with pytest.raises(MalformedQueryException) as exc:
+    with pytest.raises(
+            MalformedQueryException,
+            match=
+            "DataSet queue mode is deprecated. Please prefer Batch queue mode."
+    ):
         client.create_project(
             name=rand_gen(str),
             queue_mode=QueueMode.Dataset,
         )
-        assert exc.message == "DataSet queue mode is deprecated. Please prefer Batch queue mode."
 
 
 def test_legacy_project_dataset_relationships(project, dataset):
