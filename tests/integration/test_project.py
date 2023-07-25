@@ -19,7 +19,8 @@ def test_project(client, rand_gen):
     data = {
         "name": rand_gen(str),
         "description": rand_gen(str),
-        "queue_mode": QueueMode.Dataset
+        "queue_mode": QueueMode.Batch.Batch,
+        "media_type": MediaType.Image,
     }
     project = client.create_project(**data)
     assert project.name == data["name"]
@@ -166,7 +167,7 @@ def test_project_export_v2_with_iso_date_filters(client, export_v2_test_helpers,
 def test_project_export_v2_datarow_list(
         export_v2_test_helpers,
         configured_batch_project_with_multiple_datarows):
-    batch_project, _, data_rows = configured_batch_project_with_multiple_datarows
+    project, _, data_rows = configured_batch_project_with_multiple_datarows
 
     data_row_ids = [dr.uid for dr in data_rows]
     datarow_filter_size = 2
@@ -178,7 +179,7 @@ def test_project_export_v2_datarow_list(
     }
     params = {"data_row_details": True, "media_type_override": MediaType.Image}
     task_results = export_v2_test_helpers.run_project_export_v2_task(
-        batch_project, filters=filters, params=params)
+        project, filters=filters, params=params)
 
     # only 2 datarows should be exported
     assert len(task_results) == datarow_filter_size
@@ -341,11 +342,10 @@ def test_queued_data_row_export(configured_project):
 
 
 def test_queue_mode(configured_project: Project):
-    # ensures default queue mode is dataset
-    assert configured_project.queue_mode == QueueMode.Dataset
+    assert configured_project.queue_mode == QueueMode.Batch
 
 
-def test_batches(batch_project: Project, dataset: Dataset, image_url):
+def test_batches(project: Project, dataset: Dataset, image_url):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
@@ -356,28 +356,27 @@ def test_batches(batch_project: Project, dataset: Dataset, image_url):
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
-    batch_project.create_batch(batch_one, [data_rows[0]])
-    batch_project.create_batch(batch_two, [data_rows[1]])
+    project.create_batch(batch_one, [data_rows[0]])
+    project.create_batch(batch_two, [data_rows[1]])
 
-    names = set([batch.name for batch in list(batch_project.batches())])
+    names = set([batch.name for batch in list(project.batches())])
     assert names == {batch_one, batch_two}
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
-def test_create_batch_with_global_keys_sync(batch_project: Project, data_rows):
+def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
-    batch = batch_project.create_batch(batch_name, global_keys=global_keys)
+    batch = project.create_batch(batch_name, global_keys=global_keys)
     batch_data_rows = set(batch.export_data_rows())
     assert batch_data_rows == set(data_rows)
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
-def test_create_batch_with_global_keys_async(batch_project: Project, data_rows):
+def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
-    batch = batch_project._create_batch_async(batch_name,
-                                              global_keys=global_keys)
+    batch = project._create_batch_async(batch_name, global_keys=global_keys)
     batch_data_rows = set(batch.export_data_rows())
     assert batch_data_rows == set(data_rows)
 

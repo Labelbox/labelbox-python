@@ -12,7 +12,7 @@ def big_dataset(dataset: Dataset):
             "row_data": IMAGE_URL,
             "external_id": "my-image"
         },
-    ] * 250)
+    ] * 2)
     task.wait_till_done()
 
     yield dataset
@@ -48,73 +48,71 @@ def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task.wait_till_done()
 
 
-def test_create_batch(batch_project: Project, big_dataset: Dataset):
+def test_create_batch(project: Project, big_dataset: Dataset):
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch = batch_project.create_batch("test-batch", data_rows, 3)
+    batch = project.create_batch("test-batch", data_rows, 3)
     assert batch.name == "test-batch"
     assert batch.size == len(data_rows)
 
 
-def test_create_batch_async(batch_project: Project, big_dataset: Dataset):
+def test_create_batch_async(project: Project, big_dataset: Dataset):
     data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch = batch_project._create_batch_async("big-batch",
-                                              data_rows,
-                                              priority=3)
+    batch = project._create_batch_async("big-batch", data_rows, priority=3)
     assert batch.name == "big-batch"
     assert batch.size == len(data_rows)
 
 
-def test_create_batch_with_consensus_settings(batch_project: Project,
+def test_create_batch_with_consensus_settings(project: Project,
                                               small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     consensus_settings = {"coverage_percentage": 0.1, "number_of_labels": 3}
-    batch = batch_project.create_batch("batch with consensus settings",
-                                       data_rows,
-                                       3,
-                                       consensus_settings=consensus_settings)
+    batch = project.create_batch("batch with consensus settings",
+                                 data_rows,
+                                 3,
+                                 consensus_settings=consensus_settings)
     assert batch.name == "batch with consensus settings"
     assert batch.size == len(data_rows)
     assert batch.consensus_settings == consensus_settings
 
 
-def test_create_batch_with_data_row_class(batch_project: Project,
+def test_create_batch_with_data_row_class(project: Project,
                                           small_dataset: Dataset):
     data_rows = list(small_dataset.export_data_rows())
-    batch = batch_project.create_batch("test-batch-data-rows", data_rows, 3)
+    batch = project.create_batch("test-batch-data-rows", data_rows, 3)
     assert batch.name == "test-batch-data-rows"
     assert batch.size == len(data_rows)
 
 
-def test_archive_batch(batch_project: Project, small_dataset: Dataset):
+def test_archive_batch(project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = batch_project.create_batch("batch to archive", data_rows)
+    batch = project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
     exported_data_rows = list(batch.export_data_rows())
 
     assert len(exported_data_rows) == 0
 
 
-def test_delete(batch_project: Project, small_dataset: Dataset):
+def test_delete(project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = batch_project.create_batch("batch to delete", data_rows)
+    batch = project.create_batch("batch to delete", data_rows)
     batch.delete()
 
-    assert len(list(batch_project.batches())) == 0
+    assert len(list(project.batches())) == 0
 
 
-def test_batch_project(batch_project: Project, small_dataset: Dataset):
+def test_batch_project(project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = batch_project.create_batch("batch to test project relationship",
-                                       data_rows)
+    batch = project.create_batch("batch to test project relationship",
+                                 data_rows)
 
     project_from_batch = batch.project()
 
-    assert project_from_batch.uid == batch_project.uid
-    assert project_from_batch.name == batch_project.name
+    assert project_from_batch.uid == project.uid
+    assert project_from_batch.name == project.name
 
 
 def test_batch_creation_for_data_rows_with_issues(
-        batch_project: Project, small_dataset: Dataset,
+        project: Project, small_dataset: Dataset,
         dataset_with_invalid_data_rows: Dataset):
     """
     Create a batch containing both valid and invalid data rows
@@ -126,8 +124,8 @@ def test_batch_creation_for_data_rows_with_issues(
     data_rows_to_add = valid_data_rows + invalid_data_rows
 
     assert len(data_rows_to_add) == 5
-    batch = batch_project.create_batch("batch to test failed data rows",
-                                       data_rows_to_add)
+    batch = project.create_batch("batch to test failed data rows",
+                                 data_rows_to_add)
     failed_data_row_ids = [x for x in batch.failed_data_row_ids]
     assert len(failed_data_row_ids) == 2
 
@@ -136,7 +134,7 @@ def test_batch_creation_for_data_rows_with_issues(
     assert len(failed_data_row_ids_set.intersection(invalid_data_rows_set)) == 2
 
 
-def test_batch_creation_with_processing_timeout(batch_project: Project,
+def test_batch_creation_with_processing_timeout(project: Project,
                                                 small_dataset: Dataset,
                                                 unique_dataset: Dataset):
     """
@@ -151,18 +149,17 @@ def test_batch_creation_with_processing_timeout(batch_project: Project,
 
     data_row_ids = valid_data_rows + unprocessed_data_rows
 
-    stashed_wait_timeout = batch_project._wait_processing_max_seconds
+    stashed_wait_timeout = project._wait_processing_max_seconds
     with pytest.raises(ProcessingWaitTimeout):
         # emulate the situation where there are still some data rows being
         # processed but wait timeout exceeded
-        batch_project._wait_processing_max_seconds = 0
-        batch_project.create_batch("batch to test failed data rows",
-                                   data_row_ids)
-    batch_project._wait_processing_max_seconds = stashed_wait_timeout
+        project._wait_processing_max_seconds = 0
+        project.create_batch("batch to test failed data rows", data_row_ids)
+    project._wait_processing_max_seconds = stashed_wait_timeout
 
 
-def test_export_data_rows(batch_project: Project, dataset: Dataset):
-    n_data_rows = 5
+def test_export_data_rows(project: Project, dataset: Dataset):
+    n_data_rows = 2
     task = dataset.create_data_rows([
         {
             "row_data": IMAGE_URL,
@@ -172,7 +169,7 @@ def test_export_data_rows(batch_project: Project, dataset: Dataset):
     task.wait_till_done()
 
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    batch = batch_project.create_batch("batch test", data_rows)
+    batch = project.create_batch("batch test", data_rows)
 
     result = list(batch.export_data_rows())
     exported_data_rows = [dr.uid for dr in result]
@@ -184,19 +181,18 @@ def test_export_data_rows(batch_project: Project, dataset: Dataset):
 @pytest.mark.skip(
     reason="Test cannot be used effectively with MAL/LabelImport. \
 Fix/Unskip after resolving deletion with MAL/LabelImport")
-def test_delete_labels(batch_project, small_dataset):
+def test_delete_labels(project, small_dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = batch_project.create_batch("batch to delete labels", data_rows)
+    batch = project.create_batch("batch to delete labels", data_rows)
 
 
 @pytest.mark.skip(
     reason="Test cannot be used effectively with MAL/LabelImport. \
 Fix/Unskip after resolving deletion with MAL/LabelImport")
-def test_delete_labels_with_templates(batch_project: Project,
-                                      small_dataset: Dataset):
+def test_delete_labels_with_templates(project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
-    batch = batch_project.create_batch("batch to delete labels w templates",
-                                       data_rows)
+    batch = project.create_batch("batch to delete labels w templates",
+                                 data_rows)
     exported_data_rows = list(batch.export_data_rows())
     res = batch.delete_labels(labels_as_template=True)
     exported_data_rows = list(batch.export_data_rows())

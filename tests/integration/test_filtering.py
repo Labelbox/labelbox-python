@@ -7,10 +7,10 @@ from labelbox.schema.queue_mode import QueueMode
 
 # Avoid assertions using equality to prevent intermittent failures due to
 # other builds simultaneously adding projects to test org
-def test_where(client):
-    p_a = client.create_project(name="a", queue_mode=QueueMode.Dataset)
-    p_b = client.create_project(name="b", queue_mode=QueueMode.Dataset)
-    p_c = client.create_project(name="c", queue_mode=QueueMode.Dataset)
+def test_where(client, image_url, rand_gen):
+    p_a = client.create_project(name="a", queue_mode=QueueMode.Batch)
+    p_b = client.create_project(name="b", queue_mode=QueueMode.Batch)
+    p_c = client.create_project(name="c", queue_mode=QueueMode.Batch)
 
     def _get(f, where=None):
         date_where = Project.created_at >= p_a.created_at
@@ -35,12 +35,16 @@ def test_where(client):
     assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
     dataset = client.create_dataset(name="Dataset")
-    p_a.datasets.connect(dataset)
-    p_b.datasets.connect(dataset)
-    p_c.datasets.connect(dataset)
+    data_row = dataset.create_data_row(row_data=image_url)
+    data_row_ids = [data_row.uid]
+    batch = p_a.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
 
     def get(where=None):
-        return _get(dataset.projects, where)
+        return _get(batch.project, where)
 
     assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
     e_a = get(Project.name == "a")
@@ -56,7 +60,7 @@ def test_where(client):
     le_b = get(Project.name <= "b")
     assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
-    dataset.delete()
+    batch.delete()
     p_a.delete()
     p_b.delete()
     p_c.delete()

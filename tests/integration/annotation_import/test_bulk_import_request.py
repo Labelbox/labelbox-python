@@ -17,6 +17,7 @@ from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
 from labelbox.schema.annotation_import import LabelImport, MALPredictionImport
+from labelbox.schema.media_type import MediaType
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -352,6 +353,7 @@ def test_nested_video_object_annotations(client,
                                          rand_gen):
     labels = []
     _, data_row_uids = video_data
+    configured_project_without_data_rows.update(media_type=MediaType.Video)
     configured_project_without_data_rows.create_batch(
         rand_gen(str),
         data_row_uids,  # sample of data row objects
