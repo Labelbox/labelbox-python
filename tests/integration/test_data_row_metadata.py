@@ -85,8 +85,6 @@ def make_named_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
-# needs prediction import, can't run locally
-# AL-6601 + AL-6410
 def test_export_empty_metadata(client, configured_project_with_label,
                                wait_for_data_row_processing):
     project, _, data_row, _ = configured_project_with_label
@@ -117,7 +115,7 @@ def test_get_datarow_metadata_ontology(mdo):
         ])
 
 
-def test_get_datarow_metadata_ontology(data_row, mdo: DataRowMetadataOntology):
+def test_bulk_upsert_datarow_metadata(data_row, mdo: DataRowMetadataOntology):
     metadata = make_metadata(data_row.uid)
     mdo.bulk_upsert([metadata])
     exported = mdo.bulk_export([data_row.uid])

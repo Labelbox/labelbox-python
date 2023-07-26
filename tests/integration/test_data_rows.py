@@ -737,7 +737,6 @@ def test_create_data_rows_result(client, dataset, image_url):
         client.get_data_row(result['id'])
 
 
-# enum metadata not imported
 def test_create_data_rows_local_file(dataset, sample_image):
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
@@ -941,7 +940,6 @@ def test_create_conversational_text(dataset, conversational_content):
 
 
 def test_invalid_media_type(dataset, conversational_content):
-
     for error_message, invalid_media_type in [[
             "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
     ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
