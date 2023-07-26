@@ -546,8 +546,14 @@ def test_data_row_update(client, dataset, rand_gen, image_url,
     assert data_row.row_data == image_url
 
     # tileLayer becomes a media attribute
-    pdf_url = "http://somepdfurl"
-    data_row.update(row_data={'pdfUrl': pdf_url, "tileLayerUrl": "123"})
+    pdf_url = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
+    tileLayerUrl = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
+    data_row.update(
+        row_data={
+            'pdfUrl': pdf_url, "tileLayerUrl": tileLayerUrl
+        }
+    )
+    data_row = wait_for_data_row_processing(client, data_row, check_updated_at=True)
     assert data_row.row_data == pdf_url
 
 

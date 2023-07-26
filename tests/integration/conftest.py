@@ -590,13 +590,20 @@ def wait_for_data_row_processing():
     DataRow be fully processed with media_attributes
     """
 
-    def func(client, data_row):
+    def func(client, data_row, check_updated_at=False):
+        """
+        added check_updated_at because when a data_row is updated from say
+        an image to pdf, it already has media_attributes and the loop does
+        not wait for processing to a pdf
+        """
+        updated_at = data_row.updated_at if check_updated_at else None
         data_row_id = data_row.uid
         timeout_seconds = 60
         while True:
             data_row = client.get_data_row(data_row_id)
-            if data_row.media_attributes:
-                return data_row
+            if data_row.media_attributes and (updated_at is None or updated_at != data_row.updated_at):
+                if data_row.media_attributes:
+                    return data_row
             timeout_seconds -= 2
             if timeout_seconds <= 0:
                 raise TimeoutError(
