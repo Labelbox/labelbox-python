@@ -1,6 +1,7 @@
 import pytest
 
 from labelbox import Project
+from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 
 
@@ -9,13 +10,16 @@ from labelbox.schema.queue_mode import QueueMode
 def test_relationship_sorting(client):
     a = client.create_project(name="a",
                               description="b",
-                              queue_mode=QueueMode.Dataset)
+                              queue_mode=QueueMode.Batch,
+                              media_type=MediaType.Image)
     b = client.create_project(name="b",
                               description="c",
-                              queue_mode=QueueMode.Dataset)
+                              queue_mode=QueueMode.Batch,
+                              media_type=MediaType.Image)
     c = client.create_project(name="c",
                               description="a",
-                              queue_mode=QueueMode.Dataset)
+                              queue_mode=QueueMode.Batch,
+                              media_type=MediaType.Image)
 
     dataset = client.create_dataset(name="Dataset")
     a.datasets.connect(dataset)

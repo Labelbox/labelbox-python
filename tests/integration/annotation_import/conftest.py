@@ -4,7 +4,7 @@ import pytest
 import time
 import requests
 
-from labelbox import parser
+from labelbox import parser, MediaType
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -113,9 +113,9 @@ def document_data_row(rand_gen):
 def text_data_row(rand_gen):
     return {
         "row_data":
-            "https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt",
+            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
         "global_key":
-            f"https://lb-test-data.s3.us-west-1.amazonaws.com/text-samples/sample-text-1.txt-{rand_gen(str)}",
+            f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{rand_gen(str)}",
         "media_type":
             "TEXT",
     }
@@ -160,7 +160,8 @@ def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
 
 @pytest.fixture
 def annotations_by_data_type(polygon_inference, rectangle_inference,
-                             line_inference, entity_inference,
+                             rectangle_inference_document, line_inference,
+                             entity_inference, entity_inference_document,
                              checklist_inference, text_inference,
                              video_checklist_inference):
     return {
@@ -168,8 +169,8 @@ def annotations_by_data_type(polygon_inference, rectangle_inference,
         'conversation': [checklist_inference, text_inference, entity_inference],
         'dicom': [line_inference],
         'document': [
-            entity_inference, checklist_inference, text_inference,
-            rectangle_inference
+            entity_inference_document, checklist_inference, text_inference,
+            rectangle_inference_document
         ],
         'html': [text_inference, checklist_inference],
         'image': [
@@ -477,10 +478,19 @@ def wait_for_label_processing():
 
 
 @pytest.fixture
-def configured_project(client, ontology, rand_gen, image_url):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+def initial_dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
+    yield dataset
+    dataset.delete()
+
+
+@pytest.fixture
+def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
+    dataset = initial_dataset
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+    )
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -489,33 +499,33 @@ def configured_project(client, ontology, rand_gen, image_url):
 
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_row_ids,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-    project.datasets.connect(dataset)
+    project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
     project.data_row_ids = data_row_ids
     yield project
     project.delete()
-    dataset.delete()
 
 
 @pytest.fixture
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Dataset)
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Pdf)
     dataset = client.create_dataset(name=rand_gen(str))
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
-    data_row_ids = []
-    data_row_ids.append(dataset.create_data_row(pdf_url).uid)
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_row_ids,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
-    project.datasets.connect(dataset)
+    data_row = dataset.create_data_row(pdf_url)
+    data_row_ids = [data_row.uid]
+    project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
     project.data_row_ids = data_row_ids
     yield project
     project.delete()
@@ -533,10 +543,13 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
-def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row):
+def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
+                                wait_for_data_row_processing):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
     data_row = dataset.create_data_row(conversation_entity_data_row)
+    data_row = wait_for_data_row_processing(client, data_row)
+
     data_row_ids.append(data_row.uid)
     yield dataset, data_row_ids
     dataset.delete()
@@ -562,7 +575,8 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
 @pytest.fixture
 def prediction_id_mapping(configured_project):
     # Maps tool types to feature schema ids
-    ontology = configured_project.ontology().normalized
+    project = configured_project
+    ontology = project.ontology().normalized
     result = {}
 
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
@@ -579,7 +593,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": configured_project.data_row_ids[idx],
+                    "id": project.data_row_ids[idx],
                 },
                 'tool': tool
             }
@@ -592,7 +606,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": configured_project.data_row_ids[idx],
+                    "id": project.data_row_ids[idx],
                 },
                 'tool': tool
             }

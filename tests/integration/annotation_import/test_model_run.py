@@ -24,7 +24,7 @@ def _model_run_export_v2_results(model_run, task_name, params, num_retries=5):
     return []
 
 
-def test_model_run(client, configured_project_with_label, rand_gen):
+def test_model_run(client, configured_project_with_label, data_row, rand_gen):
     project, _, _, label = configured_project_with_label
     label_id = label.uid
     ontology = project.ontology()
@@ -46,8 +46,7 @@ def test_model_run(client, configured_project_with_label, rand_gen):
     model_run_data_row = next(model_run.model_run_data_rows())
     assert model_run_data_row.label_id == label_id
     assert model_run_data_row.model_run_id == model_run.uid
-    assert model_run_data_row.data_row().uid == next(
-        next(project.datasets()).data_rows()).uid
+    assert model_run_data_row.data_row().uid == data_row.uid
 
     fetch_model_run = client.get_model_run(model_run.uid)
     assert fetch_model_run == model_run

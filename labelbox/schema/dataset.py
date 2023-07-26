@@ -52,7 +52,12 @@ class Dataset(DbObject, Updateable, Deletable):
     row_count = Field.Int("row_count")
 
     # Relationships
-    projects = Relationship.ToMany("Project", True)
+    projects = Relationship.ToMany(
+        "Project",
+        True,
+        deprecation_warning=
+        "This method does not return any data for batch-based projects and it will be deprecated on or around November 1, 2023."
+    )
     data_rows = Relationship.ToMany("DataRow", False)
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
