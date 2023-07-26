@@ -601,9 +601,8 @@ def wait_for_data_row_processing():
         timeout_seconds = 60
         while True:
             data_row = client.get_data_row(data_row_id)
-            if data_row.media_attributes and (updated_at is None or updated_at != data_row.updated_at):
-                if data_row.media_attributes:
-                    return data_row
+            if data_row.media_attributes and (updated_at is None or updated_at < data_row.updated_at):
+                return data_row
             timeout_seconds -= 2
             if timeout_seconds <= 0:
                 raise TimeoutError(
