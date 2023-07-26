@@ -74,7 +74,7 @@ class Dataset(DbObject, Updateable, Deletable):
         Custom method to paginate data_rows via cursor.
 
         Params:
-            after (str): Cursor (data row id) to start from, if none, will start from the beginning
+            from_cursor (str): Cursor (data row id) to start from, if none, will start from the beginning
             where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.    
                 example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
 
@@ -87,38 +87,27 @@ class Dataset(DbObject, Updateable, Deletable):
         """
 
         page_size = 500  # hardcode to avoid overloading the server
-        datarow_selections = query.results_query_part(Entity.DataRow)
-
-        empty_string = ''
-
-        where_clause = empty_string
-        where_vars = empty_string
-        where_param = None
-        if where is not None:
-            where_clause = ', $where: DatasetDataRowWhereInput'
-            where_vars = ', where: $where'
-            where_param = query.where_as_dict(Entity.DataRow, where)
+        where_param = query.where_as_dict(Entity.DataRow,
+                                          where) if where is not None else None
 
         template = Template(
-            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int$where_clause)  {
-                        datasetDataRows(id: $$id, from: $$from, first: $$first$where_vars)
+            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int, $$where: DatasetDataRowWhereInput)  {
+                        datasetDataRows(id: $$id, from: $$from, first: $$first, where: $$where)
                             {
                                 nodes { $datarow_selections }
                                 pageInfo { hasNextPage startCursor }
                             }
                         }
                     """)
-        query_str = template.substitute(where_clause=where_clause,
-                                        where_vars=where_vars,
-                                        datarow_selections=datarow_selections)
+        query_str = template.substitute(
+            datarow_selections=query.results_query_part(Entity.DataRow))
 
         params = {
             'id': self.uid,
             'from': from_cursor,
             'first': page_size,
+            'where': where_param,
         }
-        if where is not None:
-            params['where'] = where_param
 
         return PaginatedCollection(
             client=self.client,
