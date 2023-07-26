@@ -526,7 +526,8 @@ def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
         ])
 
 
-def test_data_row_update(client, dataset, rand_gen, image_url, wait_for_data_row_processing):
+def test_data_row_update(client, dataset, rand_gen, image_url,
+                         wait_for_data_row_processing):
     external_id = rand_gen(str)
     data_row = dataset.create_data_row(row_data=image_url,
                                        external_id=external_id)
