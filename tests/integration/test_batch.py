@@ -111,7 +111,6 @@ def test_batch_project(project: Project, small_dataset: Dataset):
     assert project_from_batch.name == project.name
 
 
-# OK
 def test_batch_creation_for_data_rows_with_issues(
         project: Project, small_dataset: Dataset,
         dataset_with_invalid_data_rows: Dataset):

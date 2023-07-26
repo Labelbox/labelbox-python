@@ -96,7 +96,6 @@ def test_export_empty_metadata(client, configured_project_with_label,
     assert label.data.metadata == []
 
 
-# OK
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
@@ -118,7 +117,6 @@ def test_get_datarow_metadata_ontology(mdo):
         ])
 
 
-# OK
 def test_get_datarow_metadata_ontology(data_row, mdo: DataRowMetadataOntology):
     metadata = make_metadata(data_row.uid)
     mdo.bulk_upsert([metadata])
@@ -127,7 +125,6 @@ def test_get_datarow_metadata_ontology(data_row, mdo: DataRowMetadataOntology):
     assert len([field for field in exported[0].fields]) == 3
 
 
-# OK
 def test_bulk_upsert_datarow_metadata_by_globalkey(
         data_rows, mdo: DataRowMetadataOntology):
     global_keys = [data_row.global_key for data_row in data_rows]
@@ -136,7 +133,6 @@ def test_bulk_upsert_datarow_metadata_by_globalkey(
     assert len(errors) == 0
 
 
-# OK
 @pytest.mark.slow
 def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
     metadata = []
@@ -155,7 +151,6 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
                    ]), metadata_lookup.get(data_row_id).fields
 
 
-# OK
 def test_upsert_datarow_metadata_by_name(data_row, mdo):
     metadata = [make_named_metadata(data_row.uid)]
     errors = mdo.bulk_upsert(metadata)
@@ -169,7 +164,6 @@ def test_upsert_datarow_metadata_by_name(data_row, mdo):
                ]), metadata_lookup.get(data_row.uid).fields
 
 
-# OK
 def test_upsert_datarow_metadata_option_by_name(data_row, mdo):
     metadata = DataRowMetadata(data_row_id=data_row.uid,
                                fields=[
@@ -187,7 +181,6 @@ def test_upsert_datarow_metadata_option_by_name(data_row, mdo):
     assert metadata.value == TEST_SPLIT_ID
 
 
-# OK
 def test_upsert_datarow_metadata_option_by_incorrect_name(data_row, mdo):
     metadata = DataRowMetadata(data_row_id=data_row.uid,
                                fields=[
@@ -198,7 +191,6 @@ def test_upsert_datarow_metadata_option_by_incorrect_name(data_row, mdo):
         mdo.bulk_upsert([metadata])
 
 
-# OK
 def test_bulk_delete_datarow_metadata(data_row, mdo):
     """test bulk deletes for all fields"""
     metadata = make_metadata(data_row.uid)
@@ -212,7 +204,6 @@ def test_bulk_delete_datarow_metadata(data_row, mdo):
     assert not len(remaining_ids.intersection(set(upload_ids)))
 
 
-# OK
 def test_bulk_partial_delete_datarow_metadata(data_row, mdo):
     """Delete a single from metadata"""
     n_fields = len(mdo.bulk_export([data_row.uid])[0].fields)
@@ -229,7 +220,6 @@ def test_bulk_partial_delete_datarow_metadata(data_row, mdo):
     assert len(fields) == (len(metadata.fields) - 1)
 
 
-# AL-6622
 def test_large_bulk_delete_datarow_metadata(big_dataset, mdo, is_adv_enabled):
     metadata = []
     data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
@@ -266,7 +256,6 @@ def test_large_bulk_delete_datarow_metadata(big_dataset, mdo, is_adv_enabled):
         assert SPLIT_SCHEMA_ID not in [field.schema_id for field in fields]
 
 
-# OK
 def test_bulk_delete_datarow_enum_metadata(data_row: DataRow, mdo):
     """test bulk deletes for non non fields"""
     metadata = make_metadata(data_row.uid)
@@ -288,7 +277,6 @@ def test_bulk_delete_datarow_enum_metadata(data_row: DataRow, mdo):
     assert len(exported) == 0
 
 
-# OK
 def test_raise_enum_upsert_schema_error(data_row, mdo):
     """Setting an option id as the schema id will raise a Value Error"""
 
@@ -301,7 +289,6 @@ def test_raise_enum_upsert_schema_error(data_row, mdo):
         mdo.bulk_upsert([metadata])
 
 
-# OK
 def test_upsert_non_existent_schema_id(data_row, mdo):
     """Raise error on non-existent schema id"""
     metadata = DataRowMetadata(data_row_id=data_row.uid,
@@ -314,7 +301,6 @@ def test_upsert_non_existent_schema_id(data_row, mdo):
         mdo.bulk_upsert([metadata])
 
 
-# OK
 def test_delete_non_existent_schema_id(data_row, mdo, is_adv_enabled):
     res = mdo.bulk_delete([
         DeleteDataRowMetadata(data_row_id=data_row.uid,
@@ -328,7 +314,6 @@ def test_delete_non_existent_schema_id(data_row, mdo, is_adv_enabled):
         assert len(res) == 0
 
 
-# OK
 def test_parse_raw_metadata(mdo):
     example = {
         'dataRowId':
@@ -368,7 +353,6 @@ def test_parse_raw_metadata(mdo):
             assert mdo._parse_upsert(field)
 
 
-# OK
 def test_parse_raw_metadata_fields(mdo):
     example = [
         {
@@ -400,7 +384,6 @@ def test_parse_raw_metadata_fields(mdo):
         assert mdo._parse_upsert(field)
 
 
-# OK
 def test_parse_metadata_schema():
     unparsed = {
         'id':
@@ -428,7 +411,6 @@ def test_parse_metadata_schema():
     assert parsed.options[0].kind == DataRowMetadataKind.option
 
 
-# OK
 def test_create_schema(mdo):
     metadata_name = str(uuid.uuid4())
     created_schema = mdo.create_schema(metadata_name, DataRowMetadataKind.enum,
@@ -440,7 +422,6 @@ def test_create_schema(mdo):
     mdo.delete_schema(metadata_name)
 
 
-# OK
 def test_update_schema(mdo):
     metadata_name = str(uuid.uuid4())
     created_schema = mdo.create_schema(metadata_name, DataRowMetadataKind.enum,
@@ -453,7 +434,6 @@ def test_update_schema(mdo):
     mdo.delete_schema(f"{metadata_name}_updated")
 
 
-# OK
 def test_update_enum_options(mdo):
     metadata_name = str(uuid.uuid4())
     created_schema = mdo.create_schema(metadata_name, DataRowMetadataKind.enum,
@@ -468,7 +448,6 @@ def test_update_enum_options(mdo):
     mdo.delete_schema(metadata_name)
 
 
-# OK
 def test_delete_schema(mdo):
     metadata_name = str(uuid.uuid4())
     created_schema = mdo.create_schema(metadata_name,
@@ -479,7 +458,6 @@ def test_delete_schema(mdo):
     assert metadata_name not in mdo.custom_by_name
 
 
-# OK
 @pytest.mark.parametrize('datetime_str',
                          ['2011-11-04T00:05:23Z', '2011-11-04T00:05:23+00:00'])
 def test_upsert_datarow_date_metadata(data_row, mdo, datetime_str):
@@ -497,7 +475,6 @@ def test_upsert_datarow_date_metadata(data_row, mdo, datetime_str):
     assert f"{metadata[0].fields[0].value}" == "2011-11-04 00:05:23+00:00"
 
 
-# OK
 @pytest.mark.parametrize('datetime_str',
                          ['2011-11-04T00:05:23Z', '2011-11-04T00:05:23+00:00'])
 def test_create_data_row_with_metadata(dataset, image_url, datetime_str):
