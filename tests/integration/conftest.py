@@ -602,7 +602,8 @@ def wait_for_data_row_processing():
         while True:
             data_row = client.get_data_row(data_row_id)
             if data_row.media_attributes and (prev_media_attrs is None or
-                                              prev_media_attrs != data_row.media_attributes):
+                                              prev_media_attrs
+                                              != data_row.media_attributes):
                 return data_row
             timeout_seconds -= 2
             if timeout_seconds <= 0:
