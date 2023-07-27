@@ -13,7 +13,7 @@ def big_dataset(dataset: Dataset):
             "row_data": IMAGE_URL,
             "external_id": EXTERNAL_ID
         },
-    ] * 2)
+    ] * 3)
     task.wait_till_done()
 
     yield dataset
@@ -26,7 +26,7 @@ def small_dataset(dataset: Dataset):
             "row_data": IMAGE_URL,
             "external_id": EXTERNAL_ID
         },
-    ] * 3)
+    ] * 2)
     task.wait_till_done()
 
     yield dataset
@@ -124,7 +124,7 @@ def test_batch_creation_for_data_rows_with_issues(
     ]
     data_rows_to_add = valid_data_rows + invalid_data_rows
 
-    assert len(data_rows_to_add) == 5
+    assert len(data_rows_to_add) == 4
     batch = project.create_batch("batch to test failed data rows",
                                  data_rows_to_add)
     failed_data_row_ids = [x for x in batch.failed_data_row_ids]
