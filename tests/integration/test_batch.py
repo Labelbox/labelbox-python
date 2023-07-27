@@ -3,6 +3,7 @@ import pytest
 from labelbox import Dataset, Project
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+EXTERNAL_ID = "my-image"
 
 
 @pytest.fixture
@@ -10,7 +11,7 @@ def big_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
         {
             "row_data": IMAGE_URL,
-            "external_id": "my-image"
+            "external_id": EXTERNAL_ID
         },
     ] * 2)
     task.wait_till_done()
@@ -23,7 +24,7 @@ def small_dataset(dataset: Dataset):
     task = dataset.create_data_rows([
         {
             "row_data": IMAGE_URL,
-            "external_id": "my-image"
+            "external_id": EXTERNAL_ID
         },
     ] * 3)
     task.wait_till_done()
@@ -163,7 +164,7 @@ def test_export_data_rows(project: Project, dataset: Dataset):
     task = dataset.create_data_rows([
         {
             "row_data": IMAGE_URL,
-            "external_id": "my-image"
+            "external_id": EXTERNAL_ID
         },
     ] * n_data_rows)
     task.wait_till_done()
