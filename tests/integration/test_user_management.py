@@ -60,6 +60,7 @@ def test_project_invite(client, organization, project_pack, queries):
                           for proj_role in [project_role_1, project_role_2]])
 
     project_members = project_1.members()
+
     project_member = [
         member for member in project_members
         if member.user().uid == client.get_user().uid
@@ -68,6 +69,7 @@ def test_project_invite(client, organization, project_pack, queries):
     assert len(project_member) == 1
     project_member = project_member[0]
 
+    assert project_member.access_from == 'ORGANIZATION'
     assert project_member.role().name.upper() == roles['ADMIN'].name.upper()
     queries.cancel_invite(client, invite.uid)
 

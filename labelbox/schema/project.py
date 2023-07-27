@@ -150,7 +150,7 @@ class Project(DbObject, Updateable, Deletable):
         """
         id_param = "projectId"
         query_str = """query ProjectMemberOverviewPyApi($%s: ID!) {
-             project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } }
+             project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } accessFrom }
            }
         }""" % (id_param, id_param, query.results_query_part(Entity.User))
         return PaginatedCollection(self.client, query_str,
@@ -1360,6 +1360,7 @@ class Project(DbObject, Updateable, Deletable):
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)
     role = Relationship.ToOne("Role", cache=True)
+    access_from = Field.String("access_from")
 
 
 class LabelingParameterOverride(DbObject):
