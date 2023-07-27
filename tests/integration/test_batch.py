@@ -1,10 +1,15 @@
 import pytest
 
+from uuid import uuid4
 from labelbox import Dataset, Project
 from labelbox.exceptions import ProcessingWaitTimeout
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 EXTERNAL_ID = "my-image"
+
+
+def get_data_row_ids(ds: Dataset):
+    return [dr.uid for dr in list(ds.export_data_rows())]
 
 
 @pytest.fixture
@@ -178,6 +183,46 @@ def test_export_data_rows(project: Project, dataset: Dataset):
 
     assert len(result) == n_data_rows
     assert set(data_rows) == set(exported_data_rows)
+
+
+def test_list_all_batches(project: Project, client):
+    """
+    Test to verify that we can retrieve all available batches in the project.
+    """
+    # Data to use
+    img_assets = [{
+        "row_data": IMAGE_URL,
+        "external_id": str(uuid4())
+    } for asset in range(0, 4)]
+    data = [img_assets for _ in range(0, 4)]
+
+    # Setup
+    batches = []
+    datasets = []
+
+    for assets in data:
+        dataset = client.create_dataset(name=str(uuid4()))
+        create_data_rows_task = dataset.create_data_rows(assets)
+        create_data_rows_task.wait_till_done()
+        datasets.append(dataset)
+
+    for dataset in datasets:
+        data_row_ids = get_data_row_ids(dataset)
+        new_batch = project.create_batch(name=str(uuid4()),
+                                         data_rows=data_row_ids)
+        batches.append(new_batch)
+
+    # Test
+    project_batches = list(project.batches())
+    assert len(batches) == len(project_batches)
+
+    for project_batch in project_batches:
+        for assets in data:
+            assert len(assets) == project_batch.size
+
+    # Clean up
+    for dataset in datasets:
+        dataset.delete()
 
 
 @pytest.mark.skip(
