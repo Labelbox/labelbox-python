@@ -1,6 +1,7 @@
-from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
+
 from labelbox import Dataset, Project
+from labelbox.exceptions import ProcessingWaitTimeout
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 EXTERNAL_ID = "my-image"
