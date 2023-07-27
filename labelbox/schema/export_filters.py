@@ -48,6 +48,10 @@ class DatasetExportFilters(SharedExportFilters):
     pass
 
 
+class DatarowExportFilters(SharedExportFilters):
+    pass
+
+
 def validate_datetime(datetime_str: str) -> bool:
     """helper function to validate that datetime's format: "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss" 
     or ISO 8061 format "YYYY-MM-DDThh:mm:ss±hhmm" (Example: "2023-05-23T14:30:00+0530")"""
