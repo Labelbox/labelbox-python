@@ -2,7 +2,7 @@ import pytest
 
 from uuid import uuid4
 from labelbox import Dataset, Project
-from labelbox.exceptions import ProcessingWaitTimeout
+from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, ResourceConflict, LabelboxError
 
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 EXTERNAL_ID = "my-image"
@@ -60,6 +60,81 @@ def test_create_batch(project: Project, big_dataset: Dataset):
     batch = project.create_batch("test-batch", data_rows, 3)
     assert batch.name == "test-batch"
     assert batch.size == len(data_rows)
+
+
+def test_create_batch_with_invalid_data_rows_ids(project: Project):
+    with pytest.raises(MalformedQueryException) as ex:
+        project.create_batch("test-batch", data_rows=['a', 'b', 'c'])
+        assert str(
+            ex) == "No valid data rows to be added from the list provided!"
+
+
+def test_create_batch_with_the_same_name(project: Project,
+                                         small_dataset: Dataset):
+    batch1 = project.create_batch("batch1",
+                                  data_rows=get_data_row_ids(small_dataset))
+    assert batch1.name == "batch1"
+
+    with pytest.raises(ResourceConflict):
+        project.create_batch("batch1",
+                             data_rows=get_data_row_ids(small_dataset))
+
+
+def test_create_batch_with_same_data_row_ids(project: Project,
+                                             small_dataset: Dataset):
+    batch1 = project.create_batch("batch1",
+                                  data_rows=get_data_row_ids(small_dataset))
+    assert batch1.name == "batch1"
+
+    with pytest.raises(MalformedQueryException) as ex:
+        project.create_batch("batch2",
+                             data_rows=get_data_row_ids(small_dataset))
+        assert str(ex) == "No valid data rows to add to project"
+
+
+def test_create_batch_with_non_existent_global_keys(project: Project):
+    with pytest.raises(MalformedQueryException) as ex:
+        project.create_batch("batch1", global_keys=["key1"])
+        assert str(
+            ex
+        ) == "Data rows with the following global keys do not exist: key1."
+
+
+def test_create_batch_with_negative_priority(project: Project,
+                                             small_dataset: Dataset):
+    with pytest.raises(LabelboxError):
+        project.create_batch("batch1",
+                             data_rows=get_data_row_ids(small_dataset),
+                             priority=-1)
+
+
+def test_create_batch_with_null_priority(project: Project,
+                                         small_dataset: Dataset):
+    with pytest.raises(LabelboxError):
+        project.create_batch("batch1",
+                             data_rows=get_data_row_ids(small_dataset),
+                             priority=0)
+
+    with pytest.raises(LabelboxError):
+        project.create_batch("batch1",
+                             data_rows=get_data_row_ids(small_dataset),
+                             priority=None)
+
+
+def test_create_batch_with_out_of_bound_priority(project: Project,
+                                                 small_dataset: Dataset):
+    with pytest.raises(LabelboxError):
+        project.create_batch("batch1",
+                             data_rows=get_data_row_ids(small_dataset),
+                             priority=6)
+
+
+def test_create_batch_with_float_number_priority(project: Project,
+                                                 small_dataset: Dataset):
+    with pytest.raises(LabelboxError):
+        project.create_batch("batch1",
+                             data_rows=get_data_row_ids(small_dataset),
+                             priority=4.9)
 
 
 def test_create_batch_async(project: Project, big_dataset: Dataset):
@@ -193,8 +268,8 @@ def test_list_all_batches(project: Project, client):
     img_assets = [{
         "row_data": IMAGE_URL,
         "external_id": str(uuid4())
-    } for asset in range(0, 4)]
-    data = [img_assets for _ in range(0, 4)]
+    } for asset in range(0, 2)]
+    data = [img_assets for _ in range(0, 2)]
 
     # Setup
     batches = []
@@ -223,6 +298,11 @@ def test_list_all_batches(project: Project, client):
     # Clean up
     for dataset in datasets:
         dataset.delete()
+
+
+def test_list_project_batches_with_no_batches(project: Project):
+    batches = list(project.batches())
+    assert len(batches) == 0
 
 
 @pytest.mark.skip(
