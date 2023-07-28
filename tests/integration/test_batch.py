@@ -1,3 +1,5 @@
+import time
+
 from labelbox.exceptions import ProcessingWaitTimeout
 import pytest
 from labelbox import Dataset, Project
@@ -170,7 +172,8 @@ def test_export_data_rows(project: Project, dataset: Dataset):
 
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
     batch = project.create_batch("batch test", data_rows)
-
+    # allow time for catapult to sync changes to ES
+    time.sleep(5)
     result = list(batch.export_data_rows())
     exported_data_rows = [dr.uid for dr in result]
 
