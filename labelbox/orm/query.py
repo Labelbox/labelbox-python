@@ -1,4 +1,5 @@
 from itertools import chain
+from typing import Any, Dict
 
 from labelbox import utils
 from labelbox.exceptions import InvalidQueryError, InvalidAttributeError, MalformedQueryException
@@ -448,3 +449,24 @@ def bulk_delete(db_objects, use_where_clause):
         utils.camel_case(type_name), ", ".join(
             '"%s"' % db_object.uid for db_object in db_objects))
     return query_str, {}
+
+
+def where_as_dict(entity, node: Comparison) -> Dict[str, Any]:
+    check_where_clause(entity, node)
+    """ Helper that constructs a where clause from a Comparison node. """
+    COMPARISON_TO_SUFFIX = {
+        Comparison.Op.EQ: "",
+        Comparison.Op.NE: "_not",
+        Comparison.Op.LT: "_lt",
+        Comparison.Op.GT: "_gt",
+        Comparison.Op.LE: "_lte",
+        Comparison.Op.GE: "_gte",
+    }
+
+    key = f"{node.field.graphql_name}{COMPARISON_TO_SUFFIX[node.op]}"
+    return {key: node.value}
+
+
+def order_by_as_string(entity, node: tuple) -> str:
+    check_order_by_clause(entity, node)
+    return f"{node[0].graphql_name}_{node[1].name.upper()}"
