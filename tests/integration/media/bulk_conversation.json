@@ -1,113 +1,130 @@
-[
-    {
-        "externalId": "Convo-123",
-        "attachments": [
-            {
-                "type": "TEXT",
-                "value": "IOWA, Zone 2232, June 2022 [Text string]"
-            },
-            {
-                "type": "IMAGE",
-                "value": "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
-            }
-        ],
-        "type": "application/vnd.labelbox.conversational",
-        "version": 1,
-        "conversationalData": [
-            {
-                "messageId": "message-0",
-                "timestampUsec": 1530718491,
-                "content": "I love iphone! i just bought new iphone! :smiling_face_with_3_hearts: :calling:",
-                "user": {
-                    "userId": "Bot 002",
-                    "name": "Bot"
-                },
-                "align": "left",
-                "canLabel": false
-            },
-            {
-                "messageId": "message-1",
-                "timestampUsec": 1530718503,
-                "content": "Thats good for you, i'm not very into new tech",
-                "user": {
-                    "userId": "User 00686",
-                    "name": "User"
-                },
-                "align": "right",
-                "canLabel": true
-            },
-            {
-                "messageId": "message-2",
-                "timestampUsec": 1530718516,
-                "content": "I am a college student and i am a college student :female-teacher::skin-tone-2:",
-                "user": {
-                    "userId": "Bot 002",
-                    "name": "Bot"
-                },
-                "align": "left",
-                "canLabel": false
-            },
-            {
-                "messageId": "message-3",
-                "timestampUsec": 1530718528,
-                "content": "I am go to gym and live on donations :woman-lifting-weights::skin-tone-6:",
-                "user": {
-                    "userId": "User 00686",
-                    "name": "User"
-                },
-                "align": "right",
-                "canLabel": true
-            }
-        ]
-    },
-    {
-        "externalId": "Convo-456",
-        "attachments": [
-            {
-                "type": "TEXT",
-                "value": "IOWA, Zone 1234567, July 2022 [Text string]"
-            },
-            {
-                "type": "IMAGE",
-                "value": "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
-            }
-        ],
-        "type": "application/vnd.labelbox.conversational",
-        "version": 1,
-        "conversationalData": [
-            {
-                "messageId": "message-0",
-                "timestampUsec": 1530718491,
-                "content": "I love iphone! i just bought new iphone! :smiling_face_with_3_hearts: :calling:",
-                "user": {
-                    "userId": "Bot 002",
-                    "name": "Bot"
-                },
-                "align": "left",
-                "canLabel": false
-            },
-            {
-                "messageId": "message-1",
-                "timestampUsec": 1530718503,
-                "content": "Thats good for you, i'm not very into new tech",
-                "user": {
-                    "userId": "User 00686",
-                    "name": "User"
-                },
-                "align": "right",
-                "canLabel": true
-            },
-            {
-                "messageId": "message-2",
-                "timestampUsec": 1530718516,
-                "content": "I am a college student and i am a college student :female-teacher::skin-tone-2:",
-                "user": {
-                    "userId": "Bot 002",
-                    "name": "Bot"
-                },
-                "align": "left",
-                "canLabel": false
-            }
-        ]
-    }
-]
+[{
+    "externalId":
+        "Convo-123",
+    "attachments": [{
+        "type": "RAW_TEXT",
+        "value": "IOWA, Zone 2232, June 2022 [Text string]"
+    }, {
+        "type":
+            "IMAGE",
+        "value":
+            "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
+    }],
+    "type":
+        "application/vnd.labelbox.conversational",
+    "version":
+        1,
+    "conversationalData": [{
+        "messageId":
+            "message-0",
+        "timestampUsec":
+            1530718491,
+        "content":
+            "I love iphone! i just bought new iphone! :smiling_face_with_3_hearts: :calling:",
+        "user": {
+            "userId": "Bot 002",
+            "name": "Bot"
+        },
+        "align":
+            "left",
+        "canLabel":
+            false
+    }, {
+        "messageId": "message-1",
+        "timestampUsec": 1530718503,
+        "content": "Thats good for you, i'm not very into new tech",
+        "user": {
+            "userId": "User 00686",
+            "name": "User"
+        },
+        "align": "right",
+        "canLabel": true
+    }, {
+        "messageId":
+            "message-2",
+        "timestampUsec":
+            1530718516,
+        "content":
+            "I am a college student and i am a college student :female-teacher::skin-tone-2:",
+        "user": {
+            "userId": "Bot 002",
+            "name": "Bot"
+        },
+        "align":
+            "left",
+        "canLabel":
+            false
+    }, {
+        "messageId":
+            "message-3",
+        "timestampUsec":
+            1530718528,
+        "content":
+            "I am go to gym and live on donations :woman-lifting-weights::skin-tone-6:",
+        "user": {
+            "userId": "User 00686",
+            "name": "User"
+        },
+        "align":
+            "right",
+        "canLabel":
+            true
+    }]
+}, {
+    "externalId":
+        "Convo-456",
+    "attachments": [{
+        "type": "RAW_TEXT",
+        "value": "IOWA, Zone 1234567, July 2022 [Text string]"
+    }, {
+        "type":
+            "IMAGE",
+        "value":
+            "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
+    }],
+    "type":
+        "application/vnd.labelbox.conversational",
+    "version":
+        1,
+    "conversationalData": [{
+        "messageId":
+            "message-0",
+        "timestampUsec":
+            1530718491,
+        "content":
+            "I love iphone! i just bought new iphone! :smiling_face_with_3_hearts: :calling:",
+        "user": {
+            "userId": "Bot 002",
+            "name": "Bot"
+        },
+        "align":
+            "left",
+        "canLabel":
+            false
+    }, {
+        "messageId": "message-1",
+        "timestampUsec": 1530718503,
+        "content": "Thats good for you, i'm not very into new tech",
+        "user": {
+            "userId": "User 00686",
+            "name": "User"
+        },
+        "align": "right",
+        "canLabel": true
+    }, {
+        "messageId":
+            "message-2",
+        "timestampUsec":
+            1530718516,
+        "content":
+            "I am a college student and i am a college student :female-teacher::skin-tone-2:",
+        "user": {
+            "userId": "Bot 002",
+            "name": "Bot"
+        },
+        "align":
+            "left",
+        "canLabel":
+            false
+    }]
+}]
