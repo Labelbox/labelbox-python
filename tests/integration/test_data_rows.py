@@ -800,8 +800,12 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
         assert task.status == "COMPLETE"
         assert len(task.failed_data_rows) == 1
         assert len(task.created_data_rows) == 1
-        assert "Duplicate global key found" in task.failed_data_rows[0][
-            'message']
+        assert task.failed_data_rows[0][
+            'message'] == f"Duplicate global key: '{global_key_1}'"
+        assert task.failed_data_rows[0]['failedDataRows'][0][
+            'externalId'] == sample_image
+        assert task.created_data_rows[0]['externalId'] == sample_image
+        assert task.created_data_rows[0]['globalKey'] == global_key_1
     else:
         assert task.status == "FAILED"
         assert len(task.failed_data_rows) > 0
