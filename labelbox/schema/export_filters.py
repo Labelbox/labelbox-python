@@ -96,6 +96,19 @@ def build_filters(client, filters):
         tz_res = client.execute(timezone_query_str)
         return tz_res["user"]["timezone"] or "UTC"
 
+    def _build_id_filters(ids: list, es_type_name: str) -> str:
+        if not isinstance(data_row_ids, list):
+            raise ValueError(f"{es_type_name} filter expects a list.")
+        if len(ids) > MAX_DATA_ROW_IDS_PER_EXPORT_V2:
+            raise ValueError(
+                f"{es_type_name} filter only supports a max of {MAX_DATA_ROW_IDS_PER_EXPORT_V2} items."
+            )
+        search_query.append({
+            "ids": ids,
+            "operator": "is",
+            "type": es_type_name
+        })
+
     last_activity_at = filters.get("last_activity_at")
     if last_activity_at:
         timezone = _get_timezone()
@@ -181,18 +194,10 @@ def build_filters(client, filters):
             })
 
     data_row_ids = filters.get("data_row_ids")
-    if data_row_ids:
-        if not isinstance(data_row_ids, list):
-            raise ValueError("`data_row_ids` filter expects a list.")
-        if len(data_row_ids) > MAX_DATA_ROW_IDS_PER_EXPORT_V2:
-            raise ValueError(
-                f"`data_row_ids` filter only supports a max of {MAX_DATA_ROW_IDS_PER_EXPORT_V2} items."
-            )
-        search_query.append({
-            "ids": data_row_ids,
-            "operator": "is",
-            "type": "data_row_id"
-        })
+    _build_filters(data_row_ids, "data_row_id")
+
+    global_keys = filters.get("global_keys")
+    _build_filters(global_keys, "global_key")
 
     batch_ids = filters.get("batch_ids")
     if batch_ids:
