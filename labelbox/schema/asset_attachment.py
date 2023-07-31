@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 from typing import Dict
 
@@ -14,9 +15,19 @@ class AssetAttachment(DbObject):
     """
 
     class AttachmentType(Enum):
+
+        @classmethod
+        def __missing__(cls, value: object):
+            if str(value) == "TEXT":
+                warnings.warn(
+                    "The TEXT attachment type is deprecated. Use RAW_TEXT instead."
+                )
+                return cls.RAW_TEXT
+            return value
+
         VIDEO = "VIDEO"
         IMAGE = "IMAGE"
-        TEXT = "TEXT"
+        # TEXT = "TEXT"  # Deprecated
         IMAGE_OVERLAY = "IMAGE_OVERLAY"
         HTML = "HTML"
         RAW_TEXT = "RAW_TEXT"

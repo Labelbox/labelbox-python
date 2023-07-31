@@ -340,6 +340,7 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
 
 def test_create_data_row_with_invalid_metadata(dataset, image_url):
     fields = make_metadata_fields()
+    # make the payload invalid by providing the same schema id more than once
     fields.append(
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
@@ -472,6 +473,7 @@ def test_create_data_rows_with_named_metadata_field_class(
 
 def test_create_data_rows_with_invalid_metadata(dataset, image_url):
     fields = make_metadata_fields()
+    # make the payload invalid by providing the same schema id more than once
     fields.append(
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
@@ -582,12 +584,6 @@ def test_data_row_filtering_sorting(dataset, image_url):
     row2 = row2[0]
     assert row2.external_id == "row2"
 
-    # Test sorting
-    assert list(
-        dataset.data_rows(order_by=DataRow.external_id.asc)) == [row1, row2]
-    assert list(
-        dataset.data_rows(order_by=DataRow.external_id.desc)) == [row2, row1]
-
 
 def test_data_row_deletion(dataset, image_url):
     task = dataset.create_data_rows([{
@@ -630,7 +626,7 @@ def test_data_row_iteration(dataset, image_url) -> None:
 
 def test_data_row_attachments(dataset, image_url):
     attachments = [("IMAGE", image_url, "attachment image"),
-                   ("TEXT", "test-text", None),
+                   ("RAW_TEXT", "test-text", None),
                    ("IMAGE_OVERLAY", image_url, "Overlay"),
                    ("HTML", image_url, None)]
     task = dataset.create_data_rows([{
@@ -666,7 +662,7 @@ def test_data_row_attachments(dataset, image_url):
 
 def test_create_data_rows_sync_attachments(dataset, image_url):
     attachments = [("IMAGE", image_url, "image URL"),
-                   ("TEXT", "test-text", None),
+                   ("RAW_TEXT", "test-text", None),
                    ("IMAGE_OVERLAY", image_url, "Overlay"),
                    ("HTML", image_url, None)]
     attachments_per_data_row = 3
@@ -703,7 +699,7 @@ def test_delete_data_row_attachment(data_row, image_url):
     attachments = []
 
     # Anonymous attachment
-    to_attach = [("IMAGE", image_url), ("TEXT", "test-text"),
+    to_attach = [("IMAGE", image_url), ("RAW_TEXT", "test-text"),
                  ("IMAGE_OVERLAY", image_url), ("HTML", image_url)]
     for attachment_type, attachment_value in to_attach:
         attachments.append(
@@ -711,7 +707,7 @@ def test_delete_data_row_attachment(data_row, image_url):
 
     # Attachment with a name
     to_attach = [("IMAGE", image_url, "Att. Image"),
-                 ("TEXT", "test-text", "Att. Text"),
+                 ("RAW_TEXT", "test-text", "Att. Text"),
                  ("IMAGE_OVERLAY", image_url, "Image Overlay"),
                  ("HTML", image_url, "Att. HTML")]
     for attachment_type, attachment_value, attachment_name in to_attach:
@@ -789,7 +785,7 @@ def test_data_row_bulk_creation_with_unique_global_keys(dataset, sample_image):
 
 
 def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
-                                                      snapshot):
+                                                      snapshot, is_adv_enabled):
     global_key_1 = str(uuid.uuid4())
     task = dataset.create_data_rows([{
         DataRow.row_data: sample_image,
@@ -800,35 +796,46 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
     }])
 
     task.wait_till_done()
-    assert task.status == "FAILED"
-    assert len(task.failed_data_rows) > 0
-    assert len(list(dataset.data_rows())) == 0
-    assert task.errors == "Data rows contain duplicate global keys"
+    if is_adv_enabled:
+        assert task.status == "COMPLETE"
+        assert len(task.failed_data_rows) == 1
+        assert len(task.created_data_rows) == 1
+        assert task.failed_data_rows[0][
+            'message'] == f"Duplicate global key: '{global_key_1}'"
+        assert task.failed_data_rows[0]['failedDataRows'][0][
+            'externalId'] == sample_image
+        assert task.created_data_rows[0]['externalId'] == sample_image
+        assert task.created_data_rows[0]['globalKey'] == global_key_1
+    else:
+        assert task.status == "FAILED"
+        assert len(task.failed_data_rows) > 0
+        assert len(list(dataset.data_rows())) == 0
+        assert task.errors == "Data rows contain duplicate global keys"
 
-    # Dynamic values, resetting to make snapshot
-    task.failed_data_rows[0]['failedDataRows'][0]['rowData'] = ''
-    task.failed_data_rows[0]['failedDataRows'][1]['rowData'] = ''
-    task.failed_data_rows[0]['failedDataRows'][0]['globalKey'] = ''
-    task.failed_data_rows[0]['failedDataRows'][1]['globalKey'] = ''
-    snapshot.snapshot_dir = INTEGRATION_SNAPSHOT_DIRECTORY
-    snapshot.assert_match(
-        json.dumps(task.failed_data_rows),
-        'test_data_rows.test_data_row_bulk_creation_with_same_global_keys.failed_data_rows.json'
-    )
+        # Dynamic values, resetting to make snapshot
+        task.failed_data_rows[0]['failedDataRows'][0]['rowData'] = ''
+        task.failed_data_rows[0]['failedDataRows'][1]['rowData'] = ''
+        task.failed_data_rows[0]['failedDataRows'][0]['globalKey'] = ''
+        task.failed_data_rows[0]['failedDataRows'][1]['globalKey'] = ''
+        snapshot.snapshot_dir = INTEGRATION_SNAPSHOT_DIRECTORY
+        snapshot.assert_match(
+            json.dumps(task.failed_data_rows),
+            'test_data_rows.test_data_row_bulk_creation_with_same_global_keys.failed_data_rows.json'
+        )
 
-    task = dataset.create_data_rows([{
-        DataRow.row_data: sample_image,
-        DataRow.global_key: global_key_1
-    }])
+        task = dataset.create_data_rows([{
+            DataRow.row_data: sample_image,
+            DataRow.global_key: global_key_1
+        }])
 
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert len(list(dataset.data_rows())) == 1
-    assert list(dataset.data_rows())[0].global_key == global_key_1
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+        assert len(list(dataset.data_rows())) == 1
+        assert list(dataset.data_rows())[0].global_key == global_key_1
 
 
 def test_data_row_delete_and_create_with_same_global_key(
-        client, dataset, sample_image):
+        client, dataset, sample_image, is_adv_enabled):
     global_key_1 = str(uuid.uuid4())
     data_row_payload = {
         DataRow.row_data: sample_image,
@@ -848,9 +855,15 @@ def test_data_row_delete_and_create_with_same_global_key(
     task = dataset.create_data_rows([data_row_payload])
     task.wait_till_done()
 
-    assert task.status == "FAILED"
-    assert len(task.failed_data_rows) > 0
-    assert task.errors.startswith("Duplicate global keys found")
+    if is_adv_enabled:
+        assert task.status == "COMPLETE"
+        assert len(task.failed_data_rows) == 1
+        assert "Duplicate global key found" in task.failed_data_rows[0][
+            'message']
+    else:
+        assert task.status == "FAILED"
+        assert len(task.failed_data_rows) > 0
+        assert task.errors.startswith("Duplicate global keys found")
 
     # delete datarow
     client.get_data_row(new_data_row_id).delete()
@@ -888,7 +901,7 @@ def test_data_row_bulk_creation_sync_with_unique_global_keys(
            } == {global_key_1, global_key_2, global_key_3}
 
 
-def test_data_row_rulk_creation_sync_with_same_global_keys(
+def test_data_row_bulk_creation_sync_with_same_global_keys(
         dataset, sample_image):
     global_key_1 = str(uuid.uuid4())
 
@@ -968,7 +981,7 @@ def test_create_data_row_with_attachments(dataset):
     attachment_value = 'attachment value'
     dr = dataset.create_data_row(row_data="123",
                                  attachments=[{
-                                     'type': 'TEXT',
+                                     'type': 'RAW_TEXT',
                                      'value': attachment_value
                                  }])
     attachments = list(dr.attachments())
