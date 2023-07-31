@@ -252,7 +252,8 @@ def data_row(dataset, image_url):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
-            "external_id": "my-image"
+            "external_id": "my-image",
+            "global_key": "global-key-1"
         },
     ])
     task.wait_till_done()

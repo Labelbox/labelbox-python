@@ -7,7 +7,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.export_filters import DatarowExportFilters, build_filters
+from labelbox.schema.export_filters import DatarowExportFilters, DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
@@ -158,7 +158,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     @staticmethod
     def export_v2(client: 'Client',
-                  data_rows: List[Union[str, 'DataRow']],
+                  data_rows: List[Union[str, 'DataRow']] = None,
+                  global_keys: List[str] = None,
                   task_name: Optional[str] = None,
                   params: Optional[CatalogExportParams] = None) -> Task:
         """
@@ -184,6 +185,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+
+        if not data_rows and not global_keys:
+            raise ValueError("data_rows and global_keys cannot both be empty")
 
         _params = params or CatalogExportParams({
             "attachments": False,
@@ -213,14 +217,16 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 elif isinstance(dr, str):
                     data_row_ids.append(dr)
 
-        filters = DatarowExportFilters({
+        filters = DatasetExportFilters({
             "last_activity_at": None,
             "label_created_at": None,
             "data_row_ids": data_row_ids,
+        }) if data_row_ids else DatasetExportFilters({
+            "last_activity_at": None,
+            "label_created_at": None,
+            "global_keys": global_keys,
         })
-        search_query: List[Dict[str, Collection[str]]] = []
         search_query = build_filters(client, filters)
-
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:

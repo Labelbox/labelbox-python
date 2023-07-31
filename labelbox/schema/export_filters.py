@@ -97,7 +97,7 @@ def build_filters(client, filters):
         return tz_res["user"]["timezone"] or "UTC"
 
     def _build_id_filters(ids: list, es_type_name: str) -> str:
-        if not isinstance(data_row_ids, list):
+        if not isinstance(ids, list):
             raise ValueError(f"{es_type_name} filter expects a list.")
         if len(ids) > MAX_DATA_ROW_IDS_PER_EXPORT_V2:
             raise ValueError(
@@ -194,10 +194,12 @@ def build_filters(client, filters):
             })
 
     data_row_ids = filters.get("data_row_ids")
-    _build_filters(data_row_ids, "data_row_id")
+    if data_row_ids is not None:
+        _build_id_filters(data_row_ids, "data_row_id")
 
     global_keys = filters.get("global_keys")
-    _build_filters(global_keys, "global_key")
+    if global_keys is not None:
+        _build_id_filters(global_keys, "global_key")
 
     batch_ids = filters.get("batch_ids")
     if batch_ids:
