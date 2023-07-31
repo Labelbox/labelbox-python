@@ -858,8 +858,8 @@ def test_data_row_delete_and_create_with_same_global_key(
     if is_adv_enabled:
         assert task.status == "COMPLETE"
         assert len(task.failed_data_rows) == 1
-        assert "Duplicate global key found" in task.failed_data_rows[0][
-            'message']
+        assert task.failed_data_rows[0][
+            'message'] == f"Duplicate global key: '{global_key_1}'"
     else:
         assert task.status == "FAILED"
         assert len(task.failed_data_rows) > 0
