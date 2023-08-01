@@ -196,6 +196,22 @@ def test_project_export_v2_datarow_list(
     assert set([dr['data_row']['id'] for dr in task_results
                ]) == set(data_row_ids[:datarow_filter_size])
 
+    global_keys = [dr.global_key for dr in data_rows]
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "global_keys": global_keys[:datarow_filter_size]
+    }
+    params = {"data_row_details": True, "media_type_override": MediaType.Image}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, filters=filters, params=params)
+
+    # only 2 datarows should be exported
+    assert len(task_results) == datarow_filter_size
+    # only filtered datarows should be exported
+    assert set([dr['data_row']['global_key'] for dr in task_results
+               ]) == set(global_keys[:datarow_filter_size])
+
 
 def test_update_project_resource_tags(client, rand_gen):
 

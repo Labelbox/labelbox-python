@@ -7,7 +7,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.export_filters import DatarowExportFilters, DatasetExportFilters, build_filters
+from labelbox.schema.export_filters import DatarowExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
@@ -173,11 +173,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = DataRow.export_v2(
-        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
-        >>>         filters={
-        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
-        >>>         },
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], # or  global_keys=["global_key_1", "global_key_2"],   
         >>>         params={
         >>>             "performance_details": False,
         >>>             "label_details": True

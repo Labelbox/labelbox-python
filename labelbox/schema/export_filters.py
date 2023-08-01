@@ -101,21 +101,24 @@ def build_filters(client, filters):
         return tz_res["user"]["timezone"] or "UTC"
 
     def _build_es_id_filters(
-        ids: list,
-        es_type_name: str,
-        elastic_search_where_limit: int = MAX_DATA_ROW_IDS_PER_EXPORT_V2
-    ) -> str:
+            ids: list,
+            es_type_name: str,
+            es_search_where_limit: int = MAX_DATA_ROW_IDS_PER_EXPORT_V2) -> str:
         if not isinstance(ids, list):
             raise ValueError(f"{es_type_name} filter expects a list.")
-        if len(ids) > elastic_search_where_limit:
+        if len(ids) == 0:
+            raise ValueError(f"{es_type_name} filter expects a non-empty list.")
+        if len(ids) > es_search_where_limit:
             raise ValueError(
-                f"{es_type_name} filter only supports a max of {elastic_search_where_limit} items."
+                f"{es_type_name} filter only supports a max of {es_search_where_limit} items."
             )
         search_query.append({
             "ids": ids,
             "operator": "is",
             "type": es_type_name
         })
+
+        return True
 
     data_row_ids = filters.get("data_row_ids")
     global_keys = filters.get("global_keys")

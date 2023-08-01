@@ -190,7 +190,6 @@ def test_dataset_export_v2(export_v2_test_helpers, dataset, data_rows):
                ]) == set(global_keys[:datarow_filter_size])
 
 
-
 def test_create_descriptor_file(dataset):
     import unittest.mock as mock
     with mock.patch.object(dataset.client,

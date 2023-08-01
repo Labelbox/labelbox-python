@@ -420,8 +420,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 
 @pytest.fixture
-def configured_batch_project_with_label(client, rand_gen, image_url, project,
-                                        dataset, data_row,
+def configured_batch_project_with_label(project, dataset, data_row,
                                         wait_for_label_processing):
     """Project with a batch having one datarow
     Project contains an ontology with 1 bbox tool

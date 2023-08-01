@@ -19,6 +19,14 @@ def test_ids_filter():
     }]
 
 
+def test_ids_empty_filter():
+    client = MagicMock()
+    filters = {"data_row_ids": [], "batch_ids": ["b1", "b2"]}
+    with pytest.raises(ValueError,
+                       match="data_row_id filter expects a non-empty list."):
+        build_filters(client, filters)
+
+
 def test_global_keys_filter():
     client = MagicMock()
     filters = {"global_keys": ["id1", "id2"]}

@@ -609,7 +609,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]   
         >>>         },
         >>>         params={
         >>>             "performance_details": False,
