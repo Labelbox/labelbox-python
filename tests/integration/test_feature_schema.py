@@ -98,6 +98,34 @@ def test_creates_and_deletes_classifications(client, classifications):
             feature.normalized['featureSchemaId']) is None
 
 
+def test_throws_error_when_not_converted_to_dict(client, tools,
+                                                 classifications):
+    """
+    This test covers whether or not expected error is raised when Tool/Classification object
+    is not converted to dict() with .asdict() method before upserting feature schema.
+    """
+    with pytest.raises(AttributeError,
+                       match="'Tool' object has no attribute 'get'"):
+        client.upsert_feature_schema(tools["point"])
+
+    with pytest.raises(AttributeError):
+        client.upsert_feature_schema(classifications["radio"])
+
+
+def test_can_retrieve_feature(client, tools):
+    feature = client.upsert_feature_schema(tools["bbox"].asdict())
+    assert feature.uid is not None
+
+    get_feature = client.get_feature_schema(feature.uid)
+    assert get_feature is not None
+
+    client.delete_unused_feature_schema(feature.normalized["featureSchemaId"])
+
+
+def test_returns_empty_list_if_name_doesnt_match_features(client):
+    assert len(list(client.get_feature_schemas("no-feature"))) == 0
+
+
 def test_cant_delete_already_deleted_feature_schema(client):
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
