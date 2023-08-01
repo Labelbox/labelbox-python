@@ -217,13 +217,11 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 elif isinstance(dr, str):
                     data_row_ids.append(dr)
 
-        filters = DatasetExportFilters({
-            "last_activity_at": None,
-            "label_created_at": None,
+        filters = DatarowExportFilters({
             "data_row_ids": data_row_ids,
-        }) if data_row_ids else DatasetExportFilters({
-            "last_activity_at": None,
-            "label_created_at": None,
+            "global_keys": None,
+        }) if data_row_ids else DatarowExportFilters({
+            "data_row_ids": None,
             "global_keys": global_keys,
         })
         search_query = build_filters(client, filters)
