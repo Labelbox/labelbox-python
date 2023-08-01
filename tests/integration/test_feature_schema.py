@@ -1,6 +1,6 @@
 import pytest
 
-from labelbox import Tool, MediaType
+from labelbox import Tool, MediaType, Classification, Option
 
 point = Tool(
     tool=Tool.Type.POINT,
@@ -11,6 +11,11 @@ TOOL_COLOR = "#ff0000"
 TOOL_NAMES = {
     "bbox", "polygon", "segmentation", "line", "point", "ner",
     "raster-segmentation"
+}
+CLASSIFICATION_NAMES = {
+    "text",
+    "radio",
+    "checklist",
 }
 
 
@@ -44,6 +49,26 @@ def tools():
     }
 
 
+@pytest.fixture
+def classifications():
+    return {
+        "text":
+            Classification(class_type=Classification.Type.TEXT,
+                           name="text",
+                           required=True),
+        "radio":
+            Classification(class_type=Classification.Type.RADIO,
+                           name="radio",
+                           options=[Option("poodle")],
+                           required=True),
+        "checklist":
+            Classification(class_type=Classification.Type.CHECKLIST,
+                           name="checklist",
+                           options=[Option("at_park"),
+                                    Option("has_leash")])
+    }
+
+
 def test_deletes_a_feature_schema(client, tools):
     """
     This test covers both creation and deletion of the feature schemas.
@@ -53,6 +78,21 @@ def test_deletes_a_feature_schema(client, tools):
 
         assert feature.uid is not None
         assert feature.name in TOOL_NAMES
+
+        assert client.delete_unused_feature_schema(
+            feature.normalized['featureSchemaId']) is None
+
+
+def test_creates_and_deletes_classifications(client, classifications):
+    """
+    This test covers both creation and deletion of the classifications for feature schemas.
+    """
+    ...
+    for classification in classifications.values():
+        feature = client.upsert_feature_schema(classification.asdict())
+
+        assert feature.uid is not None
+        assert feature.name in CLASSIFICATION_NAMES
 
         assert client.delete_unused_feature_schema(
             feature.normalized['featureSchemaId']) is None
