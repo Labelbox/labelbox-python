@@ -20,13 +20,14 @@ class BaseExportFilters(TypedDict):
     >>>   ["clgo3lyax0000veeezdbu3ws4", "clgo3lzjl0001veeer6y6z8zp", ...]
 
     """
-    
+
     global_keys: Optional[List[str]]
     """ Global keys to export
     Only allows MAX_DATAROW_IDS_PER_EXPORT_V2 datarows
     Example:
     >>>   ["key1", "key2", ...]
     """
+
 
 class SharedExportFilters(BaseExportFilters):
     label_created_at: Optional[Tuple[str, str]]
@@ -38,7 +39,6 @@ class SharedExportFilters(BaseExportFilters):
     >>>   ["2000-01-01 00:00:00", None]
     """
     last_activity_at: Optional[Tuple[str, str]]
-
 
 
 class ProjectExportFilters(SharedExportFilters):
@@ -100,7 +100,11 @@ def build_filters(client, filters):
         tz_res = client.execute(timezone_query_str)
         return tz_res["user"]["timezone"] or "UTC"
 
-    def _build_es_id_filters(ids: list, es_type_name: str, elastic_search_where_limit:int = MAX_DATA_ROW_IDS_PER_EXPORT_V2) -> str:
+    def _build_es_id_filters(
+        ids: list,
+        es_type_name: str,
+        elastic_search_where_limit: int = MAX_DATA_ROW_IDS_PER_EXPORT_V2
+    ) -> str:
         if not isinstance(ids, list):
             raise ValueError(f"{es_type_name} filter expects a list.")
         if len(ids) > elastic_search_where_limit:
@@ -112,6 +116,13 @@ def build_filters(client, filters):
             "operator": "is",
             "type": es_type_name
         })
+
+    data_row_ids = filters.get("data_row_ids")
+    global_keys = filters.get("global_keys")
+    if data_row_ids is not None and global_keys is not None:
+        raise ValueError(
+            "data_rows and global_keys cannot both be present in export filters"
+        )
 
     last_activity_at = filters.get("last_activity_at")
     if last_activity_at:
