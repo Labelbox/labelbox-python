@@ -5,15 +5,57 @@ from labelbox import Tool, MediaType
 point = Tool(
     tool=Tool.Type.POINT,
     name="name",
-    color="#ff0000",
 )
 
+TOOL_COLOR = "#ff0000"
+TOOL_NAMES = {
+    "bbox", "polygon", "segmentation", "line", "point", "ner",
+    "raster-segmentation"
+}
 
-def test_deletes_a_feature_schema(client):
-    tool = client.upsert_feature_schema(point.asdict())
 
-    assert client.delete_unused_feature_schema(
-        tool.normalized['featureSchemaId']) is None
+@pytest.fixture
+def tools():
+    return {
+        "bbox":
+            Tool(tool=Tool.Type.BBOX,
+                 name="bbox",
+                 color=TOOL_COLOR,
+                 required=True),
+        "polygon":
+            Tool(tool=Tool.Type.POLYGON, name="polygon", color=TOOL_COLOR),
+        "segmentation":
+            Tool(tool=Tool.Type.SEGMENTATION,
+                 name="segmentation",
+                 color=TOOL_COLOR),
+        "point":
+            Tool(tool=Tool.Type.POINT, name="point", color=TOOL_COLOR),
+        "line":
+            Tool(tool=Tool.Type.LINE, name="line", color=TOOL_COLOR),
+        "ner":
+            Tool(tool=Tool.Type.NER,
+                 name="ner",
+                 required=True,
+                 color=TOOL_COLOR),
+        "raster-seg":
+            Tool(tool=Tool.Type.RASTER_SEGMENTATION,
+                 name="raster-segmentation",
+                 color=TOOL_COLOR)
+    }
+
+
+def test_deletes_a_feature_schema(client, tools):
+    """
+    This test covers both creation and deletion of the feature schemas.
+    """
+    for tool in tools.values():
+        feature = client.upsert_feature_schema(tool.asdict())
+
+        assert feature.uid is not None
+        assert feature.name in TOOL_NAMES
+
+        assert client.delete_unused_feature_schema(
+            feature.normalized['featureSchemaId']) is None
 
 
 def test_cant_delete_already_deleted_feature_schema(client):
