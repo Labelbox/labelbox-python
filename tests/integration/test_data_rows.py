@@ -799,7 +799,9 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
     task.wait_till_done()
     if is_adv_enabled:
         assert task.status == "COMPLETE"
+        assert type(task.failed_data_rows) is list
         assert len(task.failed_data_rows) == 1
+        assert type(task.created_data_rows) is list
         assert len(task.created_data_rows) == 1
         assert task.failed_data_rows[0][
             'message'] == f"Duplicate global key: '{global_key_1}'"
@@ -859,8 +861,8 @@ def test_data_row_delete_and_create_with_same_global_key(
     if is_adv_enabled:
         assert task.status == "COMPLETE"
         assert len(task.failed_data_rows) == 1
-        assert "Duplicate global key found" in task.failed_data_rows[0][
-            'message']
+        assert task.failed_data_rows[0][
+            'message'] == f"Duplicate global key: '{global_key_1}'"
     else:
         assert task.status == "FAILED"
         assert len(task.failed_data_rows) > 0
