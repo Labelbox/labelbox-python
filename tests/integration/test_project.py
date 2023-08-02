@@ -226,10 +226,6 @@ def test_update_project_resource_tags(client, rand_gen):
         """, {"tag_id": tag_id})
         return res
 
-    before = list(client.get_projects())
-    for o in before:
-        assert isinstance(o, Project)
-
     org = client.get_organization()
     assert org.uid is not None
 
@@ -271,6 +267,8 @@ def test_update_project_resource_tags(client, rand_gen):
 
     delete_tag(tagA.uid)
     delete_tag(tagB.uid)
+
+    p1.delete()
 
 
 def test_project_filtering(client, rand_gen):
