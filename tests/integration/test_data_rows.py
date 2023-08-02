@@ -173,6 +173,9 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     assert {data_row.row_data for data_row in data_rows} == {image_url}
     assert {data_row.global_key for data_row in data_rows} == {None}
 
+    data_rows = list(dataset.data_rows(from_cursor=data_rows[0].uid))
+    assert len(data_rows) == 1
+
     # Test creation using file name
     with NamedTemporaryFile() as fp:
         data = rand_gen(str).encode()

@@ -134,7 +134,7 @@ class _CursorPagination(_Pagination):
     def __init__(self, cursor_path: List[str], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_path = cursor_path
-        self.next_cursor: Optional[Any] = None
+        self.next_cursor: Optional[Any] = kwargs.get('params', {}).get('from')
 
     def increment_page(self, results: Dict[str, Any]):
         for path in self.cursor_path:
