@@ -416,6 +416,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
     for label in project.labels():
         label.delete()
+    project.delete()
 
 
 @pytest.fixture
@@ -443,6 +444,7 @@ def configured_batch_project_with_label(client, rand_gen, image_url, project,
 
     for label in project.labels():
         label.delete()
+    project.delete()
 
 
 @pytest.fixture
@@ -465,6 +467,7 @@ def configured_batch_project_with_multiple_datarows(project, dataset, data_rows,
 
     for label in project.labels():
         label.delete()
+    project.delete()
 
 
 def _create_label(project, data_row, ontology, wait_for_label_processing):
