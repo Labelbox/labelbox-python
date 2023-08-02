@@ -1,3 +1,5 @@
+from collections import defaultdict
+from itertools import islice
 import json
 import os
 import re
@@ -807,3 +809,37 @@ def upload_invalid_data_rows_for_dataset(dataset: Dataset):
         },
     ] * 2)
     task.wait_till_done()
+
+
+def pytest_configure():
+    pytest.report = defaultdict(int)
+    pytest.data_row_report = {'times': 0, 'num_rows': 0}
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_fixture_setup(fixturedef, request):
+    start = time.time()
+    yield
+
+    end = time.time()
+
+    exec_time = end - start
+    pytest.report[fixturedef.argname] += exec_time
+
+    # print('pytest_fixture_setup'
+    #       f', request={request}'
+    #       f', create_data_row_time={end - start}')
+
+
+@pytest.fixture(scope='session', autouse=True)
+def print_perf_summary():
+    yield
+
+    sorted_dict = dict(
+        sorted(pytest.report.items(), key=lambda item: item[1], reverse=True))
+    num_of_entries = 10 if len(sorted_dict) >= 10 else len(sorted_dict)
+    slowest_fixtures = [
+        (aaa, sorted_dict[aaa]) for aaa in islice(sorted_dict, num_of_entries)
+    ]
+    print("\nTop slowest fixtures:\n", slowest_fixtures)
+    print("Data row report:\n", pytest.data_row_report)

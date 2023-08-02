@@ -9,6 +9,7 @@ from labelbox import parser, MediaType
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.project import Project
 from labelbox.schema.queue_mode import QueueMode
 
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
@@ -486,6 +487,7 @@ def initial_dataset(client, rand_gen):
 
 @pytest.fixture
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
+    start_time = time.time()
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
@@ -496,14 +498,21 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
     data_row_ids = []
-
+    # print("Before creating data rows ", time.time() - start_time)
+    num_rows = 0
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
+        num_rows += 1
+    # print("After creating data rows ", time.time() - start_time)
+
+    pytest.data_row_report['times'] += time.time() - start_time
+    pytest.data_row_report['num_rows'] += num_rows
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
     )
+    print("After creating batch ", time.time() - start_time)
     project.data_row_ids = data_row_ids
     yield project
     project.delete()
@@ -1006,6 +1015,7 @@ def model_run_with_training_metadata(rand_gen, model):
 @pytest.fixture
 def model_run_with_data_rows(client, configured_project, model_run_predictions,
                              model_run, wait_for_label_processing):
+    start_time = time.time()
     configured_project.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
@@ -1019,6 +1029,7 @@ def model_run_with_data_rows(client, configured_project, model_run_predictions,
     labels = wait_for_label_processing(configured_project)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)
+    print(f"model_run_with_data_rows: {time.time() - start_time}")
     yield model_run
     model_run.delete()
     # TODO: Delete resources when that is possible ..
