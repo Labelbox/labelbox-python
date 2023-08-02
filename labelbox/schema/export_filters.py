@@ -103,7 +103,7 @@ def build_filters(client, filters):
     def _build_es_id_filters(
             ids: list,
             es_type_name: str,
-            es_search_where_limit: int = MAX_DATA_ROW_IDS_PER_EXPORT_V2) -> str:
+            es_search_where_limit: int = MAX_DATA_ROW_IDS_PER_EXPORT_V2):
         if not isinstance(ids, list):
             raise ValueError(f"{es_type_name} filter expects a list.")
         if len(ids) == 0:
@@ -117,8 +117,6 @@ def build_filters(client, filters):
             "operator": "is",
             "type": es_type_name
         })
-
-        return True
 
     data_row_ids = filters.get("data_row_ids")
     global_keys = filters.get("global_keys")
