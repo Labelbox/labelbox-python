@@ -1,7 +1,7 @@
 import sys
 
 from datetime import datetime, timezone
-from typing import Collection, Dict, Tuple, List, Optional
+from typing import Collection, Dict, Tuple, List, Optional, Literal
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -41,6 +41,11 @@ class ProjectExportFilters(SharedExportFilters):
     """ Batch ids to export
     Example:
     >>> ["clgo3lyax0000veeezdbu3ws4"]
+    """
+    workflow_status: Optional[Literal["InReview", "InRework", "Done"]]
+    """ Export data rows matching workflow status
+    Example:
+    >>> "InReview"
     """
 
 
@@ -199,6 +204,19 @@ def build_filters(client, filters):
             "ids": batch_ids,
             "operator": "is",
             "type": "batch"
+        })
+
+    workflow_status = filters.get("workflow_status")
+    if workflow_status:
+        if not isinstance(workflow_status, str):
+            raise ValueError("`workflow_status` filter expects a string.")
+        elif workflow_status not in ["InReview", "InRework", "Done"]:
+            raise ValueError(
+                "`workflow_status` filter expects one of 'InReview', 'InRework', or 'Done'."
+            )
+        search_query.append({
+            "type": 'task_queue_status',
+            "status": workflow_status
         })
 
     return search_query
