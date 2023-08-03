@@ -18,6 +18,8 @@ class MediaType(Enum):
     Video = "VIDEO"
     Unknown = "UNKNOWN"
     Unsupported = "UNSUPPORTED"
+    LLMPromptCreation = "LLM_PROMPT_CREATION"
+    LLMPromptResponseCreation = "LLM_PROMPT_RESPONSE_CREATION"
 
     @classmethod
     def _missing_(cls, name):
