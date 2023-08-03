@@ -394,6 +394,11 @@ def test_media_type(client, configured_project: Project, rand_gen):
     project.delete()
 
     for media_type in MediaType.get_supported_members():
+        # Exclude LLM media types for now, as they are not supported
+        if MediaType[media_type] in [
+                MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation
+        ]:
+            continue
 
         project = client.create_project(name=rand_gen(str),
                                         media_type=MediaType[media_type])
