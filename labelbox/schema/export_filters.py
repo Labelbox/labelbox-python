@@ -42,7 +42,8 @@ class ProjectExportFilters(SharedExportFilters):
     Example:
     >>> ["clgo3lyax0000veeezdbu3ws4"]
     """
-    workflow_status: Optional[Literal["InReview", "InRework", "Done"]]
+    workflow_status: Optional[Literal["ToLabel", "InReview", "InRework",
+                                      "Done"]]
     """ Export data rows matching workflow status
     Example:
     >>> "InReview"
@@ -210,13 +211,17 @@ def build_filters(client, filters):
     if workflow_status:
         if not isinstance(workflow_status, str):
             raise ValueError("`workflow_status` filter expects a string.")
-        elif workflow_status not in ["InReview", "InRework", "Done"]:
+        elif workflow_status not in ["ToLabel", "InReview", "InRework", "Done"]:
             raise ValueError(
                 "`workflow_status` filter expects one of 'InReview', 'InRework', or 'Done'."
             )
-        search_query.append({
-            "type": 'task_queue_status',
-            "status": workflow_status
-        })
+
+        if workflow_status == "ToLabel":
+            search_query.append({"type": "task_queue_not_exist"})
+        else:
+            search_query.append({
+                "type": 'task_queue_status',
+                "status": workflow_status
+            })
 
     return search_query
