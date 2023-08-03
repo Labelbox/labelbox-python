@@ -44,7 +44,7 @@ class MediaType(Enum):
     def get_supported_members(cls):
         return [
             item for item in cls.__members__
-            if item not in ["Unknown", "Unsupported"]
+            if item not in ["LLM_PROMPT_CREATION", "LLM_PROMPT_RESPONSE_CREATION", "Unknown", "Unsupported"]
         ]
 
 
