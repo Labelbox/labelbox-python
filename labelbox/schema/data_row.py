@@ -173,7 +173,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = DataRow.export_v2(
-        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], # or  global_keys=["global_key_1", "global_key_2"],   
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], 
+        >>>             # or data_rows = data_set.data_rows.list()
+        >>>             # or  global_keys=["global_key_1", "global_key_2"],   
         >>>         params={
         >>>             "performance_details": False,
         >>>             "label_details": True
