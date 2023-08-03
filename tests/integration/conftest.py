@@ -248,12 +248,12 @@ def unique_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def data_row(dataset, image_url):
+def data_row(dataset, image_url, rand_gen):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
             "external_id": "my-image",
-            "global_key": "global-key-1"
+            "global_key": f"global-key-{rand_gen(str)}"
         },
     ])
     task.wait_till_done()
