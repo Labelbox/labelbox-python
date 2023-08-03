@@ -15,7 +15,7 @@ ISO_8061_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 class BaseExportFilters(TypedDict):
     data_row_ids: Optional[List[str]]
     """ Datarow ids to export
-    Only allows MAX_DATAROW_IDS_PER_EXPORT_V2 datarows
+    Please refer to https://docs.labelbox.com/docs/limits#export on the allowed limit of data_row_ids
     Example:
     >>>   ["clgo3lyax0000veeezdbu3ws4", "clgo3lzjl0001veeer6y6z8zp", ...]
 
@@ -23,7 +23,7 @@ class BaseExportFilters(TypedDict):
 
     global_keys: Optional[List[str]]
     """ Global keys to export
-    Only allows MAX_DATAROW_IDS_PER_EXPORT_V2 datarows
+    Please refer to https://docs.labelbox.com/docs/limits#export on the allowed limit of data_row_ids
     Example:
     >>>   ["key1", "key2", ...]
     """
