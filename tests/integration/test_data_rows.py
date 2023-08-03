@@ -994,11 +994,16 @@ def test_create_data_row_with_attachments(dataset):
     assert len(attachments) == 1
 
 
-def test_create_data_row_with_media_type(dataset, image_url):
+def test_create_data_row_with_media_type(dataset, image_url, is_adv_enabled):
     with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
         dr = dataset.create_data_row(
             row_data={'invalid_object': 'invalid_value'}, media_type="IMAGE")
-    assert "Found invalid contents for media type: \'IMAGE\'" in str(exc.value)
+    if is_adv_enabled:
+        assert "Media type validation failed, expected: 'image/*', was: application/json" in str(
+            exc.value)
+    else:
+        assert "Found invalid contents for media type: \'IMAGE\'" in str(
+            exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
 
