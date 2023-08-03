@@ -1,7 +1,8 @@
 import sys
 
 from datetime import datetime, timezone
-from typing import Collection, Dict, Tuple, List, Optional, Literal
+from typing import Collection, Dict, Tuple, List, Optional
+from labelbox.typing_imports import Literal
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
