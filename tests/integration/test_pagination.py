@@ -1,14 +1,25 @@
 from copy import copy
 import time
 
+import pytest
+
 from labelbox.schema.dataset import Dataset
 
 
-def test_get_one_and_many_dataset_order(client, rand_gen):
-    started = time.time()
+@pytest.fixture
+def data_for_dataset_order_test(client, rand_gen):
     name = rand_gen(str)
     dataset1 = client.create_dataset(name=name)
     dataset2 = client.create_dataset(name=name)
+
+    yield name
+
+    dataset1.delete()
+    dataset2.delete()
+
+
+def test_get_one_and_many_dataset_order(client, data_for_dataset_order_test):
+    name = data_for_dataset_order_test
 
     paginator = client.get_datasets(where=Dataset.name == name)
     # confirm get_one returns first dataset
@@ -20,8 +31,3 @@ def test_get_one_and_many_dataset_order(client, rand_gen):
     # confirm get_many(1) returns first dataset
     get_many_datasets = copy(paginator).get_many(1)
     assert get_many_datasets[0].uid == all_datasets[0].uid
-
-    dataset1.delete()
-    dataset2.delete()
-
-    print(f"test_get_one_and_many_dataset_order took {time.time() - started}")

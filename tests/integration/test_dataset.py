@@ -44,17 +44,24 @@ def test_dataset(client, rand_gen):
         dataset = client.get_dataset(dataset.uid)
 
 
-def test_dataset_filtering(client, rand_gen):
+@pytest.fixture
+def dataset_for_filtering(client, rand_gen):
     name_1 = rand_gen(str)
     name_2 = rand_gen(str)
     d1 = client.create_dataset(name=name_1)
     d2 = client.create_dataset(name=name_2)
 
-    assert list(client.get_datasets(where=Dataset.name == name_1)) == [d1]
-    assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
+    yield name_1, d1, name_2, d2
 
     d1.delete()
     d2.delete()
+
+
+def test_dataset_filtering(client, dataset_for_filtering):
+    name_1, d1, name_2, d2 = dataset_for_filtering
+
+    assert list(client.get_datasets(where=Dataset.name == name_1)) == [d1]
+    assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
 
 
 def test_get_data_row_for_external_id(dataset, rand_gen, image_url):

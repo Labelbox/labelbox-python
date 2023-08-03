@@ -5,15 +5,28 @@ from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.queue_mode import QueueMode
 
 
-# Avoid assertions using equality to prevent intermittent failures due to
-# other builds simultaneously adding projects to test org
-def test_where(client, image_url, rand_gen):
+@pytest.fixture
+def project_to_test_where(client, rand_gen):
     p_a_name = f"a-{rand_gen(str)}"
     p_b_name = f"b-{rand_gen(str)}"
     p_c_name = f"c-{rand_gen(str)}"
+
     p_a = client.create_project(name=p_a_name, queue_mode=QueueMode.Batch)
     p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
     p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
+
+    yield p_a, p_b, p_c
+
+    p_a.delete()
+    p_b.delete()
+    p_c.delete()
+
+
+# Avoid assertions using equality to prevent intermittent failures due to
+# other builds simultaneously adding projects to test org
+def test_where(client, image_url, project_to_test_where, rand_gen):
+    p_a, p_b, p_c = project_to_test_where
+    p_a_name, p_b_name, p_c_name = [p.name for p in [p_a, p_b, p_c]]
 
     def _get(f, where=None):
         date_where = Project.created_at >= p_a.created_at
@@ -64,10 +77,6 @@ def test_where(client, image_url, rand_gen):
     assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
     batch.delete()
-    p_a.delete()
-    p_b.delete()
-    p_c.delete()
-    dataset.delete()
 
 
 def test_unsupported_where(client):

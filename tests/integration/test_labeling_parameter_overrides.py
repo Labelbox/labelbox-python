@@ -66,5 +66,3 @@ def test_labeling_parameter_overrides(consensus_project, initial_dataset,
         project.set_labeling_parameter_overrides(data)
     assert str(exc_info.value) == \
         f"Priority must be greater than 0 for data_row {data_rows[2]}. Index: 0"
-
-    dataset.delete()
