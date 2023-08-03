@@ -427,7 +427,7 @@ class Client:
         else:
             return db_object_type(self, res)
 
-    def get_project(self, project_id):
+    def get_project(self, project_id) -> Project:
         """ Gets a single Project with the given ID.
 
         >>> project = client.get_project("<project_id>")
