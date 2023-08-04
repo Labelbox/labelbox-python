@@ -1,46 +1,15 @@
 import time
+from uuid import uuid4
+
 import pytest
 
-from uuid import uuid4
 from labelbox import Dataset, Project
 from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, ResourceConflict, LabelboxError
-
-IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
-EXTERNAL_ID = "my-image"
+from integration.conftest import upload_invalid_data_rows_for_dataset, IMAGE_URL, EXTERNAL_ID
 
 
 def get_data_row_ids(ds: Dataset):
     return [dr.uid for dr in list(ds.export_data_rows())]
-
-
-@pytest.fixture
-def big_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": IMAGE_URL,
-            "external_id": EXTERNAL_ID
-        },
-    ] * 3)
-    task.wait_till_done()
-
-    yield dataset
-
-
-@pytest.fixture(scope='function')
-def dataset_with_invalid_data_rows(unique_dataset: Dataset):
-    upload_invalid_data_rows_for_dataset(unique_dataset)
-
-    yield unique_dataset
-
-
-def upload_invalid_data_rows_for_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": 'gs://invalid-bucket/example.png',  # forbidden
-            "external_id": "image-without-access.jpg"
-        },
-    ] * 2)
-    task.wait_till_done()
 
 
 def test_create_batch(project: Project, big_dataset: Dataset):

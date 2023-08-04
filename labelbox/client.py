@@ -1704,3 +1704,27 @@ class Client:
             raise labelbox.exceptions.LabelboxError(
                 "Failed unarchive the feature schema node, message: ",
                 response.text)
+
+    def get_batch(self, project_id: str, batch_id: str) -> Entity.Batch:
+        # obtain batch entity to return
+        get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
+                          project(where: {id: $projectId}) {
+                             batches(where: {id: $batchId}) {
+                                nodes {
+                                   %s
+                                }
+                             }
+                        }
+                    }
+                    """ % ("getProjectBatchPyApi",
+                           query.results_query_part(Entity.Batch))
+
+        batch = self.execute(
+            get_batch_str, {
+                "projectId": project_id,
+                "batchId": batch_id
+            },
+            timeout=180.0,
+            experimental=True)["project"]["batches"]["nodes"][0]
+
+        return Entity.Batch(self, project_id, batch)
