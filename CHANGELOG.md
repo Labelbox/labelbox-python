@@ -1,4 +1,19 @@
 # Changelog
+# Version 3.50.0 (2023-08-04)
+## Added
+ * Support batchIds filter for projects in Exports v2
+ * Project.members() call now returns roles of project members too in the SDK response
+ * Ability to use data rows ids instead of the whole data row object for DataRow.export_V2()
+ * Cursor-based pagination for dataset.data_rows()
+
+ ## Fixed
+ * client.get_projects() unable to fetch details for LLM projects
+
+ ## Notebooks
+ * Improved the documentation for `examples/basics/custom_embeddings.ipynb`
+ * Updated the documentation for `examples/basics/data_row_metadata.ipynb`
+ * Added details about CRUD methods to `examples/basics/ontologies.ipynb`
+
 # Version 3.49.1 (2023-06-29)
 ## Fixed
 * Removed numpy version lock that caused Python version >3.8 to download incompatible numpy version
