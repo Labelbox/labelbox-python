@@ -1,9 +1,9 @@
 # Changelog
 # Version 3.50.0 (2023-08-04)
 ## Added
- * Support batchIds filter for projects in Exports v2
- * Project.members() call now returns roles of project members too in the SDK response
- * Ability to use data rows ids instead of the whole data row object for DataRow.export_V2()
+ * Support batch_ids filter for projects in Exports v2
+ * Added access_from field to project members to differentiate project-based roles from organization level roles
+ * Ability to use data_row_ids instead of the whole data row object for DataRow.export_V2()
  * Cursor-based pagination for dataset.data_rows()
 
  ## Fixed
