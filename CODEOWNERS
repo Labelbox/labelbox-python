@@ -2,4 +2,4 @@
 * @Labelbox/data-io
 
 # Notebooks
-*.ipynb @Labelbox/data-io @Labelbox
+*.ipynb @Labelbox/data-io @Labelbox/*
