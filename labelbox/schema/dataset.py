@@ -1,8 +1,9 @@
-from typing import Collection, Dict, Generator, List, Optional, Union, Any, TYPE_CHECKING
+from typing import Dict, Generator, List, Optional, Union, Any
 import os
 import json
 import logging
 from collections.abc import Iterable
+from string import Template
 import time
 
 from labelbox import parser
@@ -12,12 +13,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
-from labelbox import utils
+from labelbox import pagination
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
+from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
+from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
@@ -40,7 +43,6 @@ class Dataset(DbObject, Updateable, Deletable):
         row_count (int): The number of rows in the dataset. Fetch the dataset again to update since this is cached.
 
         projects (Relationship): `ToMany` relationship to Project
-        data_rows (Relationship): `ToMany` relationship to DataRow
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
 
@@ -52,12 +54,69 @@ class Dataset(DbObject, Updateable, Deletable):
     row_count = Field.Int("row_count")
 
     # Relationships
-    projects = Relationship.ToMany("Project", True)
-    data_rows = Relationship.ToMany("DataRow", False)
+    projects = Relationship.ToMany(
+        "Project",
+        True,
+        deprecation_warning=
+        "This method does not return any data for batch-based projects and it will be deprecated on or around November 1, 2023."
+    )
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     iam_integration = Relationship.ToOne("IAMIntegration", False,
                                          "iam_integration", "signer")
+
+    def data_rows(
+        self,
+        from_cursor: str = None,
+        where: Comparison = None,
+    ) -> PaginatedCollection:
+        """ 
+        Custom method to paginate data_rows via cursor.
+
+        Params:
+            from_cursor (str): Cursor (data row id) to start from, if none, will start from the beginning
+            where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.    
+                example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
+
+
+        NOTE: 
+            Order of retrieval is newest data row first.
+            Deleted data rows are not retrieved.
+            Failed data rows are not retrieved.
+            Data rows in progress *maybe* retrieved.
+        """
+
+        page_size = 500  # hardcode to avoid overloading the server
+        where_param = query.where_as_dict(Entity.DataRow,
+                                          where) if where is not None else None
+
+        template = Template(
+            """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int, $$where: DatasetDataRowWhereInput)  {
+                        datasetDataRows(id: $$id, from: $$from, first: $$first, where: $$where)
+                            {
+                                nodes { $datarow_selections }
+                                pageInfo { hasNextPage startCursor }
+                            }
+                        }
+                    """)
+        query_str = template.substitute(
+            datarow_selections=query.results_query_part(Entity.DataRow))
+
+        params = {
+            'id': self.uid,
+            'from': from_cursor,
+            'first': page_size,
+            'where': where_param,
+        }
+
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params=params,
+            dereferencing=['datasetDataRows', 'nodes'],
+            obj_class=Entity.DataRow,
+            cursor_path=['datasetDataRows', 'pageInfo', 'startCursor'],
+        )
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
@@ -451,7 +510,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A list of `DataRow` with the given ID.
 
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+         labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -460,11 +519,11 @@ class Dataset(DbObject, Updateable, Deletable):
 
         data_rows = self.data_rows(where=where)
         # Get at most `limit` data_rows.
-        data_rows = list(islice(data_rows, limit))
+        at_most_data_rows = list(islice(data_rows, limit))
 
-        if not len(data_rows):
+        if not len(at_most_data_rows):
             raise ResourceNotFoundError(DataRow, where)
-        return data_rows
+        return at_most_data_rows
 
     def data_row_for_external_id(self, external_id) -> "DataRow":
         """ Convenience method for getting a single `DataRow` belonging to this
@@ -632,10 +691,9 @@ class Dataset(DbObject, Updateable, Deletable):
         })
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
-        res = self.client.execute(
-            create_task_query_str,
-            query_params,
-        )
+        res = self.client.execute(create_task_query_str,
+                                  query_params,
+                                  error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
         user: User = self.client.get_user()

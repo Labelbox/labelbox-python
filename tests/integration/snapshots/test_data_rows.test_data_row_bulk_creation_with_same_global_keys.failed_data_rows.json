@@ -1,0 +1,1 @@
+[{"message": "Data rows contain duplicate global keys", "failedDataRows": [{"externalId": "tests/integration/media/sample_image.jpg", "globalKey": "", "rowData": "", "attachmentInputs": []}, {"externalId": "tests/integration/media/sample_image.jpg", "globalKey": "", "rowData": "", "attachmentInputs": []}]}]

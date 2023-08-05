@@ -536,10 +536,9 @@ class ModelRun(DbObject):
                 },
             }
         }
-        res = self.client.execute(
-            create_task_query_str,
-            queryParams,
-        )
+        res = self.client.execute(create_task_query_str,
+                                  queryParams,
+                                  error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
         user: User = self.client.get_user()

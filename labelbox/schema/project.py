@@ -87,7 +87,12 @@ class Project(DbObject, Updateable, Deletable):
     media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
 
     # Relationships
-    datasets = Relationship.ToMany("Dataset", True)
+    datasets = Relationship.ToMany(
+        "Dataset",
+        True,
+        deprecation_warning=
+        "This method does not return any data for batch-based projects and it will be deprecated on or around November 1, 2023."
+    )
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
@@ -145,7 +150,7 @@ class Project(DbObject, Updateable, Deletable):
         """
         id_param = "projectId"
         query_str = """query ProjectMemberOverviewPyApi($%s: ID!) {
-             project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } }
+             project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } accessFrom }
            }
         }""" % (id_param, id_param, query.results_query_part(Entity.User))
         return PaginatedCollection(self.client, query_str,
@@ -486,10 +491,9 @@ class Project(DbObject, Updateable, Deletable):
         search_query = build_filters(self.client, _filters)
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
-        res = self.client.execute(
-            create_task_query_str,
-            query_params,
-        )
+        res = self.client.execute(create_task_query_str,
+                                  query_params,
+                                  error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
         user: User = self.client.get_user()
@@ -973,26 +977,25 @@ class Project(DbObject, Updateable, Deletable):
 
     def validate_labeling_parameter_overrides(self, data) -> None:
         for idx, row in enumerate(data):
-            if len(row) != 3:
+            if len(row) < 2:
                 raise TypeError(
-                    f"Data must be a list of tuples containing a DataRow, priority (int), num_labels (int). Found {len(row)} items. Index: {idx}"
+                    f"Data must be a list of tuples containing a DataRow and priority (int). Found {len(row)} items. Index: {idx}"
                 )
-            data_row, priority, num_labels = row
+            data_row = row[0]
+            priority = row[1]
             if not isinstance(data_row, Entity.DataRow):
                 raise TypeError(
                     f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
                 )
 
-            for name, value in [["Priority", priority],
-                                ["Number of labels", num_labels]]:
-                if not isinstance(value, int):
-                    raise TypeError(
-                        f"{name} must be an int. Found {type(value)} for data_row {data_row}. Index: {idx}"
-                    )
-                if value < 1:
-                    raise ValueError(
-                        f"{name} must be greater than 0 for data_row {data_row}. Index: {idx}"
-                    )
+            if not isinstance(priority, int):
+                raise TypeError(
+                    f"Priority must be an int. Found {type(priority)} for data_row {data_row}. Index: {idx}"
+                )
+            if priority < 1:
+                raise ValueError(
+                    f"Priority must be greater than 0 for data_row {data_row}. Index: {idx}"
+                )
 
     def set_labeling_parameter_overrides(self, data) -> bool:
         """ Adds labeling parameter overrides to this project.
@@ -1001,7 +1004,7 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
             >>> project.set_labeling_parameter_overrides([
-            >>>     (data_row_1, 2, 3), (data_row_2, 1, 4)])
+            >>>     (data_row_1, 2), (data_row_2, 1)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
@@ -1018,15 +1021,6 @@ class Project(DbObject, Updateable, Deletable):
                     * Datarows with parameter overrides will appear before datarows without overrides.
                     * The priority only effects items in the queue.
                         - Assigning a priority will not automatically add the item back into the queue.
-                Number of labels:
-                    * The number of times a data row should be labeled.
-                        - Creates duplicate data rows in a project (one for each number of labels).
-                    * New duplicated data rows will be added to the queue.
-                        - Already labeled duplicates will not be sent back to the queue.
-                    * The queue will never assign the same datarow to a single labeler more than once.
-                        - If the number of labels is greater than the number of labelers working on a project then
-                            the extra items will remain in the queue (this can be fixed by removing the override at any time).
-                    * Setting this to 1 will result in the default behavior (no duplicates).
         Returns:
             bool, indicates if the operation was a success.
         """
@@ -1034,11 +1028,11 @@ class Project(DbObject, Updateable, Deletable):
             "LabelingParameterOverrides are deprecated for new projects, and will eventually be removed "
             "completely. Prefer to use batch based queuing with priority & consensus number of labels instead."
         )
+        data = [t[:2] for t in data]
         self.validate_labeling_parameter_overrides(data)
-        data_str = ",\n".join(
-            "{dataRow: {id: \"%s\"}, priority: %d, numLabels: %d }" %
-            (data_row.uid, priority, num_labels)
-            for data_row, priority, num_labels in data)
+        data_str = ",\n".join("{dataRow: {id: \"%s\"}, priority: %d }" %
+                              (data_row.uid, priority)
+                              for data_row, priority in data)
         id_param = "projectId"
         query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
             project(where: { id: $%s }) {setLabelingParameterOverrides
@@ -1366,6 +1360,7 @@ class Project(DbObject, Updateable, Deletable):
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)
     role = Relationship.ToOne("Role", cache=True)
+    access_from = Field.String("access_from")
 
 
 class LabelingParameterOverride(DbObject):

@@ -10,14 +10,16 @@ class MediaType(Enum):
     Html = "HTML"
     Image = "IMAGE"
     Json = "JSON"
+    LLMPromptCreation = "LLM_PROMPT_CREATION"
+    LLMPromptResponseCreation = "LLM_PROMPT_RESPONSE_CREATION"
     Pdf = "PDF"
     Simple_Tile = "TMS_SIMPLE"
     Text = "TEXT"
     Tms_Geo = "TMS_GEO"
     Tms_Simple = "TMS_SIMPLE"
-    Video = "VIDEO"
     Unknown = "UNKNOWN"
     Unsupported = "UNSUPPORTED"
+    Video = "VIDEO"
 
     @classmethod
     def _missing_(cls, name):

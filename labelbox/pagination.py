@@ -22,7 +22,7 @@ class PaginatedCollection:
     def __init__(self,
                  client: "Client",
                  query: str,
-                 params: Dict[str, str],
+                 params: Dict[str, Union[str, int]],
                  dereferencing: Union[List[str], Dict[str, Any]],
                  obj_class: Union[Type["DbObject"], Callable[[Any, Any], Any]],
                  cursor_path: Optional[List[str]] = None,
@@ -134,7 +134,7 @@ class _CursorPagination(_Pagination):
     def __init__(self, cursor_path: List[str], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_path = cursor_path
-        self.next_cursor: Optional[Any] = None
+        self.next_cursor: Optional[Any] = kwargs.get('params', {}).get('from')
 
     def increment_page(self, results: Dict[str, Any]):
         for path in self.cursor_path:
@@ -145,7 +145,8 @@ class _CursorPagination(_Pagination):
         return not self.next_cursor
 
     def fetch_results(self) -> Dict[str, Any]:
-        self.params.update({'from': self.next_cursor, 'first': _PAGE_SIZE})
+        page_size = self.params.get('first', _PAGE_SIZE)
+        self.params.update({'from': self.next_cursor, 'first': page_size})
         return self.client.execute(self.query,
                                    self.params,
                                    experimental=self.experimental)

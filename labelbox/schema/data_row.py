@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Collection, Dict, List, Optional
+from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
 import json
 from labelbox.exceptions import ResourceNotFoundError
 
@@ -7,6 +7,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
+from labelbox.schema.export_filters import DatarowExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
@@ -157,15 +158,21 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     @staticmethod
     def export_v2(client: 'Client',
-                  data_rows: List['DataRow'],
+                  data_rows: List[Union[str, 'DataRow']],
                   task_name: Optional[str] = None,
                   params: Optional[CatalogExportParams] = None) -> Task:
         """
         Creates a data rows export task with the given list, params and returns the task.
+        Args:
+            client (Client): client to use to make the export request
+            data_rows (list of DataRow or str): list of data row objects or data row ids to export
+            task_name (str): name of remote task
+            params (CatalogExportParams): export params
+
         
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = DataRow.export_v2(
-        >>>         data_rows_ids=[data_row.uid for data_row in dataset.data_rows.list()],
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
@@ -198,19 +205,26 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             %s(input: $input) {taskId} }
             """ % (mutation_name)
 
-        data_rows_ids = [data_row.uid for data_row in data_rows]
-        search_query: List[Dict[str, Collection[str]]] = []
-        search_query.append({
-            "ids": data_rows_ids,
-            "operator": "is",
-            "type": "data_row_id"
-        })
+        data_row_ids = []
+        if data_rows is not None:
+            for dr in data_rows:
+                if isinstance(dr, DataRow):
+                    data_row_ids.append(dr.uid)
+                elif isinstance(dr, str):
+                    data_row_ids.append(dr)
 
-        print(search_query)
+        filters = DatarowExportFilters({
+            "last_activity_at": None,
+            "label_created_at": None,
+            "data_row_ids": data_row_ids,
+        })
+        search_query: List[Dict[str, Collection[str]]] = []
+        search_query = build_filters(client, filters)
+
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:
-            task_name = f"Export v2: data rows (%s)" % len(data_rows_ids)
+            task_name = f"Export v2: data rows (%s)" % len(data_row_ids)
         query_params = {
             "input": {
                 "taskName": task_name,
@@ -246,10 +260,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             }
         }
 
-        res = client.execute(
-            create_task_query_str,
-            query_params,
-        )
+        res = client.execute(create_task_query_str,
+                             query_params,
+                             error_log_key="errors")
         print(res)
         res = res[mutation_name]
         task_id = res["taskId"]

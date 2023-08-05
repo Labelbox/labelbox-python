@@ -25,3 +25,6 @@ def rename_cuid_key_recursive(d):
             for i in v:
                 if isinstance(i, dict):
                     rename_cuid_key_recursive(i)
+
+
+INTEGRATION_SNAPSHOT_DIRECTORY = 'tests/integration/snapshots'

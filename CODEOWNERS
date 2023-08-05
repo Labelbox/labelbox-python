@@ -1,0 +1,3 @@
+# SDK team's approval is required for all code changes (excluding notebook changes)
+* @Labelbox/data-io
+*.ipynb
