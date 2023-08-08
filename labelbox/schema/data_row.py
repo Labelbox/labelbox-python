@@ -7,7 +7,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.export_filters import DatarowExportFilters, build_filters
+from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
@@ -176,7 +176,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], 
         >>>             # or a list of DataRow objects: data_rows = data_set.data_rows.list()
         >>>             # or a list of global_keys=["global_key_1", "global_key_2"], 
-        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time  
+        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time 
+        >>>             # and if data rows ids is present, global keys will be ignored
         >>>         params={
         >>>             "performance_details": False,
         >>>             "label_details": True
@@ -184,9 +185,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-
-        if not data_rows and not global_keys:
-            raise ValueError("data_rows and global_keys cannot both be empty")
 
         _params = params or CatalogExportParams({
             "attachments": False,
@@ -223,6 +221,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             "data_row_ids": None,
             "global_keys": global_keys,
         })
+        validate_at_least_one_of_data_row_ids_or_global_keys(filters)
+
         search_query = build_filters(client, filters)
         media_type_override = _params.get('media_type_override', None)
 

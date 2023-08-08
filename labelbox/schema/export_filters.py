@@ -91,6 +91,19 @@ def convert_to_utc_if_iso8061(datetime_str: str, timezone_str: Optional[str]):
     return datetime_str, timezone_str
 
 
+def validate_one_of_data_row_ids_or_global_keys(filters):
+    if filters.get("data_row_ids") is not None and filters.get(
+            "global_keys") is not None:
+        raise ValueError(
+            "data_rows and global_keys cannot both be present in export filters"
+        )
+
+
+def validate_at_least_one_of_data_row_ids_or_global_keys(filters):
+    if not filters.get("data_row_ids") and not filters.get("global_keys"):
+        raise ValueError("data_rows and global_keys cannot both be empty")
+
+
 def build_filters(client, filters):
     search_query: List[Dict[str, Collection[str]]] = []
     timezone: Optional[str] = None
@@ -113,12 +126,7 @@ def build_filters(client, filters):
             )
         search_query.append({"ids": ids, "operator": "is", "type": type_name})
 
-    data_row_ids = filters.get("data_row_ids")
-    global_keys = filters.get("global_keys")
-    if data_row_ids is not None and global_keys is not None:
-        raise ValueError(
-            "data_rows and global_keys cannot both be present in export filters"
-        )
+    validate_one_of_data_row_ids_or_global_keys(filters)
 
     last_activity_at = filters.get("last_activity_at")
     if last_activity_at:
