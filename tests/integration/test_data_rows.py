@@ -983,7 +983,7 @@ def test_invalid_media_type(dataset, conversational_content):
 def test_create_tiled_layer(dataset, tile_content):
     examples = [
         {
-            **tile_content, 'media_type': 'TMS_SIMPLE'
+            **tile_content, 'media_type': 'TMS_GEO'
         },
         tile_content,
         # Old way to check for backwards compatibility
