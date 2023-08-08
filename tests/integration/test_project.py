@@ -94,16 +94,24 @@ def test_project_export_v2(client, export_v2_test_helpers,
 
     filters = {
         "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "task_queue_status": "InReview"
     }
 
     # TODO: Right now we don't have a way to test this
     include_performance_details = True
     params = {
-        "include_performance_details": include_performance_details,
+        "performance_details": include_performance_details,
         "include_labels": True,
+        "project_details": True,
         "media_type_override": MediaType.Image
     }
+
+    task_queues = project.task_queues()
+
+    review_queue = next(
+        tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
+    project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
 
     task_results = export_v2_test_helpers.run_project_export_v2_task(
         project, task_name=task_name, filters=filters, params=params)
@@ -113,6 +121,7 @@ def test_project_export_v2(client, export_v2_test_helpers,
         task_project_label_ids_set = set(
             map(lambda prediction: prediction['id'], task_project['labels']))
         assert label_id in task_project_label_ids_set
+        assert task_project['project_details']['workflow_status'] == 'IN_REVIEW'
 
         # TODO: Add back in when we have a way to test this
         # if include_performance_details:

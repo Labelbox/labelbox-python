@@ -2,6 +2,7 @@ import sys
 
 from datetime import datetime, timezone
 from typing import Collection, Dict, Tuple, List, Optional
+from labelbox.typing_imports import Literal
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -41,6 +42,12 @@ class ProjectExportFilters(SharedExportFilters):
     """ Batch ids to export
     Example:
     >>> ["clgo3lyax0000veeezdbu3ws4"]
+    """
+    workflow_status: Optional[Literal["ToLabel", "InReview", "InRework",
+                                      "Done"]]
+    """ Export data rows matching workflow status
+    Example:
+    >>> "InReview"
     """
 
 
@@ -200,5 +207,22 @@ def build_filters(client, filters):
             "operator": "is",
             "type": "batch"
         })
+
+    workflow_status = filters.get("workflow_status")
+    if workflow_status:
+        if not isinstance(workflow_status, str):
+            raise ValueError("`workflow_status` filter expects a string.")
+        elif workflow_status not in ["ToLabel", "InReview", "InRework", "Done"]:
+            raise ValueError(
+                "`workflow_status` filter expects one of 'InReview', 'InRework', or 'Done'."
+            )
+
+        if workflow_status == "ToLabel":
+            search_query.append({"type": "task_queue_not_exist"})
+        else:
+            search_query.append({
+                "type": 'task_queue_status',
+                "status": workflow_status
+            })
 
     return search_query
