@@ -8,7 +8,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import TypedDict
 
-MAX_DATA_ROW_IDS_PER_EXPORT_V2 = 2_000
+SEARCH_LIMIT_PER_EXPORT_V2 = 2_000
 ISO_8061_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
@@ -100,23 +100,18 @@ def build_filters(client, filters):
         tz_res = client.execute(timezone_query_str)
         return tz_res["user"]["timezone"] or "UTC"
 
-    def _build_es_id_filters(
-            ids: list,
-            es_type_name: str,
-            es_search_where_limit: int = MAX_DATA_ROW_IDS_PER_EXPORT_V2):
+    def _build_id_filters(ids: list,
+                          type_name: str,
+                          search_where_limit: int = SEARCH_LIMIT_PER_EXPORT_V2):
         if not isinstance(ids, list):
-            raise ValueError(f"{es_type_name} filter expects a list.")
+            raise ValueError(f"{type_name} filter expects a list.")
         if len(ids) == 0:
-            raise ValueError(f"{es_type_name} filter expects a non-empty list.")
-        if len(ids) > es_search_where_limit:
+            raise ValueError(f"{type_name} filter expects a non-empty list.")
+        if len(ids) > search_where_limit:
             raise ValueError(
-                f"{es_type_name} filter only supports a max of {es_search_where_limit} items."
+                f"{type_name} filter only supports a max of {search_where_limit} items."
             )
-        search_query.append({
-            "ids": ids,
-            "operator": "is",
-            "type": es_type_name
-        })
+        search_query.append({"ids": ids, "operator": "is", "type": type_name})
 
     data_row_ids = filters.get("data_row_ids")
     global_keys = filters.get("global_keys")
@@ -211,15 +206,15 @@ def build_filters(client, filters):
 
     data_row_ids = filters.get("data_row_ids")
     if data_row_ids is not None:
-        _build_es_id_filters(data_row_ids, "data_row_id")
+        _build_id_filters(data_row_ids, "data_row_id")
 
     global_keys = filters.get("global_keys")
     if global_keys is not None:
-        _build_es_id_filters(global_keys, "global_key")
+        _build_id_filters(global_keys, "global_key")
 
     batch_ids = filters.get("batch_ids")
     if batch_ids is not None:
-        _build_es_id_filters(batch_ids, "batch")
+        _build_id_filters(batch_ids, "batch")
 
     workflow_status = filters.get("workflow_status")
     if workflow_status:
