@@ -77,7 +77,17 @@ def test_network_error(client):
         client.create_project(name="Project name")
 
 
-def test_invalid_attribute_error(client, rand_gen):
+@pytest.fixture
+def project_for_test_invalid_attribute_error(client):
+    project = client.create_project(name="Project name")
+    yield project
+    project.delete()
+
+
+def test_invalid_attribute_error(client, rand_gen,
+                                 project_for_test_invalid_attribute_error):
+    project = project_for_test_invalid_attribute_error
+
     # Creation
     with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
         client.create_project(name="Name", invalid_field="Whatever")
@@ -108,8 +118,6 @@ def test_invalid_attribute_error(client, rand_gen):
         client.get_projects(where=User.email == "email")
     assert excinfo.value.db_object_type == Project
     assert excinfo.value.field == {User.email}
-
-    project.delete()
 
 
 @pytest.mark.skip("timeouts cause failure before rate limit")

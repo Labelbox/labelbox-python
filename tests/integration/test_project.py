@@ -213,7 +213,25 @@ def test_project_export_v2_datarow_list(
                ]) == set(global_keys[:datarow_filter_size])
 
 
-def test_update_project_resource_tags(client, rand_gen):
+@pytest.fixture
+def data_for_project_test(client, rand_gen):
+    projects = []
+
+    def _create_project(name: str = None):
+        if name is None:
+            name = rand_gen(str)
+        project = client.create_project(name=name)
+        projects.append(project)
+        return project
+
+    yield _create_project
+
+    for project in projects:
+        project.delete()
+
+
+def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
+    p1 = data_for_project_test()
 
     def delete_tag(tag_id: str):
         """Deletes a tag given the tag uid. Currently internal use only so this is not public"""
@@ -226,15 +244,9 @@ def test_update_project_resource_tags(client, rand_gen):
         """, {"tag_id": tag_id})
         return res
 
-    before = list(client.get_projects())
-    for o in before:
-        assert isinstance(o, Project)
-
     org = client.get_organization()
     assert org.uid is not None
 
-    project_name = rand_gen(str)
-    p1 = client.create_project(name=project_name)
     assert p1.uid is not None
 
     colorA = "#ffffff"
@@ -273,17 +285,14 @@ def test_update_project_resource_tags(client, rand_gen):
     delete_tag(tagB.uid)
 
 
-def test_project_filtering(client, rand_gen):
+def test_project_filtering(client, rand_gen, data_for_project_test):
     name_1 = rand_gen(str)
+    p1 = data_for_project_test(name_1)
     name_2 = rand_gen(str)
-    p1 = client.create_project(name=name_1)
-    p2 = client.create_project(name=name_2)
+    p2 = data_for_project_test(name_2)
 
     assert list(client.get_projects(where=Project.name == name_1)) == [p1]
     assert list(client.get_projects(where=Project.name == name_2)) == [p2]
-
-    p1.delete()
-    p2.delete()
 
 
 def test_upsert_review_queue(project):
