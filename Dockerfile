@@ -9,7 +9,8 @@ RUN apt install -y libsm6 \
                 libxrender1 \
                 libgl1-mesa-glx \
                 libgeos-dev \
-                gcc
+                gcc \
+                build-essential
 
 WORKDIR /usr/src/
 COPY requirements.txt /usr/src/
