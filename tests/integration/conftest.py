@@ -262,7 +262,7 @@ def small_dataset(dataset: Dataset):
 
 
 @pytest.fixture
-def data_row(dataset, image_url):
+def data_row(dataset, image_url, rand_gen):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
