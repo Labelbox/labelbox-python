@@ -7,7 +7,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.export_filters import DatarowExportFilters, build_filters
+from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
@@ -158,7 +158,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     @staticmethod
     def export_v2(client: 'Client',
-                  data_rows: List[Union[str, 'DataRow']],
+                  data_rows: List[Union[str, 'DataRow']] = None,
+                  global_keys: List[str] = None,
                   task_name: Optional[str] = None,
                   params: Optional[CatalogExportParams] = None) -> Task:
         """
@@ -172,11 +173,11 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = DataRow.export_v2(
-        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
-        >>>         filters={
-        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
-        >>>         },
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], 
+        >>>             # or a list of DataRow objects: data_rows = data_set.data_rows.list()
+        >>>             # or a list of global_keys=["global_key_1", "global_key_2"], 
+        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time 
+        >>>             # and if data rows ids is present, global keys will be ignored
         >>>         params={
         >>>             "performance_details": False,
         >>>             "label_details": True
@@ -214,13 +215,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                     data_row_ids.append(dr)
 
         filters = DatarowExportFilters({
-            "last_activity_at": None,
-            "label_created_at": None,
             "data_row_ids": data_row_ids,
+            "global_keys": None,
+        }) if data_row_ids else DatarowExportFilters({
+            "data_row_ids": None,
+            "global_keys": global_keys,
         })
-        search_query: List[Dict[str, Collection[str]]] = []
-        search_query = build_filters(client, filters)
+        validate_at_least_one_of_data_row_ids_or_global_keys(filters)
 
+        search_query = build_filters(client, filters)
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:
