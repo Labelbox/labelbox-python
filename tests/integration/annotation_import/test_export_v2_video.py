@@ -1,13 +1,24 @@
-import time
+import time, re
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
 import labelbox.types as lb_types
 from labelbox.schema.annotation_import import AnnotationImportState
 
+GKEY_SANITIZER_REGEX = re.compile(r"[^a-zA-Z0-9!_.*\'\(\)&$@=;:+,\?\- ]")
+GKEY_MAX_SIZE = 255
+
+
+def _get_sanitized_global_key(gk):
+    sanitized_key = re.sub(GKEY_SANITIZER_REGEX, "_", gk.strip())
+    if len(sanitized_key) > GKEY_MAX_SIZE:
+        raise ValueError("Global Key length exceeds max size.")
+    return sanitized_key
+
 
 def test_export_v2_video(client, configured_project_without_data_rows,
                          video_data, video_data_row,
-                         bbox_video_annotation_objects, rand_gen):
+                         bbox_video_annotation_objects, rand_gen,
+                         is_adv_enabled):
 
     project = configured_project_without_data_rows
     project_id = project.uid
@@ -52,7 +63,9 @@ def test_export_v2_video(client, configured_project_without_data_rows,
 
     export_data = task.result
     data_row_export = export_data[0]['data_row']
-    assert data_row_export['global_key'] == video_data_row['global_key']
+    global_key = \
+        _get_sanitized_global_key(video_data_row['global_key']) if is_adv_enabled else video_data_row['global_key']
+    assert data_row_export['global_key'] == global_key
     assert data_row_export['row_data'] == video_data_row['row_data']
     assert export_data[0]['media_attributes']['mime_type'] == 'video/mp4'
 
