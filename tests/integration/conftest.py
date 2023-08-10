@@ -22,7 +22,7 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
-SMALL_DATASET_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 5
 
@@ -255,7 +255,7 @@ def small_dataset(dataset: Dataset):
             "row_data": SMALL_DATASET_URL,
             "external_id": "my-image"
         },
-    ] * 3)
+    ] * 2)
     task.wait_till_done()
 
     yield dataset

@@ -4,7 +4,7 @@ import pytest
 
 from labelbox.schema.media_type import MediaType
 
-IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+IMAGE_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 
 
 def test_project_export_v2(client, export_v2_test_helpers,

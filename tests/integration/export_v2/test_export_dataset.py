@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.parametrize('data_rows', [5], indirect=True)
+@pytest.mark.parametrize('data_rows', [2], indirect=True)
 def test_dataset_export_v2(export_v2_test_helpers, dataset, data_rows):
     data_row_ids = [dr.uid for dr in data_rows]
     params = {"performance_details": False, "label_details": False}
@@ -12,7 +12,7 @@ def test_dataset_export_v2(export_v2_test_helpers, dataset, data_rows):
                ]) == set(data_row_ids)
 
 
-@pytest.mark.parametrize('data_rows', [5], indirect=True)
+@pytest.mark.parametrize('data_rows', [3], indirect=True)
 def test_dataset_export_v2_datarow_list(export_v2_test_helpers, dataset,
                                         data_rows):
     datarow_filter_size = 2

@@ -26,19 +26,6 @@ def big_dataset(dataset: Dataset):
     yield dataset
 
 
-@pytest.fixture
-def small_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": IMAGE_URL,
-            "external_id": EXTERNAL_ID
-        },
-    ] * 2)
-    task.wait_till_done()
-
-    yield dataset
-
-
 @pytest.fixture(scope='function')
 def dataset_with_invalid_data_rows(unique_dataset: Dataset):
     upload_invalid_data_rows_for_dataset(unique_dataset)
