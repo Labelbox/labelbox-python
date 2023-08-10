@@ -63,8 +63,10 @@ def test_export_v2_video(client, configured_project_without_data_rows,
 
     export_data = task.result
     data_row_export = export_data[0]['data_row']
-    global_key = \
-        _get_sanitized_global_key(video_data_row['global_key']) if is_adv_enabled else video_data_row['global_key']
+    if is_adv_enabled:
+        global_key = _get_sanitized_global_key(video_data_row['global_key'])
+    else:
+        global_key = video_data_row['global_key']
     assert data_row_export['global_key'] == global_key
     assert data_row_export['row_data'] == video_data_row['row_data']
     assert export_data[0]['media_attributes']['mime_type'] == 'video/mp4'
