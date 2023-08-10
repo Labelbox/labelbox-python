@@ -8,7 +8,7 @@ from labelbox.data.annotation_types.annotation import ObjectAnnotation
 from labelbox.schema.annotation_import import LabelImport
 from labelbox import Dataset, Project
 
-IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+IMAGE_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 
 
 def test_export_annotations_nested_checklist(
