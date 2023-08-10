@@ -4,14 +4,12 @@ from labelbox.data.annotation_types.data.video import VideoData
 import labelbox.types as lb_types
 from labelbox.schema.annotation_import import AnnotationImportState
 
-GKEY_SANITIZER_REGEX = re.compile(r"[^a-zA-Z0-9!_.*\'\(\)&$@=;:+,\?\- ]")
-GKEY_MAX_SIZE = 255
+# This regex is to match sanitization in ADV
+ADV_GKEY_SANITIZER_REGEX = re.compile(r"[^a-zA-Z0-9!_.*\'\(\)&$@=;:+,\?\- ]")
 
 
 def _get_sanitized_global_key(gk):
-    sanitized_key = re.sub(GKEY_SANITIZER_REGEX, "_", gk.strip())
-    if len(sanitized_key) > GKEY_MAX_SIZE:
-        raise ValueError("Global Key length exceeds max size.")
+    sanitized_key = re.sub(ADV_GKEY_SANITIZER_REGEX, "_", gk.strip())
     return sanitized_key
 
 
