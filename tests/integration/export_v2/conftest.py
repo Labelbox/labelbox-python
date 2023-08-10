@@ -271,7 +271,8 @@ def polygon_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
+def configured_project_with_ontology(client, initial_dataset, ontology,
+                                     rand_gen, image_url):
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
@@ -309,19 +310,20 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
 
 
 @pytest.fixture
-def model_run_with_data_rows(client, configured_project, model_run_predictions,
-                             model_run, wait_for_label_processing):
-    configured_project.enable_model_assisted_labeling()
+def model_run_with_data_rows(client, configured_project_with_ontology,
+                             model_run_predictions, model_run,
+                             wait_for_label_processing):
+    configured_project_with_ontology.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
-        client, configured_project.uid, f"label-import-{uuid.uuid4()}",
-        model_run_predictions)
+        client, configured_project_with_ontology.uid,
+        f"label-import-{uuid.uuid4()}", model_run_predictions)
     upload_task.wait_until_done()
     assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
     assert len(
         upload_task.errors
     ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
-    labels = wait_for_label_processing(configured_project)
+    labels = wait_for_label_processing(configured_project_with_ontology)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)
     yield model_run
@@ -388,9 +390,9 @@ def wait_for_label_processing():
 
 
 @pytest.fixture
-def prediction_id_mapping(configured_project):
+def prediction_id_mapping(configured_project_with_ontology):
     # Maps tool types to feature schema ids
-    project = configured_project
+    project = configured_project_with_ontology
     ontology = project.ontology().normalized
     result = {}
 
