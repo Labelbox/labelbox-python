@@ -80,6 +80,7 @@ def test_create_from_objects_all_project_labels(
 def test_model_run_project_labels(model_run_with_all_project_labels,
                                   model_run_predictions):
     model_run = model_run_with_all_project_labels
+    # TODO: Move to export_v2
     model_run_exported_labels = model_run.export_labels(download=True)
     labels_indexed_by_schema_id = {}
     for label in model_run_exported_labels:

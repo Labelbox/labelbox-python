@@ -370,11 +370,6 @@ def test_same_ontology_after_instructions(
     assert instructions is not None
 
 
-def test_queued_data_row_export(configured_project):
-    result = configured_project.export_queued_data_rows()
-    assert len(result) == 1
-
-
 def test_queue_mode(configured_project: Project):
     assert configured_project.queue_mode == QueueMode.Batch
 
@@ -387,6 +382,7 @@ def test_batches(project: Project, dataset: Dataset, image_url):
         },
     ] * 2)
     task.wait_till_done()
+    # TODO: Move to export_v2
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
@@ -404,6 +400,7 @@ def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     batch = project.create_batch(batch_name, global_keys=global_keys)
     # allow time for catapult to sync changes to ES
     time.sleep(5)
+    # TODO: Move to export_v2
     batch_data_rows = set(batch.export_data_rows())
     assert batch_data_rows == set(data_rows)
 
@@ -413,6 +410,7 @@ def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project._create_batch_async(batch_name, global_keys=global_keys)
+    # TODO: Move to export_v2
     batch_data_rows = set(batch.export_data_rows())
     assert batch_data_rows == set(data_rows)
 
