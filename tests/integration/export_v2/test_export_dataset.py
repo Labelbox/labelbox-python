@@ -7,7 +7,7 @@ def test_dataset_export_v2(export_v2_test_helpers, dataset, data_rows):
     params = {"performance_details": False, "label_details": False}
     task_results = export_v2_test_helpers.run_dataset_export_v2_task(
         dataset, params=params)
-    assert len(task_results) == 3
+    assert len(task_results) == len(data_row_ids)
     assert set([dr['data_row']['id'] for dr in task_results
                ]) == set(data_row_ids)
 
