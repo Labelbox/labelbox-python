@@ -490,7 +490,6 @@ def test_create_data_rows_with_invalid_metadata(dataset, image_url,
     if is_adv_enabled:
         assert task.status == "COMPLETE"
         assert len(task.failed_data_rows) == 1
-        print(task.failed_data_rows[0])
         assert f"A schemaId can only be specified once per DataRow : [{TEXT_SCHEMA_ID}]" in task.failed_data_rows[
             0]["message"]
     else:
