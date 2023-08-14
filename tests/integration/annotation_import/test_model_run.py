@@ -87,10 +87,12 @@ def test_model_run_data_rows_delete(model_run_with_data_rows):
     assert len(before) == len(after) + 1
 
 
-def test_model_run_upsert_data_rows(dataset, model_run):
+def test_model_run_upsert_data_rows(dataset, model_run, configured_project):
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
     assert n_model_run_data_rows == 0
     data_row = dataset.create_data_row(row_data="test row data")
+    configured_project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row.uid])
     model_run.upsert_data_rows([data_row.uid])
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
     assert n_model_run_data_rows == 1
@@ -166,13 +168,15 @@ def test_model_run_status(model_run_with_data_rows):
 
 
 def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
-                                                    image_url):
+                                                    image_url,
+                                                    configured_project):
     n_data_rows = 10
     data_rows = dataset.create_data_rows([{
         "row_data": image_url
     } for _ in range(n_data_rows)])
     data_row_ids = [data_row['id'] for data_row in data_rows.result]
-
+    configured_project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids)
     model_run.upsert_data_rows(data_row_ids)
 
     with pytest.raises(ValueError):
