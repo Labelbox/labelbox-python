@@ -201,7 +201,8 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     url = ({data_row.row_data for data_row in data_rows} - {image_url}).pop()
     assert requests.get(url).content == data
 
-    data_rows[0].delete()
+    for dr in data_rows:
+        dr.delete()
 
 
 @pytest.mark.slow
@@ -596,13 +597,23 @@ def test_data_row_filtering_sorting(dataset, image_url):
     assert row2.external_id == "row2"
 
 
-def test_data_row_deletion(dataset, image_url):
+@pytest.fixture
+def create_datarows_for_data_row_deletion(dataset, image_url):
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
         DataRow.external_id: str(i)
     } for i in range(10)])
     task.wait_till_done()
 
+    data_rows = list(dataset.data_rows())
+
+    yield data_rows
+    for dr in data_rows:
+        dr.delete()
+
+
+def test_data_row_deletion(dataset, create_datarows_for_data_row_deletion):
+    create_datarows_for_data_row_deletion
     data_rows = list(dataset.data_rows())
     expected = set(map(str, range(10)))
     assert {dr.external_id for dr in data_rows} == expected
@@ -1041,6 +1052,13 @@ def test_export_data_rows(client, data_row, wait_for_data_row_processing):
     assert task.result[0]['data_row']['id'] == data_row.uid
 
     task = DataRow.export_v2(client=client, data_rows=[data_row.uid])
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    assert task.errors is None
+    assert len(task.result) == 1
+    assert task.result[0]['data_row']['id'] == data_row.uid
+
+    task = DataRow.export_v2(client=client, global_keys=[data_row.global_key])
     task.wait_till_done()
     assert task.status == "COMPLETE"
     assert task.errors is None

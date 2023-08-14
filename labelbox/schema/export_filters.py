@@ -2,16 +2,34 @@ import sys
 
 from datetime import datetime, timezone
 from typing import Collection, Dict, Tuple, List, Optional
+from labelbox.typing_imports import Literal
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
 
-MAX_DATA_ROW_IDS_PER_EXPORT_V2 = 2_000
+SEARCH_LIMIT_PER_EXPORT_V2 = 2_000
 ISO_8061_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
-class SharedExportFilters(TypedDict):
+class BaseExportFilters(TypedDict):
+    data_row_ids: Optional[List[str]]
+    """ Datarow ids to export
+    Please refer to https://docs.labelbox.com/docs/limits#export on the allowed limit of data_row_ids
+    Example:
+    >>>   ["clgo3lyax0000veeezdbu3ws4", "clgo3lzjl0001veeer6y6z8zp", ...]
+
+    """
+
+    global_keys: Optional[List[str]]
+    """ Global keys to export
+    Please refer to https://docs.labelbox.com/docs/limits#export on the allowed limit of data_row_ids
+    Example:
+    >>>   ["key1", "key2", ...]
+    """
+
+
+class SharedExportFilters(BaseExportFilters):
     label_created_at: Optional[Tuple[str, str]]
     """ Date range for labels created at
     Formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
@@ -21,19 +39,6 @@ class SharedExportFilters(TypedDict):
     >>>   ["2000-01-01 00:00:00", None]
     """
     last_activity_at: Optional[Tuple[str, str]]
-    """ Date range for last activity at
-    Formatted "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
-    Examples: 
-    >>>   ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
-    >>>   [None, "2050-01-01 00:00:00"]
-    >>>   ["2000-01-01 00:00:00", None]
-    """
-    data_row_ids: Optional[List[str]]
-    """ Datarow ids to export
-    Only allows MAX_DATAROW_IDS_PER_EXPORT_V2 datarows
-    Example:
-    >>>   ["clgo3lyax0000veeezdbu3ws4", "clgo3lzjl0001veeer6y6z8zp", ...]
-    """
 
 
 class ProjectExportFilters(SharedExportFilters):
@@ -42,13 +47,19 @@ class ProjectExportFilters(SharedExportFilters):
     Example:
     >>> ["clgo3lyax0000veeezdbu3ws4"]
     """
+    workflow_status: Optional[Literal["ToLabel", "InReview", "InRework",
+                                      "Done"]]
+    """ Export data rows matching workflow status
+    Example:
+    >>> "InReview"
+    """
 
 
 class DatasetExportFilters(SharedExportFilters):
     pass
 
 
-class DatarowExportFilters(SharedExportFilters):
+class DatarowExportFilters(BaseExportFilters):
     pass
 
 
@@ -80,6 +91,19 @@ def convert_to_utc_if_iso8061(datetime_str: str, timezone_str: Optional[str]):
     return datetime_str, timezone_str
 
 
+def validate_one_of_data_row_ids_or_global_keys(filters):
+    if filters.get("data_row_ids") is not None and filters.get(
+            "global_keys") is not None:
+        raise ValueError(
+            "data_rows and global_keys cannot both be present in export filters"
+        )
+
+
+def validate_at_least_one_of_data_row_ids_or_global_keys(filters):
+    if not filters.get("data_row_ids") and not filters.get("global_keys"):
+        raise ValueError("data_rows and global_keys cannot both be empty")
+
+
 def build_filters(client, filters):
     search_query: List[Dict[str, Collection[str]]] = []
     timezone: Optional[str] = None
@@ -88,6 +112,21 @@ def build_filters(client, filters):
         timezone_query_str = """query CurrentUserPyApi { user { timezone } }"""
         tz_res = client.execute(timezone_query_str)
         return tz_res["user"]["timezone"] or "UTC"
+
+    def _build_id_filters(ids: list,
+                          type_name: str,
+                          search_where_limit: int = SEARCH_LIMIT_PER_EXPORT_V2):
+        if not isinstance(ids, list):
+            raise ValueError(f"{type_name} filter expects a list.")
+        if len(ids) == 0:
+            raise ValueError(f"{type_name} filter expects a non-empty list.")
+        if len(ids) > search_where_limit:
+            raise ValueError(
+                f"{type_name} filter only supports a max of {search_where_limit} items."
+            )
+        search_query.append({"ids": ids, "operator": "is", "type": type_name})
+
+    validate_one_of_data_row_ids_or_global_keys(filters)
 
     last_activity_at = filters.get("last_activity_at")
     if last_activity_at:
@@ -174,31 +213,32 @@ def build_filters(client, filters):
             })
 
     data_row_ids = filters.get("data_row_ids")
-    if data_row_ids:
-        if not isinstance(data_row_ids, list):
-            raise ValueError("`data_row_ids` filter expects a list.")
-        if len(data_row_ids) > MAX_DATA_ROW_IDS_PER_EXPORT_V2:
-            raise ValueError(
-                f"`data_row_ids` filter only supports a max of {MAX_DATA_ROW_IDS_PER_EXPORT_V2} items."
-            )
-        search_query.append({
-            "ids": data_row_ids,
-            "operator": "is",
-            "type": "data_row_id"
-        })
+    if data_row_ids is not None:
+        _build_id_filters(data_row_ids, "data_row_id")
+
+    global_keys = filters.get("global_keys")
+    if global_keys is not None:
+        _build_id_filters(global_keys, "global_key")
 
     batch_ids = filters.get("batch_ids")
-    if batch_ids:
-        if not isinstance(batch_ids, list):
-            raise ValueError("`batch_ids` filter expects a list.")
-        if len(batch_ids) > MAX_DATA_ROW_IDS_PER_EXPORT_V2:
+    if batch_ids is not None:
+        _build_id_filters(batch_ids, "batch")
+
+    workflow_status = filters.get("workflow_status")
+    if workflow_status:
+        if not isinstance(workflow_status, str):
+            raise ValueError("`workflow_status` filter expects a string.")
+        elif workflow_status not in ["ToLabel", "InReview", "InRework", "Done"]:
             raise ValueError(
-                f"`batch_ids` filter only supports a max of {MAX_DATA_ROW_IDS_PER_EXPORT_V2} items."
+                "`workflow_status` filter expects one of 'InReview', 'InRework', or 'Done'."
             )
-        search_query.append({
-            "ids": batch_ids,
-            "operator": "is",
-            "type": "batch"
-        })
+
+        if workflow_status == "ToLabel":
+            search_query.append({"type": "task_queue_not_exist"})
+        else:
+            search_query.append({
+                "type": 'task_queue_status',
+                "status": workflow_status
+            })
 
     return search_query

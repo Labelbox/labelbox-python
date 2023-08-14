@@ -5,7 +5,7 @@ import pytest
     'Skipping until we have a way to create slices programatically')
 def test_export_v2_slice(client):
     # Since we don't have CRUD for slices, we'll just use the one that's already there
-    SLICE_ID = "clfgqf1c72mk107zx6ypo9bse"
+    SLICE_ID = "clk04g1e4000ryb0rgsvy1dty"
     slice = client.get_catalog_slice(SLICE_ID)
     task = slice.export_v2(params={
         "performance_details": False,

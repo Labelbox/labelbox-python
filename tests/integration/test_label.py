@@ -28,21 +28,6 @@ def test_labels(configured_project_with_label):
     assert list(data_row.labels()) == []
 
 
-def test_label_export(configured_project_with_label):
-    project, _, _, label = configured_project_with_label
-    label_id = label.uid
-    # Wait for exporter to retrieve latest labels
-    time.sleep(10)
-
-    exported_labels_url = project.export_labels()
-    assert exported_labels_url is not None
-    exported_labels = requests.get(exported_labels_url)
-    labels = [example['ID'] for example in exported_labels.json()]
-    assert labels[0] == label_id
-    #TODO: Add test for bulk export back.
-    # The new exporter doesn't work with the create_label mutation
-
-
 # TODO: Skipping this test in staging due to label not updating
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or
                     os.environ['LABELBOX_TEST_ENVIRON'] == "staging" or

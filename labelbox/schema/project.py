@@ -422,7 +422,8 @@ class Project(DbObject, Updateable, Deletable):
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...]
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]   
+        >>>             "batch_ids": [BATCH_ID_1, BATCH_ID_2, ...]
         >>>         },
         >>>         params={
         >>>             "performance_details": False,
@@ -447,7 +448,9 @@ class Project(DbObject, Updateable, Deletable):
             "last_activity_at": None,
             "label_created_at": None,
             "data_row_ids": None,
+            "global_keys": None,
             "batch_ids": None,
+            "workflow_status": None
         })
 
         mutation_name = "exportDataRowsInProject"
