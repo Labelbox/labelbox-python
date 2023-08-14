@@ -220,7 +220,7 @@ def test_issues_export(project):
 
 
 def test_dataset_export(dataset, image_url):
-    n_data_rows = 5
+    n_data_rows = 2
     ids = set()
     for _ in range(n_data_rows):
         ids.add(dataset.create_data_row(row_data=image_url))

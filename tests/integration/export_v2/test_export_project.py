@@ -1,8 +1,13 @@
 from datetime import datetime, timezone, timedelta
 
 import pytest
+import uuid
+from typing import Tuple
 
 from labelbox.schema.media_type import MediaType
+from labelbox import Project, Dataset
+from labelbox.schema.data_row import DataRow
+from labelbox.schema.label import Label
 
 IMAGE_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 
@@ -86,16 +91,24 @@ def test_project_export_v2_date_filters(client, export_v2_test_helpers,
 
     filters = {
         "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"]
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "task_queue_status": "InReview"
     }
 
     # TODO: Right now we don't have a way to test this
     include_performance_details = True
     params = {
-        "include_performance_details": include_performance_details,
+        "performance_details": include_performance_details,
         "include_labels": True,
+        "project_details": True,
         "media_type_override": MediaType.Image
     }
+
+    task_queues = project.task_queues()
+
+    review_queue = next(
+        tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
+    project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
 
     task_results = export_v2_test_helpers.run_project_export_v2_task(
         project, task_name=task_name, filters=filters, params=params)
@@ -105,6 +118,7 @@ def test_project_export_v2_date_filters(client, export_v2_test_helpers,
         task_project_label_ids_set = set(
             map(lambda prediction: prediction['id'], task_project['labels']))
         assert label_id in task_project_label_ids_set
+        assert task_project['project_details']['workflow_status'] == 'IN_REVIEW'
 
         # TODO: Add back in when we have a way to test this
         # if include_performance_details:
@@ -156,7 +170,7 @@ def test_project_export_v2_with_iso_date_filters(client, export_v2_test_helpers,
 
 
 @pytest.mark.parametrize("data_rows", [3], indirect=True)
-def test_project_export_v2_datarow_filter(
+def test_project_export_v2_datarows_filter(
         export_v2_test_helpers,
         configured_batch_project_with_multiple_datarows):
     project, _, data_rows = configured_batch_project_with_multiple_datarows
@@ -178,3 +192,56 @@ def test_project_export_v2_datarow_filter(
     # only filtered datarows should be exported
     assert set([dr['data_row']['id'] for dr in task_results
                ]) == set(data_row_ids[:datarow_filter_size])
+
+    global_keys = [dr.global_key for dr in data_rows]
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "global_keys": global_keys[:datarow_filter_size]
+    }
+    params = {"data_row_details": True, "media_type_override": MediaType.Image}
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, filters=filters, params=params)
+
+    # only 2 datarows should be exported
+    assert len(task_results) == datarow_filter_size
+    # only filtered datarows should be exported
+    assert set([dr['data_row']['global_key'] for dr in task_results
+               ]) == set(global_keys[:datarow_filter_size])
+
+
+def test_batch_project_export_v2(
+        configured_batch_project_with_label: Tuple[Project, Dataset, DataRow,
+                                                   Label],
+        export_v2_test_helpers, dataset: Dataset, image_url: str):
+    project, dataset, *_ = configured_batch_project_with_label
+
+    batch = list(project.batches())[0]
+    filters = {
+        "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        "batch_ids": [batch.uid],
+    }
+    params = {
+        "include_performance_details": True,
+        "include_labels": True,
+        "media_type_override": MediaType.Image
+    }
+    task_name = "test_batch_export_v2"
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch_one = f'batch one {uuid.uuid4()}'
+
+    # This test creates two batches, only one batch should be exporter
+    # Creatin second batch that will not be used in the export due to the filter: batch_id
+    project.create_batch(batch_one, data_rows)
+
+    task_results = export_v2_test_helpers.run_project_export_v2_task(
+        project, task_name=task_name, filters=filters, params=params)
+    assert (batch.size == len(task_results))
