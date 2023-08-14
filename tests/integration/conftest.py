@@ -3,6 +3,7 @@ from itertools import islice
 import json
 import os
 import re
+import sys
 import time
 import uuid
 from enum import Enum
@@ -390,9 +391,21 @@ def initial_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def configured_project(project, initial_dataset, client, rand_gen, image_url):
+def project_with_ontology(project):
+    editor = list(
+        project.client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    empty_ontology = {"tools": [], "classifications": []}
+    project.setup(editor, empty_ontology)
+    yield project
+
+
+@pytest.fixture
+def configured_project(project_with_ontology, initial_dataset, rand_gen,
+                       image_url):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
+    project = project_with_ontology
 
     project.create_batch(
         rand_gen(str),
@@ -401,14 +414,7 @@ def configured_project(project, initial_dataset, client, rand_gen, image_url):
     )
     project.data_row_ids = [data_row_id]
 
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
     yield project
-    dataset.delete()
-    project.delete()
 
 
 @pytest.fixture
@@ -833,6 +839,8 @@ def pytest_fixture_setup(fixturedef, request):
 
 @pytest.fixture(scope='session', autouse=True)
 def print_perf_summary():
+    print("Starting measurements\n", file=sys.stderr)
+
     yield
 
     sorted_dict = dict(
@@ -841,5 +849,6 @@ def print_perf_summary():
     slowest_fixtures = [
         (aaa, sorted_dict[aaa]) for aaa in islice(sorted_dict, num_of_entries)
     ]
-    print("\nTop slowest fixtures:\n", slowest_fixtures)
-    print("Data row report:\n", pytest.data_row_report)
+    print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)
+    print("Data row report:\n", pytest.data_row_report, file=sys.stderr)
+    # assert False

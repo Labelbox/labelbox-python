@@ -25,15 +25,15 @@ from labelbox.schema.media_type import MediaType
 """
 
 
-def test_create_from_url(configured_project):
+def test_create_from_url(project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
-    bulk_import_request = configured_project.upload_annotations(name=name,
-                                                                annotations=url,
-                                                                validate=False)
+    bulk_import_request = project.upload_annotations(name=name,
+                                                     annotations=url,
+                                                     validate=False)
 
-    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
     assert bulk_import_request.input_file_url == url
     assert bulk_import_request.error_file_url is None
@@ -41,24 +41,24 @@ def test_create_from_url(configured_project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_validate_file(configured_project):
+def test_validate_file(project_with_ontology):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     with pytest.raises(MALValidationError):
-        configured_project.upload_annotations(name=name,
-                                              annotations=url,
-                                              validate=True)
+        project_with_ontology.upload_annotations(name=name,
+                                                 annotations=url,
+                                                 validate=True)
         #Schema ids shouldn't match
 
 
-def test_create_from_objects(configured_project, predictions,
+def test_create_from_objects(configured_project_without_data_rows, predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
-    bulk_import_request = configured_project.upload_annotations(
+    bulk_import_request = configured_project_without_data_rows.upload_annotations(
         name=name, annotations=predictions)
 
-    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.project() == configured_project_without_data_rows
     assert bulk_import_request.name == name
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
@@ -105,17 +105,17 @@ def test_create_from_local_file(tmp_path, predictions, configured_project,
         bulk_import_request.input_file_url, predictions)
 
 
-def test_get(client, configured_project):
+def test_get(client, configured_project_without_data_rows):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    configured_project.upload_annotations(name=name,
-                                          annotations=url,
-                                          validate=False)
+    configured_project_without_data_rows.upload_annotations(name=name,
+                                                            annotations=url,
+                                                            validate=False)
 
     bulk_import_request = BulkImportRequest.from_name(
-        client, project_id=configured_project.uid, name=name)
+        client, project_id=configured_project_without_data_rows.uid, name=name)
 
-    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.project() == configured_project_without_data_rows
     assert bulk_import_request.name == name
     assert bulk_import_request.input_file_url == url
     assert bulk_import_request.error_file_url is None
@@ -158,14 +158,13 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
 
 
 @pytest.mark.slow
-def test_wait_till_done(rectangle_inference, configured_project):
+def test_wait_till_done(rectangle_inference,
+                        configured_project_without_data_rows):
     name = str(uuid.uuid4())
-    url = configured_project.client.upload_data(content=parser.dumps(
-        [rectangle_inference]),
-                                                sign=True)
-    bulk_import_request = configured_project.upload_annotations(name=name,
-                                                                annotations=url,
-                                                                validate=False)
+    url = configured_project_without_data_rows.client.upload_data(
+        content=parser.dumps([rectangle_inference]), sign=True)
+    bulk_import_request = configured_project_without_data_rows.upload_annotations(
+        name=name, annotations=url, validate=False)
 
     assert len(bulk_import_request.inputs) == 1
     bulk_import_request.wait_until_done()

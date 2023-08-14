@@ -486,17 +486,12 @@ def initial_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
+def configured_project(client, configured_project_without_data_rows,
+                       initial_dataset, ontology, rand_gen, image_url):
     start_time = time.time()
     dataset = initial_dataset
-    project = client.create_project(
-        name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
-    )
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
+    project = configured_project_without_data_rows
+
     data_row_ids = []
     # print("Before creating data rows ", time.time() - start_time)
     num_rows = 0
