@@ -58,6 +58,7 @@ def test_create_from_objects_with_confidence(predictions_with_confidence,
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, predictions_with_confidence)
     annotation_import.wait_until_done()
+    assert annotation_import.state == AnnotationImportState.FINISHED
     annotation_import_test_helpers.download_and_assert_status(
         annotation_import.status_file_url)
 
