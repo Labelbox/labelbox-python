@@ -476,19 +476,26 @@ def test_create_data_rows_with_named_metadata_field_class(
         CUSTOM_TEXT_SCHEMA_NAME].uid
 
 
-def test_create_data_rows_with_invalid_metadata(dataset, image_url):
+def test_create_data_rows_with_invalid_metadata(dataset, image_url,
+                                                is_adv_enabled):
     fields = make_metadata_fields()
     # make the payload invalid by providing the same schema id more than once
     fields.append(
-        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value="some msg"))
 
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
         DataRow.metadata_fields: fields
     }])
-    task.wait_till_done()
-    assert task.status == "FAILED"
-    assert len(task.failed_data_rows) > 0
+    task.wait_till_done(timeout_seconds=60)
+    if is_adv_enabled:
+        assert task.status == "COMPLETE"
+        assert len(task.failed_data_rows) == 1
+        assert f"A schemaId can only be specified once per DataRow : [{TEXT_SCHEMA_ID}]" in task.failed_data_rows[
+            0]["message"]
+    else:
+        assert task.status == "FAILED"
+        assert len(task.failed_data_rows) > 0
 
 
 def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
