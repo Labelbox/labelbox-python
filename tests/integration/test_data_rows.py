@@ -9,6 +9,7 @@ import requests
 
 from labelbox import DataRow
 from labelbox.exceptions import MalformedQueryException
+from labelbox.schema.export_filters import DatarowExportFilters
 from labelbox.schema.task import Task
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 import labelbox.exceptions
