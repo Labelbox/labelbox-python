@@ -839,8 +839,6 @@ def pytest_fixture_setup(fixturedef, request):
 
 @pytest.fixture(scope='session', autouse=True)
 def print_perf_summary():
-    print("Starting measurements\n", file=sys.stderr)
-
     yield
 
     sorted_dict = dict(

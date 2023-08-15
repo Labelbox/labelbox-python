@@ -486,8 +486,27 @@ def initial_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def configured_project(client, configured_project_without_data_rows,
-                       initial_dataset, ontology, rand_gen, image_url):
+def hardcoded_datarow_id():
+    data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
+
+    def get_data_row_id(indx=0):
+        return data_row_id
+
+    yield get_data_row_id
+
+
+@pytest.fixture
+def configured_project_datarow_id(configured_project):
+
+    def get_data_row_id(indx=0):
+        return configured_project.data_row_ids[indx]
+
+    yield get_data_row_id
+
+
+@pytest.fixture
+def configured_project(configured_project_without_data_rows, initial_dataset,
+                       ontology, rand_gen, image_url):
     start_time = time.time()
     dataset = initial_dataset
     project = configured_project_without_data_rows
@@ -509,6 +528,7 @@ def configured_project(client, configured_project_without_data_rows,
     )
     print("After creating batch ", time.time() - start_time)
     project.data_row_ids = data_row_ids
+
     yield project
     project.delete()
 
@@ -577,10 +597,19 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
 # In an example of a 'rectangle' we have extended to support multiple instances of the same tool type
 # TODO: we will support this approach in the future for all tools
 @pytest.fixture
-def prediction_id_mapping(configured_project):
+def prediction_id_mapping(configured_project_without_data_rows, ontology,
+                          request):
     # Maps tool types to feature schema ids
-    project = configured_project
+    if 'configured_project' in request.fixturenames:
+        data_row_id_factory = request.getfixturevalue(
+            'configured_project_datarow_id')
+        project = configured_project
+    else:
+        data_row_id_factory = request.getfixturevalue('hardcoded_datarow_id')
+        project = configured_project_without_data_rows
+
     ontology = project.ontology().normalized
+
     result = {}
 
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
@@ -597,7 +626,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": project.data_row_ids[idx],
+                    "id": data_row_id_factory(idx),
                 },
                 'tool': tool
             }
@@ -610,7 +639,47 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": project.data_row_ids[idx],
+                    "id": data_row_id_factory(idx),
+                },
+                'tool': tool
+            }
+    return result
+
+
+@pytest.fixture
+def prediction_id_mapping_datarow_id():
+    # Maps tool types to feature schema ids
+    data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
+    result = {}
+
+    for _, tool in enumerate(ontology['tools'] + ontology['classifications']):
+        if 'tool' in tool:
+            tool_type = tool['tool']
+        else:
+            tool_type = tool[
+                'type'] if 'scope' not in tool else f"{tool['type']}_{tool['scope']}"  # so 'checklist' of 'checklist_index'
+
+        # TODO: remove this once we have a better way to associate multiple tools instances with a single tool type
+        if tool_type == 'rectangle':
+            value = {
+                "uuid": str(uuid.uuid4()),
+                "schemaId": tool['featureSchemaId'],
+                "name": tool['name'],
+                "dataRow": {
+                    "id": data_row_id,
+                },
+                'tool': tool
+            }
+            if tool_type not in result:
+                result[tool_type] = []
+            result[tool_type].append(value)
+        else:
+            result[tool_type] = {
+                "uuid": str(uuid.uuid4()),
+                "schemaId": tool['featureSchemaId'],
+                "name": tool['name'],
+                "dataRow": {
+                    "id": data_row_id,
                 },
                 'tool': tool
             }
