@@ -1,4 +1,13 @@
 # Changelog
+# Version 3.51.0 (2023-08-14)
+## Added
+* Added global keys to export v2 filters for project, dataset and DataRow
+* Added workflow task status filtering for export v2
+
+ ## Notebooks
+* Removed labels notebook, since almost all of the relevant methods in the notebook were not compatible with workflow paradigm.
+* Updated project.ipynb to use batches not datasets
+
 # Version 3.50.0 (2023-08-04)
 ## Added
  * Support batch_ids filter for projects in Exports v2

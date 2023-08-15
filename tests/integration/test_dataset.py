@@ -44,17 +44,24 @@ def test_dataset(client, rand_gen):
         dataset = client.get_dataset(dataset.uid)
 
 
-def test_dataset_filtering(client, rand_gen):
+@pytest.fixture
+def dataset_for_filtering(client, rand_gen):
     name_1 = rand_gen(str)
     name_2 = rand_gen(str)
     d1 = client.create_dataset(name=name_1)
     d2 = client.create_dataset(name=name_2)
 
-    assert list(client.get_datasets(where=Dataset.name == name_1)) == [d1]
-    assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
+    yield name_1, d1, name_2, d2
 
     d1.delete()
     d2.delete()
+
+
+def test_dataset_filtering(client, dataset_for_filtering):
+    name_1, d1, name_2, d2 = dataset_for_filtering
+
+    assert list(client.get_datasets(where=Dataset.name == name_1)) == [d1]
+    assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
 
 
 def test_get_data_row_for_external_id(dataset, rand_gen, image_url):
@@ -135,46 +142,6 @@ def test_bulk_conversation(dataset, sample_bulk_conversation: list) -> None:
     task.wait_till_done()
 
     assert len(list(dataset.data_rows())) == len(sample_bulk_conversation)
-
-
-def test_data_row_export(dataset, image_url):
-    n_data_rows = 5
-    ids = set()
-    for _ in range(n_data_rows):
-        ids.add(dataset.create_data_row(row_data=image_url))
-    result = list(dataset.export_data_rows())
-    assert len(result) == n_data_rows
-    assert set(result) == ids
-
-
-@pytest.mark.parametrize('data_rows', [5], indirect=True)
-def test_dataset_export_v2(export_v2_test_helpers, dataset, data_rows):
-    data_row_ids = [dr.uid for dr in data_rows]
-    params = {"performance_details": False, "label_details": False}
-    task_results = export_v2_test_helpers.run_dataset_export_v2_task(
-        dataset, params=params)
-    assert len(task_results) == 5
-    assert set([dr['data_row']['id'] for dr in task_results
-               ]) == set(data_row_ids)
-
-
-@pytest.mark.parametrize('data_rows', [5], indirect=True)
-def test_dataset_export_v2_datarow_list(export_v2_test_helpers, dataset,
-                                        data_rows):
-    datarow_filter_size = 2
-    data_row_ids = [dr.uid for dr in data_rows]
-
-    params = {"performance_details": False, "label_details": False}
-    filters = {"data_row_ids": data_row_ids[:datarow_filter_size]}
-
-    task_results = export_v2_test_helpers.run_dataset_export_v2_task(
-        dataset, filters=filters, params=params)
-
-    # only 2 datarows should be exported
-    assert len(task_results) == datarow_filter_size
-    # only filtered datarows should be exported
-    assert set([dr['data_row']['id'] for dr in task_results
-               ]) == set(data_row_ids[:datarow_filter_size])
 
 
 def test_create_descriptor_file(dataset):

@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from labelbox import Client, MediaType
-from labelbox import LabelingFrontend
+from labelbox import LabelingFrontend, Dataset
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
@@ -22,6 +22,7 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
+SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 5
 
@@ -248,11 +249,25 @@ def unique_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def data_row(dataset, image_url):
+def small_dataset(dataset: Dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": SMALL_DATASET_URL,
+            "external_id": "my-image"
+        },
+    ] * 2)
+    task.wait_till_done()
+
+    yield dataset
+
+
+@pytest.fixture
+def data_row(dataset, image_url, rand_gen):
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
-            "external_id": "my-image"
+            "external_id": "my-image",
+            "global_key": f"global-key-{rand_gen(str)}"
         },
     ])
     task.wait_till_done()
@@ -419,8 +434,7 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 
 @pytest.fixture
-def configured_batch_project_with_label(client, rand_gen, image_url, project,
-                                        dataset, data_row,
+def configured_batch_project_with_label(project, dataset, data_row,
                                         wait_for_label_processing):
     """Project with a batch having one datarow
     Project contains an ontology with 1 bbox tool

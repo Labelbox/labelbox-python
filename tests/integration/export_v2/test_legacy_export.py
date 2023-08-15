@@ -1,8 +1,14 @@
 import uuid
 import datetime
+import time
+import requests
+import pytest
 
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
 from labelbox.schema.annotation_import import LabelImport
+from labelbox import Dataset, Project
+
+IMAGE_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 
 
 def test_export_annotations_nested_checklist(
@@ -151,3 +157,84 @@ def test_export_filtered_activity(client,
         last_activity_end=(datetime.datetime.now() -
                            datetime.timedelta(days=1)).strftime("%Y-%m-%d"))
     assert len(empty_export) == 0
+
+
+def test_export_data_rows(project: Project, dataset: Dataset):
+    n_data_rows = 2
+    task = dataset.create_data_rows([
+        {
+            "row_data": IMAGE_URL,
+            "external_id": "my-image"
+        },
+    ] * n_data_rows)
+    task.wait_till_done()
+
+    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    batch = project.create_batch("batch test", data_rows)
+
+    result = list(batch.export_data_rows())
+    exported_data_rows = [dr.uid for dr in result]
+
+    assert len(result) == n_data_rows
+    assert set(data_rows) == set(exported_data_rows)
+
+
+def test_queued_data_row_export(configured_project):
+    result = configured_project.export_queued_data_rows()
+    assert len(result) == 1
+
+
+def test_label_export(configured_project_with_label):
+    project, _, _, label = configured_project_with_label
+    label_id = label.uid
+    # Wait for exporter to retrieve latest labels
+    time.sleep(10)
+
+    # TODO: Move to export_v2
+    exported_labels_url = project.export_labels()
+    assert exported_labels_url is not None
+    exported_labels = requests.get(exported_labels_url)
+    labels = [example['ID'] for example in exported_labels.json()]
+    assert labels[0] == label_id
+    #TODO: Add test for bulk export back.
+    # The new exporter doesn't work with the create_label mutation
+
+
+def test_issues_export(project):
+    exported_issues_url = project.export_issues()
+    assert exported_issues_url
+
+    exported_issues_url = project.export_issues("Open")
+    assert exported_issues_url
+    assert "?status=Open" in exported_issues_url
+
+    exported_issues_url = project.export_issues("Resolved")
+    assert exported_issues_url
+    assert "?status=Resolved" in exported_issues_url
+
+    invalidStatusValue = "Closed"
+    with pytest.raises(ValueError) as exc_info:
+        exported_issues_url = project.export_issues(invalidStatusValue)
+    assert "status must be in" in str(exc_info.value)
+    assert "Found %s" % (invalidStatusValue) in str(exc_info.value)
+
+
+def test_dataset_export(dataset, image_url):
+    n_data_rows = 2
+    ids = set()
+    for _ in range(n_data_rows):
+        ids.add(dataset.create_data_row(row_data=image_url))
+    result = list(dataset.export_data_rows())
+    assert len(result) == n_data_rows
+    assert set(result) == ids
+
+
+def test_data_row_export_with_empty_media_attributes(
+        client, configured_project_with_label, wait_for_data_row_processing):
+    project, _, data_row, _ = configured_project_with_label
+    data_row = wait_for_data_row_processing(client, data_row)
+    labels = list(project.label_generator())
+    assert len(
+        labels
+    ) == 1, "Label export job unexpectedly returned an empty result set`"
+    assert labels[0].data.media_attributes == {}

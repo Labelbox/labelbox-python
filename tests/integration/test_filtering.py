@@ -5,12 +5,28 @@ from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.queue_mode import QueueMode
 
 
+@pytest.fixture
+def project_to_test_where(client, rand_gen):
+    p_a_name = f"a-{rand_gen(str)}"
+    p_b_name = f"b-{rand_gen(str)}"
+    p_c_name = f"c-{rand_gen(str)}"
+
+    p_a = client.create_project(name=p_a_name, queue_mode=QueueMode.Batch)
+    p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
+    p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
+
+    yield p_a, p_b, p_c
+
+    p_a.delete()
+    p_b.delete()
+    p_c.delete()
+
+
 # Avoid assertions using equality to prevent intermittent failures due to
 # other builds simultaneously adding projects to test org
-def test_where(client, image_url, rand_gen):
-    p_a = client.create_project(name="a", queue_mode=QueueMode.Batch)
-    p_b = client.create_project(name="b", queue_mode=QueueMode.Batch)
-    p_c = client.create_project(name="c", queue_mode=QueueMode.Batch)
+def test_where(client, image_url, project_to_test_where, rand_gen):
+    p_a, p_b, p_c = project_to_test_where
+    p_a_name, p_b_name, p_c_name = [p.name for p in [p_a, p_b, p_c]]
 
     def _get(f, where=None):
         date_where = Project.created_at >= p_a.created_at
@@ -21,17 +37,17 @@ def test_where(client, image_url, rand_gen):
         return _get(client.get_projects, where)
 
     assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
-    e_a = get(Project.name == "a")
+    e_a = get(Project.name == p_a_name)
     assert p_a.uid in e_a and p_b.uid not in e_a and p_c.uid not in e_a
-    not_b = get(Project.name != "b")
+    not_b = get(Project.name != p_b_name)
     assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
-    gt_b = get(Project.name > "b")
+    gt_b = get(Project.name > p_b_name)
     assert p_c.uid in gt_b and p_a.uid not in gt_b and p_b.uid not in gt_b
-    lt_b = get(Project.name < "b")
+    lt_b = get(Project.name < p_b_name)
     assert p_a.uid in lt_b and p_b.uid not in lt_b and p_c.uid not in lt_b
-    ge_b = get(Project.name >= "b")
+    ge_b = get(Project.name >= p_b_name)
     assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
-    le_b = get(Project.name <= "b")
+    le_b = get(Project.name <= p_b_name)
     assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
     dataset = client.create_dataset(name="Dataset")
@@ -47,23 +63,20 @@ def test_where(client, image_url, rand_gen):
         return _get(batch.project, where)
 
     assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
-    e_a = get(Project.name == "a")
+    e_a = get(Project.name == p_a_name)
     assert p_a.uid in e_a and p_b.uid not in e_a and p_c.uid not in e_a
-    not_b = get(Project.name != "b")
+    not_b = get(Project.name != p_b_name)
     assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
-    gt_b = get(Project.name > "b")
+    gt_b = get(Project.name > p_b_name)
     assert p_c.uid in gt_b and p_a.uid not in gt_b and p_b.uid not in gt_b
-    lt_b = get(Project.name < "b")
+    lt_b = get(Project.name < p_b_name)
     assert p_a.uid in lt_b and p_b.uid not in lt_b and p_c.uid not in lt_b
-    ge_b = get(Project.name >= "b")
+    ge_b = get(Project.name >= p_b_name)
     assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
-    le_b = get(Project.name <= "b")
+    le_b = get(Project.name <= p_b_name)
     assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
 
     batch.delete()
-    p_a.delete()
-    p_b.delete()
-    p_c.delete()
 
 
 def test_unsupported_where(client):

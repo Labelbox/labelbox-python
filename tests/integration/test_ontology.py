@@ -5,6 +5,8 @@ from labelbox.orm.model import Entity
 import json
 import time
 
+from labelbox.schema.queue_mode import QueueMode
+
 
 def test_feature_schema_is_not_archived(client, ontology):
     feature_schema_to_check = ontology.normalized['tools'][0]
@@ -85,6 +87,7 @@ def test_deletes_an_ontology(client):
 
 def test_cant_delete_an_ontology_with_project(client):
     project = client.create_project(name="test project",
+                                    queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized['featureSchemaId']
@@ -155,6 +158,7 @@ def test_does_not_include_used_ontologies(client):
         feature_schema_ids=[feature_schema_id],
         media_type=MediaType.Image)
     project = client.create_project(name="test project",
+                                    queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
     project.setup_editor(ontology_with_project)
     unused_ontologies = client.get_unused_ontologies()

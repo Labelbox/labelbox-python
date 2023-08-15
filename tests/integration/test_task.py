@@ -66,6 +66,7 @@ def test_task_success_json(dataset, image_url, snapshot):
 
 def test_task_success_label_export(client, configured_project_with_label):
     project, _, _, _ = configured_project_with_label
+    # TODO: Move to export_v2
     project.export_labels()
     user = client.get_user()
     task = None

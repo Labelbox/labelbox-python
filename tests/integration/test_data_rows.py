@@ -201,7 +201,8 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     url = ({data_row.row_data for data_row in data_rows} - {image_url}).pop()
     assert requests.get(url).content == data
 
-    data_rows[0].delete()
+    for dr in data_rows:
+        dr.delete()
 
 
 @pytest.mark.slow
@@ -475,19 +476,26 @@ def test_create_data_rows_with_named_metadata_field_class(
         CUSTOM_TEXT_SCHEMA_NAME].uid
 
 
-def test_create_data_rows_with_invalid_metadata(dataset, image_url):
+def test_create_data_rows_with_invalid_metadata(dataset, image_url,
+                                                is_adv_enabled):
     fields = make_metadata_fields()
     # make the payload invalid by providing the same schema id more than once
     fields.append(
-        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
+        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value="some msg"))
 
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
         DataRow.metadata_fields: fields
     }])
-    task.wait_till_done()
-    assert task.status == "FAILED"
-    assert len(task.failed_data_rows) > 0
+    task.wait_till_done(timeout_seconds=60)
+    if is_adv_enabled:
+        assert task.status == "COMPLETE"
+        assert len(task.failed_data_rows) == 1
+        assert f"A schemaId can only be specified once per DataRow : [{TEXT_SCHEMA_ID}]" in task.failed_data_rows[
+            0]["message"]
+    else:
+        assert task.status == "FAILED"
+        assert len(task.failed_data_rows) > 0
 
 
 def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
@@ -589,13 +597,23 @@ def test_data_row_filtering_sorting(dataset, image_url):
     assert row2.external_id == "row2"
 
 
-def test_data_row_deletion(dataset, image_url):
+@pytest.fixture
+def create_datarows_for_data_row_deletion(dataset, image_url):
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
         DataRow.external_id: str(i)
     } for i in range(10)])
     task.wait_till_done()
 
+    data_rows = list(dataset.data_rows())
+
+    yield data_rows
+    for dr in data_rows:
+        dr.delete()
+
+
+def test_data_row_deletion(dataset, create_datarows_for_data_row_deletion):
+    create_datarows_for_data_row_deletion
     data_rows = list(dataset.data_rows())
     expected = set(map(str, range(10)))
     assert {dr.external_id for dr in data_rows} == expected
@@ -983,7 +1001,7 @@ def test_invalid_media_type(dataset, conversational_content):
 def test_create_tiled_layer(dataset, tile_content):
     examples = [
         {
-            **tile_content, 'media_type': 'TMS_SIMPLE'
+            **tile_content, 'media_type': 'TMS_GEO'
         },
         tile_content,
         # Old way to check for backwards compatibility
@@ -1019,23 +1037,3 @@ def test_create_data_row_with_media_type(dataset, image_url, is_adv_enabled):
             exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
-
-
-def test_export_data_rows(client, data_row, wait_for_data_row_processing):
-    # Ensure created data rows are indexed
-    data_row = wait_for_data_row_processing(client, data_row)
-    time.sleep(7)  # temp fix for ES indexing delay
-
-    task = DataRow.export_v2(client=client, data_rows=[data_row])
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
-    assert len(task.result) == 1
-    assert task.result[0]['data_row']['id'] == data_row.uid
-
-    task = DataRow.export_v2(client=client, data_rows=[data_row.uid])
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    assert task.errors is None
-    assert len(task.result) == 1
-    assert task.result[0]['data_row']['id'] == data_row.uid
