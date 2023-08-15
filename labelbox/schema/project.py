@@ -789,8 +789,8 @@ class Project(DbObject, Updateable, Deletable):
     ) -> CreateBatchesTask:
         """
         Creates batches for a project from a list of data rows. One of `global_keys` or `data_rows` must be provided,
-        but not both. There is no limit on the number of data rows that may be specified, but the specific batch
-        that each data row will be placed in is undefined.
+        but not both. When more than 100k data rows are specified and thus multiple batches are needed, the specific
+        batch that each data row will be placed in is undefined.
 
         Batches will be created with the specified name prefix and a unique suffix. The suffix will be a 4-digit
         number starting at 0000. For example, if the name prefix is "batch" and 3 batches are created, the names
@@ -869,8 +869,11 @@ class Project(DbObject, Updateable, Deletable):
         consensus_settings: Optional[Dict[str,
                                           float]] = None) -> CreateBatchesTask:
         """
-        Creates batches for a project from a dataset. There is no limit on the number of data rows that may be
-        specified, but the specific batch that each data row will be placed in is undefined.
+        Creates batches for a project from a dataset, selecting only the data rows that are not already added to the
+        project. When the dataset contains more than 100k data rows and multiple batches are needed, the specific batch
+        that each data row will be placed in is undefined. Note that data rows may not be immediately available for a
+        project after being added to a dataset; use the `_wait_until_data_rows_are_processed` method to ensure that
+        data rows are available before creating batches.
 
         Batches will be created with the specified name prefix and a unique suffix. The suffix will be a 4-digit
         number starting at 0000. For example, if the name prefix is "batch" and 3 batches are created, the names
