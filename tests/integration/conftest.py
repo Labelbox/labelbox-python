@@ -21,6 +21,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
+from labelbox.schema.project import Project
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
@@ -425,16 +426,21 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
+    start_time = time.time()
+    project._wait_until_data_rows_are_processed(data_row_ids=[data_row.uid],
+                                                sleep_interval=3)
 
     project.create_batch(
         rand_gen(str),
         [data_row.uid],  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
     )
+    print("create_batch took: ", time.time() - start_time)
     ontology = _setup_ontology(project)
+    print("setup ontology took: ", time.time() - start_time)
     label = _create_label(project, data_row, ontology,
                           wait_for_label_processing)
-
+    print("create_label took: ", time.time() - start_time)
     yield [project, dataset, data_row, label]
 
     for label in project.labels():
@@ -817,11 +823,13 @@ def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task.wait_till_done()
 
 
+@pytest.mark.skipif("FIXTURE_PROFILE" not in os.environ)
 def pytest_configure():
     pytest.report = defaultdict(int)
     pytest.data_row_report = {'times': 0, 'num_rows': 0}
 
 
+@pytest.mark.skipif("FIXTURE_PROFILE" not in os.environ)
 @pytest.hookimpl(hookwrapper=True)
 def pytest_fixture_setup(fixturedef, request):
     start = time.time()
@@ -832,11 +840,8 @@ def pytest_fixture_setup(fixturedef, request):
     exec_time = end - start
     pytest.report[fixturedef.argname] += exec_time
 
-    # print('pytest_fixture_setup'
-    #       f', request={request}'
-    #       f', create_data_row_time={end - start}')
 
-
+@pytest.mark.skipif("FIXTURE_PROFILE" not in os.environ)
 @pytest.fixture(scope='session', autouse=True)
 def print_perf_summary():
     yield

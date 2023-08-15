@@ -297,7 +297,7 @@ def configured_project_with_ontology(client, initial_dataset, ontology,
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen):
+def configured_project_with_one_data_row(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
                                     queue_mode=QueueMode.Batch)

@@ -211,7 +211,7 @@ def annotations_by_data_type_v2(
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def ontology():
     bbox_tool_with_nested_text = {
         'required':
@@ -479,23 +479,6 @@ def wait_for_label_processing():
 
 
 @pytest.fixture
-def initial_dataset(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
-    yield dataset
-    dataset.delete()
-
-
-@pytest.fixture
-def hardcoded_datarow_id():
-    data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
-
-    def get_data_row_id(indx=0):
-        return data_row_id
-
-    yield get_data_row_id
-
-
-@pytest.fixture
 def configured_project_datarow_id(configured_project):
 
     def get_data_row_id(indx=0):
@@ -505,22 +488,36 @@ def configured_project_datarow_id(configured_project):
 
 
 @pytest.fixture
-def configured_project(configured_project_without_data_rows, initial_dataset,
-                       ontology, rand_gen, image_url):
+def configured_project_one_datarow_id(configured_project_with_one_data_row):
+
+    def get_data_row_id(indx=0):
+        return configured_project_with_one_data_row.data_row_ids[0]
+
+    yield get_data_row_id
+
+
+@pytest.fixture
+def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     start_time = time.time()
     dataset = initial_dataset
-    project = configured_project_without_data_rows
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch)
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    project.setup(editor, ontology)
+    num_rows = 0
 
     data_row_ids = []
-    # print("Before creating data rows ", time.time() - start_time)
-    num_rows = 0
+
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
         num_rows += 1
-    # print("After creating data rows ", time.time() - start_time)
-
-    pytest.data_row_report['times'] += time.time() - start_time
-    pytest.data_row_report['num_rows'] += num_rows
+    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
+                                                sleep_interval=3)
+    if pytest.data_row_report:
+        pytest.data_row_report['times'] += time.time() - start_time
+        pytest.data_row_report['num_rows'] += num_rows
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
@@ -580,7 +577,10 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen):
+def configured_project_with_one_data_row(client, ontology, rand_gen,
+                                         initial_dataset, image_url):
+    start_time = time.time()
+
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
@@ -588,7 +588,25 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
+
+    data_row = initial_dataset.create_data_row(row_data=image_url)
+    data_row_ids = [data_row.uid]
+    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
+                                                sleep_interval=3)
+
+    if pytest.data_row_report:
+        pytest.data_row_report['times'] += time.time() - start_time
+        pytest.data_row_report['num_rows'] += 1
+    batch = project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = data_row_ids
+
     yield project
+
+    batch.delete()
     project.delete()
 
 
@@ -597,16 +615,20 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
 # In an example of a 'rectangle' we have extended to support multiple instances of the same tool type
 # TODO: we will support this approach in the future for all tools
 @pytest.fixture
-def prediction_id_mapping(configured_project_without_data_rows, ontology,
-                          request):
+def prediction_id_mapping(ontology, request):
     # Maps tool types to feature schema ids
     if 'configured_project' in request.fixturenames:
         data_row_id_factory = request.getfixturevalue(
             'configured_project_datarow_id')
-        project = configured_project
-    else:
+        project = request.getfixturevalue('configured_project')
+    elif 'hardcoded_datarow_id' in request.fixturenames:
         data_row_id_factory = request.getfixturevalue('hardcoded_datarow_id')
-        project = configured_project_without_data_rows
+        project = request.getfixturevalue('configured_project_with_ontology')
+    else:
+        data_row_id_factory = request.getfixturevalue(
+            'configured_project_one_datarow_id')
+        project = request.getfixturevalue(
+            'configured_project_with_one_data_row')
 
     ontology = project.ontology().normalized
 
@@ -640,46 +662,6 @@ def prediction_id_mapping(configured_project_without_data_rows, ontology,
                 "name": tool['name'],
                 "dataRow": {
                     "id": data_row_id_factory(idx),
-                },
-                'tool': tool
-            }
-    return result
-
-
-@pytest.fixture
-def prediction_id_mapping_datarow_id():
-    # Maps tool types to feature schema ids
-    data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
-    result = {}
-
-    for _, tool in enumerate(ontology['tools'] + ontology['classifications']):
-        if 'tool' in tool:
-            tool_type = tool['tool']
-        else:
-            tool_type = tool[
-                'type'] if 'scope' not in tool else f"{tool['type']}_{tool['scope']}"  # so 'checklist' of 'checklist_index'
-
-        # TODO: remove this once we have a better way to associate multiple tools instances with a single tool type
-        if tool_type == 'rectangle':
-            value = {
-                "uuid": str(uuid.uuid4()),
-                "schemaId": tool['featureSchemaId'],
-                "name": tool['name'],
-                "dataRow": {
-                    "id": data_row_id,
-                },
-                'tool': tool
-            }
-            if tool_type not in result:
-                result[tool_type] = []
-            result[tool_type].append(value)
-        else:
-            result[tool_type] = {
-                "uuid": str(uuid.uuid4()),
-                "schemaId": tool['featureSchemaId'],
-                "name": tool['name'],
-                "dataRow": {
-                    "id": data_row_id,
                 },
                 'tool': tool
             }
@@ -1079,7 +1061,6 @@ def model_run_with_training_metadata(rand_gen, model):
 @pytest.fixture
 def model_run_with_data_rows(client, configured_project, model_run_predictions,
                              model_run, wait_for_label_processing):
-    start_time = time.time()
     configured_project.enable_model_assisted_labeling()
 
     upload_task = LabelImport.create_from_objects(
@@ -1093,7 +1074,6 @@ def model_run_with_data_rows(client, configured_project, model_run_predictions,
     labels = wait_for_label_processing(configured_project)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)
-    print(f"model_run_with_data_rows: {time.time() - start_time}")
     yield model_run
     model_run.delete()
     # TODO: Delete resources when that is possible ..
