@@ -854,8 +854,7 @@ class Project(DbObject, Updateable, Deletable):
         }
 
         tasks = self.client.execute(
-            mutation_str, params, timeout=180.0,
-            experimental=True)["project"][method]["tasks"]
+            mutation_str, params, experimental=True)["project"][method]["tasks"]
         batch_ids = [task["batchUuid"] for task in tasks]
         task_ids = [task["taskId"] for task in tasks]
 
@@ -923,8 +922,7 @@ class Project(DbObject, Updateable, Deletable):
         }
 
         tasks = self.client.execute(
-            mutation_str, params, timeout=180.0,
-            experimental=True)["project"][method]["tasks"]
+            mutation_str, params, experimental=True)["project"][method]["tasks"]
 
         batch_ids = [task["batchUuid"] for task in tasks]
         task_ids = [task["taskId"] for task in tasks]

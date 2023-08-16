@@ -1,7 +1,15 @@
 import json
-from typing import List, Optional, Dict, Any
+from typing import TYPE_CHECKING, Callable, List, Optional, Dict, Any
 
 from labelbox.orm.model import Entity
+
+if TYPE_CHECKING:
+    from labelbox import User
+
+    def lru_cache() -> Callable[..., Callable[..., Dict[str, Any]]]:
+        pass
+else:
+    from functools import lru_cache
 
 
 class CreateBatchesTask:
@@ -45,6 +53,7 @@ class CreateBatchesTask:
 
         return errors
 
+    @lru_cache()
     def result(self):
         """
         Returns the batches created by the task.
