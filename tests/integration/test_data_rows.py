@@ -980,7 +980,7 @@ def test_create_conversational_text(dataset, conversational_content):
             data_row.row_data).json() == conversational_content['row_data']
 
 
-def test_invalid_media_type(dataset, conversational_content):
+def test_invalid_media_type(dataset, conversational_content, is_adv_enabled):
     for error_message, invalid_media_type in [[
             "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
     ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
@@ -988,8 +988,12 @@ def test_invalid_media_type(dataset, conversational_content):
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(labelbox.exceptions.InvalidQueryError):
             dataset.create_data_rows_sync([{
-                **conversational_content, 'media_type': invalid_media_type
+                **conversational_content, 'media_type': 'IMAGE'
             }])
+
+        if is_adv_enabled:
+            # ADV does not take media type hint into account for async import requests
+            continue
 
         task = dataset.create_data_rows([{
             **conversational_content, 'media_type': invalid_media_type
