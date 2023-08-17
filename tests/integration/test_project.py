@@ -228,7 +228,7 @@ def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project.create_batch(batch_name, global_keys=global_keys)
-    # allow time for catapult to sync changes to ES
+    # give some time for the data ingestion system to finish processing the batch creation
     time.sleep(5)
     # TODO: Move to export_v2
     batch_data_rows = set(batch.export_data_rows())
@@ -240,6 +240,8 @@ def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project._create_batch_async(batch_name, global_keys=global_keys)
+    # give some time for the data ingestion system to finish processing the batch creation
+    time.sleep(5)
     # TODO: Move to export_v2
     batch_data_rows = set(batch.export_data_rows())
     assert batch_data_rows == set(data_rows)
