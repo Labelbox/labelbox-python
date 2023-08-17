@@ -1,53 +1,22 @@
 import time
+from typing import List
+from uuid import uuid4
+
 import pytest
 
-from uuid import uuid4
 from labelbox import Dataset, Project
 from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, ResourceConflict, LabelboxError
-
-IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
-EXTERNAL_ID = "my-image"
+from integration.conftest import upload_invalid_data_rows_for_dataset, IMAGE_URL, EXTERNAL_ID
 
 
 def get_data_row_ids(ds: Dataset):
     return [dr.uid for dr in list(ds.export_data_rows())]
 
 
-@pytest.fixture
-def big_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": IMAGE_URL,
-            "external_id": EXTERNAL_ID
-        },
-    ] * 3)
-    task.wait_till_done()
-
-    yield dataset
-
-
-@pytest.fixture(scope='function')
-def dataset_with_invalid_data_rows(unique_dataset: Dataset):
-    upload_invalid_data_rows_for_dataset(unique_dataset)
-
-    yield unique_dataset
-
-
-def upload_invalid_data_rows_for_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": 'gs://invalid-bucket/example.png',  # forbidden
-            "external_id": "image-without-access.jpg"
-        },
-    ] * 2)
-    task.wait_till_done()
-
-
-def test_create_batch(project: Project, big_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch = project.create_batch("test-batch", data_rows, 3)
+def test_create_batch(project: Project, big_dataset_data_row_ids: List[str]):
+    batch = project.create_batch("test-batch", big_dataset_data_row_ids, 3)
     assert batch.name == "test-batch"
-    assert batch.size == len(data_rows)
+    assert batch.size == len(big_dataset_data_row_ids)
 
 
 def test_create_batch_with_invalid_data_rows_ids(project: Project):
@@ -125,11 +94,13 @@ def test_create_batch_with_float_number_priority(project: Project,
                              priority=4.9)
 
 
-def test_create_batch_async(project: Project, big_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch = project._create_batch_async("big-batch", data_rows, priority=3)
+def test_create_batch_async(project: Project,
+                            big_dataset_data_row_ids: List[str]):
+    batch = project._create_batch_async("big-batch",
+                                        big_dataset_data_row_ids,
+                                        priority=3)
     assert batch.name == "big-batch"
-    assert batch.size == len(data_rows)
+    assert batch.size == len(big_dataset_data_row_ids)
 
 
 def test_create_batch_with_consensus_settings(project: Project,

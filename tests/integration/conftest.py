@@ -5,13 +5,13 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
-from typing import Type
+from typing import Type, List
 
 import pytest
 import requests
 
-from labelbox import Client, MediaType
-from labelbox import LabelingFrontend, Dataset
+from labelbox import Client, Dataset
+from labelbox import LabelingFrontend
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
@@ -768,3 +768,42 @@ def is_adv_enabled(client) -> bool:
     query_str = "query IsAdvEnabledPyApi { user { isAdvEnabled } }"
     response = client.execute(query_str)
     return bool(response['user']['isAdvEnabled'])
+
+
+IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+EXTERNAL_ID = "my-image"
+
+
+@pytest.fixture
+def big_dataset(dataset: Dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": IMAGE_URL,
+            "external_id": EXTERNAL_ID
+        },
+    ] * 3)
+    task.wait_till_done()
+
+    yield dataset
+
+
+@pytest.fixture
+def big_dataset_data_row_ids(big_dataset: Dataset) -> List[str]:
+    yield [dr.uid for dr in list(big_dataset.export_data_rows())]
+
+
+@pytest.fixture(scope='function')
+def dataset_with_invalid_data_rows(unique_dataset: Dataset):
+    upload_invalid_data_rows_for_dataset(unique_dataset)
+
+    yield unique_dataset
+
+
+def upload_invalid_data_rows_for_dataset(dataset: Dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": 'gs://invalid-bucket/example.png',  # forbidden
+            "external_id": "image-without-access.jpg"
+        },
+    ] * 2)
+    task.wait_till_done()
