@@ -1,4 +1,5 @@
 import time
+from typing import List
 from uuid import uuid4
 
 import pytest
@@ -12,11 +13,10 @@ def get_data_row_ids(ds: Dataset):
     return [dr.uid for dr in list(ds.export_data_rows())]
 
 
-def test_create_batch(project: Project, big_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch = project.create_batch("test-batch", data_rows, 3)
+def test_create_batch(project: Project, big_dataset_data_row_ids: List[str]):
+    batch = project.create_batch("test-batch", big_dataset_data_row_ids, 3)
     assert batch.name == "test-batch"
-    assert batch.size == len(data_rows)
+    assert batch.size == len(big_dataset_data_row_ids)
 
 
 def test_create_batch_with_invalid_data_rows_ids(project: Project):
@@ -94,11 +94,13 @@ def test_create_batch_with_float_number_priority(project: Project,
                              priority=4.9)
 
 
-def test_create_batch_async(project: Project, big_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
-    batch = project._create_batch_async("big-batch", data_rows, priority=3)
+def test_create_batch_async(project: Project,
+                            big_dataset_data_row_ids: List[str]):
+    batch = project._create_batch_async("big-batch",
+                                        big_dataset_data_row_ids,
+                                        priority=3)
     assert batch.name == "big-batch"
-    assert batch.size == len(data_rows)
+    assert batch.size == len(big_dataset_data_row_ids)
 
 
 def test_create_batch_with_consensus_settings(project: Project,

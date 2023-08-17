@@ -5,7 +5,7 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
-from typing import Type
+from typing import Type, List
 
 import pytest
 import requests
@@ -785,6 +785,11 @@ def big_dataset(dataset: Dataset):
     task.wait_till_done()
 
     yield dataset
+
+
+@pytest.fixture
+def big_dataset_data_row_ids(big_dataset: Dataset) -> List[str]:
+    yield [dr.uid for dr in list(big_dataset.export_data_rows())]
 
 
 @pytest.fixture(scope='function')
