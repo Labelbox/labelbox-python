@@ -116,7 +116,8 @@ def test_long_global_key_validation(client, dataset, image_url):
         'error'] == 'Invalid assignment. Either DataRow does not exist, or globalKey is invalid'
 
 
-def test_global_key_with_whitespaces_validation(client, dataset, image_url):
+def test_global_key_with_whitespaces_validation(client, dataset, image_url,
+                                                is_adv_enabled):
     dr_1 = dataset.create_data_row(row_data=image_url)
     dr_2 = dataset.create_data_row(row_data=image_url)
     dr_3 = dataset.create_data_row(row_data=image_url)
@@ -137,19 +138,27 @@ def test_global_key_with_whitespaces_validation(client, dataset, image_url):
     }]
     res = client.assign_global_keys_to_data_rows(assignment_inputs)
 
-    assert len(res['results']) == 0
-    assert len(res['errors']) == 3
-    assert res['status'] == 'FAILURE'
-    assign_errors_ids = set([e['data_row_id'] for e in res['errors']])
-    assign_errors_gks = set([e['global_key'] for e in res['errors']])
-    assign_errors_msgs = set([e['error'] for e in res['errors']])
-    assert assign_errors_ids == set([dr_1.uid, dr_2.uid, dr_3.uid])
-    assert assign_errors_gks == set([gk_1, gk_2, gk_3])
-    assert assign_errors_msgs == set([
-        'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',
-        'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',
-        'Invalid assignment. Either DataRow does not exist, or globalKey is invalid'
-    ])
+    if is_adv_enabled:
+        assert res['status'] == 'PARTIAL SUCCESS'
+        assert len(res['results']) == 2
+        assert len(res['errors']) == 1
+        assert res['errors'][0]['global_key'] == gk_3
+        assert res['errors'][0][
+            'error'] == "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
+    else:
+        assert len(res['results']) == 0
+        assert len(res['errors']) == 3
+        assert res['status'] == 'FAILURE'
+        assign_errors_ids = set([e['data_row_id'] for e in res['errors']])
+        assign_errors_gks = set([e['global_key'] for e in res['errors']])
+        assign_errors_msgs = set([e['error'] for e in res['errors']])
+        assert assign_errors_ids == set([dr_1.uid, dr_2.uid, dr_3.uid])
+        assert assign_errors_gks == set([gk_1, gk_2, gk_3])
+        assert assign_errors_msgs == set([
+            'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',
+            'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',
+            'Invalid assignment. Either DataRow does not exist, or globalKey is invalid'
+        ])
 
 
 def test_get_data_row_ids_for_global_keys(client, dataset, image_url):
