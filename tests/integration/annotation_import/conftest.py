@@ -505,13 +505,11 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
-    num_rows = 0
 
     data_row_ids = []
 
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
-        num_rows += 1
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
 
@@ -605,6 +603,22 @@ def configured_project_with_one_data_row(client, ontology, rand_gen,
 # At the moment it expects only one feature per tool type and this creates unnecessary coupling between differet tests
 # In an example of a 'rectangle' we have extended to support multiple instances of the same tool type
 # TODO: we will support this approach in the future for all tools
+#
+"""
+Please note that this fixture now offers the flexibility to configure three different strategies for generating data row ids for predictions:
+Default(configured_project fixture):
+    configured_project that generates a data row for each member of ontology.
+    This makes sure each prediction has its own data row id. This is applicable to prediction upload cases when last label overwrites existing ones
+
+Optimized Strategy (configured_project_with_one_data_row fixture):
+    This fixture has only one data row and all predictions will be mapped to it
+
+Custom Data Row IDs Strategy:
+    Individuals can create their own fixture to supply data row ids. 
+    This particular fixture, termed "hardcoded_datarow_id," should be defined locally within a test file.
+"""
+
+
 @pytest.fixture
 def prediction_id_mapping(ontology, request):
     # Maps tool types to feature schema ids
