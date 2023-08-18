@@ -137,7 +137,8 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
 ])
 def test_import_data_types(client, configured_project, initial_dataset,
                            rand_gen, data_row_json_by_data_type,
-                           annotations_by_data_type, data_type_class):
+                           annotations_by_data_type, data_type_class,
+                           one_datarow):
 
     project = configured_project
     project_id = project.uid
@@ -304,14 +305,22 @@ def test_import_label_annotations(client, configured_project_with_one_data_row,
 
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
-def test_import_mal_annotations(client, configured_project_with_one_data_row,
-                                data_row_json_by_data_type, data_type,
-                                data_class, annotations, rand_gen):
-
+@pytest.fixture
+def one_datarow(client, rand_gen, data_row_json_by_data_type, data_type):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_json = data_row_json_by_data_type[data_type]
     data_row = dataset.create_data_row(data_row_json)
 
+    yield data_row
+
+    dataset.delete()
+
+
+@pytest.mark.parametrize('data_type, data_class, annotations', test_params)
+def test_import_mal_annotations(client, configured_project_with_one_data_row,
+                                data_type, data_class, annotations, rand_gen,
+                                one_datarow):
+    data_row = one_datarow
     set_project_media_type_from_data_type(configured_project_with_one_data_row,
                                           data_class)
 

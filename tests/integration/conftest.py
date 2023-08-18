@@ -390,6 +390,8 @@ def initial_dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
 
+    dataset.delete()
+
 
 @pytest.fixture
 def project_with_ontology(project):
