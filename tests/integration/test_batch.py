@@ -157,8 +157,6 @@ def test_archive_batch(project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     batch = project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
-    # give some time for the data ingestion system to finish processing the batch creation
-    time.sleep(5)
     exported_data_rows = list(batch.export_data_rows())
 
     assert len(exported_data_rows) == 0
@@ -242,8 +240,6 @@ def test_export_data_rows(project: Project, dataset: Dataset):
 
     data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
     batch = project.create_batch("batch test", data_rows)
-    # give some time for the data ingestion system to finish processing the batch creation
-    time.sleep(5)
     result = list(batch.export_data_rows())
     exported_data_rows = [dr.uid for dr in result]
 
@@ -311,8 +307,6 @@ def test_delete_labels_with_templates(project: Project, small_dataset: Dataset):
     data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
     batch = project.create_batch("batch to delete labels w templates",
                                  data_rows)
-    # give some time for the data ingestion system to finish processing the batch creation
-    time.sleep(5)
     exported_data_rows = list(batch.export_data_rows())
     res = batch.delete_labels(labels_as_template=True)
     exported_data_rows = list(batch.export_data_rows())
