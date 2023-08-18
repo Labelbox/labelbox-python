@@ -498,7 +498,6 @@ def configured_project_one_datarow_id(configured_project_with_one_data_row):
 
 @pytest.fixture
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
-    start_time = time.time()
     dataset = initial_dataset
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
@@ -515,15 +514,12 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
         num_rows += 1
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
-    if pytest.data_row_report:
-        pytest.data_row_report['times'] += time.time() - start_time
-        pytest.data_row_report['num_rows'] += num_rows
+
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
     )
-    print("After creating batch ", time.time() - start_time)
     project.data_row_ids = data_row_ids
 
     yield project
@@ -579,8 +575,6 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
 @pytest.fixture
 def configured_project_with_one_data_row(client, ontology, rand_gen,
                                          initial_dataset, image_url):
-    start_time = time.time()
-
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
@@ -594,9 +588,6 @@ def configured_project_with_one_data_row(client, ontology, rand_gen,
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
 
-    if pytest.data_row_report:
-        pytest.data_row_report['times'] += time.time() - start_time
-        pytest.data_row_report['num_rows'] += 1
     batch = project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects

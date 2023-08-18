@@ -27,8 +27,6 @@ from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
-DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
-DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 5
 
 
 class Environ(Enum):
@@ -458,10 +456,8 @@ def configured_batch_project_with_label(project, dataset, data_row,
     One label is already created and yielded when using fixture
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_rows,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+    project._wait_until_data_rows_are_processed(data_row_ids=data_rows,
+                                                sleep_interval=3)
     project.create_batch("test-batch", data_rows)
     project.data_row_ids = data_rows
 
@@ -604,7 +600,6 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     project.setup(editor, ontology.asdict())
 
     yield [project, data_row]
-    dataset.delete()
     project.delete()
 
 
@@ -825,35 +820,31 @@ def upload_invalid_data_rows_for_dataset(dataset: Dataset):
     task.wait_till_done()
 
 
-@pytest.mark.skipif("FIXTURE_PROFILE" not in os.environ)
 def pytest_configure():
     pytest.report = defaultdict(int)
-    pytest.data_row_report = {'times': 0, 'num_rows': 0}
 
 
-@pytest.mark.skipif("FIXTURE_PROFILE" not in os.environ)
 @pytest.hookimpl(hookwrapper=True)
-def pytest_fixture_setup(fixturedef, request):
+def pytest_fixture_setup(fixturedef):
     start = time.time()
     yield
-
     end = time.time()
 
     exec_time = end - start
-    pytest.report[fixturedef.argname] += exec_time
+    if "FIXTURE_PROFILE" in os.environ:
+        pytest.report[fixturedef.argname] += exec_time
 
 
-@pytest.mark.skipif("FIXTURE_PROFILE" not in os.environ)
 @pytest.fixture(scope='session', autouse=True)
 def print_perf_summary():
     yield
 
-    sorted_dict = dict(
-        sorted(pytest.report.items(), key=lambda item: item[1], reverse=True))
-    num_of_entries = 10 if len(sorted_dict) >= 10 else len(sorted_dict)
-    slowest_fixtures = [
-        (aaa, sorted_dict[aaa]) for aaa in islice(sorted_dict, num_of_entries)
-    ]
-    print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)
-    print("Data row report:\n", pytest.data_row_report, file=sys.stderr)
-    # assert False
+    if "FIXTURE_PROFILE" in os.environ:
+        sorted_dict = dict(
+            sorted(pytest.report.items(),
+                   key=lambda item: item[1],
+                   reverse=True))
+        num_of_entries = 10 if len(sorted_dict) >= 10 else len(sorted_dict)
+        slowest_fixtures = [(aaa, sorted_dict[aaa])
+                            for aaa in islice(sorted_dict, num_of_entries)]
+        print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)

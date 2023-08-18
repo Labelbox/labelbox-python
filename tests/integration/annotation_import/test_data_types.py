@@ -135,10 +135,15 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData,
     TextData
 ])
-def test_import_data_types(client, configured_project, initial_dataset,
-                           rand_gen, data_row_json_by_data_type,
-                           annotations_by_data_type, data_type_class,
-                           one_datarow):
+def test_import_data_types(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+    data_type_class,
+):
 
     project = configured_project
     project_id = project.uid
