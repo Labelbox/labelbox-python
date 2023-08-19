@@ -929,7 +929,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
         dataset, sample_image, is_adv_enabled):
     global_key_1 = str(uuid.uuid4())
 
-    with pytest.raises(labelbox.exceptions.MalformedQueryException):
+    with pytest.raises(labelbox.exceptions.MalformedQueryException) as exc_info:
         dataset.create_data_rows_sync([{
             DataRow.row_data: sample_image,
             DataRow.global_key: global_key_1
@@ -939,9 +939,11 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
         }])
 
     if is_adv_enabled:
-        # ADV will create the first data row and reject the second
+        # ADV will import the first data row but not the second (duplicate global key)
         assert len(list(dataset.data_rows())) == 1
         assert list(dataset.data_rows())[0].global_key == global_key_1
+        assert "Some data rows were not imported. Check error output here" in str(
+            exc_info.value)
     else:
         assert len(list(dataset.data_rows())) == 0
 
