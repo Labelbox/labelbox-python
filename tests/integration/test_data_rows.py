@@ -941,6 +941,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
     if is_adv_enabled:
         # ADV will import the first data row but not the second (duplicate global key)
         assert len(list(dataset.data_rows())) == 1
+        assert list(dataset.data_rows())[0].global_key == global_key_1
         assert "Some data rows were not imported. Check error output here" in str(
             exc_info.value)
     else:
