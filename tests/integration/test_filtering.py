@@ -24,18 +24,15 @@ def project_to_test_where(client, rand_gen):
 
 # Avoid assertions using equality to prevent intermittent failures due to
 # other builds simultaneously adding projects to test org
-def test_where(client, image_url, project_to_test_where, rand_gen):
+def test_where(client, project_to_test_where):
     p_a, p_b, p_c = project_to_test_where
-    p_a_name, p_b_name, p_c_name = [p.name for p in [p_a, p_b, p_c]]
+    p_a_name, p_b_name, _ = [p.name for p in [p_a, p_b, p_c]]
 
-    def _get(f, where=None):
+    def get(where=None):
         date_where = Project.created_at >= p_a.created_at
         where = date_where if where is None else where & date_where
         return {p.uid for p in client.get_projects(where)}
 
-    def get(where=None):
-        return _get(client.get_projects, where)
-
     assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
     e_a = get(Project.name == p_a_name)
     assert p_a.uid in e_a and p_b.uid not in e_a and p_c.uid not in e_a
@@ -49,34 +46,6 @@ def test_where(client, image_url, project_to_test_where, rand_gen):
     assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
     le_b = get(Project.name <= p_b_name)
     assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
-
-    dataset = client.create_dataset(name="Dataset")
-    data_row = dataset.create_data_row(row_data=image_url)
-    data_row_ids = [data_row.uid]
-    batch = p_a.create_batch(
-        rand_gen(str),
-        data_row_ids,  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
-    )
-
-    def get(where=None):
-        return _get(batch.project, where)
-
-    assert {p_a.uid, p_b.uid, p_c.uid}.issubset(get())
-    e_a = get(Project.name == p_a_name)
-    assert p_a.uid in e_a and p_b.uid not in e_a and p_c.uid not in e_a
-    not_b = get(Project.name != p_b_name)
-    assert {p_a.uid, p_c.uid}.issubset(not_b) and p_b.uid not in not_b
-    gt_b = get(Project.name > p_b_name)
-    assert p_c.uid in gt_b and p_a.uid not in gt_b and p_b.uid not in gt_b
-    lt_b = get(Project.name < p_b_name)
-    assert p_a.uid in lt_b and p_b.uid not in lt_b and p_c.uid not in lt_b
-    ge_b = get(Project.name >= p_b_name)
-    assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
-    le_b = get(Project.name <= p_b_name)
-    assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
-
-    batch.delete()
 
 
 def test_unsupported_where(client):
