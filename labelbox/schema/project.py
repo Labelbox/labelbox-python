@@ -1481,8 +1481,8 @@ class Project(DbObject, Updateable, Deletable):
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
-                    "Maximum wait time exceeded while waiting for data rows to be processed. "
-                    "Try creating a batch a bit later")
+                    """Maximum wait time exceeded while waiting for data rows to be processed. 
+                    Try creating a batch a bit later""")
 
             all_good = self.__check_data_rows_have_been_processed(
                 data_row_ids, global_keys)
