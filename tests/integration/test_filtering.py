@@ -15,7 +15,7 @@ def project_to_test_where(client, rand_gen):
     p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
     p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
 
-    yield p_a, p_b
+    yield p_a, p_b, p_c
 
     p_a.delete()
     p_b.delete()

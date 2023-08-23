@@ -522,7 +522,6 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 
     yield project
 
-    batch.delete()
     project.delete()
 
 
