@@ -1454,12 +1454,35 @@ class Project(DbObject, Updateable, Deletable):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
 
+        max_data_rows_per_poll = 100_000
+        if data_row_ids is not None:
+            for i in range(0, len(data_row_ids), max_data_rows_per_poll):
+                chunk = data_row_ids[i:i + max_data_rows_per_poll]
+                self._poll_data_row_processing_status(
+                    chunk, [], start_time, wait_processing_max_seconds,
+                    sleep_interval)
+
+        if global_keys is not None:
+            for i in range(0, len(global_keys), max_data_rows_per_poll):
+                chunk = global_keys[i:i + max_data_rows_per_poll]
+                self._poll_data_row_processing_status(
+                    [], chunk, start_time, wait_processing_max_seconds,
+                    sleep_interval)
+
+    def _poll_data_row_processing_status(
+            self,
+            data_row_ids: List[str],
+            global_keys: List[str],
+            start_time: datetime,
+            wait_processing_max_seconds: int = _wait_processing_max_seconds,
+            sleep_interval=30):
+
         while True:
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
-                    "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
-                )
+                    """Maximum wait time exceeded while waiting for data rows to be processed. 
+                    Try creating a batch a bit later""")
 
             all_good = self.__check_data_rows_have_been_processed(
                 data_row_ids, global_keys)
