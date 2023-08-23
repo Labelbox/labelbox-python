@@ -7,7 +7,8 @@ from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
+from labelbox.schema.data_row_metadata import DataRowMetadataField
+from labelbox.schema.es_filters import build_id_filters  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
@@ -90,7 +91,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
 
     @staticmethod
-    def bulk_delete_by_ids(data_row_ids: List[str]) -> None:
+    def bulk_delete_by_ids(client, data_row_ids: List[str]) -> None:
         """ Deletes DataRows given data row ids.
 
         Args:
@@ -100,21 +101,42 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         if len(data_row_ids) == 0:
             return
 
+        search_query: List[Dict[str, Collection[str]]] = []
+        search_query.append(build_id_filters(data_row_ids, "data_row_id"))
 
-        where_param = query.where_as_dict(Entity.DataRow,
-                                    where) if where is not None else None
-        template = Template(
-            """mutation deleteDataRowsByQueryPyApi($$id: ID!, $$from: ID, $$first: Int, $$where: DatasetDataRowWhereInput)  {
-                        datasetDataRows(id: $$id, from: $$from, first: $$first, where: $$where)
-                            {
-                                nodes { $datarow_selections }
-                                pageInfo { hasNextPage startCursor }
-                            }
+        mutation_name = "deleteDataRowsByQuery"
+        query = """mutation deleteDataRowsByQueryPyApi($$where: DeleteDataRowsByQueryInput)  {
+                        %s(where: $$where)
+                            { taskId }
                         }
-                    """)
-        query_str = template.substitute(
-            datarow_selections=query.results_query_part(Entity.DataRow))
+                    """% (mutation_name)
+        query_params = {
+            "where": {
+                "searchQuery": {
+                    "query": search_query
+                }
+            }
+        }
 
+        res = client.execute(query,
+                        query_params,
+                        error_log_key="errors")
+        res = res[mutation_name]
+        task_id = res["taskId"]
+        user: User = client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+
+        task.wait_till_done()
+        errors = task.errors
+        if errors:
+            raise Exception(errors)
+
+        return task
 
 
     def get_winning_label_id(self, project_id: str) -> Optional[str]:
