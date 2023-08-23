@@ -2,6 +2,7 @@ import sys
 
 from datetime import datetime, timezone
 from typing import Collection, Dict, Tuple, List, Optional
+from labelbox.schema.es_filters import build_id_filters
 from labelbox.typing_imports import Literal
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -113,19 +114,6 @@ def build_filters(client, filters):
         tz_res = client.execute(timezone_query_str)
         return tz_res["user"]["timezone"] or "UTC"
 
-    def _build_id_filters(ids: list,
-                          type_name: str,
-                          search_where_limit: int = SEARCH_LIMIT_PER_EXPORT_V2):
-        if not isinstance(ids, list):
-            raise ValueError(f"{type_name} filter expects a list.")
-        if len(ids) == 0:
-            raise ValueError(f"{type_name} filter expects a non-empty list.")
-        if len(ids) > search_where_limit:
-            raise ValueError(
-                f"{type_name} filter only supports a max of {search_where_limit} items."
-            )
-        search_query.append({"ids": ids, "operator": "is", "type": type_name})
-
     validate_one_of_data_row_ids_or_global_keys(filters)
 
     last_activity_at = filters.get("last_activity_at")
@@ -214,15 +202,15 @@ def build_filters(client, filters):
 
     data_row_ids = filters.get("data_row_ids")
     if data_row_ids is not None:
-        _build_id_filters(data_row_ids, "data_row_id")
+        search_query.append(build_id_filters(data_row_ids, "data_row_id"))
 
     global_keys = filters.get("global_keys")
     if global_keys is not None:
-        _build_id_filters(global_keys, "global_key")
+        search_query.append(build_id_filters(global_keys, "global_key"))
 
     batch_ids = filters.get("batch_ids")
     if batch_ids is not None:
-        _build_id_filters(batch_ids, "batch")
+        search_query.append(build_id_filters(batch_ids, "batch"))
 
     workflow_status = filters.get("workflow_status")
     if workflow_status:
