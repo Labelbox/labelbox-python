@@ -15,7 +15,7 @@ def project_to_test_where(client, rand_gen):
     p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
     p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
 
-    yield p_a, p_b, p_c
+    yield p_a, p_b
 
     p_a.delete()
     p_b.delete()
@@ -26,7 +26,7 @@ def project_to_test_where(client, rand_gen):
 # other builds simultaneously adding projects to test org
 def test_where(client, project_to_test_where):
     p_a, p_b, p_c = project_to_test_where
-    p_a_name, p_b_name, _ = [p.name for p in [p_a, p_b, p_c]]
+    p_a_name, p_b_name = [p.name for p in [p_a, p_b]]
 
     def get(where=None):
         date_where = Project.created_at >= p_a.created_at

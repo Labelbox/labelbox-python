@@ -5,11 +5,11 @@ import labelbox.types as lb_types
 from labelbox.schema.annotation_import import AnnotationImportState
 
 
-def test_export_v2_video(client, configured_project_with_one_data_row,
+def test_export_v2_video(client, configured_project_without_data_rows,
                          video_data, video_data_row,
                          bbox_video_annotation_objects, rand_gen):
 
-    project = configured_project_with_one_data_row
+    project = configured_project_without_data_rows
     project_id = project.uid
     labels = []
     _, data_row_uids = video_data

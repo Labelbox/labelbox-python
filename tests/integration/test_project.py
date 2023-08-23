@@ -171,15 +171,15 @@ def test_attach_instructions(client, project):
 
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
                     reason="new mutation does not work for onprem")
-def test_html_instructions(project_with_ontology):
+def test_html_instructions(project_with_empty_ontology):
     html_file_path = '/tmp/instructions.html'
     sample_html_str = "<html></html>"
 
     with open(html_file_path, 'w') as file:
         file.write(sample_html_str)
 
-    project_with_ontology.upsert_instructions(html_file_path)
-    updated_ontology = project_with_ontology.ontology().normalized
+    project_with_empty_ontology.upsert_instructions(html_file_path)
+    updated_ontology = project_with_empty_ontology.ontology().normalized
 
     instructions = updated_ontology.pop('projectInstructions')
     assert requests.get(instructions).text == sample_html_str

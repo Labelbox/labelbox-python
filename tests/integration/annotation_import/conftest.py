@@ -513,7 +513,7 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
 
-    project.create_batch(
+    batch = project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
@@ -521,6 +521,8 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     project.data_row_ids = data_row_ids
 
     yield project
+
+    batch.delete()
     project.delete()
 
 
@@ -614,8 +616,10 @@ Optimized Strategy (configured_project_with_one_data_row fixture):
     This fixture has only one data row and all predictions will be mapped to it
 
 Custom Data Row IDs Strategy:
-    Individuals can create their own fixture to supply data row ids. 
+    Individuals can supply hard-coded data row ids when a creation of data row is not required. 
     This particular fixture, termed "hardcoded_datarow_id," should be defined locally within a test file.
+    In the future, we can use this approach to inject correct number of rows instead of using configured_project fixture 
+        that creates a data row for each member of ontology (14 in total) for each run.
 """
 
 

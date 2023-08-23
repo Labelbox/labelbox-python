@@ -41,13 +41,13 @@ def test_create_from_url(project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_validate_file(project_with_ontology):
+def test_validate_file(project_with_empty_ontology):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     with pytest.raises(MALValidationError):
-        project_with_ontology.upload_annotations(name=name,
-                                                 annotations=url,
-                                                 validate=True)
+        project_with_empty_ontology.upload_annotations(name=name,
+                                                       annotations=url,
+                                                       validate=True)
         #Schema ids shouldn't match
 
 

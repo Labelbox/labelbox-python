@@ -27,6 +27,8 @@ from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
+DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
+DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
 
 
 class Environ(Enum):
@@ -392,7 +394,7 @@ def initial_dataset(client, rand_gen):
 
 
 @pytest.fixture
-def project_with_ontology(project):
+def project_with_empty_ontology(project):
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -402,13 +404,13 @@ def project_with_ontology(project):
 
 
 @pytest.fixture
-def configured_project(project_with_ontology, initial_dataset, rand_gen,
+def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
                        image_url):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
-    project = project_with_ontology
+    project = project_with_empty_ontology
 
-    project.create_batch(
+    batch = project.create_batch(
         rand_gen(str),
         [data_row_id],  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
@@ -416,6 +418,8 @@ def configured_project(project_with_ontology, initial_dataset, rand_gen,
     project.data_row_ids = [data_row_id]
 
     yield project
+
+    batch.delete()
 
 
 @pytest.fixture
@@ -426,21 +430,19 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
-    start_time = time.time()
-    project._wait_until_data_rows_are_processed(data_row_ids=[data_row.uid],
-                                                sleep_interval=3)
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row.uid],
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
 
     project.create_batch(
         rand_gen(str),
         [data_row.uid],  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
     )
-    print("create_batch took: ", time.time() - start_time)
     ontology = _setup_ontology(project)
-    print("setup ontology took: ", time.time() - start_time)
     label = _create_label(project, data_row, ontology,
                           wait_for_label_processing)
-    print("create_label took: ", time.time() - start_time)
     yield [project, dataset, data_row, label]
 
     for label in project.labels():
