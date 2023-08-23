@@ -7,7 +7,7 @@ from labelbox.data.annotation_types.ner import ConversationEntity
 from labelbox.schema.annotation_import import MALPredictionImport
 
 
-def test_conversation_entity(client, configured_project_without_data_rows,
+def test_conversation_entity(client, configured_project_with_one_data_row,
                              dataset_conversation_entity, rand_gen):
 
     conversation_entity_annotation = ConversationEntity(start=0,
@@ -20,7 +20,7 @@ def test_conversation_entity(client, configured_project_without_data_rows,
     labels = []
     _, data_row_uids = dataset_conversation_entity
 
-    configured_project_without_data_rows.create_batch(
+    configured_project_with_one_data_row.create_batch(
         rand_gen(str),
         data_row_uids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
@@ -35,7 +35,7 @@ def test_conversation_entity(client, configured_project_without_data_rows,
 
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_without_data_rows.uid,
+        project_id=configured_project_with_one_data_row.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
 

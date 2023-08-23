@@ -39,6 +39,7 @@ jobs:
             echo "LABELBOX_TEST_ENVIRON=prod" >> $GITHUB_ENV
           else
             echo "LABELBOX_TEST_ENVIRON=staging" >> $GITHUB_ENV
+            echo "FIXTURE_PROFILE=true" >> $GITHUB_ENV
           fi
 
       - uses: actions/checkout@v2

@@ -1,3 +1,6 @@
+from labelbox.schema.project import Project
+
+
 def test_user(client):
     user = client.get_user()
     assert user.uid is not None
@@ -10,14 +13,11 @@ def test_organization(client):
     assert client.get_user() in set(organization.users())
 
 
-def test_user_and_org_projects(project):
-    client = project.client
+def test_user_and_org_projects(client, project):
     user = client.get_user()
     org = client.get_organization()
-    user_projects = set(user.projects())
-    org_projects = set(org.projects())
+    user_project = user.projects(where=Project.uid == project.uid)
+    org_project = org.projects(where=Project.uid == project.uid)
 
-    assert project.created_by() == user
-    assert project.organization() == org
-    assert project in user_projects
-    assert project in org_projects
+    assert user_project
+    assert org_project

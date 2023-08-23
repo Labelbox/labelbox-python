@@ -1,6 +1,9 @@
+from collections import defaultdict
+from itertools import islice
 import json
 import os
 import re
+import sys
 import time
 import uuid
 from enum import Enum
@@ -18,13 +21,14 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
+from labelbox.schema.project import Project
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
-DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 5
+DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
 
 
 class Environ(Enum):
@@ -386,27 +390,36 @@ def initial_dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
 
+    dataset.delete()
+
 
 @pytest.fixture
-def configured_project(project, initial_dataset, client, rand_gen, image_url):
-    dataset = initial_dataset
-    data_row_id = dataset.create_data_row(row_data=image_url).uid
-
-    project.create_batch(
-        rand_gen(str),
-        [data_row_id],  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids = [data_row_id]
-
+def project_with_empty_ontology(project):
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
     yield project
-    dataset.delete()
-    project.delete()
+
+
+@pytest.fixture
+def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
+                       image_url):
+    dataset = initial_dataset
+    data_row_id = dataset.create_data_row(row_data=image_url).uid
+    project = project_with_empty_ontology
+
+    batch = project.create_batch(
+        rand_gen(str),
+        [data_row_id],  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = [data_row_id]
+
+    yield project
+
+    batch.delete()
 
 
 @pytest.fixture
@@ -417,6 +430,10 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row.uid],
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
 
     project.create_batch(
         rand_gen(str),
@@ -426,7 +443,6 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     ontology = _setup_ontology(project)
     label = _create_label(project, data_row, ontology,
                           wait_for_label_processing)
-
     yield [project, dataset, data_row, label]
 
     for label in project.labels():
@@ -442,10 +458,8 @@ def configured_batch_project_with_label(project, dataset, data_row,
     One label is already created and yielded when using fixture
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_rows,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+    project._wait_until_data_rows_are_processed(data_row_ids=data_rows,
+                                                sleep_interval=3)
     project.create_batch("test-batch", data_rows)
     project.data_row_ids = data_rows
 
@@ -588,7 +602,6 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     project.setup(editor, ontology.asdict())
 
     yield [project, data_row]
-    dataset.delete()
     project.delete()
 
 
@@ -807,3 +820,33 @@ def upload_invalid_data_rows_for_dataset(dataset: Dataset):
         },
     ] * 2)
     task.wait_till_done()
+
+
+def pytest_configure():
+    pytest.report = defaultdict(int)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_fixture_setup(fixturedef):
+    start = time.time()
+    yield
+    end = time.time()
+
+    exec_time = end - start
+    if "FIXTURE_PROFILE" in os.environ:
+        pytest.report[fixturedef.argname] += exec_time
+
+
+@pytest.fixture(scope='session', autouse=True)
+def print_perf_summary():
+    yield
+
+    if "FIXTURE_PROFILE" in os.environ:
+        sorted_dict = dict(
+            sorted(pytest.report.items(),
+                   key=lambda item: item[1],
+                   reverse=True))
+        num_of_entries = 10 if len(sorted_dict) >= 10 else len(sorted_dict)
+        slowest_fixtures = [(aaa, sorted_dict[aaa])
+                            for aaa in islice(sorted_dict, num_of_entries)]
+        print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)

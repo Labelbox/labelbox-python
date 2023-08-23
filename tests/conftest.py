@@ -12,7 +12,7 @@ pytest_plugins = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def rand_gen():
 
     def gen(field_type):
