@@ -1,4 +1,5 @@
 import logging
+from string import Template
 from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
 import json
 from labelbox.exceptions import ResourceNotFoundError
@@ -86,6 +87,35 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             data_rows (list of DataRow): The DataRows to delete.
         """
         BulkDeletable._bulk_delete(data_rows, True)
+
+
+    @staticmethod
+    def bulk_delete_by_ids(data_row_ids: List[str]) -> None:
+        """ Deletes DataRows given data row ids.
+
+        Args:
+            data_row_ids (list of data row ids)
+        """
+        
+        if len(data_row_ids) == 0:
+            return
+
+
+        where_param = query.where_as_dict(Entity.DataRow,
+                                    where) if where is not None else None
+        template = Template(
+            """mutation deleteDataRowsByQueryPyApi($$id: ID!, $$from: ID, $$first: Int, $$where: DatasetDataRowWhereInput)  {
+                        datasetDataRows(id: $$id, from: $$from, first: $$first, where: $$where)
+                            {
+                                nodes { $datarow_selections }
+                                pageInfo { hasNextPage startCursor }
+                            }
+                        }
+                    """)
+        query_str = template.substitute(
+            datarow_selections=query.results_query_part(Entity.DataRow))
+
+
 
     def get_winning_label_id(self, project_id: str) -> Optional[str]:
         """ Retrieves the winning label ID, i.e. the one that was marked as the
