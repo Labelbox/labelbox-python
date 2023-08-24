@@ -9,6 +9,7 @@ from labelbox import parser, MediaType
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.project import Project
 from labelbox.schema.queue_mode import QueueMode
 
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
@@ -210,7 +211,7 @@ def annotations_by_data_type_v2(
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def ontology():
     bbox_tool_with_nested_text = {
         'required':
@@ -478,34 +479,49 @@ def wait_for_label_processing():
 
 
 @pytest.fixture
-def initial_dataset(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
-    yield dataset
-    dataset.delete()
+def configured_project_datarow_id(configured_project):
+
+    def get_data_row_id(indx=0):
+        return configured_project.data_row_ids[indx]
+
+    yield get_data_row_id
+
+
+@pytest.fixture
+def configured_project_one_datarow_id(configured_project_with_one_data_row):
+
+    def get_data_row_id(indx=0):
+        return configured_project_with_one_data_row.data_row_ids[0]
+
+    yield get_data_row_id
 
 
 @pytest.fixture
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     dataset = initial_dataset
-    project = client.create_project(
-        name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
-    )
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
+
     data_row_ids = []
 
     for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
-    project.create_batch(
+    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
+                                                sleep_interval=3)
+
+    batch = project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
     )
     project.data_row_ids = data_row_ids
+
     yield project
+
     project.delete()
 
 
@@ -556,7 +572,8 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen):
+def configured_project_with_one_data_row(client, ontology, rand_gen,
+                                         initial_dataset, image_url):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
@@ -564,7 +581,22 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
+
+    data_row = initial_dataset.create_data_row(row_data=image_url)
+    data_row_ids = [data_row.uid]
+    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
+                                                sleep_interval=3)
+
+    batch = project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = data_row_ids
+
     yield project
+
+    batch.delete()
     project.delete()
 
 
@@ -572,11 +604,42 @@ def configured_project_without_data_rows(client, ontology, rand_gen):
 # At the moment it expects only one feature per tool type and this creates unnecessary coupling between differet tests
 # In an example of a 'rectangle' we have extended to support multiple instances of the same tool type
 # TODO: we will support this approach in the future for all tools
+#
+"""
+Please note that this fixture now offers the flexibility to configure three different strategies for generating data row ids for predictions:
+Default(configured_project fixture):
+    configured_project that generates a data row for each member of ontology.
+    This makes sure each prediction has its own data row id. This is applicable to prediction upload cases when last label overwrites existing ones
+
+Optimized Strategy (configured_project_with_one_data_row fixture):
+    This fixture has only one data row and all predictions will be mapped to it
+
+Custom Data Row IDs Strategy:
+    Individuals can supply hard-coded data row ids when a creation of data row is not required. 
+    This particular fixture, termed "hardcoded_datarow_id," should be defined locally within a test file.
+    In the future, we can use this approach to inject correct number of rows instead of using configured_project fixture 
+        that creates a data row for each member of ontology (14 in total) for each run.
+"""
+
+
 @pytest.fixture
-def prediction_id_mapping(configured_project):
+def prediction_id_mapping(ontology, request):
     # Maps tool types to feature schema ids
-    project = configured_project
+    if 'configured_project' in request.fixturenames:
+        data_row_id_factory = request.getfixturevalue(
+            'configured_project_datarow_id')
+        project = request.getfixturevalue('configured_project')
+    elif 'hardcoded_datarow_id' in request.fixturenames:
+        data_row_id_factory = request.getfixturevalue('hardcoded_datarow_id')
+        project = request.getfixturevalue('configured_project_with_ontology')
+    else:
+        data_row_id_factory = request.getfixturevalue(
+            'configured_project_one_datarow_id')
+        project = request.getfixturevalue(
+            'configured_project_with_one_data_row')
+
     ontology = project.ontology().normalized
+
     result = {}
 
     for idx, tool in enumerate(ontology['tools'] + ontology['classifications']):
@@ -593,7 +656,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": project.data_row_ids[idx],
+                    "id": data_row_id_factory(idx),
                 },
                 'tool': tool
             }
@@ -606,7 +669,7 @@ def prediction_id_mapping(configured_project):
                 "schemaId": tool['featureSchemaId'],
                 "name": tool['name'],
                 "dataRow": {
-                    "id": project.data_row_ids[idx],
+                    "id": data_row_id_factory(idx),
                 },
                 'tool': tool
             }

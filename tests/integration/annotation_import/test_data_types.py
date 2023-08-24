@@ -135,12 +135,18 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData,
     TextData
 ])
-def test_import_data_types(client, configured_project, initial_dataset,
-                           rand_gen, data_row_json_by_data_type,
-                           annotations_by_data_type, data_type_class):
+def test_import_data_types(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+    data_type_class,
+):
 
     project = configured_project
-    project_id = configured_project.uid
+    project_id = project.uid
     dataset = initial_dataset
 
     set_project_media_type_from_data_type(project, data_type_class)
@@ -261,11 +267,11 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
 
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
-def test_import_label_annotations(client, configured_project, initial_dataset,
-                                  data_row_json_by_data_type, data_type,
-                                  data_class, annotations, rand_gen):
+def test_import_label_annotations(client, configured_project_with_one_data_row,
+                                  initial_dataset, data_row_json_by_data_type,
+                                  data_type, data_class, annotations, rand_gen):
 
-    project = configured_project
+    project = configured_project_with_one_data_row
     dataset = initial_dataset
     set_project_media_type_from_data_type(project, data_class)
 
@@ -297,24 +303,33 @@ def test_import_label_annotations(client, configured_project, initial_dataset,
     assert export_task.errors is None
     expected_annotations = get_annotation_comparison_dicts_from_labels(labels)
     actual_annotations = get_annotation_comparison_dicts_from_export(
-        export_task.result, data_row.uid, configured_project.uid)
+        export_task.result, data_row.uid,
+        configured_project_with_one_data_row.uid)
     assert actual_annotations == expected_annotations
     data_row.delete()
 
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
-def test_import_mal_annotations(client, configured_project_without_data_rows,
-                                data_row_json_by_data_type, data_type,
-                                data_class, annotations, rand_gen):
-
+@pytest.fixture
+def one_datarow(client, rand_gen, data_row_json_by_data_type, data_type):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_json = data_row_json_by_data_type[data_type]
     data_row = dataset.create_data_row(data_row_json)
 
-    set_project_media_type_from_data_type(configured_project_without_data_rows,
+    yield data_row
+
+    dataset.delete()
+
+
+@pytest.mark.parametrize('data_type, data_class, annotations', test_params)
+def test_import_mal_annotations(client, configured_project_with_one_data_row,
+                                data_type, data_class, annotations, rand_gen,
+                                one_datarow):
+    data_row = one_datarow
+    set_project_media_type_from_data_type(configured_project_with_one_data_row,
                                           data_class)
 
-    configured_project_without_data_rows.create_batch(
+    configured_project_with_one_data_row.create_batch(
         rand_gen(str),
         [data_row.uid],
     )
@@ -326,7 +341,7 @@ def test_import_mal_annotations(client, configured_project_without_data_rows,
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_without_data_rows.uid,
+        project_id=configured_project_with_one_data_row.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
     import_annotations.wait_until_done()

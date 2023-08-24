@@ -171,15 +171,15 @@ def test_attach_instructions(client, project):
 
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
                     reason="new mutation does not work for onprem")
-def test_html_instructions(configured_project):
+def test_html_instructions(project_with_empty_ontology):
     html_file_path = '/tmp/instructions.html'
     sample_html_str = "<html></html>"
 
     with open(html_file_path, 'w') as file:
         file.write(sample_html_str)
 
-    configured_project.upsert_instructions(html_file_path)
-    updated_ontology = configured_project.ontology().normalized
+    project_with_empty_ontology.upsert_instructions(html_file_path)
+    updated_ontology = project_with_empty_ontology.ontology().normalized
 
     instructions = updated_ontology.pop('projectInstructions')
     assert requests.get(instructions).text == sample_html_str
@@ -198,10 +198,6 @@ def test_same_ontology_after_instructions(
 
     assert initial_ontology == updated_ontology
     assert instructions is not None
-
-
-def test_queue_mode(configured_project: Project):
-    assert configured_project.queue_mode == QueueMode.Batch
 
 
 def test_batches(project: Project, dataset: Dataset, image_url):
@@ -228,8 +224,6 @@ def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project.create_batch(batch_name, global_keys=global_keys)
-    # allow time for catapult to sync changes to ES
-    time.sleep(5)
     # TODO: Move to export_v2
     batch_data_rows = set(batch.export_data_rows())
     assert batch_data_rows == set(data_rows)
@@ -245,9 +239,9 @@ def test_create_batch_with_global_keys_async(project: Project, data_rows):
     assert batch_data_rows == set(data_rows)
 
 
-def test_media_type(client, configured_project: Project, rand_gen):
+def test_media_type(client, project: Project, rand_gen):
     # Existing project with no media_type
-    assert isinstance(configured_project.media_type, MediaType)
+    assert isinstance(project.media_type, MediaType)
 
     # Update test
     project = client.create_project(name=rand_gen(str))

@@ -1,4 +1,8 @@
 # Changelog
+# Version 3.52.0 (2023-08-24)
+## Added
+* Added methods to create multiple batches for a project from a list of data rows
+* Limit the number of data rows to be checked for processing status
 # Version 3.51.0 (2023-08-14)
 ## Added
 * Added global keys to export v2 filters for project, dataset and DataRow

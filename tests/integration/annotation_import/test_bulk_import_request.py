@@ -25,15 +25,15 @@ from labelbox.schema.media_type import MediaType
 """
 
 
-def test_create_from_url(configured_project):
+def test_create_from_url(project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
 
-    bulk_import_request = configured_project.upload_annotations(name=name,
-                                                                annotations=url,
-                                                                validate=False)
+    bulk_import_request = project.upload_annotations(name=name,
+                                                     annotations=url,
+                                                     validate=False)
 
-    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.project() == project
     assert bulk_import_request.name == name
     assert bulk_import_request.input_file_url == url
     assert bulk_import_request.error_file_url is None
@@ -41,24 +41,24 @@ def test_create_from_url(configured_project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_validate_file(configured_project):
+def test_validate_file(project_with_empty_ontology):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     with pytest.raises(MALValidationError):
-        configured_project.upload_annotations(name=name,
-                                              annotations=url,
-                                              validate=True)
+        project_with_empty_ontology.upload_annotations(name=name,
+                                                       annotations=url,
+                                                       validate=True)
         #Schema ids shouldn't match
 
 
-def test_create_from_objects(configured_project, predictions,
+def test_create_from_objects(configured_project_with_one_data_row, predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
-    bulk_import_request = configured_project.upload_annotations(
+    bulk_import_request = configured_project_with_one_data_row.upload_annotations(
         name=name, annotations=predictions)
 
-    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.project() == configured_project_with_one_data_row
     assert bulk_import_request.name == name
     assert bulk_import_request.error_file_url is None
     assert bulk_import_request.status_file_url is None
@@ -105,17 +105,17 @@ def test_create_from_local_file(tmp_path, predictions, configured_project,
         bulk_import_request.input_file_url, predictions)
 
 
-def test_get(client, configured_project):
+def test_get(client, configured_project_with_one_data_row):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    configured_project.upload_annotations(name=name,
-                                          annotations=url,
-                                          validate=False)
+    configured_project_with_one_data_row.upload_annotations(name=name,
+                                                            annotations=url,
+                                                            validate=False)
 
     bulk_import_request = BulkImportRequest.from_name(
-        client, project_id=configured_project.uid, name=name)
+        client, project_id=configured_project_with_one_data_row.uid, name=name)
 
-    assert bulk_import_request.project() == configured_project
+    assert bulk_import_request.project() == configured_project_with_one_data_row
     assert bulk_import_request.name == name
     assert bulk_import_request.input_file_url == url
     assert bulk_import_request.error_file_url is None
@@ -123,16 +123,15 @@ def test_get(client, configured_project):
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
 
 
-def test_validate_ndjson(tmp_path, configured_project):
+def test_validate_ndjson(tmp_path, configured_project_with_one_data_row):
     file_name = f"broken.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         f.write("test")
 
     with pytest.raises(ValueError):
-        configured_project.upload_annotations(name="name",
-                                              validate=True,
-                                              annotations=str(file_path))
+        configured_project_with_one_data_row.upload_annotations(
+            name="name", validate=True, annotations=str(file_path))
 
 
 def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
@@ -158,14 +157,13 @@ def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
 
 
 @pytest.mark.slow
-def test_wait_till_done(rectangle_inference, configured_project):
+def test_wait_till_done(rectangle_inference,
+                        configured_project_with_one_data_row):
     name = str(uuid.uuid4())
-    url = configured_project.client.upload_data(content=parser.dumps(
-        [rectangle_inference]),
-                                                sign=True)
-    bulk_import_request = configured_project.upload_annotations(name=name,
-                                                                annotations=url,
-                                                                validate=False)
+    url = configured_project_with_one_data_row.client.upload_data(
+        content=parser.dumps([rectangle_inference]), sign=True)
+    bulk_import_request = configured_project_with_one_data_row.upload_annotations(
+        name=name, annotations=url, validate=False)
 
     assert len(bulk_import_request.inputs) == 1
     bulk_import_request.wait_until_done()
@@ -299,7 +297,7 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
     assert import_annotations.errors == []
 
 
-def test_pdf_document_entity(client, configured_project_without_data_rows,
+def test_pdf_document_entity(client, configured_project_with_one_data_row,
                              dataset_pdf_entity, rand_gen):
     # for content "Metal-insulator (MI) transitions have been one of the" in OCR JSON extract tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json
     document_text_selection = DocumentTextSelection(
@@ -323,7 +321,7 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
 
     labels = []
     _, data_row_uids = dataset_pdf_entity
-    configured_project_without_data_rows.create_batch(
+    configured_project_with_one_data_row.create_batch(
         rand_gen(str),
         data_row_uids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
@@ -338,7 +336,7 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
 
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_without_data_rows.uid,
+        project_id=configured_project_with_one_data_row.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
     import_annotations.wait_until_done()
@@ -347,14 +345,14 @@ def test_pdf_document_entity(client, configured_project_without_data_rows,
 
 
 def test_nested_video_object_annotations(client,
-                                         configured_project_without_data_rows,
+                                         configured_project_with_one_data_row,
                                          video_data,
                                          bbox_video_annotation_objects,
                                          rand_gen):
     labels = []
     _, data_row_uids = video_data
-    configured_project_without_data_rows.update(media_type=MediaType.Video)
-    configured_project_without_data_rows.create_batch(
+    configured_project_with_one_data_row.update(media_type=MediaType.Video)
+    configured_project_with_one_data_row.create_batch(
         rand_gen(str),
         data_row_uids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
@@ -366,7 +364,7 @@ def test_nested_video_object_annotations(client,
                   annotations=bbox_video_annotation_objects))
     import_annotations = MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_without_data_rows.uid,
+        project_id=configured_project_with_one_data_row.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
     import_annotations.wait_until_done()

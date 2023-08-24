@@ -13,6 +13,7 @@ test-local: build-image
 		-e LABELBOX_TEST_ENVIRON="local" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_LOCAL=${LABELBOX_TEST_API_KEY_LOCAL} \
+		-e FIXTURE_PROFILE=true \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
 test-staging: build-image
