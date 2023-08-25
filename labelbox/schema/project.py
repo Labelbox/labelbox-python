@@ -120,12 +120,10 @@ class Project(DbObject, Updateable, Deletable):
         for a project is inferred through the following attributes:
 
         Benchmark:
-            auto_audit_number_of_labels = 1
-            auto_audit_percentage = 1.0
+            auto_audit_number_of_labels = 1 and auto_audit_percentage = 1.0
 
         Consensus:
-            auto_audit_number_of_labels > 1
-            auto_audit_percentage <= 1.0
+            auto_audit_number_of_labels > 1 or auto_audit_percentage <= 1.0
 
         Attempting to switch between benchmark and consensus modes is an invalid operation and will result
         in an error.

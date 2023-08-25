@@ -22,6 +22,7 @@ from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
 from labelbox.schema.project import Project
+from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
@@ -231,7 +232,7 @@ def project(client, rand_gen):
 @pytest.fixture
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    auto_audit_percentage=0,
+                                    quality_mode=QualityMode.Consensus,
                                     queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
     yield project

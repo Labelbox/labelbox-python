@@ -8,11 +8,11 @@ import requests
 from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 
 
 def test_project(client, rand_gen):
-
     data = {
         "name": rand_gen(str),
         "description": rand_gen(str),
@@ -260,3 +260,19 @@ def test_media_type(client, project: Project, rand_gen):
                                         media_type=MediaType[media_type])
         assert project.media_type == MediaType[media_type]
         project.delete()
+
+
+def test_queue_mode(client, rand_gen):
+    project = client.create_project(name=rand_gen(str))  # defaults to benchmark
+    assert project.auto_audit_number_of_labels == 1
+    assert project.auto_audit_percentage == 1
+
+    project = client.create_project(name=rand_gen(str),
+                                    quality_mode=QualityMode.Benchmark)
+    assert project.auto_audit_number_of_labels == 1
+    assert project.auto_audit_percentage == 1
+
+    project = client.create_project(name=rand_gen(str),
+                                    quality_mode=QualityMode.Consensus)
+    assert project.auto_audit_number_of_labels == 3
+    assert project.auto_audit_percentage == 0

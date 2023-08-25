@@ -31,6 +31,7 @@ from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
+from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
@@ -636,16 +637,33 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
-            auto_audit_percentage (Optional[float]): The percentage of data rows that will require more than 1 label
-            auto_audit_number_of_labels (Optional[float]): Number of labels required for data rows selected for multiple labeling (auto_audit_percentage)
+            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
+                Benchmark
         Returns:
             A new Project object.
         Raises:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
-        media_type = kwargs.get("media_type")
+
+        auto_audit_percentage = kwargs.get("auto_audit_percentage")
+        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
+        if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
+            raise ValueError(
+                "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+            )
+
         queue_mode = kwargs.get("queue_mode")
+        if queue_mode is QueueMode.Dataset:
+            raise ValueError(
+                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
+            )
+        elif queue_mode is QueueMode.Batch:
+            logger.warning(
+                "Passing a queue mode of batch is redundant and will soon no longer be supported."
+            )
+
+        media_type = kwargs.get("media_type")
         if media_type:
             if MediaType.is_supported(media_type):
                 media_type = media_type.value
@@ -658,20 +676,23 @@ class Client:
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
 
-        if not queue_mode:
-            logger.warning(
-                "Default createProject behavior will soon be adjusted to prefer "
-                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the "
-                "time being.")
-        elif queue_mode == QueueMode.Dataset:
-            logger.warning(
-                "QueueMode.Dataset will eventually be deprecated, and is no longer "
-                "recommended for new projects. Prefer QueueMode.Batch instead.")
+        quality_mode = kwargs.get("quality_mode")
+        if not quality_mode:
+            logger.info("Defaulting quality mode to Benchmark.")
+
+        data = kwargs
+        data.pop("quality_mode", None)
+        if quality_mode is None or quality_mode is QualityMode.Benchmark:
+            data["auto_audit_number_of_labels"] = 1
+            data["auto_audit_percentage"] = 1
+        else:
+            data["auto_audit_number_of_labels"] = 3
+            data["auto_audit_percentage"] = 0
 
         return self._create(Entity.Project, {
-            **kwargs,
+            **data,
             **({
-                'media_type': media_type
+                "media_type": media_type
             } if media_type else {})
         })
 
