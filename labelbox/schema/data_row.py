@@ -89,7 +89,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         """
         BulkDeletable._bulk_delete(data_rows, True)
 
-
     @staticmethod
     def bulk_delete_by_ids(client, data_row_ids: List[str]) -> None:
         """ Deletes DataRows given data row ids.
@@ -97,7 +96,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Args:
             data_row_ids (list of data row ids)
         """
-        
+
         if len(data_row_ids) == 0:
             return
 
@@ -105,16 +104,15 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         search_query.append(build_id_filters(data_row_ids, "data_row_id"))
 
         mutation_name = "deleteDataRowsByQuery"
-        query = """mutation deleteDataRowsByQueryPyApi($$where: DeleteDataRowsByQueryInput)  {
-                        %s(where: $$where)
+        query = """mutation DeleteDataRowsByQueryPyApi($searchQueryInput: SearchServiceQueryInput!)  {
+                        %s(where: {searchQuery: $searchQueryInput})
                             { taskId }
                         }
-                    """% (mutation_name)
+                    """ % (mutation_name)
         query_params = {
-            "where": {
-                "searchQuery": {
-                    "query": search_query
-                }
+            "searchQueryInput": {
+                "query": search_query,
+                "scope": None
             }
         }
 

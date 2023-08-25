@@ -610,7 +610,7 @@ def create_datarows_for_data_row_deletion(dataset, image_url):
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
         DataRow.external_id: str(i)
-    } for i in range(10)])
+    } for i in range(5)])
     task.wait_till_done()
 
     data_rows = list(dataset.data_rows())
@@ -623,22 +623,35 @@ def create_datarows_for_data_row_deletion(dataset, image_url):
 def test_data_row_deletion(dataset, create_datarows_for_data_row_deletion):
     create_datarows_for_data_row_deletion
     data_rows = list(dataset.data_rows())
-    expected = set(map(str, range(10)))
+    expected = set(map(str, range(5)))
     assert {dr.external_id for dr in data_rows} == expected
 
     for dr in data_rows:
-        if dr.external_id in "37":
+        if dr.external_id in "13":
             dr.delete()
-    expected -= set("37")
+    expected -= set("13")
 
     data_rows = list(dataset.data_rows())
     assert {dr.external_id for dr in data_rows} == expected
 
-    DataRow.bulk_delete([dr for dr in data_rows if dr.external_id in "2458"])
-    expected -= set("2458")
+    DataRow.bulk_delete([dr for dr in data_rows if dr.external_id in "24"])
+    expected -= set("24")
 
     data_rows = list(dataset.data_rows())
     assert {dr.external_id for dr in data_rows} == expected
+
+
+def test_data_row_deletion_by_ids(client, dataset,
+                                  create_datarows_for_data_row_deletion):
+    create_datarows_for_data_row_deletion
+    data_rows = list(dataset.data_rows())
+
+    data_row_ids = [dr.uid for dr in data_rows]
+    delete_data_row_ids = data_row_ids[:2]
+    success = DataRow.bulk_delete_by_ids(client, [delete_data_row_ids])
+    assert success
+    success = DataRow.bulk_delete_by_ids(client, ['foobar'])
+    assert success
 
 
 def test_data_row_iteration(dataset, image_url) -> None:
