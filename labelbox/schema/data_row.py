@@ -1,6 +1,6 @@
+from collections import defaultdict
 import logging
-from string import Template
-from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 import json
 from labelbox.exceptions import ResourceNotFoundError
 
@@ -81,16 +81,35 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         super().update(**kwargs)
 
     @staticmethod
-    def bulk_delete(data_rows) -> None:
+    def bulk_delete(
+            data_rows: Union[List[str], List["DataRow"]],
+            client: Optional["Client"] = None) -> Union[defaultdict(set), None]:
         """ Deletes all the given DataRows.
 
         Args:
             data_rows (list of DataRow): The DataRows to delete.
         """
-        BulkDeletable._bulk_delete(data_rows, True)
+        if len(data_rows) == 0:
+            return None
+
+        data_row_ids = []
+        if data_rows is not None:
+            for dr in data_rows:
+                if isinstance(dr, DataRow):
+                    data_row_ids.append(dr.uid)
+                elif isinstance(dr, str):
+                    data_row_ids.append(dr)
+
+        if len(data_row_ids) >= 0:
+            DataRow._bulk_delete_by_ids(client, data_row_ids)
+        else:
+            BulkDeletable._bulk_delete(data_rows, True)
+
+        return None
 
     @staticmethod
-    def bulk_delete_by_ids(client, data_row_ids: List[str]) -> None:
+    def _bulk_delete_by_ids(client: "Client",
+                            data_row_ids: List[str]) -> defaultdict(set):
         """ Deletes DataRows given data row ids.
 
         Args:
@@ -100,42 +119,25 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         if len(data_row_ids) == 0:
             return
 
-        search_query: List[Dict[str, Collection[str]]] = []
-        search_query.append(build_id_filters(data_row_ids, "data_row_id"))
-
-        mutation_name = "deleteDataRowsByQuery"
-        query = """mutation DeleteDataRowsByQueryPyApi($searchQueryInput: SearchServiceQueryInput!)  {
-                        %s(where: {searchQuery: $searchQueryInput})
-                            { taskId }
+        mutation_name = "deleteDataRows"
+        query = """mutation DeleteDataRowsPyApi($where: DeleteDataRowsInput!)  {
+                        %s(where: $where)
+                            { id deleted }
                         }
                     """ % (mutation_name)
-        query_params = {
-            "searchQueryInput": {
-                "query": search_query,
-                "scope": None
-            }
-        }
+        query_params = {"where": {"dataRowIds": data_row_ids,}}
 
-        res = client.execute(query,
-                        query_params,
-                        error_log_key="errors")
+        res = client.execute(query, query_params, error_log_key="errors")
         res = res[mutation_name]
-        task_id = res["taskId"]
-        user: User = client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
+        report = defaultdict(set)
 
-        task.wait_till_done()
-        errors = task.errors
-        if errors:
-            raise Exception(errors)
+        for result in res:
+            if not result["deleted"]:
+                report["failed"].add(result["id"])
+            else:
+                report["deleted"].add(result["id"])
 
-        return task
-
+        return report
 
     def get_winning_label_id(self, project_id: str) -> Optional[str]:
         """ Retrieves the winning label ID, i.e. the one that was marked as the

@@ -648,7 +648,9 @@ def test_data_row_deletion_by_ids(client, dataset,
 
     data_row_ids = [dr.uid for dr in data_rows]
     delete_data_row_ids = data_row_ids[:2]
-    success = DataRow.bulk_delete_by_ids(client, [delete_data_row_ids])
+    success = DataRow.bulk_delete(delete_data_row_ids, client)
+    import pdb
+    pdb.set_trace()
     assert success
     success = DataRow.bulk_delete_by_ids(client, ['foobar'])
     assert success
