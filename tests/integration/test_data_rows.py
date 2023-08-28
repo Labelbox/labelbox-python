@@ -648,12 +648,15 @@ def test_data_row_deletion_by_ids(client, dataset,
 
     data_row_ids = [dr.uid for dr in data_rows]
     delete_data_row_ids = data_row_ids[:2]
-    success = DataRow.bulk_delete(delete_data_row_ids, client)
-    import pdb
-    pdb.set_trace()
-    assert success
-    success = DataRow.bulk_delete_by_ids(client, ['foobar'])
-    assert success
+    client.delete_data_rows(delete_data_row_ids)
+
+    remaining_data_rows = list(
+        dataset.data_rows(where=(DataRow.uid == delete_data_row_ids[0])))
+    assert len(remaining_data_rows) == 0
+
+    remaining_data_rows = list(
+        dataset.data_rows(where=(DataRow.uid == delete_data_row_ids[1])))
+    assert len(remaining_data_rows) == 0
 
 
 def test_data_row_iteration(dataset, image_url) -> None:

@@ -1002,6 +1002,35 @@ class Client:
                 "Failed to delete the ontology, message: " +
                 str(response.json()['message']))
 
+    def delete_data_rows(
+        self,
+        data_rows: List[str],
+    ) -> None:
+        """ Deletes data rows given data row ids
+
+        Args:
+            List of data row ids to delete.
+
+        Returns:
+            NOTE current implementation returns None since the API returns all data row ids we have sent and 
+                and it does not actually report any rows that could not be deleted
+            If needed, we recommend verifying data rows have been deleted by trying to fetch them after deletion.
+        """
+        if len(data_rows) == 0:
+            return None
+
+        mutation_name = "deleteDataRows"
+        query = """mutation DeleteDataRowsPyApi($where: DeleteDataRowsInput!)  {
+                        %s(where: $where)
+                            { id deleted }
+                        }
+                    """ % (mutation_name)
+        query_params = {"where": {"dataRowIds": data_rows,}}
+
+        self.execute(query, query_params, error_log_key="errors")
+
+        return None
+
     def update_feature_schema_title(self, feature_schema_id: str,
                                     title: str) -> FeatureSchema:
         """

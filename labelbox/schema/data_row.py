@@ -1,14 +1,12 @@
-from collections import defaultdict
 import logging
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
 import json
 from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.schema.data_row_metadata import DataRowMetadataField
-from labelbox.schema.es_filters import build_id_filters  # type: ignore
+from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.task import Task
@@ -81,63 +79,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         super().update(**kwargs)
 
     @staticmethod
-    def bulk_delete(
-            data_rows: Union[List[str], List["DataRow"]],
-            client: Optional["Client"] = None) -> Union[defaultdict(set), None]:
+    def bulk_delete(data_rows) -> None:
         """ Deletes all the given DataRows.
 
         Args:
             data_rows (list of DataRow): The DataRows to delete.
         """
-        if len(data_rows) == 0:
-            return None
-
-        data_row_ids = []
-        if data_rows is not None:
-            for dr in data_rows:
-                if isinstance(dr, DataRow):
-                    data_row_ids.append(dr.uid)
-                elif isinstance(dr, str):
-                    data_row_ids.append(dr)
-
-        if len(data_row_ids) >= 0:
-            DataRow._bulk_delete_by_ids(client, data_row_ids)
-        else:
-            BulkDeletable._bulk_delete(data_rows, True)
-
-        return None
-
-    @staticmethod
-    def _bulk_delete_by_ids(client: "Client",
-                            data_row_ids: List[str]) -> defaultdict(set):
-        """ Deletes DataRows given data row ids.
-
-        Args:
-            data_row_ids (list of data row ids)
-        """
-
-        if len(data_row_ids) == 0:
-            return
-
-        mutation_name = "deleteDataRows"
-        query = """mutation DeleteDataRowsPyApi($where: DeleteDataRowsInput!)  {
-                        %s(where: $where)
-                            { id deleted }
-                        }
-                    """ % (mutation_name)
-        query_params = {"where": {"dataRowIds": data_row_ids,}}
-
-        res = client.execute(query, query_params, error_log_key="errors")
-        res = res[mutation_name]
-        report = defaultdict(set)
-
-        for result in res:
-            if not result["deleted"]:
-                report["failed"].add(result["id"])
-            else:
-                report["deleted"].add(result["id"])
-
-        return report
+        BulkDeletable._bulk_delete(data_rows, True)
 
     def get_winning_label_id(self, project_id: str) -> Optional[str]:
         """ Retrieves the winning label ID, i.e. the one that was marked as the
