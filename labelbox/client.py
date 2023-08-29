@@ -31,7 +31,8 @@ from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
-from labelbox.schema.quality_mode import QualityMode
+from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
+    BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
@@ -683,11 +684,13 @@ class Client:
         data = kwargs
         data.pop("quality_mode", None)
         if quality_mode is None or quality_mode is QualityMode.Benchmark:
-            data["auto_audit_number_of_labels"] = 1
-            data["auto_audit_percentage"] = 1
+            data[
+                "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
         else:
-            data["auto_audit_number_of_labels"] = 3
-            data["auto_audit_percentage"] = 0
+            data[
+                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
 
         return self._create(Entity.Project, {
             **data,
