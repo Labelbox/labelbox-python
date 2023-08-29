@@ -43,6 +43,9 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
+from labelbox.schema.task import Task
+from labelbox.schema.es_filters import build_id_filters
+
 
 logger = logging.getLogger(__name__)
 
@@ -1002,34 +1005,63 @@ class Client:
                 "Failed to delete the ontology, message: " +
                 str(response.json()['message']))
 
-    def delete_data_rows(
-        self,
-        data_rows: List[str],
-    ) -> None:
-        """ Deletes data rows given data row ids
+
+    def bulk_delete_data_rows(self, data_row_ids: List[str]=None, global_keys: List[str]=None) -> Task:
+        """ Deletes DataRows given data row ids or global keys.
 
         Args:
-            List of data row ids to delete.
-
-        Returns:
-            NOTE current implementation returns None since the API returns all data row ids we have sent and 
-                and it does not actually report any rows that could not be deleted
-            If needed, we recommend verifying data rows have been deleted by trying to fetch them after deletion.
+            data_row_ids (list of data row ids or global keys)
         """
-        if len(data_rows) == 0:
-            return None
 
-        mutation_name = "deleteDataRows"
-        query = """mutation DeleteDataRowsPyApi($where: DeleteDataRowsInput!)  {
-                        %s(where: $where)
-                            { id deleted }
+        if data_row_ids is None and global_keys is None:
+            raise ValueError("Either data_row_ids or global_keys must be provided")
+
+        search_query: List[Dict[str, Collection[str]]] = []
+        if  global_keys is not None:
+            search_query.append(build_id_filters(global_keys, "global_key"))
+        else:
+            search_query.append(build_id_filters(data_row_ids, "data_row_id"))
+
+        mutation_name = "deleteDataRowsByQuery"
+        query = """mutation DeleteDataRowsByQueryPyApi($searchQueryInput: SearchServiceQueryInput!)  {
+                        %s(where: {searchQuery: $searchQueryInput})
+                            { taskId }
                         }
                     """ % (mutation_name)
-        query_params = {"where": {"dataRowIds": data_rows,}}
+        query_params = {
+            "searchQueryInput": {
+                "query": search_query,
+                "scope": None
+            }
+        }
 
-        self.execute(query, query_params, error_log_key="errors")
+        res = self.execute(query,
+                        query_params,
+                        error_log_key="errors")
+        res = res[mutation_name]
 
-        return None
+        def get_task(task_id):
+            user: User = self.get_user()
+            tasks: List[Task] = list(
+                user.created_tasks(where=Entity.Task.uid == task_id))
+            if len(tasks) != 1:
+                raise ResourceNotFoundError(Entity.Task, task_id)
+            task: Task = tasks[0]
+            task._user = user
+
+            return task
+        
+        task_id = res["taskId"]
+        user: User = self.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+
+        return task  
+ 
 
     def update_feature_schema_title(self, feature_schema_id: str,
                                     title: str) -> FeatureSchema:

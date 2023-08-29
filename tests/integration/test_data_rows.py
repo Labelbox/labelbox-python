@@ -641,15 +641,16 @@ def test_data_row_deletion(dataset, create_datarows_for_data_row_deletion):
     assert {dr.external_id for dr in data_rows} == expected
 
 
-def test_data_row_deletion_by_ids(client, dataset,
+def test_data_row_bulk_delete(client, dataset,
                                   create_datarows_for_data_row_deletion):
-    create_datarows_for_data_row_deletion
-    data_rows = list(dataset.data_rows())
+    data_rows = create_datarows_for_data_row_deletion
 
-    data_row_ids = [dr.uid for dr in data_rows]
-    delete_data_row_ids = data_row_ids[:2]
-    client.delete_data_rows(delete_data_row_ids)
+    all_data_row_ids = [dr.uid for dr in data_rows]
 
+    delete_data_row_ids = all_data_row_ids[:2]
+    task = client.bulk_delete_data_rows(delete_data_row_ids)
+    task.wait_till_done()
+    
     remaining_data_rows = list(
         dataset.data_rows(where=(DataRow.uid == delete_data_row_ids[0])))
     assert len(remaining_data_rows) == 0
