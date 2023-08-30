@@ -8,7 +8,7 @@ import time
 import uuid
 from enum import Enum
 from types import SimpleNamespace
-from typing import Type, List
+from typing import Type, List, Union
 
 import pytest
 import requests
@@ -39,9 +39,10 @@ class Environ(Enum):
     ONPREM = 'onprem'
     CUSTOM = 'custom'
     STAGING_EU = 'staging-eu'
-    EPHEMERAL = 'ephemeral' # Used for testing PRs with ephemeral environments
-    
-    EPHEMERAL_BASE_URL = "http://lb-api-public"
+    EPHEMERAL = 'ephemeral'  # Used for testing PRs with ephemeral environments
+
+
+EPHEMERAL_BASE_URL = "http://lb-api-public"
 
 
 @pytest.fixture(scope="session")
@@ -78,7 +79,7 @@ def graphql_url(environ: str) -> str:
             raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
         return graphql_api_endpoint
     elif environ == Environ.EPHEMERAL:
-        return f"{Environ.EPHEMERAL_BASE_URL}/graphql"
+        return f"{EPHEMERAL_BASE_URL}/graphql"
     return 'http://host.docker.internal:8080/graphql'
 
 
@@ -95,8 +96,15 @@ def rest_url(environ: str) -> str:
             raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
         return rest_api_endpoint
     elif environ == Environ.EPHEMERAL:
-        return f"{Environ.EPHEMERAL_BASE_URL}/api/v1"
+        return f"{EPHEMERAL_BASE_URL}/api/v1"
     return 'http://host.docker.internal:8080/api/v1'
+
+
+def admin_url(environ: str) -> Union[str, None]:
+    if environ == Environ.EPHEMERAL:
+        return f"{EPHEMERAL_BASE_URL}/admin/v1"
+
+    return 'http://host.docker.internal:8080/admin/v1'
 
 
 def testing_api_key(environ: str) -> str:
@@ -170,6 +178,8 @@ class IntegrationClient(Client):
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         rest_endpoint = rest_url(environ)
+        self._admin_endpoint = admin_url(environ)
+
         super().__init__(api_key,
                          api_url,
                          enable_experimental=True,
@@ -181,6 +191,98 @@ class IntegrationClient(Client):
             assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
         self.queries.append((query, params))
         return super().execute(query, params, **kwargs)
+
+    def create_organization(self) -> str:
+        endpoint = f"{self._admin_endpoint}/organizations/"
+        response = requests.post(
+            endpoint,
+            headers=self.headers,
+            json={"name": f"Test Org {uuid.uuid4()}"},
+        )
+        if response.status_code != requests.codes.created:
+            raise Exception("Failed to create ephemeral org, message: " +
+                            str(response.json()['message']))
+
+        return response.json()['id']
+
+    def create_user(self, organization_id) -> tuple[str, str]:
+        endpoint = f"{self._admin_endpoint}/user-identities/"
+        identity_id = f"e2e+{uuid.uuid4()}"
+
+        response = requests.post(
+            endpoint,
+            headers=self.headers,
+            json={
+                "identityId": identity_id,
+                "email": "email@email.com",
+                "name": f"tester{uuid.uuid4()}",
+                "verificationStatus": "VERIFIED",
+            },
+        )
+        if response.status_code != requests.codes.created:
+            raise Exception("Failed to create ephemeral org, message: " +
+                            str(response.json()['message']))
+
+        user_identity_id = response.json()['identityId']
+
+        endpoint = f"{self._admin_endpoint}/organizations/{organization_id}/users/"
+        response = requests.post(
+            endpoint,
+            headers=self.headers,
+            json={
+                "identityId": user_identity_id,
+                "organizationRole": "Admin"
+            },
+        )
+        if response.status_code != requests.codes.created:
+            raise Exception("Failed to create ephemeral org, message: " +
+                            str(response.json()['message']))
+
+        user_id = response.json()['id']
+
+        endpoint = f"{self._admin_endpoint}/users/{user_id}/token"
+        response = requests.get(
+            endpoint,
+            headers=self.headers,
+        )
+        if response.status_code != requests.codes.created:
+            raise Exception("Failed to create ephemeral org, message: " +
+                            str(response.json()['message']))
+
+        token = response["token"]
+
+        return user_id, token
+
+    def create_api_key_for_user(self, user_token) -> str:
+        key_name = f"test-key+{uuid.uuid4()}"
+        query = """
+            mutation CreateApiKey($name: String!) {
+                createApiKey(data: {name: $name}) {
+                    id
+                    jwt
+                    __typename
+                }
+            }
+        """
+        params = {"name": key_name}
+        req = self._make_gql_request(query=query, params=params)
+
+        return req["createApiKey"]["jwt"]
+        mutation_name = "deleteDataRowsByQuery"
+        query = """mutation DeleteDataRowsByQueryPyApi($searchQueryInput: SearchServiceQueryInput!)  {
+                        %s(where: {searchQuery: $searchQueryInput})
+                            { taskId }
+                        }
+                    """ % (mutation_name)
+        query_params = {
+            "searchQueryInput": {
+                "query": search_query,
+                "scope": None
+            }
+        }
+
+        res = self.execute(query, query_params, error_log_key="errors")
+        res = res[mutation_name]
 
 
 @pytest.fixture(scope="session")
