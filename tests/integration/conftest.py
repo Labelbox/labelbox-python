@@ -39,6 +39,9 @@ class Environ(Enum):
     ONPREM = 'onprem'
     CUSTOM = 'custom'
     STAGING_EU = 'staging-eu'
+    EPHEMERAL = 'ephemeral' # Used for testing PRs with ephemeral environments
+    
+    EPHEMERAL_BASE_URL = "http://lb-api-public"
 
 
 @pytest.fixture(scope="session")
@@ -74,6 +77,8 @@ def graphql_url(environ: str) -> str:
         if graphql_api_endpoint is None:
             raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
         return graphql_api_endpoint
+    elif environ == Environ.EPHEMERAL:
+        return f"{Environ.EPHEMERAL_BASE_URL}/graphql"
     return 'http://host.docker.internal:8080/graphql'
 
 
@@ -89,6 +94,8 @@ def rest_url(environ: str) -> str:
         if rest_api_endpoint is None:
             raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
         return rest_api_endpoint
+    elif environ == Environ.EPHEMERAL:
+        return f"{Environ.EPHEMERAL_BASE_URL}/api/v1"
     return 'http://host.docker.internal:8080/api/v1'
 
 
@@ -103,6 +110,8 @@ def testing_api_key(environ: str) -> str:
         return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
     elif environ == Environ.CUSTOM:
         return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
+    elif environ == Environ.EPHEMERAL:
+        return os.environ["LABELBOX_TEST_API_KEY_EPHEMERAL"]
     return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
