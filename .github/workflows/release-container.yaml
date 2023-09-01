@@ -6,6 +6,9 @@ on:
   release:
     types: [published]
 
+env:
+  CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
+
 jobs:
   context:
     runs-on: ubuntu-latest
@@ -31,14 +34,10 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         push: true
 
-        registry: ghcr.io
-        organization: "${{ github.event.repository.owner.login }}"
-        repository: "${{ github.event.repository.name }}"
-
         platforms: |
           linux/amd64
           linux/arm64
 
         tags: |
-          latest
-          ${{ github.event.release.tag_name }}
+          ${{ env.CONTAINER_IMAGE }}:latest
+          ${{ env.CONTAINER_IMAGE }}:${{ github.event.release.tag_name }}
