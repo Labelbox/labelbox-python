@@ -45,8 +45,3 @@ jobs:
         tags: |
           develop
           ${{ github.sha }}
-
-        outputs: |
-          image: ${{ steps.build.outputs.imageid }}
-          digest: ${{ steps.build.outputs.digest }}
-          metadata: ${{ steps.build.outputs.metadata }}
