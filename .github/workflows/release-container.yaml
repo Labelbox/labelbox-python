@@ -13,10 +13,6 @@ jobs:
   context:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
-
     steps:
     - name: downcase CONTAINER_IMAGE
       run: |
