@@ -64,6 +64,6 @@ test-ephemeral: build-image
 	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
 		-e LABELBOX_TEST_ENVIRON="ephemeral" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
-		-e LABELBOX_TEST_API_KEY_EPHEMERAL=${LABELBOX_TEST_API_KEY_LOCAL} \
-		-e FIXTURE_PROFILE=true \
+		-e SERVICE_API_KEY=${SERVICE_API_KEY} \
+		-e LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
