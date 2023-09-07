@@ -64,6 +64,7 @@ def test_export_v2_video(client, configured_project_without_data_rows,
             'created_at': '2023-04-16T17:04:23+00:00',
             'updated_at': '2023-04-16T17:04:23+00:00',
             'created_by': 'vbrodsky@labelbox.com',
+            'content_last_updated_at': '2023-04-16T17:04:23+00:00',
             'reviews': []
         },
         'annotations': {
