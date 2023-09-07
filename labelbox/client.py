@@ -8,6 +8,7 @@ import logging
 import mimetypes
 import os
 import time
+import sys
 import urllib.parse
 
 from google.api_core import retry
@@ -45,6 +46,12 @@ from labelbox.schema.media_type import MediaType, get_media_type_validation_erro
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
+
+
+def python_version_info():
+    version_info = sys.version_info
+
+    return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
 
 
 class Client:
@@ -94,11 +101,13 @@ class Client:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
+
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Authorization': 'Bearer %s' % api_key,
-            'X-User-Agent': f'python-sdk {SDK_VERSION}'
+            'X-User-Agent': f"python-sdk {SDK_VERSION}",
+            'X-Python-Version': f"{python_version_info()}",
         }
         self._data_row_metadata_ontology = None
 
