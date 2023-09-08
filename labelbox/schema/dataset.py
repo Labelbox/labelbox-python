@@ -239,7 +239,7 @@ class Dataset(DbObject, Updateable, Deletable):
             url_param: descriptor_url
         })
 
-    def create_data_rows(self, items) -> Union["Task", List[Any]]:
+    def create_data_rows(self, items) -> "Task":
         """ Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
