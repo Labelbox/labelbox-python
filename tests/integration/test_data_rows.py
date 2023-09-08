@@ -3,6 +3,7 @@ import time
 import uuid
 from datetime import datetime
 import json
+from labelbox.schema.media_type import MediaType
 
 import pytest
 import requests
@@ -959,7 +960,8 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 def test_create_conversational_text(dataset, conversational_content):
     examples = [
         {
-            **conversational_content, 'media_type': 'CONVERSATIONAL'
+            **conversational_content, 'media_type':
+                MediaType.Conversational.value
         },
         conversational_content,
         {

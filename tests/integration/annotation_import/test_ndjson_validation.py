@@ -1,3 +1,4 @@
+from labelbox.schema.media_type import MediaType
 import pytest
 
 from labelbox import parser
@@ -25,8 +26,11 @@ def hardcoded_datarow_id():
 
 @pytest.fixture(scope="module", autouse=True)
 def configured_project_with_ontology(client, ontology, rand_gen):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
