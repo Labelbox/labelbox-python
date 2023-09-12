@@ -366,6 +366,17 @@ def one_datarow(client, rand_gen, data_row_json_by_data_type, data_type):
     dataset.delete()
 
 
+@pytest.fixture
+def one_datarow_global_key(client, rand_gen, data_row_json_by_data_type):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_json = data_row_json_by_data_type['video']
+    data_row = dataset.create_data_row(data_row_json)
+
+    yield data_row
+
+    dataset.delete()
+
+
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
 def test_import_mal_annotations(client, configured_project_with_one_data_row,
                                 data_type, data_class, annotations, rand_gen,
@@ -381,6 +392,36 @@ def test_import_mal_annotations(client, configured_project_with_one_data_row,
 
     labels = [
         lb_types.Label(data=data_class(uid=data_row.uid),
+                       annotations=annotations)
+    ]
+
+    import_annotations = lb.MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_with_one_data_row.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
+    import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
+    # MAL Labels cannot be exported and compared to input labels
+
+
+def test_import_mal_annotations_global_key(client,
+                                           configured_project_with_one_data_row,
+                                           rand_gen, one_datarow_global_key):
+    data_class = lb_types.VideoData
+    data_row = one_datarow_global_key
+    annotations = [video_mask_annotation]
+    set_project_media_type_from_data_type(configured_project_with_one_data_row,
+                                          data_class)
+
+    configured_project_with_one_data_row.create_batch(
+        rand_gen(str),
+        [data_row.uid],
+    )
+
+    labels = [
+        lb_types.Label(data=data_class(global_key=data_row.global_key),
                        annotations=annotations)
     ]
 
