@@ -37,6 +37,25 @@ def test_create_from_objects(model_run_with_data_rows, object_predictions,
     annotation_import.wait_until_done()
 
 
+def test_create_from_objects_global_key(client, model_run_with_data_rows,
+                                        entity_inference,
+                                        annotation_import_test_helpers):
+    name = str(uuid.uuid4())
+    dr = client.get_data_row(entity_inference['dataRow']['id'])
+    del entity_inference['dataRow']['id']
+    entity_inference['dataRow']['globalKey'] = dr.global_key
+    object_predictions = [entity_inference]
+
+    annotation_import = model_run_with_data_rows.add_predictions(
+        name=name, predictions=object_predictions)
+
+    assert annotation_import.model_run_id == model_run_with_data_rows.uid
+    annotation_import_test_helpers.check_running_state(annotation_import, name)
+    annotation_import_test_helpers.assert_file_content(
+        annotation_import.input_file_url, object_predictions)
+    annotation_import.wait_until_done()
+
+
 def test_create_from_objects_with_confidence(predictions_with_confidence,
                                              model_run_with_data_rows,
                                              annotation_import_test_helpers):
