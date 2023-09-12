@@ -180,6 +180,51 @@ def test_import_data_types(
     data_row.delete()
 
 
+def test_import_data_types_by_global_key(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+):
+
+    project = configured_project
+    project_id = project.uid
+    dataset = initial_dataset
+    data_type_class = ImageData
+    set_project_media_type_from_data_type(project, data_type_class)
+
+    data_row_ndjson = data_row_json_by_data_type['image']
+    data_row_ndjson['global_key'] = str(uuid.uuid4())
+    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
+                                           rand_gen(str))
+
+    annotations_ndjson = annotations_by_data_type['image']
+    annotations_list = [
+        label.annotations
+        for label in NDJsonConverter.deserialize(annotations_ndjson)
+    ]
+    labels = [
+        lb_types.Label(data=data_type_class(global_key=data_row.global_key),
+                       annotations=annotations)
+        for annotations in annotations_list
+    ]
+
+    label_import = lb.LabelImport.create_from_objects(client, project_id,
+                                                      f'test-import-image',
+                                                      labels)
+    label_import.wait_until_done()
+
+    assert label_import.state == AnnotationImportState.FINISHED
+    assert len(label_import.errors) == 0
+    exported_labels = project.export_labels(download=True)
+    objects = exported_labels[0]['Label']['objects']
+    classifications = exported_labels[0]['Label']['classifications']
+    assert len(objects) + len(classifications) == len(labels)
+    data_row.delete()
+
+
 def validate_iso_format(date_string: str):
     parsed_t = datetime.datetime.fromisoformat(
         date_string)  #this will blow up if the string is not in iso format
