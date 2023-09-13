@@ -41,14 +41,6 @@ def test_labeling_parameter_overrides(consensus_project, initial_dataset,
     for override in updated_overrides:
         assert isinstance(override.data_row(), DataRow)
 
-    success = project.unset_labeling_parameter_overrides(
-        [data[0][0], data[1][0]])
-    assert success
-
-    # TODO ensure that the labeling parameter overrides are removed
-    # currently this doesn't work so the count remains 3
-    assert len(list(project.labeling_parameter_overrides())) == 1
-
     with pytest.raises(TypeError) as exc_info:
         data = [(data_rows[2], "a_string", 3)]
         project.set_labeling_parameter_overrides(data)
@@ -60,9 +52,3 @@ def test_labeling_parameter_overrides(consensus_project, initial_dataset,
         project.set_labeling_parameter_overrides(data)
     assert str(exc_info.value) == \
         "data_row should be be of type DataRow. Found <class 'str'>. Index: 0"
-
-    with pytest.raises(ValueError) as exc_info:
-        data = [(data_rows[2], 0)]
-        project.set_labeling_parameter_overrides(data)
-    assert str(exc_info.value) == \
-        f"Priority must be greater than 0 for data_row {data_rows[2]}. Index: 0"

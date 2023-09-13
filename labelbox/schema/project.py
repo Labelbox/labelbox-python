@@ -1166,25 +1166,6 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    def unset_labeling_parameter_overrides(self, data_rows) -> bool:
-        """ Removes labeling parameter overrides to this project.
-
-        * This will remove unlabeled duplicates in the queue.
-
-        Args:
-            data_rows (iterable): An iterable of DataRows.
-        Returns:
-            bool, indicates if the operation was a success.
-        """
-        id_param = "projectId"
-        query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
-            project(where: { id: $%s}) {
-            unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            id_param, id_param, ",\n".join(
-                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
-        res = self.client.execute(query_str, {id_param: self.uid})
-        return res["project"]["unsetLabelingParameterOverrides"]["success"]
-
     def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
 
