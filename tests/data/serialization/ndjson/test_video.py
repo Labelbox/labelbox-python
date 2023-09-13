@@ -12,7 +12,6 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox import parser
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.schema.annotation_import import MALPredictionImport
 
 
 def test_video():

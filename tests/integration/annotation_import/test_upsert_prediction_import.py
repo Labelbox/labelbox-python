@@ -1,8 +1,6 @@
 import uuid
 from labelbox import parser
 import pytest
-
-from labelbox.schema.annotation_import import AnnotationImportState, MEAPredictionImport
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -28,7 +26,7 @@ def test_create_from_url(client, tmp_path, object_predictions,
         if p['dataRow']['id'] in model_run_data_rows
     ]
     with file_path.open("w") as f:
-        ndjson.dump(predictions, f)
+        parser.dump(predictions, f)
 
     # Needs to have data row ids
 
@@ -114,7 +112,7 @@ def test_create_from_local_file(tmp_path, model_run_with_data_rows,
     ]
 
     with file_path.open("w") as f:
-        ndjson.dump(predictions, f)
+        parser.dump(predictions, f)
 
     annotation_import, batch, mal_prediction_import = model_run_with_data_rows.upsert_predictions_and_send_to_project(
         name=name,
