@@ -118,6 +118,13 @@ def make_metadata_fields_dict():
     return fields
 
 
+def test_get_data_row_by_global_key(data_row_and_global_key, client, rand_gen):
+    _, global_key = data_row_and_global_key
+    data_row = client.get_data_row_by_global_key(global_key)
+    assert type(data_row) == DataRow
+    assert data_row.global_key == global_key
+
+
 def test_get_data_row(data_row, client):
     assert client.get_data_row(data_row.uid)
 
