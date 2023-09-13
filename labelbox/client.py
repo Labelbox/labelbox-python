@@ -696,10 +696,12 @@ class Client:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-        else:
+        elif quality_mode is QualityMode.Consensus:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+        else:
+            raise ValueError(f"{quality_mode} is not a valid quality mode.")
 
         return self._create(Entity.Project, {
             **data,
