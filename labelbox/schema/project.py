@@ -1127,10 +1127,6 @@ class Project(DbObject, Updateable, Deletable):
                 raise TypeError(
                     f"Priority must be an int. Found {type(priority)} for data_row {data_row}. Index: {idx}"
                 )
-            if priority < 1:
-                raise ValueError(
-                    f"Priority must be greater than 0 for data_row {data_row}. Index: {idx}"
-                )
 
     def set_labeling_parameter_overrides(self, data) -> bool:
         """ Adds labeling parameter overrides to this project.
@@ -1143,26 +1139,21 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority<int>, number_of_labels<int>) for the new override.
+                (DataRow, priority<int>) for the new override.
 
                 Priority:
                     * Data will be labeled in priority order.
                         - A lower number priority is labeled first.
-                        - Minimum priority is 1.
+                        - All signed 32-bit integers are accepted, from -2147483648 to 2147483647.
                     * Priority is not the queue position.
                         - The position is determined by the relative priority.
                         - E.g. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)]
                             will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
-                    * Datarows with parameter overrides will appear before datarows without overrides.
                     * The priority only effects items in the queue.
                         - Assigning a priority will not automatically add the item back into the queue.
         Returns:
             bool, indicates if the operation was a success.
         """
-        logger.warning(
-            "LabelingParameterOverrides are deprecated for new projects, and will eventually be removed "
-            "completely. Prefer to use batch based queuing with priority & consensus number of labels instead."
-        )
         data = [t[:2] for t in data]
         self.validate_labeling_parameter_overrides(data)
         data_str = ",\n".join("{dataRow: {id: \"%s\"}, priority: %d }" %
@@ -1174,25 +1165,6 @@ class Project(DbObject, Updateable, Deletable):
             (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
-
-    def unset_labeling_parameter_overrides(self, data_rows) -> bool:
-        """ Removes labeling parameter overrides to this project.
-
-        * This will remove unlabeled duplicates in the queue.
-
-        Args:
-            data_rows (iterable): An iterable of DataRows.
-        Returns:
-            bool, indicates if the operation was a success.
-        """
-        id_param = "projectId"
-        query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
-            project(where: { id: $%s}) {
-            unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            id_param, id_param, ",\n".join(
-                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
-        res = self.client.execute(query_str, {id_param: self.uid})
-        return res["project"]["unsetLabelingParameterOverrides"]["success"]
 
     def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
