@@ -195,16 +195,33 @@ def small_dataset(dataset: Dataset):
 
 @pytest.fixture
 def data_row(dataset, image_url, rand_gen):
+    global_key = f"global-key-{rand_gen(str)}"
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
             "external_id": "my-image",
-            "global_key": f"global-key-{rand_gen(str)}"
+            "global_key": global_key
         },
     ])
     task.wait_till_done()
     dr = dataset.data_rows().get_one()
     yield dr
+    dr.delete()
+
+
+@pytest.fixture
+def data_row_and_global_key(dataset, image_url, rand_gen):
+    global_key = f"global-key-{rand_gen(str)}"
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image",
+            "global_key": global_key
+        },
+    ])
+    task.wait_till_done()
+    dr = dataset.data_rows().get_one()
+    yield dr, global_key
     dr.delete()
 
 

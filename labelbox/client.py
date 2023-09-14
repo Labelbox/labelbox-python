@@ -24,6 +24,7 @@ from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
@@ -430,6 +431,7 @@ class Client:
                 of the given type for the given ID.
         """
         query_str, params = query.get_single(db_object_type, uid)
+
         res = self.execute(query_str, params)
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
@@ -726,6 +728,21 @@ class Client:
         """
 
         return self._get_single(Entity.DataRow, data_row_id)
+
+    def get_data_row_by_global_key(self, global_key: str) -> DataRow:
+        """
+            Returns: DataRow: returns a single data row given the global key
+        """
+
+        res = self.get_data_row_ids_for_global_keys([global_key])
+        if res['status'] != "SUCCESS":
+            raise labelbox.exceptions.MalformedQueryException(res['errors'][0])
+        if len(res['results']) == 0:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Entity.DataRow, {global_key: global_key})
+        data_row_id = res['results'][0]
+
+        return self.get_data_row(data_row_id)
 
     def get_data_row_metadata_ontology(self) -> DataRowMetadataOntology:
         """
