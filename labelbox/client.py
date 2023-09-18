@@ -892,7 +892,9 @@ class Client:
         Fetches top level feature schemas with names that match the `name_contains` string
 
         Args:
-            name_contains (str): the string to search top level feature schema names by
+            name_contains (str): search filter for a name of a root feature schema
+                If present, results in a case insensitive 'like' search for feature schemas
+                If None, returns all top level feature schemas
         Returns:
             PaginatedCollection of FeatureSchemas with names that match `name_contains`
         """
