@@ -11,21 +11,13 @@ from labelbox.data.serialization import NDJsonConverter
 """
 
 
-def test_create_from_url(model_run_with_data_rows,
-                         annotation_import_test_helpers):
-    name = str(uuid.uuid4())
-    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
-    annotation_import = model_run_with_data_rows.add_predictions(
-        name=name, predictions=url)
-    assert annotation_import.model_run_id == model_run_with_data_rows.uid
-    annotation_import_test_helpers.check_running_state(annotation_import, name,
-                                                       url)
-    annotation_import.wait_until_done()
-
-
-def test_create_from_objects(model_run_with_data_rows, object_predictions,
+def test_create_from_objects(model_run_with_data_rows,
+                             object_predictions_for_annotation_import,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
+    object_predictions = object_predictions_for_annotation_import
+    use_data_row_ids = [p['dataRow']['id'] for p in object_predictions]
+    model_run_with_data_rows.upsert_data_rows(use_data_row_ids)
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=object_predictions)
@@ -35,16 +27,20 @@ def test_create_from_objects(model_run_with_data_rows, object_predictions,
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
+
+    assert annotation_import.state == AnnotationImportState.FINISHED
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
 
 
 def test_create_from_objects_global_key(client, model_run_with_data_rows,
-                                        entity_inference,
+                                        polygon_inference,
                                         annotation_import_test_helpers):
     name = str(uuid.uuid4())
-    dr = client.get_data_row(entity_inference['dataRow']['id'])
-    del entity_inference['dataRow']['id']
-    entity_inference['dataRow']['globalKey'] = dr.global_key
-    object_predictions = [entity_inference]
+    dr = client.get_data_row(polygon_inference['dataRow']['id'])
+    del polygon_inference['dataRow']['id']
+    polygon_inference['dataRow']['globalKey'] = dr.global_key
+    object_predictions = [polygon_inference]
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=object_predictions)
@@ -54,6 +50,10 @@ def test_create_from_objects_global_key(client, model_run_with_data_rows,
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
+
+    assert annotation_import.state == AnnotationImportState.FINISHED
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
 
 
 def test_create_from_objects_with_confidence(predictions_with_confidence,
@@ -77,15 +77,20 @@ def test_create_from_objects_with_confidence(predictions_with_confidence,
     annotation_import_test_helpers.assert_file_content(
         annotation_import.input_file_url, predictions_with_confidence)
     annotation_import.wait_until_done()
+
     assert annotation_import.state == AnnotationImportState.FINISHED
     annotation_import_test_helpers.download_and_assert_status(
         annotation_import.status_file_url)
 
 
 def test_create_from_objects_all_project_labels(
-        model_run_with_all_project_labels, object_predictions,
+        model_run_with_all_project_labels,
+        object_predictions_for_annotation_import,
         annotation_import_test_helpers):
     name = str(uuid.uuid4())
+    object_predictions = object_predictions_for_annotation_import
+    use_data_row_ids = [p['dataRow']['id'] for p in object_predictions]
+    model_run_with_all_project_labels.upsert_data_rows(use_data_row_ids)
 
     annotation_import = model_run_with_all_project_labels.add_predictions(
         name=name, predictions=object_predictions)
@@ -96,6 +101,10 @@ def test_create_from_objects_all_project_labels(
         annotation_import.input_file_url, object_predictions)
     annotation_import.wait_until_done()
 
+    assert annotation_import.state == AnnotationImportState.FINISHED
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
+
 
 def test_model_run_project_labels(model_run_with_all_project_labels,
                                   model_run_predictions):
@@ -103,6 +112,7 @@ def test_model_run_project_labels(model_run_with_all_project_labels,
     # TODO: Move to export_v2
     model_run_exported_labels = model_run.export_labels(download=True)
     labels_indexed_by_schema_id = {}
+
     for label in model_run_exported_labels:
         # assuming exported array of label 'objects' has only one label per data row... as usually is when there are no label revisions
         schema_id = label['Label']['objects'][0]['schemaId']
@@ -121,11 +131,17 @@ def test_model_run_project_labels(model_run_with_all_project_labels,
         assert actual_label['DataRow ID'] == expected_label['dataRow']['id']
 
 
-def test_create_from_label_objects(model_run_with_data_rows, object_predictions,
+def test_create_from_label_objects(model_run_with_data_rows,
+                                   object_predictions_for_annotation_import,
                                    annotation_import_test_helpers):
     name = str(uuid.uuid4())
+    use_data_row_ids = [
+        p['dataRow']['id'] for p in object_predictions_for_annotation_import
+    ]
+    model_run_with_data_rows.upsert_data_rows(use_data_row_ids)
 
-    predictions = list(NDJsonConverter.deserialize(object_predictions))
+    predictions = list(
+        NDJsonConverter.deserialize(object_predictions_for_annotation_import))
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=predictions)
@@ -137,15 +153,24 @@ def test_create_from_label_objects(model_run_with_data_rows, object_predictions,
         annotation_import.input_file_url, normalized_predictions)
     annotation_import.wait_until_done()
 
+    assert annotation_import.state == AnnotationImportState.FINISHED
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
+
 
 def test_create_from_local_file(tmp_path, model_run_with_data_rows,
-                                object_predictions,
+                                object_predictions_for_annotation_import,
                                 annotation_import_test_helpers):
+    use_data_row_ids = [
+        p['dataRow']['id'] for p in object_predictions_for_annotation_import
+    ]
+    model_run_with_data_rows.upsert_data_rows(use_data_row_ids)
+
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
-        parser.dump(object_predictions, f)
+        parser.dump(object_predictions_for_annotation_import, f)
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=str(file_path))
@@ -153,8 +178,13 @@ def test_create_from_local_file(tmp_path, model_run_with_data_rows,
     assert annotation_import.model_run_id == model_run_with_data_rows.uid
     annotation_import_test_helpers.check_running_state(annotation_import, name)
     annotation_import_test_helpers.assert_file_content(
-        annotation_import.input_file_url, object_predictions)
+        annotation_import.input_file_url,
+        object_predictions_for_annotation_import)
     annotation_import.wait_until_done()
+
+    assert annotation_import.state == AnnotationImportState.FINISHED
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
 
 
 def test_get(client, model_run_with_data_rows, annotation_import_test_helpers):
