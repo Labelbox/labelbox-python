@@ -618,6 +618,7 @@ class DataRowMetadataOntology:
             query = """query dataRowCustomMetadataPyApi($dataRowIds: [ID!]!) {
                 dataRowCustomMetadata(where: {dataRowIds : $dataRowIds}) {
                     dataRowId
+                    globalKey
                     fields {
                         value
                         schemaId
