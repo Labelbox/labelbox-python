@@ -6,7 +6,7 @@ nbconvert~=7.2.6
 nbformat~=5.7.0
 opencv-python
 PILLOW
-pydantic>=1.8,<2.0
+pydantic>=2.4.0,<2.0
 pygeotile
 pyproj
 pytest-xdist
