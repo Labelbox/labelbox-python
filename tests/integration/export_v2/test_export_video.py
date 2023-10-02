@@ -1,17 +1,34 @@
 import time
+
+import pytest
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
 import labelbox.types as lb_types
 from labelbox.schema.annotation_import import AnnotationImportState
 
 
+@pytest.fixture
+def user_id(client):
+    return client.get_user().uid
+
+
+@pytest.fixture
+def org_id(client):
+    return client.get_organization().uid
+
+
 def test_export_v2_video(client, configured_project_without_data_rows,
-                         video_data, video_data_row,
-                         bbox_video_annotation_objects, rand_gen):
+                         video_data, video_data_row, is_adv_enabled,
+                         bbox_video_annotation_objects, rand_gen, user_id,
+                         org_id):
+
+    orgid = client.get_organization().uid
+    userid = client.get_user().uid
 
     project = configured_project_without_data_rows
     project_id = project.uid
     labels = []
+
     _, data_row_uids = video_data
     project.create_batch(
         rand_gen(str),
@@ -156,6 +173,7 @@ def test_export_v2_video(client, configured_project_without_data_rows,
            )  #note we create 1 label per data row, 1 data row so 1 label
     export_label = project_export_labels[0]
     assert (export_label['label_kind']) == 'Video'
+
     assert (export_label['label_details'].keys()
            ) == expected_export_label['label_details'].keys()
 

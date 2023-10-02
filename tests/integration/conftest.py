@@ -25,6 +25,7 @@ from labelbox.schema.user import User
 from support.integration_client import Environ, IntegrationClient, EphemeralClient, AdminClient
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
+MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
@@ -108,7 +109,7 @@ def client(environ: str):
 
 @pytest.fixture(scope="session")
 def image_url(client):
-    return client.upload_data(requests.get(IMG_URL).content,
+    return client.upload_data(requests.get(MASKABLE_IMG_URL).content,
                               content_type="image/jpeg",
                               filename="image.jpeg",
                               sign=True)
