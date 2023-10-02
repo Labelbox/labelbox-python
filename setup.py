@@ -1,8 +1,8 @@
 import setuptools
 
-with open('labelbox/__init__.py') as fid:
+with open("labelbox/__init__.py") as fid:
     for line in fid:
-        if line.startswith('__version__'):
+        if line.startswith("__version__"):
             SDK_VERSION = line.strip().split()[-1][1:-1]
             break
 
@@ -20,23 +20,35 @@ setuptools.setup(
     url="https://labelbox.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "backoff==1.10.0", "requests>=2.22.0", "google-api-core>=1.22.1",
-        "pydantic>=1.8,<2.0", "tqdm", "python-dateutil>=2.8.2,<2.9.0"
+        "backoff>=2.2.1,<3.0",
+        "requests>=2.22.0",
+        "google-api-core>=1.22.1",
+        "pydantic>=1.8,<2.0",
+        "tqdm",
+        "python-dateutil>=2.8.2,<2.9.0",
     ],
     extras_require={
-        'data': [
-            "shapely", "geojson", "numpy", "PILLOW", "opencv-python",
-            "typeguard", "imagesize", "pyproj", "pygeotile",
-            "typing-extensions", "packaging"
+        "data": [
+            "shapely",
+            "geojson",
+            "numpy",
+            "PILLOW",
+            "opencv-python",
+            "typeguard",
+            "imagesize",
+            "pyproj",
+            "pygeotile",
+            "typing-extensions",
+            "packaging",
         ],
     },
     classifiers=[
-        'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
-    python_requires='>=3.7',
+    python_requires=">=3.7",
     keywords=["labelbox"],
 )
