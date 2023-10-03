@@ -7,6 +7,8 @@
 * Python 3.10 support
 * Change return of dataset.create_data_rows() to Task
 * Add new header to capture python version
+ ## Notebooks
+ * Updated examples to match latest updates to SDK
 # Version 3.52.0 (2023-08-24)
 ## Added
 * Added methods to create multiple batches for a project from a list of data rows
