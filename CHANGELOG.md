@@ -1,4 +1,12 @@
 # Changelog
+# Version 3.53.0 (2023-10-03)
+## Added
+* Remove LPO deprecation warning and allow greater range of priority values
+* Add an sdk method to get data row by global key
+* Disallow invalid quality modes during create_project
+* Python 3.10 support
+* Change return of dataset.create_data_rows() to Task
+* Add new header to capture python version
 # Version 3.52.0 (2023-08-24)
 ## Added
 * Added methods to create multiple batches for a project from a list of data rows
