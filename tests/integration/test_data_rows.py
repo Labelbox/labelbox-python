@@ -1,3 +1,4 @@
+import operator
 from tempfile import NamedTemporaryFile
 import time
 import uuid
@@ -606,58 +607,55 @@ def test_data_row_filtering_sorting(dataset, image_url):
 
 
 @pytest.fixture
-def create_datarows_for_data_row_deletion(dataset, image_url):
+def create_datarows_for_data_row_deletion(dataset, image_url, rand_gen,
+                                          wait_for_data_row_processing, client):
+    num_rows = 6
+    global_keys = [rand_gen(str) for i in range(num_rows)]
     task = dataset.create_data_rows([{
         DataRow.row_data: image_url,
-        DataRow.external_id: str(i)
-    } for i in range(5)])
+        DataRow.global_key: gk
+    } for gk in global_keys])
     task.wait_till_done()
 
     data_rows = list(dataset.data_rows())
+    for data_row in data_rows:
+        wait_for_data_row_processing(client, data_row)
 
-    yield data_rows
+    yield data_rows, global_keys
     for dr in data_rows:
         dr.delete()
 
 
-def test_data_row_deletion(dataset, create_datarows_for_data_row_deletion):
-    create_datarows_for_data_row_deletion
-    data_rows = list(dataset.data_rows())
-    expected = set(map(str, range(5)))
-    assert {dr.external_id for dr in data_rows} == expected
+def test_data_row_deletion(client, dataset,
+                           create_datarows_for_data_row_deletion):
+    data_rows, global_keys = create_datarows_for_data_row_deletion
 
-    for dr in data_rows:
-        if dr.external_id in "13":
-            dr.delete()
-    expected -= set("13")
-
-    data_rows = list(dataset.data_rows())
-    assert {dr.external_id for dr in data_rows} == expected
-
-    DataRow.bulk_delete([dr for dr in data_rows if dr.external_id in "24"])
-    expected -= set("24")
+    expected = global_keys
+    data_row = data_rows[:1][0]
+    delete_gk = data_row.global_key
+    data_row.delete()
+    expected.remove(delete_gk)
 
     data_rows = list(dataset.data_rows())
-    assert {dr.external_id for dr in data_rows} == expected
+    assert sorted({dr.global_key for dr in data_rows}) == sorted(expected)
 
+    bulk_delete_data_rows = data_rows[:2]
+    bulk_delete_data_row_ids = [dr.uid for dr in bulk_delete_data_rows]
+    bulk_delete_gks = [dr.global_key for dr in bulk_delete_data_rows]
+    client.bulk_delete_data_rows(data_row_ids=bulk_delete_data_row_ids)
+    for gk in bulk_delete_gks:
+        expected.remove(gk)
 
-def test_data_row_bulk_delete(client, dataset,
-                                  create_datarows_for_data_row_deletion):
-    data_rows = create_datarows_for_data_row_deletion
+    data_rows = list(dataset.data_rows())
+    assert sorted({dr.global_key for dr in data_rows}) == sorted(expected)
 
-    all_data_row_ids = [dr.uid for dr in data_rows]
+    bulk_delete_data_row_gks = [dr.global_key for dr in data_rows[:2]]
+    client.bulk_delete_data_rows(global_keys=bulk_delete_data_row_gks)
+    for gk in bulk_delete_data_row_gks:
+        expected.remove(gk)
 
-    delete_data_row_ids = all_data_row_ids[:2]
-    task = client.bulk_delete_data_rows(delete_data_row_ids)
-    task.wait_till_done()
-    
-    remaining_data_rows = list(
-        dataset.data_rows(where=(DataRow.uid == delete_data_row_ids[0])))
-    assert len(remaining_data_rows) == 0
-
-    remaining_data_rows = list(
-        dataset.data_rows(where=(DataRow.uid == delete_data_row_ids[1])))
-    assert len(remaining_data_rows) == 0
+    data_rows = list(dataset.data_rows())
+    assert {dr.global_key for dr in data_rows} == expected
 
 
 def test_data_row_iteration(dataset, image_url) -> None:

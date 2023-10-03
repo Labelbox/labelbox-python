@@ -46,7 +46,6 @@ from labelbox.schema.media_type import MediaType, get_media_type_validation_erro
 from labelbox.schema.task import Task
 from labelbox.schema.es_filters import build_id_filters
 
-
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
@@ -1005,19 +1004,21 @@ class Client:
                 "Failed to delete the ontology, message: " +
                 str(response.json()['message']))
 
-
-    def bulk_delete_data_rows(self, data_row_ids: List[str]=None, global_keys: List[str]=None) -> Task:
+    def bulk_delete_data_rows(self,
+                              data_row_ids: List[str] = None,
+                              global_keys: List[str] = None) -> None:
         """ Deletes DataRows given data row ids or global keys.
 
         Args:
-            data_row_ids (list of data row ids or global keys)
+            data_row_ids / global_keys (list of data row ids or global keys)
         """
 
         if data_row_ids is None and global_keys is None:
-            raise ValueError("Either data_row_ids or global_keys must be provided")
+            raise ValueError(
+                "Either data_row_ids or global_keys must be provided")
 
         search_query: List[Dict[str, Collection[str]]] = []
-        if  global_keys is not None:
+        if global_keys is not None:
             search_query.append(build_id_filters(global_keys, "global_key"))
         else:
             search_query.append(build_id_filters(data_row_ids, "data_row_id"))
@@ -1035,22 +1036,9 @@ class Client:
             }
         }
 
-        res = self.execute(query,
-                        query_params,
-                        error_log_key="errors")
+        res = self.execute(query, query_params, error_log_key="errors")
         res = res[mutation_name]
 
-        def get_task(task_id):
-            user: User = self.get_user()
-            tasks: List[Task] = list(
-                user.created_tasks(where=Entity.Task.uid == task_id))
-            if len(tasks) != 1:
-                raise ResourceNotFoundError(Entity.Task, task_id)
-            task: Task = tasks[0]
-            task._user = user
-
-            return task
-        
         task_id = res["taskId"]
         user: User = self.get_user()
         tasks: List[Task] = list(
@@ -1059,9 +1047,9 @@ class Client:
             raise ResourceNotFoundError(Entity.Task, task_id)
         task: Task = tasks[0]
         task._user = user
+        task.wait_till_done()
 
-        return task  
- 
+        return None
 
     def update_feature_schema_title(self, feature_schema_id: str,
                                     title: str) -> FeatureSchema:
