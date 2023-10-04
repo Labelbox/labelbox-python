@@ -1166,14 +1166,14 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    def set_data_row_labeling_priority(
+    def update_data_row_labeling_priority(
         self,
         data_rows: List[str],
         priority: int,
     ) -> bool:
         """
-        Adds labeling parameter overrides to this project in bulk. This method allows up to 1 million data rows to be
-        set at once.
+        Updates labeling parameter overrides to this project in bulk. This method allows up to 1 million data rows to be
+        updated at once.
 
         See information on priority here:
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system

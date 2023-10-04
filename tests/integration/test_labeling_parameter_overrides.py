@@ -2,23 +2,8 @@ import pytest
 from labelbox import DataRow
 
 
-def test_labeling_parameter_overrides(consensus_project, initial_dataset,
-                                      rand_gen, image_url):
-    project = consensus_project
-    dataset = initial_dataset
-
-    task = dataset.create_data_rows([{DataRow.row_data: image_url}] * 3)
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-
-    data_rows = list(dataset.data_rows())
-    assert len(data_rows) == 3
-
-    project.create_batch(
-        rand_gen(str),
-        data_rows,  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
-    )
+def test_labeling_parameter_overrides(consensus_project_with_batch):
+    [project, _, data_rows] = consensus_project_with_batch
 
     init_labeling_parameter_overrides = list(
         project.labeling_parameter_overrides())
@@ -54,23 +39,8 @@ def test_labeling_parameter_overrides(consensus_project, initial_dataset,
            "data_row should be be of type DataRow. Found <class 'str'>. Index: 0"
 
 
-def test_set_labeling_priority(consensus_project, initial_dataset, rand_gen,
-                               image_url):
-    project = consensus_project
-    dataset = initial_dataset
-
-    task = dataset.create_data_rows([{DataRow.row_data: image_url}] * 3)
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-
-    data_rows = list(dataset.data_rows())
-    assert len(data_rows) == 3
-
-    project.create_batch(
-        rand_gen(str),
-        data_rows,  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
-    )
+def test_set_labeling_priority(consensus_project_with_batch):
+    [project, _, data_rows] = consensus_project_with_batch
 
     init_labeling_parameter_overrides = list(
         project.labeling_parameter_overrides())
@@ -78,7 +48,7 @@ def test_set_labeling_priority(consensus_project, initial_dataset, rand_gen,
     assert {o.priority for o in init_labeling_parameter_overrides} == {5, 5, 5}
 
     data = [data_row.uid for data_row in data_rows]
-    success = project.set_data_row_labeling_priority(data, 1)
+    success = project.update_data_row_labeling_priority(data, 1)
     assert success
 
     updated_overrides = list(project.labeling_parameter_overrides())
