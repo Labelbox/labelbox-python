@@ -1166,6 +1166,60 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
+    def update_data_row_labeling_priority(
+        self,
+        data_rows: List[str],
+        priority: int,
+    ) -> bool:
+        """
+        Updates labeling parameter overrides to this project in bulk. This method allows up to 1 million data rows to be
+        updated at once.
+
+        See information on priority here:
+            https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
+
+        Args:
+            data_rows (iterable): An iterable of data row ids.
+            priority (int): Priority for the new override. See above for more information.
+
+        Returns:
+            bool, indicates if the operation was a success.
+        """
+
+        method = "createQueuePriorityUpdateTask"
+        priority_param = "priority"
+        project_param = "projectId"
+        data_rows_param = "dataRowIds"
+        query_str = """mutation %sPyApi(
+              $%s: Int!
+              $%s: ID!
+              $%s: [ID!]
+            ) {
+              project(where: { id: $%s }) {
+                %s(
+                  data: { priority: $%s, dataRowIds: $%s }
+                ) {
+                  taskId
+                }
+              }
+            }
+        """ % (method, priority_param, project_param, data_rows_param,
+               project_param, method, priority_param, data_rows_param)
+        res = self.client.execute(
+            query_str, {
+                priority_param: priority,
+                project_param: self.uid,
+                data_rows_param: data_rows
+            })["project"][method]
+
+        task_id = res['taskId']
+
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Priority was not updated successfully: " +
+                                json.dumps(task.errors))
+        return True
+
     def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
 

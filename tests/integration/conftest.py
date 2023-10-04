@@ -11,7 +11,7 @@ from typing import Type, List
 import pytest
 import requests
 
-from labelbox import Dataset
+from labelbox import Dataset, DataRow
 from labelbox import LabelingFrontend
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
@@ -165,6 +165,29 @@ def consensus_project(client, rand_gen):
                                     media_type=MediaType.Image)
     yield project
     project.delete()
+
+
+@pytest.fixture
+def consensus_project_with_batch(consensus_project, initial_dataset, rand_gen,
+                                 image_url):
+    project = consensus_project
+    dataset = initial_dataset
+
+    task = dataset.create_data_rows([{DataRow.row_data: image_url}] * 3)
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == 3
+
+    batch = project.create_batch(
+        rand_gen(str),
+        data_rows,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+
+    yield [project, batch, data_rows]
+    batch.delete()
 
 
 @pytest.fixture
