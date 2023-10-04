@@ -8,6 +8,7 @@ import logging
 import mimetypes
 import os
 import time
+import sys
 import urllib.parse
 
 from google.api_core import retry
@@ -23,6 +24,7 @@ from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
@@ -31,6 +33,8 @@ from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
+from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
+    BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
@@ -43,6 +47,12 @@ from labelbox.schema.media_type import MediaType, get_media_type_validation_erro
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
+
+
+def python_version_info():
+    version_info = sys.version_info
+
+    return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
 
 
 class Client:
@@ -92,11 +102,13 @@ class Client:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
+
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Authorization': 'Bearer %s' % api_key,
-            'X-User-Agent': f'python-sdk {SDK_VERSION}'
+            'X-User-Agent': f"python-sdk {SDK_VERSION}",
+            'X-Python-Version': f"{python_version_info()}",
         }
         self._data_row_metadata_ontology = None
 
@@ -419,6 +431,7 @@ class Client:
                 of the given type for the given ID.
         """
         query_str, params = query.get_single(db_object_type, uid)
+
         res = self.execute(query_str, params)
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
@@ -636,16 +649,33 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
-            auto_audit_percentage (Optional[float]): The percentage of data rows that will require more than 1 label
-            auto_audit_number_of_labels (Optional[float]): Number of labels required for data rows selected for multiple labeling (auto_audit_percentage)
+            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
+                Benchmark
         Returns:
             A new Project object.
         Raises:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
-        media_type = kwargs.get("media_type")
+
+        auto_audit_percentage = kwargs.get("auto_audit_percentage")
+        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
+        if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
+            raise ValueError(
+                "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+            )
+
         queue_mode = kwargs.get("queue_mode")
+        if queue_mode is QueueMode.Dataset:
+            raise ValueError(
+                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
+            )
+        elif queue_mode is QueueMode.Batch:
+            logger.warning(
+                "Passing a queue mode of batch is redundant and will soon no longer be supported."
+            )
+
+        media_type = kwargs.get("media_type")
         if media_type:
             if MediaType.is_supported(media_type):
                 media_type = media_type.value
@@ -658,20 +688,27 @@ class Client:
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
 
-        if not queue_mode:
-            logger.warning(
-                "Default createProject behavior will soon be adjusted to prefer "
-                "batch projects. Pass in `queue_mode` parameter explicitly to opt-out for the "
-                "time being.")
-        elif queue_mode == QueueMode.Dataset:
-            logger.warning(
-                "QueueMode.Dataset will eventually be deprecated, and is no longer "
-                "recommended for new projects. Prefer QueueMode.Batch instead.")
+        quality_mode = kwargs.get("quality_mode")
+        if not quality_mode:
+            logger.info("Defaulting quality mode to Benchmark.")
+
+        data = kwargs
+        data.pop("quality_mode", None)
+        if quality_mode is None or quality_mode is QualityMode.Benchmark:
+            data[
+                "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
+        elif quality_mode is QualityMode.Consensus:
+            data[
+                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+        else:
+            raise ValueError(f"{quality_mode} is not a valid quality mode.")
 
         return self._create(Entity.Project, {
-            **kwargs,
+            **data,
             **({
-                'media_type': media_type
+                "media_type": media_type
             } if media_type else {})
         })
 
@@ -691,6 +728,21 @@ class Client:
         """
 
         return self._get_single(Entity.DataRow, data_row_id)
+
+    def get_data_row_by_global_key(self, global_key: str) -> DataRow:
+        """
+            Returns: DataRow: returns a single data row given the global key
+        """
+
+        res = self.get_data_row_ids_for_global_keys([global_key])
+        if res['status'] != "SUCCESS":
+            raise labelbox.exceptions.MalformedQueryException(res['errors'][0])
+        if len(res['results']) == 0:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Entity.DataRow, {global_key: global_key})
+        data_row_id = res['results'][0]
+
+        return self.get_data_row(data_row_id)
 
     def get_data_row_metadata_ontology(self) -> DataRowMetadataOntology:
         """
@@ -840,7 +892,9 @@ class Client:
         Fetches top level feature schemas with names that match the `name_contains` string
 
         Args:
-            name_contains (str): the string to search top level feature schema names by
+            name_contains (str): search filter for a name of a root feature schema
+                If present, results in a case insensitive 'like' search for feature schemas
+                If None, returns all top level feature schemas
         Returns:
             PaginatedCollection of FeatureSchemas with names that match `name_contains`
         """

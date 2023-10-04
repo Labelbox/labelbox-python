@@ -508,12 +508,16 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 
     data_row_ids = []
 
-    for _ in range(len(ontology['tools']) + len(ontology['classifications'])):
-        data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
+    ontologies = ontology['tools'] + ontology['classifications']
+    for ind in range(len(ontologies)):
+        data_row_ids.append(
+            dataset.create_data_row(
+                row_data=image_url,
+                global_key=f"gk_{ontologies[ind]['name']}_{rand_gen(str)}").uid)
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
 
-    batch = project.create_batch(
+    project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5  # priority between 1(Highest) - 5(lowest)
@@ -890,9 +894,9 @@ def segmentation_inference(prediction_id_mapping):
     segmentation = prediction_id_mapping['superpixel'].copy()
     segmentation.update({
         'mask': {
-            # TODO: Use a real URI
-            'instanceURI': "sampleuri",
-            'colorRGB': [0, 0, 0]
+            "instanceURI":
+                "https://storage.googleapis.com/labelbox-datasets/image_sample_data/raster_seg.png",
+            "colorRGB": (255, 255, 255)
         }
     })
     del segmentation['tool']
@@ -1002,13 +1006,23 @@ def model_run_predictions(polygon_inference, rectangle_inference,
     return [polygon_inference, rectangle_inference, line_inference]
 
 
-# also used for label imports
 @pytest.fixture
 def object_predictions(polygon_inference, rectangle_inference, line_inference,
                        entity_inference, segmentation_inference):
     return [
         polygon_inference, rectangle_inference, line_inference,
         entity_inference, segmentation_inference
+    ]
+
+
+@pytest.fixture
+def object_predictions_for_annotation_import(polygon_inference,
+                                             rectangle_inference,
+                                             line_inference,
+                                             segmentation_inference):
+    return [
+        polygon_inference, rectangle_inference, line_inference,
+        segmentation_inference
     ]
 
 
@@ -1070,6 +1084,8 @@ def model_run_with_training_metadata(rand_gen, model):
 def model_run_with_data_rows(client, configured_project, model_run_predictions,
                              model_run, wait_for_label_processing):
     configured_project.enable_model_assisted_labeling()
+    use_data_row_ids = [p['dataRow']['id'] for p in model_run_predictions]
+    model_run.upsert_data_rows(use_data_row_ids)
 
     upload_task = LabelImport.create_from_objects(
         client, configured_project.uid, f"label-import-{uuid.uuid4()}",
@@ -1092,6 +1108,8 @@ def model_run_with_all_project_labels(client, configured_project,
                                       model_run_predictions, model_run,
                                       wait_for_label_processing):
     configured_project.enable_model_assisted_labeling()
+    use_data_row_ids = [p['dataRow']['id'] for p in model_run_predictions]
+    model_run.upsert_data_rows(use_data_row_ids)
 
     upload_task = LabelImport.create_from_objects(
         client, configured_project.uid, f"label-import-{uuid.uuid4()}",

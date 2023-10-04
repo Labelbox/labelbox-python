@@ -2,18 +2,16 @@ from collections import defaultdict
 from itertools import islice
 import json
 import os
-import re
 import sys
 import time
 import uuid
-from enum import Enum
 from types import SimpleNamespace
 from typing import Type, List
 
 import pytest
 import requests
 
-from labelbox import Client, Dataset
+from labelbox import Dataset
 from labelbox import LabelingFrontend
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
@@ -21,23 +19,16 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
-from labelbox.schema.project import Project
+from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
+from support.integration_client import Environ, IntegrationClient, EphemeralClient, AdminClient
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
+MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
-
-
-class Environ(Enum):
-    LOCAL = 'local'
-    PROD = 'prod'
-    STAGING = 'staging'
-    ONPREM = 'onprem'
-    CUSTOM = 'custom'
-    STAGING_EU = 'staging-eu'
 
 
 @pytest.fixture(scope="session")
@@ -53,56 +44,6 @@ def environ() -> Environ:
         return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
-
-
-def graphql_url(environ: str) -> str:
-    if environ == Environ.PROD:
-        return 'https://api.labelbox.com/graphql'
-    elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/graphql'
-    elif environ == Environ.STAGING_EU:
-        return 'https://api.eu-de.lb-stage.xyz/graphql'
-    elif environ == Environ.ONPREM:
-        hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
-        if hostname is None:
-            raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
-        return f"{hostname}/api/_gql"
-    elif environ == Environ.CUSTOM:
-        graphql_api_endpoint = os.environ.get(
-            'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
-        if graphql_api_endpoint is None:
-            raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
-        return graphql_api_endpoint
-    return 'http://host.docker.internal:8080/graphql'
-
-
-def rest_url(environ: str) -> str:
-    if environ == Environ.PROD:
-        return 'https://api.labelbox.com/api/v1'
-    elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/api/v1'
-    elif environ == Environ.STAGING_EU:
-        return 'https://api.eu-de.lb-stage.xyz/api/v1'
-    elif environ == Environ.CUSTOM:
-        rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
-        if rest_api_endpoint is None:
-            raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
-        return rest_api_endpoint
-    return 'http://host.docker.internal:8080/api/v1'
-
-
-def testing_api_key(environ: str) -> str:
-    if environ == Environ.PROD:
-        return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-    elif environ == Environ.STAGING:
-        return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
-    elif environ == Environ.STAGING_EU:
-        return os.environ["LABELBOX_TEST_API_KEY_STAGING_EU"]
-    elif environ == Environ.ONPREM:
-        return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
-    elif environ == Environ.CUSTOM:
-        return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
-    return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
 def cancel_invite(client, invite_id):
@@ -154,33 +95,21 @@ def queries():
                            get_invites=get_invites)
 
 
-class IntegrationClient(Client):
-
-    def __init__(self, environ: str) -> None:
-        api_url = graphql_url(environ)
-        api_key = testing_api_key(environ)
-        rest_endpoint = rest_url(environ)
-        super().__init__(api_key,
-                         api_url,
-                         enable_experimental=True,
-                         rest_endpoint=rest_endpoint)
-        self.queries = []
-
-    def execute(self, query=None, params=None, check_naming=True, **kwargs):
-        if check_naming and query is not None:
-            assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
-        self.queries.append((query, params))
-        return super().execute(query, params, **kwargs)
+@pytest.fixture(scope="session")
+def admin_client(environ: str):
+    return AdminClient(environ)
 
 
 @pytest.fixture(scope="session")
 def client(environ: str):
+    if environ == Environ.EPHEMERAL:
+        return EphemeralClient()
     return IntegrationClient(environ)
 
 
 @pytest.fixture(scope="session")
 def image_url(client):
-    return client.upload_data(requests.get(IMG_URL).content,
+    return client.upload_data(requests.get(MASKABLE_IMG_URL).content,
                               content_type="image/jpeg",
                               filename="image.jpeg",
                               sign=True)
@@ -231,7 +160,7 @@ def project(client, rand_gen):
 @pytest.fixture
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    auto_audit_percentage=0,
+                                    quality_mode=QualityMode.Consensus,
                                     queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
     yield project
@@ -267,16 +196,33 @@ def small_dataset(dataset: Dataset):
 
 @pytest.fixture
 def data_row(dataset, image_url, rand_gen):
+    global_key = f"global-key-{rand_gen(str)}"
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
             "external_id": "my-image",
-            "global_key": f"global-key-{rand_gen(str)}"
+            "global_key": global_key
         },
     ])
     task.wait_till_done()
     dr = dataset.data_rows().get_one()
     yield dr
+    dr.delete()
+
+
+@pytest.fixture
+def data_row_and_global_key(dataset, image_url, rand_gen):
+    global_key = f"global-key-{rand_gen(str)}"
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image",
+            "global_key": global_key
+        },
+    ])
+    task.wait_till_done()
+    dr = dataset.data_rows().get_one()
+    yield dr, global_key
     dr.delete()
 
 

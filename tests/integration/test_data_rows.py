@@ -3,6 +3,7 @@ import time
 import uuid
 from datetime import datetime
 import json
+from labelbox.schema.media_type import MediaType
 
 import pytest
 import requests
@@ -115,6 +116,13 @@ def make_metadata_fields_dict():
         "value": msg
     }]
     return fields
+
+
+def test_get_data_row_by_global_key(data_row_and_global_key, client, rand_gen):
+    _, global_key = data_row_and_global_key
+    data_row = client.get_data_row_by_global_key(global_key)
+    assert type(data_row) == DataRow
+    assert data_row.global_key == global_key
 
 
 def test_get_data_row(data_row, client):
@@ -959,7 +967,8 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 def test_create_conversational_text(dataset, conversational_content):
     examples = [
         {
-            **conversational_content, 'media_type': 'CONVERSATIONAL'
+            **conversational_content, 'media_type':
+                MediaType.Conversational.value
         },
         conversational_content,
         {

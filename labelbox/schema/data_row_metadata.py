@@ -255,6 +255,7 @@ class DataRowMetadataOntology:
                 options = []
                 for option in schema["options"]:
                     option["uid"] = option["id"]
+
                     options.append(
                         DataRowMetadataSchema(**{
                             **option,
