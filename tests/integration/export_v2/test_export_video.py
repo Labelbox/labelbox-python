@@ -17,13 +17,14 @@ def org_id(client):
     return client.get_organization().uid
 
 
-def test_export_v2_video(client, configured_project_without_data_rows,
-                         video_data, video_data_row, is_adv_enabled,
-                         bbox_video_annotation_objects, rand_gen, user_id,
-                         org_id):
-
-    orgid = client.get_organization().uid
-    userid = client.get_user().uid
+def test_export_v2_video(
+    client,
+    configured_project_without_data_rows,
+    video_data,
+    video_data_row,
+    bbox_video_annotation_objects,
+    rand_gen,
+):
 
     project = configured_project_without_data_rows
     project_id = project.uid
@@ -51,6 +52,7 @@ def test_export_v2_video(client, configured_project_without_data_rows,
 
     num_retries = 5
     task = None
+
     while (num_retries > 0):
         task = project.export_v2(
             params={
@@ -72,7 +74,10 @@ def test_export_v2_video(client, configured_project_without_data_rows,
     assert data_row_export['global_key'] == video_data_row['global_key']
     assert data_row_export['row_data'] == video_data_row['row_data']
     assert export_data[0]['media_attributes']['mime_type'] == 'video/mp4'
-
+    assert export_data[0]['media_attributes'][
+        'frame_rate'] == 10  # as per the video_data fixture
+    assert export_data[0]['media_attributes'][
+        'frame_count'] == 100  # as per the video_data fixture
     expected_export_label = {
         'label_kind': 'Video',
         'version': '1.0.0',
