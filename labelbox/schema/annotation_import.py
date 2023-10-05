@@ -5,7 +5,7 @@ import os
 import time
 from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
 
-import backoff
+from google.api_core import retry
 from labelbox import parser
 import requests
 from tqdm import tqdm  # type: ignore
@@ -109,12 +109,9 @@ class AnnotationImport(DbObject):
             pbar.update(100 - pbar.n)
             pbar.close()
 
-    @backoff.on_exception(
-        backoff.expo,
-        (labelbox.exceptions.ApiLimitError, labelbox.exceptions.TimeoutError,
-         labelbox.exceptions.NetworkError),
-        max_tries=10,
-        jitter=None)
+    @retry.Retry(predicate=retry.if_exception_type(
+        labelbox.exceptions.ApiLimitError, labelbox.exceptions.TimeoutError,
+        labelbox.exceptions.NetworkError))
     def __backoff_refresh(self) -> None:
         self.refresh()
 
