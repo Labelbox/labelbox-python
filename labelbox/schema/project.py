@@ -337,6 +337,9 @@ class Project(DbObject, Updateable, Deletable):
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
+        print(
+            "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
+        )
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
             """Returns a concatenated string of the dictionary's keys and values
@@ -355,10 +358,6 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         filter_param = ""
         filter_param_dict = {}
-
-        print(
-            "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
-        )
 
         if "start" in kwargs or "end" in kwargs:
             created_at_dict = {
