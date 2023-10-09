@@ -5,6 +5,7 @@ import logging
 from collections.abc import Iterable
 from string import Template
 import time
+import warnings
 
 from labelbox import parser
 from itertools import islice
@@ -565,7 +566,7 @@ class Dataset(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
-        print(
+        warnings.warn(
             "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
         )
         id_param = "datasetId"

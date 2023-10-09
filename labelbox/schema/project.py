@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -231,7 +232,7 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
-        print(
+        warnings.warn(
             "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
         )
         id_param = "projectId"
@@ -337,7 +338,7 @@ class Project(DbObject, Updateable, Deletable):
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
-        print(
+        warnings.warn(
             "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
         )
 
@@ -525,7 +526,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             URL of the data file with this Project's issues.
         """
-        print(
+        warnings.warn(
             "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
         )
         id_param = "projectId"

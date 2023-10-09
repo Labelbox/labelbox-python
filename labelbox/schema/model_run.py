@@ -5,6 +5,7 @@ import os
 import time
 import logging
 import requests
+import warnings
 from labelbox import parser
 from enum import Enum
 
@@ -470,7 +471,7 @@ class ModelRun(DbObject):
             If the server didn't generate during the `timeout_seconds` period,
             None is returned.
         """
-        print(
+        warnings.warn(
             "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
         )
         sleep_time = 2

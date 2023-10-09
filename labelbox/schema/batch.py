@@ -9,6 +9,7 @@ from labelbox import parser
 import requests
 import logging
 import time
+import warnings
 
 if TYPE_CHECKING:
     from labelbox import Project
@@ -103,7 +104,7 @@ class Batch(DbObject):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
-        print(
+        warnings.warn(
             "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to exports v2. Learn more about it here  - https://docs.labelbox.com/reference/label-export"
         )
         id_param = "batchId"
