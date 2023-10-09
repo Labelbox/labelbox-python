@@ -231,6 +231,9 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
+        print(
+            "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to the newer version. Learn more about exports v2  - https://docs.labelbox.com/reference/label-export"
+        )
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
@@ -352,6 +355,10 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         filter_param = ""
         filter_param_dict = {}
+
+        print(
+            "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to the newer version. Learn more about exports v2  - https://docs.labelbox.com/reference/label-export"
+        )
 
         if "start" in kwargs or "end" in kwargs:
             created_at_dict = {
@@ -519,6 +526,9 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             URL of the data file with this Project's issues.
         """
+        print(
+            "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to the newer version. Learn more about exports v2  - https://docs.labelbox.com/reference/label-export"
+        )
         id_param = "projectId"
         status_param = "status"
         query_str = """query GetProjectIssuesExportPyApi($%s: ID!, $%s: IssueStatus) {

@@ -470,6 +470,9 @@ class ModelRun(DbObject):
             If the server didn't generate during the `timeout_seconds` period,
             None is returned.
         """
+        print(
+            "You are using the exports v1 to perform this operation which will be deprecated after Dec 31st, 2023. Please migrate to the newer version. Learn more about exports v2  - https://docs.labelbox.com/reference/label-export"
+        )
         sleep_time = 2
         query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
                 exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
