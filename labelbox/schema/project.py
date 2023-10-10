@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -231,6 +232,9 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. Find out more at this link: https://docs.labelbox.com/reference/label-export."
+        )
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
@@ -334,6 +338,9 @@ class Project(DbObject, Updateable, Deletable):
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. Find out more at this link: https://docs.labelbox.com/reference/label-export."
+        )
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
             """Returns a concatenated string of the dictionary's keys and values
