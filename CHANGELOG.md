@@ -1,4 +1,10 @@
 # Changelog
+# Version 3.54.0 (2023-10-10)
+## Added
+* Add exports v1 deprecation warning
+* Create method in SDK to modify LPO priorities in bulk
+## Removed
+*  Remove backoff library
 # Version 3.53.0 (2023-10-03)
 ## Added
 * Remove LPO deprecation warning and allow greater range of priority values
