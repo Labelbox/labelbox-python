@@ -105,8 +105,9 @@ class Batch(DbObject):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. Find out more at this link: https://docs.labelbox.com/reference/label-export."
-        )
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
+
         id_param = "batchId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetBatchDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
