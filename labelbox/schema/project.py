@@ -526,9 +526,6 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             URL of the data file with this Project's issues.
         """
-        warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. Find out more at this link: https://docs.labelbox.com/reference/label-export."
-        )
         id_param = "projectId"
         status_param = "status"
         query_str = """query GetProjectIssuesExportPyApi($%s: ID!, $%s: IssueStatus) {
