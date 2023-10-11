@@ -5,6 +5,7 @@ import os
 import time
 import logging
 import requests
+import warnings
 from labelbox import parser
 from enum import Enum
 
@@ -470,6 +471,9 @@ class ModelRun(DbObject):
             If the server didn't generate during the `timeout_seconds` period,
             None is returned.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
         sleep_time = 2
         query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
                 exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {

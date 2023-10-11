@@ -6,7 +6,7 @@ import functools
 import logging
 from pathlib import Path
 import pydantic
-import backoff
+from google.api_core import retry
 from labelbox import parser
 import requests
 from pydantic import BaseModel, root_validator, validator
@@ -197,11 +197,9 @@ class BulkImportRequest(DbObject):
             time.sleep(sleep_time_seconds)
             self.__exponential_backoff_refresh()
 
-    @backoff.on_exception(
-        backoff.expo, (lb_exceptions.ApiLimitError, lb_exceptions.TimeoutError,
-                       lb_exceptions.NetworkError),
-        max_tries=10,
-        jitter=None)
+    @retry.Retry(predicate=retry.if_exception_type(lb_exceptions.ApiLimitError,
+                                                   lb_exceptions.TimeoutError,
+                                                   lb_exceptions.NetworkError))
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
 

@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -231,6 +232,9 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
@@ -334,6 +338,9 @@ class Project(DbObject, Updateable, Deletable):
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
             """Returns a concatenated string of the dictionary's keys and values
@@ -1165,6 +1172,60 @@ class Project(DbObject, Updateable, Deletable):
             (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
+
+    def update_data_row_labeling_priority(
+        self,
+        data_rows: List[str],
+        priority: int,
+    ) -> bool:
+        """
+        Updates labeling parameter overrides to this project in bulk. This method allows up to 1 million data rows to be
+        updated at once.
+
+        See information on priority here:
+            https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
+
+        Args:
+            data_rows (iterable): An iterable of data row ids.
+            priority (int): Priority for the new override. See above for more information.
+
+        Returns:
+            bool, indicates if the operation was a success.
+        """
+
+        method = "createQueuePriorityUpdateTask"
+        priority_param = "priority"
+        project_param = "projectId"
+        data_rows_param = "dataRowIds"
+        query_str = """mutation %sPyApi(
+              $%s: Int!
+              $%s: ID!
+              $%s: [ID!]
+            ) {
+              project(where: { id: $%s }) {
+                %s(
+                  data: { priority: $%s, dataRowIds: $%s }
+                ) {
+                  taskId
+                }
+              }
+            }
+        """ % (method, priority_param, project_param, data_rows_param,
+               project_param, method, priority_param, data_rows_param)
+        res = self.client.execute(
+            query_str, {
+                priority_param: priority,
+                project_param: self.uid,
+                data_rows_param: data_rows
+            })["project"][method]
+
+        task_id = res['taskId']
+
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Priority was not updated successfully: " +
+                                json.dumps(task.errors))
+        return True
 
     def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
