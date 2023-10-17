@@ -1,7 +1,7 @@
 # Changelog
 # Version 3.54.1 (2023-10-17)
 ## Notebooks
-* Corrected project_setup.ipynb to use `quality_mode` when creating project
+* Revised the notebooks to update outdated examples when using `client.create_project()` to create a project
 
 # Version 3.54.0 (2023-10-10)
 ## Added
