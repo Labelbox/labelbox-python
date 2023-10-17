@@ -68,8 +68,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def data_rows(
         self,
-        from_cursor: str = None,
-        where: Comparison = None,
+        from_cursor: Optional[str] = None,
+        where: Optional[Comparison] = None,
     ) -> PaginatedCollection:
         """ 
         Custom method to paginate data_rows via cursor.
