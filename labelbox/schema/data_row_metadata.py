@@ -255,6 +255,7 @@ class DataRowMetadataOntology:
                 options = []
                 for option in schema["options"]:
                     option["uid"] = option["id"]
+
                     options.append(
                         DataRowMetadataSchema(**{
                             **option,
@@ -365,12 +366,7 @@ class DataRowMetadataOntology:
             raise ValueError(
                 f"Updating Enum option is only supported for Enum metadata schema"
             )
-        valid_options: List[str] = [o.name for o in schema.options]
 
-        if option not in valid_options:
-            raise ValueError(
-                f"Enum option '{option}' is not a valid option for Enum '{name}', valid options are: {valid_options}"
-            )
         upsert_schema = _UpsertCustomMetadataSchemaInput(id=schema.uid,
                                                          name=schema.name,
                                                          kind=schema.kind.value)
