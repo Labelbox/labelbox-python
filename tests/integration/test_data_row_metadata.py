@@ -94,6 +94,15 @@ def test_export_empty_metadata(client, configured_project_with_label,
     assert label.data.metadata == []
 
 
+def test_bulk_export_datarow_metadata(data_row, mdo: DataRowMetadataOntology):
+    metadata = make_metadata(data_row.uid)
+    mdo.bulk_upsert([metadata])
+    exported = mdo.bulk_export([data_row.uid])
+    assert exported[0].global_key == data_row.global_key
+    assert exported[0].data_row_id == data_row.uid
+    assert len([field for field in exported[0].fields]) == 3
+
+
 def test_get_datarow_metadata_ontology(mdo):
     assert len(mdo.fields)
     assert len(mdo.reserved_fields)
@@ -316,6 +325,8 @@ def test_parse_raw_metadata(mdo):
     example = {
         'dataRowId':
             'ckr6kkfx801ui0yrtg9fje8xh',
+        'globalKey':
+            'global-key-1',
         'fields': [
             {
                 'schemaId': 'cko8s9r5v0001h2dk9elqdidh',
@@ -344,6 +355,7 @@ def test_parse_raw_metadata(mdo):
     assert len(parsed) == 1
     for row in parsed:
         assert row.data_row_id == example["dataRowId"]
+        assert row.global_key == example["globalKey"]
         assert len(row.fields) == 4
 
     for row in parsed:
