@@ -135,12 +135,18 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData,
     TextData
 ])
-def test_import_data_types(client, configured_project, initial_dataset,
-                           rand_gen, data_row_json_by_data_type,
-                           annotations_by_data_type, data_type_class):
+def test_import_data_types(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+    data_type_class,
+):
 
     project = configured_project
-    project_id = configured_project.uid
+    project_id = project.uid
     dataset = initial_dataset
 
     set_project_media_type_from_data_type(project, data_type_class)
@@ -163,6 +169,51 @@ def test_import_data_types(client, configured_project, initial_dataset,
 
     label_import = lb.LabelImport.create_from_objects(
         client, project_id, f'test-import-{data_type_string}', labels)
+    label_import.wait_until_done()
+
+    assert label_import.state == AnnotationImportState.FINISHED
+    assert len(label_import.errors) == 0
+    exported_labels = project.export_labels(download=True)
+    objects = exported_labels[0]['Label']['objects']
+    classifications = exported_labels[0]['Label']['classifications']
+    assert len(objects) + len(classifications) == len(labels)
+    data_row.delete()
+
+
+def test_import_data_types_by_global_key(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+):
+
+    project = configured_project
+    project_id = project.uid
+    dataset = initial_dataset
+    data_type_class = ImageData
+    set_project_media_type_from_data_type(project, data_type_class)
+
+    data_row_ndjson = data_row_json_by_data_type['image']
+    data_row_ndjson['global_key'] = str(uuid.uuid4())
+    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
+                                           rand_gen(str))
+
+    annotations_ndjson = annotations_by_data_type['image']
+    annotations_list = [
+        label.annotations
+        for label in NDJsonConverter.deserialize(annotations_ndjson)
+    ]
+    labels = [
+        lb_types.Label(data=data_type_class(global_key=data_row.global_key),
+                       annotations=annotations)
+        for annotations in annotations_list
+    ]
+
+    label_import = lb.LabelImport.create_from_objects(client, project_id,
+                                                      f'test-import-image',
+                                                      labels)
     label_import.wait_until_done()
 
     assert label_import.state == AnnotationImportState.FINISHED
@@ -261,11 +312,11 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
 
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
-def test_import_label_annotations(client, configured_project, initial_dataset,
-                                  data_row_json_by_data_type, data_type,
-                                  data_class, annotations, rand_gen):
+def test_import_label_annotations(client, configured_project_with_one_data_row,
+                                  initial_dataset, data_row_json_by_data_type,
+                                  data_type, data_class, annotations, rand_gen):
 
-    project = configured_project
+    project = configured_project_with_one_data_row
     dataset = initial_dataset
     set_project_media_type_from_data_type(project, data_class)
 
@@ -297,24 +348,44 @@ def test_import_label_annotations(client, configured_project, initial_dataset,
     assert export_task.errors is None
     expected_annotations = get_annotation_comparison_dicts_from_labels(labels)
     actual_annotations = get_annotation_comparison_dicts_from_export(
-        export_task.result, data_row.uid, configured_project.uid)
+        export_task.result, data_row.uid,
+        configured_project_with_one_data_row.uid)
     assert actual_annotations == expected_annotations
     data_row.delete()
 
 
 @pytest.mark.parametrize('data_type, data_class, annotations', test_params)
-def test_import_mal_annotations(client, configured_project_without_data_rows,
-                                data_row_json_by_data_type, data_type,
-                                data_class, annotations, rand_gen):
-
+@pytest.fixture
+def one_datarow(client, rand_gen, data_row_json_by_data_type, data_type):
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_json = data_row_json_by_data_type[data_type]
     data_row = dataset.create_data_row(data_row_json)
 
-    set_project_media_type_from_data_type(configured_project_without_data_rows,
+    yield data_row
+
+    dataset.delete()
+
+
+@pytest.fixture
+def one_datarow_global_key(client, rand_gen, data_row_json_by_data_type):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_json = data_row_json_by_data_type['video']
+    data_row = dataset.create_data_row(data_row_json)
+
+    yield data_row
+
+    dataset.delete()
+
+
+@pytest.mark.parametrize('data_type, data_class, annotations', test_params)
+def test_import_mal_annotations(client, configured_project_with_one_data_row,
+                                data_type, data_class, annotations, rand_gen,
+                                one_datarow):
+    data_row = one_datarow
+    set_project_media_type_from_data_type(configured_project_with_one_data_row,
                                           data_class)
 
-    configured_project_without_data_rows.create_batch(
+    configured_project_with_one_data_row.create_batch(
         rand_gen(str),
         [data_row.uid],
     )
@@ -326,7 +397,37 @@ def test_import_mal_annotations(client, configured_project_without_data_rows,
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_without_data_rows.uid,
+        project_id=configured_project_with_one_data_row.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
+    import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
+    # MAL Labels cannot be exported and compared to input labels
+
+
+def test_import_mal_annotations_global_key(client,
+                                           configured_project_with_one_data_row,
+                                           rand_gen, one_datarow_global_key):
+    data_class = lb_types.VideoData
+    data_row = one_datarow_global_key
+    annotations = [video_mask_annotation]
+    set_project_media_type_from_data_type(configured_project_with_one_data_row,
+                                          data_class)
+
+    configured_project_with_one_data_row.create_batch(
+        rand_gen(str),
+        [data_row.uid],
+    )
+
+    labels = [
+        lb_types.Label(data=data_class(global_key=data_row.global_key),
+                       annotations=annotations)
+    ]
+
+    import_annotations = lb.MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_with_one_data_row.uid,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
     import_annotations.wait_until_done()

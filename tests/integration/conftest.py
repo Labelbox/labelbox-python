@@ -1,39 +1,34 @@
+from collections import defaultdict
+from itertools import islice
 import json
 import os
-import re
+import sys
 import time
 import uuid
-from enum import Enum
 from types import SimpleNamespace
-from typing import Type
+from typing import Type, List
 
 import pytest
 import requests
 
-from labelbox import Client, MediaType
-from labelbox import LabelingFrontend, Dataset
+from labelbox import Dataset, DataRow
+from labelbox import LabelingFrontend
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
+from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
+from support.integration_client import Environ, IntegrationClient, EphemeralClient, AdminClient
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
+MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
-DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 5
-
-
-class Environ(Enum):
-    LOCAL = 'local'
-    PROD = 'prod'
-    STAGING = 'staging'
-    ONPREM = 'onprem'
-    CUSTOM = 'custom'
-    STAGING_EU = 'staging-eu'
+DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
 
 
 @pytest.fixture(scope="session")
@@ -49,56 +44,6 @@ def environ() -> Environ:
         return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
-
-
-def graphql_url(environ: str) -> str:
-    if environ == Environ.PROD:
-        return 'https://api.labelbox.com/graphql'
-    elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/graphql'
-    elif environ == Environ.STAGING_EU:
-        return 'https://api.eu-de.lb-stage.xyz/graphql'
-    elif environ == Environ.ONPREM:
-        hostname = os.environ.get('LABELBOX_TEST_ONPREM_HOSTNAME', None)
-        if hostname is None:
-            raise Exception(f"Missing LABELBOX_TEST_ONPREM_INSTANCE")
-        return f"{hostname}/api/_gql"
-    elif environ == Environ.CUSTOM:
-        graphql_api_endpoint = os.environ.get(
-            'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
-        if graphql_api_endpoint is None:
-            raise Exception(f"Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
-        return graphql_api_endpoint
-    return 'http://host.docker.internal:8080/graphql'
-
-
-def rest_url(environ: str) -> str:
-    if environ == Environ.PROD:
-        return 'https://api.labelbox.com/api/v1'
-    elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/api/v1'
-    elif environ == Environ.STAGING_EU:
-        return 'https://api.eu-de.lb-stage.xyz/api/v1'
-    elif environ == Environ.CUSTOM:
-        rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
-        if rest_api_endpoint is None:
-            raise Exception(f"Missing LABELBOX_TEST_REST_API_ENDPOINT")
-        return rest_api_endpoint
-    return 'http://host.docker.internal:8080/api/v1'
-
-
-def testing_api_key(environ: str) -> str:
-    if environ == Environ.PROD:
-        return os.environ["LABELBOX_TEST_API_KEY_PROD"]
-    elif environ == Environ.STAGING:
-        return os.environ["LABELBOX_TEST_API_KEY_STAGING"]
-    elif environ == Environ.STAGING_EU:
-        return os.environ["LABELBOX_TEST_API_KEY_STAGING_EU"]
-    elif environ == Environ.ONPREM:
-        return os.environ["LABELBOX_TEST_API_KEY_ONPREM"]
-    elif environ == Environ.CUSTOM:
-        return os.environ["LABELBOX_TEST_API_KEY_CUSTOM"]
-    return os.environ["LABELBOX_TEST_API_KEY_LOCAL"]
 
 
 def cancel_invite(client, invite_id):
@@ -150,33 +95,21 @@ def queries():
                            get_invites=get_invites)
 
 
-class IntegrationClient(Client):
-
-    def __init__(self, environ: str) -> None:
-        api_url = graphql_url(environ)
-        api_key = testing_api_key(environ)
-        rest_endpoint = rest_url(environ)
-        super().__init__(api_key,
-                         api_url,
-                         enable_experimental=True,
-                         rest_endpoint=rest_endpoint)
-        self.queries = []
-
-    def execute(self, query=None, params=None, check_naming=True, **kwargs):
-        if check_naming and query is not None:
-            assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
-        self.queries.append((query, params))
-        return super().execute(query, params, **kwargs)
+@pytest.fixture(scope="session")
+def admin_client(environ: str):
+    return AdminClient(environ)
 
 
 @pytest.fixture(scope="session")
 def client(environ: str):
+    if environ == Environ.EPHEMERAL:
+        return EphemeralClient()
     return IntegrationClient(environ)
 
 
 @pytest.fixture(scope="session")
 def image_url(client):
-    return client.upload_data(requests.get(IMG_URL).content,
+    return client.upload_data(requests.get(MASKABLE_IMG_URL).content,
                               content_type="image/jpeg",
                               filename="image.jpeg",
                               sign=True)
@@ -227,11 +160,34 @@ def project(client, rand_gen):
 @pytest.fixture
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    auto_audit_percentage=0,
+                                    quality_mode=QualityMode.Consensus,
                                     queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
     yield project
     project.delete()
+
+
+@pytest.fixture
+def consensus_project_with_batch(consensus_project, initial_dataset, rand_gen,
+                                 image_url):
+    project = consensus_project
+    dataset = initial_dataset
+
+    task = dataset.create_data_rows([{DataRow.row_data: image_url}] * 3)
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+
+    data_rows = list(dataset.data_rows())
+    assert len(data_rows) == 3
+
+    batch = project.create_batch(
+        rand_gen(str),
+        data_rows,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+
+    yield [project, batch, data_rows]
+    batch.delete()
 
 
 @pytest.fixture
@@ -263,16 +219,33 @@ def small_dataset(dataset: Dataset):
 
 @pytest.fixture
 def data_row(dataset, image_url, rand_gen):
+    global_key = f"global-key-{rand_gen(str)}"
     task = dataset.create_data_rows([
         {
             "row_data": image_url,
             "external_id": "my-image",
-            "global_key": f"global-key-{rand_gen(str)}"
+            "global_key": global_key
         },
     ])
     task.wait_till_done()
     dr = dataset.data_rows().get_one()
     yield dr
+    dr.delete()
+
+
+@pytest.fixture
+def data_row_and_global_key(dataset, image_url, rand_gen):
+    global_key = f"global-key-{rand_gen(str)}"
+    task = dataset.create_data_rows([
+        {
+            "row_data": image_url,
+            "external_id": "my-image",
+            "global_key": global_key
+        },
+    ])
+    task.wait_till_done()
+    dr = dataset.data_rows().get_one()
+    yield dr, global_key
     dr.delete()
 
 
@@ -386,27 +359,36 @@ def initial_dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
 
+    dataset.delete()
+
 
 @pytest.fixture
-def configured_project(project, initial_dataset, client, rand_gen, image_url):
-    dataset = initial_dataset
-    data_row_id = dataset.create_data_row(row_data=image_url).uid
-
-    project.create_batch(
-        rand_gen(str),
-        [data_row_id],  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids = [data_row_id]
-
+def project_with_empty_ontology(project):
     editor = list(
         project.client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
     yield project
-    dataset.delete()
-    project.delete()
+
+
+@pytest.fixture
+def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
+                       image_url):
+    dataset = initial_dataset
+    data_row_id = dataset.create_data_row(row_data=image_url).uid
+    project = project_with_empty_ontology
+
+    batch = project.create_batch(
+        rand_gen(str),
+        [data_row_id],  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = [data_row_id]
+
+    yield project
+
+    batch.delete()
 
 
 @pytest.fixture
@@ -417,6 +399,10 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=[data_row.uid],
+        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
 
     project.create_batch(
         rand_gen(str),
@@ -426,7 +412,6 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     ontology = _setup_ontology(project)
     label = _create_label(project, data_row, ontology,
                           wait_for_label_processing)
-
     yield [project, dataset, data_row, label]
 
     for label in project.labels():
@@ -442,10 +427,8 @@ def configured_batch_project_with_label(project, dataset, data_row,
     One label is already created and yielded when using fixture
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
-    project._wait_until_data_rows_are_processed(
-        data_row_ids=data_rows,
-        wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+    project._wait_until_data_rows_are_processed(data_row_ids=data_rows,
+                                                sleep_interval=3)
     project.create_batch("test-batch", data_rows)
     project.data_row_ids = data_rows
 
@@ -588,7 +571,6 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     project.setup(editor, ontology.asdict())
 
     yield [project, data_row]
-    dataset.delete()
     project.delete()
 
 
@@ -768,3 +750,72 @@ def is_adv_enabled(client) -> bool:
     query_str = "query IsAdvEnabledPyApi { user { isAdvEnabled } }"
     response = client.execute(query_str)
     return bool(response['user']['isAdvEnabled'])
+
+
+IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
+EXTERNAL_ID = "my-image"
+
+
+@pytest.fixture
+def big_dataset(dataset: Dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": IMAGE_URL,
+            "external_id": EXTERNAL_ID
+        },
+    ] * 3)
+    task.wait_till_done()
+
+    yield dataset
+
+
+@pytest.fixture
+def big_dataset_data_row_ids(big_dataset: Dataset) -> List[str]:
+    yield [dr.uid for dr in list(big_dataset.export_data_rows())]
+
+
+@pytest.fixture(scope='function')
+def dataset_with_invalid_data_rows(unique_dataset: Dataset):
+    upload_invalid_data_rows_for_dataset(unique_dataset)
+
+    yield unique_dataset
+
+
+def upload_invalid_data_rows_for_dataset(dataset: Dataset):
+    task = dataset.create_data_rows([
+        {
+            "row_data": 'gs://invalid-bucket/example.png',  # forbidden
+            "external_id": "image-without-access.jpg"
+        },
+    ] * 2)
+    task.wait_till_done()
+
+
+def pytest_configure():
+    pytest.report = defaultdict(int)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_fixture_setup(fixturedef):
+    start = time.time()
+    yield
+    end = time.time()
+
+    exec_time = end - start
+    if "FIXTURE_PROFILE" in os.environ:
+        pytest.report[fixturedef.argname] += exec_time
+
+
+@pytest.fixture(scope='session', autouse=True)
+def print_perf_summary():
+    yield
+
+    if "FIXTURE_PROFILE" in os.environ:
+        sorted_dict = dict(
+            sorted(pytest.report.items(),
+                   key=lambda item: item[1],
+                   reverse=True))
+        num_of_entries = 10 if len(sorted_dict) >= 10 else len(sorted_dict)
+        slowest_fixtures = [(aaa, sorted_dict[aaa])
+                            for aaa in islice(sorted_dict, num_of_entries)]
+        print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)

@@ -13,6 +13,7 @@ test-local: build-image
 		-e LABELBOX_TEST_ENVIRON="local" \
 		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
 		-e LABELBOX_TEST_API_KEY_LOCAL=${LABELBOX_TEST_API_KEY_LOCAL} \
+		-e FIXTURE_PROFILE=true \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)
 
 test-staging: build-image
@@ -51,4 +52,18 @@ test-custom: build-image
 		-e LABELBOX_TEST_API_KEY_CUSTOM=${LABELBOX_TEST_API_KEY_CUSTOM} \
 		-e LABELBOX_TEST_GRAPHQL_API_ENDPOINT=${LABELBOX_TEST_GRAPHQL_API_ENDPOINT} \
 		-e LABELBOX_TEST_REST_API_ENDPOINT=${LABELBOX_TEST_REST_API_ENDPOINT} \
+		local/labelbox-python:test pytest $(PATH_TO_TEST)
+
+test-ephemeral: build-image
+
+	@# if PATH_TO_TEST we assume you know what you are doing
+	@if [ -z ${PATH_TO_TEST} ]; then \
+		./scripts/ensure_local_setup.sh; \
+	fi
+
+	docker run -it --rm -v ${PWD}:/usr/src -w /usr/src \
+		-e LABELBOX_TEST_ENVIRON="ephemeral" \
+		-e DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
+		-e SERVICE_API_KEY=${SERVICE_API_KEY} \
+		-e LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 		local/labelbox-python:test pytest $(PATH_TO_TEST)

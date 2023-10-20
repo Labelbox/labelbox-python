@@ -5,6 +5,7 @@ import logging
 from collections.abc import Iterable
 from string import Template
 import time
+import warnings
 
 from labelbox import parser
 from itertools import islice
@@ -239,7 +240,7 @@ class Dataset(DbObject, Updateable, Deletable):
             url_param: descriptor_url
         })
 
-    def create_data_rows(self, items) -> Union["Task", List[Any]]:
+    def create_data_rows(self, items) -> "Task":
         """ Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
@@ -565,6 +566,9 @@ class Dataset(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
         id_param = "datasetId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetDatasetDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)

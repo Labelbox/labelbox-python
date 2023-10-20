@@ -1,17 +1,35 @@
 import time
+
+import pytest
 import labelbox as lb
 from labelbox.data.annotation_types.data.video import VideoData
 import labelbox.types as lb_types
 from labelbox.schema.annotation_import import AnnotationImportState
 
 
-def test_export_v2_video(client, configured_project_without_data_rows,
-                         video_data, video_data_row,
-                         bbox_video_annotation_objects, rand_gen):
+@pytest.fixture
+def user_id(client):
+    return client.get_user().uid
+
+
+@pytest.fixture
+def org_id(client):
+    return client.get_organization().uid
+
+
+def test_export_v2_video(
+    client,
+    configured_project_without_data_rows,
+    video_data,
+    video_data_row,
+    bbox_video_annotation_objects,
+    rand_gen,
+):
 
     project = configured_project_without_data_rows
     project_id = project.uid
     labels = []
+
     _, data_row_uids = video_data
     project.create_batch(
         rand_gen(str),
@@ -34,6 +52,7 @@ def test_export_v2_video(client, configured_project_without_data_rows,
 
     num_retries = 5
     task = None
+
     while (num_retries > 0):
         task = project.export_v2(
             params={
@@ -55,7 +74,10 @@ def test_export_v2_video(client, configured_project_without_data_rows,
     assert data_row_export['global_key'] == video_data_row['global_key']
     assert data_row_export['row_data'] == video_data_row['row_data']
     assert export_data[0]['media_attributes']['mime_type'] == 'video/mp4'
-
+    assert export_data[0]['media_attributes'][
+        'frame_rate'] == 10  # as per the video_data fixture
+    assert export_data[0]['media_attributes'][
+        'frame_count'] == 100  # as per the video_data fixture
     expected_export_label = {
         'label_kind': 'Video',
         'version': '1.0.0',
@@ -64,6 +86,7 @@ def test_export_v2_video(client, configured_project_without_data_rows,
             'created_at': '2023-04-16T17:04:23+00:00',
             'updated_at': '2023-04-16T17:04:23+00:00',
             'created_by': 'vbrodsky@labelbox.com',
+            'content_last_updated_at': '2023-04-16T17:04:23+00:00',
             'reviews': []
         },
         'annotations': {
@@ -155,6 +178,7 @@ def test_export_v2_video(client, configured_project_without_data_rows,
            )  #note we create 1 label per data row, 1 data row so 1 label
     export_label = project_export_labels[0]
     assert (export_label['label_kind']) == 'Video'
+
     assert (export_label['label_details'].keys()
            ) == expected_export_label['label_details'].keys()
 

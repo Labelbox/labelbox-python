@@ -3,6 +3,7 @@ import time
 import uuid
 from datetime import datetime
 import json
+from labelbox.schema.media_type import MediaType
 
 import pytest
 import requests
@@ -115,6 +116,13 @@ def make_metadata_fields_dict():
         "value": msg
     }]
     return fields
+
+
+def test_get_data_row_by_global_key(data_row_and_global_key, client, rand_gen):
+    _, global_key = data_row_and_global_key
+    data_row = client.get_data_row_by_global_key(global_key)
+    assert type(data_row) == DataRow
+    assert data_row.global_key == global_key
 
 
 def test_get_data_row(data_row, client):
@@ -929,9 +937,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
         dataset, sample_image, is_adv_enabled):
     global_key_1 = str(uuid.uuid4())
 
-    if is_adv_enabled:
-        # ADV does not throw an error for duplicate global keys
-        # but rather create the first one and reject the second
+    with pytest.raises(labelbox.exceptions.MalformedQueryException) as exc_info:
         dataset.create_data_rows_sync([{
             DataRow.row_data: sample_image,
             DataRow.global_key: global_key_1
@@ -939,18 +945,14 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
             DataRow.row_data: sample_image,
             DataRow.global_key: global_key_1
         }])
+
+    if is_adv_enabled:
+        # ADV will import the first data row but not the second (duplicate global key)
         assert len(list(dataset.data_rows())) == 1
         assert list(dataset.data_rows())[0].global_key == global_key_1
+        assert "Some data rows were not imported. Check error output here" in str(
+            exc_info.value)
     else:
-        with pytest.raises(labelbox.exceptions.MalformedQueryException):
-            dataset.create_data_rows_sync([{
-                DataRow.row_data: sample_image,
-                DataRow.global_key: global_key_1
-            }, {
-                DataRow.row_data: sample_image,
-                DataRow.global_key: global_key_1
-            }])
-
         assert len(list(dataset.data_rows())) == 0
 
         dataset.create_data_rows_sync([{
@@ -965,7 +967,8 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 def test_create_conversational_text(dataset, conversational_content):
     examples = [
         {
-            **conversational_content, 'media_type': 'CONVERSATIONAL'
+            **conversational_content, 'media_type':
+                MediaType.Conversational.value
         },
         conversational_content,
         {
@@ -980,7 +983,7 @@ def test_create_conversational_text(dataset, conversational_content):
             data_row.row_data).json() == conversational_content['row_data']
 
 
-def test_invalid_media_type(dataset, conversational_content):
+def test_invalid_media_type(dataset, conversational_content, is_adv_enabled):
     for error_message, invalid_media_type in [[
             "Found invalid contents for media type: 'IMAGE'", 'IMAGE'
     ], ["Found invalid media type: 'totallyinvalid'", 'totallyinvalid']]:
@@ -988,8 +991,12 @@ def test_invalid_media_type(dataset, conversational_content):
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(labelbox.exceptions.InvalidQueryError):
             dataset.create_data_rows_sync([{
-                **conversational_content, 'media_type': invalid_media_type
+                **conversational_content, 'media_type': 'IMAGE'
             }])
+
+        if is_adv_enabled:
+            # ADV does not take media type hint into account for async import requests
+            continue
 
         task = dataset.create_data_rows([{
             **conversational_content, 'media_type': invalid_media_type

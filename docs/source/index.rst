@@ -216,3 +216,9 @@ CatalogSlice
    :members: CatalogSlice
    :exclude-members: Slice
    :show-inheritance:
+
+QualityMode
+-----------------------------------------
+.. automodule:: labelbox.schema.quality_mode
+   :members:
+   :show-inheritance:

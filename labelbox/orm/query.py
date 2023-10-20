@@ -314,7 +314,7 @@ def relationship(source, relationship, where, order_by):
 
 
 def create(entity, data):
-    """ Generats a query and parameters for creating a new DB object.
+    """ Generates a query and parameters for creating a new DB object.
 
     Args:
         entity (type): An Entity subtype indicating which kind of

@@ -1,15 +1,16 @@
 import json
 import logging
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 from urllib.parse import urlparse
 
-from labelbox import parser
 import requests
 
+from labelbox import parser
 from labelbox import utils
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
                                  ProcessingWaitTimeout, ResourceConflict,
@@ -19,6 +20,7 @@ from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
+from labelbox.schema.create_batches_task import CreateBatchesTask
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
@@ -26,8 +28,8 @@ from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
-from labelbox.schema.user import User
 from labelbox.schema.task_queue import TaskQueue
+from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -119,12 +121,10 @@ class Project(DbObject, Updateable, Deletable):
         for a project is inferred through the following attributes:
 
         Benchmark:
-            auto_audit_number_of_labels = 1
-            auto_audit_percentage = 1.0
+            auto_audit_number_of_labels = 1 and auto_audit_percentage = 1.0
 
         Consensus:
-            auto_audit_number_of_labels > 1
-            auto_audit_percentage <= 1.0
+            auto_audit_number_of_labels > 1 or auto_audit_percentage <= 1.0
 
         Attempting to switch between benchmark and consensus modes is an invalid operation and will result
         in an error.
@@ -232,6 +232,9 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
@@ -335,6 +338,9 @@ class Project(DbObject, Updateable, Deletable):
             URL of the data file with this Project's labels. If the server didn't
             generate during the `timeout_seconds` period, None is returned.
         """
+        warnings.warn(
+            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            DeprecationWarning)
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
             """Returns a concatenated string of the dictionary's keys and values
@@ -721,14 +727,19 @@ class Project(DbObject, Updateable, Deletable):
         consensus_settings: Optional[Dict[str, float]] = None,
         global_keys: Optional[List[str]] = None,
     ):
-        """Create a new batch for a project. One of `global_keys` or `data_rows` must be provided but not both.
+        """
+        Creates a new batch for a project. One of `global_keys` or `data_rows` must be provided, but not both. A
+            maximum of 100,000 data rows can be added to a batch.
 
         Args:
             name: a name for the batch, must be unique within a project
             data_rows: Either a list of `DataRows` or Data Row ids. 
             global_keys: global keys for data rows to add to the batch. 
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
-            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3, 'coverage_percentage': 0.1}
+            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3,
+                'coverage_percentage': 0.1}
+
+        Returns: the created batch
         """
 
         # @TODO: make this automatic?
@@ -772,6 +783,156 @@ class Project(DbObject, Updateable, Deletable):
         else:
             return self._create_batch_sync(name, dr_ids, global_keys, priority,
                                            consensus_settings)
+
+    def create_batches(
+        self,
+        name_prefix: str,
+        data_rows: Optional[List[Union[str, DataRow]]] = None,
+        global_keys: Optional[List[str]] = None,
+        priority: int = 5,
+        consensus_settings: Optional[Dict[str, float]] = None,
+    ) -> CreateBatchesTask:
+        """
+        Creates batches for a project from a list of data rows. One of `global_keys` or `data_rows` must be provided,
+        but not both. When more than 100k data rows are specified and thus multiple batches are needed, the specific
+        batch that each data row will be placed in is undefined.
+
+        Batches will be created with the specified name prefix and a unique suffix. The suffix will be a 4-digit
+        number starting at 0000. For example, if the name prefix is "batch" and 3 batches are created, the names
+        will be "batch0000", "batch0001", and "batch0002". This method will throw an error if a batch with the same
+        name already exists.
+
+        Args:
+            name_prefix: a prefix for the batch names, must be unique within a project
+            data_rows: Either a list of `DataRows` or Data Row ids.
+            global_keys: global keys for data rows to add to the batch.
+            priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
+            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3,
+                'coverage_percentage': 0.1}
+
+        Returns: a task for the created batches
+        """
+
+        if self.queue_mode != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
+
+        dr_ids = []
+        if data_rows is not None:
+            for dr in data_rows:
+                if isinstance(dr, Entity.DataRow):
+                    dr_ids.append(dr.uid)
+                elif isinstance(dr, str):
+                    dr_ids.append(dr)
+                else:
+                    raise ValueError(
+                        "`data_rows` must be DataRow ids or DataRow objects")
+
+        self._wait_until_data_rows_are_processed(
+            dr_ids, global_keys, self._wait_processing_max_seconds)
+
+        if consensus_settings:
+            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+                by_alias=True)
+
+        method = 'createBatches'
+        mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesInput!) {
+                                      project(where: {id: $projectId}) {
+                                        %s(input: $input) {
+                                          tasks {
+                                            batchUuid
+                                            taskId
+                                          }
+                                        }
+                                      }
+                                    }
+                                """ % (method, method)
+
+        params = {
+            "projectId": self.uid,
+            "input": {
+                "batchNamePrefix": name_prefix,
+                "dataRowIds": dr_ids,
+                "globalKeys": global_keys,
+                "priority": priority,
+                "consensusSettings": consensus_settings
+            }
+        }
+
+        tasks = self.client.execute(
+            mutation_str, params, experimental=True)["project"][method]["tasks"]
+        batch_ids = [task["batchUuid"] for task in tasks]
+        task_ids = [task["taskId"] for task in tasks]
+
+        return CreateBatchesTask(self.client, self.uid, batch_ids, task_ids)
+
+    def create_batches_from_dataset(
+        self,
+        name_prefix: str,
+        dataset_id: str,
+        priority: int = 5,
+        consensus_settings: Optional[Dict[str,
+                                          float]] = None) -> CreateBatchesTask:
+        """
+        Creates batches for a project from a dataset, selecting only the data rows that are not already added to the
+        project. When the dataset contains more than 100k data rows and multiple batches are needed, the specific batch
+        that each data row will be placed in is undefined. Note that data rows may not be immediately available for a
+        project after being added to a dataset; use the `_wait_until_data_rows_are_processed` method to ensure that
+        data rows are available before creating batches.
+
+        Batches will be created with the specified name prefix and a unique suffix. The suffix will be a 4-digit
+        number starting at 0000. For example, if the name prefix is "batch" and 3 batches are created, the names
+        will be "batch0000", "batch0001", and "batch0002". This method will throw an error if a batch with the same
+        name already exists.
+
+        Args:
+            name_prefix: a prefix for the batch names, must be unique within a project
+            dataset_id: the id of the dataset to create batches from
+            priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
+            consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3,
+                'coverage_percentage': 0.1}
+
+        Returns: a task for the created batches
+        """
+
+        if self.queue_mode != QueueMode.Batch:
+            raise ValueError("Project must be in batch mode")
+
+        if consensus_settings:
+            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+                by_alias=True)
+
+        print("Creating batches from dataset %s", dataset_id)
+
+        method = 'createBatchesFromDataset'
+        mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesFromDatasetInput!) {
+                                        project(where: {id: $projectId}) {
+                                            %s(input: $input) {
+                                              tasks {
+                                                batchUuid
+                                                taskId
+                                              }
+                                            }
+                                        }
+                                    }
+                                """ % (method, method)
+
+        params = {
+            "projectId": self.uid,
+            "input": {
+                "batchNamePrefix": name_prefix,
+                "datasetId": dataset_id,
+                "priority": priority,
+                "consensusSettings": consensus_settings
+            }
+        }
+
+        tasks = self.client.execute(
+            mutation_str, params, experimental=True)["project"][method]["tasks"]
+
+        batch_ids = [task["batchUuid"] for task in tasks]
+        task_ids = [task["taskId"] for task in tasks]
+
+        return CreateBatchesTask(self.client, self.uid, batch_ids, task_ids)
 
     def _create_batch_sync(self, name, dr_ids, global_keys, priority,
                            consensus_settings):
@@ -843,7 +1004,7 @@ class Project(DbObject, Updateable, Deletable):
         add_data_rows_mutation_str = """mutation %sPyApi($projectId: ID!, $input: AddDataRowsToBatchInput!) {
                                       project(where: {id: $projectId}) {
                                         %s(input: $input) {
-                                            taskId
+                                          taskId
                                         }
                                       }
                                     }
@@ -871,29 +1032,7 @@ class Project(DbObject, Updateable, Deletable):
             raise LabelboxError(f"Batch was not created successfully: " +
                                 json.dumps(task.errors))
 
-        # obtain batch entity to return
-        get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
-                          project(where: {id: $projectId}) {
-                             batches(where: {id: $batchId}) {
-                                nodes {
-                                   %s
-                                }
-                             }
-                        }
-                    }
-                    """ % ("getProjectBatchPyApi",
-                           query.results_query_part(Entity.Batch))
-
-        batch = self.client.execute(
-            get_batch_str, {
-                "projectId": self.uid,
-                "batchId": batch_id
-            },
-            timeout=180.0,
-            experimental=True)["project"]["batches"]["nodes"][0]
-
-        # TODO async endpoints currently do not provide failed_data_row_ids in response
-        return Entity.Batch(self.client, self.uid, batch)
+        return self.client.get_batch(self.uid, batch_id)
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """
@@ -995,10 +1134,6 @@ class Project(DbObject, Updateable, Deletable):
                 raise TypeError(
                     f"Priority must be an int. Found {type(priority)} for data_row {data_row}. Index: {idx}"
                 )
-            if priority < 1:
-                raise ValueError(
-                    f"Priority must be greater than 0 for data_row {data_row}. Index: {idx}"
-                )
 
     def set_labeling_parameter_overrides(self, data) -> bool:
         """ Adds labeling parameter overrides to this project.
@@ -1011,26 +1146,21 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority<int>, number_of_labels<int>) for the new override.
+                (DataRow, priority<int>) for the new override.
 
                 Priority:
                     * Data will be labeled in priority order.
                         - A lower number priority is labeled first.
-                        - Minimum priority is 1.
+                        - All signed 32-bit integers are accepted, from -2147483648 to 2147483647.
                     * Priority is not the queue position.
                         - The position is determined by the relative priority.
                         - E.g. [(data_row_1, 5,1), (data_row_2, 2,1), (data_row_3, 10,1)]
                             will be assigned in the following order: [data_row_2, data_row_1, data_row_3]
-                    * Datarows with parameter overrides will appear before datarows without overrides.
                     * The priority only effects items in the queue.
                         - Assigning a priority will not automatically add the item back into the queue.
         Returns:
             bool, indicates if the operation was a success.
         """
-        logger.warning(
-            "LabelingParameterOverrides are deprecated for new projects, and will eventually be removed "
-            "completely. Prefer to use batch based queuing with priority & consensus number of labels instead."
-        )
         data = [t[:2] for t in data]
         self.validate_labeling_parameter_overrides(data)
         data_str = ",\n".join("{dataRow: {id: \"%s\"}, priority: %d }" %
@@ -1043,24 +1173,59 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    def unset_labeling_parameter_overrides(self, data_rows) -> bool:
-        """ Removes labeling parameter overrides to this project.
+    def update_data_row_labeling_priority(
+        self,
+        data_rows: List[str],
+        priority: int,
+    ) -> bool:
+        """
+        Updates labeling parameter overrides to this project in bulk. This method allows up to 1 million data rows to be
+        updated at once.
 
-        * This will remove unlabeled duplicates in the queue.
+        See information on priority here:
+            https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows (iterable): An iterable of DataRows.
+            data_rows (iterable): An iterable of data row ids.
+            priority (int): Priority for the new override. See above for more information.
+
         Returns:
             bool, indicates if the operation was a success.
         """
-        id_param = "projectId"
-        query_str = """mutation UnsetLabelingParameterOverridesPyApi($%s: ID!){
-            project(where: { id: $%s}) {
-            unsetLabelingParameterOverrides(data: [%s]) { success }}}""" % (
-            id_param, id_param, ",\n".join(
-                "{dataRowId: \"%s\"}" % row.uid for row in data_rows))
-        res = self.client.execute(query_str, {id_param: self.uid})
-        return res["project"]["unsetLabelingParameterOverrides"]["success"]
+
+        method = "createQueuePriorityUpdateTask"
+        priority_param = "priority"
+        project_param = "projectId"
+        data_rows_param = "dataRowIds"
+        query_str = """mutation %sPyApi(
+              $%s: Int!
+              $%s: ID!
+              $%s: [ID!]
+            ) {
+              project(where: { id: $%s }) {
+                %s(
+                  data: { priority: $%s, dataRowIds: $%s }
+                ) {
+                  taskId
+                }
+              }
+            }
+        """ % (method, priority_param, project_param, data_rows_param,
+               project_param, method, priority_param, data_rows_param)
+        res = self.client.execute(
+            query_str, {
+                priority_param: priority,
+                project_param: self.uid,
+                data_rows_param: data_rows
+            })["project"][method]
+
+        task_id = res['taskId']
+
+        task = self._wait_for_task(task_id)
+        if task.status != "COMPLETE":
+            raise LabelboxError(f"Priority was not updated successfully: " +
+                                json.dumps(task.errors))
+        return True
 
     def upsert_review_queue(self, quota_factor) -> None:
         """ Sets the the proportion of total assets in a project to review.
@@ -1320,12 +1485,35 @@ class Project(DbObject, Updateable, Deletable):
         """ Wait until all the specified data rows are processed"""
         start_time = datetime.now()
 
+        max_data_rows_per_poll = 100_000
+        if data_row_ids is not None:
+            for i in range(0, len(data_row_ids), max_data_rows_per_poll):
+                chunk = data_row_ids[i:i + max_data_rows_per_poll]
+                self._poll_data_row_processing_status(
+                    chunk, [], start_time, wait_processing_max_seconds,
+                    sleep_interval)
+
+        if global_keys is not None:
+            for i in range(0, len(global_keys), max_data_rows_per_poll):
+                chunk = global_keys[i:i + max_data_rows_per_poll]
+                self._poll_data_row_processing_status(
+                    [], chunk, start_time, wait_processing_max_seconds,
+                    sleep_interval)
+
+    def _poll_data_row_processing_status(
+            self,
+            data_row_ids: List[str],
+            global_keys: List[str],
+            start_time: datetime,
+            wait_processing_max_seconds: int = _wait_processing_max_seconds,
+            sleep_interval=30):
+
         while True:
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
-                    "Maximum wait time exceeded while waiting for data rows to be processed. Try creating a batch a bit later"
-                )
+                    """Maximum wait time exceeded while waiting for data rows to be processed. 
+                    Try creating a batch a bit later""")
 
             all_good = self.__check_data_rows_have_been_processed(
                 data_row_ids, global_keys)

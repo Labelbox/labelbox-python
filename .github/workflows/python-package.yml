@@ -26,6 +26,10 @@ jobs:
             prod-key: PROD_LABELBOX_API_KEY_3
             staging-key: STAGING_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: '3.10'
+            prod-key: PROD_LABELBOX_API_KEY_4
+            staging-key: STAGING_LABELBOX_API_KEY_4
+            da-test-key: DA_GCP_LABELBOX_API_KEY
 
     steps:
       - name: Cancel previous workflow
@@ -39,6 +43,7 @@ jobs:
             echo "LABELBOX_TEST_ENVIRON=prod" >> $GITHUB_ENV
           else
             echo "LABELBOX_TEST_ENVIRON=staging" >> $GITHUB_ENV
+            echo "FIXTURE_PROFILE=true" >> $GITHUB_ENV
           fi
 
       - uses: actions/checkout@v2

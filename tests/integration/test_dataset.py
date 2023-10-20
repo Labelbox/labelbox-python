@@ -53,8 +53,12 @@ def dataset_for_filtering(client, rand_gen):
 
     yield name_1, d1, name_2, d2
 
-    d1.delete()
-    d2.delete()
+
+def test_dataset_filtering(client, dataset_for_filtering):
+    name_1, d1, name_2, d2 = dataset_for_filtering
+
+    assert list(client.get_datasets(where=Dataset.name == name_1)) == [d1]
+    assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
 
 
 def test_dataset_filtering(client, dataset_for_filtering):
