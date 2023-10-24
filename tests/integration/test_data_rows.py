@@ -964,7 +964,6 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
         assert list(dataset.data_rows())[0].global_key == global_key_1
 
 
-@pytest.mark.skip(reason="create_data_rows_sync not supported by ADV yet")
 def test_create_conversational_text(client, dataset, conversational_content):
     examples = [
         {
