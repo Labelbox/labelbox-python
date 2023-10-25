@@ -295,7 +295,7 @@ class Client:
             elif get_error_status_code(internal_server_error) == 426:
                 raise labelbox.exceptions.OperationNotAllowedException(message)
             elif get_error_status_code(internal_server_error) == 409:
-                raise labelbox.exceptions.MalformedQueryException(message)
+                raise labelbox.exceptions.ResourceConflict(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
