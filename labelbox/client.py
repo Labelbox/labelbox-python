@@ -294,6 +294,8 @@ class Client:
                 raise labelbox.exceptions.InvalidQueryError(message)
             elif get_error_status_code(internal_server_error) == 426:
                 raise labelbox.exceptions.OperationNotAllowedException(message)
+            elif get_error_status_code(internal_server_error) == 409:
+                raise labelbox.exceptions.MalformedQueryException(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
