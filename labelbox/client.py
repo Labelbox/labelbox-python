@@ -215,6 +215,7 @@ class Client:
                 "Failed to parse response as JSON: %s" % response.text)
 
         errors = r_json.get("errors", [])
+        print(errors)
 
         def check_errors(keywords, *path):
             """ Helper that looks for any of the given `keywords` in any of
