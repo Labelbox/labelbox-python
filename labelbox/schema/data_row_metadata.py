@@ -435,7 +435,9 @@ class DataRowMetadataOntology:
             if "fields" in dr:
                 fields = self.parse_metadata_fields(dr["fields"])
             parsed.append(
-                DataRowMetadata(data_row_id=dr["dataRowId"], fields=fields))
+                DataRowMetadata(data_row_id=dr["dataRowId"],
+                                global_key=dr["globalKey"],
+                                fields=fields))
         return parsed
 
     def parse_metadata_fields(
@@ -621,6 +623,7 @@ class DataRowMetadataOntology:
             query = """query dataRowCustomMetadataPyApi($dataRowIds: [ID!]!) {
                 dataRowCustomMetadata(where: {dataRowIds : $dataRowIds}) {
                     dataRowId
+                    globalKey
                     fields {
                         value
                         schemaId
