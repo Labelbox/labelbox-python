@@ -964,8 +964,8 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
         assert list(dataset.data_rows())[0].global_key == global_key_1
 
 
-@pytest.mark.skip(reason="create_data_rows_sync not supported by ADV yet")
-def test_create_conversational_text(client, dataset, conversational_content):
+@pytest.fixture
+def converstational_data_rows(dataset, conversational_content):
     examples = [
         {
             **conversational_content, 'media_type':
@@ -976,9 +976,20 @@ def test_create_conversational_text(client, dataset, conversational_content):
             "conversationalData": conversational_content['row_data']['messages']
         }  # Old way to check for backwards compatibility
     ]
-    dataset.create_data_rows_sync(examples)
+    task = dataset.create_data_rows(examples)
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+
     data_rows = list(dataset.data_rows())
-    assert len(data_rows) == len(examples)
+
+    yield data_rows
+    for dr in data_rows:
+        dr.delete()
+
+
+def test_create_conversational_text(converstational_data_rows,
+                                    conversational_content):
+    data_rows = converstational_data_rows
     for data_row in data_rows:
         assert requests.get(
             data_row.row_data).json() == conversational_content['row_data']
