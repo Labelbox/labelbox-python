@@ -14,9 +14,17 @@ def get_data_row_ids(ds: Dataset):
 
 
 def test_create_batch(project: Project, big_dataset_data_row_ids: List[str]):
-    batch = project.create_batch("test-batch", big_dataset_data_row_ids, 3)
+    batch = project.create_batch("test-batch",
+                                 big_dataset_data_row_ids,
+                                 3,
+                                 consensus_settings={
+                                     'number_of_labels': 3,
+                                     'coverage_percentage': 0.1
+                                 })
+
     assert batch.name == "test-batch"
     assert batch.size == len(big_dataset_data_row_ids)
+    assert len([dr for dr in batch.failed_data_row_ids]) == 0
 
 
 def test_create_batch_with_invalid_data_rows_ids(project: Project):
@@ -101,6 +109,7 @@ def test_create_batch_async(project: Project,
                                         priority=3)
     assert batch.name == "big-batch"
     assert batch.size == len(big_dataset_data_row_ids)
+    assert len([dr for dr in batch.failed_data_row_ids]) == 0
 
 
 def test_create_batch_with_consensus_settings(project: Project,
