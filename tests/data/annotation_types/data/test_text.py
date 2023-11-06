@@ -22,7 +22,7 @@ def test_text():
 
 
 def test_url():
-    url = "https://filesamples.com/samples/document/txt/sample3.txt"
+    url = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample3.txt"
     text_data = TextData(url=url)
     text = text_data.value
     assert len(text) == 3541

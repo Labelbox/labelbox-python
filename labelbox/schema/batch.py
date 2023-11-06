@@ -43,7 +43,7 @@ class Batch(DbObject):
                  client,
                  project_id,
                  *args,
-                 failed_data_row_ids=None,
+                 failed_data_row_ids=[],
                  **kwargs):
         super().__init__(client, *args, **kwargs)
         self.project_id = project_id
@@ -187,6 +187,11 @@ class Batch(DbObject):
             experimental=True)
         return res
 
+    # modify this function to return an empty list if there are no failed data rows
+
     @property
     def failed_data_row_ids(self):
+        if self._failed_data_row_ids is None:
+            self._failed_data_row_ids = []
+
         return (x for x in self._failed_data_row_ids)

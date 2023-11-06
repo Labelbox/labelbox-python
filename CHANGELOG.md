@@ -1,4 +1,12 @@
 # Changelog
+
+# Version 3.55.0 (2023-11-06)
+## Fixed
+* Fix the instantiation of `failed_data_row_ids` in Batch. This fix will address the issue with the `create_batch` method for more than 1,000 data rows.
+* Improve Python type hints for the `data_rows()` method in the Dataset.
+* Fix the `DataRowMetadataOntology` method `bulk_export()` to properly export global key(s).
+* In the `DataRowMetadataOntology` method `update_enum_option`, provide a more descriptive error message when the enum option is not valid.
+
 # Version 3.54.1 (2023-10-17)
 ## Notebooks
 * Revised the notebooks to update outdated examples when using `client.create_project()` to create a project
