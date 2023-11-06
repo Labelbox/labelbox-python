@@ -1,4 +1,5 @@
 name = "labelbox"
+
 __version__ = "3.55.0"
 
 from labelbox.client import Client

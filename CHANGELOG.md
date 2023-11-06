@@ -1,4 +1,5 @@
 # Changelog
+
 # Version 3.55.0 (2023-11-06)
 ## Fixed
 * Fix the instantiation of `failed_data_row_ids` in Batch. This fix will address the issue with the `create_batch` method for more than 1,000 data rows.
