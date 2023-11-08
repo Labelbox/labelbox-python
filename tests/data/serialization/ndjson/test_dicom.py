@@ -1,5 +1,6 @@
 from copy import copy
 import pytest
+import base64
 import labelbox.types as lb_types
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.serialization.ndjson.objects import NDDicomSegments, NDDicomSegment, NDDicomLine
@@ -89,9 +90,11 @@ video_mask_annotation_ndjson = {
     'masks': {
         'frames': [{
             'index': 1,
+            'imBytes': None,
             'instanceURI': instance_uri_1
         }, {
             'index': 5,
+            'imBytes': None,
             'instanceURI': instance_uri_5
         }],
         'instances': [
@@ -157,9 +160,12 @@ labels = [
     video_mask_label_with_global_key
 ]
 ndjsons = [
-    polyline_annotation_ndjson, polyline_annotation_ndjson_with_global_key,
-    dicom_mask_annotation_ndjson, dicom_mask_annotation_ndjson_with_global_key,
-    video_mask_annotation_ndjson, video_mask_annotation_ndjson_with_global_key
+    polyline_annotation_ndjson,
+    polyline_annotation_ndjson_with_global_key,
+    dicom_mask_annotation_ndjson,
+    dicom_mask_annotation_ndjson_with_global_key,
+    video_mask_annotation_ndjson,
+    video_mask_annotation_ndjson_with_global_key,
 ]
 labels_ndjsons = list(zip(labels, ndjsons))
 
