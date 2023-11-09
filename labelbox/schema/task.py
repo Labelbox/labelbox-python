@@ -62,10 +62,10 @@ class Task(DbObject):
         to update the task attributes.
 
         Args:
-            timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to one minute.
+            timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
         """
         check_frequency = 2  # frequency of checking, in seconds
-        while True:
+        while timeout_seconds:
             if self.status != "IN_PROGRESS":
                 # self.errors fetches the error content.
                 # This first condition prevents us from downloading the content for v2 exports
@@ -74,13 +74,10 @@ class Task(DbObject):
                         "There are errors present. Please look at `task.errors` for more details"
                     )
                 return
-            sleep_time_seconds = min(check_frequency, timeout_seconds)
-            logger.debug("Task.wait_till_done sleeping for %.2f seconds" %
-                         sleep_time_seconds)
-            if sleep_time_seconds <= 0:
-                break
+            logger.debug("Task.wait_till_done sleeping for %d seconds",
+                         check_frequency)
+            time.sleep(check_frequency)
             timeout_seconds -= check_frequency
-            time.sleep(sleep_time_seconds)
             self.refresh()
 
     @property

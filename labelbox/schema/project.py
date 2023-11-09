@@ -24,6 +24,7 @@ from labelbox.schema.create_batches_task import CreateBatchesTask
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
+from labelbox.schema.export_task import ExportTask
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -415,10 +416,23 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def export_v2(self,
-                  task_name: Optional[str] = None,
-                  filters: Optional[ProjectExportFilters] = None,
-                  params: Optional[ProjectExportParams] = None) -> Task:
+    def export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[ProjectExportFilters] = None,
+        params: Optional[ProjectExportParams] = None,
+    ) -> ExportTask:
+        """Creates a project export task with the given params and returns the task."""
+        task = self.export_v2(task_name, filters, params, True)
+        return ExportTask(task)
+
+    def export_v2(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[ProjectExportFilters] = None,
+        params: Optional[ProjectExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         """
         Creates a project export task with the given params and returns the task.
 
@@ -460,9 +474,10 @@ class Project(DbObject, Updateable, Deletable):
         })
 
         mutation_name = "exportDataRowsInProject"
-        create_task_query_str = """mutation exportDataRowsInProjectPyApi($input: ExportDataRowsInProjectInput!){
-          %s(input: $input) {taskId} }
-          """ % (mutation_name)
+        create_task_query_str = (
+            f"mutation {mutation_name}PyApi"
+            f"($input: ExportDataRowsInProjectInput!)"
+            f"{{{mutation_name}(input: $input){{taskId}}}}")
 
         media_type_override = _params.get('media_type_override', None)
         query_params: Dict[str, Any] = {
@@ -494,6 +509,7 @@ class Project(DbObject, Updateable, Deletable):
                     "includeInterpolatedFrames":
                         _params.get('interpolated_frames', False),
                 },
+                "streamable": streamable,
             }
         }
 
@@ -505,17 +521,7 @@ class Project(DbObject, Updateable, Deletable):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
-        return task
+        return Task.get_task(self.client, task_id)
 
     def export_issues(self, status=None) -> str:
         """ Calls the server-side Issues exporting that

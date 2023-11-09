@@ -25,6 +25,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
@@ -601,10 +602,22 @@ class Dataset(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    def export_v2(self,
-                  task_name: Optional[str] = None,
-                  filters: Optional[DatasetExportFilters] = None,
-                  params: Optional[CatalogExportParams] = None) -> Task:
+    def export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[DatasetExportFilters] = None,
+        params: Optional[CatalogExportParams] = None,
+    ) -> ExportTask:
+        task = self.export_v2(task_name, filters, params, True)
+        return ExportTask(task)
+
+    def export_v2(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[DatasetExportFilters] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         """
         Creates a dataset export task with the given params and returns the task.
         
@@ -645,10 +658,10 @@ class Dataset(DbObject, Updateable, Deletable):
         })
 
         mutation_name = "exportDataRowsInCatalog"
-        create_task_query_str = """mutation exportDataRowsInCatalogPyApi($input: ExportDataRowsInCatalogInput!){
-            %s(input: $input) {taskId} }
-            """ % (mutation_name)
-
+        create_task_query_str = (
+            f"mutation {mutation_name}PyApi"
+            f"($input: ExportDataRowsInCatalogInput!)"
+            f"{{{mutation_name}(input: $input){{taskId}}}}")
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:
@@ -685,6 +698,7 @@ class Dataset(DbObject, Updateable, Deletable):
                     "modelRunIds":
                         _params.get('model_run_ids', None),
                 },
+                "streamable": streamable,
             }
         }
 
@@ -702,14 +716,4 @@ class Dataset(DbObject, Updateable, Deletable):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
-        return task
+        return Task.get_task(self.client, task_id)

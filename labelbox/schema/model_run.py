@@ -14,6 +14,7 @@ from labelbox.orm.query import results_query_part
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.schema.export_params import ModelRunExportParams
+from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
@@ -503,20 +504,29 @@ class ModelRun(DbObject):
                          self.uid)
             time.sleep(sleep_time)
 
-    """
-    Creates a model run export task with the given params and returns the task.
-    
-    >>>    export_task = export_v2("my_export_task", params={"media_attributes": True})
-    
-    """
+    def export(self,
+               task_name: Optional[str] = None,
+               params: Optional[ModelRunExportParams] = None) -> ExportTask:
+        task = self.export_v2(task_name, params, True)
+        return ExportTask(task)
 
-    def export_v2(self,
-                  task_name: Optional[str] = None,
-                  params: Optional[ModelRunExportParams] = None) -> Task:
+    def export_v2(
+        self,
+        task_name: Optional[str] = None,
+        params: Optional[ModelRunExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
+        """
+        Creates a model run export task with the given params and returns the task.
+
+        >>>    export_task = export_v2("my_export_task", params={"media_attributes": True})
+
+        """
         mutation_name = "exportDataRowsInModelRun"
-        create_task_query_str = """mutation exportDataRowsInModelRunPyApi($input: ExportDataRowsInModelRunInput!){
-          %s(input: $input) {taskId} }
-          """ % (mutation_name)
+        create_task_query_str = (
+            f"mutation {mutation_name}PyApi"
+            f"($input: ExportDataRowsInModelRunInput!)"
+            f"{{{mutation_name}(input: $input){{taskId}}}}")
 
         _params = params or ModelRunExportParams()
 
@@ -538,6 +548,7 @@ class ModelRun(DbObject):
                     "includePredictions":
                         _params.get('predictions', False),
                 },
+                "streamable": streamable
             }
         }
         res = self.client.execute(create_task_query_str,
@@ -545,17 +556,7 @@ class ModelRun(DbObject):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
-        return task
+        return Task.get_task(self.client, task_id)
 
 
 class ModelRunDataRow(DbObject):
