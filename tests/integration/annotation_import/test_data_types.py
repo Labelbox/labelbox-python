@@ -65,6 +65,7 @@ def get_annotation_comparison_dicts_from_labels(labels):
         if 'masks' in annotation:
             for frame in annotation['masks']['frames']:
                 frame.pop('instanceURI')
+                frame.pop('imBytes')
             for instance in annotation['masks']['instances']:
                 instance.pop('colorRGB')
     return labels_ndjson

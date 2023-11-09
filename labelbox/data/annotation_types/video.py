@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, root_validator
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
@@ -81,14 +81,24 @@ class DICOMObjectAnnotation(VideoObjectAnnotation):
         keyframe (bool): Whether or not this annotation was a human generated or interpolated annotation
         segment_id (Optional[Int]): Index of video segment this annotation belongs to
         classifications (List[ClassificationAnnotation]) = []
-        extra (Dict[str, Any])        
+        extra (Dict[str, Any])
     """
     group_key: GroupKey
 
 
 class MaskFrame(_CamelCaseMixin, BaseModel):
     index: int
-    instance_uri: str
+    instance_uri: Optional[str] = None
+    im_bytes: Optional[bytes] = None
+
+    @root_validator()
+    def validate_args(cls, values):
+        im_bytes = values.get("im_bytes")
+        instance_uri = values.get("instance_uri")
+
+        if im_bytes == instance_uri == None:
+            raise ValueError("One of `instance_uri`, `im_bytes` required.")
+        return values
 
     @validator("instance_uri")
     def validate_uri(cls, v):

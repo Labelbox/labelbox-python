@@ -501,6 +501,11 @@ class NDVideoMasks(NDJsonBase, ConfidenceMixin):
     masks: NDVideoMasksFramesInstances
 
     def to_common(self) -> VideoMaskAnnotation:
+        for mask_frame in self.masks.frames:
+            if mask_frame.im_bytes:
+                mask_frame.im_bytes = base64.b64decode(
+                    mask_frame.im_bytes.encode('utf-8'))
+
         return VideoMaskAnnotation(
             frames=self.masks.frames,
             instances=self.masks.instances,
@@ -508,6 +513,11 @@ class NDVideoMasks(NDJsonBase, ConfidenceMixin):
 
     @classmethod
     def from_common(cls, annotation, data):
+        for mask_frame in annotation.frames:
+            if mask_frame.im_bytes:
+                mask_frame.im_bytes = base64.b64encode(
+                    mask_frame.im_bytes).decode('utf-8')
+
         return cls(
             data_row=DataRow(id=data.uid, global_key=data.global_key),
             masks=NDVideoMasksFramesInstances(frames=annotation.frames,
