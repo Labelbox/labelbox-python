@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
+from io import TextIOWrapper
 from pathlib import Path
 from typing import (
     Callable,
@@ -85,8 +86,8 @@ class Converter(ABC, Generic[OutputT]):
 
         Args:
             current_offset: The global offset indicating the position of the data within the
-                            exported files. It represents a cumulative offset across multiple
-                            files.
+                            exported files. It represents a cumulative offset in characters
+                            across multiple files.
             raw_data: The raw data to convert.
 
         Yields:
@@ -94,16 +95,17 @@ class Converter(ABC, Generic[OutputT]):
         """
 
 
-class JsonConverter(Converter["JsonConverter.Output"]):  # pylint: disable=too-few-public-methods
+@dataclass
+class JsonConverterOutput:
+    """Output with the JSON string."""
+
+    current_offset: int
+    current_line: int
+    json_str: str
+
+
+class JsonConverter(Converter[JsonConverterOutput]):  # pylint: disable=too-few-public-methods
     """Converts JSON data."""
-
-    @dataclass
-    class Output:
-        """Output with the JSON string."""
-
-        current_offset: int
-        current_line: int
-        json_str: str
 
     def _find_json_object_offsets(self, data: str) -> List[Tuple[int, int]]:
         object_offsets: List[Tuple[int, int]] = []
@@ -132,7 +134,7 @@ class JsonConverter(Converter["JsonConverter.Output"]):  # pylint: disable=too-f
 
     def convert(
         self, input_args: Converter.ConverterInputArgs
-    ) -> Iterator["JsonConverter.Output"]:
+    ) -> Iterator[JsonConverterOutput]:
         current_offset, current_line, raw_data = (
             input_args.file_info.offsets.start,
             input_args.file_info.lines.start,
@@ -140,30 +142,31 @@ class JsonConverter(Converter["JsonConverter.Output"]):  # pylint: disable=too-f
         )
         offsets = self._find_json_object_offsets(raw_data)
         for line, (offset_start, offset_end) in enumerate(offsets):
-            yield JsonConverter.Output(
+            yield JsonConverterOutput(
                 current_offset + offset_start,
                 current_line + line,
                 json_str=raw_data[offset_start:offset_end + 1].strip(),
             )
 
 
-class FileConverter(Converter["FileConverter.Output"]):
+@dataclass
+class FileConverterOutput:
+    """Output with statistics about the written file."""
+
+    file_path: Path
+    total_size: int
+    total_lines: int
+    current_offset: int
+    current_line: int
+    bytes_written: int
+
+
+class FileConverter(Converter[FileConverterOutput]):
     """Converts data to a file."""
-
-    @dataclass
-    class Output:
-        """Output with statistics about the written file."""
-
-        file_path: Path
-        total_size: int
-        total_lines: int
-        current_offset: int
-        current_line: int
-        bytes_written: int
 
     def __init__(self, file_path: str) -> None:
         super().__init__()
-        self._file = None
+        self._file: Optional[TextIOWrapper] = None
         self._file_path = file_path
 
     def __enter__(self):
@@ -171,16 +174,17 @@ class FileConverter(Converter["FileConverter.Output"]):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._file.close()
+        if self._file:
+            self._file.close()
         return False
 
     def convert(
         self, input_args: Converter.ConverterInputArgs
-    ) -> Iterator["FileConverter.Output"]:
+    ) -> Iterator[FileConverterOutput]:
         # appends data to the file
         assert self._file is not None
         self._file.write(input_args.raw_data)
-        yield FileConverter.Output(
+        yield FileConverterOutput(
             file_path=Path(self._file_path),
             total_size=input_args.ctx.metadata_header.total_size,
             total_lines=input_args.ctx.metadata_header.total_lines,
@@ -380,6 +384,8 @@ class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
         self._retrieval_strategy = strategy
 
     def read(self) -> Iterator[Tuple[_MetadataFileInfo, str]]:
+        if not self._retrieval_strategy:
+            raise ValueError("retrieval strategy not set")
         result = self._retrieval_strategy.get_next_chunk()
         while result:
             file_info, raw_data = result
@@ -533,32 +539,32 @@ class ExportTask:
         res = res["task"]["exportMetadataHeader"]
         return _MetadataHeader(**res) if res else None
 
-    @staticmethod
-    def get_total_file_size(client, task_id: str,
+    def get_total_file_size(self, client, task_id: str,
                             stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
+        if not self._task.status in ["COMPLETE", "FAILED"]:
+            raise ExportTask.TaskNotReadyException("Task is not ready yet")
         header = ExportTask._get_metadata_header(client, task_id, stream_type)
         return header.total_size if header else None
 
-    @staticmethod
-    def get_total_lines(client, task_id: str,
+    def get_total_lines(self, client, task_id: str,
                         stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
+        if not self._task.status in ["COMPLETE", "FAILED"]:
+            raise ExportTask.TaskNotReadyException("Task is not ready yet")
         header = ExportTask._get_metadata_header(client, task_id, stream_type)
         return header.total_lines if header else None
 
     def has_result(self) -> bool:
         """Returns whether the task has a result."""
-        total_size = ExportTask.get_total_file_size(self._task.client,
-                                                    self._task.uid,
-                                                    StreamType.RESULT)
+        total_size = self.get_total_file_size(self._task.client, self._task.uid,
+                                              StreamType.RESULT)
         return total_size is not None and total_size > 0
 
     def has_errors(self) -> bool:
         """Returns whether the task has errors."""
-        total_size = ExportTask.get_total_file_size(self._task.client,
-                                                    self._task.uid,
-                                                    StreamType.ERRORS)
+        total_size = self.get_total_file_size(self._task.client, self._task.uid,
+                                              StreamType.ERRORS)
         return total_size is not None and total_size > 0
 
     @overload
@@ -566,7 +572,7 @@ class ExportTask:
         self,
         converter: JsonConverter = JsonConverter(),
         stream_type: StreamType = StreamType.RESULT,
-    ) -> Stream[JsonConverter.Output]:
+    ) -> Stream[JsonConverterOutput]:
         """Overload for getting the right typing hints when using a JsonConverter."""
 
     @overload
@@ -574,7 +580,7 @@ class ExportTask:
         self,
         converter: FileConverter,
         stream_type: StreamType = StreamType.RESULT,
-    ) -> Stream[FileConverter.Output]:
+    ) -> Stream[FileConverterOutput]:
         """Overload for getting the right typing hints when using a FileConverter."""
 
     def get_stream(

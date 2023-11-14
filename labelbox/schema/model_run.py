@@ -507,7 +507,13 @@ class ModelRun(DbObject):
     def export(self,
                task_name: Optional[str] = None,
                params: Optional[ModelRunExportParams] = None) -> ExportTask:
-        task = self.export_v2(task_name, params, True)
+        """
+        Creates a model run export task with the given params and returns the task.
+
+        >>>    export_task = export("my_export_task", params={"media_attributes": True})
+
+        """
+        task = self.export_v2(task_name, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(

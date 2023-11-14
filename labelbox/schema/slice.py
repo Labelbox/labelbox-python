@@ -68,7 +68,16 @@ class CatalogSlice(Slice):
     def export(self,
                task_name: Optional[str] = None,
                params: Optional[CatalogExportParams] = None) -> ExportTask:
-        task = self.export_v2(task_name, params, True)
+        """
+        Creates a slice export task with the given params and returns the task.
+        >>>     slice = client.get_catalog_slice("SLICE_ID")
+        >>>     task = slice.export(
+        >>>         params={"performance_details": False, "label_details": True}
+        >>>     )
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+        task = self.export_v2(task_name, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(

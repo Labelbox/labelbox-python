@@ -65,7 +65,7 @@ class Task(DbObject):
             timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
         """
         check_frequency = 2  # frequency of checking, in seconds
-        while timeout_seconds:
+        while timeout_seconds > 0:
             if self.status != "IN_PROGRESS":
                 # self.errors fetches the error content.
                 # This first condition prevents us from downloading the content for v2 exports

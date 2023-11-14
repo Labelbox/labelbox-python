@@ -160,20 +160,46 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     @staticmethod
     def export(
         client: "Client",
-        data_rows: List[Union[str, "DataRow"]] = None,
-        global_keys: List[str] = None,
+        data_rows: Optional[List[Union[str, "DataRow"]]] = None,
+        global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
     ) -> ExportTask:
-        task = DataRow.export_v2(client, data_rows, global_keys, task_name,
-                                 params, True)
+        """
+        Creates a data rows export task with the given list, params and returns the task.
+        Args:
+            client (Client): client to use to make the export request
+            data_rows (list of DataRow or str): list of data row objects or data row ids to export
+            task_name (str): name of remote task
+            params (CatalogExportParams): export params
+
+        >>>     dataset = client.get_dataset(DATASET_ID)
+        >>>     task = DataRow.export(
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
+        >>>             # or a list of DataRow objects: data_rows = data_set.data_rows.list()
+        >>>             # or a list of global_keys=["global_key_1", "global_key_2"],
+        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time
+        >>>             # and if data rows ids is present, global keys will be ignored
+        >>>         params={
+        >>>             "performance_details": False,
+        >>>             "label_details": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+        task = DataRow.export_v2(client,
+                                 data_rows,
+                                 global_keys,
+                                 task_name,
+                                 params,
+                                 streamable=True)
         return ExportTask(task)
 
     @staticmethod
     def export_v2(
         client: "Client",
-        data_rows: List[Union[str, "DataRow"]] = None,
-        global_keys: List[str] = None,
+        data_rows: Optional[List[Union[str, "DataRow"]]] = None,
+        global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,

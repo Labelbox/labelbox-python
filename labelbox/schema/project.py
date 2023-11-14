@@ -422,8 +422,24 @@ class Project(DbObject, Updateable, Deletable):
         filters: Optional[ProjectExportFilters] = None,
         params: Optional[ProjectExportParams] = None,
     ) -> ExportTask:
-        """Creates a project export task with the given params and returns the task."""
-        task = self.export_v2(task_name, filters, params, True)
+        """
+        Creates a project export task with the given params and returns the task.
+
+        >>>     task = project.export(
+        >>>         filters={
+        >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]
+        >>>             "batch_ids": [BATCH_ID_1, BATCH_ID_2, ...]
+        >>>         },
+        >>>         params={
+        >>>             "performance_details": False,
+        >>>             "label_details": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+        task = self.export_v2(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
