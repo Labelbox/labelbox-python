@@ -4,11 +4,12 @@ import json
 from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
+from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 from labelbox.schema.user import User  # type: ignore
 
@@ -156,12 +157,54 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
 
+    @experimental
     @staticmethod
-    def export_v2(client: 'Client',
-                  data_rows: List[Union[str, 'DataRow']] = None,
-                  global_keys: List[str] = None,
-                  task_name: Optional[str] = None,
-                  params: Optional[CatalogExportParams] = None) -> Task:
+    def export(
+        client: "Client",
+        data_rows: Optional[List[Union[str, "DataRow"]]] = None,
+        global_keys: Optional[List[str]] = None,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+    ) -> ExportTask:
+        """
+        Creates a data rows export task with the given list, params and returns the task.
+        Args:
+            client (Client): client to use to make the export request
+            data_rows (list of DataRow or str): list of data row objects or data row ids to export
+            task_name (str): name of remote task
+            params (CatalogExportParams): export params
+
+        >>>     dataset = client.get_dataset(DATASET_ID)
+        >>>     task = DataRow.export(
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
+        >>>             # or a list of DataRow objects: data_rows = data_set.data_rows.list()
+        >>>             # or a list of global_keys=["global_key_1", "global_key_2"],
+        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time
+        >>>             # and if data rows ids is present, global keys will be ignored
+        >>>         params={
+        >>>             "performance_details": False,
+        >>>             "label_details": True
+        >>>         })
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+        task = DataRow.export_v2(client,
+                                 data_rows,
+                                 global_keys,
+                                 task_name,
+                                 params,
+                                 streamable=True)
+        return ExportTask(task)
+
+    @staticmethod
+    def export_v2(
+        client: "Client",
+        data_rows: Optional[List[Union[str, "DataRow"]]] = None,
+        global_keys: Optional[List[str]] = None,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         """
         Creates a data rows export task with the given list, params and returns the task.
         Args:
@@ -202,9 +245,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         validate_catalog_export_params(_params)
 
         mutation_name = "exportDataRowsInCatalog"
-        create_task_query_str = """mutation exportDataRowsInCatalogPyApi($input: ExportDataRowsInCatalogInput!){
-            %s(input: $input) {taskId} }
-            """ % (mutation_name)
+        create_task_query_str = (
+            f"mutation {mutation_name}PyApi"
+            f"($input: ExportDataRowsInCatalogInput!)"
+            f"{{{mutation_name}(input: $input){{taskId}}}}")
 
         data_row_ids = []
         if data_rows is not None:
@@ -227,7 +271,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:
-            task_name = f"Export v2: data rows (%s)" % len(data_row_ids)
+            task_name = f"Export v2: data rows {len(data_row_ids)}"
         query_params = {
             "input": {
                 "taskName": task_name,
@@ -260,6 +304,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                     "modelRunIds":
                         _params.get('model_run_ids', None),
                 },
+                "streamable": streamable
             }
         }
 
@@ -269,14 +314,4 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         print(res)
         res = res[mutation_name]
         task_id = res["taskId"]
-        user: User = client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
-        return task
+        return Task.get_task(client, task_id)
