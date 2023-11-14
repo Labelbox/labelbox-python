@@ -77,9 +77,15 @@ class Webhook(DbObject, Updateable):
             ValueError: If the topic is not one of Topic or status is not one of Status
 
         Information on configuring your server can be found here (this is where the url points to and the secret is set).
-                        https://docs.labelbox.com/en/configure-editor/webhooks-setup#setup-steps
+                        https://docs.labelbox.com/reference/webhook
 
         """
+        if not secret:
+            raise TypeError(f"Secret must be a non-empty string.")
+        if not topics:
+            raise TypeError(f"Topics must be a non-empty list.")
+        if not url:
+            raise TypeError(f"URL must be a non-empty string.")
         Webhook.validate_topics(topics)
 
         project_str = "" if project is None \
