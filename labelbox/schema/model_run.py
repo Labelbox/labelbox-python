@@ -504,6 +504,7 @@ class ModelRun(DbObject):
                          self.uid)
             time.sleep(sleep_time)
 
+    @experimental
     def export(self,
                task_name: Optional[str] = None,
                params: Optional[ModelRunExportParams] = None) -> ExportTask:

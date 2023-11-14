@@ -4,7 +4,7 @@ import json
 from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
+from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
@@ -157,6 +157,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
 
+    @experimental
     @staticmethod
     def export(
         client: "Client",

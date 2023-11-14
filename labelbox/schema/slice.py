@@ -1,6 +1,6 @@
 from typing import Optional, List
 from labelbox.exceptions import ResourceNotFoundError
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
@@ -65,6 +65,7 @@ class CatalogSlice(Slice):
             obj_class=lambda _, data_row_id: data_row_id,
             cursor_path=['getDataRowIdsBySavedQuery', 'pageInfo', 'endCursor'])
 
+    @experimental
     def export(self,
                task_name: Optional[str] = None,
                params: Optional[CatalogExportParams] = None) -> ExportTask:

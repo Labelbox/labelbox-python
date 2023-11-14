@@ -17,7 +17,7 @@ import requests
 from labelbox import pagination
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.comparison import Comparison
-from labelbox.orm.db_object import DbObject, Updateable, Deletable
+from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
@@ -602,6 +602,7 @@ class Dataset(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    @experimental
     def export(
         self,
         task_name: Optional[str] = None,

@@ -16,7 +16,7 @@ from labelbox.exceptions import (InvalidQueryError, LabelboxError,
                                  ProcessingWaitTimeout, ResourceConflict,
                                  ResourceNotFoundError)
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Deletable, Updateable
+from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
@@ -416,6 +416,7 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
+    @experimental
     def export(
         self,
         task_name: Optional[str] = None,
