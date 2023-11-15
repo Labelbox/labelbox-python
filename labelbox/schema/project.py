@@ -25,22 +25,15 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.identifiable import DataRowIdentifiers, IdType, UniqueIds, strings_to_identifiable
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
-from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
-
-try:
-    datetime.fromisoformat  # type: ignore[attr-defined]
-except AttributeError:
-    from backports.datetime_fromisoformat import MonkeyPatch
-
-    MonkeyPatch.patch_fromisoformat()
 
 try:
     from labelbox.data.serialization import LBV1Converter
@@ -643,7 +636,7 @@ class Project(DbObject, Updateable, Deletable):
         def create_labeler_performance(client, result):
             result["user"] = Entity.User(client, result["user"])
             # python isoformat doesn't accept Z as utc timezone
-            result["lastActivityTime"] = datetime.fromisoformat(
+            result["lastActivityTime"] = utils.format_iso_from_string(
                 result["lastActivityTime"].replace('Z', '+00:00'))
             return LabelerPerformance(**{
                 utils.snake_case(key): value for key, value in result.items()
