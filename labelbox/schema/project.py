@@ -5,16 +5,19 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TypeVar, Union, overload
 from urllib.parse import urlparse
 
 import requests
 
 from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict,
-                                 ResourceNotFoundError)
+from labelbox.exceptions import (
+    InvalidQueryError,
+    LabelboxError,
+    ProcessingWaitTimeout,
+    ResourceConflict,
+)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -25,7 +28,7 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiable import DataRowIdentifiers, IdType, UniqueIds, strings_to_identifiable
+from labelbox.schema.identifiable import DataRowIdentifiers, strings_to_identifiable
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -1375,29 +1378,43 @@ class Project(DbObject, Updateable, Deletable):
             for field_values in task_queue_values
         ]
 
+    @overload
+    def move_data_rows_to_task_queue(self, data_row_ids: DataRowIdentifiers,
+                                     task_queue_id: str):
+        pass
+
+    @overload
     def move_data_rows_to_task_queue(self, data_row_ids: List[str],
                                      task_queue_id: str):
+        pass
+
+    def move_data_rows_to_task_queue(self, data_row_ids, task_queue_id: str):
         """
 
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved
+            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object 
+                DataRowIdentifier objects are lists of ids or global keys
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
         Returns:
             None if successful, or a raised error on failure
 
         """
+        if isinstance(data_row_ids, list):
+            data_row_ids = strings_to_identifiable(data_row_ids)
+
         method = "createBulkAddRowsToQueueTask"
         query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
           $projectId: ID!
           $queueId: ID
           $dataRowIds: [ID!]!
+          $idType: IdType!
         ) {
           project(where: { id: $projectId }) {
             %s(
-              data: { queueId: $queueId, dataRowIds: $dataRowIds }
+              data: { queueId: $queueId, dataRowIds: $dataRowIds, idType: $idType }
             ) {
               taskId
             }
@@ -1409,7 +1426,8 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {
                 "projectId": self.uid,
                 "queueId": task_queue_id,
-                "dataRowIds": data_row_ids
+                "dataRowIds": data_row_ids.keys,
+                "idType": data_row_ids.id_type,
             },
             timeout=180.0,
             experimental=True)["project"][method]["taskId"]
