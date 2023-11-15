@@ -518,6 +518,16 @@ class ExportTask:
         """Returns the type of the task."""
         return self._task.type
 
+    @property
+    def created_by(self):
+        """Returns the user who created the task."""
+        return self._task.created_by
+
+    @property
+    def organization(self):
+        """Returns the organization of the task."""
+        return self._task.organization
+
     def wait_till_done(self, timeout_seconds: int = 300) -> None:
         """Waits until the task is done."""
         return self._task.wait_till_done(timeout_seconds)
