@@ -81,11 +81,11 @@ class Webhook(DbObject, Updateable):
 
         """
         if not secret:
-            raise ValueError(f"Secret must be a non-empty string.")
+            raise ValueError("Secret must be a non-empty string.")
         if not topics:
-            raise ValueError(f"Topics must be a non-empty list.")
+            raise ValueError("Topics must be a non-empty list.")
         if not url:
-            raise ValueError(f"URL must be a non-empty string.")
+            raise ValueError("URL must be a non-empty string.")
         Webhook.validate_topics(topics)
 
         project_str = "" if project is None \
