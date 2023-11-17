@@ -22,7 +22,7 @@ def test_webhook_create_with_no_topics(rand_gen):
     project = MagicMock()
     secret = rand_gen(str)
     url = "https:/" + rand_gen(str)
-    topics = ["1"]
+    topics = []
 
     with pytest.raises(ValueError) as exc_info:
         Webhook.create(client, topics, url, secret, project)
