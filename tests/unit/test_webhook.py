@@ -3,6 +3,7 @@ import pytest
 
 from labelbox import Webhook
 
+
 def test_webhook_create_with_no_secret(rand_gen):
     client = MagicMock()
     project = MagicMock()
