@@ -1,21 +1,20 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Union
-from typing_extensions import TypeAlias
 
 
 class IdType(str, Enum):
-    DataRowId = "DATA_ROW_ID"
+    DataRowId = "UID"
     GlobalKey = "GLOBAL_KEY"
 
 
 class Identifiable(ABC):
 
-    def __init__(self, keys: Union[str, List[str]]):
+    def __init__(self, keys: Union[str, List[str]], id_type: IdType):
         self._keys = keys
         if isinstance(keys, str):
-            self.keys = [keys]
-        self._id_type = IdType.DataRowId
+            self._keys = [keys]
+        self._id_type = id_type
 
     @property
     def keys(self):
@@ -25,11 +24,12 @@ class Identifiable(ABC):
     def keys(self, keys):
         self._keys = keys
         if isinstance(keys, str):
-            self.keys = [keys]
+            self._keys = [keys]
 
-    @property
-    def id_type(self):
-        return self._id_type
+    @classmethod
+    @abstractmethod
+    def strings_to_identifiable(cls, keys: Union[str, List[str]]):
+        pass
 
     def __eq__(self, other):
         return other.keys == self.keys
@@ -43,21 +43,23 @@ class Identifiable(ABC):
 
 class UniqueIds(Identifiable):
 
+    @classmethod
+    def strings_to_identifiable(cls, keys: Union[str, List[str]]):
+        return cls(keys)
+
     def __init__(self, keys: Union[str, List[str]]):
-        super().__init__(keys)
-        self._id_type = IdType.DataRowId
+        super().__init__(keys, IdType.DataRowId)
 
 
 class GlobalKeys(Identifiable):
 
+    @classmethod
+    def strings_to_identifiable(cls, keys: Union[str, List[str]]):
+        return cls(keys)
+
     def __init__(self, keys: Union[str, List[str]]):
-        super().__init__(keys)
-        self._id_type = IdType.GlobalKey
+        super().__init__(keys, IdType.GlobalKey)
 
 
-DefaultIdentifiable: TypeAlias = UniqueIds
-DataRowIdentifiers: TypeAlias = Union[UniqueIds, GlobalKeys]
-
-
-def strings_to_identifiable(keys: Union[str, List[str]]) -> DefaultIdentifiable:
-    return DefaultIdentifiable(keys)
+DefaultIdentifiable = UniqueIds
+DataRowIdentifiers = Union[UniqueIds, GlobalKeys]

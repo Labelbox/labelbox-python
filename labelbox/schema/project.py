@@ -28,7 +28,7 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiable import DataRowIdentifiers, strings_to_identifiable
+from labelbox.schema.identifiable import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -1403,18 +1403,17 @@ class Project(DbObject, Updateable, Deletable):
 
         """
         if isinstance(data_row_ids, list):
-            data_row_ids = strings_to_identifiable(data_row_ids)
+            data_row_ids = UniqueIds.strings_to_identifiable(data_row_ids)
 
         method = "createBulkAddRowsToQueueTask"
         query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
           $projectId: ID!
           $queueId: ID
-          $dataRowIds: [ID!]!
-          $idType: IdType!
+          $dataRowIdentifiers: AddRowsToTaskQueueViaDataRowIdentifiersInput!
         ) {
           project(where: { id: $projectId }) {
             %s(
-              data: { queueId: $queueId, dataRowIds: $dataRowIds, idType: $idType }
+              data: { queueId: $queueId, dataRowIdentifiers: $dataRowIdentifiers }
             ) {
               taskId
             }
@@ -1426,8 +1425,10 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {
                 "projectId": self.uid,
                 "queueId": task_queue_id,
-                "dataRowIds": data_row_ids.keys,
-                "idType": data_row_ids.id_type,
+                "dataRowIdentifiers": {
+                    "ids": data_row_ids.keys,
+                    "idType": data_row_ids._id_type,
+                },
             },
             timeout=180.0,
             experimental=True)["project"][method]["taskId"]
