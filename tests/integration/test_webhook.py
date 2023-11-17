@@ -48,7 +48,7 @@ def test_webhook_create_with_no_secret(project, rand_gen):
     url = "https:/" + rand_gen(str)
     topics = []
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         Webhook.create(client, topics, url, secret, project)
     assert str(exc_info.value) == \
         "Secret must be a non-empty string."
@@ -60,7 +60,7 @@ def test_webhook_create_with_no_topics(project, rand_gen):
     url = "https:/" + rand_gen(str)
     topics = []
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         Webhook.create(client, topics, url, secret, project)
     assert str(exc_info.value) == \
         "Topics must be a non-empty list."
@@ -72,7 +72,7 @@ def test_webhook_create_with_no_url(project, rand_gen):
     url = ""
     topics = [Webhook.LABEL_CREATED, Webhook.LABEL_DELETED]
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         Webhook.create(client, topics, url, secret, project)
     assert str(exc_info.value) == \
         "URL must be a non-empty string."
