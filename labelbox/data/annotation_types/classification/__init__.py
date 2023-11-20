@@ -1,2 +1,3 @@
 from .classification import (Checklist, ClassificationAnswer, Dropdown, Radio,
-                             Text)
+                             Text, Prompt, ResponseText, ResponseRadio,
+                             ResponseChecklist)

@@ -10,7 +10,7 @@ from labelbox.schema import ontology
 from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
 from .classification import ClassificationAnswer
-from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData
+from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData, LlmPromptResponseCreationData, LlmPromptCreationData, LlmResponseCreationData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
@@ -19,7 +19,9 @@ from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from ..ontology import get_feature_schema_lookup
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
-                 ConversationData, DicomData, DocumentData, HTMLData]
+                 ConversationData, DicomData, DocumentData, HTMLData,
+                 LlmPromptResponseCreationData, LlmPromptCreationData,
+                 LlmResponseCreationData]
 
 
 class Label(BaseModel):

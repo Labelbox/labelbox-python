@@ -56,8 +56,27 @@ class Radio(ConfidenceMixin, BaseModel):
     answer: ClassificationAnswer
 
 
+class ResponseRadio(ConfidenceMixin, BaseModel):
+    """ A response to a prompt with only one selected option allowed
+
+    >>> ResponseRadio(answer = ClassificationAnswer(name = "dog"))
+
+    """
+    answer: ClassificationAnswer
+
+
 class Checklist(_TempName):
     """ A classification with many selected options allowed
+
+    >>> Checklist(answer = [ClassificationAnswer(name = "cloudy")])
+
+    """
+    name: Literal["checklist"] = "checklist"
+    answer: List[ClassificationAnswer]
+
+
+class ResponseChecklist(_TempName):
+    """ A response to a prompt with many selected options allowed
 
     >>> Checklist(answer = [ClassificationAnswer(name = "cloudy")])
 
@@ -70,6 +89,24 @@ class Text(ConfidenceMixin, BaseModel):
     """ Free form text
 
     >>> Text(answer = "some text answer")
+
+    """
+    answer: str
+
+
+class Prompt(ConfidenceMixin, BaseModel):
+    """ Prompt
+
+    >>> Prompt(answer = "this is a prompt")
+
+    """
+    answer: str
+
+
+class ResponseText(ConfidenceMixin, BaseModel):
+    """ Response Text
+
+    >>> ResponseText(answer = "this is a response text")
 
     """
     answer: str
@@ -109,7 +146,8 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):
         extra (Dict[str, Any])
      """
 
-    value: Union[Text, Checklist, Radio, Dropdown]
+    value: Union[Text, Checklist, Radio, Dropdown, Prompt, ResponseText,
+                 ResponseRadio, ResponseChecklist]
     message_id: Optional[str] = None
 
 

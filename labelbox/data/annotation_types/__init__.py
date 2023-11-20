@@ -32,6 +32,10 @@ from .classification import ClassificationAnswer
 from .classification import Dropdown
 from .classification import Radio
 from .classification import Text
+from .classification import Prompt
+from .classification import ResponseText
+from .classification import ResponseRadio
+from .classification import ResponseChecklist
 
 from .data import AudioData
 from .data import ConversationData
@@ -42,6 +46,9 @@ from .data import ImageData
 from .data import MaskData
 from .data import TextData
 from .data import VideoData
+from .data import LlmPromptResponseCreationData
+from .data import LlmPromptCreationData
+from .data import LlmResponseCreationData
 
 from .label import Label
 from .collection import LabelList
