@@ -78,7 +78,7 @@ class Checklist(_TempName):
 class ResponseChecklist(_TempName):
     """ A response to a prompt with many selected options allowed
 
-    >>> Checklist(answer = [ClassificationAnswer(name = "cloudy")])
+    >>> ResponseChecklist(answer = [ClassificationAnswer(name = "cloudy")])
 
     """
     name: Literal["checklist"] = "checklist"
