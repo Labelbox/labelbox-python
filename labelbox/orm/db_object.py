@@ -270,14 +270,37 @@ class BulkDeletable:
 
 
 def experimental(fn):
+    """Decorator used to mark functions that are experimental. This means that
+    the interface could change. This decorator will check if the client has
+    experimental features enabled. If not, it will raise a runtime error.
+    """
+    is_static = isinstance(fn, staticmethod)
 
     @wraps(fn)
-    def wrapper(self, *args, **kwargs):
-        if not self.client.enable_experimental:
-            raise Exception(
-                f"This function {fn.__name__} relies on a experimental feature in the api. This means that the interface could change."
-                " Set `enable_experimental=True` in the client to enable use of experimental functions."
-            )
-        return fn(self, *args, **kwargs)
+    def wrapper(*args, **kwargs):
+        client = None
+        wrapped_fn = None
+        if is_static:
+            # assumes that the first argument is the client, needs modification if that changes
+            if len(args) >= 1:
+                client = args[0]
+            elif "client" in kwargs:
+                client = kwargs["client"]
+            else:
+                raise ValueError(
+                    f"Static method {fn.__name__} must have a client passed in as the first "
+                    f"argument or as a keyword argument.")
+            wrapped_fn = fn.__func__
+        else:
+            client = args[0].client
+            wrapped_fn = fn
+
+        if not client.enable_experimental:
+            raise RuntimeError(
+                f"This function {fn.__name__} relies on a experimental feature in the api. "
+                f"This means that the interface could change. "
+                f"Set `enable_experimental=True` in the client to enable use of "
+                f"experimental functions.")
+        return wrapped_fn(*args, **kwargs)
 
     return wrapper
