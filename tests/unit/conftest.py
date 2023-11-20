@@ -1,5 +1,4 @@
-import requests
-
+import json
 import pytest
 
 
@@ -97,3 +96,36 @@ def ndjson_content_with_nonascii_and_line_breaks():
         'created_at': '2015-01-01T15:00:10Z'
     }]
     return line, expected_objects
+
+
+@pytest.fixture
+def generate_random_ndjson(rand_gen):
+
+    def _generate_random_ndjson(lines: int = 10):
+        return [
+            json.dumps({"data_row": {
+                "id": rand_gen(str)
+            }}) for _ in range(lines)
+        ]
+
+    return _generate_random_ndjson
+
+
+@pytest.fixture
+def mock_response():
+
+    class MockResponse:
+
+        def __init__(self, text: str, exception: Exception = None) -> None:
+            self._text = text
+            self._exception = exception
+
+        @property
+        def text(self):
+            return self._text
+
+        def raise_for_status(self):
+            if self._exception:
+                raise self._exception
+
+    return MockResponse
