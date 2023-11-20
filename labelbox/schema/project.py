@@ -1395,7 +1395,7 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object 
-                DataRowIdentifier objects are lists of ids or global keys
+                DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
         Returns:
@@ -1404,6 +1404,8 @@ class Project(DbObject, Updateable, Deletable):
         """
         if isinstance(data_row_ids, list):
             data_row_ids = UniqueIds.strings_to_identifiable(data_row_ids)
+            warnings.warn("Using data row ids will be deprecated. Please use "
+                          "UniqueIds or GlobalKeys instead.")
 
         method = "createBulkAddRowsToQueueTask"
         query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
