@@ -124,8 +124,11 @@ class JsonConverter(Converter[JsonConverterOutput]):  # pylint: disable=too-few-
                         object_offsets.append((0, index - 1))
             elif char == "}" and stack:
                 stack.pop()
-                if len(stack) == 0 and data[
-                        index + 1] == "\n" and current_object_start is not None:
+                # this covers cases where the last object is either followed by a newline or
+                # it is missing
+                if len(stack) == 0 and (len(data) == index + 1 or
+                                        data[index + 1] == "\n"
+                                       ) and current_object_start is not None:
                     object_offsets.append((current_object_start, index + 1))
                     current_object_start = None
 
@@ -143,8 +146,8 @@ class JsonConverter(Converter[JsonConverterOutput]):  # pylint: disable=too-few-
         offsets = self._find_json_object_offsets(raw_data)
         for line, (offset_start, offset_end) in enumerate(offsets):
             yield JsonConverterOutput(
-                current_offset + offset_start,
-                current_line + line,
+                current_offset=current_offset + offset_start,
+                current_line=current_line + line,
                 json_str=raw_data[offset_start:offset_end + 1].strip(),
             )
 
@@ -549,32 +552,30 @@ class ExportTask:
         res = res["task"]["exportMetadataHeader"]
         return _MetadataHeader(**res) if res else None
 
-    def get_total_file_size(self, task_id: str,
-                            stream_type: StreamType) -> Union[int, None]:
+    def get_total_file_size(self, stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
         if not self._task.status in ["COMPLETE", "FAILED"]:
             raise ExportTask.TaskNotReadyException("Task is not ready yet")
-        header = ExportTask._get_metadata_header(self._task.client, task_id,
-                                                 stream_type)
+        header = ExportTask._get_metadata_header(self._task.client,
+                                                 self._task.uid, stream_type)
         return header.total_size if header else None
 
-    def get_total_lines(self, task_id: str,
-                        stream_type: StreamType) -> Union[int, None]:
+    def get_total_lines(self, stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
         if not self._task.status in ["COMPLETE", "FAILED"]:
             raise ExportTask.TaskNotReadyException("Task is not ready yet")
-        header = ExportTask._get_metadata_header(self._task.client, task_id,
-                                                 stream_type)
+        header = ExportTask._get_metadata_header(self._task.client,
+                                                 self._task.uid, stream_type)
         return header.total_lines if header else None
 
     def has_result(self) -> bool:
         """Returns whether the task has a result."""
-        total_size = self.get_total_file_size(self._task.uid, StreamType.RESULT)
+        total_size = self.get_total_file_size(StreamType.RESULT)
         return total_size is not None and total_size > 0
 
     def has_errors(self) -> bool:
         """Returns whether the task has errors."""
-        total_size = self.get_total_file_size(self._task.uid, StreamType.ERRORS)
+        total_size = self.get_total_file_size(StreamType.ERRORS)
         return total_size is not None and total_size > 0
 
     @overload
