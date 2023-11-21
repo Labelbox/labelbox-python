@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.56.0 (2023-11-21)
+## Added
+* Support for importing raster video masks from image bytes as a source
+* Add new ExportTask class to handle streaming of exports
+## Fixed
+* Check for empty fields during webhook creation
+## Notebooks
+* Updates to use bytes array for masks (video, image), and add examples of multiple notations per frame (video)
+
 # Version 3.55.0 (2023-11-06)
 ## Fixed
 * Fix the instantiation of `failed_data_row_ids` in Batch. This fix will address the issue with the `create_batch` method for more than 1,000 data rows.
