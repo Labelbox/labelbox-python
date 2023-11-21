@@ -1,7 +1,7 @@
 import time
 
 from labelbox import Project
-from labelbox.schema.identifiable import GlobalKeys
+from labelbox.schema.identifiables import GlobalKeys
 
 
 def test_get_task_queue(project: Project):

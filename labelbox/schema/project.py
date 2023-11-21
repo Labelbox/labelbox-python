@@ -28,7 +28,7 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiable import DataRowIdentifiers, UniqueIds
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -1403,7 +1403,7 @@ class Project(DbObject, Updateable, Deletable):
 
         """
         if isinstance(data_row_ids, list):
-            data_row_ids = UniqueIds.strings_to_identifiable(data_row_ids)
+            data_row_ids = UniqueIds(data_row_ids)
             warnings.warn("Using data row ids will be deprecated. Please use "
                           "UniqueIds or GlobalKeys instead.")
 
@@ -1428,7 +1428,7 @@ class Project(DbObject, Updateable, Deletable):
                 "projectId": self.uid,
                 "queueId": task_queue_id,
                 "dataRowIdentifiers": {
-                    "ids": data_row_ids.keys,
+                    "ids": [id for id in data_row_ids],
                     "idType": data_row_ids._id_type,
                 },
             },
