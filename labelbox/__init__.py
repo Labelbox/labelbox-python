@@ -1,6 +1,6 @@
 name = "labelbox"
 
-__version__ = "3.55.0"
+__version__ = "3.56.0"
 
 from labelbox.client import Client
 from labelbox.schema.project import Project
@@ -16,6 +16,7 @@ from labelbox.schema.review import Review
 from labelbox.schema.user import User
 from labelbox.schema.organization import Organization
 from labelbox.schema.task import Task
+from labelbox.schema.export_task import StreamType, ExportTask, JsonConverter, JsonConverterOutput, FileConverter, FileConverterOutput
 from labelbox.schema.labeling_frontend import LabelingFrontend, LabelingFrontendOptions
 from labelbox.schema.asset_attachment import AssetAttachment
 from labelbox.schema.webhook import Webhook

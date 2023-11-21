@@ -40,3 +40,39 @@ def test_webhook_create_update(project, rand_gen):
         "Topics must be List[Webhook.Topic]. Found `invalid..`"
 
     webhook.delete()
+
+
+def test_webhook_create_with_no_secret(project, rand_gen):
+    client = project.client
+    secret = ""
+    url = "https:/" + rand_gen(str)
+    topics = []
+
+    with pytest.raises(ValueError) as exc_info:
+        Webhook.create(client, topics, url, secret, project)
+    assert str(exc_info.value) == \
+        "Secret must be a non-empty string."
+
+
+def test_webhook_create_with_no_topics(project, rand_gen):
+    client = project.client
+    secret = rand_gen(str)
+    url = "https:/" + rand_gen(str)
+    topics = []
+
+    with pytest.raises(ValueError) as exc_info:
+        Webhook.create(client, topics, url, secret, project)
+    assert str(exc_info.value) == \
+        "Topics must be a non-empty list."
+
+
+def test_webhook_create_with_no_url(project, rand_gen):
+    client = project.client
+    secret = rand_gen(str)
+    url = ""
+    topics = [Webhook.LABEL_CREATED, Webhook.LABEL_DELETED]
+
+    with pytest.raises(ValueError) as exc_info:
+        Webhook.create(client, topics, url, secret, project)
+    assert str(exc_info.value) == \
+        "URL must be a non-empty string."

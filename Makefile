@@ -1,6 +1,6 @@
 
 build-image:
-	docker build -t local/labelbox-python:test .
+	docker build --quiet -t local/labelbox-python:test .
 
 test-local: build-image
 

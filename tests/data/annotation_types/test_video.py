@@ -6,6 +6,7 @@ def test_mask_frame():
                                     instance_uri="http://path/to/frame.png")
     assert mask_frame.dict(by_alias=True) == {
         'index': 1,
+        'imBytes': None,
         'instanceURI': 'http://path/to/frame.png'
     }
 

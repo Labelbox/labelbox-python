@@ -1,9 +1,10 @@
 from typing import Optional, List
 from labelbox.exceptions import ResourceNotFoundError
-from labelbox.orm.db_object import DbObject
+from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
@@ -64,9 +65,28 @@ class CatalogSlice(Slice):
             obj_class=lambda _, data_row_id: data_row_id,
             cursor_path=['getDataRowIdsBySavedQuery', 'pageInfo', 'endCursor'])
 
-    def export_v2(self,
-                  task_name: Optional[str] = None,
-                  params: Optional[CatalogExportParams] = None) -> Task:
+    @experimental
+    def export(self,
+               task_name: Optional[str] = None,
+               params: Optional[CatalogExportParams] = None) -> ExportTask:
+        """
+        Creates a slice export task with the given params and returns the task.
+        >>>     slice = client.get_catalog_slice("SLICE_ID")
+        >>>     task = slice.export(
+        >>>         params={"performance_details": False, "label_details": True}
+        >>>     )
+        >>>     task.wait_till_done()
+        >>>     task.result
+        """
+        task = self.export_v2(task_name, params, streamable=True)
+        return ExportTask(task)
+
+    def export_v2(
+        self,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         """
         Creates a slice export task with the given params and returns the task.
         >>>     slice = client.get_catalog_slice("SLICE_ID")
@@ -92,9 +112,10 @@ class CatalogSlice(Slice):
         validate_catalog_export_params(_params)
 
         mutation_name = "exportDataRowsInSlice"
-        create_task_query_str = """mutation exportDataRowsInSlicePyApi($input: ExportDataRowsInSliceInput!){
-          %s(input: $input) {taskId} }
-          """ % (mutation_name)
+        create_task_query_str = (
+            f"mutation {mutation_name}PyApi"
+            f"($input: ExportDataRowsInSliceInput!)"
+            f"{{{mutation_name}(input: $input){{taskId}}}}")
 
         media_type_override = _params.get('media_type_override', None)
         query_params = {
@@ -126,6 +147,7 @@ class CatalogSlice(Slice):
                     "modelRunIds":
                         _params.get('model_run_ids', None),
                 },
+                "streamable": streamable,
             }
         }
 
@@ -134,17 +156,7 @@ class CatalogSlice(Slice):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
-        return task
+        return Task.get_task(self.client, task_id)
 
 
 class ModelSlice(Slice):
