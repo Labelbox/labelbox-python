@@ -222,3 +222,10 @@ QualityMode
 .. automodule:: labelbox.schema.quality_mode
    :members:
    :show-inheritance:
+
+ExportTask
+---------------------------
+
+.. automodule:: labelbox.schema.export_task
+   :members:
+   :show-inheritance:
