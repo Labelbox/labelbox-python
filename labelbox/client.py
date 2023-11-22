@@ -665,6 +665,10 @@ class Client:
                 "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
             )
 
+        name = kwargs.get("name")
+        if name is None or not name.strip():
+            raise ValueError("project name must be a valid string.")
+
         queue_mode = kwargs.get("queue_mode")
         if queue_mode is QueueMode.Dataset:
             raise ValueError(
