@@ -38,11 +38,9 @@ def test_project_auto_audit_parameters(client, rand_gen):
 
 def test_project_name_parameter(client, rand_gen):
     with pytest.raises(ValueError,
-                       match="project name must be a valid string."
-    ):
+                       match="project name must be a valid string."):
         client.create_project()
 
     with pytest.raises(ValueError,
-                       match="project name must be a valid string."
-    ):
+                       match="project name must be a valid string."):
         client.create_project(name="     ")
