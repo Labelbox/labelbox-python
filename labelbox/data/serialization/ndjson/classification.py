@@ -1,13 +1,15 @@
 from typing import Any, Dict, List, Union, Optional
 
 from pydantic import BaseModel, Field, root_validator
+from labelbox.data.annotation_types.data.llm_prompt_creation import LlmPromptCreationData
+from labelbox.data.annotation_types.data.llm_prompt_response_creation import LlmPromptResponseCreationData
 from labelbox.data.mixins import ConfidenceMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
-from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
+from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Prompt, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 
@@ -166,7 +168,28 @@ class NDText(NDAnnotation, NDTextSubclass):
             message_id=message_id,
             confidence=text.confidence,
         )
+    
+class NDPrompt(NDAnnotation):
 
+    @classmethod
+    def from_common(cls,
+                    uuid: str,
+                    text: Prompt,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[LlmPromptCreationData, LlmPromptResponseCreationData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDPrompt":
+        return cls(
+            answer=text.answer,
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            name=name,
+            schema_id=feature_schema_id,
+            uuid=uuid,
+            message_id=message_id,
+            confidence=text.confidence,
+        )
 
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
@@ -261,6 +284,7 @@ class NDSubclassification:
             Text: NDTextSubclass,
             Checklist: NDChecklistSubclass,
             Radio: NDRadioSubclass,
+            Prompt: NDPrompt
         }.get(type(annotation.value))
 
 
@@ -310,13 +334,14 @@ class NDClassification:
     def lookup_classification(
         annotation: Union[ClassificationAnnotation,
                           VideoClassificationAnnotation]
-    ) -> Union[NDText, NDChecklist, NDRadio]:
+    ) -> Union[NDText, NDChecklist, NDRadio, NDPrompt]:
         if isinstance(annotation.value, Dropdown):
             raise TypeError("Dropdowns are not supported for MAL.")
         return {
             Text: NDText,
             Checklist: NDChecklist,
-            Radio: NDRadio
+            Radio: NDRadio,
+            Prompt: NDPrompt
         }.get(type(annotation.value))
 
 
@@ -331,8 +356,9 @@ NDChecklist.update_forward_refs()
 NDRadioSubclass.update_forward_refs()
 NDRadio.update_forward_refs()
 NDText.update_forward_refs()
+NDPrompt.update_forward_refs()
 NDTextSubclass.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
-NDClassificationType = Union[NDChecklist, NDRadio, NDText]
+NDClassificationType = Union[NDChecklist, NDRadio, NDText, NDPrompt]

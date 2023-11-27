@@ -5,6 +5,11 @@ from collections import defaultdict
 import warnings
 
 from pydantic import BaseModel
+from labelbox.data.annotation_types.classification.classification import Prompt, ResponseChecklist, ResponseRadio, ResponseText
+from labelbox.data.annotation_types.data.llm_prompt_creation import LlmPromptCreationData
+
+from labelbox.data.annotation_types.data.llm_prompt_response_creation import LlmPromptResponseCreationData
+from labelbox.data.annotation_types.data.llm_response_creation import LlmResponseCreationData
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.relationship import RelationshipAnnotation
@@ -163,6 +168,13 @@ class NDLabel(BaseModel):
             data = VideoData
         elif DICOMObjectAnnotation in types:
             data = DicomData
+        elif Prompt in types:
+            if any(item in types for item in [ResponseText, ResponseRadio, ResponseChecklist]):
+                data = LlmPromptResponseCreationData
+            else:
+                data = LlmPromptCreationData
+        elif any(item in types for item in [ResponseText, ResponseRadio, ResponseChecklist]):
+            data = LlmResponseCreationData
 
         if data_row.id:
             return data(uid=data_row.id)
