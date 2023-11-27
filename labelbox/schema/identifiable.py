@@ -3,6 +3,9 @@ from typing import List, Union
 
 
 class Identifiable(ABC):
+    """
+    Base class for any object representing a unique identifier.
+    """
 
     def __init__(self, key: str):
         self._key = key
@@ -22,8 +25,14 @@ class Identifiable(ABC):
 
 
 class UniqueId(Identifiable):
+    """
+    Represents a unique, internally generated id.
+    """
     pass
 
 
 class GlobalKey(Identifiable):
+    """
+    Represents a user generated id.
+    """
     pass
