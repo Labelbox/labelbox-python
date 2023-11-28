@@ -77,6 +77,21 @@ class NDTextSubclass(NDAnswer):
                    confidence=text.confidence)
 
 
+class NDPromptSubclass(NDAnswer):
+    answer: str
+
+    def to_common(self) -> Prompt:
+        return Prompt(answer=self.answer, confidence=self.confidence)
+
+    @classmethod
+    def from_common(cls, text: Prompt, name: str,
+                    feature_schema_id: Cuid) -> "NDPromptSubclass":
+        return cls(answer=text.answer,
+                   name=name,
+                   schema_id=feature_schema_id,
+                   confidence=text.confidence)
+
+
 class NDChecklistSubclass(NDAnswer):
     answer: List[NDAnswer] = Field(..., alias='answers')
 
@@ -168,7 +183,8 @@ class NDText(NDAnnotation, NDTextSubclass):
             message_id=message_id,
             confidence=text.confidence,
         )
-    
+
+
 class NDPrompt(NDAnnotation):
 
     @classmethod
@@ -178,7 +194,8 @@ class NDPrompt(NDAnnotation):
                     name: str,
                     feature_schema_id: Cuid,
                     extra: Dict[str, Any],
-                    data: Union[LlmPromptCreationData, LlmPromptResponseCreationData],
+                    data: Union[LlmPromptCreationData,
+                                LlmPromptResponseCreationData],
                     message_id: str,
                     confidence: Optional[float] = None) -> "NDPrompt":
         return cls(
@@ -190,6 +207,31 @@ class NDPrompt(NDAnnotation):
             message_id=message_id,
             confidence=text.confidence,
         )
+
+
+class NDPrompt(NDAnnotation, NDPromptSubclass):
+
+    @classmethod
+    def from_common(cls,
+                    uuid: str,
+                    text: Prompt,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[LlmPromptCreationData,
+                                LlmPromptResponseCreationData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDPrompt":
+        return cls(
+            answer=text.answer,
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            name=name,
+            schema_id=feature_schema_id,
+            uuid=uuid,
+            message_id=message_id,
+            confidence=text.confidence,
+        )
+
 
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 

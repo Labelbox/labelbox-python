@@ -3,6 +3,7 @@ import warnings
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 
 from labelbox.data.mixins import ConfidenceMixin
+from labelbox.utils import _NoCoercionMixin
 
 try:
     from typing import Literal
@@ -85,31 +86,34 @@ class ResponseChecklist(_TempName):
     answer: List[ClassificationAnswer]
 
 
-class Text(ConfidenceMixin, BaseModel):
+class Text(ConfidenceMixin, BaseModel, _NoCoercionMixin):
     """ Free form text
 
     >>> Text(answer = "some text answer")
 
     """
     answer: str
+    class_name: Literal["Text"] = "Text"
 
 
-class Prompt(ConfidenceMixin, BaseModel):
+class Prompt(ConfidenceMixin, BaseModel, _NoCoercionMixin):
     """ Prompt
 
     >>> Prompt(answer = "this is a prompt")
 
     """
     answer: str
+    class_name: Literal["Prompt"] = "Prompt"
 
 
-class ResponseText(ConfidenceMixin, BaseModel):
+class ResponseText(ConfidenceMixin, BaseModel, _NoCoercionMixin):
     """ Response Text
 
     >>> ResponseText(answer = "this is a response text")
 
     """
     answer: str
+    class_name: Literal["ResponseText"] = "ResponseText"
 
 
 class Dropdown(_TempName):
