@@ -548,4 +548,6 @@ NDTextSubclass.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
-NDClassificationType = Union[NDChecklist, NDRadio, NDText, NDPrompt]
+NDClassificationType = Union[NDChecklist, NDRadio, NDText, NDPrompt,
+                             NDResponseText, NDResponseChecklist,
+                             NDResponseRadio]
