@@ -169,11 +169,13 @@ class NDLabel(BaseModel):
         elif DICOMObjectAnnotation in types:
             data = DicomData
         elif Prompt in types:
-            if any(item in types for item in [ResponseText, ResponseRadio, ResponseChecklist]):
+            if any(item in types for item in
+                   [ResponseText, ResponseRadio, ResponseChecklist]):
                 data = LlmPromptResponseCreationData
             else:
                 data = LlmPromptCreationData
-        elif any(item in types for item in [ResponseText, ResponseRadio, ResponseChecklist]):
+        elif any(item in types
+                 for item in [ResponseText, ResponseRadio, ResponseChecklist]):
             data = LlmResponseCreationData
 
         if data_row.id:

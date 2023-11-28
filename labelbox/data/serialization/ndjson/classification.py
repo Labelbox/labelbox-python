@@ -131,6 +131,7 @@ class NDChecklistSubclass(NDAnswer):
             res['answer'] = res.pop('answers')
         return res
 
+
 class NDResponseChecklistSubclass(NDAnswer):
     answer: List[NDAnswer] = Field(..., alias='answers')
 
@@ -196,7 +197,8 @@ class NDRadioSubclass(NDAnswer):
                                    ]),
                    name=name,
                    schema_id=feature_schema_id)
-        
+
+
 class NDResponseRadioSubclass(NDAnswer):
     answer: NDAnswer
 
@@ -273,7 +275,8 @@ class NDPrompt(NDAnnotation):
             message_id=message_id,
             confidence=text.confidence,
         )
-    
+
+
 class NDResponseText(NDAnnotation, NDResponseTextSubclass):
 
     @classmethod
@@ -297,19 +300,20 @@ class NDResponseText(NDAnnotation, NDResponseTextSubclass):
             confidence=text.confidence,
         )
 
+
 class NDResponseChecklist(NDAnnotation, NDResponseChecklistSubclass):
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    checklist: ResponseChecklist,
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[LlmPromptResponseCreationData,
-                                LlmResponseCreationData],
-                    message_id: str,
-                    confidence: Optional[float] = None) -> "NDResponseChecklist":
+    def from_common(
+            cls,
+            uuid: str,
+            checklist: ResponseChecklist,
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[LlmPromptResponseCreationData, LlmResponseCreationData],
+            message_id: str,
+            confidence: Optional[float] = None) -> "NDResponseChecklist":
 
         return cls(answer=[
             NDAnswer(name=answer.name,
@@ -328,6 +332,7 @@ class NDResponseChecklist(NDAnnotation, NDResponseChecklistSubclass):
                    frames=extra.get('frames'),
                    message_id=message_id,
                    confidence=confidence)
+
 
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
@@ -361,7 +366,6 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    confidence=confidence)
 
 
-
 class NDResponseRadio(NDAnnotation, NDResponseRadioSubclass):
 
     @classmethod
@@ -372,8 +376,7 @@ class NDResponseRadio(NDAnnotation, NDResponseRadioSubclass):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[LlmPromptResponseCreationData,
-                                LlmResponseCreationData],
+        data: Union[LlmPromptResponseCreationData, LlmResponseCreationData],
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDResponseRadio":
