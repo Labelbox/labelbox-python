@@ -9,8 +9,8 @@ class IdType(str, Enum):
         - DataRowId: The id assigned to a data row by Labelbox.
         - GlobalKey: The id assigned to a data row by the user.
     """
-    DataRowId = "UID"
-    GlobalKey = "GLOBAL_KEY"
+    DataRowId = "ID"
+    GlobalKey = "GKEY"
 
 
 class Identifiables:
