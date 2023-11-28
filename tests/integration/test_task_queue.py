@@ -1,7 +1,7 @@
 import time
 
 from labelbox import Project
-from labelbox.schema.identifiables import GlobalKeys
+from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
 
 def test_get_task_queue(project: Project):
@@ -31,7 +31,7 @@ def _validate_moved(project, queue_name, data_row_count):
         time.sleep(sleep_time)
 
 
-def test_move_to_task(configured_batch_project_with_label: Project):
+def test_move_to_task(configured_batch_project_with_label):
     project, _, data_row, _ = configured_batch_project_with_label
     task_queues = project.task_queues()
 
@@ -45,3 +45,9 @@ def test_move_to_task(configured_batch_project_with_label: Project):
     project.move_data_rows_to_task_queue(GlobalKeys([data_row.global_key]),
                                          review_queue.uid)
     _validate_moved(project, "MANUAL_REWORK_QUEUE", 1)
+
+    review_queue = next(
+        tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
+    project.move_data_rows_to_task_queue(UniqueIds([data_row.uid]),
+                                         review_queue.uid)
+    _validate_moved(project, "MANUAL_REVIEW_QUEUE", 1)
