@@ -3,13 +3,14 @@ from typing import Any, Dict, List, Union, Optional
 from pydantic import BaseModel, Field, root_validator
 from labelbox.data.annotation_types.data.llm_prompt_creation import LlmPromptCreationData
 from labelbox.data.annotation_types.data.llm_prompt_response_creation import LlmPromptResponseCreationData
+from labelbox.data.annotation_types.data.llm_response_creation import LlmResponseCreationData
 from labelbox.data.mixins import ConfidenceMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
-from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Prompt, Text, Checklist, Radio
+from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Prompt, ResponseChecklist, ResponseRadio, ResponseText, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 
@@ -77,15 +78,15 @@ class NDTextSubclass(NDAnswer):
                    confidence=text.confidence)
 
 
-class NDPromptSubclass(NDAnswer):
+class NDResponseTextSubclass(NDAnswer):
     answer: str
 
-    def to_common(self) -> Prompt:
-        return Prompt(answer=self.answer, confidence=self.confidence)
+    def to_common(self) -> ResponseText:
+        return ResponseText(answer=self.answer, confidence=self.confidence)
 
     @classmethod
-    def from_common(cls, text: Prompt, name: str,
-                    feature_schema_id: Cuid) -> "NDPromptSubclass":
+    def from_common(cls, text: ResponseText, name: str,
+                    feature_schema_id: Cuid) -> "NDResponseTextSubclass":
         return cls(answer=text.answer,
                    name=name,
                    schema_id=feature_schema_id,
@@ -130,6 +131,44 @@ class NDChecklistSubclass(NDAnswer):
             res['answer'] = res.pop('answers')
         return res
 
+class NDResponseChecklistSubclass(NDAnswer):
+    answer: List[NDAnswer] = Field(..., alias='answers')
+
+    def to_common(self) -> Checklist:
+
+        return ResponseChecklist(answer=[
+            ClassificationAnswer(name=answer.name,
+                                 feature_schema_id=answer.schema_id,
+                                 confidence=answer.confidence,
+                                 classifications=[
+                                     NDSubclassification.to_common(annot)
+                                     for annot in answer.classifications
+                                 ])
+            for answer in self.answer
+        ])
+
+    @classmethod
+    def from_common(cls, checklist: ResponseChecklist, name: str,
+                    feature_schema_id: Cuid) -> "NDResponseChecklistSubclass":
+        return cls(answer=[
+            NDAnswer(name=answer.name,
+                     schema_id=answer.feature_schema_id,
+                     confidence=answer.confidence,
+                     classifications=[
+                         NDSubclassification.from_common(annot)
+                         for annot in answer.classifications
+                     ])
+            for answer in checklist.answer
+        ],
+                   name=name,
+                   schema_id=feature_schema_id)
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if 'answers' in res:
+            res['answer'] = res.pop('answers')
+        return res
+
 
 class NDRadioSubclass(NDAnswer):
     answer: NDAnswer
@@ -148,6 +187,33 @@ class NDRadioSubclass(NDAnswer):
     @classmethod
     def from_common(cls, radio: Radio, name: str,
                     feature_schema_id: Cuid) -> "NDRadioSubclass":
+        return cls(answer=NDAnswer(name=radio.answer.name,
+                                   schema_id=radio.answer.feature_schema_id,
+                                   confidence=radio.answer.confidence,
+                                   classifications=[
+                                       NDSubclassification.from_common(annot)
+                                       for annot in radio.answer.classifications
+                                   ]),
+                   name=name,
+                   schema_id=feature_schema_id)
+        
+class NDResponseRadioSubclass(NDAnswer):
+    answer: NDAnswer
+
+    def to_common(self) -> ResponseRadio:
+        return ResponseRadio(answer=ClassificationAnswer(
+            name=self.answer.name,
+            feature_schema_id=self.answer.schema_id,
+            confidence=self.answer.confidence,
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.answer.classifications
+            ],
+        ))
+
+    @classmethod
+    def from_common(cls, radio: Radio, name: str,
+                    feature_schema_id: Cuid) -> "NDResponseRadioSubclass":
         return cls(answer=NDAnswer(name=radio.answer.name,
                                    schema_id=radio.answer.feature_schema_id,
                                    confidence=radio.answer.confidence,
@@ -207,21 +273,20 @@ class NDPrompt(NDAnnotation):
             message_id=message_id,
             confidence=text.confidence,
         )
-
-
-class NDPrompt(NDAnnotation, NDPromptSubclass):
+    
+class NDResponseText(NDAnnotation, NDResponseTextSubclass):
 
     @classmethod
     def from_common(cls,
                     uuid: str,
-                    text: Prompt,
+                    text: ResponseText,
                     name: str,
                     feature_schema_id: Cuid,
                     extra: Dict[str, Any],
-                    data: Union[LlmPromptCreationData,
-                                LlmPromptResponseCreationData],
+                    data: Union[LlmPromptResponseCreationData,
+                                LlmResponseCreationData],
                     message_id: str,
-                    confidence: Optional[float] = None) -> "NDPrompt":
+                    confidence: Optional[float] = None) -> "NDResponseText":
         return cls(
             answer=text.answer,
             data_row=DataRow(id=data.uid, global_key=data.global_key),
@@ -232,6 +297,37 @@ class NDPrompt(NDAnnotation, NDPromptSubclass):
             confidence=text.confidence,
         )
 
+class NDResponseChecklist(NDAnnotation, NDResponseChecklistSubclass):
+
+    @classmethod
+    def from_common(cls,
+                    uuid: str,
+                    checklist: ResponseChecklist,
+                    name: str,
+                    feature_schema_id: Cuid,
+                    extra: Dict[str, Any],
+                    data: Union[LlmPromptResponseCreationData,
+                                LlmResponseCreationData],
+                    message_id: str,
+                    confidence: Optional[float] = None) -> "NDResponseChecklist":
+
+        return cls(answer=[
+            NDAnswer(name=answer.name,
+                     schema_id=answer.feature_schema_id,
+                     confidence=answer.confidence,
+                     classifications=[
+                         NDSubclassification.from_common(annot)
+                         for annot in answer.classifications
+                     ])
+            for answer in checklist.answer
+        ],
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=uuid,
+                   frames=extra.get('frames'),
+                   message_id=message_id,
+                   confidence=confidence)
 
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
@@ -256,6 +352,38 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                      ])
             for answer in checklist.answer
         ],
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=uuid,
+                   frames=extra.get('frames'),
+                   message_id=message_id,
+                   confidence=confidence)
+
+
+
+class NDResponseRadio(NDAnnotation, NDResponseRadioSubclass):
+
+    @classmethod
+    def from_common(
+        cls,
+        uuid: str,
+        radio: ResponseRadio,
+        name: str,
+        feature_schema_id: Cuid,
+        extra: Dict[str, Any],
+        data: Union[LlmPromptResponseCreationData,
+                                LlmResponseCreationData],
+        message_id: str,
+        confidence: Optional[float] = None,
+    ) -> "NDResponseRadio":
+        return cls(answer=NDAnswer(name=radio.answer.name,
+                                   schema_id=radio.answer.feature_schema_id,
+                                   confidence=radio.answer.confidence,
+                                   classifications=[
+                                       NDSubclassification.from_common(annot)
+                                       for annot in radio.answer.classifications
+                                   ]),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
@@ -326,7 +454,9 @@ class NDSubclassification:
             Text: NDTextSubclass,
             Checklist: NDChecklistSubclass,
             Radio: NDRadioSubclass,
-            Prompt: NDPrompt
+            ResponseText: NDResponseTextSubclass,
+            ResponseChecklist: NDResponseChecklistSubclass,
+            ResponseRadio: NDResponseRadioSubclass,
         }.get(type(annotation.value))
 
 
@@ -383,7 +513,10 @@ class NDClassification:
             Text: NDText,
             Checklist: NDChecklist,
             Radio: NDRadio,
-            Prompt: NDPrompt
+            Prompt: NDPrompt,
+            ResponseText: NDResponseText,
+            ResponseChecklist: NDResponseChecklist,
+            ResponseRadio: NDResponseRadio,
         }.get(type(annotation.value))
 
 
@@ -399,6 +532,12 @@ NDRadioSubclass.update_forward_refs()
 NDRadio.update_forward_refs()
 NDText.update_forward_refs()
 NDPrompt.update_forward_refs()
+NDResponseText.update_forward_refs()
+NDResponseRadio.update_forward_refs()
+NDResponseChecklist.update_forward_refs()
+NDResponseTextSubclass.update_forward_refs()
+NDResponseRadioSubclass.update_forward_refs()
+NDResponseChecklistSubclass.update_forward_refs()
 NDTextSubclass.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
