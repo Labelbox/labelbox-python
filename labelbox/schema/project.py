@@ -61,7 +61,6 @@ class Project(DbObject, Updateable, Deletable):
         auto_audit_number_of_labels (int)
         auto_audit_percentage (float)
 
-        datasets (Relationship): `ToMany` relationship to Dataset
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
         labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
@@ -86,12 +85,6 @@ class Project(DbObject, Updateable, Deletable):
     media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
 
     # Relationships
-    datasets = Relationship.ToMany(
-        "Dataset",
-        True,
-        deprecation_warning=
-        "This method does not return any data for batch-based projects and it will be deprecated on or around November 1, 2023."
-    )
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     labeling_frontend = Relationship.ToOne("LabelingFrontend")
