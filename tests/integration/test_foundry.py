@@ -80,11 +80,11 @@ def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
     assert task.status == 'COMPLETE'
 
 
-def test_run_foundry_app_with_non_existant_data_rows(foundry_client, data_row,
+def test_run_foundry_app_with_non_existent_data_rows(foundry_client, data_row,
                                                      app, random_str):
-    data_rows = lb.GlobalKeys([data_row.global_key, "non-existant-global-key"])
+    data_rows = lb.GlobalKeys([data_row.global_key, "non-existent-global-key"])
     task = foundry_client.run_app(
-        model_run_name=f"test-app-with-wrong-key{random_str}",
+        model_run_name=f"test-app-with-wrong-key-{random_str}",
         data_rows=data_rows,
         app_id=app.id)
     task.wait_till_done()
