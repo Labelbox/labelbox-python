@@ -1,0 +1,92 @@
+import labelbox as lb
+from uuid import uuid4, UUID
+import pytest
+
+from labelbox.schema.foundry import FoundryClient, App
+
+# Yolo object detection model id
+TEST_MODEL_ID = "e8b352ce-8f3a-4cd6-93a5-8af904307346"
+
+
+@pytest.fixture()
+def random_str(rand_gen):
+    return rand_gen(str)
+
+
+@pytest.fixture(scope="module")
+def foundry_client(client):
+    return FoundryClient(client)
+
+
+@pytest.fixture()
+def unsaved_app(random_str):
+    return App(
+        model_id=TEST_MODEL_ID,
+        name=f"Test App {random_str}",
+        description="Test App Description",
+        inference_params={"confidence": 0.2},
+        class_to_schema_id={},
+    )
+
+
+@pytest.fixture()
+def app(foundry_client, unsaved_app):
+    app = foundry_client._create_app(unsaved_app)
+    yield app
+    foundry_client._delete_app(app.id)
+
+
+def test_create_app(foundry_client, unsaved_app):
+    app = foundry_client._create_app(unsaved_app)
+    assert app.dict(exclude={"id"}) == unsaved_app.dict(exclude={"id"})
+
+
+def test_get_app(foundry_client, app):
+    retrieved_app = foundry_client._get_app(app.id)
+    retrieved_dict = retrieved_app.dict(exclude={'created_by'})
+    expected_dict = app.dict(exclude={'created_by'})
+    assert retrieved_dict == expected_dict
+
+
+def test_get_app_with_invalid_id(foundry_client):
+    with pytest.raises(lb.exceptions.ResourceNotFoundError):
+        foundry_client._get_app("invalid-id")
+
+
+def test_get_model_by_id(foundry_client):
+    model = foundry_client._get_model(TEST_MODEL_ID)
+    assert str(model.id) == TEST_MODEL_ID
+
+
+def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
+                                          random_str):
+    data_rows = lb.DataRowIds([data_row.uid])
+    task = foundry_client.run_app(
+        model_run_name=f"test-app-with-datarow-id-{random_str}",
+        data_rows=data_rows,
+        app_id=app.id)
+    task.wait_till_done()
+    assert task.status == 'COMPLETE'
+
+
+def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
+                                         random_str):
+    data_rows = lb.GlobalKeys([data_row.global_key])
+    task = foundry_client.run_app(
+        model_run_name=f"test-app-with-global-key-{random_str}",
+        data_rows=data_rows,
+        app_id=app.id)
+    task.wait_till_done()
+    assert task.status == 'COMPLETE'
+
+
+def test_run_foundry_app_with_non_existant_data_rows(foundry_client, data_row,
+                                                     app, random_str):
+    data_rows = lb.GlobalKeys([data_row.global_key, "non-existant-global-key"])
+    task = foundry_client.run_app(
+        model_run_name=f"test-app-with-wrong-key{random_str}",
+        data_rows=data_rows,
+        app_id=app.id)
+    task.wait_till_done()
+    # The incorrect data row is filtered out and the task still completes with the correct data row
+    assert task.status == 'COMPLETE'
