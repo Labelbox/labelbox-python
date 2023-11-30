@@ -18,33 +18,28 @@ def _model_run_export_v2_results(model_run, task_name, params, num_retries=5):
     return []
 
 
-def test_model_run_export_v2(model_run_with_data_rows, configured_project):
-    task_name = "test_task"
-    media_attributes = True
-    params = {"media_attributes": media_attributes, "predictions": True}
-    task_results = _model_run_export_v2_results(model_run_with_data_rows,
-                                                task_name, params)
-    label_ids = [label.uid for label in configured_project.labels()]
-    label_ids_set = set(label_ids)
+def test_model_run_export_v2(model_run_with_data_rows):
+    model_run, labels = model_run_with_data_rows
+    label_ids = [label.uid for label in labels]
+    expected_data_rows = list(model_run.model_run_data_rows())
 
-    assert len(task_results) == len(label_ids)
+    task_name = "test_task"
+    params = {"media_attributes": True, "predictions": True}
+    task_results = _model_run_export_v2_results(model_run, task_name, params)
+    assert len(task_results) == len(expected_data_rows)
 
     for task_result in task_results:
         # Check export param handling
-        if media_attributes:
-            assert 'media_attributes' in task_result and task_result[
-                'media_attributes'] is not None
-        else:
-            assert 'media_attributes' not in task_result or task_result[
-                'media_attributes'] is None
-        model_run = task_result['experiments'][
-            model_run_with_data_rows.model_id]['runs'][
-                model_run_with_data_rows.uid]
+        assert 'media_attributes' in task_result and task_result[
+            'media_attributes'] is not None
+        exported_model_run = task_result['experiments'][
+            model_run.model_id]['runs'][model_run.uid]
         task_label_ids_set = set(
-            map(lambda label: label['id'], model_run['labels']))
+            map(lambda label: label['id'], exported_model_run['labels']))
         task_prediction_ids_set = set(
-            map(lambda prediction: prediction['id'], model_run['predictions']))
+            map(lambda prediction: prediction['id'],
+                exported_model_run['predictions']))
         for label_id in task_label_ids_set:
-            assert label_id in label_ids_set
+            assert label_id in label_ids
         for prediction_id in task_prediction_ids_set:
-            assert prediction_id in label_ids_set
+            assert prediction_id in label_ids
