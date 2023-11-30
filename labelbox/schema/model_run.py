@@ -1,22 +1,25 @@
 # type: ignore
-from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
-from pathlib import Path
-import os
-import time
 import logging
-import requests
+import os
+import random
+import time
 import warnings
-from labelbox import parser
 from enum import Enum
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 
-from labelbox.pagination import PaginatedCollection
-from labelbox.orm.query import results_query_part
-from labelbox.orm.model import Field, Relationship, Entity
+import requests
+
+from labelbox import parser
 from labelbox.orm.db_object import DbObject, experimental
+from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.query import results_query_part
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys
 from labelbox.schema.task import Task
-from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
@@ -564,6 +567,86 @@ class ModelRun(DbObject):
         res = res[mutation_name]
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
+
+    def send_to_annotate_from_model(
+            self,
+            batch_name: str,
+            data_rows: DataRowIdentifiers,
+            destination_project: str,
+            task_queue_id: Optional[str],
+            exclude_data_rows_in_project: bool = False,
+            ontology_mapping: Dict[str, str] = None,
+            override_existing_annotations_rule:
+        ConflictResolutionStrategy = ConflictResolutionStrategy.KeepExisting,
+            priority: int = 5) -> Task:
+
+        mutation_str = """mutation SendToAnnotateFromMeaPyApi($input: SendToAnnotateFromMeaInput!) {
+                            sendToAnnotateFromMea(input: $input) {
+                              taskId
+                            }
+                          }
+        """
+
+        destination_task_queue = {
+            "type": "id",
+            "value": task_queue_id
+        } if task_queue_id else {
+            "type": "done"
+        }
+
+        predictions_input = {
+            "featureSchemaIdsMapping":
+                ontology_mapping if ontology_mapping else {},
+            "modelRunId":
+                self.uid,
+            "minConfidence":
+                0,
+            "maxConfidence":
+                1
+        }
+
+        if isinstance(data_rows, UniqueIds):
+            data_rows_query = {
+                "type": "data_row_id",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        elif isinstance(data_rows, GlobalKeys):
+            data_rows_query = {
+                "type": "global_key",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        else:
+            raise ValueError(
+                "data_rows must be of type UniqueIds or GlobalKeys")
+
+        res = self.client.execute(
+            mutation_str, {
+                "input": {
+                    "destinationProjectId":
+                        destination_project,
+                    "batchInput": {
+                        "batchName": batch_name,
+                        "batchPriority": priority
+                    },
+                    "destinationTaskQueue":
+                        destination_task_queue,
+                    "excludeDataRowsInProject":
+                        exclude_data_rows_in_project,
+                    "annotationsInput":
+                        None,
+                    "predictionsInput":
+                        predictions_input,
+                    "conflictLabelsResolutionStrategy":
+                        override_existing_annotations_rule,
+                    "searchQuery": [data_rows_query],
+                    "sourceModelRunId":
+                        self.uid
+                }
+            })['sendToAnnotateFromMea']
+
+        return Entity.Task.get_task(self.client, res['taskId'])
 
 
 class ModelRunDataRow(DbObject):

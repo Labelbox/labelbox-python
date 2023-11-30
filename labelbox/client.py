@@ -1,7 +1,8 @@
 # type: ignore
+import random
 from datetime import datetime, timezone
 import json
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Union, Optional
 from collections import defaultdict
 
 import logging
@@ -22,12 +23,14 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema import role
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
@@ -1786,3 +1789,104 @@ class Client:
             experimental=True)["project"]["batches"]["nodes"][0]
 
         return Entity.Batch(self, project_id, batch)
+
+    def send_to_annotate_from_catalog(
+            self,
+            batch_name: str,
+            data_rows: DataRowIdentifiers,
+            source_model_run_id: Optional[str],
+            source_project_id: Optional[str],
+            destination_project: str,
+            task_queue_id: Optional[str],
+            exclude_data_rows_in_project: bool = False,
+            ontology_mapping: Dict[str, str] = None,
+            override_existing_annotations_rule:
+        ConflictResolutionStrategy = ConflictResolutionStrategy.KeepExisting,
+            priority: int = 5):
+
+        mutation_str = """mutation SendToAnnotateFromCatalogPyApi($input: SendToAnnotateFromCatalogInput!) {
+                            sendToAnnotateFromCatalog(input: $input) {
+                              taskId
+                            }
+                          }
+        """
+
+        destination_task_queue = {
+            "type": "id",
+            "value": task_queue_id
+        } if task_queue_id else {
+            "type": "done"
+        }
+
+        annotations_input = {
+            "projectId":
+                source_project_id,
+            "featureSchemaIdsMapping":
+                ontology_mapping if ontology_mapping else {},
+        } if source_project_id else None
+
+        predictions_input = {
+            "featureSchemaIdsMapping":
+                ontology_mapping if ontology_mapping else {},
+            "modelRunId":
+                source_model_run_id,
+            "minConfidence":
+                0,
+            "maxConfidence":
+                1
+        } if source_model_run_id else None
+
+        if isinstance(data_rows, UniqueIds):
+            data_rows_query = {
+                "type": "data_row_id",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        elif isinstance(data_rows, GlobalKeys):
+            data_rows_query = {
+                "type": "global_key",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        else:
+            raise ValueError(
+                "data_rows must be of type UniqueIds or GlobalKeys")
+
+        res = self.execute(
+            mutation_str, {
+                "input": {
+                    "destinationProjectId":
+                        destination_project,
+                    "batchInput": {
+                        "batchName": batch_name,
+                        "batchPriority": priority
+                    },
+                    "destinationTaskQueue":
+                        destination_task_queue,
+                    "excludeDataRowsInProject":
+                        exclude_data_rows_in_project,
+                    "annotationsInput":
+                        annotations_input,
+                    "predictionsInput":
+                        predictions_input,
+                    "conflictLabelsResolutionStrategy":
+                        override_existing_annotations_rule,
+                    "searchQuery": {
+                        "scope": None,
+                        "query": [data_rows_query]
+                    },
+                    "ordering": {
+                        "type": "RANDOM",
+                        "random": {
+                            "seed": random.randint(0, 10000)
+                        },
+                        "sorting": None
+                    },
+                    "sorting":
+                        None,
+                    "limit":
+                        None
+                }
+            })['sendToAnnotateFromCatalog']
+
+        return Entity.Task.get_task(self, res['taskId'])
