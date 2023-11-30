@@ -26,7 +26,7 @@ from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
-from labelbox.schema.foundry import FoundryClient
+from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys
 from labelbox.schema import role

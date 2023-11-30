@@ -1,37 +1,9 @@
-from datetime import datetime
-from typing import Any, Dict, Optional, Union
-from pydantic import BaseModel
+from typing import Union
 from labelbox import exceptions
+from labelbox.schema.foundry.app import App, APP_FIELD_NAMES
+from labelbox.schema.foundry.model import Model, MODEL_FIELD_NAMES
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys
 from labelbox.schema.task import Task
-from labelbox.utils import _CamelCaseMixin
-
-
-class App(_CamelCaseMixin, BaseModel):
-    id: Optional[str]
-    model_id: str
-    name: str
-    description: str
-    inference_params: Dict[str, Any]
-    class_to_schema_id: Dict[str, str]
-    created_by: Optional[str] = None
-
-    @classmethod
-    def type_name(cls):
-        return "App"
-
-
-class Model(_CamelCaseMixin, BaseModel):
-    id: str
-    description: str
-    inference_params_json_schema: Dict
-    name: str
-    ontology_id: str
-    created_at: datetime
-
-
-APP_FIELD_NAMES = list(App.schema()['properties'].keys())
-MODEL_FIELD_NAMES = list(Model.schema()['properties'].keys())
 
 
 class FoundryClient:
@@ -40,31 +12,30 @@ class FoundryClient:
         self.client = client
 
     def _create_app(self, app: App) -> App:
-        query_str = """
+        field_names_str = "\n".join(APP_FIELD_NAMES)
+        query_str = f"""
             mutation CreateDataRowAttachmentPyApi(
                 $name: String!, $modelId: ID!, $description: String, $inferenceParams: Json!, $classToSchemaId: Json!
-            ){
-                createModelFoundryApp(input: {
+            ){{
+                createModelFoundryApp(input: {{
                     name: $name 
                     modelId: $modelId 
                     description: $description
                     inferenceParams: $inferenceParams
                     classToSchemaId: $classToSchemaId
-                })
-                {
-                    id
-                    name
-                    modelId
-                    description
-                    inferenceParams
-                    classToSchemaId
-                }
-            }
+                }})
+                {{
+                    {field_names_str}
+                }}
+            }}
             """
 
         params = app.dict(by_alias=True, exclude={"id"})
 
-        response = self.client.execute(query_str, params)
+        try:
+            response = self.client.execute(query_str, params)
+        except exceptions.LabelboxError as e:
+            raise exceptions.LabelboxError('Unable to create app', e)
         return App(**response["createModelFoundryApp"])
 
     def _get_app(self, id: str) -> App:
@@ -83,6 +54,8 @@ class FoundryClient:
             response = self.client.execute(query_str, params)
         except exceptions.InvalidQueryError as e:
             raise exceptions.ResourceNotFoundError(App, params)
+        except Exception as e:
+            raise exceptions.LabelboxError(f'Unable to get app with id {id}', e)
         return App(**response["findModelFoundryApp"])
 
     def _delete_app(self, id: str) -> None:
@@ -94,7 +67,11 @@ class FoundryClient:
             }
         """
         params = {"id": id}
-        self.client.execute(query_str, params)
+        try:
+            self.client.execute(query_str, params)
+        except Exception as e:
+            raise exceptions.LabelboxError(f'Unable to delete app with id {id}',
+                                           e)
 
     def _get_model(self, id: str) -> Model:
         field_names_str = "\n".join(MODEL_FIELD_NAMES)
@@ -110,7 +87,11 @@ class FoundryClient:
         """
         params = {"id": id}
 
-        response = self.client.execute(query_str, params)
+        try:
+            response = self.client.execute(query_str, params)
+        except Exception as e:
+            raise exceptions.LabelboxError(f'Unable to get model with id {id}',
+                                           e)
         return Model(**response["modelFoundryModel"]["model"])
 
     def run_app(self, model_run_name: str,
@@ -155,6 +136,9 @@ class FoundryClient:
             }
         }
         """
-        response = self.client.execute(query, {"input": params})
+        try:
+            response = self.client.execute(query, {"input": params})
+        except Exception as e:
+            raise exceptions.LabelboxError('Unable to run foundry app', e)
         task_id = response["createModelJob"]["taskId"]
         return Task.get_task(self.client, task_id)

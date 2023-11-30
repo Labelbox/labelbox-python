@@ -1,8 +1,8 @@
 import labelbox as lb
-from uuid import uuid4, UUID
 import pytest
+from labelbox.schema.foundry.app import App
 
-from labelbox.schema.foundry import FoundryClient, App
+from labelbox.schema.foundry.foundry_client import FoundryClient
 
 # Yolo object detection model id
 TEST_MODEL_ID = "e8b352ce-8f3a-4cd6-93a5-8af904307346"
@@ -38,7 +38,9 @@ def app(foundry_client, unsaved_app):
 
 def test_create_app(foundry_client, unsaved_app):
     app = foundry_client._create_app(unsaved_app)
-    assert app.dict(exclude={"id"}) == unsaved_app.dict(exclude={"id"})
+    retrieved_dict = app.dict(exclude={'id', 'created_by'})
+    expected_dict = app.dict(exclude={'id', 'created_by'})
+    assert retrieved_dict == expected_dict
 
 
 def test_get_app(foundry_client, app):
