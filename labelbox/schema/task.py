@@ -48,6 +48,7 @@ class Task(DbObject):
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
+    _session = requests.Session()
 
     def refresh(self) -> None:
         """ Refreshes Task data from the server. """
@@ -157,8 +158,9 @@ class Task(DbObject):
             if url is None:
                 return None
 
-            response = requests.get(url)
+            response = self._session.get(url)
             response.raise_for_status()
+
             if format == 'json':
                 return response.json()
             elif format == 'ndjson':

@@ -117,6 +117,8 @@ class Client:
             'X-Python-Version': f"{python_version_info()}",
         }
         self._data_row_metadata_ontology = None
+        self._session = requests.Session()
+        self._session.headers.update(self.headers)
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -184,20 +186,15 @@ class Client:
         endpoint = self.endpoint if not experimental else self.endpoint.replace(
             "/graphql", "/_gql")
 
-        try:
-            request = {
-                'url': endpoint,
-                'data': data,
-                'headers': self.headers,
-                'timeout': timeout
-            }
-            if files:
-                request.update({'files': files})
-                request['headers'] = {
-                    'Authorization': self.headers['Authorization']
-                }
+        request = requests.Request(method="POST", url=endpoint, data=data)
+        prepare_req = request.prepare()
+        prepare_req.headers = self.headers
 
-            response = requests.post(**request)
+        if files:
+            prepare_req.headers["files"] = files
+
+        try:
+            response = self._session.send(prepare_req, timeout=timeout, stream=True)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -983,10 +980,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.delete(
-            endpoint,
-            headers=self.headers,
-        )
+        response = self._session.delete(url=endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1003,10 +997,7 @@ class Client:
         """
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.delete(
-            endpoint,
-            headers=self.headers,
-        )
+        response = self._session.delete(url=endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1028,11 +1019,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id) + '/definition'
-        response = requests.patch(
-            endpoint,
-            headers=self.headers,
-            json={"title": title},
-        )
+        response = self._session.patch(url=endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
@@ -1061,10 +1048,9 @@ class Client:
             "featureSchemaId") or "new_feature_schema_id"
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.put(
-            endpoint,
-            headers=self.headers,
-            json={"normalized": json.dumps(feature_schema)},
+        response = self._session.put(
+            url=endpoint,
+            json={"normalized": json.dumps(feature_schema)}
         )
 
         if response.status_code == requests.codes.ok:
@@ -1091,11 +1077,8 @@ class Client:
         endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.post(
-            endpoint,
-            headers=self.headers,
-            json={"position": position},
-        )
+        response = self._session.post(url=endpoint, json={"position": position})
+
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
@@ -1116,11 +1099,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = requests.get(
-            endpoint,
-            headers=self.headers,
-            json={"after": after},
-        )
+        response = self._session.get(url=endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1144,11 +1123,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = requests.get(
-            endpoint,
-            headers=self.headers,
-            json={"after": after},
-        )
+        response = self._session.get(url=endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1645,10 +1620,7 @@ class Client:
 
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.get(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._session.get(url=ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()['featureSchemaNodes']
@@ -1720,10 +1692,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.delete(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._session.delete(url=ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -1757,10 +1726,8 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + '/feature-schemas/' + urllib.parse.quote(
                 root_feature_schema_id) + '/unarchive'
-        response = requests.patch(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._session.patch(url=ontology_endpoint)
+
         if response.status_code == requests.codes.ok:
             if not bool(response.json()['unarchived']):
                 raise labelbox.exceptions.LabelboxError(
