@@ -1185,9 +1185,25 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
+    @overload
+    def update_data_row_labeling_priority(
+        self,
+        data_rows: DataRowIdentifiers,
+        priority: int,
+    ) -> bool:
+        pass
+
+    @overload
     def update_data_row_labeling_priority(
         self,
         data_rows: List[str],
+        priority: int,
+    ) -> bool:
+        pass
+
+    def update_data_row_labeling_priority(
+        self,
+        data_rows,
         priority: int,
     ) -> bool:
         """
@@ -1198,25 +1214,31 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows (iterable): An iterable of data row ids.
+            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object 
+                DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             priority (int): Priority for the new override. See above for more information.
 
         Returns:
             bool, indicates if the operation was a success.
         """
 
+        if isinstance(data_rows, list):
+            data_rows = UniqueIds(data_rows)
+            warnings.warn("Using data row ids will be deprecated. Please use "
+                          "UniqueIds or GlobalKeys instead.")
+
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
         project_param = "projectId"
-        data_rows_param = "dataRowIds"
+        data_rows_param = "dataRowIdentifiers"
         query_str = """mutation %sPyApi(
               $%s: Int!
               $%s: ID!
-              $%s: [ID!]
+              $%s: QueuePriorityUpdateDataRowIdentifiersInput
             ) {
               project(where: { id: $%s }) {
                 %s(
-                  data: { priority: $%s, dataRowIds: $%s }
+                  data: { priority: $%s, dataRowIdentifiers: $%s }
                 ) {
                   taskId
                 }
@@ -1228,7 +1250,10 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {
                 priority_param: priority,
                 project_param: self.uid,
-                data_rows_param: data_rows
+                data_rows_param: {
+                    "ids": [id for id in data_rows],
+                    "idType": data_rows._id_type,
+                },
             })["project"][method]
 
         task_id = res['taskId']
