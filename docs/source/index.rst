@@ -225,7 +225,30 @@ QualityMode
 
 ExportTask
 ---------------------------
-
 .. automodule:: labelbox.schema.export_task
+   :members:
+   :show-inheritance:
+
+IdType
+---------------------------
+.. automodule:: labelbox.schema.identifiables
+   :members:
+   :show-inheritance:
+
+UniqueIds
+---------------------------
+.. automodule:: labelbox.schema.identifiables
+   :members:
+   :show-inheritance:
+
+GlobalKeys
+---------------------------
+.. automodule:: labelbox.schema.identifiables
+   :members:
+   :show-inheritance:
+
+DataRowIdentifiers
+---------------------------
+.. automodule:: labelbox.schema.identifiables
    :members:
    :show-inheritance:
