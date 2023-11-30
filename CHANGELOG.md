@@ -1,5 +1,14 @@
 # Changelog
 
+# Version 3.57.0 (2023-11-30)
+## Added
+* Global key support for Project move_data_rows_to_task_queue
+* Project name required for project creation
+## Notebooks
+* Updates to Image and Video notebook format
+* Added additional byte array examples for Image/Video import and Image prediction import notebook
+* Added a new LLM folder for new LLM import (MAL/MEA/Ground truth)
+
 # Version 3.56.0 (2023-11-21)
 ## Added
 * Support for importing raster video masks from image bytes as a source
