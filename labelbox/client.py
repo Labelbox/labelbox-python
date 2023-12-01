@@ -1832,12 +1832,9 @@ class Client:
 
         source_project_id = params.get("source_project_id", None)
         project_ontology_mapping = params.get("project_ontology_mapping", None)
-        annotations_input = {
-            "projectId":
-                source_project_id,
-            "featureSchemaIdsMapping":
-                project_ontology_mapping if project_ontology_mapping else {},
-        } if source_project_id else None
+        annotations_input = self.build_annotations_input(
+            project_ontology_mapping,
+            source_project_id) if source_project_id else None
 
         batch_priority = params.get("batch_priority", 5)
         exclude_data_rows_in_project = params.get(
@@ -1886,6 +1883,15 @@ class Client:
         return Entity.Task.get_task(self, res['taskId'])
 
     @staticmethod
+    def build_annotations_input(project_ontology_mapping, source_project_id):
+        return {
+            "projectId":
+                source_project_id,
+            "featureSchemaIdsMapping":
+                project_ontology_mapping if project_ontology_mapping else {},
+        }
+
+    @staticmethod
     def build_destination_task_queue_input(task_queue_id):
         destination_task_queue = {
             "type": "id",
@@ -1912,6 +1918,15 @@ class Client:
 
     @staticmethod
     def build_catalog_query(data_rows):
+        """
+        Given a list of data rows, builds a query that can be used to fetch the associated data rows from the catalog.
+
+        Args:
+            data_rows: A list of data rows. Can be either UniqueIds or GlobalKeys.
+
+        Returns: A query that can be used to fetch the associated data rows from the catalog.
+
+        """
         if isinstance(data_rows, UniqueIds):
             data_rows_query = {
                 "type": "data_row_id",
