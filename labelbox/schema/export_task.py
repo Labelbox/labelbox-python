@@ -463,7 +463,7 @@ class ExportTask:
     for accessing task details such as UID, status, and creation time.
     """
 
-    class TaskNotReadyException(Exception):
+    class ExportTaskException(Exception):
         """Raised when the task is not ready yet."""
 
     def __init__(self, task: Task) -> None:
@@ -555,9 +555,9 @@ class ExportTask:
     def get_total_file_size(self, stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
         if self._task.status == "FAILED":
-            raise ExportTask.TaskNotReadyException("Task failed")
+            raise ExportTask.ExportTaskException("Task failed")
         if self._task.status != "COMPLETE":
-            raise ExportTask.TaskNotReadyException("Task is not ready yet")
+            raise ExportTask.ExportTaskException("Task is not ready yet")
         header = ExportTask._get_metadata_header(self._task.client,
                                                  self._task.uid, stream_type)
         return header.total_size if header else None
@@ -565,9 +565,9 @@ class ExportTask:
     def get_total_lines(self, stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
         if self._task.status == "FAILED":
-            raise ExportTask.TaskNotReadyException("Task failed")
+            raise ExportTask.ExportTaskException("Task failed")
         if self._task.status != "COMPLETE":
-            raise ExportTask.TaskNotReadyException("Task is not ready yet")
+            raise ExportTask.ExportTaskException("Task is not ready yet")
         header = ExportTask._get_metadata_header(self._task.client,
                                                  self._task.uid, stream_type)
         return header.total_lines if header else None
@@ -605,9 +605,9 @@ class ExportTask:
     ) -> Stream:
         """Returns the result of the task."""
         if self._task.status == "FAILED":
-            raise ExportTask.TaskNotReadyException("Task failed")
+            raise ExportTask.ExportTaskException("Task failed")
         if self._task.status != "COMPLETE":
-            raise ExportTask.TaskNotReadyException("Task is not ready yet")
+            raise ExportTask.ExportTaskException("Task is not ready yet")
 
         metadata_header = self._get_metadata_header(self._task.client,
                                                     self._task.uid, stream_type)
