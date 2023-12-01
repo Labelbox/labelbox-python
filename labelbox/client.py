@@ -38,6 +38,7 @@ from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSche
 from labelbox.schema.organization import Organization
 from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
     BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
+from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
@@ -1790,19 +1791,26 @@ class Client:
 
         return Entity.Batch(self, project_id, batch)
 
-    def send_to_annotate_from_catalog(
-            self,
-            batch_name: str,
-            data_rows: DataRowIdentifiers,
-            source_model_run_id: Optional[str],
-            source_project_id: Optional[str],
-            destination_project: str,
-            task_queue_id: Optional[str],
-            exclude_data_rows_in_project: bool = False,
-            ontology_mapping: Dict[str, str] = None,
-            override_existing_annotations_rule:
-        ConflictResolutionStrategy = ConflictResolutionStrategy.KeepExisting,
-            priority: int = 5):
+    def send_to_annotate_from_catalog(self, destination_project_id: str,
+                                      task_queue_id: Optional[str],
+                                      batch_name: str,
+                                      data_rows: DataRowIdentifiers,
+                                      params: SendToAnnotateFromCatalogParams):
+        """
+        Sends data rows from catalog to a specified project for annotation.
+
+        Args:
+            destination_project_id: The ID of the project to send the data rows to.
+            task_queue_id: The ID of the task queue to send the data rows to. If not specified, the data rows will be
+                sent to the Done workflow state.
+            batch_name: The name of the batch to create. If more than one batch is created, additional batches will be
+                named with a monotonically increasing numerical suffix, starting at "_1".
+            data_rows: The data rows to send to the project.
+            params: Additional parameters to configure the job. See SendToAnnotateFromCatalogParams for more details.
+
+        Returns: The created task for this operation.
+
+        """
 
         mutation_str = """mutation SendToAnnotateFromCatalogPyApi($input: SendToAnnotateFromCatalogInput!) {
                             sendToAnnotateFromCatalog(input: $input) {
@@ -1811,55 +1819,41 @@ class Client:
                           }
         """
 
-        destination_task_queue = {
-            "type": "id",
-            "value": task_queue_id
-        } if task_queue_id else {
-            "type": "done"
-        }
+        destination_task_queue = self.build_destination_task_queue_input(
+            task_queue_id)
+        data_rows_query = self.build_catalog_query(data_rows)
 
+        source_model_run_id = params.get("source_model_run_id", None)
+        model_run_ontology_mapping = params.get("model_run_ontology_mapping",
+                                                None)
+        predictions_input = self.build_predictions_input(
+            model_run_ontology_mapping,
+            source_model_run_id) if source_model_run_id else None
+
+        source_project_id = params.get("source_project_id", None)
+        project_ontology_mapping = params.get("project_ontology_mapping", None)
         annotations_input = {
             "projectId":
                 source_project_id,
             "featureSchemaIdsMapping":
-                ontology_mapping if ontology_mapping else {},
+                project_ontology_mapping if project_ontology_mapping else {},
         } if source_project_id else None
 
-        predictions_input = {
-            "featureSchemaIdsMapping":
-                ontology_mapping if ontology_mapping else {},
-            "modelRunId":
-                source_model_run_id,
-            "minConfidence":
-                0,
-            "maxConfidence":
-                1
-        } if source_model_run_id else None
-
-        if isinstance(data_rows, UniqueIds):
-            data_rows_query = {
-                "type": "data_row_id",
-                "operator": "is",
-                "ids": list(data_rows)
-            }
-        elif isinstance(data_rows, GlobalKeys):
-            data_rows_query = {
-                "type": "global_key",
-                "operator": "is",
-                "ids": list(data_rows)
-            }
-        else:
-            raise ValueError(
-                "data_rows must be of type UniqueIds or GlobalKeys")
+        batch_priority = params.get("batch_priority", 5)
+        exclude_data_rows_in_project = params.get(
+            "exclude_data_rows_in_project", False)
+        override_existing_annotations_rule = params.get(
+            "override_existing_annotations_rule",
+            ConflictResolutionStrategy.KeepExisting)
 
         res = self.execute(
             mutation_str, {
                 "input": {
                     "destinationProjectId":
-                        destination_project,
+                        destination_project_id,
                     "batchInput": {
                         "batchName": batch_name,
-                        "batchPriority": priority
+                        "batchPriority": batch_priority
                     },
                     "destinationTaskQueue":
                         destination_task_queue,
@@ -1890,3 +1884,47 @@ class Client:
             })['sendToAnnotateFromCatalog']
 
         return Entity.Task.get_task(self, res['taskId'])
+
+    @staticmethod
+    def build_destination_task_queue_input(task_queue_id):
+        destination_task_queue = {
+            "type": "id",
+            "value": task_queue_id
+        } if task_queue_id else {
+            "type": "done"
+        }
+        return destination_task_queue
+
+    @staticmethod
+    def build_predictions_input(model_run_ontology_mapping,
+                                source_model_run_id):
+        return {
+            "featureSchemaIdsMapping":
+                model_run_ontology_mapping
+                if model_run_ontology_mapping else {},
+            "modelRunId":
+                source_model_run_id,
+            "minConfidence":
+                0,
+            "maxConfidence":
+                1
+        }
+
+    @staticmethod
+    def build_catalog_query(data_rows):
+        if isinstance(data_rows, UniqueIds):
+            data_rows_query = {
+                "type": "data_row_id",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        elif isinstance(data_rows, GlobalKeys):
+            data_rows_query = {
+                "type": "global_key",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        else:
+            raise ValueError(
+                "data_rows must be of type UniqueIds or GlobalKeys")
+        return data_rows_query

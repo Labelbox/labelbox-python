@@ -17,10 +17,11 @@ def test_send_to_annotate_from_model(client, configured_project,
         q for q in queues if q.name == "Initial labeling task")
 
     task = model_run.send_to_annotate_from_model(
+        destination_project_id=destination_project.uid,
         batch_name="batch",
         data_rows=UniqueIds(data_row_ids),
-        destination_project=destination_project.uid,
-        task_queue_id=initial_labeling_task.uid)
+        task_queue_id=initial_labeling_task.uid,
+        params={})
 
     task.wait_till_done()
 

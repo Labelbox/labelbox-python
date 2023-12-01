@@ -19,6 +19,7 @@ from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrat
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys
+from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams
 from labelbox.schema.task import Task
 
 if TYPE_CHECKING:
@@ -569,16 +570,24 @@ class ModelRun(DbObject):
         return Task.get_task(self.client, task_id)
 
     def send_to_annotate_from_model(
-            self,
-            batch_name: str,
-            data_rows: DataRowIdentifiers,
-            destination_project: str,
-            task_queue_id: Optional[str],
-            exclude_data_rows_in_project: bool = False,
-            ontology_mapping: Dict[str, str] = None,
-            override_existing_annotations_rule:
-        ConflictResolutionStrategy = ConflictResolutionStrategy.KeepExisting,
-            priority: int = 5) -> Task:
+            self, destination_project_id: str, task_queue_id: Optional[str],
+            batch_name: str, data_rows: DataRowIdentifiers,
+            params: SendToAnnotateFromModelParams) -> Task:
+        """
+        Sends data rows from a model run to a project for annotation.
+
+        Args:
+            destination_project_id: The ID of the project to send the data rows to.
+            task_queue_id: The ID of the task queue to send the data rows to.  If not specified, the data rows will be
+                sent to the Done workflow state.
+            batch_name: The name of the batch to create. If more than one batch is created, additional batches will be
+                named with a monotonically increasing numerical suffix, starting at "_1".
+            data_rows: The data rows to send to the project.
+            params: Additional parameters for this operation. See SendToAnnotateFromModelParams for details.
+
+        Returns: The created task for this operation.
+
+        """
 
         mutation_str = """mutation SendToAnnotateFromMeaPyApi($input: SendToAnnotateFromMeaInput!) {
                             sendToAnnotateFromMea(input: $input) {
@@ -587,48 +596,29 @@ class ModelRun(DbObject):
                           }
         """
 
-        destination_task_queue = {
-            "type": "id",
-            "value": task_queue_id
-        } if task_queue_id else {
-            "type": "done"
-        }
+        destination_task_queue = self.client.build_destination_task_queue_input(
+            task_queue_id)
+        data_rows_query = self.client.build_catalog_query(data_rows)
 
-        predictions_input = {
-            "featureSchemaIdsMapping":
-                ontology_mapping if ontology_mapping else {},
-            "modelRunId":
-                self.uid,
-            "minConfidence":
-                0,
-            "maxConfidence":
-                1
-        }
+        model_run_ontology_mapping = params.get("model_run_ontology_mapping",
+                                                None)
+        predictions_input = self.client.build_predictions_input(
+            model_run_ontology_mapping, self.uid)
 
-        if isinstance(data_rows, UniqueIds):
-            data_rows_query = {
-                "type": "data_row_id",
-                "operator": "is",
-                "ids": list(data_rows)
-            }
-        elif isinstance(data_rows, GlobalKeys):
-            data_rows_query = {
-                "type": "global_key",
-                "operator": "is",
-                "ids": list(data_rows)
-            }
-        else:
-            raise ValueError(
-                "data_rows must be of type UniqueIds or GlobalKeys")
-
+        batch_priority = params.get("batch_priority", 5)
+        exclude_data_rows_in_project = params.get(
+            "exclude_data_rows_in_project", False)
+        override_existing_annotations_rule = params.get(
+            "override_existing_annotations_rule",
+            ConflictResolutionStrategy.KeepExisting)
         res = self.client.execute(
             mutation_str, {
                 "input": {
                     "destinationProjectId":
-                        destination_project,
+                        destination_project_id,
                     "batchInput": {
                         "batchName": batch_name,
-                        "batchPriority": priority
+                        "batchPriority": batch_priority
                     },
                     "destinationTaskQueue":
                         destination_task_queue,
