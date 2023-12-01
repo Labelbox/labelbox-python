@@ -26,7 +26,9 @@ from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
+from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys
 from labelbox.schema import role
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.model import Model
@@ -35,6 +37,7 @@ from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSche
 from labelbox.schema.organization import Organization
 from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
     BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
+from labelbox.schema.task import Task
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
@@ -1786,3 +1789,17 @@ class Client:
             experimental=True)["project"]["batches"]["nodes"][0]
 
         return Entity.Batch(self, project_id, batch)
+
+    def run_foundry_app(self, model_run_name: str, data_rows: Union[DataRowIds,
+                                                                    GlobalKeys],
+                        app_id: str) -> Task:
+        """
+        Run a foundry app
+
+        Args:
+            model_run_name (str): Name of a new model run to store app predictions in
+            data_rows (DataRowIds or GlobalKeys): Data row identifiers to run predictions on
+            app_id (str): Foundry app to run predictions with
+        """
+        foundry_client = FoundryClient(self)
+        return foundry_client.run_app(model_run_name, data_rows, app_id)
