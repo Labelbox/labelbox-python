@@ -1,52 +1,53 @@
 # type: ignore
-import random
-from datetime import datetime, timezone
 import json
-from typing import Any, List, Dict, Union, Optional
-from collections import defaultdict
-
 import logging
 import mimetypes
 import os
-import time
+import random
 import sys
+import time
 import urllib.parse
+from collections import defaultdict
+from datetime import datetime, timezone
+from typing import Any, List, Dict, Union, Optional
 
-from google.api_core import retry
 import requests
 import requests.exceptions
+from google.api_core import retry
 
 import labelbox.exceptions
-from labelbox import utils
 from labelbox import __version__ as SDK_VERSION
+from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema import role
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
-from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
+from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema import role
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys
+from labelbox.schema.identifiables import DataRowIds
+from labelbox.schema.identifiables import GlobalKeys
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
+from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
+from labelbox.schema.ontology import Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
+from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
     BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
-from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams
-from labelbox.schema.user import User
-from labelbox.schema.project import Project
-from labelbox.schema.role import Role
-from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
-
-from labelbox.schema.media_type import MediaType, get_media_type_validation_error
+from labelbox.schema.role import Role
+from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams
+from labelbox.schema.slice import CatalogSlice, ModelSlice
+from labelbox.schema.task import Task
+from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -1794,7 +1795,7 @@ class Client:
     def send_to_annotate_from_catalog(self, destination_project_id: str,
                                       task_queue_id: Optional[str],
                                       batch_name: str,
-                                      data_rows: DataRowIdentifiers,
+                                      data_rows: Union[DataRowIds, GlobalKeys],
                                       params: SendToAnnotateFromCatalogParams):
         """
         Sends data rows from catalog to a specified project for annotation.
@@ -1883,7 +1884,9 @@ class Client:
         return Entity.Task.get_task(self, res['taskId'])
 
     @staticmethod
-    def build_annotations_input(project_ontology_mapping, source_project_id):
+    def build_annotations_input(project_ontology_mapping: Optional[Dict[str,
+                                                                        str]],
+                                source_project_id: str):
         return {
             "projectId":
                 source_project_id,
@@ -1892,7 +1895,7 @@ class Client:
         }
 
     @staticmethod
-    def build_destination_task_queue_input(task_queue_id):
+    def build_destination_task_queue_input(task_queue_id: str):
         destination_task_queue = {
             "type": "id",
             "value": task_queue_id
@@ -1902,8 +1905,9 @@ class Client:
         return destination_task_queue
 
     @staticmethod
-    def build_predictions_input(model_run_ontology_mapping,
-                                source_model_run_id):
+    def build_predictions_input(model_run_ontology_mapping: Optional[Dict[str,
+                                                                          str]],
+                                source_model_run_id: str):
         return {
             "featureSchemaIdsMapping":
                 model_run_ontology_mapping
@@ -1917,7 +1921,7 @@ class Client:
         }
 
     @staticmethod
-    def build_catalog_query(data_rows):
+    def build_catalog_query(data_rows: Union[DataRowIds, GlobalKeys]):
         """
         Given a list of data rows, builds a query that can be used to fetch the associated data rows from the catalog.
 
@@ -1927,7 +1931,7 @@ class Client:
         Returns: A query that can be used to fetch the associated data rows from the catalog.
 
         """
-        if isinstance(data_rows, UniqueIds):
+        if isinstance(data_rows, DataRowIds):
             data_rows_query = {
                 "type": "data_row_id",
                 "operator": "is",
@@ -1941,5 +1945,20 @@ class Client:
             }
         else:
             raise ValueError(
-                "data_rows must be of type UniqueIds or GlobalKeys")
+                f"Invalid data_rows type {type(data_rows)}. Type of data_rows must be DataRowIds or GlobalKey"
+            )
         return data_rows_query
+
+    def run_foundry_app(self, model_run_name: str, data_rows: Union[DataRowIds,
+                                                                    GlobalKeys],
+                        app_id: str) -> Task:
+        """
+        Run a foundry app
+
+        Args:
+            model_run_name (str): Name of a new model run to store app predictions in
+            data_rows (DataRowIds or GlobalKeys): Data row identifiers to run predictions on
+            app_id (str): Foundry app to run predictions with
+        """
+        foundry_client = FoundryClient(self)
+        return foundry_client.run_app(model_run_name, data_rows, app_id)

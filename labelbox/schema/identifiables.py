@@ -47,4 +47,6 @@ class GlobalKeys(Identifiables):
         super().__init__(iterable, IdType.GlobalKey)
 
 
+DataRowIds = UniqueIds
+
 DataRowIdentifiers = Union[UniqueIds, GlobalKeys]

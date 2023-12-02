@@ -227,27 +227,10 @@ ExportTask
 ---------------------------
 .. automodule:: labelbox.schema.export_task
    :members:
+   :exclude-members: FileRetrieverByLine, FileRetrieverByOffset, FileRetrieverStrategy, Range, Converter
    :show-inheritance:
 
-IdType
----------------------------
-.. automodule:: labelbox.schema.identifiables
-   :members:
-   :show-inheritance:
-
-UniqueIds
----------------------------
-.. automodule:: labelbox.schema.identifiables
-   :members:
-   :show-inheritance:
-
-GlobalKeys
----------------------------
-.. automodule:: labelbox.schema.identifiables
-   :members:
-   :show-inheritance:
-
-DataRowIdentifiers
+Identifiables
 ---------------------------
 .. automodule:: labelbox.schema.identifiables
    :members:

@@ -18,7 +18,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys, DataRowIds
 from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams
 from labelbox.schema.task import Task
 
@@ -571,7 +571,7 @@ class ModelRun(DbObject):
 
     def send_to_annotate_from_model(
             self, destination_project_id: str, task_queue_id: Optional[str],
-            batch_name: str, data_rows: DataRowIdentifiers,
+            batch_name: str, data_rows: Union[DataRowIds, GlobalKeys],
             params: SendToAnnotateFromModelParams) -> Task:
         """
         Sends data rows from a model run to a project for annotation.
