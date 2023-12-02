@@ -373,6 +373,18 @@ def project_with_empty_ontology(project):
 
 
 @pytest.fixture
+def project_with_ontology(client, rand_gen):
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
+    ontology = _setup_ontology(project)
+
+    yield [project, ontology]
+
+    project.delete()
+
+
+@pytest.fixture
 def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
                        image_url):
     dataset = initial_dataset

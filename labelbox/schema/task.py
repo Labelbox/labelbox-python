@@ -94,7 +94,9 @@ class Task(DbObject):
                 return self.failed_data_rows
         elif self.type == "export-data-rows":
             return self._fetch_remote_json(remote_json_field='errors_url')
-        elif self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
+        elif (self.type == "add-data-rows-to-batch" or
+              self.type == "send-to-task-queue" or
+              self.type == "send-to-annotate"):
             if self.status == "FAILED":
                 # for these tasks, the error is embedded in the result itself
                 return json.loads(self.result_url)

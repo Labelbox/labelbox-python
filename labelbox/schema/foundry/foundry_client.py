@@ -99,22 +99,7 @@ class FoundryClient:
         app = self._get_app(app_id)
         model = self._get_model(app.model_id)
 
-        if isinstance(data_rows, DataRowIds):
-            data_rows_query = {
-                "type": "data_row_id",
-                "operator": "is",
-                "ids": list(data_rows)
-            }
-        elif isinstance(data_rows, GlobalKeys):
-            data_rows_query = {
-                "type": "global_key",
-                "operator": "is",
-                "ids": list(data_rows)
-            }
-        else:
-            raise ValueError(
-                f"Invalid data_rows type {type(data_rows)}. Type of data_rows must be DataRowIds or GlobalKey"
-            )
+        data_rows_query = self.client.build_catalog_query(data_rows)
 
         params = {
             "modelId": str(app.model_id),
