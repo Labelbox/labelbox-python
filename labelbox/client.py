@@ -1,51 +1,54 @@
 # type: ignore
-from datetime import datetime, timezone
 import json
-from typing import Any, List, Dict, Union
-from collections import defaultdict
-
 import logging
 import mimetypes
 import os
-import time
+import random
 import sys
+import time
 import urllib.parse
+from collections import defaultdict
+from datetime import datetime, timezone
+from typing import Any, List, Dict, Union, Optional
 
-from google.api_core import retry
 import requests
 import requests.exceptions
+from google.api_core import retry
 
 import labelbox.exceptions
-from labelbox import utils
 from labelbox import __version__ as SDK_VERSION
+from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema import role
+from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
-from labelbox.schema.data_row import DataRow
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.identifiables import DataRowIds, GlobalKeys
-from labelbox.schema import role
+from labelbox.schema.identifiables import DataRowIds
+from labelbox.schema.identifiables import GlobalKeys
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 from labelbox.schema.model import Model
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, Tool, Classification, FeatureSchema
+from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
+from labelbox.schema.ontology import Tool, Classification, FeatureSchema
 from labelbox.schema.organization import Organization
+from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
     BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.role import Role
+from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams, build_destination_task_queue_input, \
+    build_predictions_input, build_annotations_input
+from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
-from labelbox.schema.project import Project
-from labelbox.schema.role import Role
-from labelbox.schema.slice import CatalogSlice, ModelSlice
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
-
-from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 
 logger = logging.getLogger(__name__)
 
@@ -1789,6 +1792,141 @@ class Client:
             experimental=True)["project"]["batches"]["nodes"][0]
 
         return Entity.Batch(self, project_id, batch)
+
+    def send_to_annotate_from_catalog(self, destination_project_id: str,
+                                      task_queue_id: Optional[str],
+                                      batch_name: str,
+                                      data_rows: Union[DataRowIds, GlobalKeys],
+                                      params: SendToAnnotateFromCatalogParams):
+        """
+        Sends data rows from catalog to a specified project for annotation.
+
+        Example usage:
+            >>> task = client.send_to_annotate_from_catalog(
+            >>>     destination_project_id=DESTINATION_PROJECT_ID,
+            >>>     task_queue_id=TASK_QUEUE_ID,
+            >>>     batch_name="batch_name",
+            >>>     data_rows=UniqueIds([DATA_ROW_ID]),
+            >>>     params={
+            >>>         "source_project_id":
+            >>>             SOURCE_PROJECT_ID,
+            >>>         "override_existing_annotations_rule":
+            >>>             ConflictResolutionStrategy.OverrideWithAnnotations
+            >>>     })
+            >>> task.wait_till_done()
+
+        Args:
+            destination_project_id: The ID of the project to send the data rows to.
+            task_queue_id: The ID of the task queue to send the data rows to. If not specified, the data rows will be
+                sent to the Done workflow state.
+            batch_name: The name of the batch to create. If more than one batch is created, additional batches will be
+                named with a monotonically increasing numerical suffix, starting at "_1".
+            data_rows: The data rows to send to the project.
+            params: Additional parameters to configure the job. See SendToAnnotateFromCatalogParams for more details.
+
+        Returns: The created task for this operation.
+
+        """
+
+        mutation_str = """mutation SendToAnnotateFromCatalogPyApi($input: SendToAnnotateFromCatalogInput!) {
+                            sendToAnnotateFromCatalog(input: $input) {
+                              taskId
+                            }
+                          }
+        """
+
+        destination_task_queue = build_destination_task_queue_input(
+            task_queue_id)
+        data_rows_query = self.build_catalog_query(data_rows)
+
+        source_model_run_id = params.get("source_model_run_id", None)
+        predictions_ontology_mapping = params.get(
+            "predictions_ontology_mapping", None)
+        predictions_input = build_predictions_input(
+            predictions_ontology_mapping,
+            source_model_run_id) if source_model_run_id else None
+
+        source_project_id = params.get("source_project_id", None)
+        annotations_ontology_mapping = params.get(
+            "annotations_ontology_mapping", None)
+        annotations_input = build_annotations_input(
+            annotations_ontology_mapping,
+            source_project_id) if source_project_id else None
+
+        batch_priority = params.get("batch_priority", 5)
+        exclude_data_rows_in_project = params.get(
+            "exclude_data_rows_in_project", False)
+        override_existing_annotations_rule = params.get(
+            "override_existing_annotations_rule",
+            ConflictResolutionStrategy.KeepExisting)
+
+        res = self.execute(
+            mutation_str, {
+                "input": {
+                    "destinationProjectId":
+                        destination_project_id,
+                    "batchInput": {
+                        "batchName": batch_name,
+                        "batchPriority": batch_priority
+                    },
+                    "destinationTaskQueue":
+                        destination_task_queue,
+                    "excludeDataRowsInProject":
+                        exclude_data_rows_in_project,
+                    "annotationsInput":
+                        annotations_input,
+                    "predictionsInput":
+                        predictions_input,
+                    "conflictLabelsResolutionStrategy":
+                        override_existing_annotations_rule,
+                    "searchQuery": {
+                        "scope": None,
+                        "query": [data_rows_query]
+                    },
+                    "ordering": {
+                        "type": "RANDOM",
+                        "random": {
+                            "seed": random.randint(0, 10000)
+                        },
+                        "sorting": None
+                    },
+                    "sorting":
+                        None,
+                    "limit":
+                        None
+                }
+            })['sendToAnnotateFromCatalog']
+
+        return Entity.Task.get_task(self, res['taskId'])
+
+    @staticmethod
+    def build_catalog_query(data_rows: Union[DataRowIds, GlobalKeys]):
+        """
+        Given a list of data rows, builds a query that can be used to fetch the associated data rows from the catalog.
+
+        Args:
+            data_rows: A list of data rows. Can be either UniqueIds or GlobalKeys.
+
+        Returns: A query that can be used to fetch the associated data rows from the catalog.
+
+        """
+        if isinstance(data_rows, DataRowIds):
+            data_rows_query = {
+                "type": "data_row_id",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        elif isinstance(data_rows, GlobalKeys):
+            data_rows_query = {
+                "type": "global_key",
+                "operator": "is",
+                "ids": list(data_rows)
+            }
+        else:
+            raise ValueError(
+                f"Invalid data_rows type {type(data_rows)}. Type of data_rows must be DataRowIds or GlobalKey"
+            )
+        return data_rows_query
 
     def run_foundry_app(self, model_run_name: str, data_rows: Union[DataRowIds,
                                                                     GlobalKeys],
