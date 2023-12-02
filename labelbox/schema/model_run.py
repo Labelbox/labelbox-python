@@ -1,7 +1,6 @@
 # type: ignore
 import logging
 import os
-import random
 import time
 import warnings
 from enum import Enum
@@ -18,8 +17,9 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds, GlobalKeys, DataRowIds
-from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams
+from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams, build_destination_task_queue_input, \
+    build_predictions_input
 from labelbox.schema.task import Task
 
 if TYPE_CHECKING:
@@ -576,6 +576,15 @@ class ModelRun(DbObject):
         """
         Sends data rows from a model run to a project for annotation.
 
+        Example Usage:
+            >>> task = model_run.send_to_annotate_from_model(
+            >>>     destination_project_id=DESTINATION_PROJECT_ID,
+            >>>     batch_name="batch",
+            >>>     data_rows=UniqueIds([DATA_ROW_ID]),
+            >>>     task_queue_id=TASK_QUEUE_ID,
+            >>>     params={})
+            >>> task.wait_till_done()
+
         Args:
             destination_project_id: The ID of the project to send the data rows to.
             task_queue_id: The ID of the task queue to send the data rows to.  If not specified, the data rows will be
@@ -596,14 +605,14 @@ class ModelRun(DbObject):
                           }
         """
 
-        destination_task_queue = self.client.build_destination_task_queue_input(
+        destination_task_queue = build_destination_task_queue_input(
             task_queue_id)
         data_rows_query = self.client.build_catalog_query(data_rows)
 
-        model_run_ontology_mapping = params.get("model_run_ontology_mapping",
-                                                None)
-        predictions_input = self.client.build_predictions_input(
-            model_run_ontology_mapping, self.uid)
+        predictions_ontology_mapping = params.get(
+            "predictions_ontology_mapping", None)
+        predictions_input = build_predictions_input(
+            predictions_ontology_mapping, self.uid)
 
         batch_priority = params.get("batch_priority", 5)
         exclude_data_rows_in_project = params.get(

@@ -16,11 +16,11 @@ class SendToAnnotateFromCatalogParams(TypedDict):
     source_project_id must be provided.
 
     :param source_model_run_id: Optional[str] - The model run to use for predictions. Defaults to None.
-    :param model_run_ontology_mapping: Optional[Dict[str, str]] - A mapping of ontology ids to ontology ids. Defaults to
-        an empty dictionary.
+    :param predictions_ontology_mapping: Optional[Dict[str, str]] - A mapping of feature schema ids to feature schema
+        ids. Defaults to an empty dictionary.
     :param source_project_id: Optional[str] - The project to use for predictions. Defaults to None.
-    :param project_ontology_mapping: Optional[Dict[str, str]] - A mapping of ontology ids to ontology ids. Defaults to
-        an empty dictionary.
+    :param annotations_ontology_mapping: Optional[Dict[str, str]] - A mapping of feature schema ids to feature schema
+        ids. Defaults to an empty dictionary.
     :param exclude_data_rows_in_project: Optional[bool] - Exclude data rows that are already in the project. Defaults
         to False.
     :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - The strategy defining how to
@@ -31,9 +31,9 @@ class SendToAnnotateFromCatalogParams(TypedDict):
     """
 
     source_model_run_id: Optional[str]
-    model_run_ontology_mapping: Optional[Dict[str, str]]
+    predictions_ontology_mapping: Optional[Dict[str, str]]
     source_project_id: Optional[str]
-    project_ontology_mapping: Optional[Dict[str, str]]
+    annotations_ontology_mapping: Optional[Dict[str, str]]
     exclude_data_rows_in_project: Optional[bool]
     override_existing_annotations_rule: Optional[ConflictResolutionStrategy]
     batch_priority: Optional[int]
@@ -43,8 +43,8 @@ class SendToAnnotateFromModelParams(TypedDict):
     """
     Extra parameters for sending data rows to a project through a model run.
 
-    :param model_run_ontology_mapping: Dict[str, str] - A mapping of ontology ids to ontology ids. Defaults to an empty
-        dictionary.
+    :param predictions_ontology_mapping: Dict[str, str] - A mapping of feature schema ids to feature schema ids.
+        Defaults to an empty dictionary.
     :param exclude_data_rows_in_project: Optional[bool] - Exclude data rows that are already in the project. Defaults
         to False.
     :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - The strategy defining how to
@@ -53,7 +53,42 @@ class SendToAnnotateFromModelParams(TypedDict):
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
 
-    model_run_ontology_mapping: Dict[str, str]
+    predictions_ontology_mapping: Dict[str, str]
     exclude_data_rows_in_project: Optional[bool]
     override_existing_annotations_rule: Optional[ConflictResolutionStrategy]
     batch_priority: Optional[int]
+
+
+def build_annotations_input(project_ontology_mapping: Optional[Dict[str, str]],
+                            source_project_id: str):
+    return {
+        "projectId":
+            source_project_id,
+        "featureSchemaIdsMapping":
+            project_ontology_mapping if project_ontology_mapping else {},
+    }
+
+
+def build_destination_task_queue_input(task_queue_id: str):
+    destination_task_queue = {
+        "type": "id",
+        "value": task_queue_id
+    } if task_queue_id else {
+        "type": "done"
+    }
+    return destination_task_queue
+
+
+def build_predictions_input(model_run_ontology_mapping: Optional[Dict[str,
+                                                                      str]],
+                            source_model_run_id: str):
+    return {
+        "featureSchemaIdsMapping":
+            model_run_ontology_mapping if model_run_ontology_mapping else {},
+        "modelRunId":
+            source_model_run_id,
+        "minConfidence":
+            0,
+        "maxConfidence":
+            1
+    }
