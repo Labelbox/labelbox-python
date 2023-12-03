@@ -5,16 +5,19 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TypeVar, Union, overload
 from urllib.parse import urlparse
 
 import requests
 
 from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict,
-                                 ResourceNotFoundError)
+from labelbox.exceptions import (
+    InvalidQueryError,
+    LabelboxError,
+    ProcessingWaitTimeout,
+    ResourceConflict,
+)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -25,22 +28,15 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
-from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
-
-try:
-    datetime.fromisoformat  # type: ignore[attr-defined]
-except AttributeError:
-    from backports.datetime_fromisoformat import MonkeyPatch
-
-    MonkeyPatch.patch_fromisoformat()
 
 try:
     from labelbox.data.serialization import LBV1Converter
@@ -643,7 +639,7 @@ class Project(DbObject, Updateable, Deletable):
         def create_labeler_performance(client, result):
             result["user"] = Entity.User(client, result["user"])
             # python isoformat doesn't accept Z as utc timezone
-            result["lastActivityTime"] = datetime.fromisoformat(
+            result["lastActivityTime"] = utils.format_iso_from_string(
                 result["lastActivityTime"].replace('Z', '+00:00'))
             return LabelerPerformance(**{
                 utils.snake_case(key): value for key, value in result.items()
@@ -1382,29 +1378,44 @@ class Project(DbObject, Updateable, Deletable):
             for field_values in task_queue_values
         ]
 
+    @overload
+    def move_data_rows_to_task_queue(self, data_row_ids: DataRowIdentifiers,
+                                     task_queue_id: str):
+        pass
+
+    @overload
     def move_data_rows_to_task_queue(self, data_row_ids: List[str],
                                      task_queue_id: str):
+        pass
+
+    def move_data_rows_to_task_queue(self, data_row_ids, task_queue_id: str):
         """
 
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved
+            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object 
+                DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
         Returns:
             None if successful, or a raised error on failure
 
         """
+        if isinstance(data_row_ids, list):
+            data_row_ids = UniqueIds(data_row_ids)
+            warnings.warn("Using data row ids will be deprecated. Please use "
+                          "UniqueIds or GlobalKeys instead.")
+
         method = "createBulkAddRowsToQueueTask"
         query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
           $projectId: ID!
           $queueId: ID
-          $dataRowIds: [ID!]!
+          $dataRowIdentifiers: AddRowsToTaskQueueViaDataRowIdentifiersInput!
         ) {
           project(where: { id: $projectId }) {
             %s(
-              data: { queueId: $queueId, dataRowIds: $dataRowIds }
+              data: { queueId: $queueId, dataRowIdentifiers: $dataRowIdentifiers }
             ) {
               taskId
             }
@@ -1416,7 +1427,10 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {
                 "projectId": self.uid,
                 "queueId": task_queue_id,
-                "dataRowIds": data_row_ids
+                "dataRowIdentifiers": {
+                    "ids": [id for id in data_row_ids],
+                    "idType": data_row_ids._id_type,
+                },
             },
             timeout=180.0,
             experimental=True)["project"][method]["taskId"]

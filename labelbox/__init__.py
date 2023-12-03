@@ -1,6 +1,6 @@
 name = "labelbox"
 
-__version__ = "3.56.0"
+__version__ = "3.57.0"
 
 from labelbox.client import Client
 from labelbox.schema.project import Project
@@ -33,3 +33,4 @@ from labelbox.schema.media_type import MediaType
 from labelbox.schema.slice import Slice, CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.task_queue import TaskQueue
+from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
