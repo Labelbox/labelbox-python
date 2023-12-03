@@ -57,14 +57,16 @@ class Task(DbObject):
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
 
-    def wait_till_done(self, timeout_seconds: float = 300.0) -> None:
+    def wait_till_done(self,
+                       timeout_seconds: float = 300.0,
+                       check_frequency: float = 2.0) -> None:
         """ Waits until the task is completed. Periodically queries the server
         to update the task attributes.
 
         Args:
             timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
+            check_frequency (float): Frequency of queries to server to update the task attributes, in seconds. Defaults to two seconds.
         """
-        check_frequency = 2  # frequency of checking, in seconds
         while timeout_seconds > 0:
             if self.status != "IN_PROGRESS":
                 # self.errors fetches the error content.
