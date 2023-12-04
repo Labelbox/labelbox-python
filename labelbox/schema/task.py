@@ -65,8 +65,11 @@ class Task(DbObject):
 
         Args:
             timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
-            check_frequency (float): Frequency of queries to server to update the task attributes, in seconds. Defaults to two seconds.
+            check_frequency (float): Frequency of querie s to server to update the task attributes, in seconds. Defaults to two seconds. Minimal value is two seconds. 
         """
+        if check_frequency < 2.0:
+            raise ValueError(
+                "Expected check frequency to be two seconds or more")
         while timeout_seconds > 0:
             if self.status != "IN_PROGRESS":
                 # self.errors fetches the error content.
