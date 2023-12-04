@@ -314,6 +314,8 @@ def model_run_with_data_rows(client, configured_project_with_ontology,
                              model_run_predictions, model_run,
                              wait_for_label_processing):
     configured_project_with_ontology.enable_model_assisted_labeling()
+    use_data_row_ids = [p['dataRow']['id'] for p in model_run_predictions]
+    model_run.upsert_data_rows(use_data_row_ids)
 
     upload_task = LabelImport.create_from_objects(
         client, configured_project_with_ontology.uid,
@@ -326,7 +328,7 @@ def model_run_with_data_rows(client, configured_project_with_ontology,
     labels = wait_for_label_processing(configured_project_with_ontology)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)
-    yield model_run
+    yield model_run, labels
     model_run.delete()
     # TODO: Delete resources when that is possible ..
 
