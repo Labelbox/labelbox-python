@@ -44,7 +44,6 @@ class Dataset(DbObject, Updateable, Deletable):
         created_at (datetime)
         row_count (int): The number of rows in the dataset. Fetch the dataset again to update since this is cached.
 
-        projects (Relationship): `ToMany` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
 
@@ -56,12 +55,6 @@ class Dataset(DbObject, Updateable, Deletable):
     row_count = Field.Int("row_count")
 
     # Relationships
-    projects = Relationship.ToMany(
-        "Project",
-        True,
-        deprecation_warning=
-        "This method does not return any data for batch-based projects and it will be deprecated on or around November 1, 2023."
-    )
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
     iam_integration = Relationship.ToOne("IAMIntegration", False,

@@ -15,11 +15,6 @@ def test_project_dataset(client, rand_gen):
         )
 
 
-def test_legacy_project_dataset_relationships(project, dataset):
-    assert [ds for ds in project.datasets()] == []
-    assert [p for p in dataset.projects()] == []
-
-
 def test_project_auto_audit_parameters(client, rand_gen):
     with pytest.raises(
             ValueError,

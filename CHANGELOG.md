@@ -1,5 +1,9 @@
 # Changelog
 
+# Version TBD (Date TBD)
+## Removed
+* Project.datasets and Datasets.projects methods as they have been deprecated
+
 # Version 3.57.0 (2023-11-30)
 ## Added
 * Global key support for Project move_data_rows_to_task_queue

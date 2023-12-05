@@ -77,17 +77,10 @@ def test_network_error(client):
         client.create_project(name="Project name")
 
 
-@pytest.fixture
-def project_for_test_invalid_attribute_error(client):
-    project = client.create_project(name="Project name")
-    yield project
-    project.delete()
-
-
-def test_invalid_attribute_error(client, rand_gen,
-                                 project_for_test_invalid_attribute_error):
-    project = project_for_test_invalid_attribute_error
-
+def test_invalid_attribute_error(
+    client,
+    rand_gen,
+):
     # Creation
     with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
         client.create_project(name="Name", invalid_field="Whatever")
@@ -100,18 +93,6 @@ def test_invalid_attribute_error(client, rand_gen,
         project.update(invalid_field="Whatever")
     assert excinfo.value.db_object_type == Project
     assert excinfo.value.field == "invalid_field"
-
-    # Relationship expansion filtering
-    with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
-        project.datasets(where=User.email == "email")
-    assert excinfo.value.db_object_type == Dataset
-    assert excinfo.value.field == {User.email}
-
-    # Relationship order-by
-    with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
-        project.datasets(order_by=User.email.asc)
-    assert excinfo.value.db_object_type == Dataset
-    assert excinfo.value.field == {User.email}
 
     # Top-level-fetch
     with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
@@ -129,9 +110,9 @@ def test_api_limit_error(client):
         except labelbox.exceptions.ApiLimitError as e:
             return e
 
-    #Rate limited at 1500 + buffer
+    # Rate limited at 1500 + buffer
     n = 1600
-    #max of 30 concurrency before the service becomes unavailable
+    # max of 30 concurrency before the service becomes unavailable
     with Pool(30) as pool:
         start = time.time()
         results = list(pool.imap(get, range(n)), total=n)
