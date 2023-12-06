@@ -28,6 +28,9 @@ class Identifiables:
     def __iter__(self):
         return iter(self._iterable)
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self._iterable})"
+
 
 class UniqueIds(Identifiables):
     """
