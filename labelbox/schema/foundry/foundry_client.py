@@ -15,11 +15,12 @@ class FoundryClient:
         field_names_str = "\n".join(APP_FIELD_NAMES)
         query_str = f"""
             mutation CreateDataRowAttachmentPyApi(
-                $name: String!, $modelId: ID!, $description: String, $inferenceParams: Json!, $classToSchemaId: Json!
+                $name: String!, $modelId: ID!, $ontologyId: ID!, $description: String, $inferenceParams: Json!, $classToSchemaId: Json!
             ){{
                 createModelFoundryApp(input: {{
                     name: $name 
                     modelId: $modelId 
+                    ontologyId: $ontologyId
                     description: $description
                     inferenceParams: $inferenceParams
                     classToSchemaId: $classToSchemaId
@@ -73,31 +74,9 @@ class FoundryClient:
             raise exceptions.LabelboxError(f'Unable to delete app with id {id}',
                                            e)
 
-    def _get_model(self, id: str) -> Model:
-        field_names_str = "\n".join(MODEL_FIELD_NAMES)
-
-        query_str = f"""
-            query GetModelByIdPyApi($id: ID!) {{
-                modelFoundryModel(where: {{id: $id}}) {{
-                    model {{
-                        {field_names_str}
-                    }}
-                }}
-            }}
-        """
-        params = {"id": id}
-
-        try:
-            response = self.client.execute(query_str, params)
-        except Exception as e:
-            raise exceptions.LabelboxError(f'Unable to get model with id {id}',
-                                           e)
-        return Model(**response["modelFoundryModel"]["model"])
-
     def run_app(self, model_run_name: str,
                 data_rows: Union[DataRowIds, GlobalKeys], app_id: str) -> Task:
         app = self._get_app(app_id)
-        model = self._get_model(app.model_id)
 
         data_rows_query = self.client.build_catalog_query(data_rows)
 
@@ -110,7 +89,7 @@ class FoundryClient:
                 "query": [data_rows_query],
                 "scope": None
             },
-            "ontologyId": model.ontology_id
+            "ontologyId": app.ontology_id
         }
 
         query = """

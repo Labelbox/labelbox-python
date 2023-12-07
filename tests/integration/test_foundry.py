@@ -19,14 +19,34 @@ def foundry_client(client):
 
 
 @pytest.fixture()
-def unsaved_app(random_str):
-    return App(
-        model_id=TEST_MODEL_ID,
-        name=f"Test App {random_str}",
-        description="Test App Description",
-        inference_params={"confidence": 0.2},
-        class_to_schema_id={},
-    )
+def ontology(client, random_str):
+    object_features = [
+        lb.Tool(tool=lb.Tool.Type.BBOX,
+                name="text",
+                color="#ff0000",
+                classifications=[
+                    lb.Classification(class_type=lb.Classification.Type.TEXT,
+                                      name="value")
+                ])
+    ]
+
+    ontology_builder = lb.OntologyBuilder(tools=object_features,)
+
+    ontology = client.create_ontology(
+        f"Test ontology for tesseract model {random_str}",
+        ontology_builder.asdict(),
+        media_type=lb.MediaType.Image)
+    return ontology
+
+
+@pytest.fixture()
+def unsaved_app(random_str, ontology):
+    return App(model_id=TEST_MODEL_ID,
+               name=f"Test App {random_str}",
+               description="Test App Description",
+               inference_params={"confidence": 0.2},
+               class_to_schema_id={},
+               ontology_id=ontology.uid)
 
 
 @pytest.fixture()
@@ -53,11 +73,6 @@ def test_get_app(foundry_client, app):
 def test_get_app_with_invalid_id(foundry_client):
     with pytest.raises(lb.exceptions.ResourceNotFoundError):
         foundry_client._get_app("invalid-id")
-
-
-def test_get_model_by_id(foundry_client):
-    model = foundry_client._get_model(TEST_MODEL_ID)
-    assert str(model.id) == TEST_MODEL_ID
 
 
 def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
