@@ -692,10 +692,8 @@ class Project(DbObject, Updateable, Deletable):
         LFO = Entity.LabelingFrontendOptions
         self.client._create(
             LFO, {
-                LFO.project:
-                    self,
-                LFO.labeling_frontend:
-                    labeling_frontend,
+                LFO.project: self,
+                LFO.labeling_frontend: labeling_frontend,
                 LFO.customization_options: ""
             })
 
