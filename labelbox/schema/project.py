@@ -683,10 +683,10 @@ class Project(DbObject, Updateable, Deletable):
         """
         if self.labeling_frontend() is not None:
             raise ResourceConflict("Editor is already set up.")
-        
+
         labeling_frontend = next(
             self.client.get_labeling_frontends(
-                where=Entity.LabelingFrontend.name == "Editor"))    
+                where=Entity.LabelingFrontend.name == "Editor"))
         self.labeling_frontend.connect(labeling_frontend)
 
         LFO = Entity.LabelingFrontendOptions
@@ -696,12 +696,7 @@ class Project(DbObject, Updateable, Deletable):
                     self,
                 LFO.labeling_frontend:
                     labeling_frontend,
-                # LFO.customization_options: ""
-                LFO.customization_options:
-                    json.dumps({
-                        "tools": [],
-                        "classifications": []
-                    })
+                LFO.customization_options: ""
             })
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
