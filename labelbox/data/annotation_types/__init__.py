@@ -42,6 +42,9 @@ from .data import ImageData
 from .data import MaskData
 from .data import TextData
 from .data import VideoData
+from .data import LlmPromptResponseCreationData
+from .data import LlmPromptCreationData
+from .data import LlmResponseCreationData
 
 from .label import Label
 from .collection import LabelList
