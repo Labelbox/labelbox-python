@@ -42,6 +42,7 @@ class Task(DbObject):
     result_url = Field.String("result_url", "result")
     errors_url = Field.String("errors_url", "errors")
     type = Field.String("type")
+    metadata = Field.Json("metadata")
     _user: Optional["User"] = None
 
     # Relationships
