@@ -317,3 +317,66 @@ def expected_export_v2_document():
         'relationships': []
     }
     return expected_annotations
+
+
+@pytest.fixture()
+def expected_export_v2_llm_prompt_creation():
+    expected_annotations = {
+        'objects': [],
+        'classifications': [{
+            'name': 'checklist',
+            'checklist_answers': [{
+                'name': 'option1',
+                'classifications': []
+            }]
+        }, {
+            'name': 'text',
+            'text_answer': {
+                'content': 'free form text...'
+            }
+        }],
+        'relationships': []
+    }
+    return expected_annotations
+
+
+@pytest.fixture()
+def expected_export_v2_llm_prompt_response_creation():
+    expected_annotations = {
+        'objects': [],
+        'classifications': [{
+            'name': 'checklist',
+            'checklist_answers': [{
+                'name': 'option1',
+                'classifications': []
+            }]
+        }, {
+            'name': 'text',
+            'text_answer': {
+                'content': 'free form text...'
+            }
+        }],
+        'relationships': []
+    }
+    return expected_annotations
+
+
+@pytest.fixture()
+def expected_export_v2_llm_response_creation():
+    expected_annotations = {
+        'objects': [],
+        'classifications': [{
+            'name': 'checklist',
+            'checklist_answers': [{
+                'name': 'option1',
+                'classifications': []
+            }]
+        }, {
+            'name': 'text',
+            'text_answer': {
+                'content': 'free form text...'
+            }
+        }],
+        'relationships': []
+    }
+    return expected_annotations
