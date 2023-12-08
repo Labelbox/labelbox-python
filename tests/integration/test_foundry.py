@@ -97,6 +97,17 @@ def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
     assert task.status == 'COMPLETE'
 
 
+def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app):
+    data_rows = lb.GlobalKeys([data_row.global_key])
+    task = foundry_client.run_app(
+        model_run_name=f"test-app-with-global-key-{random_str}",
+        data_rows=data_rows,
+        app_id=app.id)
+    model_run_id = task.metadata['modelRunId']
+    model_run = foundry_client.client.get_model_run(model_run_id)
+    assert model_run.uid == model_run_id
+
+
 def test_run_foundry_app_with_non_existent_data_rows(foundry_client, data_row,
                                                      app, random_str):
     data_rows = lb.GlobalKeys([data_row.global_key, "non-existent-global-key"])
