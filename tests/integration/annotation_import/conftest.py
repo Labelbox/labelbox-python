@@ -580,6 +580,21 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 
 
 @pytest.fixture
+def project_with_ontology(client, configured_project, ontology, rand_gen):
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    project.setup(editor, ontology)
+
+    yield [project, ontology]
+
+    project.delete()
+
+
+@pytest.fixture
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch,
