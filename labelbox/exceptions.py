@@ -37,18 +37,15 @@ class ResourceNotFoundError(LabelboxError):
             params (dict): Dict of params identifying the sought resource.
             message (str): Optional error message, if this is not provided, it will be generate using db_object_type and params.
         """
+        if (db_object_type is None or params is None) == (message is None):
+            raise ValueError(
+                "Must provide either db_object_type and params, or message as input but not both"
+            )
+
         if message is None:
-            if db_object_type is None or params is None:
-                raise ValueError(
-                    "Must provide db_object_type and params if message is not provided."
-                )
             message = "Resource '%s' not found for params: %r" % (
                 db_object_type.type_name(), params)
-        else:
-            if db_object_type is not None or params is not None:
-                raise ValueError(
-                    "db_object_type or params cannot be provided with message is provided."
-                )
+
         super().__init__(message)
         self.db_object_type = db_object_type
         self.params = params
