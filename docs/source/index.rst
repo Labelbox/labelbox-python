@@ -2,7 +2,7 @@ Labelbox Python API reference
 ===================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
 Client
@@ -238,35 +238,30 @@ Identifiables
 
 ConflictResolutionStrategy
 ---------------------------
-
 .. automodule:: labelbox.schema.conflict_resolution_strategy
    :members:
    :show-inheritance:
 
 FoundryClient
 ---------------------------
-
 .. automodule:: labelbox.schema.foundry.foundry_client
    :members:
    :show-inheritance:
 
 App
 ---------------------------
-
 .. automodule:: labelbox.schema.foundry.app
    :members:
    :show-inheritance:
 
-Model
+FoundryModel
 ---------------------------
-
 .. automodule:: labelbox.schema.foundry.model
    :members:
    :show-inheritance:
 
 SendToAnnotateParams
 ---------------------------
-
 .. automodule:: labelbox.schema.send_to_annotate_params
    :members:
    :show-inheritance:
