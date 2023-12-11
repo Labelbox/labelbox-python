@@ -589,7 +589,7 @@ def project_with_ontology(client, configured_project, ontology, rand_gen):
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
 
-    yield [project, ontology]
+    yield project, ontology
 
     project.delete()
 
