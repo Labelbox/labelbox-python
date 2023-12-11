@@ -78,30 +78,31 @@ class FoundryClient:
                 data_rows: Union[DataRowIds, GlobalKeys], app_id: str) -> Task:
         app = self._get_app(app_id)
 
-        data_rows_query = self.client.build_catalog_query(data_rows)
-
         params = {
             "modelId": str(app.model_id),
             "name": model_run_name,
             "classToSchemaId": app.class_to_schema_id,
             "inferenceParams": app.inference_params,
-            "searchQuery": {
-                "query": [data_rows_query],
-                "scope": None
-            },
             "ontologyId": app.ontology_id
         }
 
+        data_rows_key = "dataRowIds" if isinstance(data_rows,
+                                                   DataRowIds) else "globalKeys"
+        params[data_rows_key] = list(data_rows)
+
         query = """
-        mutation CreateModelJobPyApi($input: CreateModelJobInput!) {
-            createModelJob(input: $input) {
+        mutation CreateModelJobPyApi($input: CreateModelJobForDataRowsInput!) {
+            createModelJobForDataRows(input: $input) {
                 taskId
                 __typename
             }
         }
         """
         try:
-            response = self.client.execute(query, {"input": params})
+            response = self.client.execute(query, {"input": params},
+                                           raise_not_found_error=True)
+        except exceptions.ResourceNotFoundError as e:
+            raise e
         except Exception as e:
             raise exceptions.LabelboxError('Unable to run foundry app', e)
         task_id = response["createModelJob"]["taskId"]

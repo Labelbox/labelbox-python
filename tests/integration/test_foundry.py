@@ -108,13 +108,23 @@ def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app):
     assert model_run.uid == model_run_id
 
 
-def test_run_foundry_app_with_non_existent_data_rows(foundry_client, data_row,
-                                                     app, random_str):
-    data_rows = lb.GlobalKeys([data_row.global_key, "non-existent-global-key"])
-    task = foundry_client.run_app(
-        model_run_name=f"test-app-with-wrong-key-{random_str}",
-        data_rows=data_rows,
-        app_id=app.id)
-    task.wait_till_done()
-    # The incorrect data row is filtered out and the task still completes with the correct data row
-    assert task.status == 'COMPLETE'
+def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
+    invalid_datarow_id = 'invalid-global-key'
+    data_rows = lb.GlobalKeys([invalid_datarow_id])
+    with pytest.raises(lb.exceptions.ResourceNotFoundError) as exception:
+        foundry_client.run_app(
+            model_run_name=f"test-app-with-invalid-datarow-id-{random_str}",
+            data_rows=data_rows,
+            app_id=app.id)
+        assert invalid_datarow_id in exception.value
+
+
+def test_run_foundry_with_invalid_global_key(foundry_client, app, random_str):
+    invalid_global_key = 'invalid-global-key'
+    data_rows = lb.GlobalKeys([invalid_global_key])
+    with pytest.raises(lb.exceptions.ResourceNotFoundError) as exception:
+        foundry_client.run_app(
+            model_run_name=f"test-app-with-invalid-global-key-{random_str}",
+            data_rows=data_rows,
+            app_id=app.id)
+        assert invalid_global_key in exception.value

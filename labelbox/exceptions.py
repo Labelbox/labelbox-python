@@ -29,15 +29,27 @@ class AuthorizationError(LabelboxError):
 class ResourceNotFoundError(LabelboxError):
     """Exception raised when a given resource is not found. """
 
-    def __init__(self, db_object_type, params):
-        """ Constructor.
+    def __init__(self, db_object_type=None, params=None, message=None):
+        """ Specify either db_object_type and params, or message.
 
         Args:
             db_object_type (type): A labelbox.schema.DbObject subtype.
             params (dict): Dict of params identifying the sought resource.
+            message (str): Optional error message, if this is not provided, it will be generate using db_object_type and params.
         """
-        super().__init__("Resource '%s' not found for params: %r" %
-                         (db_object_type.type_name(), params))
+        if message is None:
+            if db_object_type is None or params is None:
+                raise ValueError(
+                    "Must provide db_object_type and params if message is not provided."
+                )
+            message = "Resource '%s' not found for params: %r" % (
+                db_object_type.type_name(), params)
+        else:
+            if db_object_type is not None or params is not None:
+                raise ValueError(
+                    "db_object_type or params cannot be provided with message is provided."
+                )
+        super().__init__(message)
         self.db_object_type = db_object_type
         self.params = params
 
