@@ -11,6 +11,7 @@
 * Project.datasets and Datasets.projects methods as they have been deprecated
 ## Notebooks
 * Added note books for Human labeling(GT/MAL/MEA) + data generation (GT/MAL)
+* Remove relationship annotations from text and conversational imports
 
 # Version 3.57.0 (2023-11-30)
 ## Added
