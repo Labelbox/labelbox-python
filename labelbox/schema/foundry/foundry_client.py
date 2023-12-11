@@ -105,5 +105,5 @@ class FoundryClient:
             raise e
         except Exception as e:
             raise exceptions.LabelboxError('Unable to run foundry app', e)
-        task_id = response["createModelJob"]["taskId"]
+        task_id = response["createModelJobForDataRows"]["taskId"]
         return Task.get_task(self.client, task_id)
