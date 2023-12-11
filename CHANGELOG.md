@@ -4,12 +4,13 @@
 ## Added
 * Support for `send_to_annotate_from_catalog` 
 * `ontology_id` to the model app instantiation
-* LLM data gen label types
-
+* LLM data generation label types
 ## Fixed
 * Documentation index for identifiables
 ## Removed
 * Project.datasets and Datasets.projects methods as they have been deprecated
+## Notebooks
+* Added note books for Human labeling(GT/MAL/MEA) + data generation (GT/MAL)
 
 # Version 3.57.0 (2023-11-30)
 ## Added
