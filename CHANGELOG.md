@@ -1,6 +1,13 @@
 # Changelog
 
-# Version TBD (Date TBD)
+# Version 3.58.0 (2023-12-11)
+## Added
+* Support for `send_to_annotate_from_catalog` 
+* `ontology_id` to the model app instantiation
+* LLM data gen label types
+
+## Fixed
+* Documentation index for identifiables
 ## Removed
 * Project.datasets and Datasets.projects methods as they have been deprecated
 
