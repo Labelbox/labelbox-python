@@ -26,7 +26,7 @@ class SendToAnnotateFromCatalogParams(TypedDict):
     :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - The strategy defining how to
         handle conflicts in classifications between the data rows that already exist in the project and incoming
         predictions from the source model run or annotations from the source project. Defaults to
-        ConflictResolutionStrategy.SKIP.
+        ConflictResolutionStrategy.KEEP_EXISTING.
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
 
@@ -49,7 +49,7 @@ class SendToAnnotateFromModelParams(TypedDict):
         to False.
     :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - The strategy defining how to
         handle conflicts in classifications between the data rows that already exist in the project and incoming
-        predictions from the source model run. Defaults to ConflictResolutionStrategy.SKIP.
+        predictions from the source model run. Defaults to ConflictResolutionStrategy.KEEP_EXISTING.
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
 
