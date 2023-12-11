@@ -1,8 +1,18 @@
 # Changelog
 
-# Version TBD (Date TBD)
+# Version 3.58.0 (2023-12-11)
+## Added
+* `ontology_id` to the model app instantiation
+* LLM data generation label types
+* `run_foundry_app` to support running model foundry apps
+* Two methods for sending data rows to any workflow task in a project, that can also include predictions from a model run, or annotations from a different project
+## Fixed
+* Documentation index for identifiables
 ## Removed
 * Project.datasets and Datasets.projects methods as they have been deprecated
+## Notebooks
+* Added note books for Human labeling(GT/MAL/MEA) + data generation (GT/MAL)
+* Remove relationship annotations from text and conversational imports
 
 # Version 3.57.0 (2023-11-30)
 ## Added
