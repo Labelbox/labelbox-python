@@ -2,9 +2,10 @@
 
 # Version 3.58.0 (2023-12-11)
 ## Added
-* Support for `send_to_annotate_from_catalog` 
 * `ontology_id` to the model app instantiation
 * LLM data generation label types
+* `run_foundry_app` to support running model foundry apps
+* Two methods for sending data rows to any workflow task in a project, that can also include predictions from a model run, or annotations from a different project
 ## Fixed
 * Documentation index for identifiables
 ## Removed
