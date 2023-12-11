@@ -98,7 +98,8 @@ class IntegrationClient(Client):
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
         if check_naming and query is not None:
-            assert re.match(r"(?:query|mutation) \w+PyApi", query) is not None
+            assert re.match(r"\s*(?:query|mutation) \w+PyApi",
+                            query) is not None
         self.queries.append((query, params))
         return super().execute(query, params, **kwargs)
 

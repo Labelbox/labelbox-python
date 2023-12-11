@@ -1,22 +1,26 @@
 # type: ignore
-from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
-from pathlib import Path
+import logging
 import os
 import time
-import logging
-import requests
 import warnings
-from labelbox import parser
 from enum import Enum
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 
-from labelbox.pagination import PaginatedCollection
-from labelbox.orm.query import results_query_part
-from labelbox.orm.model import Field, Relationship, Entity
+import requests
+
+from labelbox import parser
 from labelbox.orm.db_object import DbObject, experimental
+from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.query import results_query_part
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams, build_destination_task_queue_input, \
+    build_predictions_input
 from labelbox.schema.task import Task
-from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import MEAPredictionImport
@@ -170,7 +174,7 @@ class ModelRun(DbObject):
             if res['status'] == 'COMPLETE':
                 return True
             elif res['status'] == 'FAILED':
-                raise Exception(f"Job failed. Details : {res['errorMessage']}")
+                raise Exception(f"Job failed.")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(
@@ -564,6 +568,84 @@ class ModelRun(DbObject):
         res = res[mutation_name]
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
+
+    def send_to_annotate_from_model(
+            self, destination_project_id: str, task_queue_id: Optional[str],
+            batch_name: str, data_rows: Union[DataRowIds, GlobalKeys],
+            params: SendToAnnotateFromModelParams) -> Task:
+        """
+        Sends data rows from a model run to a project for annotation.
+
+        Example Usage:
+            >>> task = model_run.send_to_annotate_from_model(
+            >>>     destination_project_id=DESTINATION_PROJECT_ID,
+            >>>     batch_name="batch",
+            >>>     data_rows=UniqueIds([DATA_ROW_ID]),
+            >>>     task_queue_id=TASK_QUEUE_ID,
+            >>>     params={})
+            >>> task.wait_till_done()
+
+        Args:
+            destination_project_id: The ID of the project to send the data rows to.
+            task_queue_id: The ID of the task queue to send the data rows to.  If not specified, the data rows will be
+                sent to the Done workflow state.
+            batch_name: The name of the batch to create. If more than one batch is created, additional batches will be
+                named with a monotonically increasing numerical suffix, starting at "_1".
+            data_rows: The data rows to send to the project.
+            params: Additional parameters for this operation. See SendToAnnotateFromModelParams for details.
+
+        Returns: The created task for this operation.
+
+        """
+
+        mutation_str = """mutation SendToAnnotateFromMeaPyApi($input: SendToAnnotateFromMeaInput!) {
+                            sendToAnnotateFromMea(input: $input) {
+                              taskId
+                            }
+                          }
+        """
+
+        destination_task_queue = build_destination_task_queue_input(
+            task_queue_id)
+        data_rows_query = self.client.build_catalog_query(data_rows)
+
+        predictions_ontology_mapping = params.get(
+            "predictions_ontology_mapping", None)
+        predictions_input = build_predictions_input(
+            predictions_ontology_mapping, self.uid)
+
+        batch_priority = params.get("batch_priority", 5)
+        exclude_data_rows_in_project = params.get(
+            "exclude_data_rows_in_project", False)
+        override_existing_annotations_rule = params.get(
+            "override_existing_annotations_rule",
+            ConflictResolutionStrategy.KeepExisting)
+        res = self.client.execute(
+            mutation_str, {
+                "input": {
+                    "destinationProjectId":
+                        destination_project_id,
+                    "batchInput": {
+                        "batchName": batch_name,
+                        "batchPriority": batch_priority
+                    },
+                    "destinationTaskQueue":
+                        destination_task_queue,
+                    "excludeDataRowsInProject":
+                        exclude_data_rows_in_project,
+                    "annotationsInput":
+                        None,
+                    "predictionsInput":
+                        predictions_input,
+                    "conflictLabelsResolutionStrategy":
+                        override_existing_annotations_rule,
+                    "searchQuery": [data_rows_query],
+                    "sourceModelRunId":
+                        self.uid
+                }
+            })['sendToAnnotateFromMea']
+
+        return Entity.Task.get_task(self.client, res['taskId'])
 
 
 class ModelRunDataRow(DbObject):

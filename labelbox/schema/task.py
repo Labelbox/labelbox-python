@@ -42,6 +42,7 @@ class Task(DbObject):
     result_url = Field.String("result_url", "result")
     errors_url = Field.String("errors_url", "errors")
     type = Field.String("type")
+    metadata = Field.Json("metadata")
     _user: Optional["User"] = None
 
     # Relationships
@@ -92,7 +93,9 @@ class Task(DbObject):
                 return self.failed_data_rows
         elif self.type == "export-data-rows":
             return self._fetch_remote_json(remote_json_field='errors_url')
-        elif self.type == "add-data-rows-to-batch" or self.type == "send-to-task-queue":
+        elif (self.type == "add-data-rows-to-batch" or
+              self.type == "send-to-task-queue" or
+              self.type == "send-to-annotate"):
             if self.status == "FAILED":
                 # for these tasks, the error is embedded in the result itself
                 return json.loads(self.result_url)

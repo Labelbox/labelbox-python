@@ -508,7 +508,7 @@ def _setup_ontology(project):
     project.setup(editor, ontology_builder.asdict())
     # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
     time.sleep(2)
-    return ontology_builder.from_project(project)
+    return OntologyBuilder.from_project(project)
 
 
 @pytest.fixture

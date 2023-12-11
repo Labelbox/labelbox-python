@@ -122,11 +122,35 @@ def text_data_row(rand_gen):
     }
 
 
+@pytest.fixture()
+def llm_prompt_creation_data_row(rand_gen):
+    return {
+        "row_data": {
+            "type": "application/llm.prompt-creation",
+            "version": 1
+        },
+        "global_key": rand_gen(str)
+    }
+
+
+@pytest.fixture()
+def llm_prompt_response_data_row(rand_gen):
+    return {
+        "row_data": {
+            "type": "application/llm.prompt-response-creation",
+            "version": 1
+        },
+        "global_key": rand_gen(str)
+    }
+
+
 @pytest.fixture
 def data_row_json_by_data_type(audio_data_row, conversation_data_row,
                                dicom_data_row, geospatial_data_row,
                                html_data_row, image_data_row, document_data_row,
-                               text_data_row, video_data_row):
+                               text_data_row, video_data_row,
+                               llm_prompt_creation_data_row,
+                               llm_prompt_response_data_row):
     return {
         'audio': audio_data_row,
         'conversation': conversation_data_row,
@@ -137,6 +161,9 @@ def data_row_json_by_data_type(audio_data_row, conversation_data_row,
         'document': document_data_row,
         'text': text_data_row,
         'video': video_data_row,
+        'llmpromptcreation': llm_prompt_creation_data_row,
+        'llmpromptresponsecreation': llm_prompt_response_data_row,
+        'llmresponsecreation': text_data_row
     }
 
 
@@ -146,16 +173,33 @@ def exports_v2_by_data_type(expected_export_v2_image, expected_export_v2_audio,
                             expected_export_v2_video,
                             expected_export_v2_conversation,
                             expected_export_v2_dicom,
-                            expected_export_v2_document):
+                            expected_export_v2_document,
+                            expected_export_v2_llm_prompt_creation,
+                            expected_export_v2_llm_prompt_response_creation,
+                            expected_export_v2_llm_response_creation):
     return {
-        'image': expected_export_v2_image,
-        'audio': expected_export_v2_audio,
-        'html': expected_export_v2_html,
-        'text': expected_export_v2_text,
-        'video': expected_export_v2_video,
-        'conversation': expected_export_v2_conversation,
-        'dicom': expected_export_v2_dicom,
-        'document': expected_export_v2_document,
+        'image':
+            expected_export_v2_image,
+        'audio':
+            expected_export_v2_audio,
+        'html':
+            expected_export_v2_html,
+        'text':
+            expected_export_v2_text,
+        'video':
+            expected_export_v2_video,
+        'conversation':
+            expected_export_v2_conversation,
+        'dicom':
+            expected_export_v2_dicom,
+        'document':
+            expected_export_v2_document,
+        'llmpromptcreation':
+            expected_export_v2_llm_prompt_creation,
+        'llmpromptresponsecreation':
+            expected_export_v2_llm_prompt_response_creation,
+        'llmresponsecreation':
+            expected_export_v2_llm_response_creation
     }
 
 
@@ -179,7 +223,10 @@ def annotations_by_data_type(polygon_inference, rectangle_inference,
             checklist_inference, text_inference
         ],
         'text': [entity_inference, checklist_inference, text_inference],
-        'video': [video_checklist_inference]
+        'video': [video_checklist_inference],
+        'llmpromptcreation': [checklist_inference, text_inference],
+        'llmpromptresponsecreation': [checklist_inference, text_inference],
+        'llmresponsecreation': [checklist_inference, text_inference]
     }
 
 
@@ -207,7 +254,10 @@ def annotations_by_data_type_v2(
             checklist_inference, text_inference
         ],
         'text': [entity_inference, checklist_inference, text_inference],
-        'video': [video_checklist_inference]
+        'video': [video_checklist_inference],
+        'llmpromptcreation': [checklist_inference, text_inference],
+        'llmpromptresponsecreation': [checklist_inference, text_inference],
+        'llmresponsecreation': [checklist_inference, text_inference]
     }
 
 
@@ -525,6 +575,21 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     project.data_row_ids = data_row_ids
 
     yield project
+
+    project.delete()
+
+
+@pytest.fixture
+def project_with_ontology(client, configured_project, ontology, rand_gen):
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
+    editor = list(
+        client.get_labeling_frontends(
+            where=LabelingFrontend.name == "editor"))[0]
+    project.setup(editor, ontology)
+
+    yield project, ontology
 
     project.delete()
 
