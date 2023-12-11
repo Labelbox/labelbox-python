@@ -19,6 +19,23 @@ def foundry_client(client):
 
 
 @pytest.fixture()
+def text_data_row(dataset, random_str):
+    global_key = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{random_str}"
+    task = dataset.create_data_rows([{
+        "row_data":
+            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
+        "media_type":
+            "TEXT",
+        "global_key":
+            global_key
+    }])
+    task.wait_till_done()
+    dr = dataset.data_rows().get_one()
+    yield dr
+    dr.delete()
+
+
+@pytest.fixture()
 def ontology(client, random_str):
     object_features = [
         lb.Tool(tool=lb.Tool.Type.BBOX,
@@ -75,9 +92,11 @@ def test_get_app_with_invalid_id(foundry_client):
         foundry_client._get_app("invalid-id")
 
 
-def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
+def test_run_foundry_app_with_data_row_id(client, foundry_client, data_row, app,
                                           random_str):
-    data_rows = lb.DataRowIds([data_row.uid])
+    retrieved_data_row = client.get_data_row(data_row.uid)
+    assert retrieved_data_row.global_key is not None
+    data_rows = lb.DataRowIds([retrieved_data_row.uid])
     task = foundry_client.run_app(
         model_run_name=f"test-app-with-datarow-id-{random_str}",
         data_rows=data_rows,
