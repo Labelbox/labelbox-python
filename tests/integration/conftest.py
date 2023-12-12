@@ -173,13 +173,18 @@ def consensus_project_with_batch(consensus_project, initial_dataset, rand_gen,
     project = consensus_project
     dataset = initial_dataset
 
-    task = dataset.create_data_rows([{DataRow.row_data: image_url}] * 3)
+    data_rows = []
+    for _ in range(3):
+        data_rows.append({
+            DataRow.row_data: image_url,
+            DataRow.global_key: str(uuid.uuid4())
+        })
+    task = dataset.create_data_rows(data_rows)
     task.wait_till_done()
     assert task.status == "COMPLETE"
 
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == 3
-
     batch = project.create_batch(
         rand_gen(str),
         data_rows,  # sample of data row objects
