@@ -750,13 +750,6 @@ def export_v2_test_helpers() -> Type[ExportV2Helpers]:
     return ExportV2Helpers()
 
 
-@pytest.fixture(scope="session")
-def is_adv_enabled(client) -> bool:
-    query_str = "query IsAdvEnabledPyApi { user { isAdvEnabled } }"
-    response = client.execute(query_str)
-    return bool(response['user']['isAdvEnabled'])
-
-
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 EXTERNAL_ID = "my-image"
 
