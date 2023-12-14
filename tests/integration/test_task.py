@@ -8,7 +8,7 @@ from utils import INTEGRATION_SNAPSHOT_DIRECTORY
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 
 
-def test_task_errors(dataset, image_url, snapshot, is_adv_enabled):
+def test_task_errors(dataset, image_url, snapshot):
     client = dataset.client
     task = dataset.create_data_rows([
         {
@@ -25,22 +25,11 @@ def test_task_errors(dataset, image_url, snapshot, is_adv_enabled):
 
     assert task in client.get_user().created_tasks()
     task.wait_till_done()
-    if is_adv_enabled:
-        assert len(task.failed_data_rows) == 1
-        assert "A schemaId can only be specified once per DataRow : [cko8s9r5v0001h2dk9elqdidh]" in task.failed_data_rows[
-            0]['message']
-        assert len(
-            task.failed_data_rows[0]['failedDataRows'][0]['metadata']) == 2
-    else:
-        snapshot.snapshot_dir = INTEGRATION_SNAPSHOT_DIRECTORY
-        # RowData is dynamic, so we need to remove it from the snapshot
-        task.failed_data_rows[0]['failedDataRows'][0]['rowData'] = ''
-        snapshot.assert_match(
-            json.dumps(task.failed_data_rows),
-            'test_task.test_task_errors.failed_data_rows.json')
-        assert task.errors is not None
-        snapshot.assert_match(json.dumps(task.errors),
-                              'test_task.test_task_errors.errors.json')
+
+    assert len(task.failed_data_rows) == 1
+    assert "A schemaId can only be specified once per DataRow : [cko8s9r5v0001h2dk9elqdidh]" in task.failed_data_rows[
+        0]['message']
+    assert len(task.failed_data_rows[0]['failedDataRows'][0]['metadata']) == 2
 
 
 def test_task_success_json(dataset, image_url, snapshot):
