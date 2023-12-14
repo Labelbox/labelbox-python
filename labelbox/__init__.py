@@ -34,3 +34,4 @@ from labelbox.schema.slice import Slice, CatalogSlice, ModelSlice
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.identifiable import UniqueId, GlobalKey

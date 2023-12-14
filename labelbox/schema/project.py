@@ -1,11 +1,12 @@
 import json
 import logging
+from string import Template
 import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, overload
 from urllib.parse import urlparse
 
 import requests
@@ -28,6 +29,8 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.id_type import IdType
+from labelbox.schema.identifiable import DataRowIdentifier, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
@@ -43,7 +46,33 @@ try:
 except ImportError:
     pass
 
+DataRowPriority = int
+LabelingParameterOverrideInput = Tuple[Union[DataRow, DataRowIdentifier],
+                                       DataRowPriority]
+
 logger = logging.getLogger(__name__)
+
+
+def validate_labeling_parameter_overrides(
+        data: List[LabelingParameterOverrideInput]) -> None:
+    for idx, row in enumerate(data):
+        if len(row) < 2:
+            raise TypeError(
+                f"Data must be a list of tuples each containing two elements: a DataRow or a DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
+            )
+        data_row_identifier = row[0]
+        priority = row[1]
+        if not isinstance(data_row_identifier,
+                          Entity.DataRow) and not isinstance(
+                              data_row_identifier, DataRowIdentifier):
+            raise TypeError(
+                f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row_identifier)}. Index: {idx}"
+            )
+
+        if not isinstance(priority, int):
+            raise TypeError(
+                f"Priority must be an int. Found {type(priority)} for data_row_identifier {data_row_identifier}. Index: {idx}"
+            )
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -1129,36 +1158,25 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError("Status not known")
 
-    def validate_labeling_parameter_overrides(self, data) -> None:
-        for idx, row in enumerate(data):
-            if len(row) < 2:
-                raise TypeError(
-                    f"Data must be a list of tuples containing a DataRow and priority (int). Found {len(row)} items. Index: {idx}"
-                )
-            data_row = row[0]
-            priority = row[1]
-            if not isinstance(data_row, Entity.DataRow):
-                raise TypeError(
-                    f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
-                )
-
-            if not isinstance(priority, int):
-                raise TypeError(
-                    f"Priority must be an int. Found {type(priority)} for data_row {data_row}. Index: {idx}"
-                )
-
-    def set_labeling_parameter_overrides(self, data) -> bool:
+    def set_labeling_parameter_overrides(
+            self, data: List[LabelingParameterOverrideInput]) -> bool:
         """ Adds labeling parameter overrides to this project.
 
         See information on priority here:
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
             >>> project.set_labeling_parameter_overrides([
-            >>>     (data_row_1, 2), (data_row_2, 1)])
+            >>>     (data_row_id1, 2), (data_row_id2, 1)])
+            or
+            >>> project.set_labeling_parameter_overrides([
+            >>>     (data_row_gk1, 2), (data_row_gk2, 1)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority<int>) for the new override.
+                either (DataRow, DataRowPriority<int>)
+                or (DataRowIdentifier, priority<int>) for the new override.
+                DataRowIdentifier is an object representing a data row id or a global key. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
+                NOTE - passing whole DatRow is deprecated. Please use a DataRowIdentifier instead.
 
                 Priority:
                     * Data will be labeled in priority order.
@@ -1174,15 +1192,30 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
         data = [t[:2] for t in data]
-        self.validate_labeling_parameter_overrides(data)
-        data_str = ",\n".join("{dataRow: {id: \"%s\"}, priority: %d }" %
-                              (data_row.uid, priority)
-                              for data_row, priority in data)
-        id_param = "projectId"
-        query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
-            project(where: { id: $%s }) {setLabelingParameterOverrides
-            (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
-        res = self.client.execute(query_str, {id_param: self.uid})
+        validate_labeling_parameter_overrides(data)
+
+        template = Template(
+            """mutation SetLabelingParameterOverridesPyApi($$projectId: ID!)
+                {project(where: { id: $$projectId })
+                {setLabelingParameterOverrides
+                (dataWithDataRowIdentifiers: [$dataWithDataRowIdentifiers]) 
+                {success}}}
+            """)
+
+        data_rows_with_identifiers = ""
+        for data_row, priority in data:
+            if isinstance(data_row, DataRow):
+                data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.uid}\", idType: {IdType.DataRowId}}}, priority: {priority}}},"
+            elif isinstance(data_row, DataRowIdentifier):
+                data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.key}\", idType: {data_row.id_type}}}, priority: {priority}}},"
+            else:
+                raise TypeError(
+                    f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row)}."
+                )
+
+        query_str = template.substitute(
+            dataWithDataRowIdentifiers=data_rows_with_identifiers)
+        res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
     @overload
