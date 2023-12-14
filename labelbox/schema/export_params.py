@@ -32,6 +32,8 @@ class CatalogExportParams(DataRowParams):
     model_run_ids: Optional[List[str]]
     project_ids: Optional[List[str]]
     interpolated_frames: Optional[bool]
+    all_projects: Optional[bool]
+    all_model_runs: Optional[bool]
 
 
 class ModelRunExportParams(DataRowParams):
