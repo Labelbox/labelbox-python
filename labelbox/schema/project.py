@@ -30,7 +30,7 @@ from labelbox.schema.export_filters import ProjectExportFilters, validate_dateti
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
-from labelbox.schema.identifiable import DataRowIdentifier, UniqueId
+from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
@@ -62,16 +62,19 @@ def validate_labeling_parameter_overrides(
             )
         data_row_identifier = row[0]
         priority = row[1]
-        if not isinstance(data_row_identifier,
-                          Entity.DataRow) and not isinstance(
-                              data_row_identifier, DataRowIdentifier):
+        valid_types = (Entity.DataRow, UniqueId, GlobalKey)
+        if not isinstance(data_row_identifier, valid_types):
             raise TypeError(
-                f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row_identifier)}. Index: {idx}"
+                f"Data row identifier should be be of type DataRow, UniqueId or GlobalKey. Found {type(data_row_identifier)} for data_row_identifier {data_row_identifier}"
             )
 
         if not isinstance(priority, int):
+            if isinstance(data_row_identifier, Entity.DataRow):
+                id = data_row_identifier.uid
+            else:
+                id = data_row_identifier
             raise TypeError(
-                f"Priority must be an int. Found {type(priority)} for data_row_identifier {data_row_identifier}. Index: {idx}"
+                f"Priority must be an int. Found {type(priority)} for data_row_identifier {id}"
             )
 
 
@@ -1206,7 +1209,8 @@ class Project(DbObject, Updateable, Deletable):
         for data_row, priority in data:
             if isinstance(data_row, DataRow):
                 data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.uid}\", idType: {IdType.DataRowId}}}, priority: {priority}}},"
-            elif isinstance(data_row, DataRowIdentifier):
+            elif isinstance(data_row, UniqueId) or isinstance(
+                    data_row, GlobalKey):
                 data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.key}\", idType: {data_row.id_type}}}, priority: {priority}}},"
             else:
                 raise TypeError(
