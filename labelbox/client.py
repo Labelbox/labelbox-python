@@ -1799,26 +1799,34 @@ class Client:
                                       data_rows: Union[DataRowIds, GlobalKeys],
                                       params: SendToAnnotateFromCatalogParams):
         """
-        Sends data rows from catalog to a specified project for annotation.
+        Sends data rows from Catalog to the specified project in Annotate either as prelabels or labels.
 
         Example usage:
             >>> task = client.send_to_annotate_from_catalog(
             >>>     destination_project_id=DESTINATION_PROJECT_ID,
             >>>     task_queue_id=TASK_QUEUE_ID,
             >>>     batch_name="batch_name",
-            >>>     data_rows=UniqueIds([DATA_ROW_ID]),
+            >>>     data_rows=DataRowIds([DATA_ROW_ID]), # or GlobalKeys([GLOBAL_KEY])
             >>>     params={
-            >>>         "source_project_id":
-            >>>             SOURCE_PROJECT_ID,
-            >>>         "override_existing_annotations_rule":
-            >>>             ConflictResolutionStrategy.OverrideWithAnnotations
-            >>>     })
+            >>>         "source_model_run_id": SOURCE_MODEL_RUN_ID,
+            >>>         "predictions_ontology_mapping": {
+            >>>             SOURCE_FEATURE_SCHEMA_ID_FROM_MODEL_RUN: TARGET_FEATURE_SCHEMA_ID_FROM_MODEL_RUN
+            >>>         },
+            >>>         "source_project_id": SOURCE_PROJECT_ID,
+            >>>         "annotations_ontology_mapping": {
+            >>>             SOURCE_FEATURE_SCHEMA_ID_FROM_PROJECT: TARGET_FEATURE_SCHEMA_ID_FROM_PROJECT
+            >>>         },
+            >>>         "exclude_data_rows_in_project": False,
+            >>>         "override_existing_annotations_rule": ConflictResolutionStrategy.KeepExisting,
+            >>>         "batch_priority": 5
+            >>>     }
+            >>> )
             >>> task.wait_till_done()
 
         Args:
             destination_project_id: The ID of the project to send the data rows to.
             task_queue_id: The ID of the task queue to send the data rows to. If not specified, the data rows will be
-                sent to the Done workflow state.
+                sent to the "Done" workflow state.
             batch_name: The name of the batch to create. If more than one batch is created, additional batches will be
                 named with a monotonically increasing numerical suffix, starting at "_1".
             data_rows: The data rows to send to the project.
@@ -1902,12 +1910,12 @@ class Client:
     @staticmethod
     def build_catalog_query(data_rows: Union[DataRowIds, GlobalKeys]):
         """
-        Given a list of data rows, builds a query that can be used to fetch the associated data rows from the catalog.
+        Given a list of data rows, builds a query that can be used to fetch those data rows from Catalog.
 
         Args:
-            data_rows: A list of data rows. Can be either UniqueIds or GlobalKeys.
+            data_rows: A list of data rows. Can be either DataRowIds or GlobalKeys.
 
-        Returns: A query that can be used to fetch the associated data rows from the catalog.
+        Returns: A query that can be used to fetch the associated data rows from Catalog.
 
         """
         if isinstance(data_rows, DataRowIds):
@@ -1932,12 +1940,12 @@ class Client:
                                                                     GlobalKeys],
                         app_id: str) -> Task:
         """
-        Run a foundry app
+        Run a Foundry app
 
         Args:
             model_run_name (str): Name of a new model run to store app predictions in
-            data_rows (DataRowIds or GlobalKeys): Data row identifiers to run predictions on
-            app_id (str): Foundry app to run predictions with
+            data_rows (DataRowIds or GlobalKeys): The data rows to run predictions on
+            app_id (str): Foundry app id to run
         """
         foundry_client = FoundryClient(self)
         return foundry_client.run_app(model_run_name, data_rows, app_id)

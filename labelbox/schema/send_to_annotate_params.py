@@ -12,21 +12,24 @@ else:
 
 class SendToAnnotateFromCatalogParams(TypedDict):
     """
-    Extra parameters for sending data rows to a project through catalog. At least one of source_model_run_id or
-    source_project_id must be provided.
+    Extra parameters for sending data rows and their predictions and/or annotations from Catalog to a specified project. 
+    
+    Note: 
+        At least one of source_model_run_id or source_project_id must be provided.
 
-    :param source_model_run_id: Optional[str] - The model run to use for predictions. Defaults to None.
-    :param predictions_ontology_mapping: Optional[Dict[str, str]] - A mapping of feature schema ids to feature schema
-        ids. Defaults to an empty dictionary.
-    :param source_project_id: Optional[str] - The project to use for predictions. Defaults to None.
-    :param annotations_ontology_mapping: Optional[Dict[str, str]] - A mapping of feature schema ids to feature schema
-        ids. Defaults to an empty dictionary.
+    :param source_model_run_id: Optional[str] - The model run to use for sending predictions to a project. Defaults to None.
+    :param predictions_ontology_mapping: Optional[Dict[str, str]] - A dict of feature schema ids to feature schema
+        ids to map feature schemas from source model run's ontology to target project's ontology.
+        Defaults to an empty dictionary.
+    :param source_project_id: Optional[str] - The project to use for sending annotations to a project. Defaults to None.
+    :param annotations_ontology_mapping: Optional[Dict[str, str]] - A dict of feature schema ids to feature schema
+        ids to map feature schemas from source project's ontology to target project's ontology.
+        Defaults to an empty dictionary.
     :param exclude_data_rows_in_project: Optional[bool] - Exclude data rows that are already in the project. Defaults
         to False.
-    :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - The strategy defining how to
-        handle conflicts in classifications between the data rows that already exist in the project and incoming
-        predictions from the source model run or annotations from the source project. Defaults to
-        ConflictResolutionStrategy.KEEP_EXISTING.
+    :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - Strategy for resolving conflicts 
+        between existing classifications in the project and incoming predictions/annotations. 
+        Defaults to ConflictResolutionStrategy.KEEP_EXISTING.
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
 
@@ -41,15 +44,19 @@ class SendToAnnotateFromCatalogParams(TypedDict):
 
 class SendToAnnotateFromModelParams(TypedDict):
     """
-    Extra parameters for sending data rows to a project through a model run.
+    Extra parameters for sending data rows and their predictions from a model run to a project. 
+    
+    Note: 
+        At least one of source_model_run_id or source_project_id must be provided.
 
-    :param predictions_ontology_mapping: Dict[str, str] - A mapping of feature schema ids to feature schema ids.
+    :param predictions_ontology_mapping: Dict[str, str] - A dict of feature schema ids to feature schema
+        ids to map feature schemas from source model run's ontology to target project's ontology.
         Defaults to an empty dictionary.
     :param exclude_data_rows_in_project: Optional[bool] - Exclude data rows that are already in the project. Defaults
         to False.
-    :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - The strategy defining how to
-        handle conflicts in classifications between the data rows that already exist in the project and incoming
-        predictions from the source model run. Defaults to ConflictResolutionStrategy.KEEP_EXISTING.
+    :param override_existing_annotations_rule: Optional[ConflictResolutionStrategy] - Strategy for resolving conflicts 
+        between existing classifications in the project and incoming predictions. 
+        Defaults to ConflictResolutionStrategy.KEEP_EXISTING.
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
 

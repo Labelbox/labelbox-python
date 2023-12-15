@@ -574,21 +574,28 @@ class ModelRun(DbObject):
             batch_name: str, data_rows: Union[DataRowIds, GlobalKeys],
             params: SendToAnnotateFromModelParams) -> Task:
         """
-        Sends data rows from a model run to a project for annotation.
+        Sends data rows from a model run to the specified project in Annotate either as prelabels or labels.
 
         Example Usage:
             >>> task = model_run.send_to_annotate_from_model(
             >>>     destination_project_id=DESTINATION_PROJECT_ID,
             >>>     batch_name="batch",
-            >>>     data_rows=UniqueIds([DATA_ROW_ID]),
+            >>>     data_rows=DataRowIds([DATA_ROW_ID]), # or GlobalKeys([GLOBAL_KEY])
             >>>     task_queue_id=TASK_QUEUE_ID,
-            >>>     params={})
+            >>>     params={
+            >>>         "predictions_ontology_mapping": {
+            >>>             "feature_schema_id": "feature_schema_id"
+            >>>         },
+            >>>         "exclude_data_rows_in_project": False,
+            >>>         "override_existing_annotations_rule": ConflictResolutionStrategy.KeepExisting,
+            >>>         "batch_priority": 5
+            >>>     }
             >>> task.wait_till_done()
 
         Args:
             destination_project_id: The ID of the project to send the data rows to.
-            task_queue_id: The ID of the task queue to send the data rows to.  If not specified, the data rows will be
-                sent to the Done workflow state.
+            task_queue_id: The ID of the task queue to send the data rows to. If not specified, the data rows will be
+                sent to the "Done" workflow state.
             batch_name: The name of the batch to create. If more than one batch is created, additional batches will be
                 named with a monotonically increasing numerical suffix, starting at "_1".
             data_rows: The data rows to send to the project.
