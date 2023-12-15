@@ -1,4 +1,9 @@
 # Changelog
+# Version 3.58.1 (2023-12-15)
+## Added
+* Support to export all projects and all model runs to `export_v2` for a `dataset` and a `slice`
+## Notebooks
+* Update exports v2 notebook to include methods that return `ExportTask`
 
 # Version 3.58.0 (2023-12-11)
 ## Added
