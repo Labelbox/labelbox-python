@@ -13,3 +13,13 @@ def test_global_keys():
     identifiables = GlobalKeys(ids)
     assert [i for i in identifiables] == ids
     assert identifiables._id_type == "GKEY"
+
+
+def test_repr():
+    ids = ["a", "b", "c"]
+    identifiables = GlobalKeys(ids)
+    assert repr(identifiables) == "GlobalKeys(['a', 'b', 'c'])"
+
+    ids = ["a", "b", "c"]
+    identifiables = UniqueIds(ids)
+    assert repr(identifiables) == "UniqueIds(['a', 'b', 'c'])"

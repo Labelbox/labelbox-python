@@ -12,6 +12,7 @@ review the following considerations before proceeding:
   improvements to functions within the schema/ package.
 * Please ensure that any new libraries are compliant with the Apache license that governs the Labelbox SDK.
 * Ensure that you update any relevant docstrings and comments within your code
+* Ensure that any new python components like classes, methods etc that need to feature in labelbox documentation have entries in the file [index.rst](https://github.com/Labelbox/labelbox-python/blob/develop/docs/source/index.rst). Also make sure you run `make html` locally in the `docs` folder to check if the documentation correctly updated according to the docstrings in the code added.
 
 ## Repository Organization
 

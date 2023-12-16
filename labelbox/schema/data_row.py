@@ -240,6 +240,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             "model_run_ids": None,
             "project_ids": None,
             "interpolated_frames": False,
+            "all_projects": False,
+            "all_model_runs": False,
         })
 
         validate_catalog_export_params(_params)
@@ -303,6 +305,10 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                         _params.get('project_ids', None),
                     "modelRunIds":
                         _params.get('model_run_ids', None),
+                    "allProjects":
+                        _params.get('all_projects', False),
+                    "allModelRuns":
+                        _params.get('all_model_runs', False),
                 },
                 "streamable": streamable
             }

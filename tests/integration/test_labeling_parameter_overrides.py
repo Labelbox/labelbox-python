@@ -1,5 +1,6 @@
 import pytest
 from labelbox import DataRow
+from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
 
 def test_labeling_parameter_overrides(consensus_project_with_batch):
@@ -49,8 +50,21 @@ def test_set_labeling_priority(consensus_project_with_batch):
 
     data = [data_row.uid for data_row in data_rows]
     success = project.update_data_row_labeling_priority(data, 1)
+    lo = list(project.labeling_parameter_overrides())
     assert success
+    assert len(lo) == 3
+    assert {o.priority for o in lo} == {1, 1, 1}
 
-    updated_overrides = list(project.labeling_parameter_overrides())
-    assert len(updated_overrides) == 3
-    assert {o.priority for o in updated_overrides} == {1, 1, 1}
+    data = [data_row.uid for data_row in data_rows]
+    success = project.update_data_row_labeling_priority(UniqueIds(data), 2)
+    lo = list(project.labeling_parameter_overrides())
+    assert success
+    assert len(lo) == 3
+    assert {o.priority for o in lo} == {2, 2, 2}
+
+    data = [data_row.global_key for data_row in data_rows]
+    success = project.update_data_row_labeling_priority(GlobalKeys(data), 3)
+    lo = list(project.labeling_parameter_overrides())
+    assert success
+    assert len(lo) == 3
+    assert {o.priority for o in lo} == {3, 3, 3}
