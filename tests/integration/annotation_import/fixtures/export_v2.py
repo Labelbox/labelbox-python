@@ -147,7 +147,9 @@ def expected_export_v2_text():
 def expected_export_v2_video():
     expected_annotations = {
         'frames': {},
-        'segments': {},
+        'segments': {
+            '<cuid>': [[7, 13], [18, 19]]
+        },
         'key_frame_feature_map': {},
         'classifications': [{
             'name': 'checklist',
