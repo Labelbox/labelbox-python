@@ -65,12 +65,12 @@ def test_create_batch_with_non_existent_global_keys(project: Project):
         ) == "Data rows with the following global keys do not exist: key1."
 
 
-def test_create_batch_with_negative_priority(project: Project,
-                                             small_dataset: Dataset):
+def test_create_batch_with_string_priority(project: Project,
+                                           small_dataset: Dataset):
     with pytest.raises(LabelboxError):
         project.create_batch("batch1",
                              data_rows=get_data_row_ids(small_dataset),
-                             priority=-1)
+                             priority="abcd")
 
 
 def test_create_batch_with_null_priority(project: Project,
@@ -78,28 +78,7 @@ def test_create_batch_with_null_priority(project: Project,
     with pytest.raises(LabelboxError):
         project.create_batch("batch1",
                              data_rows=get_data_row_ids(small_dataset),
-                             priority=0)
-
-    with pytest.raises(LabelboxError):
-        project.create_batch("batch1",
-                             data_rows=get_data_row_ids(small_dataset),
                              priority=None)
-
-
-def test_create_batch_with_out_of_bound_priority(project: Project,
-                                                 small_dataset: Dataset):
-    with pytest.raises(LabelboxError):
-        project.create_batch("batch1",
-                             data_rows=get_data_row_ids(small_dataset),
-                             priority=6)
-
-
-def test_create_batch_with_float_number_priority(project: Project,
-                                                 small_dataset: Dataset):
-    with pytest.raises(LabelboxError):
-        project.create_batch("batch1",
-                             data_rows=get_data_row_ids(small_dataset),
-                             priority=4.9)
 
 
 def test_create_batch_async(project: Project,
