@@ -6,6 +6,7 @@ def test_unique_ids():
     identifiables = UniqueIds(ids)
     assert [i for i in identifiables] == ids
     assert identifiables._id_type == "ID"
+    assert len(identifiables) == 3
 
 
 def test_global_keys():
@@ -13,6 +14,14 @@ def test_global_keys():
     identifiables = GlobalKeys(ids)
     assert [i for i in identifiables] == ids
     assert identifiables._id_type == "GKEY"
+    assert len(identifiables) == 3
+
+
+def test_index_access():
+    ids = ["a", "b", "c"]
+    identifiables = GlobalKeys(ids)
+    assert identifiables[0] == "a"
+    assert identifiables[1:3] == GlobalKeys(["b", "c"])
 
 
 def test_repr():
