@@ -7,6 +7,7 @@ from labelbox import DataRow, Dataset
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DeleteDataRowMetadata, \
     DataRowMetadataOntology, _parse_metadata_schema
+from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
 INVALID_SCHEMA_ID = "1" * 25
 FAKE_SCHEMA_ID = "0" * 25
@@ -98,6 +99,16 @@ def test_bulk_export_datarow_metadata(data_row, mdo: DataRowMetadataOntology):
     metadata = make_metadata(data_row.uid)
     mdo.bulk_upsert([metadata])
     exported = mdo.bulk_export([data_row.uid])
+    assert exported[0].global_key == data_row.global_key
+    assert exported[0].data_row_id == data_row.uid
+    assert len([field for field in exported[0].fields]) == 3
+
+    exported = mdo.bulk_export(UniqueIds(data_row.uid))
+    assert exported[0].global_key == data_row.global_key
+    assert exported[0].data_row_id == data_row.uid
+    assert len([field for field in exported[0].fields]) == 3
+
+    exported = mdo.bulk_export(GlobalKeys(data_row.uid))
     assert exported[0].global_key == data_row.global_key
     assert exported[0].data_row_id == data_row.uid
     assert len([field for field in exported[0].fields]) == 3
