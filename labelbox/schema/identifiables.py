@@ -29,7 +29,7 @@ class Identifiables:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._iterable})"
 
-    def __eq__(self, other: 'Identifiables') -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Identifiables):
             return False
         return self._iterable == other._iterable and self._id_type == other._id_type
