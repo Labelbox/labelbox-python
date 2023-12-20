@@ -656,7 +656,7 @@ class DataRowMetadataOntology:
                     query, {
                         "dataRowIdentifiers": {
                             "ids": [id for id in _data_row_ids],
-                            "idType": _data_row_ids._id_type
+                            "idType": _data_row_ids.id_type
                         }
                     })['dataRowCustomMetadata'])
 

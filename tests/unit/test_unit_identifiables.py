@@ -5,7 +5,7 @@ def test_unique_ids():
     ids = ["a", "b", "c"]
     identifiables = UniqueIds(ids)
     assert [i for i in identifiables] == ids
-    assert identifiables._id_type == "ID"
+    assert identifiables.id_type == "ID"
     assert len(identifiables) == 3
 
 
@@ -13,7 +13,7 @@ def test_global_keys():
     ids = ["a", "b", "c"]
     identifiables = GlobalKeys(ids)
     assert [i for i in identifiables] == ids
-    assert identifiables._id_type == "GKEY"
+    assert identifiables.id_type == "GKEY"
     assert len(identifiables) == 3
 
 

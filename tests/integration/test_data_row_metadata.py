@@ -103,12 +103,12 @@ def test_bulk_export_datarow_metadata(data_row, mdo: DataRowMetadataOntology):
     assert exported[0].data_row_id == data_row.uid
     assert len([field for field in exported[0].fields]) == 3
 
-    exported = mdo.bulk_export(UniqueIds(data_row.uid))
+    exported = mdo.bulk_export(UniqueIds([data_row.uid]))
     assert exported[0].global_key == data_row.global_key
     assert exported[0].data_row_id == data_row.uid
     assert len([field for field in exported[0].fields]) == 3
 
-    exported = mdo.bulk_export(GlobalKeys(data_row.uid))
+    exported = mdo.bulk_export(GlobalKeys([data_row.global_key]))
     assert exported[0].global_key == data_row.global_key
     assert exported[0].data_row_id == data_row.uid
     assert len([field for field in exported[0].fields]) == 3

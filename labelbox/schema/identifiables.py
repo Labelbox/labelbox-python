@@ -14,6 +14,10 @@ class Identifiables:
         self._iterable = iterable
         self._id_type = id_type
 
+    @property
+    def id_type(self):
+        return self._id_type
+
     def __iter__(self):
         return iter(self._iterable)
 
