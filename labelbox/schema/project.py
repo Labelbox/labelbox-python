@@ -1602,6 +1602,27 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
+    def get_resource_tags(self):
+        """
+        Returns all tags for a project
+        """
+        query_str = """query GetProjectResourceTagsPyApi($projectId: ID!) {
+    project(where: {id: $projectId}) {
+        name
+        resourceTags {
+        %s
+        }
+    }
+    }""" % (
+            query.results_query_part(self.ResourceTag))
+
+        return [
+            self.ResourceTag(self.client, tag) for tag in self.client.execute(
+                query_str, {"projectId": self.uid})['project']['resourceTags']
+        ]
+
+
+
 
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)
@@ -1635,3 +1656,5 @@ def _check_converter_import():
             "Missing dependencies to import converter. "
             "Use `pip install labelbox[data] --upgrade` to add missing dependencies. "
             "or download raw json with project.export_labels()")
+
+
