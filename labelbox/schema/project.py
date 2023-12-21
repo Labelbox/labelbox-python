@@ -1602,24 +1602,20 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_resource_tags(self):
+    def get_resource_tags(self):            
         """
-        Returns all tags for a project
+        Returns tags for a project
         """
         query_str = """query GetProjectResourceTagsPyApi($projectId: ID!) {
-    project(where: {id: $projectId}) {
-        name
-        resourceTags {
-        %s
-        }
-    }
-    }""" % (
-            query.results_query_part(self.ResourceTag))
+            project(where: {id: $projectId}) {
+                name
+                resourceTags {%s}
+            }
+            }""" % (query.results_query_part(self.ResourceTag))
 
-        return [
-            self.ResourceTag(self.client, tag) for tag in self.client.execute(
-                query_str, {"projectId": self.uid})['project']['resourceTags']
-        ]
+        results = self.client.execute(query_str, {"projectId": self.uid})['project']['resourceTags']
+
+        return [self.ResourceTag(self.client, tag) for tag in results]
 
 
 
