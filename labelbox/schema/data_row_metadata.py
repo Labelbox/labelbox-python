@@ -3,9 +3,12 @@ from datetime import datetime
 from copy import deepcopy
 from enum import Enum
 from itertools import chain
-from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
+import warnings
+
+from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
 
 from pydantic import BaseModel, conlist, constr
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import _CamelCaseMixin, format_iso_datetime, format_iso_from_string
@@ -601,13 +604,23 @@ class DataRowMetadataOntology:
                                  items,
                                  batch_size=self._batch_size)
 
+    @overload
     def bulk_export(self, data_row_ids: List[str]) -> List[DataRowMetadata]:
+        pass
+
+    @overload
+    def bulk_export(self,
+                    data_row_ids: DataRowIdentifiers) -> List[DataRowMetadata]:
+        pass
+
+    def bulk_export(self, data_row_ids) -> List[DataRowMetadata]:
         """ Exports metadata for a list of data rows
 
         >>> mdo.bulk_export([data_row.uid for data_row in data_rows])
 
         Args:
-            data_row_ids: List of data data rows to fetch metadata for
+            data_row_ids: List of data data rows to fetch metadata for. This can be a list of strings or a DataRowIdentifiers object
+            DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
         Returns:
             A list of DataRowMetadata.
             There will be one DataRowMetadata for each data_row_id passed in.
@@ -615,13 +628,20 @@ class DataRowMetadataOntology:
             Data rows without metadata will have empty `fields`.
 
         """
-
         if not len(data_row_ids):
             raise ValueError("Empty list passed")
 
-        def _bulk_export(_data_row_ids: List[str]) -> List[DataRowMetadata]:
-            query = """query dataRowCustomMetadataPyApi($dataRowIds: [ID!]!) {
-                dataRowCustomMetadata(where: {dataRowIds : $dataRowIds}) {
+        if isinstance(data_row_ids,
+                      list) and len(data_row_ids) > 0 and isinstance(
+                          data_row_ids[0], str):
+            data_row_ids = UniqueIds(data_row_ids)
+            warnings.warn("Using data row ids will be deprecated. Please use "
+                          "UniqueIds or GlobalKeys instead.")
+
+        def _bulk_export(
+                _data_row_ids: DataRowIdentifiers) -> List[DataRowMetadata]:
+            query = """query dataRowCustomMetadataPyApi($dataRowIdentifiers: DataRowCustomMetadataDataRowIdentifiersInput) {
+                dataRowCustomMetadata(where: {dataRowIdentifiers : $dataRowIdentifiers}) {
                     dataRowId
                     globalKey
                     fields {
@@ -633,8 +653,12 @@ class DataRowMetadataOntology:
             """
             return self.parse_metadata(
                 self._client.execute(
-                    query,
-                    {"dataRowIds": _data_row_ids})['dataRowCustomMetadata'])
+                    query, {
+                        "dataRowIdentifiers": {
+                            "ids": [id for id in _data_row_ids],
+                            "idType": _data_row_ids.id_type
+                        }
+                    })['dataRowCustomMetadata'])
 
         return _batch_operations(_bulk_export,
                                  data_row_ids,

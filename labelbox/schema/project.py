@@ -1289,7 +1289,7 @@ class Project(DbObject, Updateable, Deletable):
                 project_param: self.uid,
                 data_rows_param: {
                     "ids": [id for id in data_rows],
-                    "idType": data_rows._id_type,
+                    "idType": data_rows.id_type,
                 },
             })["project"][method]
 
@@ -1484,7 +1484,7 @@ class Project(DbObject, Updateable, Deletable):
                 "queueId": task_queue_id,
                 "dataRowIdentifiers": {
                     "ids": [id for id in data_row_ids],
-                    "idType": data_row_ids._id_type,
+                    "idType": data_row_ids.id_type,
                 },
             },
             timeout=180.0,
