@@ -634,9 +634,9 @@ class Project(DbObject, Updateable, Deletable):
             # python isoformat doesn't accept Z as utc timezone
             result["lastActivityTime"] = utils.format_iso_from_string(
                 result["lastActivityTime"].replace('Z', '+00:00'))
-            return LabelerPerformance(**{
-                utils.snake_case(key): value for key, value in result.items()
-            })
+            return LabelerPerformance(
+                **
+                {utils.snake_case(key): value for key, value in result.items()})
 
         return PaginatedCollection(self.client, query_str, {id_param: self.uid},
                                    ["project", "labelerPerformance"],
@@ -1602,7 +1602,7 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_resource_tags(self):            
+    def get_resource_tags(self):
         """
         Returns tags for a project
         """
@@ -1613,11 +1613,10 @@ class Project(DbObject, Updateable, Deletable):
             }
             }""" % (query.results_query_part(self.ResourceTag))
 
-        results = self.client.execute(query_str, {"projectId": self.uid})['project']['resourceTags']
+        results = self.client.execute(
+            query_str, {"projectId": self.uid})['project']['resourceTags']
 
         return [self.ResourceTag(self.client, tag) for tag in results]
-
-
 
 
 class ProjectMember(DbObject):
@@ -1652,5 +1651,3 @@ def _check_converter_import():
             "Missing dependencies to import converter. "
             "Use `pip install labelbox[data] --upgrade` to add missing dependencies. "
             "or download raw json with project.export_labels()")
-
-
