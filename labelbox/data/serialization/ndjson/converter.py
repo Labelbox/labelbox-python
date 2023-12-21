@@ -41,7 +41,7 @@ class NDJsonConverter:
             A generator for accessing the ndjson representation of the data
         """
         for example in NDLabel.from_common(labels):
-            res = example.dict(by_alias=True)
+            res = example.dict(by_alias=True, exclude={"uuid"})
             for k, v in list(res.items()):
                 if k in IGNORE_IF_NONE and v is None:
                     del res[k]
