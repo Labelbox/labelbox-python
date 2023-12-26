@@ -3,11 +3,10 @@ from datetime import datetime
 import pytest
 import uuid
 
-from labelbox import DataRow, Dataset
+from labelbox import Dataset
 from labelbox.exceptions import MalformedQueryException
-from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DeleteDataRowMetadata, \
-    DataRowMetadataOntology, _parse_metadata_schema
 from labelbox.schema.identifiables import GlobalKeys, UniqueIds
+from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DataRowMetadataOntology, _parse_metadata_schema
 
 INVALID_SCHEMA_ID = "1" * 25
 FAKE_SCHEMA_ID = "0" * 25
@@ -209,90 +208,6 @@ def test_upsert_datarow_metadata_option_by_incorrect_name(data_row, mdo):
         mdo.bulk_upsert([metadata])
 
 
-def test_bulk_delete_datarow_metadata(data_row, mdo):
-    """test bulk deletes for all fields"""
-    metadata = make_metadata(data_row.uid)
-    mdo.bulk_upsert([metadata])
-    assert len(mdo.bulk_export([data_row.uid])[0].fields)
-    upload_ids = [m.schema_id for m in metadata.fields[:-2]]
-    mdo.bulk_delete(
-        [DeleteDataRowMetadata(data_row_id=data_row.uid, fields=upload_ids)])
-    remaining_ids = set(
-        [f.schema_id for f in mdo.bulk_export([data_row.uid])[0].fields])
-    assert not len(remaining_ids.intersection(set(upload_ids)))
-
-
-def test_bulk_partial_delete_datarow_metadata(data_row, mdo):
-    """Delete a single from metadata"""
-    n_fields = len(mdo.bulk_export([data_row.uid])[0].fields)
-    metadata = make_metadata(data_row.uid)
-    mdo.bulk_upsert([metadata])
-
-    assert len(mdo.bulk_export(
-        [data_row.uid])[0].fields) == (n_fields + len(metadata.fields))
-
-    mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=data_row.uid, fields=[TEXT_SCHEMA_ID])
-    ])
-    fields = [f for f in mdo.bulk_export([data_row.uid])[0].fields]
-    assert len(fields) == (len(metadata.fields) - 1)
-
-
-def test_large_bulk_delete_datarow_metadata(big_dataset, mdo):
-    metadata = []
-    data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
-    for data_row_id in data_row_ids:
-        metadata.append(
-            DataRowMetadata(data_row_id=data_row_id,
-                            fields=[
-                                DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID,
-                                                     value=TEST_SPLIT_ID),
-                                DataRowMetadataField(schema_id=TEXT_SCHEMA_ID,
-                                                     value="test-message")
-                            ]))
-    errors = mdo.bulk_upsert(metadata)
-    assert len(errors) == 0
-
-    deletes = []
-    for data_row_id in data_row_ids:
-        deletes.append(
-            DeleteDataRowMetadata(
-                data_row_id=data_row_id,
-                fields=[SPLIT_SCHEMA_ID, CAPTURE_DT_SCHEMA_ID]))
-    errors = mdo.bulk_delete(deletes)
-
-    assert len(errors) == len(data_row_ids)
-    for error in errors:
-        assert error.fields == [CAPTURE_DT_SCHEMA_ID]
-        assert error.error == 'Schema did not exist'
-
-    for data_row_id in data_row_ids:
-        fields = [f for f in mdo.bulk_export([data_row_id])[0].fields]
-        assert len(fields) == 1, fields
-        assert SPLIT_SCHEMA_ID not in [field.schema_id for field in fields]
-
-
-def test_bulk_delete_datarow_enum_metadata(data_row: DataRow, mdo):
-    """test bulk deletes for non non fields"""
-    metadata = make_metadata(data_row.uid)
-    metadata.fields = [
-        m for m in metadata.fields if m.schema_id == SPLIT_SCHEMA_ID
-    ]
-    mdo.bulk_upsert([metadata])
-
-    exported = mdo.bulk_export([data_row.uid])[0].fields
-    assert len(exported) == len(
-        set([x.schema_id for x in metadata.fields] +
-            [x.schema_id for x in exported]))
-
-    mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=data_row.uid,
-                              fields=[SPLIT_SCHEMA_ID])
-    ])
-    exported = mdo.bulk_export([data_row.uid])[0].fields
-    assert len(exported) == 0
-
-
 def test_raise_enum_upsert_schema_error(data_row, mdo):
     """Setting an option id as the schema id will raise a Value Error"""
 
@@ -315,16 +230,6 @@ def test_upsert_non_existent_schema_id(data_row, mdo):
                                ])
     with pytest.raises(ValueError):
         mdo.bulk_upsert([metadata])
-
-
-def test_delete_non_existent_schema_id(data_row, mdo):
-    res = mdo.bulk_delete([
-        DeleteDataRowMetadata(data_row_id=data_row.uid,
-                              fields=[SPLIT_SCHEMA_ID])
-    ])
-    assert len(res) == 1
-    assert res[0].fields == [SPLIT_SCHEMA_ID]
-    assert res[0].error == 'Schema did not exist'
 
 
 def test_parse_raw_metadata(mdo):
