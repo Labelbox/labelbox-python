@@ -155,7 +155,8 @@ class AnnotationImport(DbObject):
 
         objects = serialize_labels(objects)
         if len(objects) > LABEL_LIMIT:
-            raise ValueError(f"Label count {len(objects)} exceeds limit of {(LABEL_LIMIT)}")
+            raise ValueError(
+                f"Label count {len(objects)} exceeds limit of {(LABEL_LIMIT)}")
         cls._validate_data_rows(objects)
 
         data_str = parser.dumps(objects)

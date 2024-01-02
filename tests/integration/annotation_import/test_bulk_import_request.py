@@ -371,25 +371,23 @@ def test_nested_video_object_annotations(client,
 
     assert import_annotations.errors == []
 
-def test_below_annotation_limit_on_single_data_row(client,
-                                         configured_project_with_one_data_row,
-                                         video_data,
-                                         rand_gen):
+
+def test_below_annotation_limit_on_single_data_row(
+        client, configured_project_with_one_data_row, video_data, rand_gen):
     _, data_row_uids = video_data
+
     def create_label():
-        return Label(
-            data=VideoData(uid=data_row_uids[0]),
-            annotations = [VideoObjectAnnotation(
-                name = "bbox",
-                keyframe=True,
-                frame=4,
-                segment_index=0,
-                value = Rectangle(
-                    start=Point(x=100, y=100),
-                    end=Point(x=105, y=105),
-                )
-            )]
-        )
+        return Label(data=VideoData(uid=data_row_uids[0]),
+                     annotations=[
+                         VideoObjectAnnotation(name="bbox",
+                                               keyframe=True,
+                                               frame=4,
+                                               segment_index=0,
+                                               value=Rectangle(
+                                                   start=Point(x=100, y=100),
+                                                   end=Point(x=105, y=105),
+                                               ))
+                     ])
 
     configured_project_with_one_data_row.update(media_type=MediaType.Video)
     configured_project_with_one_data_row.create_batch(
@@ -408,25 +406,22 @@ def test_below_annotation_limit_on_single_data_row(client,
     assert import_annotations.errors == []
 
 
-def test_above_annotation_limit_on_single_data_row(client,
-                                         configured_project_with_one_data_row,
-                                         video_data,
-                                         rand_gen):
+def test_above_annotation_limit_on_single_data_row(
+        client, configured_project_with_one_data_row, video_data, rand_gen):
     _, data_row_uids = video_data
+
     def create_label():
-        return Label(
-            data=VideoData(uid=data_row_uids[0]),
-            annotations = [VideoObjectAnnotation(
-                name = "bbox",
-                keyframe=True,
-                frame=4,
-                segment_index=0,
-                value = Rectangle(
-                    start=Point(x=100, y=100),
-                    end=Point(x=105, y=105),
-                )
-            )]
-        )
+        return Label(data=VideoData(uid=data_row_uids[0]),
+                     annotations=[
+                         VideoObjectAnnotation(name="bbox",
+                                               keyframe=True,
+                                               frame=4,
+                                               segment_index=0,
+                                               value=Rectangle(
+                                                   start=Point(x=100, y=100),
+                                                   end=Point(x=105, y=105),
+                                               ))
+                     ])
 
     configured_project_with_one_data_row.update(media_type=MediaType.Video)
     configured_project_with_one_data_row.create_batch(
