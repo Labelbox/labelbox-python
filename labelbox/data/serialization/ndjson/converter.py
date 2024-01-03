@@ -2,8 +2,8 @@ import logging
 import uuid
 from typing import Any, Dict, Generator, Iterable
 
-from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
+from ...annotation_types.relationship import RelationshipAnnotation
 from .label import NDLabel
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class NDJsonConverter:
         Returns:
             A generator for accessing the ndjson representation of the data
         """
-
+        used_annotation_uuids = set()
         for label in labels:
             annotation_uuid_lookup = {}
             # UUIDs are private properties used to enhance UX when defining relationships.
@@ -54,22 +54,33 @@ class NDJsonConverter:
                 if isinstance(annotation, RelationshipAnnotation):
                     source_uuid = annotation.value.source._uuid
                     target_uuid = annotation.value.target._uuid
-                    new_source_uuid = str(uuid.uuid4())
-                    new_target_uuid = str(uuid.uuid4())
-                    annotation_uuid_lookup[source_uuid] = new_source_uuid
-                    annotation_uuid_lookup[target_uuid] = new_target_uuid
-                    annotation.value.source._uuid = new_source_uuid
-                    annotation.value.target._uuid = new_target_uuid
+
+                    if (len(
+                            used_annotation_uuids.intersection(
+                                {source_uuid, target_uuid})) > 0):
+                        new_source_uuid = uuid.uuid4()
+                        new_target_uuid = uuid.uuid4()
+
+                        annotation_uuid_lookup[source_uuid] = new_source_uuid
+                        annotation_uuid_lookup[target_uuid] = new_target_uuid
+                        annotation.value.source._uuid = new_source_uuid
+                        annotation.value.target._uuid = new_target_uuid
 
             for annotation in label.annotations:
-                if not isinstance(annotation, RelationshipAnnotation):
+                if (not isinstance(annotation, RelationshipAnnotation) and
+                        "_uuid" in annotation):
                     annotation._uuid = annotation_uuid_lookup.get(
                         annotation._uuid, None)
 
         for example in NDLabel.from_common(labels):
+            annotation_uuid = getattr(example, "uuid", None)
+
+            annotation_uuid_is_none = annotation_uuid == "None"
+            if not annotation_uuid_is_none:
+                used_annotation_uuids.add(annotation_uuid)
             res = example.dict(
                 by_alias=True,
-                exclude={"uuid"} if example.uuid == "None" else None)
+                exclude={"uuid"} if annotation_uuid_is_none else None)
             for k, v in list(res.items()):
                 if k in IGNORE_IF_NONE and v is None:
                     del res[k]
