@@ -87,8 +87,6 @@ def test_video_classification_global_subclassifications():
 
     serialized = NDJsonConverter.serialize([label])
     res = [x for x in serialized]
-    for annotations in res:
-        annotations.pop("uuid")
     assert res == [expected_first_annotation, expected_second_annotation]
 
     deserialized = NDJsonConverter.deserialize(res)

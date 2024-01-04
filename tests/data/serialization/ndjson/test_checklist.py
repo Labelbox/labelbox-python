@@ -33,7 +33,6 @@ def test_serialization_min():
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
 
-    res.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
@@ -113,7 +112,6 @@ def test_serialization_with_classification():
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
 
-    res.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
@@ -197,7 +195,6 @@ def test_serialization_with_classification_double_nested():
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
 
-    res.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
@@ -277,7 +274,6 @@ def test_serialization_with_classification_double_nested_2():
 
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
-    res.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
