@@ -57,11 +57,6 @@ class FoundryClient:
             raise exceptions.ResourceNotFoundError(App, params)
         except Exception as e:
             raise exceptions.LabelboxError(f'Unable to get app with id {id}', e)
-
-        #if description on foundry app is None changes it to an empty string
-        if not response["findModelFoundryApp"]["description"]:
-            response["findModelFoundryApp"]["description"] = ""
-
         return App(**response["findModelFoundryApp"])
 
     def _delete_app(self, id: str) -> None:
