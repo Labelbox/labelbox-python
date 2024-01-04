@@ -1301,31 +1301,6 @@ class Project(DbObject, Updateable, Deletable):
                                 json.dumps(task.errors))
         return True
 
-    def upsert_review_queue(self, quota_factor) -> None:
-        """ Sets the the proportion of total assets in a project to review.
-
-        More information can be found here:
-            https://docs.labelbox.com/en/quality-assurance/review-labels#configure-review-percentage
-
-        Args:
-            quota_factor (float): Which part (percentage) of the queue
-                to reinitiate. Between 0 and 1.
-        """
-
-        if not 0. <= quota_factor <= 1.:
-            raise ValueError("Quota factor must be in the range of [0,1]")
-
-        id_param = "projectId"
-        quota_param = "quotaFactor"
-        query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
-            upsertReviewQueue(where:{project: {id: $%s}}
-                            data:{quotaFactor: $%s}) {id}}""" % (
-            id_param, quota_param, id_param, quota_param)
-        res = self.client.execute(query_str, {
-            id_param: self.uid,
-            quota_param: quota_factor
-        })
-
     def extend_reservations(self, queue_type) -> int:
         """ Extends all the current reservations for the current user on the given
         queue type.
