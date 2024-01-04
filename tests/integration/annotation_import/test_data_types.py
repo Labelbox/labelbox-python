@@ -59,7 +59,7 @@ test_params = [[
 def get_annotation_comparison_dicts_from_labels(labels):
     labels_ndjson = list(NDJsonConverter.serialize(labels))
     for annotation in labels_ndjson:
-        annotation.pop('uuid')
+        annotation.pop('uuid', None)
         annotation.pop('dataRow')
 
         if 'masks' in annotation:
