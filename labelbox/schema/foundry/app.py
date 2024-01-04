@@ -9,7 +9,7 @@ class App(_CamelCaseMixin, BaseModel):
     id: Optional[str]
     model_id: str
     name: str
-    description: str
+    description: Optional[str] = None
     inference_params: Dict[str, Any]
     class_to_schema_id: Dict[str, str]
     ontology_id: str
