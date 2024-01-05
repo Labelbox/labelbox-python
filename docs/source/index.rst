@@ -179,6 +179,7 @@ DataRowMetadata
 
 .. automodule:: labelbox.schema.data_row_metadata
    :members:
+   :exclude-members: _DeleteBatchDataRowMetadata
    :show-inheritance:
 
 AnnotationImport
@@ -233,6 +234,12 @@ ExportTask
 Identifiables
 ---------------------------
 .. automodule:: labelbox.schema.identifiables
+   :members:
+   :show-inheritance:
+
+Identifiable
+---------------------------
+.. automodule:: labelbox.schema.identifiable
    :members:
    :show-inheritance:
 

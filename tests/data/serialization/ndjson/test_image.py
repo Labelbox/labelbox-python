@@ -85,7 +85,6 @@ def test_mask_from_arr():
     ],
                   data=ImageData(uid="0" * 25))
     res = next(NDJsonConverter.serialize([label]))
-    res.pop('uuid')
     assert res == {
         "classifications": [],
         "schemaId": "1" * 25,

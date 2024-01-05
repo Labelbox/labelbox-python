@@ -83,7 +83,6 @@ free_text_label = [
      [free_text_label, free_text_ndjson]])
 def test_message_based_radio_classification(label, ndjson):
     serialized_label = list(NDJsonConverter().serialize(label))
-    serialized_label[0].pop('uuid')
     assert serialized_label == ndjson
 
     deserialized_label = list(NDJsonConverter().deserialize(ndjson))

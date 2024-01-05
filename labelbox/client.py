@@ -183,6 +183,7 @@ class Client:
 
         endpoint = self.endpoint if not experimental else self.endpoint.replace(
             "/graphql", "/_gql")
+
         try:
             request = {
                 'url': endpoint,
