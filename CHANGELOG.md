@@ -1,4 +1,16 @@
 # Changelog
+# Version 3.59.0 (2024-01-05)
+## Added
+* Support set_labeling_parameter_overrides for global keys 
+* Support bulk_delete of data row metadata for global keys
+* Support bulk_export of data row metadata for global keys
+## Fixed
+* Stop overwriting class annotations on prediction upload
+* Prevent users from uploading video annotations over the API limit (5000)
+* Make description optional for foundry app
+## Notebooks
+* Update notebooks for Project set_labeling_parameter_overrides add support for global keys
+
 # Version 3.58.1 (2023-12-15)
 ## Added
 * Support to export all projects and all model runs to `export_v2` for a `dataset` and a `slice`
