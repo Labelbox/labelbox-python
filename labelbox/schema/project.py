@@ -220,7 +220,7 @@ class Project(DbObject, Updateable, Deletable):
         results = self.client.execute(
             query_str, {"projectId": self.uid})['project']['resourceTags']
 
-        return [self.ResourceTag(self.client, tag) for tag in results]
+        return [ResourceTag(self.client, tag) for tag in results]
 
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
