@@ -205,6 +205,22 @@ class Project(DbObject, Updateable, Deletable):
             ResourceTag(self.client, tag)
             for tag in res["project"]["updateProjectResourceTags"]
         ]
+    
+    def get_resource_tags(self):
+        """
+        Returns tags for a project
+        """
+        query_str = """query GetProjectResourceTagsPyApi($projectId: ID!) {
+            project(where: {id: $projectId}) {
+                name
+                resourceTags {%s}
+            }
+            }""" % (query.results_query_part(self.ResourceTag))
+
+        results = self.client.execute(
+            query_str, {"projectId": self.uid})['project']['resourceTags']
+
+        return [self.ResourceTag(self.client, tag) for tag in results]
 
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
