@@ -206,7 +206,7 @@ class Project(DbObject, Updateable, Deletable):
             for tag in res["project"]["updateProjectResourceTags"]
         ]
 
-    def get_resource_tags(self) -> list[ResourceTag]:
+    def get_resource_tags(self) -> List[ResourceTag]:
         """
         Returns tags for a project
         """
