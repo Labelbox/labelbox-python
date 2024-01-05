@@ -215,7 +215,7 @@ class Project(DbObject, Updateable, Deletable):
                 name
                 resourceTags {%s}
             }
-            }""" % (query.results_query_part(self.ResourceTag))
+            }""" % (query.results_query_part(ResourceTag))
 
         results = self.client.execute(
             query_str, {"projectId": self.uid})['project']['resourceTags']
