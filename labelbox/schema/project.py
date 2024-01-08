@@ -1674,7 +1674,7 @@ class Project(DbObject, Updateable, Deletable):
                     }
                 """
 
-        query = """query GetWorkstreamStateCounts($projectId: ID!) {
+        query = """query ProjectGetOverviewPyApi($projectId: ID!) {
             project(where: { id: $projectId }) {      
             workstreamStateCounts {
                 state
