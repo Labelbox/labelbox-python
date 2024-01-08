@@ -1698,7 +1698,7 @@ class Project(DbObject, Updateable, Deletable):
                                      experimental=True)["project"]
 
         overview = {
-            st["state"]: st["count"]
+            utils.snake_case(st["state"]): st["count"]
             for st in result["workstreamStateCounts"]
             if st["state"] != "NotInTaskQueue"
         }
@@ -1710,15 +1710,15 @@ class Project(DbObject, Updateable, Deletable):
         }
 
         # Store the total number of data rows in review
-        review_queues["All"] = overview["InReview"]
-        overview["InReview"] = review_queues
+        review_queues["all"] = overview["in_review"]
+        overview["in_review"] = review_queues
 
         if with_issues:
-            overview["Issues"] = result["issues"]["totalCount"]
+            overview["issues"] = result["issues"]["totalCount"]
 
         # Rename keys
-        overview["ToLabel"] = overview.pop("Unlabeled")
-        overview["AllDataRows"] = overview.pop("All")
+        overview["to_label"] = overview.pop("unlabeled")
+        overview["all_in_data_rows"] = overview.pop("all")
 
         return overview
 

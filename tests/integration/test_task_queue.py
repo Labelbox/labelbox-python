@@ -12,7 +12,7 @@ def test_get_task_queue(project: Project):
     assert review_queue
 
     overview = project.get_overview(with_issues=True)
-    assert len(overview.keys) == 7
+    assert len(overview.keys()) == 7
 
 
 def _validate_moved(project, queue_name, data_row_count):
