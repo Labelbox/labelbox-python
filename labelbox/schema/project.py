@@ -1655,7 +1655,24 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_overview(self, with_issues=False):
+    def get_overview(self, with_issues: bool = False) -> Dict:
+        """Return 
+
+                Args:
+                    with_issues: (optional) boolean to include issues in the overview
+                Returns:
+                    Dictionary with the following structure:
+                    {
+                        'Labeled': (int) Number of labeled data rows,
+                        'InReview': (dict) Name of the in review queue and associated number of data rows
+                        'InRework': (int) Number of data rows in rework,
+                        'Done': (int) Number of completed data rows,
+                        'ToLabel': (int) Number of data rows to label,
+                        'AllDataRows': (int) Total number of data rows,
+                        'Issues': (optional) Number of issues
+                    }
+                """
+
         query = """query GetWorkstreamStateCounts($projectId: ID!) {
             project(where: { id: $projectId }) {      
             workstreamStateCounts {
