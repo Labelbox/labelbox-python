@@ -1655,6 +1655,55 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
+    def get_overview(self, with_issues=False):
+        query = """query GetWorkstreamStateCounts($projectId: ID!) {
+            project(where: { id: $projectId }) {      
+            workstreamStateCounts {
+                state
+                count
+            }
+            taskQueues {
+                queueType
+                name
+                dataRowCount
+            }
+            issues {
+                totalCount
+            }
+            completedDataRowCount
+            }
+        }
+        """
+
+        # Must use experimental to access "issues"
+        result = self.client.execute(query, {"projectId": self.project_id},
+                                     experimental=True)["project"]
+
+        overview = {
+            st["state"]: st["count"]
+            for st in result["workstreamStateCounts"]
+            if st["state"] != "NotInTaskQueue"
+        }
+
+        review_queues = {
+            tq["name"]: tq["dataRowCount"]
+            for tq in result["taskQueues"]
+            if tq["queueType"] == "MANUAL_REVIEW_QUEUE"
+        }
+
+        # Store the total number of data rows in review
+        review_queues["All"] = overview["InReview"]
+        overview["InReview"] = review_queues
+
+        if with_issues:
+            overview["Issues"] = result["issues"]["totalCount"]
+
+        # Rename keys
+        overview["ToLabel"] = overview.pop("Unlabeled")
+        overview["AllDataRows"] = overview.pop("All")
+
+        return overview
+
 
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)

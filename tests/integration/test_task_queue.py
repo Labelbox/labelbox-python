@@ -11,6 +11,9 @@ def test_get_task_queue(project: Project):
         tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
     assert review_queue
 
+    overview = project.get_overview(with_issues=True)
+    assert len(overview.keys) == 7
+
 
 def _validate_moved(project, queue_name, data_row_count):
     timeout_seconds = 30
