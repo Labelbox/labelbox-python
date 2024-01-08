@@ -1694,7 +1694,7 @@ class Project(DbObject, Updateable, Deletable):
         """
 
         # Must use experimental to access "issues"
-        result = self.client.execute(query, {"projectId": self.project_id},
+        result = self.client.execute(query, {"projectId": self.uid},
                                      experimental=True)["project"]
 
         overview = {
