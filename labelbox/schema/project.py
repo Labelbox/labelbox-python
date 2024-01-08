@@ -1656,7 +1656,8 @@ class Project(DbObject, Updateable, Deletable):
             "allDataRowsHaveBeenProcessed"]
 
     def get_overview(self, with_issues: bool = False) -> Dict:
-        """Return 
+        """ Return the number of data rows per task queue, and issues of a project
+            Equivalent of the Overview tab of a project
 
                 Args:
                     with_issues: (optional) boolean to include issues in the overview
