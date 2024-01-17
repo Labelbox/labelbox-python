@@ -111,6 +111,10 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
     assert len(project_resource_tag) == 1
     assert project_resource_tag[0].uid == tagA.uid
 
+    project_resource_tags = client.get_project(p1.uid).get_resource_tags()
+    assert len(project_resource_tags) == 1
+    assert project_resource_tags[0].uid == tagA.uid
+
     delete_tag(tagA.uid)
     delete_tag(tagB.uid)
 

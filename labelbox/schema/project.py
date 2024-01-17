@@ -206,6 +206,22 @@ class Project(DbObject, Updateable, Deletable):
             for tag in res["project"]["updateProjectResourceTags"]
         ]
 
+    def get_resource_tags(self) -> List[ResourceTag]:
+        """
+        Returns tags for a project
+        """
+        query_str = """query GetProjectResourceTagsPyApi($projectId: ID!) {
+            project(where: {id: $projectId}) {
+                name
+                resourceTags {%s}
+            }
+            }""" % (query.results_query_part(ResourceTag))
+
+        results = self.client.execute(
+            query_str, {"projectId": self.uid})['project']['resourceTags']
+
+        return [ResourceTag(self.client, tag) for tag in results]
+
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
 
@@ -1302,7 +1318,11 @@ class Project(DbObject, Updateable, Deletable):
         return True
 
     def upsert_review_queue(self, quota_factor) -> None:
-        """ Sets the the proportion of total assets in a project to review.
+        """ Sets the proportion of total assets in a project to review.
+
+        Deprecation notice: This method is deprecated and will be removed in a future version. The review step was
+        replaced by Workflows in order to offer more flexibility in customizing the review flow for labeling tasks.
+        Read more on Workflows here: https://docs.labelbox.com/docs/workflows
 
         More information can be found here:
             https://docs.labelbox.com/en/quality-assurance/review-labels#configure-review-percentage
@@ -1311,6 +1331,8 @@ class Project(DbObject, Updateable, Deletable):
             quota_factor (float): Which part (percentage) of the queue
                 to reinitiate. Between 0 and 1.
         """
+
+        logger.warning("Updating the review queue is no longer supported.")
 
         if not 0. <= quota_factor <= 1.:
             raise ValueError("Quota factor must be in the range of [0,1]")
