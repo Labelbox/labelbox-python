@@ -1,4 +1,14 @@
 # Changelog
+# Version 3.60.0 (2024-01-17)
+## Added
+* Get resource tags from a project
+* Method to CatalogSlice to get data row identifiers (both uids and global keys)
+* Added deprecation notice for the `upsert_review_queue` method in project
+## Notebooks
+* Update notebook for Project move_data_rows_to_task_queue
+* Added notebook for model foundry
+* Added notebook for migrating from Exports V1 to V2
+
 # Version 3.59.0 (2024-01-05)
 ## Added
 * Support set_labeling_parameter_overrides for global keys 
