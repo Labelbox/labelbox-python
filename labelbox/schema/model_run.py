@@ -558,6 +558,8 @@ class ModelRun(DbObject):
                         _params.get('data_row_details', False),
                     "includePredictions":
                         _params.get('predictions', False),
+                    "includeModelRunDetails":
+                        _params.get('model_run_details', False),
                 },
                 "streamable": streamable
             }
