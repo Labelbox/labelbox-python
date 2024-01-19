@@ -619,7 +619,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self.export_v2(task_name, filters, params, streamable=True)
+        task = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
@@ -627,7 +627,6 @@ class Dataset(DbObject, Updateable, Deletable):
         task_name: Optional[str] = None,
         filters: Optional[DatasetExportFilters] = None,
         params: Optional[CatalogExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a dataset export task with the given params and returns the task.
@@ -646,7 +645,15 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return self._export(task_name, filters, params)
 
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[DatasetExportFilters] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
