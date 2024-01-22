@@ -477,7 +477,7 @@ class ModelRun(DbObject):
             None is returned.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
         sleep_time = 2
         query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
