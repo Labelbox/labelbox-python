@@ -1696,6 +1696,10 @@ class Client:
             }
         """
         res = self.execute(query_str, {"id": slice_id})
+        if res is None or res["getSavedQuery"] is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                ModelSlice, slice_id)
+
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
     def delete_feature_schema_from_ontology(

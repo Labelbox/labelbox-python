@@ -7,6 +7,8 @@ def expected_export_v2_image():
         'objects': [{
             'name':
                 'polygon',
+            'value':
+                'polygon',
             'annotation_kind':
                 'ImagePolygon',
             'classifications': [],
@@ -28,11 +30,14 @@ def expected_export_v2_image():
             }]
         }, {
             'name': 'bbox',
+            'value': 'bbox',
             'annotation_kind': 'ImageBoundingBox',
             'classifications': [{
                 'name': 'nested',
+                'value': 'nested',
                 'radio_answer': {
                     'name': 'radio_option_1',
+                    'value': 'radio_value_1',
                     'classifications': []
                 }
             }],
@@ -44,6 +49,7 @@ def expected_export_v2_image():
             }
         }, {
             'name': 'polyline',
+            'value': 'polyline',
             'annotation_kind': 'ImagePolyline',
             'classifications': [],
             'line': [{
@@ -55,13 +61,18 @@ def expected_export_v2_image():
             }]
         }],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
@@ -77,13 +88,18 @@ def expected_export_v2_audio():
     expected_annotations = {
         'objects': [],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
@@ -99,13 +115,18 @@ def expected_export_v2_html():
         'objects': [],
         'classifications': [{
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
         }, {
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }],
@@ -119,6 +140,7 @@ def expected_export_v2_text():
     expected_annotations = {
         'objects': [{
             'name': 'named-entity',
+            'value': 'named_entity',
             'annotation_kind': 'TextEntity',
             'classifications': [],
             'location': {
@@ -127,13 +149,18 @@ def expected_export_v2_text():
             }
         }],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
@@ -152,9 +179,13 @@ def expected_export_v2_video():
         },
         'key_frame_feature_map': {},
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }]
@@ -167,6 +198,7 @@ def expected_export_v2_conversation():
     expected_annotations = {
         'objects': [{
             'name': 'named-entity',
+            'value': 'named_entity',
             'annotation_kind': 'ConversationalTextEntity',
             'classifications': [],
             'conversational_location': {
@@ -180,14 +212,18 @@ def expected_export_v2_conversation():
         'classifications': [{
             'name':
                 'checklist_index',
+            'value':
+                'checklist_index',
             'message_id':
                 '0',
             'conversational_checklist_answers': [{
                 'name': 'option1_index',
+                'value': 'option1_index',
                 'classifications': []
             }]
         }, {
             'name': 'text_index',
+            'value': 'text_index',
             'message_id': '0',
             'conversational_text_answer': {
                 'content': 'free form text...'
@@ -210,6 +246,8 @@ def expected_export_v2_dicom():
                         'objects': {
                             '<cuid>': {
                                 'name':
+                                    'polyline',
+                                'value':
                                     'polyline',
                                 'annotation_kind':
                                     'DICOMPolyline',
@@ -264,6 +302,7 @@ def expected_export_v2_document():
     expected_annotations = {
         'objects': [{
             'name': 'named-entity',
+            'value': 'named_entity',
             'annotation_kind': 'DocumentEntityToken',
             'classifications': [],
             'location': {
@@ -288,11 +327,14 @@ def expected_export_v2_document():
             }
         }, {
             'name': 'bbox',
+            'value': 'bbox',
             'annotation_kind': 'DocumentBoundingBox',
             'classifications': [{
                 'name': 'nested',
+                'value': 'nested',
                 'radio_answer': {
                     'name': 'radio_option_1',
+                    'value': 'radio_value_1',
                     'classifications': []
                 }
             }],
@@ -305,13 +347,18 @@ def expected_export_v2_document():
             }
         }],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
@@ -326,13 +373,18 @@ def expected_export_v2_llm_prompt_creation():
     expected_annotations = {
         'objects': [],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
@@ -347,13 +399,18 @@ def expected_export_v2_llm_prompt_response_creation():
     expected_annotations = {
         'objects': [],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
@@ -368,13 +425,18 @@ def expected_export_v2_llm_response_creation():
     expected_annotations = {
         'objects': [],
         'classifications': [{
-            'name': 'checklist',
+            'name':
+                'checklist',
+            'value':
+                'checklist',
             'checklist_answers': [{
                 'name': 'option1',
+                'value': 'option1',
                 'classifications': []
             }]
         }, {
             'name': 'text',
+            'value': 'text',
             'text_answer': {
                 'content': 'free form text...'
             }
