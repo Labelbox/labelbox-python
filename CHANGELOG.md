@@ -3,6 +3,7 @@
 # Added
 * `ModelSlice.get_data_row_identifiers`
   * Fetches all data row ids and global keys for the model slice
+  * NOTE Foundry model slices are note supported yet
 ## Updated
 * Updated exports v1 deprecation date to April 30th, 2024
 * Remove `streamable` param from export_v2 methods
