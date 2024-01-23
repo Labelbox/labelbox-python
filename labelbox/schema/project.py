@@ -1149,6 +1149,20 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
+    def get_label_count(self) -> int:
+        """
+        Returns: the total number of labels in this project.
+        """
+
+        query_str = """query LabelCountPyApi($projectId: ID!) {
+            project(where: {id: $projectId}) {
+                labelCount
+            }
+        }"""
+
+        res = self.client.execute(query_str, {'projectId': self.uid})
+        return res["project"]["labelCount"]
+
     def get_queue_mode(self) -> "QueueMode":
         """
         Provides the queue mode used for this project.
