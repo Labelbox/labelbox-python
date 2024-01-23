@@ -477,7 +477,7 @@ class ModelRun(DbObject):
             None is returned.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
         sleep_time = 2
         query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
@@ -518,14 +518,13 @@ class ModelRun(DbObject):
         >>>    export_task = export("my_export_task", params={"media_attributes": True})
 
         """
-        task = self.export_v2(task_name, params, streamable=True)
+        task = self._export(task_name, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
         self,
         task_name: Optional[str] = None,
         params: Optional[ModelRunExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a model run export task with the given params and returns the task.
@@ -533,6 +532,14 @@ class ModelRun(DbObject):
         >>>    export_task = export_v2("my_export_task", params={"media_attributes": True})
 
         """
+        return self._export(task_name, params)
+
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        params: Optional[ModelRunExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         mutation_name = "exportDataRowsInModelRun"
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
@@ -541,7 +548,7 @@ class ModelRun(DbObject):
 
         _params = params or ModelRunExportParams()
 
-        queryParams = {
+        query_params = {
             "input": {
                 "taskName": task_name,
                 "filters": {
@@ -563,7 +570,7 @@ class ModelRun(DbObject):
             }
         }
         res = self.client.execute(create_task_query_str,
-                                  queryParams,
+                                  query_params,
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]

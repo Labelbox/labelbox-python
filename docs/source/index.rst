@@ -203,19 +203,11 @@ ResourceTag
    :members:
    :show-inheritance:
 
+
 Slice
------------------------------------------
-
-.. automodule:: labelbox.schema.slice
-   :members: Slice
-   :exclude-members: CatalogSlice
-   :show-inheritance:
-
-CatalogSlice
------------------------------------------
-.. automodule:: labelbox.schema.slice
-   :members: CatalogSlice
-   :exclude-members: Slice
+---------------------------
+.. automodule:: labelbox.schema.slices
+   :members:
    :show-inheritance:
 
 QualityMode

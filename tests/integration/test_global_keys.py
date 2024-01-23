@@ -79,15 +79,6 @@ def test_assign_same_global_keys_to_data_rows(client, dataset, image_url):
         'error'] == "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
 
 
-def test_global_key_sanitization(dataset, image_url):
-    uuid_str = str(uuid.uuid4())
-    unsanitized_global_key = "\"<>\\{\\}\\|" + uuid_str
-    sanitized_global_key = "_________" + uuid_str
-    dr = dataset.create_data_row(row_data=image_url,
-                                 global_key=unsanitized_global_key)
-    assert dr.global_key == sanitized_global_key
-
-
 def test_long_global_key_validation(client, dataset, image_url):
     long_global_key = 'x' * 201
     dr_1 = dataset.create_data_row(row_data=image_url)

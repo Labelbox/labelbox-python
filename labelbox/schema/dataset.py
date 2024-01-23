@@ -561,7 +561,7 @@ class Dataset(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
         id_param = "datasetId"
         metadata_param = "includeMetadataInput"
@@ -619,7 +619,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self.export_v2(task_name, filters, params, streamable=True)
+        task = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
@@ -627,7 +627,6 @@ class Dataset(DbObject, Updateable, Deletable):
         task_name: Optional[str] = None,
         filters: Optional[DatasetExportFilters] = None,
         params: Optional[CatalogExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a dataset export task with the given params and returns the task.
@@ -646,7 +645,15 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return self._export(task_name, filters, params)
 
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[DatasetExportFilters] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,

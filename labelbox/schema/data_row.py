@@ -188,12 +188,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = DataRow.export_v2(client,
-                                 data_rows,
-                                 global_keys,
-                                 task_name,
-                                 params,
-                                 streamable=True)
+        task = DataRow._export(client,
+                               data_rows,
+                               global_keys,
+                               task_name,
+                               params,
+                               streamable=True)
         return ExportTask(task)
 
     @staticmethod
@@ -203,7 +203,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a data rows export task with the given list, params and returns the task.
@@ -228,7 +227,18 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return DataRow._export(client, data_rows, global_keys, task_name,
+                               params)
 
+    @staticmethod
+    def _export(
+        client: "Client",
+        data_rows: Optional[List[Union[str, "DataRow"]]] = None,
+        global_keys: Optional[List[str]] = None,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,

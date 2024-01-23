@@ -29,12 +29,6 @@ class Slice(DbObject):
     updated_at = Field.DateTime("updated_at")
     filter = Field.Json("filter")
 
-
-class CatalogSlice(Slice):
-    """
-    Represents a Slice used for filtering data rows in Catalog.
-    """
-
     @dataclass
     class DataRowIdAndGlobalKey:
         id: UniqueId
@@ -43,6 +37,18 @@ class CatalogSlice(Slice):
         def __init__(self, id: str, global_key: Optional[str]):
             self.id = UniqueId(id)
             self.global_key = GlobalKey(global_key) if global_key else None
+
+        def to_hash(self):
+            return {
+                "id": self.id.key,
+                "global_key": self.global_key.key if self.global_key else None
+            }
+
+
+class CatalogSlice(Slice):
+    """
+    Represents a Slice used for filtering data rows in Catalog.
+    """
 
     def get_data_row_ids(self) -> PaginatedCollection:
         """
@@ -75,7 +81,7 @@ class CatalogSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=query_str,
-            params={'id': self.uid},
+            params={'id': str(self.uid)},
             dereferencing=['getDataRowIdsBySavedQuery', 'nodes'],
             obj_class=lambda _, data_row_id: data_row_id,
             cursor_path=['getDataRowIdsBySavedQuery', 'pageInfo', 'endCursor'])
@@ -85,7 +91,7 @@ class CatalogSlice(Slice):
         Fetches all data row ids and global keys (where defined) that match this Slice
 
         Returns:
-            A PaginatedCollection of data row ids
+            A PaginatedCollection of Slice.DataRowIdAndGlobalKey
         """
         query_str = """
             query getDataRowIdenfifiersBySavedQueryPyApi($id: ID!, $from: String, $first: Int!) {
@@ -112,9 +118,9 @@ class CatalogSlice(Slice):
             query=query_str,
             params={'id': str(self.uid)},
             dereferencing=['getDataRowIdentifiersBySavedQuery', 'nodes'],
-            obj_class=lambda _, data_row_id_and_gk: CatalogSlice.
-            DataRowIdAndGlobalKey(data_row_id_and_gk.get('id'),
-                                  data_row_id_and_gk.get('globalKey', None)),
+            obj_class=lambda _, data_row_id_and_gk: Slice.DataRowIdAndGlobalKey(
+                data_row_id_and_gk.get('id'),
+                data_row_id_and_gk.get('globalKey', None)),
             cursor_path=[
                 'getDataRowIdentifiersBySavedQuery', 'pageInfo', 'endCursor'
             ])
@@ -132,14 +138,13 @@ class CatalogSlice(Slice):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self.export_v2(task_name, params, streamable=True)
+        task = self._export(task_name, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
         self,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a slice export task with the given params and returns the task.
@@ -150,7 +155,14 @@ class CatalogSlice(Slice):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return self._export(task_name, params)
 
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -224,6 +236,33 @@ class ModelSlice(Slice):
     Represents a Slice used for filtering data rows in Model.
     """
 
+    @classmethod
+    def query_str(cls):
+        query_str = """
+        query getDataRowIdenfifiersBySavedModelQueryPyApi($id: ID!, $from: DataRowIdentifierCursorInput, $first: Int!) {
+            getDataRowIdentifiersBySavedModelQuery(input: {
+                savedQueryId: $id,
+                after: $from
+                first: $first
+            }) {
+                totalCount
+                nodes
+                {
+                    id
+                    globalKey
+                }
+                pageInfo {
+                    endCursor {
+                        dataRowId
+                        globalKey
+                    }
+                    hasNextPage
+                }
+            }
+        }
+        """
+        return query_str
+
     def get_data_row_ids(self) -> PaginatedCollection:
         """
         Fetches all data row ids that match this Slice
@@ -231,26 +270,34 @@ class ModelSlice(Slice):
         Returns:
             A PaginatedCollection of data row ids
         """
-        query_str = """
-            query getDataRowIdsBySavedQueryPyApi($id: ID!, $from: String, $first: Int!) {
-                getDataRowIdsBySavedQuery(input: {
-                    savedQueryId: $id,
-                    after: $from
-                    first: $first
-                }) {
-                    totalCount
-                    nodes
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                }
-            }
+        return PaginatedCollection(
+            client=self.client,
+            query=ModelSlice.query_str(),
+            params={'id': str(self.uid)},
+            dereferencing=['getDataRowIdentifiersBySavedModelQuery', 'nodes'],
+            obj_class=lambda _, data_row_id_and_gk: data_row_id_and_gk.get('id'
+                                                                          ),
+            cursor_path=[
+                'getDataRowIdentifiersBySavedModelQuery', 'pageInfo',
+                'endCursor'
+            ])
+
+    def get_data_row_identifiers(self) -> PaginatedCollection:
+        """
+        Fetches all data row ids and global keys (where defined) that match this Slice
+
+        Returns:
+            A PaginatedCollection of Slice.DataRowIdAndGlobalKey
         """
         return PaginatedCollection(
             client=self.client,
-            query=query_str,
-            params={'id': self.uid},
-            dereferencing=['getDataRowIdsBySavedQuery', 'nodes'],
-            obj_class=lambda _, data_row_id: data_row_id,
-            cursor_path=['getDataRowIdsBySavedQuery', 'pageInfo', 'endCursor'])
+            query=ModelSlice.query_str(),
+            params={'id': str(self.uid)},
+            dereferencing=['getDataRowIdentifiersBySavedModelQuery', 'nodes'],
+            obj_class=lambda _, data_row_id_and_gk: Slice.DataRowIdAndGlobalKey(
+                data_row_id_and_gk.get('id'),
+                data_row_id_and_gk.get('globalKey', None)),
+            cursor_path=[
+                'getDataRowIdentifiersBySavedModelQuery', 'pageInfo',
+                'endCursor'
+            ])

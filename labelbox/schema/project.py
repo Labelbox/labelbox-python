@@ -271,7 +271,7 @@ class Project(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
@@ -377,7 +377,7 @@ class Project(DbObject, Updateable, Deletable):
             generate during the `timeout_seconds` period, None is returned.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
@@ -477,7 +477,7 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self.export_v2(task_name, filters, params, streamable=True)
+        task = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
@@ -485,7 +485,6 @@ class Project(DbObject, Updateable, Deletable):
         task_name: Optional[str] = None,
         filters: Optional[ProjectExportFilters] = None,
         params: Optional[ProjectExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a project export task with the given params and returns the task.
@@ -506,7 +505,15 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return self._export(task_name, filters, params)
 
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[ProjectExportFilters] = None,
+        params: Optional[ProjectExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or ProjectExportParams({
             "attachments": False,
             "metadata_fields": False,
