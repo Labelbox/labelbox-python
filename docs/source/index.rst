@@ -206,7 +206,7 @@ ResourceTag
 
 Slice
 ---------------------------
-.. automodule:: labelbox.schema.slices
+.. automodule:: labelbox.schema.slice
    :members:
    :show-inheritance:
 
