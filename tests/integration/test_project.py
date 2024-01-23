@@ -287,5 +287,6 @@ def test_label_count(client, configured_batch_project_with_label):
     assert project.get_label_count() == 0
     project.delete()
 
-    num_labels = sum([1 for _ in configured_batch_project_with_label.labels()])
-    assert configured_batch_project_with_label.get_label_count() == num_labels
+    [source_project, _, _, _] = configured_batch_project_with_label
+    num_labels = sum([1 for _ in source_project.labels()])
+    assert source_project.get_label_count() == num_labels
