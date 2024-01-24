@@ -14,7 +14,7 @@ class FoundryClient:
     def _create_app(self, app: App) -> App:
         field_names_str = "\n".join(APP_FIELD_NAMES)
         query_str = f"""
-            mutation CreateFoundryApp(
+            mutation CreateFoundryAppPyApi(
                 $name: String!, $modelId: ID!, $ontologyId: ID!, $description: String, $inferenceParams: Json!, $classToSchemaId: Json!
             ){{
                 createModelFoundryApp(input: {{
