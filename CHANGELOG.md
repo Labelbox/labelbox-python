@@ -1,4 +1,9 @@
 # Changelog
+
+# Version 3.61.1 (2024-01-25)
+## Fixed
+* Removed export API limit (5000)
+
 # Version 3.61.0 (2024-01-22)
 # Added
 * `ModelSlice.get_data_row_identifiers`
