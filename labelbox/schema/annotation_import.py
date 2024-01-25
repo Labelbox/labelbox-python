@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from labelbox.types import Label
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
-LABEL_LIMIT = 5000
 logger = logging.getLogger(__name__)
 
 
@@ -154,9 +153,6 @@ class AnnotationImport(DbObject):
             )
 
         objects = serialize_labels(objects)
-        if len(objects) > LABEL_LIMIT:
-            raise ValueError(
-                f"Label count {len(objects)} exceeds limit of {(LABEL_LIMIT)}")
         cls._validate_data_rows(objects)
 
         data_str = parser.dumps(objects)
@@ -506,8 +502,8 @@ class MALPredictionImport(AnnotationImport):
         Returns:
             MALPredictionImport
         """
-
         data = cls._get_ndjson_from_objects(predictions, 'annotations')
+
         if len(predictions) > 0 and isinstance(predictions[0], Dict):
             predictions_dicts = cast(List[Dict[str, Any]], predictions)
             has_confidence = LabelsConfidencePresenceChecker.check(
