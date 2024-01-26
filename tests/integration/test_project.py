@@ -280,3 +280,13 @@ def test_queue_mode(client, rand_gen):
                                     quality_mode=QualityMode.Consensus)
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
+
+
+def test_label_count(client, configured_batch_project_with_label):
+    project = client.create_project(name="test label count")
+    assert project.get_label_count() == 0
+    project.delete()
+
+    [source_project, _, _, _] = configured_batch_project_with_label
+    num_labels = sum([1 for _ in source_project.labels()])
+    assert source_project.get_label_count() == num_labels
