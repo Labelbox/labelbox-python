@@ -51,6 +51,7 @@ class AnnotationImport(DbObject):
     def errors(self) -> List[Dict[str, Any]]:
         """
         Errors for each individual annotation uploaded. This is a subset of statuses
+
         Returns:
             List of dicts containing error messages. Empty list means there were no errors
             See `AnnotationImport.statuses` for more details.
@@ -63,22 +64,26 @@ class AnnotationImport(DbObject):
     def statuses(self) -> List[Dict[str, Any]]:
         """
         Status for each individual annotation uploaded.
+
         Returns:
             A status for each annotation if the upload is done running.
             See below table for more details
+
         .. list-table::
-           :widths: 15 150
-           :header-rows: 1
-           * - Field
-             - Description
-           * - uuid
-             - Specifies the annotation for the status row.
-           * - dataRow
-             - JSON object containing the Labelbox data row ID for the annotation.
-           * - status
-             - Indicates SUCCESS or FAILURE.
-           * - errors
-             - An array of error messages included when status is FAILURE. Each error has a name, message and optional (key might not exist) additional_info.
+            :widths: 15 150
+            :header-rows: 1
+
+            * - Field
+              - Description
+            * - uuid
+              - Specifies the annotation for the status row.
+            * - dataRow
+              - JSON object containing the Labelbox data row ID for the annotation.
+            * - status
+              - Indicates SUCCESS or FAILURE.
+            * - errors
+              - An array of error messages included when status is FAILURE. Each error has a name, message and optional (key might not exist) additional_info.
+
         * This information will expire after 24 hours.
         """
         self.wait_until_done()

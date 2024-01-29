@@ -68,10 +68,10 @@ class Dataset(DbObject, Updateable, Deletable):
         """ 
         Custom method to paginate data_rows via cursor.
 
-        Params:
+        Args:
             from_cursor (str): Cursor (data row id) to start from, if none, will start from the beginning
             where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.    
-                example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
+            example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
 
 
         NOTE: 
