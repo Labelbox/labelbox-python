@@ -1,5 +1,12 @@
 # Changelog
 
+# Version 3.61.2 (2024-01-29)
+## Added 
+* `ModelSlice.get_data_row_identifiers` for Foundry data rows
+
+## Fixed
+* `ModelSlice.get_data_row_identifiers` scoping by model run id
+
 # Version 3.61.1 (2024-01-25)
 ## Fixed
 * Removed export API limit (5000)
