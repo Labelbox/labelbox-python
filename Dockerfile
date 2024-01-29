@@ -1,6 +1,6 @@
 FROM python:3.9-slim-bullseye
 
-RUN pip install pytest pytest-cases pytest-rerunfailures pytest-snapshot
+RUN pip install pytest=="7.4.4" pytest-cases pytest-rerunfailures pytest-snapshot
 RUN apt-get -y update
 RUN apt install -y libsm6 \
                 libxext6 \
