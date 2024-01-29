@@ -178,9 +178,16 @@ def test_export_data_rows(project: Project, dataset: Dataset):
     assert set(data_rows) == set(exported_data_rows)
 
 
-def test_queued_data_row_export(configured_project):
-    result = configured_project.export_queued_data_rows()
-    assert len(result) == 1
+def test_queued_data_row_export(
+        configured_batch_project_with_multiple_datarows):
+    project, _, data_rows = configured_batch_project_with_multiple_datarows
+    # delete one label in project
+    for label in project.labels():
+        label.delete()
+        break
+
+    result = project.export_queued_data_rows()
+    assert len(result) == len(data_rows) - 1
 
 
 def test_label_export(configured_project_with_label):
