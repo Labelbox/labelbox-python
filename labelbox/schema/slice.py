@@ -239,9 +239,10 @@ class ModelSlice(Slice):
     @classmethod
     def query_str(cls):
         query_str = """
-        query getDataRowIdenfifiersBySavedModelQueryPyApi($id: ID!, $from: DataRowIdentifierCursorInput, $first: Int!) {
+        query getDataRowIdenfifiersBySavedModelQueryPyApi($id: ID!, $modelRunId: ID, $from: DataRowIdentifierCursorInput, $first: Int!) {
             getDataRowIdentifiersBySavedModelQuery(input: {
                 savedQueryId: $id,
+                modelRunId: $modelRunId,
                 after: $from
                 first: $first
             }) {
@@ -263,9 +264,12 @@ class ModelSlice(Slice):
         """
         return query_str
 
-    def get_data_row_ids(self) -> PaginatedCollection:
+    def get_data_row_ids(self, model_run_id: str) -> PaginatedCollection:
         """
         Fetches all data row ids that match this Slice
+
+        Params
+        model_run_id: str, required, uid or cuid of model run
 
         Returns:
             A PaginatedCollection of data row ids
@@ -273,7 +277,10 @@ class ModelSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=ModelSlice.query_str(),
-            params={'id': str(self.uid)},
+            params={
+                'id': str(self.uid),
+                'modelRunId': model_run_id
+            },
             dereferencing=['getDataRowIdentifiersBySavedModelQuery', 'nodes'],
             obj_class=lambda _, data_row_id_and_gk: data_row_id_and_gk.get('id'
                                                                           ),
@@ -282,9 +289,13 @@ class ModelSlice(Slice):
                 'endCursor'
             ])
 
-    def get_data_row_identifiers(self) -> PaginatedCollection:
+    def get_data_row_identifiers(self,
+                                 model_run_id: str) -> PaginatedCollection:
         """
         Fetches all data row ids and global keys (where defined) that match this Slice
+
+        Params:
+        model_run_id : str, required, uid or cuid of model run
 
         Returns:
             A PaginatedCollection of Slice.DataRowIdAndGlobalKey
@@ -292,7 +303,10 @@ class ModelSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=ModelSlice.query_str(),
-            params={'id': str(self.uid)},
+            params={
+                'id': str(self.uid),
+                'modelRunId': model_run_id
+            },
             dereferencing=['getDataRowIdentifiersBySavedModelQuery', 'nodes'],
             obj_class=lambda _, data_row_id_and_gk: Slice.DataRowIdAndGlobalKey(
                 data_row_id_and_gk.get('id'),
