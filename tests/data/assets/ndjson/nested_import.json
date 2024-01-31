@@ -10,7 +10,17 @@
             {
                 "answer": {
                     "schemaId": "ckrb1sfl8099g0y91cxbd5ftb",
-                    "confidence": 0.34
+                    "confidence": 0.34,
+                    "customMetrics": [
+                        {
+                            "name": "customMetric1",
+                            "value": 0.5
+                        },
+                        {
+                            "name": "customMetric2",
+                            "value": 0.3
+                        }
+                    ]
                 },
                 "schemaId": "ckrb1sfkn099c0y910wbo0p1a"
             }
@@ -54,7 +64,17 @@
                 "answer": [
                     {
                         "schemaId": "ckrb1sfl8099e0y919v260awv",
-                        "confidence": 0.894
+                        "confidence": 0.894,
+                        "customMetrics": [
+                            {
+                                "name": "customMetric1",
+                                "value": 0.5
+                            },
+                            {
+                                "name": "customMetric2",
+                                "value": 0.3
+                            }
+                        ]
                     }
                 ],
                 "schemaId": "ckrb1sfkn099c0y910wbo0p1a"

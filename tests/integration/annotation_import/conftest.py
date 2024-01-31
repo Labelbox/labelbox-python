@@ -761,7 +761,17 @@ def polygon_inference(prediction_id_mapping):
         }, {
             "x": 28.308,
             "y": 169.846
-        }]
+        }],
+        "customMetrics": [
+            {
+                "name": "customMetric1",
+                "value": 0.4
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.6
+            }
+        ]
     })
     del polygon['tool']
     return polygon
@@ -786,6 +796,12 @@ def rectangle_inference(prediction_id_mapping):
             "height": 65,
             "width": 12
         },
+        "customMetrics": [
+            {
+                "name": "customMetric1",
+                "value": 0.4
+            }
+        ],
         'classifications': [{
             "schemaId":
                 rectangle['tool']['classifications'][0]['featureSchemaId'],
@@ -797,7 +813,13 @@ def rectangle_inference(prediction_id_mapping):
                     ['featureSchemaId'],
                 "name":
                     rectangle['tool']['classifications'][0]['options'][0]
-                    ['value']
+                    ['value'],
+                "customMetrics": [
+                    {
+                        "name": "customMetric1",
+                        "value": 0.4
+                    }
+                ],
             }
         }]
     })

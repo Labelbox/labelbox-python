@@ -6,7 +6,7 @@ from labelbox.data.annotation_types.annotation import ClassificationAnnotation, 
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from labelbox.data.annotation_types.feature import FeatureSchema
-from labelbox.data.mixins import ConfidenceNotSupportedMixin
+from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
 
 
@@ -24,7 +24,7 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
     segment_index: Optional[int] = None
 
 
-class VideoObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin):
+class VideoObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin):
     """Video object annotation
     >>> VideoObjectAnnotation(
     >>>     keyframe=True,

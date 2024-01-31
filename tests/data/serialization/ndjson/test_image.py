@@ -25,6 +25,7 @@ def test_image():
 
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
+    
     for r in res:
         r.pop('classifications', None)
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
@@ -53,7 +54,13 @@ def test_mask():
             "png":
                 "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAAAAACoWZBhAAAAMklEQVR4nD3MuQ3AQADDMOqQ/Vd2ijytaSiZLAcYuyLEYYYl9cvrlGftTHvsYl+u/3EDv0QLI8Z7FlwAAAAASUVORK5CYII="
         },
-        "confidence": 0.8
+        "confidence": 0.8,
+        "customMetrics": [
+            {
+              "name": "customMetric1",
+              "value": 0.4
+            }
+        ],
     }, {
         "uuid": "751fc725-f7b6-48ed-89b0-dd7d94d08af6",
         "schemaId": "ckrazcuec16ok0z66f956apb7",

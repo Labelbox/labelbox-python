@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union, Optional
 
 from pydantic import BaseModel, Field, root_validator
-from labelbox.data.mixins import ConfidenceMixin
+from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
 from labelbox.utils import camel_case
@@ -12,7 +12,7 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 
 
-class NDAnswer(ConfidenceMixin):
+class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = []
@@ -64,7 +64,10 @@ class NDTextSubclass(NDAnswer):
     answer: str
 
     def to_common(self) -> Text:
-        return Text(answer=self.answer, confidence=self.confidence)
+        return Text(
+            answer=self.answer, confidence=self.confidence, custom_metrics=self.custom_metrics
+        )
+
 
     @classmethod
     def from_common(cls, text: Text, name: str,
@@ -72,7 +75,9 @@ class NDTextSubclass(NDAnswer):
         return cls(answer=text.answer,
                    name=name,
                    schema_id=feature_schema_id,
-                   confidence=text.confidence)
+                   confidence=text.confidence,
+                   custom_metrics=text.custom_metrics,
+                   )
 
 
 class NDChecklistSubclass(NDAnswer):
@@ -87,7 +92,8 @@ class NDChecklistSubclass(NDAnswer):
                                  classifications=[
                                      NDSubclassification.to_common(annot)
                                      for annot in answer.classifications
-                                 ])
+                                 ],
+                                 custom_metrics=answer.custom_metrics)
             for answer in self.answer
         ])
 
@@ -101,7 +107,8 @@ class NDChecklistSubclass(NDAnswer):
                      classifications=[
                          NDSubclassification.from_common(annot)
                          for annot in answer.classifications
-                     ])
+                     ],
+                     custom_metrics=answer.custom_metrics)
             for answer in checklist.answer
         ],
                    name=name,
@@ -126,6 +133,7 @@ class NDRadioSubclass(NDAnswer):
                 NDSubclassification.to_common(annot)
                 for annot in self.answer.classifications
             ],
+            custom_metrics=self.answer.custom_metrics
         ))
 
     @classmethod
@@ -137,7 +145,8 @@ class NDRadioSubclass(NDAnswer):
                                    classifications=[
                                        NDSubclassification.from_common(annot)
                                        for annot in radio.answer.classifications
-                                   ]),
+                                   ],
+                                   custom_metrics=radio.answer.custom_metrics),
                    name=name,
                    schema_id=feature_schema_id)
 
@@ -165,6 +174,7 @@ class NDText(NDAnnotation, NDTextSubclass):
             uuid=uuid,
             message_id=message_id,
             confidence=text.confidence,
+            custom_metrics=text.custom_metrics,
         )
 
 
@@ -179,7 +189,8 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                     extra: Dict[str, Any],
                     data: Union[VideoData, TextData, ImageData],
                     message_id: str,
-                    confidence: Optional[float] = None) -> "NDChecklist":
+                    confidence: Optional[float] = None,
+                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDChecklist":
 
         return cls(answer=[
             NDAnswer(name=answer.name,
@@ -188,7 +199,8 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                      classifications=[
                          NDSubclassification.from_common(annot)
                          for annot in answer.classifications
-                     ])
+                     ],
+                     custom_metrics=answer.custom_metrics)
             for answer in checklist.answer
         ],
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
@@ -220,7 +232,8 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                                    classifications=[
                                        NDSubclassification.from_common(annot)
                                        for annot in radio.answer.classifications
-                                   ]),
+                                   ],
+                                   custom_metrics=radio.answer.custom_metrics),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
                    schema_id=feature_schema_id,
