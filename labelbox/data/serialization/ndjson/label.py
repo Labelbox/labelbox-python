@@ -190,8 +190,11 @@ class NDLabel(BaseModel):
         ])
         if len(sorted_frame_segment_indices) == 0:
             # Group segment by consecutive frames, since `segment_index` is not present
-            return cls._get_consecutive_frames(
-                sorted([annotation.frame for annotation in annotation_group]))
+            return [
+                cls._get_consecutive_frames(
+                    sorted(
+                        [annotation.frame for annotation in annotation_group]))
+            ]
         elif len(sorted_frame_segment_indices) == len(annotation_group):
             # Group segment by segment_index
             last_segment_id = 0
@@ -204,8 +207,10 @@ class NDLabel(BaseModel):
                 segment_groups[segment_index].append(frame)
                 last_segment_id = segment_index
             frame_ranges = []
+
+            # Group consecutive frames of segment_index
             for group in segment_groups.values():
-                frame_ranges.append((group[0], group[-1]))
+                frame_ranges.append(cls._get_consecutive_frames(sorted(group)))
             return frame_ranges
         else:
             raise ValueError(
@@ -227,17 +232,38 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(annotation=annot, data=label.data)
 
         for annotation_group in video_annotations.values():
-            segment_frame_ranges = cls._get_segment_frame_ranges(
-                annotation_group)
             if isinstance(annotation_group[0], VideoClassificationAnnotation):
-                annotation = annotation_group[0]
-                frames_data = []
-                for frames in segment_frame_ranges:
-                    frames_data.append({'start': frames[0], 'end': frames[-1]})
-                annotation.extra.update({'frames': frames_data})
-                yield NDClassification.from_common(annotation, label.data)
+                # Group by classification answer
+                grouped_answers = defaultdict(list)
+                for annotation in annotation_group:
+                    if isinstance(annotation.value.answer, list):
+                        answers = []
+                        for classification_answer in annotation.value.answer:
+                            answers.append(classification_answer.json())
+                        grouped_answers[tuple(answers)].append(annotation)
+                    else:
+                        grouped_answers[annotation.value.answer.name].append(
+                            annotation)
 
+                # Create list of NDClassifcation objects for each answer
+                for value in grouped_answers.values():
+                    segment_frame_ranges = cls._get_segment_frame_ranges(value)
+                    annotation = value[0]
+                    frames_data = []
+
+                    #Different segments
+                    for frame_ranges in segment_frame_ranges:
+                        for frames in frame_ranges:
+                            frames_data.append({
+                                'start': str(frames[0]),
+                                'end': str(frames[-1])
+                            })
+
+                    annotation.extra.update({'frames': frames_data})
+                    yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation_group[0], VideoObjectAnnotation):
+                segment_frame_ranges = cls._get_segment_frame_ranges(
+                    annotation_group)
                 segments = []
                 for start_frame, end_frame in segment_frame_ranges:
                     segment = []
