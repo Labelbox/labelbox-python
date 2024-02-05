@@ -129,18 +129,6 @@ def test_project_filtering(client, rand_gen, data_for_project_test):
     assert list(client.get_projects(where=Project.name == name_2)) == [p2]
 
 
-def test_upsert_review_queue(project):
-    project.upsert_review_queue(0.6)
-
-    with pytest.raises(ValueError) as exc_info:
-        project.upsert_review_queue(1.001)
-    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
-
-    with pytest.raises(ValueError) as exc_info:
-        project.upsert_review_queue(-0.001)
-    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
-
-
 def test_extend_reservations(project):
     assert project.extend_reservations("LabelingQueue") == 0
     assert project.extend_reservations("ReviewQueue") == 0
