@@ -13,11 +13,10 @@ def test_classification_answer():
     feature_schema_id = "schema_id"
     name = "my_feature"
     confidence = 0.9
-    custom_metrics = [{ 'name': 'metric1', 'value': 2 }]
-    answer = ClassificationAnswer(
-        name=name,
-        confidence=confidence,
-        custom_metrics=custom_metrics)
+    custom_metrics = [{'name': 'metric1', 'value': 2}]
+    answer = ClassificationAnswer(name=name,
+                                  confidence=confidence,
+                                  custom_metrics=custom_metrics)
 
     assert answer.feature_schema_id is None
     assert answer.name == name
@@ -89,10 +88,12 @@ def test_subclass():
 
 
 def test_radio():
-    answer = ClassificationAnswer(
-        name="1",
-        confidence=0.81,
-        custom_metrics=[{ 'name': 'metric1', 'value': 0.99 }])
+    answer = ClassificationAnswer(name="1",
+                                  confidence=0.81,
+                                  custom_metrics=[{
+                                      'name': 'metric1',
+                                      'value': 0.99
+                                  }])
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
@@ -109,26 +110,38 @@ def test_radio():
             'feature_schema_id': None,
             'extra': {},
             'confidence': 0.81,
-            'custom_metrics': [{ 'name': 'metric1', 'value': 0.99 }],
+            'custom_metrics': [{
+                'name': 'metric1',
+                'value': 0.99
+            }],
         }
     }
     classification = ClassificationAnnotation(
         value=Radio(answer=answer),
         feature_schema_id=feature_schema_id,
         name=name,
-        custom_metrics=[{ 'name': 'metric1', 'value': 0.99 }])
+        custom_metrics=[{
+            'name': 'metric1',
+            'value': 0.99
+        }])
     assert classification.dict() == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
-        'custom_metrics': [{ 'name': 'metric1', 'value': 0.99 }],
+        'custom_metrics': [{
+            'name': 'metric1',
+            'value': 0.99
+        }],
         'value': {
             'answer': {
                 'name': answer.name,
                 'feature_schema_id': None,
                 'extra': {},
                 'confidence': 0.81,
-                'custom_metrics': [{ 'name': 'metric1', 'value': 0.99 }]
+                'custom_metrics': [{
+                    'name': 'metric1',
+                    'value': 0.99
+                }]
             },
         },
         'message_id': None,
@@ -136,7 +149,12 @@ def test_radio():
 
 
 def test_checklist():
-    answer = ClassificationAnswer(name="1", confidence=0.99, custom_metrics=[{ 'name': 'metric1', 'value': 2 }])
+    answer = ClassificationAnswer(name="1",
+                                  confidence=0.99,
+                                  custom_metrics=[{
+                                      'name': 'metric1',
+                                      'value': 2
+                                  }])
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
@@ -153,7 +171,10 @@ def test_checklist():
             'feature_schema_id': None,
             'extra': {},
             'confidence': 0.99,
-            'custom_metrics': [{ 'name': 'metric1', 'value': 2 }],
+            'custom_metrics': [{
+                'name': 'metric1',
+                'value': 2
+            }],
         }]
     }
     classification = ClassificationAnnotation(
@@ -171,7 +192,10 @@ def test_checklist():
                 'feature_schema_id': None,
                 'extra': {},
                 'confidence': 0.99,
-                'custom_metrics': [{ 'name': 'metric1', 'value': 2 }],
+                'custom_metrics': [{
+                    'name': 'metric1',
+                    'value': 2
+                }],
             }]
         },
         'message_id': None,

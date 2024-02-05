@@ -93,7 +93,8 @@ class Dropdown(_TempName):
                       "removed in a future release")
 
 
-class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin, CustomMetricsMixin):
+class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
+                               CustomMetricsMixin):
     """Classification annotations (non localized)
 
     >>> ClassificationAnnotation(
