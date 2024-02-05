@@ -55,8 +55,8 @@ class CustomMetricsMixin(BaseModel):
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
 
-        if "customMetrics" in res and res["customMetrics"] is None:
-            res.pop("customMetrics")
+        if "custom_metrics" in res and res["custom_metrics"] is None:
+            res.pop("custom_metrics")
 
         return res
 
