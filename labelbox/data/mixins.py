@@ -24,11 +24,11 @@ class ConfidenceMixin(BaseModel):
 
 
 class ConfidenceNotSupportedMixin:
+
     def __new__(cls, *args, **kwargs):
         if "confidence" in kwargs:
             raise ConfidenceNotSupportedException(
-                "Confidence is not supported for this annotation type yet"
-            )
+                "Confidence is not supported for this annotation type yet")
         return super().__new__(cls)
 
 
@@ -62,9 +62,9 @@ class CustomMetricsMixin(BaseModel):
 
 
 class CustomMetricsNotSupportedMixin:
+
     def __new__(cls, *args, **kwargs):
         if "custom_metrics" in kwargs:
             raise CustomMetricsNotSupportedException(
-                "Custom metrics is not supported for this annotation type yet"
-            )
+                "Custom metrics is not supported for this annotation type yet")
         return super().__new__(cls)

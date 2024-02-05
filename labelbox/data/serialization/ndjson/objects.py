@@ -55,16 +55,17 @@ class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         return Point(x=self.point.x, y=self.point.y)
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    point: Point,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDPoint":
+    def from_common(
+            cls,
+            uuid: str,
+            point: Point,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None) -> "NDPoint":
         return cls(point={
             'x': point.x,
             'y': point.y
@@ -115,16 +116,17 @@ class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         return Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line])
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    line: Line,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDLine":
+    def from_common(
+            cls,
+            uuid: str,
+            line: Line,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None) -> "NDLine":
         return cls(line=[{
             'x': pt.x,
             'y': pt.y
@@ -192,16 +194,17 @@ class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         return Polygon(points=[Point(x=pt.x, y=pt.y) for pt in self.polygon])
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    polygon: Polygon,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDPolygon":
+    def from_common(
+            cls,
+            uuid: str,
+            polygon: Polygon,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None) -> "NDPolygon":
         return cls(polygon=[{
             'x': pt.x,
             'y': pt.y
@@ -224,16 +227,18 @@ class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                                    y=self.bbox.top + self.bbox.height))
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    rectangle: Rectangle,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDRectangle":
+    def from_common(
+            cls,
+            uuid: str,
+            rectangle: Rectangle,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None
+    ) -> "NDRectangle":
         return cls(bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
                              left=min(rectangle.start.x, rectangle.end.x),
                              height=abs(rectangle.end.y - rectangle.start.y),
@@ -261,16 +266,18 @@ class NDDocumentRectangle(NDRectangle):
                                  unit=self.unit)
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    rectangle: DocumentRectangle,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDRectangle":
+    def from_common(
+            cls,
+            uuid: str,
+            rectangle: DocumentRectangle,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None
+    ) -> "NDRectangle":
         return cls(bbox=Bbox(top=min(rectangle.start.y, rectangle.end.y),
                              left=min(rectangle.start.x, rectangle.end.x),
                              height=abs(rectangle.end.y - rectangle.start.y),
@@ -474,16 +481,17 @@ class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
             return Mask(mask=MaskData.from_2D_arr(image), color=(1, 1, 1))
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    mask: Mask,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDMask":
+    def from_common(
+            cls,
+            uuid: str,
+            mask: Mask,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None) -> "NDMask":
 
         if mask.mask.url is not None:
             lbv1_mask = _URIMask(instanceURI=mask.mask.url, colorRGB=mask.color)
@@ -568,16 +576,18 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         return TextEntity(start=self.location.start, end=self.location.end)
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    text_entity: TextEntity,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDTextEntity":
+    def from_common(
+            cls,
+            uuid: str,
+            text_entity: TextEntity,
+            classifications: List[ClassificationAnnotation],
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[ImageData, TextData],
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None
+    ) -> "NDTextEntity":
         return cls(location=Location(
             start=text_entity.start,
             end=text_entity.end,
@@ -600,16 +610,18 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                               text_selections=self.text_selections)
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    document_entity: DocumentEntity,
-                    classifications: List[ClassificationAnnotation],
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[ImageData, TextData],
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDDocumentEntity":
+    def from_common(
+        cls,
+        uuid: str,
+        document_entity: DocumentEntity,
+        classifications: List[ClassificationAnnotation],
+        name: str,
+        feature_schema_id: Cuid,
+        extra: Dict[str, Any],
+        data: Union[ImageData, TextData],
+        confidence: Optional[float] = None,
+        custom_metrics: Optional[List[CustomMetric]] = None
+    ) -> "NDDocumentEntity":
 
         return cls(text_selections=document_entity.text_selections,
                    dataRow=DataRow(id=data.uid, global_key=data.global_key),
@@ -631,16 +643,17 @@ class NDConversationEntity(NDTextEntity):
 
     @classmethod
     def from_common(
-            cls,
-            uuid: str,
-            conversation_entity: ConversationEntity,
-            classifications: List[ClassificationAnnotation],
-            name: str,
-            feature_schema_id: Cuid,
-            extra: Dict[str, Any],
-            data: Union[ImageData, TextData],
-            confidence: Optional[float] = None,
-            custom_metrics: Optional[List[CustomMetric]] = None) -> "NDConversationEntity":
+        cls,
+        uuid: str,
+        conversation_entity: ConversationEntity,
+        classifications: List[ClassificationAnnotation],
+        name: str,
+        feature_schema_id: Cuid,
+        extra: Dict[str, Any],
+        data: Union[ImageData, TextData],
+        confidence: Optional[float] = None,
+        custom_metrics: Optional[List[CustomMetric]] = None
+    ) -> "NDConversationEntity":
         return cls(location=Location(start=conversation_entity.start,
                                      end=conversation_entity.end),
                    message_id=conversation_entity.message_id,
@@ -664,9 +677,9 @@ class NDObject:
         ]
         confidence = annotation.confidence if hasattr(annotation,
                                                       'confidence') else None
-        
-        custom_metrics = annotation.custom_metrics if hasattr(annotation,
-                                                      'custom_metrics') else None
+
+        custom_metrics = annotation.custom_metrics if hasattr(
+            annotation, 'custom_metrics') else None
         return ObjectAnnotation(value=common_annotation,
                                 name=annotation.name,
                                 feature_schema_id=annotation.schema_id,

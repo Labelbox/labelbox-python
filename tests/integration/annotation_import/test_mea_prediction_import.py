@@ -186,11 +186,11 @@ def test_create_from_local_file(tmp_path, model_run_with_data_rows,
     assert annotation_import.state == AnnotationImportState.FINISHED
     annotation_import_test_helpers.download_and_assert_status(
         annotation_import.status_file_url)
-    
 
-def test_predictions_with_custom_metrics(model_run,
-                             object_predictions_for_annotation_import,
-                             annotation_import_test_helpers):
+
+def test_predictions_with_custom_metrics(
+        model_run, object_predictions_for_annotation_import,
+        annotation_import_test_helpers):
     name = str(uuid.uuid4())
     object_predictions = object_predictions_for_annotation_import
     use_data_row_ids = [p['dataRow']['id'] for p in object_predictions]
@@ -202,7 +202,7 @@ def test_predictions_with_custom_metrics(model_run,
     assert annotation_import.model_run_id == model_run.uid
     annotation_import.wait_until_done()
     assert annotation_import.state == AnnotationImportState.FINISHED
-    
+
     task = model_run.export_v2(params=ModelRunExportParams(predictions=True))
     task.wait_till_done()
 

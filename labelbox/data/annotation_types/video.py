@@ -24,7 +24,8 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
     segment_index: Optional[int] = None
 
 
-class VideoObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin):
+class VideoObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin,
+                            CustomMetricsNotSupportedMixin):
     """Video object annotation
     >>> VideoObjectAnnotation(
     >>>     keyframe=True,

@@ -64,20 +64,20 @@ class NDTextSubclass(NDAnswer):
     answer: str
 
     def to_common(self) -> Text:
-        return Text(
-            answer=self.answer, confidence=self.confidence, custom_metrics=self.custom_metrics
-        )
-
+        return Text(answer=self.answer,
+                    confidence=self.confidence,
+                    custom_metrics=self.custom_metrics)
 
     @classmethod
     def from_common(cls, text: Text, name: str,
                     feature_schema_id: Cuid) -> "NDTextSubclass":
-        return cls(answer=text.answer,
-                   name=name,
-                   schema_id=feature_schema_id,
-                   confidence=text.confidence,
-                   custom_metrics=text.custom_metrics,
-                   )
+        return cls(
+            answer=text.answer,
+            name=name,
+            schema_id=feature_schema_id,
+            confidence=text.confidence,
+            custom_metrics=text.custom_metrics,
+        )
 
 
 class NDChecklistSubclass(NDAnswer):
@@ -133,8 +133,7 @@ class NDRadioSubclass(NDAnswer):
                 NDSubclassification.to_common(annot)
                 for annot in self.answer.classifications
             ],
-            custom_metrics=self.answer.custom_metrics
-        ))
+            custom_metrics=self.answer.custom_metrics))
 
     @classmethod
     def from_common(cls, radio: Radio, name: str,
@@ -181,16 +180,18 @@ class NDText(NDAnnotation, NDTextSubclass):
 class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
 
     @classmethod
-    def from_common(cls,
-                    uuid: str,
-                    checklist: Checklist,
-                    name: str,
-                    feature_schema_id: Cuid,
-                    extra: Dict[str, Any],
-                    data: Union[VideoData, TextData, ImageData],
-                    message_id: str,
-                    confidence: Optional[float] = None,
-                    custom_metrics: Optional[List[CustomMetric]] = None) -> "NDChecklist":
+    def from_common(
+            cls,
+            uuid: str,
+            checklist: Checklist,
+            name: str,
+            feature_schema_id: Cuid,
+            extra: Dict[str, Any],
+            data: Union[VideoData, TextData, ImageData],
+            message_id: str,
+            confidence: Optional[float] = None,
+            custom_metrics: Optional[List[CustomMetric]] = None
+    ) -> "NDChecklist":
 
         return cls(answer=[
             NDAnswer(name=answer.name,
