@@ -3,13 +3,13 @@ from typing import List, Union
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 from labelbox.data.annotation_types.geometry.geometry import Geometry
 
-from labelbox.data.mixins import ConfidenceMixin
+from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
 
 from labelbox.data.annotation_types.classification.classification import ClassificationAnnotation
 from .ner import DocumentEntity, TextEntity, ConversationEntity
 
 
-class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
+class ObjectAnnotation(BaseAnnotation, ConfidenceMixin, CustomMetricsMixin):
     """Generic localized annotation (non classifications)
 
     >>> ObjectAnnotation(
@@ -27,5 +27,6 @@ class ObjectAnnotation(BaseAnnotation, ConfidenceMixin):
         classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
         extra (Dict[str, Any])
     """
+
     value: Union[TextEntity, ConversationEntity, DocumentEntity, Geometry]
     classifications: List[ClassificationAnnotation] = []

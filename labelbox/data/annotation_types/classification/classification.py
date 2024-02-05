@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Union, Optional
 import warnings
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 
-from labelbox.data.mixins import ConfidenceMixin
+from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
 
 try:
     from typing import Literal
@@ -23,7 +23,7 @@ class _TempName(ConfidenceMixin, BaseModel):
         return res
 
 
-class ClassificationAnswer(FeatureSchema, ConfidenceMixin):
+class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
     """
     - Represents a classification option.
     - Because it inherits from FeatureSchema
@@ -47,7 +47,7 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin):
         return res
 
 
-class Radio(ConfidenceMixin, BaseModel):
+class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """ A classification with only one selected option allowed
 
     >>> Radio(answer = ClassificationAnswer(name = "dog"))
@@ -66,7 +66,7 @@ class Checklist(_TempName):
     answer: List[ClassificationAnswer]
 
 
-class Text(ConfidenceMixin, BaseModel):
+class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """ Free form text
 
     >>> Text(answer = "some text answer")
@@ -93,7 +93,8 @@ class Dropdown(_TempName):
                       "removed in a future release")
 
 
-class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin):
+class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
+                               CustomMetricsMixin):
     """Classification annotations (non localized)
 
     >>> ClassificationAnnotation(
