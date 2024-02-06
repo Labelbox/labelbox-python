@@ -236,7 +236,7 @@ class Client:
             return None
 
         def get_error_status_code(error):
-            return error["extensions"].get("exception").get("status")
+            return False or error["extensions"].get("exception").get("status")
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
