@@ -1457,6 +1457,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             A `List` of `TaskQueue`s
         """
+
         query_str = """query GetProjectTaskQueuesPyApi($projectId: ID!) {
               project(where: {id: $projectId}) {
                 taskQueues {
@@ -1499,11 +1500,28 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             None if successful, or a raised error on failure
 
+        Raises:
+            LabelboxError: if not all data rows were not moved successfully.
+            Note, our api returns only 100 task queues, so this check is guaranteed to work only if a project has less than 100 task queues.
+            rows. But even if a project has more than 100 task queues, the check will still work in most cases.
+
         """
+
+        # NOTE the task_queues api returns max 100 queues
+        def get_task_queue(task_queue_id: str) -> Optional[TaskQueue]:
+            task_queues = self.task_queues()
+            for tq in task_queues:
+                if tq.uid == task_queue_id:
+                    return tq
+            return None
+
         if isinstance(data_row_ids, list):
             data_row_ids = UniqueIds(data_row_ids)
             warnings.warn("Using data row ids will be deprecated. Please use "
                           "UniqueIds or GlobalKeys instead.")
+
+        task_queue = get_task_queue(task_queue_id)
+        count_data_rows_before = task_queue.data_row_count if task_queue else None
 
         method = "createBulkAddRowsToQueueTask"
         query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
@@ -1537,6 +1555,17 @@ class Project(DbObject, Updateable, Deletable):
         if task.status != "COMPLETE":
             raise LabelboxError(f"Data rows were not moved successfully: " +
                                 json.dumps(task.errors))
+
+        task_queue = get_task_queue(task_queue_id)
+        count_data_rows_after = task_queue.data_row_count if task_queue else None
+
+        # we are attempting to notify a user if some data rows were not moved
+        if count_data_rows_before is not None and count_data_rows_after is not None:
+            expected_unique_data_rows = len(set(data_row_ids))
+            if count_data_rows_after - count_data_rows_before != expected_unique_data_rows:
+                raise LabelboxError(
+                    f"Data rows were not moved successfully: discrepancy is {expected_unique_data_rows - count_data_rows_after + count_data_rows_before} not moved"
+                )
 
     def _wait_for_task(self, task_id: str) -> Task:
         task = Task.get_task(self.client, task_id)

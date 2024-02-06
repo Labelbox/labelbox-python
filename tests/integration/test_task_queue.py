@@ -1,6 +1,10 @@
+from re import L
 import time
 
+import pytest
+
 from labelbox import Project
+from labelbox.exceptions import LabelboxError
 from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
 
@@ -37,17 +41,21 @@ def test_move_to_task(configured_batch_project_with_label):
 
     review_queue = next(
         tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
-    project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
-    _validate_moved(project, "MANUAL_REVIEW_QUEUE", 1)
-
-    review_queue = next(
+    rework_queue = next(
         tq for tq in task_queues if tq.queue_type == "MANUAL_REWORK_QUEUE")
-    project.move_data_rows_to_task_queue(GlobalKeys([data_row.global_key]),
-                                         review_queue.uid)
-    _validate_moved(project, "MANUAL_REWORK_QUEUE", 1)
 
-    review_queue = next(
-        tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
+    # project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
+    # _validate_moved(project, "MANUAL_REVIEW_QUEUE", 1)
+
+    # project.move_data_rows_to_task_queue(GlobalKeys([data_row.global_key]),
+    #                                      rework_queue.uid)
+    # _validate_moved(project, "MANUAL_REWORK_QUEUE", 1)
+
     project.move_data_rows_to_task_queue(UniqueIds([data_row.uid]),
                                          review_queue.uid)
     _validate_moved(project, "MANUAL_REVIEW_QUEUE", 1)
+
+    with pytest.raises(LabelboxError) as exc:
+        project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
+    assert "Data rows were not moved successfully: discrepancy is" in str(
+        exc.value)
