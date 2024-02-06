@@ -490,12 +490,12 @@ class Project(DbObject, Updateable, Deletable):
         Creates a project export task with the given params and returns the task.
 
         For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
-        
+
         >>>     task = project.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]   
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]
         >>>             "batch_ids": [BATCH_ID_1, BATCH_ID_2, ...]
         >>>         },
         >>>         params={
@@ -800,8 +800,8 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             name: a name for the batch, must be unique within a project
-            data_rows: Either a list of `DataRows` or Data Row ids. 
-            global_keys: global keys for data rows to add to the batch. 
+            data_rows: Either a list of `DataRows` or Data Row ids.
+            global_keys: global keys for data rows to add to the batch.
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
             consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3,
                 'coverage_percentage': 0.1}
@@ -1238,7 +1238,7 @@ class Project(DbObject, Updateable, Deletable):
             """mutation SetLabelingParameterOverridesPyApi($$projectId: ID!)
                 {project(where: { id: $$projectId })
                 {setLabelingParameterOverrides
-                (dataWithDataRowIdentifiers: [$dataWithDataRowIdentifiers]) 
+                (dataWithDataRowIdentifiers: [$dataWithDataRowIdentifiers])
                 {success}}}
             """)
 
@@ -1288,7 +1288,7 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object 
+            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             priority (int): Priority for the new override. See above for more information.
 
@@ -1337,37 +1337,6 @@ class Project(DbObject, Updateable, Deletable):
             raise LabelboxError(f"Priority was not updated successfully: " +
                                 json.dumps(task.errors))
         return True
-
-    def upsert_review_queue(self, quota_factor) -> None:
-        """ Sets the proportion of total assets in a project to review.
-
-        Deprecation notice: This method is deprecated and will be removed in a future version. The review step was
-        replaced by Workflows in order to offer more flexibility in customizing the review flow for labeling tasks.
-        Read more on Workflows here: https://docs.labelbox.com/docs/workflows
-
-        More information can be found here:
-            https://docs.labelbox.com/en/quality-assurance/review-labels#configure-review-percentage
-
-        Args:
-            quota_factor (float): Which part (percentage) of the queue
-                to reinitiate. Between 0 and 1.
-        """
-
-        logger.warning("Updating the review queue is no longer supported.")
-
-        if not 0. <= quota_factor <= 1.:
-            raise ValueError("Quota factor must be in the range of [0,1]")
-
-        id_param = "projectId"
-        quota_param = "quotaFactor"
-        query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
-            upsertReviewQueue(where:{project: {id: $%s}}
-                            data:{quotaFactor: $%s}) {id}}""" % (
-            id_param, quota_param, id_param, quota_param)
-        res = self.client.execute(query_str, {
-            id_param: self.uid,
-            quota_param: quota_factor
-        })
 
     def extend_reservations(self, queue_type) -> int:
         """ Extends all the current reservations for the current user on the given
@@ -1492,7 +1461,7 @@ class Project(DbObject, Updateable, Deletable):
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object 
+            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
@@ -1647,7 +1616,7 @@ class Project(DbObject, Updateable, Deletable):
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
-                    """Maximum wait time exceeded while waiting for data rows to be processed. 
+                    """Maximum wait time exceeded while waiting for data rows to be processed.
                     Try creating a batch a bit later""")
 
             all_good = self.__check_data_rows_have_been_processed(
