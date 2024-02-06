@@ -6,13 +6,15 @@ from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrat
 
 def test_send_to_annotate_from_model(client, configured_project,
                                      model_run_predictions,
-                                     model_run_with_data_rows,
-                                     project_with_ontology):
+                                     model_run_with_data_rows, project):
     model_run = model_run_with_data_rows
     data_row_ids = [p['dataRow']['id'] for p in model_run_predictions]
     assert len(data_row_ids) > 0
 
-    destination_project, _ = project_with_ontology
+    destination_project = project
+    model = client.get_model(model_run.model_id)
+    ontology = client.get_ontology(model.ontology_id)
+    destination_project.setup_editor(ontology)
 
     queues = destination_project.task_queues()
     initial_review_task = next(

@@ -3,21 +3,22 @@ from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrat
 
 
 def test_send_to_annotate_include_annotations(
-        client, configured_batch_project_with_label, project_pack):
+        client, configured_batch_project_with_label, project_pack, ontology):
     [source_project, _, data_row, _] = configured_batch_project_with_label
     destination_project = project_pack[0]
 
-    source_ontology_builder = OntologyBuilder.from_project(source_project)
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    destination_project.setup(editor, source_ontology_builder.asdict())
+    src_ontology = source_project.ontology()
+    destination_project.setup_editor(ontology)
 
     # build an ontology mapping using the top level tools
-    feature_schema_ids = list(
-        tool.feature_schema_id for tool in source_ontology_builder.tools)
+    src_feature_schema_ids = list(
+        tool.feature_schema_id for tool in src_ontology.tools())
+    dest_ontology = destination_project.ontology()
+    dest_feature_schema_ids = list(
+        tool.feature_schema_id for tool in dest_ontology.tools())
     # create a dictionary of feature schema id to itself
-    ontology_mapping = dict(zip(feature_schema_ids, feature_schema_ids))
+    ontology_mapping = dict(zip(src_feature_schema_ids,
+                                dest_feature_schema_ids))
 
     try:
         queues = destination_project.task_queues()
