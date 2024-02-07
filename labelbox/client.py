@@ -235,8 +235,11 @@ class Client:
                     return error
             return None
 
-        def get_error_status_code(error):
-            return error["extensions"].get("exception").get("status")
+        def get_error_status_code(error: dict) -> int:
+            try:
+                return int(error["extensions"].get("exception").get("status"))
+            except:
+                return 500
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
