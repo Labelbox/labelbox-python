@@ -16,6 +16,7 @@ class Model(DbObject):
         """
 
     name = Field.String("name")
+    ontology_id = Field.String("ontology_id")
     model_runs = Relationship.ToMany("ModelRun", False)
 
     def create_model_run(self, name, config=None) -> "ModelRun":
