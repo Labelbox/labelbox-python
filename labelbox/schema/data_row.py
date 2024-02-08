@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
 import json
-import pdb
 from labelbox.client_constants import ClientConstants
 from labelbox.exceptions import ResourceNotFoundError
 

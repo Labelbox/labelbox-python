@@ -217,7 +217,9 @@ class Client:
             elif response.status_code == 502:
                 error_502 = '502 Bad Gateway'
                 raise labelbox.exceptions.InternalServerError(error_502)
-
+            elif response.status_code == 504:
+                error_504 = 'Gateway Timeout'
+                raise labelbox.exceptions.InternalServerError(error_504)
             raise labelbox.exceptions.LabelboxError(
                 "Failed to parse response as JSON: %s" % response.text)
 

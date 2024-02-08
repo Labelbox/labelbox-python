@@ -1,7 +1,6 @@
 # type: ignore
 import logging
 import os
-from socket import timeout
 import time
 import warnings
 from enum import Enum
