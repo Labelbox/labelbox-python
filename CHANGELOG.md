@@ -4,6 +4,12 @@
 ## Added 
 * `custom_metrics` field can now be specified at the `Annotation` class levels for MEA imports
 
+## Updated
+* `data_row_id` and `global_key` fields are now optional for `DataRowMetadata`, `DataRowMetadataBatchResponse` and `_UpsertBatchDataRowMetadata` classes
+
+## Removed
+* `project.upsert_review_queue()` has been removed after a period of deprecation
+
 # Version 3.61.2 (2024-01-29)
 ## Added 
 * `ModelSlice.get_data_row_identifiers` for Foundry data rows
