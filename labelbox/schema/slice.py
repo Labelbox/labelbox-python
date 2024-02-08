@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 import warnings
+from labelbox.client_constants import ClientConstants
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field
 from labelbox.pagination import PaginatedCollection
@@ -223,9 +224,11 @@ class CatalogSlice(Slice):
             }
         }
 
-        res = self.client.execute(create_task_query_str,
-                                  query_params,
-                                  error_log_key="errors")
+        res = self.client.execute(
+            create_task_query_str,
+            query_params,
+            timeout=ClientConstants.EXPORT_SUBMISSION_TIMEOUT,
+            error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)

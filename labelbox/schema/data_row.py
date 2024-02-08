@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
 import json
+import pdb
+from labelbox.client_constants import ClientConstants
 from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
@@ -326,6 +328,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         res = client.execute(create_task_query_str,
                              query_params,
+                             timeout=ClientConstants.EXPORT_SUBMISSION_TIMEOUT,
                              error_log_key="errors")
         print(res)
         res = res[mutation_name]

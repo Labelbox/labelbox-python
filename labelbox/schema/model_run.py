@@ -1,6 +1,7 @@
 # type: ignore
 import logging
 import os
+from socket import timeout
 import time
 import warnings
 from enum import Enum
@@ -10,6 +11,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
 import requests
 
 from labelbox import parser
+from labelbox.client_constants import ClientConstants
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.query import results_query_part
@@ -573,9 +575,11 @@ class ModelRun(DbObject):
                 "streamable": streamable
             }
         }
-        res = self.client.execute(create_task_query_str,
-                                  query_params,
-                                  error_log_key="errors")
+        res = self.client.execute(
+            create_task_query_str,
+            query_params,
+            timeout=ClientConstants.EXPORT_SUBMISSION_TIMEOUT,
+            error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
