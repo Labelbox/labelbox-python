@@ -2,7 +2,7 @@
 
 # Version 3.62.0 (2024-02-06)
 ## Added 
-* Support custom_metrics at the annotation level for MEA imports
+* `custom_metrics` field can now be specified at the `Annotation` class levels for MEA imports
 
 # Version 3.61.2 (2024-01-29)
 ## Added 
