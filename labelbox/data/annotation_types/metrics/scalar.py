@@ -1,11 +1,11 @@
 from typing import Dict, Optional, Union
 from enum import Enum
 
-from pydantic import confloat, validator
-
 from .base import ConfidenceValue, BaseMetric
 
-ScalarMetricValue = confloat(ge=0, le=100_000_000)
+from labelbox import pydantic_compat
+
+ScalarMetricValue = pydantic_compat.confloat(ge=0, le=100_000_000)
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
 
 
@@ -33,7 +33,7 @@ class ScalarMetric(BaseMetric):
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
-    @validator('metric_name')
+    @pydantic_compat.validator('metric_name')
     def validate_metric_name(cls, name: Union[str, None]):
         if name is None:
             return None

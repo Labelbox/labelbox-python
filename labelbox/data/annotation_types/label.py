@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Union, Optional
 import warnings
 
-from pydantic import BaseModel, validator
+from labelbox import pydantic_compat, validator
 
 import labelbox
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
@@ -24,7 +24,7 @@ DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  LlmResponseCreationData]
 
 
-class Label(BaseModel):
+class Label(pydantic_compat.BaseModel):
     """Container for holding data and annotations
 
     >>> Label(

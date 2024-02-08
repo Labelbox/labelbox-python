@@ -12,10 +12,11 @@ def pydantic_import(class_name, sub_module_path: Optional[str] = None):
     if pydantic_version.startswith("1"):
         pydantic_v1_module_name = "pydantic" if sub_module_path is None else f"pydantic.{sub_module_path}"
         klass = getattr(importlib.import_module("pydantic"), class_name)
-    else: # use pydantic 2 v1 thunk
+    else:  # use pydantic 2 v1 thunk
         pydantic_v1_module_name = "pydantic.v1" if sub_module_path is None else f"pydantic.{sub_module_path}"
 
-    klass = getattr(importlib.import_module(pydantic_v1_module_name), class_name)
+    klass = getattr(importlib.import_module(pydantic_v1_module_name),
+                    class_name)
 
     return klass
 

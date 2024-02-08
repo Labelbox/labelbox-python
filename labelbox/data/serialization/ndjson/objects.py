@@ -7,7 +7,7 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObj
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin, CustomMetric, CustomMetricsNotSupportedMixin
 import numpy as np
 
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 from PIL import Image
 from labelbox.data.annotation_types import feature
 
@@ -27,21 +27,21 @@ class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
 
 
-class VideoSupported(BaseModel):
+class VideoSupported(pydantic_compat.BaseModel):
     # support for video for objects are per-frame basis
     frame: int
 
 
-class DicomSupported(BaseModel):
+class DicomSupported(pydantic_compat.BaseModel):
     group_key: str
 
 
-class _Point(BaseModel):
+class _Point(pydantic_compat.BaseModel):
     x: float
     y: float
 
 
-class Bbox(BaseModel):
+class Bbox(pydantic_compat.BaseModel):
     top: float
     left: float
     height: float
@@ -328,7 +328,7 @@ class NDFrameRectangle(VideoSupported):
                    classifications=classifications)
 
 
-class NDSegment(BaseModel):
+class NDSegment(pydantic_compat.BaseModel):
     keyframes: List[Union[NDFrameRectangle, NDFramePoint, NDFrameLine]]
 
     @staticmethod
@@ -454,12 +454,12 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
                    group_key=group_key)
 
 
-class _URIMask(BaseModel):
+class _URIMask(pydantic_compat.BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
 
 
-class _PNGMask(BaseModel):
+class _PNGMask(pydantic_compat.BaseModel):
     png: str
 
 
@@ -512,7 +512,7 @@ class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDVideoMasksFramesInstances(BaseModel):
+class NDVideoMasksFramesInstances(pydantic_compat.BaseModel):
     frames: List[MaskFrame]
     instances: List[MaskInstance]
 
@@ -564,7 +564,7 @@ class NDDicomMasks(NDVideoMasks, DicomSupported):
         )
 
 
-class Location(BaseModel):
+class Location(pydantic_compat.BaseModel):
     start: int
     end: int
 

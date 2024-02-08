@@ -9,12 +9,12 @@ try:
 except:
     from typing_extensions import Literal
 
-from pydantic import BaseModel, validator
+from labelbox import pydantic_compat, validator
 from ..feature import FeatureSchema
 
 
 # TODO: Replace when pydantic adds support for unions that don't coerce types
-class _TempName(ConfidenceMixin, BaseModel):
+class _TempName(ConfidenceMixin, pydantic_compat.BaseModel):
     name: str
 
     def dict(self, *args, **kwargs):
@@ -47,7 +47,7 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
         return res
 
 
-class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
+class Radio(ConfidenceMixin, CustomMetricsMixin, pydantic_compat.BaseModel):
     """ A classification with only one selected option allowed
 
     >>> Radio(answer = ClassificationAnswer(name = "dog"))
@@ -66,7 +66,7 @@ class Checklist(_TempName):
     answer: List[ClassificationAnswer]
 
 
-class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
+class Text(ConfidenceMixin, CustomMetricsMixin, pydantic_compat.BaseModel):
     """ Free form text
 
     >>> Text(answer = "some text answer")

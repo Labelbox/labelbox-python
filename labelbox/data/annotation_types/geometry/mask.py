@@ -1,13 +1,14 @@
 from typing import Callable, Optional, Tuple, Union, Dict, List
 
 import numpy as np
-from pydantic.class_validators import validator
 import cv2
 
 from shapely.geometry import MultiPolygon, Polygon
 
 from ..data import MaskData
 from .geometry import Geometry
+
+from labelbox import pydantic_compat
 
 
 class Mask(Geometry):
@@ -121,7 +122,7 @@ class Mask(Geometry):
         """
         return self.mask.create_url(signer)
 
-    @validator('color')
+    @pydantic_compat.validator('color')
     def is_valid_color(cls, color):
         if isinstance(color, (tuple, list)):
             if len(color) == 1:

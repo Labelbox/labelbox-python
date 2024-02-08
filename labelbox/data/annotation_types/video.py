@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel, validator, root_validator
+from labelbox import pydantic_compat, validator, root_validator
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
@@ -87,7 +87,7 @@ class DICOMObjectAnnotation(VideoObjectAnnotation):
     group_key: GroupKey
 
 
-class MaskFrame(_CamelCaseMixin, BaseModel):
+class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
     index: int
     instance_uri: Optional[str] = None
     im_bytes: Optional[bytes] = None
@@ -113,7 +113,7 @@ class MaskInstance(_CamelCaseMixin, FeatureSchema):
     name: str
 
 
-class VideoMaskAnnotation(BaseModel):
+class VideoMaskAnnotation(pydantic_compat.BaseModel):
     """Video mask annotation
        >>> VideoMaskAnnotation(
        >>>     frames=[

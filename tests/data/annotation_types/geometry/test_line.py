@@ -1,15 +1,15 @@
-from pydantic import ValidationError
 import pytest
 import cv2
 
 from labelbox.data.annotation_types.geometry import Point, Line
+from labelbox import pydantic_compat
 
 
 def test_line():
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic_compat.ValidationError):
         line = Line()
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic_compat.ValidationError):
         line = Line(points=[[0, 1], [2, 3]])
 
     points = [[0, 1], [0, 2], [2, 2]]

@@ -5,18 +5,17 @@ from typing_extensions import Literal
 
 from PIL import Image
 from google.api_core import retry
-from pydantic import BaseModel
-from pydantic import root_validator
 from requests.exceptions import ConnectTimeout
 import requests
 import numpy as np
 
+from labelbox import pydantic_compat
 from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 from ..types import TypedArray
 
 
-class RasterData(BaseModel, ABC):
+class RasterData(pydantic_compat.BaseModel, ABC):
     """Represents an image or segmentation mask.
     """
     im_bytes: Optional[bytes] = None
@@ -156,7 +155,7 @@ class RasterData(BaseModel, ABC):
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
-    @root_validator()
+    @pydantic_compat.root_validator()
     def validate_args(cls, values):
         file_path = values.get("file_path")
         im_bytes = values.get("im_bytes")
