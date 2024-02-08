@@ -533,7 +533,9 @@ class ExportTask:
 
     def wait_till_done(self, timeout_seconds: int = 300) -> None:
         """Waits until the task is done."""
-        return self._task.wait_till_done(timeout_seconds)
+
+        while self._task.status != "COMPLETE" and self._task.status != "FAILED":
+            self._task.wait_till_done(timeout_seconds)
 
     @staticmethod
     @lru_cache(maxsize=5)
