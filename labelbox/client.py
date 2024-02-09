@@ -128,8 +128,7 @@ class Client:
                 files=None,
                 timeout=60.0,
                 experimental=False,
-                error_log_key="message",
-                raise_not_found_error=False):
+                error_log_key="message"):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -143,8 +142,6 @@ class Client:
             files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
-            raise_not_found_error(bool): If resource is not found, raise
-                a ResourceNotFoundError instead of returning None
         Returns:
             dict, parsed JSON response.
         Raises:
@@ -162,8 +159,6 @@ class Client:
             labelbox.exceptions.LabelboxError: If an unknown error of any
                 kind occurred.
             ValueError: If query and data are both None.
-            labelbox.exceptions.ResourceNotFoundError: If resource is not
-                found and raise_not_found_error is True
         """
         logger.debug("Query: %s, params: %r, data %r", query, params, data)
 
@@ -283,11 +278,7 @@ class Client:
         if resource_not_found_error is not None:
             # Return None and let the caller methods raise an exception
             # as they already know which resource type and ID was requested
-            if raise_not_found_error:
-                raise labelbox.exceptions.ResourceNotFoundError(
-                    message=resource_not_found_error["message"])
-            else:
-                return None
+            return None
 
         resource_conflict_error = check_errors(["RESOURCE_CONFLICT"],
                                                "extensions", "code")

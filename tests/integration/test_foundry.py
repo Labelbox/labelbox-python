@@ -130,7 +130,7 @@ def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app):
 def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
     invalid_datarow_id = 'invalid-global-key'
     data_rows = lb.GlobalKeys([invalid_datarow_id])
-    with pytest.raises(lb.exceptions.ResourceNotFoundError) as exception:
+    with pytest.raises(lb.exceptions.LabelboxError) as exception:
         foundry_client.run_app(
             model_run_name=f"test-app-with-invalid-datarow-id-{random_str}",
             data_rows=data_rows,
@@ -141,7 +141,7 @@ def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
 def test_run_foundry_with_invalid_global_key(foundry_client, app, random_str):
     invalid_global_key = 'invalid-global-key'
     data_rows = lb.GlobalKeys([invalid_global_key])
-    with pytest.raises(lb.exceptions.ResourceNotFoundError) as exception:
+    with pytest.raises(lb.exceptions.LabelboxError) as exception:
         foundry_client.run_app(
             model_run_name=f"test-app-with-invalid-global-key-{random_str}",
             data_rows=data_rows,

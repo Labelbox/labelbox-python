@@ -99,10 +99,7 @@ class FoundryClient:
         }
         """
         try:
-            response = self.client.execute(query, {"input": params},
-                                           raise_not_found_error=True)
-        except exceptions.ResourceNotFoundError as e:
-            raise e
+            response = self.client.execute(query, {"input": params})
         except Exception as e:
             raise exceptions.LabelboxError('Unable to run foundry app', e)
         task_id = response["createModelJobForDataRows"]["taskId"]
