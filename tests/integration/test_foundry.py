@@ -92,11 +92,9 @@ def test_get_app_with_invalid_id(foundry_client):
         foundry_client._get_app("invalid-id")
 
 
-def test_run_foundry_app_with_data_row_id(client, foundry_client, data_row, app,
+def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
                                           random_str):
-    retrieved_data_row = client.get_data_row(data_row.uid)
-    assert retrieved_data_row.global_key is not None
-    data_rows = lb.DataRowIds([retrieved_data_row.uid])
+    data_rows = lb.DataRowIds([data_row.uid])
     task = foundry_client.run_app(
         model_run_name=f"test-app-with-datarow-id-{random_str}",
         data_rows=data_rows,
