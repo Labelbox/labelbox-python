@@ -86,7 +86,7 @@ class FoundryClient:
             "ontologyId": app.ontology_id
         }
 
-        data_rows_key = "dataRowIds" if isinstance(data_rows,
+        data_rows_key = "dataRowIds" if data_rows.id_type == IdType.DataRowId
                                                    DataRowIds) else "globalKeys"
         params[data_rows_key] = list(data_rows)
 
