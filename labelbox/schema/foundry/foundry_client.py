@@ -1,8 +1,7 @@
 from typing import Union
 from labelbox import exceptions
 from labelbox.schema.foundry.app import App, APP_FIELD_NAMES
-from labelbox.schema.foundry.model import Model, MODEL_FIELD_NAMES
-from labelbox.schema.identifiables import DataRowIds, GlobalKeys
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys, IdType
 from labelbox.schema.task import Task
 
 
@@ -86,8 +85,7 @@ class FoundryClient:
             "ontologyId": app.ontology_id
         }
 
-        data_rows_key = "dataRowIds" if data_rows.id_type == IdType.DataRowId
-                                                   DataRowIds) else "globalKeys"
+        data_rows_key = "dataRowIds" if data_rows.id_type == IdType.DataRowId else "globalKeys"
         params[data_rows_key] = list(data_rows)
 
         query = """
