@@ -9,7 +9,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from labelbox import pydantic_compat, validator
+from labelbox import pydantic_compat
 from ..feature import FeatureSchema
 
 
