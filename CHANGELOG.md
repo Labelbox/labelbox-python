@@ -1,5 +1,26 @@
 # Changelog
 
+# Version 3.62.0 (2024-02-12)
+## Added
+* Support custom metrics for predictions (all applicable annotation classes)
+* `FoundryClient.run_app` Add data_row identifier validation for running foundry app
+* `Client.get_error_status_code` Default to 500 error if a server error is unparseable instead of throwing an exception
+
+## Updated
+* `DataRowMetadata, DataRowMetadataBatchResponse, _UpsertBatchDataRowMetadata` Make data_row_id and global_key optional in all schema types
+
+## Fixed
+* `ExportTask.__str__` Fix returned type in ExportTask instance representation
+
+## Removed
+* `Project.upsert_review_queue`
+
+## Notebooks
+* Update notebooks to new export methods
+* Add model slice notebook
+* Added support for annotation import with img bytes
+* Update user prompts for huggingface colab
+
 # Version 3.61.2 (2024-01-29)
 ## Added 
 * `ModelSlice.get_data_row_identifiers` for Foundry data rows
