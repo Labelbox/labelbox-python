@@ -21,6 +21,16 @@
         "name": "some-line",
         "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
         "classifications": [],
-        "confidence": 0.58
+        "confidence": 0.58,
+        "customMetrics": [
+            {
+                "name": "customMetric1",
+                "value": 0.5
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.3
+            }
+        ]
     }
 ]

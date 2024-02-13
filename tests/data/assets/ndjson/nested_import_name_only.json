@@ -10,7 +10,17 @@
       {
         "answer": {
           "name": "first answer",
-          "confidence": 0.811
+          "confidence": 0.811,
+          "customMetrics": [
+            {
+                "name": "customMetric1",
+                "value": 0.5
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.3
+            }
+          ]
         },
         "name": "classification a"
       }
@@ -32,7 +42,17 @@
       {
         "answer": {
           "name": "second answer",
-          "confidence": 0.815
+          "confidence": 0.815,
+          "customMetrics": [
+            {
+                "name": "customMetric1",
+                "value": 0.5
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.3
+            }
+          ]
         },
         "name": "classification b"
       }

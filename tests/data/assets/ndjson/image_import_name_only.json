@@ -11,7 +11,17 @@
       "height": 350,
       "width": 139
     },
-    "confidence": 0.854
+    "confidence": 0.854,
+    "customMetrics": [
+      {
+        "name": "customMetric1",
+        "value": 0.5
+      },
+      {
+        "name": "customMetric2",
+        "value": 0.7
+      }
+    ]
   },
   {
     "uuid": "751fc725-f7b6-48ed-89b0-dd7d94d08af6",
@@ -27,7 +37,17 @@
         0
       ]
     },
-    "confidence": 0.685
+    "confidence": 0.685,
+    "customMetrics": [
+      {
+        "name": "customMetric1",
+        "value": 0.4
+      },
+      {
+        "name": "customMetric2",
+        "value": 0.9
+      }
+    ]
   },
   {
     "uuid": "43d719ac-5d7f-4aea-be00-2ebfca0900fd",
@@ -36,6 +56,12 @@
       "id": "ckrazctum0z8a0ybc0b0o0g0v"
     },
     "confidence": 0.71,
+    "customMetrics": [
+      {
+        "name": "customMetric1",
+        "value": 0.1
+      }
+    ],
     "polygon": [
       {
         "x": 1118,
@@ -786,6 +812,12 @@
       "id": "ckrazctum0z8a0ybc0b0o0g0v"
     },
     "confidence": 0.77,
+    "customMetrics": [
+      {
+        "name": "customMetric2",
+        "value": 1.2
+      }
+    ],
     "point": {
       "x": 2122,
       "y": 1457

@@ -4,6 +4,7 @@ import pytest
 
 from labelbox.schema.annotation_import import AnnotationImportState, MEAPredictionImport
 from labelbox.data.serialization import NDJsonConverter
+from labelbox.schema.export_params import ModelRunExportParams
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -181,6 +182,29 @@ def test_create_from_local_file(tmp_path, model_run_with_data_rows,
         annotation_import.input_file_url,
         object_predictions_for_annotation_import)
     annotation_import.wait_until_done()
+
+    assert annotation_import.state == AnnotationImportState.FINISHED
+    annotation_import_test_helpers.download_and_assert_status(
+        annotation_import.status_file_url)
+
+
+def test_predictions_with_custom_metrics(
+        model_run, object_predictions_for_annotation_import,
+        annotation_import_test_helpers):
+    name = str(uuid.uuid4())
+    object_predictions = object_predictions_for_annotation_import
+    use_data_row_ids = [p['dataRow']['id'] for p in object_predictions]
+    model_run.upsert_data_rows(use_data_row_ids)
+
+    annotation_import = model_run.add_predictions(
+        name=name, predictions=object_predictions)
+
+    assert annotation_import.model_run_id == model_run.uid
+    annotation_import.wait_until_done()
+    assert annotation_import.state == AnnotationImportState.FINISHED
+
+    task = model_run.export_v2(params=ModelRunExportParams(predictions=True))
+    task.wait_till_done()
 
     assert annotation_import.state == AnnotationImportState.FINISHED
     annotation_import_test_helpers.download_and_assert_status(

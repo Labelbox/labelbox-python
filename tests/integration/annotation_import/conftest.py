@@ -797,7 +797,11 @@ def rectangle_inference(prediction_id_mapping):
                     ['featureSchemaId'],
                 "name":
                     rectangle['tool']['classifications'][0]['options'][0]
-                    ['value']
+                    ['value'],
+                "customMetrics": [{
+                    "name": "customMetric1",
+                    "value": 0.4
+                }],
             }
         }]
     })

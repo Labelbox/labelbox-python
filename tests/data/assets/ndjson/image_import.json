@@ -6,6 +6,12 @@
             "id": "ckrazctum0z8a0ybc0b0o0g0v"
         },
         "confidence": 0.851,
+        "customMetrics": [
+            {
+              "name": "customMetric1",
+              "value": 0.4
+            }
+        ],
         "bbox": {
             "top": 1352,
             "left": 2275,
@@ -20,6 +26,12 @@
             "id": "ckrazctum0z8a0ybc0b0o0g0v"
         },
         "confidence": 0.834,
+        "customMetrics": [
+            {
+              "name": "customMetric1",
+              "value": 0.3
+            }
+        ],
         "mask": {
             "instanceURI": "https://storage.labelbox.com/ckqcx1czn06830y61gh9v02cs%2F3e729327-f038-f66c-186e-45e921ef9717-1?Expires=1626806874672&KeyName=labelbox-assets-key-3&Signature=YsUOGKrsqmAZ68vT9BlPJOaRyLY",
             "colorRGB": [
@@ -36,6 +48,12 @@
             "id": "ckrazctum0z8a0ybc0b0o0g0v"
         },
         "confidence": 0.986,
+        "customMetrics": [
+            {
+              "name": "customMetric1",
+              "value": 0.9
+            }
+        ],
         "polygon": [
             {
                 "x": 1118,

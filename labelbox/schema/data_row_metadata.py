@@ -52,8 +52,8 @@ class DataRowMetadataField(_CamelCaseMixin):
 
 
 class DataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str]
-    data_row_id: Optional[str]
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     fields: List[DataRowMetadataField]
 
 
@@ -66,8 +66,8 @@ class DeleteDataRowMetadata(_CamelCaseMixin):
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
-    global_key: Optional[str]
-    data_row_id: Optional[str]
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     error: Optional[str] = None
     fields: List[Union[DataRowMetadataField, SchemaId]]
 
@@ -84,8 +84,8 @@ class _UpsertDataRowMetadataInput(_CamelCaseMixin):
 
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str]
-    data_row_id: Optional[str]
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     fields: List[_UpsertDataRowMetadataInput]
 
 

@@ -2,7 +2,17 @@
   {
     "answer": {
       "name": "choice 1",
-      "confidence": 0.99
+      "confidence": 0.99,
+      "customMetrics": [
+        {
+            "name": "customMetric1",
+            "value": 0.5
+        },
+        {
+            "name": "customMetric2",
+            "value": 0.3
+        }
+      ]
     },
     "name": "classification a",
     "dataRow": {
@@ -14,7 +24,17 @@
     "answer": [
       {
         "name": "choice 2",
-        "confidence": 0.945
+        "confidence": 0.945,
+        "customMetrics": [
+          {
+              "name": "customMetric1",
+              "value": 0.5
+          },
+          {
+              "name": "customMetric2",
+              "value": 0.3
+          }
+        ]
       }
     ],
     "name": "classification b",

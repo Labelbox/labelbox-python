@@ -19,6 +19,23 @@ def foundry_client(client):
 
 
 @pytest.fixture()
+def text_data_row(dataset, random_str):
+    global_key = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{random_str}"
+    task = dataset.create_data_rows([{
+        "row_data":
+            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
+        "media_type":
+            "TEXT",
+        "global_key":
+            global_key
+    }])
+    task.wait_till_done()
+    dr = dataset.data_rows().get_one()
+    yield dr
+    dr.delete()
+
+
+@pytest.fixture()
 def ontology(client, random_str):
     object_features = [
         lb.Tool(tool=lb.Tool.Type.BBOX,
@@ -108,13 +125,23 @@ def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app):
     assert model_run.uid == model_run_id
 
 
-def test_run_foundry_app_with_non_existent_data_rows(foundry_client, data_row,
-                                                     app, random_str):
-    data_rows = lb.GlobalKeys([data_row.global_key, "non-existent-global-key"])
-    task = foundry_client.run_app(
-        model_run_name=f"test-app-with-wrong-key-{random_str}",
-        data_rows=data_rows,
-        app_id=app.id)
-    task.wait_till_done()
-    # The incorrect data row is filtered out and the task still completes with the correct data row
-    assert task.status == 'COMPLETE'
+def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
+    invalid_datarow_id = 'invalid-global-key'
+    data_rows = lb.GlobalKeys([invalid_datarow_id])
+    with pytest.raises(lb.exceptions.LabelboxError) as exception:
+        foundry_client.run_app(
+            model_run_name=f"test-app-with-invalid-datarow-id-{random_str}",
+            data_rows=data_rows,
+            app_id=app.id)
+        assert invalid_datarow_id in exception.value
+
+
+def test_run_foundry_with_invalid_global_key(foundry_client, app, random_str):
+    invalid_global_key = 'invalid-global-key'
+    data_rows = lb.GlobalKeys([invalid_global_key])
+    with pytest.raises(lb.exceptions.LabelboxError) as exception:
+        foundry_client.run_app(
+            model_run_name=f"test-app-with-invalid-global-key-{random_str}",
+            data_rows=data_rows,
+            app_id=app.id)
+        assert invalid_global_key in exception.value

@@ -1,8 +1,7 @@
 from typing import Union
 from labelbox import exceptions
 from labelbox.schema.foundry.app import App, APP_FIELD_NAMES
-from labelbox.schema.foundry.model import Model, MODEL_FIELD_NAMES
-from labelbox.schema.identifiables import DataRowIds, GlobalKeys
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys, IdType
 from labelbox.schema.task import Task
 
 
@@ -78,23 +77,20 @@ class FoundryClient:
                 data_rows: Union[DataRowIds, GlobalKeys], app_id: str) -> Task:
         app = self._get_app(app_id)
 
-        data_rows_query = self.client.build_catalog_query(data_rows)
-
         params = {
             "modelId": str(app.model_id),
             "name": model_run_name,
             "classToSchemaId": app.class_to_schema_id,
             "inferenceParams": app.inference_params,
-            "searchQuery": {
-                "query": [data_rows_query],
-                "scope": None
-            },
             "ontologyId": app.ontology_id
         }
 
+        data_rows_key = "dataRowIds" if data_rows.id_type == IdType.DataRowId else "globalKeys"
+        params[data_rows_key] = list(data_rows)
+
         query = """
-        mutation CreateModelJobPyApi($input: CreateModelJobInput!) {
-            createModelJob(input: $input) {
+        mutation CreateModelJobPyApi($input: CreateModelJobForDataRowsInput!) {
+            createModelJobForDataRows(input: $input) {
                 taskId
                 __typename
             }
@@ -104,5 +100,5 @@ class FoundryClient:
             response = self.client.execute(query, {"input": params})
         except Exception as e:
             raise exceptions.LabelboxError('Unable to run foundry app', e)
-        task_id = response["createModelJob"]["taskId"]
+        task_id = response["createModelJobForDataRows"]["taskId"]
         return Task.get_task(self.client, task_id)
