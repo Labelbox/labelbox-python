@@ -8,10 +8,11 @@ from uuid import uuid4
 import cv2
 import numpy as np
 from google.api_core import retry
-from pydantic import root_validator
 
 from .base_data import BaseData
 from ..types import TypedArray
+
+from labelbox import pydantic_compat
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +148,7 @@ class VideoData(BaseData):
         out.release()
         return file_path
 
-    @root_validator
+    @pydantic_compat.root_validator
     def validate_data(cls, values):
         file_path = values.get("file_path")
         url = values.get("url")

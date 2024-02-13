@@ -1,12 +1,12 @@
 import cv2
 import pytest
-from pydantic import ValidationError
 
 from labelbox.data.annotation_types import Point, Rectangle
+from labelbox import pydantic_compat
 
 
 def test_rectangle():
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic_compat.ValidationError):
         rectangle = Rectangle()
 
     rectangle = Rectangle(start=Point(x=0, y=1), end=Point(x=10, y=10))

@@ -12,8 +12,7 @@ from google.api_core import retry
 from PIL import Image
 from pyproj import Transformer
 from pygeotile.point import Point as PygeoPoint
-from pydantic import BaseModel, validator
-from pydantic.class_validators import root_validator
+from labelbox import pydantic_compat
 
 from labelbox.data.annotation_types import Rectangle, Point, Line, Polygon
 from .base_data import BaseData
@@ -41,7 +40,7 @@ class EPSG(Enum):
     EPSG3857 = 3857
 
 
-class TiledBounds(BaseModel):
+class TiledBounds(pydantic_compat.BaseModel):
     """ Bounds for a tiled image asset related to the relevant epsg.
 
     Bounds should be Point objects.
@@ -55,7 +54,7 @@ class TiledBounds(BaseModel):
     epsg: EPSG
     bounds: List[Point]
 
-    @validator('bounds')
+    @pydantic_compat.validator('bounds')
     def validate_bounds_not_equal(cls, bounds):
         first_bound = bounds[0]
         second_bound = bounds[1]
@@ -67,7 +66,7 @@ class TiledBounds(BaseModel):
         return bounds
 
     #validate bounds are within lat,lng range if they are EPSG4326
-    @root_validator
+    @pydantic_compat.root_validator
     def validate_bounds_lat_lng(cls, values):
         epsg = values.get('epsg')
         bounds = values.get('bounds')
@@ -83,7 +82,7 @@ class TiledBounds(BaseModel):
         return values
 
 
-class TileLayer(BaseModel):
+class TileLayer(pydantic_compat.BaseModel):
     """ Url that contains the tile layer. Must be in the format:
 
     https://c.tile.openstreetmap.org/{z}/{x}/{y}.png
@@ -99,7 +98,7 @@ class TileLayer(BaseModel):
     def asdict(self) -> Dict[str, str]:
         return {"tileLayerUrl": self.url, "name": self.name}
 
-    @validator('url')
+    @pydantic_compat.validator('url')
     def validate_url(cls, url):
         xyz_format = "/{z}/{x}/{y}"
         if xyz_format not in url:
@@ -344,7 +343,7 @@ class TiledImageData(BaseData):
                              f"Max allowed tiles are {max_tiles}"
                              f"Increase max tiles or reduce zoom level.")
 
-    @validator('zoom_levels')
+    @pydantic_compat.validator('zoom_levels')
     def validate_zoom_levels(cls, zoom_levels):
         if zoom_levels[0] > zoom_levels[1]:
             raise ValueError(
@@ -353,7 +352,7 @@ class TiledImageData(BaseData):
         return zoom_levels
 
 
-class EPSGTransformer(BaseModel):
+class EPSGTransformer(pydantic_compat.BaseModel):
     """Transformer class between different EPSG's. Useful when wanting to project
     in different formats.
     """

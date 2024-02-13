@@ -7,7 +7,7 @@ import warnings
 
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
 
-from pydantic import BaseModel, conlist, constr
+from labelbox import pydantic_compat
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 
@@ -25,9 +25,11 @@ class DataRowMetadataKind(Enum):
 
 
 # Metadata schema
-class DataRowMetadataSchema(BaseModel):
+class DataRowMetadataSchema(pydantic_compat.BaseModel):
     uid: SchemaId
-    name: constr(strip_whitespace=True, min_length=1, max_length=100)
+    name: pydantic_compat.constr(strip_whitespace=True,
+                                 min_length=1,
+                                 max_length=100)
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]]
@@ -36,8 +38,10 @@ class DataRowMetadataSchema(BaseModel):
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
-String: Type[str] = constr(max_length=4096)
+Embedding: Type[List[float]] = pydantic_compat.conlist(float,
+                                                       min_items=128,
+                                                       max_items=128)
+String: Type[str] = pydantic_compat.constr(max_length=4096)
 
 
 # Metadata base class
@@ -120,13 +124,17 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: constr(strip_whitespace=True, min_length=1, max_length=100)
+    name: pydantic_compat.constr(strip_whitespace=True,
+                                 min_length=1,
+                                 max_length=100)
     kind: str
 
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: constr(strip_whitespace=True, min_length=1, max_length=100)
+    name: pydantic_compat.constr(strip_whitespace=True,
+                                 min_length=1,
+                                 max_length=100)
     kind: str
     options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]]
 

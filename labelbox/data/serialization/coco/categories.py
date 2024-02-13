@@ -1,10 +1,10 @@
 import sys
 from hashlib import md5
 
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 
 
-class Categories(BaseModel):
+class Categories(pydantic_compat.BaseModel):
     id: int
     name: str
     supercategory: str
