@@ -38,6 +38,7 @@ class CatalogExportParams(DataRowParams):
 
 class ModelRunExportParams(DataRowParams):
     predictions: Optional[bool]
+    model_run_details: Optional[bool]
 
 
 def _validate_array_length(array, max_length, array_name):
