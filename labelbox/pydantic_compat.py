@@ -8,14 +8,13 @@ def pydantic_import(class_name, sub_module_path: Optional[str] = None):
     # Get the version of pydantic
     pydantic_version = pkg_resources.get_distribution("pydantic").version
 
-    # Check if the version is 1
-    if pydantic_version.startswith("1"):
-        pydantic_v1_module_name = "pydantic" if sub_module_path is None else f"pydantic.{sub_module_path}"
-    else:  # use pydantic 2 v1 thunk
-        pydantic_v1_module_name = "pydantic.v1" if sub_module_path is None else f"pydantic.{sub_module_path}"
+    # Determine the module name based on the version
+    module_name = "pydantic" if pydantic_version.startswith(
+        "1") else "pydantic.v1"
+    module_name = f"{module_name}.{sub_module_path}" if sub_module_path else module_name
 
-    klass = getattr(importlib.import_module(pydantic_v1_module_name),
-                    class_name)
+    # Import the class from the module
+    klass = getattr(importlib.import_module(module_name), class_name)
 
     return klass
 
