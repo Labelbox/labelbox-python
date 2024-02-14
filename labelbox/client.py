@@ -299,11 +299,14 @@ class Client:
                                              "extensions", "code")
         if internal_server_error is not None:
             message = internal_server_error.get("message")
+            error_status_code = get_error_status_code(internal_server_error)
 
-            if get_error_status_code(internal_server_error) == 400:
+            if error_status_code == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
-            elif get_error_status_code(internal_server_error) == 426:
+            elif error_status_code == 426:
                 raise labelbox.exceptions.OperationNotAllowedException(message)
+            elif error_status_code == 500:
+                raise labelbox.exceptions.LabelboxError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
