@@ -1,7 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 import json
-from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
@@ -11,7 +10,6 @@ from labelbox.schema.export_filters import DatarowExportFilters, build_filters, 
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
-from labelbox.schema.user import User  # type: ignore
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment, Client
@@ -74,9 +72,19 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     def update(self, **kwargs):
         # Convert row data to string if it is an object
         # All other updates pass through
+        primary_fields = ["external_id", "global_key", "row_data"]
+        for field in primary_fields:
+            data = kwargs.get(field)
+            if data == "" or data == {}:
+                raise ValueError(f"{field} cannot be empty if it is set")
+        if not any(kwargs.get(field) for field in primary_fields):
+            raise ValueError(
+                f"At least one of these fields needs to be present: {primary_fields}"
+            )
+
         row_data = kwargs.get("row_data")
         if isinstance(row_data, dict):
-            kwargs['row_data'] = json.dumps(kwargs['row_data'])
+            kwargs['row_data'] = json.dumps(row_data)
         super().update(**kwargs)
 
     @staticmethod
