@@ -1,0 +1,486 @@
+[
+    {
+        "data_row": {
+            "id": "clo78lhhn3dxb07322mnn8plu",
+            "global_key": "2560px-Kitano_Street_Kobe01s.jpeg",
+            "row_data": "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg",
+            "details": {
+                "dataset_id": "clo78lg8f003007321fe52lje",
+                "dataset_name": "image_prediction_demo",
+                "created_at": "2023-10-26T13:45:24.929+00:00",
+                "updated_at": "2023-10-26T13:45:25.965+00:00",
+                "last_activity_at": "2024-02-15T22:26:06.000+00:00",
+                "created_by": "aovalle@labelbox.com"
+            }
+        },
+        "media_attributes": {
+            "height": 1707,
+            "width": 2560,
+            "mime_type": "image/jpeg",
+            "exif_rotation": "1"
+        },
+        "attachments": [],
+        "metadata_fields": [],
+        "projects": {
+            "clpk3otla03cr07u9gmdhe47x": {
+                "name": "Image Prediction Demo",
+                "labels": [
+                    {
+                        "label_kind": "Default",
+                        "version": "1.0.0",
+                        "id": "clpk3owad006i14vs8fvi1nrw",
+                        "label_details": {
+                            "created_at": "2023-11-29T18:28:49.000+00:00",
+                            "updated_at": "2024-02-15T22:26:06.000+00:00",
+                            "created_by": "aovalle@labelbox.com",
+                            "content_last_updated_at": "2024-02-15T22:26:05.000+00:00",
+                            "reviews": []
+                        },
+                        "performance_details": {
+                            "seconds_to_create": 0,
+                            "seconds_to_review": 0,
+                            "skipped": false
+                        },
+                        "annotations": {
+                            "objects": [
+                                {
+                                    "feature_id": "clpk3ow9u006714vsmg5bfe0v",
+                                    "feature_schema_id": "clpk3nvru05b508ua1s8b5w1a",
+                                    "name": "bounding_box",
+                                    "value": "bounding_box",
+                                    "annotation_kind": "ImageBoundingBox",
+                                    "classifications": [],
+                                    "bounding_box": {
+                                        "top": 977.0,
+                                        "left": 1690.0,
+                                        "height": 330.0,
+                                        "width": 225.0
+                                    }
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006814vs358fp09f",
+                                    "feature_schema_id": "clpk3nvru05b708uab1tq6azn",
+                                    "name": "bbox_with_radio_subclass",
+                                    "value": "bbox_with_radio_subclass",
+                                    "annotation_kind": "ImageBoundingBox",
+                                    "classifications": [
+                                        {
+                                            "feature_id": "clpk3ow9u006914vslyxhvh8f",
+                                            "feature_schema_id": "clpk3nvru05b808ua6rv7fl8d",
+                                            "name": "sub_radio_question",
+                                            "value": "sub_radio_question",
+                                            "radio_answer": {
+                                                "feature_id": "clpk3ow9u006a14vs0k8fgtbf",
+                                                "feature_schema_id": "clpk3nvru05b908ua2gtyc3vy",
+                                                "name": "first_sub_radio_answer",
+                                                "value": "first_sub_radio_answer",
+                                                "classifications": []
+                                            }
+                                        }
+                                    ],
+                                    "bounding_box": {
+                                        "top": 933.0,
+                                        "left": 541.0,
+                                        "height": 191.0,
+                                        "width": 330.0
+                                    }
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006b14vs56u7fpcg",
+                                    "feature_schema_id": "clpk3nvrv05bd08uaalhm2n70",
+                                    "name": "polygon",
+                                    "value": "polygon",
+                                    "annotation_kind": "ImagePolygon",
+                                    "classifications": [],
+                                    "polygon": [
+                                        {
+                                            "x": 1489.581,
+                                            "y": 183.934
+                                        },
+                                        {
+                                            "x": 2278.306,
+                                            "y": 256.885
+                                        },
+                                        {
+                                            "x": 2428.197,
+                                            "y": 200.437
+                                        },
+                                        {
+                                            "x": 2560.0,
+                                            "y": 335.419
+                                        },
+                                        {
+                                            "x": 2557.386,
+                                            "y": 503.165
+                                        },
+                                        {
+                                            "x": 2320.596,
+                                            "y": 503.103
+                                        },
+                                        {
+                                            "x": 2156.083,
+                                            "y": 628.943
+                                        },
+                                        {
+                                            "x": 2161.111,
+                                            "y": 785.519
+                                        },
+                                        {
+                                            "x": 2002.115,
+                                            "y": 894.647
+                                        },
+                                        {
+                                            "x": 1838.456,
+                                            "y": 877.874
+                                        },
+                                        {
+                                            "x": 1436.53,
+                                            "y": 874.636
+                                        },
+                                        {
+                                            "x": 1411.403,
+                                            "y": 758.579
+                                        },
+                                        {
+                                            "x": 1353.853,
+                                            "y": 751.74
+                                        },
+                                        {
+                                            "x": 1345.264,
+                                            "y": 453.461
+                                        },
+                                        {
+                                            "x": 1426.011,
+                                            "y": 421.129
+                                        },
+                                        {
+                                            "x": 1489.581,
+                                            "y": 183.934
+                                        }
+                                    ]
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006c14vsqwjaxm5q",
+                                    "feature_schema_id": "clpk3nvrv05bl08ua21766m82",
+                                    "name": "point",
+                                    "value": "point",
+                                    "annotation_kind": "ImagePoint",
+                                    "classifications": [],
+                                    "point": {
+                                        "x": 1166.606,
+                                        "y": 1441.768
+                                    }
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006d14vsn1fcxzs2",
+                                    "feature_schema_id": "clpk3nvrw05bn08ua15zzab51",
+                                    "name": "polyline",
+                                    "value": "polyline",
+                                    "annotation_kind": "ImagePolyline",
+                                    "classifications": [],
+                                    "line": [
+                                        {
+                                            "x": 2534.353,
+                                            "y": 249.471
+                                        },
+                                        {
+                                            "x": 2429.492,
+                                            "y": 182.092
+                                        },
+                                        {
+                                            "x": 2294.322,
+                                            "y": 221.962
+                                        },
+                                        {
+                                            "x": 2224.491,
+                                            "y": 180.463
+                                        },
+                                        {
+                                            "x": 2136.123,
+                                            "y": 204.716
+                                        },
+                                        {
+                                            "x": 1712.247,
+                                            "y": 173.949
+                                        },
+                                        {
+                                            "x": 1703.838,
+                                            "y": 84.438
+                                        },
+                                        {
+                                            "x": 1579.772,
+                                            "y": 82.61
+                                        },
+                                        {
+                                            "x": 1583.442,
+                                            "y": 167.552
+                                        },
+                                        {
+                                            "x": 1478.869,
+                                            "y": 164.903
+                                        },
+                                        {
+                                            "x": 1418.941,
+                                            "y": 318.149
+                                        },
+                                        {
+                                            "x": 1243.128,
+                                            "y": 400.815
+                                        },
+                                        {
+                                            "x": 1022.067,
+                                            "y": 319.007
+                                        },
+                                        {
+                                            "x": 892.367,
+                                            "y": 379.216
+                                        },
+                                        {
+                                            "x": 670.273,
+                                            "y": 364.408
+                                        },
+                                        {
+                                            "x": 613.114,
+                                            "y": 288.16
+                                        },
+                                        {
+                                            "x": 377.559,
+                                            "y": 238.251
+                                        },
+                                        {
+                                            "x": 368.087,
+                                            "y": 185.064
+                                        },
+                                        {
+                                            "x": 246.557,
+                                            "y": 167.286
+                                        },
+                                        {
+                                            "x": 236.648,
+                                            "y": 285.61
+                                        },
+                                        {
+                                            "x": 90.929,
+                                            "y": 326.412
+                                        }
+                                    ]
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006f14vs2w5qa9l3",
+                                    "feature_schema_id": "clpk3nvrv05bh08ua8fwqavng",
+                                    "name": "mask_with_text_subclass",
+                                    "value": "mask_with_text_subclass",
+                                    "annotation_kind": "ImageSegmentationMask",
+                                    "classifications": [
+                                        {
+                                            "feature_id": "clpk3ow9u006h14vsgqgq3egg",
+                                            "feature_schema_id": "clpk3nvrv05bi08ua09x820tk",
+                                            "name": "sub_free_text",
+                                            "value": "sub_free_text",
+                                            "text_answer": {
+                                                "content": "free text answer"
+                                            }
+                                        }
+                                    ],
+                                    "mask": {
+                                        "url": "https://api.labelbox.com/api/v1/projects/clpk3otla03cr07u9gmdhe47x/annotations/clpk3ow9u006f14vs2w5qa9l3/index/1/mask"
+                                    },
+                                    "composite_mask": {
+                                        "url": "https://api.labelbox.com/api/v1/tasks/clsnsiuvh00sm07042habgtht/masks/clpk3ovwt005s14vsg5vz6vut",
+                                        "color_rgb": [
+                                            123,
+                                            103,
+                                            152
+                                        ]
+                                    }
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006g14vs66pk37ks",
+                                    "feature_schema_id": "clpk3nvrv05bf08ua1ztff00n",
+                                    "name": "mask",
+                                    "value": "mask",
+                                    "annotation_kind": "ImageSegmentationMask",
+                                    "classifications": [],
+                                    "mask": {
+                                        "url": "https://api.labelbox.com/api/v1/projects/clpk3otla03cr07u9gmdhe47x/annotations/clpk3ow9u006g14vs66pk37ks/index/1/mask"
+                                    },
+                                    "composite_mask": {
+                                        "url": "https://api.labelbox.com/api/v1/tasks/clsnsiuvh00sm07042habgtht/masks/clpk3ovwt005s14vsg5vz6vut",
+                                        "color_rgb": [
+                                            142,
+                                            220,
+                                            196
+                                        ]
+                                    }
+                                },
+                                {
+                                    "feature_id": "clsnsi5nz00043b6q77e0y17h",
+                                    "feature_schema_id": "clpk3nvrv05bf08ua1ztff00n",
+                                    "name": "mask",
+                                    "value": "mask",
+                                    "annotation_kind": "ImageSegmentationMask",
+                                    "classifications": [],
+                                    "mask": {
+                                        "url": "https://api.labelbox.com/api/v1/projects/clpk3otla03cr07u9gmdhe47x/annotations/clsnsi5nz00043b6q77e0y17h/index/1/mask"
+                                    },
+                                    "composite_mask": {
+                                        "url": "https://api.labelbox.com/api/v1/tasks/clsnsiuvh00sm07042habgtht/masks/clpk3ovwt005s14vsg5vz6vut",
+                                        "color_rgb": [
+                                            41,
+                                            94,
+                                            117
+                                        ]
+                                    }
+                                },
+                                {
+                                    "feature_id": "clsnsia2000083b6qbhgpoy4k",
+                                    "feature_schema_id": "clpk3nvrv05bh08ua8fwqavng",
+                                    "name": "mask_with_text_subclass",
+                                    "value": "mask_with_text_subclass",
+                                    "annotation_kind": "ImageSegmentationMask",
+                                    "classifications": [
+                                        {
+                                            "feature_id": "clsnsignw000b3b6qb7gl2x53",
+                                            "feature_schema_id": "clpk3nvrv05bi08ua09x820tk",
+                                            "name": "sub_free_text",
+                                            "value": "sub_free_text",
+                                            "text_answer": {
+                                                "content": "test"
+                                            }
+                                        }
+                                    ],
+                                    "mask": {
+                                        "url": "https://api.labelbox.com/api/v1/projects/clpk3otla03cr07u9gmdhe47x/annotations/clsnsia2000083b6qbhgpoy4k/index/1/mask"
+                                    },
+                                    "composite_mask": {
+                                        "url": "https://api.labelbox.com/api/v1/tasks/clsnsiuvh00sm07042habgtht/masks/clpk3ovwt005s14vsg5vz6vut",
+                                        "color_rgb": [
+                                            103,
+                                            14,
+                                            79
+                                        ]
+                                    }
+                                }
+                            ],
+                            "classifications": [
+                                {
+                                    "feature_id": "clpk3ow9t005t14vswzzwpdwz",
+                                    "feature_schema_id": "clpk3nvrw05bp08uaecxu7gst",
+                                    "name": "radio_question",
+                                    "value": "radio_question",
+                                    "radio_answer": {
+                                        "feature_id": "clpk3ow9t005u14vs1goj7hbt",
+                                        "feature_schema_id": "clpk3nvrw05bs08ua8fora3cm",
+                                        "name": "second_radio_answer",
+                                        "value": "second_radio_answer",
+                                        "classifications": []
+                                    }
+                                },
+                                {
+                                    "feature_id": "clpk3ow9t005v14vs3qocyo4t",
+                                    "feature_schema_id": "clpk3nvrx05c308ua6ndbc3ki",
+                                    "name": "nested_radio_question",
+                                    "value": "nested_radio_question",
+                                    "radio_answer": {
+                                        "feature_id": "clpk3ow9t005w14vsg0aoojjr",
+                                        "feature_schema_id": "clpk3nvrx05c408ua7n5b2yqj",
+                                        "name": "first_radio_answer",
+                                        "value": "first_radio_answer",
+                                        "classifications": [
+                                            {
+                                                "feature_id": "clpk3ow9t005x14vsej98wrso",
+                                                "feature_schema_id": "clpk3nvrx05c508ua01ntevqz",
+                                                "name": "sub_radio_question",
+                                                "value": "sub_radio_question",
+                                                "radio_answer": {
+                                                    "feature_id": "clpk3ow9t005y14vs51hf6yro",
+                                                    "feature_schema_id": "clpk3nvrx05c608uafxnfaixy",
+                                                    "name": "first_sub_radio_answer",
+                                                    "value": "first_sub_radio_answer",
+                                                    "classifications": []
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "feature_id": "clpk3ow9t005z14vspdbwhb3v",
+                                    "feature_schema_id": "clpk3nvrw05bv08ua2ouf3j1f",
+                                    "name": "checklist_question",
+                                    "value": "checklist_question",
+                                    "checklist_answers": [
+                                        {
+                                            "feature_id": "clpk3ow9t006014vs16qsm6qk",
+                                            "feature_schema_id": "clpk3nvrw05bw08uaf6mw9vd2",
+                                            "name": "first_checklist_answer",
+                                            "value": "first_checklist_answer",
+                                            "classifications": []
+                                        },
+                                        {
+                                            "feature_id": "clpk3ow9t006114vswkqe5da8",
+                                            "feature_schema_id": "clpk3nvrw05by08ua6bz3aj98",
+                                            "name": "second_checklist_answer",
+                                            "value": "second_checklist_answer",
+                                            "classifications": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006214vs89qh2orb",
+                                    "feature_schema_id": "clpk3nvrx05cb08uagn9p6aqs",
+                                    "name": "nested_checklist_question",
+                                    "value": "nested_checklist_question",
+                                    "checklist_answers": [
+                                        {
+                                            "feature_id": "clpk3ow9u006314vs94fka76v",
+                                            "feature_schema_id": "clpk3nvrx05cc08uad7ax3dn3",
+                                            "name": "first_checklist_answer",
+                                            "value": "first_checklist_answer",
+                                            "classifications": [
+                                                {
+                                                    "feature_id": "clpk3ow9u006414vsnmclpja3",
+                                                    "feature_schema_id": "clpk3nvrx05cd08uae0svdfss",
+                                                    "name": "sub_checklist_question",
+                                                    "value": "sub_checklist_question",
+                                                    "checklist_answers": [
+                                                        {
+                                                            "feature_id": "clpk3ow9u006514vsjhruyu8i",
+                                                            "feature_schema_id": "clpk3nvrx05ce08ua4mycdyfq",
+                                                            "name": "first_sub_checklist_answer",
+                                                            "value": "first_sub_checklist_answer",
+                                                            "classifications": []
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "feature_id": "clpk3ow9u006614vsof1mrf8e",
+                                    "feature_schema_id": "clpk3nvrw05c108uagis5cmar",
+                                    "name": "free_text",
+                                    "value": "free_text",
+                                    "text_answer": {
+                                        "content": "sample text"
+                                    }
+                                }
+                            ],
+                            "relationships": []
+                        }
+                    }
+                ],
+                "project_details": {
+                    "ontology_id": "clpk3nvr305b408ua1n7k0w2b",
+                    "task_name": "Done",
+                    "batch_id": "2214fd80-8ee5-11ee-ad5c-a761ffb32cef",
+                    "batch_name": "batch_predictions_demo",
+                    "workflow_status": "DONE",
+                    "priority": 5,
+                    "consensus_expected_label_count": 1,
+                    "workflow_history": []
+                }
+            }
+        }
+    }
+]
