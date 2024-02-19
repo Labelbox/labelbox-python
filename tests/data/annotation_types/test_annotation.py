@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from labelbox.data.annotation_types import (Text, Point, Line,
                                             ClassificationAnnotation,
@@ -8,6 +7,7 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
 from labelbox.data.annotation_types.video import VideoClassificationAnnotation
 from labelbox.exceptions import ConfidenceNotSupportedException
+from labelbox import pydantic_compat
 
 
 def test_annotation():
@@ -35,7 +35,7 @@ def test_annotation():
     )
 
     # Invalid subclass
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic_compat.ValidationError):
         ObjectAnnotation(
             value=line,
             name=name,
@@ -56,11 +56,11 @@ def test_video_annotations():
     line = Line(points=[Point(x=1, y=2), Point(x=2, y=2)])
 
     # Wrong type
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic_compat.ValidationError):
         VideoClassificationAnnotation(value=line, name=name, frame=1)
 
     # Missing frames
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic_compat.ValidationError):
         VideoClassificationAnnotation(value=line, name=name)
 
     VideoObjectAnnotation(value=line, name=name, keyframe=True, frame=2)

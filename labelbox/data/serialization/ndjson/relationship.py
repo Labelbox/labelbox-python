@@ -1,5 +1,5 @@
 from typing import Union
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 from .base import NDAnnotation, DataRow
 from ...annotation_types.data import ImageData, TextData
 from ...annotation_types.relationship import RelationshipAnnotation
@@ -10,7 +10,7 @@ from .base import DataRow
 SUPPORTED_ANNOTATIONS = NDObjectType
 
 
-class _Relationship(BaseModel):
+class _Relationship(pydantic_compat.BaseModel):
     source: str
     target: str
     type: str

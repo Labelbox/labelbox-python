@@ -4,7 +4,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from pydantic import BaseModel, validator, Field
+from labelbox import pydantic_compat
 import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
@@ -32,7 +32,7 @@ class LBV1ObjectBase(LBV1Feature):
             res.pop('instanceURI')
         return res
 
-    @validator('classifications', pre=True)
+    @pydantic_compat.validator('classifications', pre=True)
     def validate_subclasses(cls, value, field):
         # checklist subclasses create extra unessesary nesting. So we just remove it.
         if isinstance(value, list) and len(value):
@@ -49,24 +49,24 @@ class LBV1ObjectBase(LBV1Feature):
         return value
 
 
-class TIPointCoordinate(BaseModel):
+class TIPointCoordinate(pydantic_compat.BaseModel):
     coordinates: List[float]
 
 
-class TILineCoordinate(BaseModel):
+class TILineCoordinate(pydantic_compat.BaseModel):
     coordinates: List[List[float]]
 
 
-class TIPolygonCoordinate(BaseModel):
+class TIPolygonCoordinate(pydantic_compat.BaseModel):
     coordinates: List[List[List[float]]]
 
 
-class TIRectangleCoordinate(BaseModel):
+class TIRectangleCoordinate(pydantic_compat.BaseModel):
     coordinates: List[List[List[float]]]
 
 
 class LBV1TIPoint(LBV1ObjectBase):
-    object_type: Literal['point'] = Field(..., alias='type')
+    object_type: Literal['point'] = pydantic_compat.Field(..., alias='type')
     geometry: TIPointCoordinate
 
     def to_common(self) -> Point:
@@ -75,7 +75,7 @@ class LBV1TIPoint(LBV1ObjectBase):
 
 
 class LBV1TILine(LBV1ObjectBase):
-    object_type: Literal['polyline'] = Field(..., alias='type')
+    object_type: Literal['polyline'] = pydantic_compat.Field(..., alias='type')
     geometry: TILineCoordinate
 
     def to_common(self) -> Line:
@@ -85,7 +85,7 @@ class LBV1TILine(LBV1ObjectBase):
 
 
 class LBV1TIPolygon(LBV1ObjectBase):
-    object_type: Literal['polygon'] = Field(..., alias='type')
+    object_type: Literal['polygon'] = pydantic_compat.Field(..., alias='type')
     geometry: TIPolygonCoordinate
 
     def to_common(self) -> Polygon:
@@ -95,7 +95,7 @@ class LBV1TIPolygon(LBV1ObjectBase):
 
 
 class LBV1TIRectangle(LBV1ObjectBase):
-    object_type: Literal['rectangle'] = Field(..., alias='type')
+    object_type: Literal['rectangle'] = pydantic_compat.Field(..., alias='type')
     geometry: TIRectangleCoordinate
 
     def to_common(self) -> Rectangle:
@@ -111,12 +111,12 @@ class LBV1TIRectangle(LBV1ObjectBase):
                          end=Point(x=end[0], y=end[1]))
 
 
-class _Point(BaseModel):
+class _Point(pydantic_compat.BaseModel):
     x: float
     y: float
 
 
-class _Box(BaseModel):
+class _Box(pydantic_compat.BaseModel):
     top: float
     left: float
     height: float
@@ -230,12 +230,12 @@ class LBV1Mask(LBV1ObjectBase):
                    })
 
 
-class _TextPoint(BaseModel):
+class _TextPoint(pydantic_compat.BaseModel):
     start: int
     end: int
 
 
-class _Location(BaseModel):
+class _Location(pydantic_compat.BaseModel):
     location: _TextPoint
 
 
@@ -263,7 +263,7 @@ class LBV1TextEntity(LBV1ObjectBase):
                    **extra)
 
 
-class LBV1Objects(BaseModel):
+class LBV1Objects(pydantic_compat.BaseModel):
     objects: List[Union[
         LBV1Line,
         LBV1Point,

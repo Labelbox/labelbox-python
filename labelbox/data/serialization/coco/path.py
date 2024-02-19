@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 from pathlib import Path
 
 
-class PathSerializerMixin(BaseModel):
+class PathSerializerMixin(pydantic_compat.BaseModel):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

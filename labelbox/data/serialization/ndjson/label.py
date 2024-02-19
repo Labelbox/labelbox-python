@@ -4,7 +4,7 @@ from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
 import warnings
 
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.relationship import RelationshipAnnotation
@@ -28,16 +28,16 @@ AnnotationType = Union[NDObjectType, NDClassificationType,
                        NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship]
 
 
-class NDLabel(BaseModel):
+class NDLabel(pydantic_compat.BaseModel):
     annotations: List[AnnotationType]
 
-    class _Relationship(BaseModel):
+    class _Relationship(pydantic_compat.BaseModel):
         """This object holds information about the relationship"""
         ndjson: NDRelationship
         source: str
         target: str
 
-    class _AnnotationGroup(BaseModel):
+    class _AnnotationGroup(pydantic_compat.BaseModel):
         """Stores all the annotations and relationships per datarow"""
         data_row: DataRow = None
         ndjson_annotations: Dict[str, AnnotationType] = {}
