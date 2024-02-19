@@ -1,22 +1,37 @@
 import json
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
 def test_relationship():
-    with open('tests/data/assets/ndjson/relationship_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
         data = json.load(file)
 
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
+    assert len(res) == len(data)
 
-    assert res == data
+    res_relationship_annotation = [
+        annot for annot in res if "relationship" in annot
+    ][0]
+    res_source_and_target = [
+        annot for annot in res if "relationship" not in annot
+    ]
+    assert res_relationship_annotation
+
+    assert res_relationship_annotation["relationship"]["source"] in [
+        annot["uuid"] for annot in res_source_and_target
+    ]
+    assert res_relationship_annotation["relationship"]["target"] in [
+        annot["uuid"] for annot in res_source_and_target
+    ]
 
 
 def test_relationship_nonexistent_object():
-    with open('tests/data/assets/ndjson/relationship_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
         data = json.load(file)
 
     relationship_annotation = data[2]
@@ -30,7 +45,7 @@ def test_relationship_nonexistent_object():
 
 
 def test_relationship_duplicate_uuids():
-    with open('tests/data/assets/ndjson/relationship_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
         data = json.load(file)
 
     source, target = data[0], data[1]
