@@ -1,4 +1,8 @@
 # Changelog
+# Version 3.63.0 (2024-02-19)
+## Added
+* Ability for users to install and use sdk with pydantic v.2.* while still maintaining support for pydantic v1.*
+* `ModelRun` `export()` and `export_v2()` add model_run_details to support splits
 
 # Version 3.62.0 (2024-02-12)
 ## Added
