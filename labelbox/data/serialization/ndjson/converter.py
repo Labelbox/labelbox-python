@@ -74,37 +74,38 @@ class NDJsonConverter:
             ]] = []
             # First pass to get all RelatiohnshipAnnotaitons
             # and update the UUIDs of the source and target annotations
-            for annotation in label.annotations:
-                if isinstance(annotation, RelationshipAnnotation):
-                    annotation = copy.deepcopy(annotation)
-                    new_source_uuid = uuid.uuid4()
-                    new_target_uuid = uuid.uuid4()
-                    relationship_uuids[annotation.value.source._uuid].append(
-                        new_source_uuid)
-                    relationship_uuids[annotation.value.target._uuid].append(
-                        new_target_uuid)
-                    annotation.value.source._uuid = new_source_uuid
-                    annotation.value.target._uuid = new_target_uuid
-                    if annotation._uuid in used_uuids:
-                        annotation._uuid = uuid.uuid4()
-                    used_uuids.add(annotation._uuid)
-                    uuid_safe_annotations.append(annotation)
+            for relationship_annotation in (
+                    annotation for annotation in label.annotations
+                    if isinstance(annotation, RelationshipAnnotation)):
+                if relationship_annotation in uuid_safe_annotations:
+                    relationship_annotation = copy.deepcopy(
+                        relationship_annotation)
+                new_source_uuid = uuid.uuid4()
+                new_target_uuid = uuid.uuid4()
+                relationship_uuids[relationship_annotation.value.source.
+                                   _uuid].append(new_source_uuid)
+                relationship_uuids[relationship_annotation.value.target.
+                                   _uuid].append(new_target_uuid)
+                relationship_annotation.value.source._uuid = new_source_uuid
+                relationship_annotation.value.target._uuid = new_target_uuid
+                if relationship_annotation._uuid in used_uuids:
+                    relationship_annotation._uuid = uuid.uuid4()
+                used_uuids.add(relationship_annotation._uuid)
+                uuid_safe_annotations.append(relationship_annotation)
             # Second pass to update UUIDs for annotations referenced by RelationshipAnnotations
             for annotation in label.annotations:
-                if (not isinstance(annotation, RelationshipAnnotation) and
-                        hasattr(annotation, "_uuid")):
-                    annotation = copy.deepcopy(annotation)
-                    next_uuids = relationship_uuids[annotation._uuid]
-                    if len(next_uuids) > 0:
-                        annotation._uuid = next_uuids.popleft()
+                if not isinstance(annotation, RelationshipAnnotation):
+                    if hasattr(annotation, "_uuid"):
+                        if annotation in uuid_safe_annotations:
+                            annotation = copy.deepcopy(annotation)
+                        next_uuids = relationship_uuids[annotation._uuid]
+                        if len(next_uuids) > 0:
+                            annotation._uuid = next_uuids.popleft()
 
-                    if annotation._uuid in used_uuids:
-                        annotation._uuid = uuid.uuid4()
-                    used_uuids.add(annotation._uuid)
+                        if annotation._uuid in used_uuids:
+                            annotation._uuid = uuid.uuid4()
+                        used_uuids.add(annotation._uuid)
                     uuid_safe_annotations.append(annotation)
-                else:
-                    if not isinstance(annotation, RelationshipAnnotation):
-                        uuid_safe_annotations.append(annotation)
             label.annotations = uuid_safe_annotations
             for example in NDLabel.from_common([label]):
                 annotation_uuid = getattr(example, "uuid", None)
