@@ -153,6 +153,11 @@ class Dataset(DbObject, Updateable, Deletable):
                 "DataRow.row_data missing when creating DataRow.")
 
         row_data = args[DataRow.row_data.name]
+
+        if isinstance(row_data, str) and row_data.startswith("s3:/"):
+            raise InvalidQueryError(
+                "row_data: s3 assets must start with 'https'.")
+
         if not isinstance(row_data, str):
             # If the row data is an object, upload as a string
             args[DataRow.row_data.name] = json.dumps(row_data)
@@ -425,6 +430,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 raise InvalidQueryError(
                     "`row_data` missing when creating DataRow.")
 
+            if isinstance(item.get('row_data'),
+                          str) and item.get('row_data').startswith("s3:/"):
+                raise InvalidQueryError(
+                    "row_data: s3 assets must start with 'https'.")
             invalid_keys = set(item) - {
                 *{f.name for f in DataRow.fields()}, 'attachments', 'media_type'
             }

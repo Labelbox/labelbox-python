@@ -127,6 +127,18 @@ def test_get_data_row(data_row, client):
     assert client.get_data_row(data_row.uid)
 
 
+def test_create_invalid_aws_data_row(dataset, client):
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_row(row_data="s3://labelbox-public-data/invalid")
+    assert "s3" in exc.value.message
+
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_rows([{
+            "row_data": "s3://labelbox-public-data/invalid"
+        }])
+    assert "s3" in exc.value.message
+
+
 def test_lookup_data_rows(client, dataset):
     uid = str(uuid.uuid4())
     # 1 external id : 1 uid
