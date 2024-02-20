@@ -154,7 +154,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         row_data = args[DataRow.row_data.name]
 
-        if row_data.startswith("s3:/"):
+        if isinstance(row_data, str) and row_data.startswith("s3:/"):
             raise InvalidQueryError(
                 "row_data: s3 assets must start with 'https'.")
 
@@ -430,7 +430,8 @@ class Dataset(DbObject, Updateable, Deletable):
                 raise InvalidQueryError(
                     "`row_data` missing when creating DataRow.")
 
-            if item.get('row_data').startswith("s3:/"):
+            if isinstance(item.get('row_data'),
+                          str) and item.get('row_data').startswith("s3:/"):
                 raise InvalidQueryError(
                     "row_data: s3 assets must start with 'https'.")
             invalid_keys = set(item) - {
