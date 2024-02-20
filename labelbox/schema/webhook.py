@@ -19,7 +19,6 @@ class Webhook(DbObject, Updateable):
         created_at (datetime)
         url (str)
         topics (str): LABEL_CREATED, LABEL_UPDATED, LABEL_DELETED
-            REVIEW_CREATED, REVIEW_UPDATED, REVIEW_DELETED
         status (str): ACTIVE, INACTIVE, REVOKED
 
     """
@@ -33,9 +32,6 @@ class Webhook(DbObject, Updateable):
         LABEL_CREATED = "LABEL_CREATED"
         LABEL_UPDATED = "LABEL_UPDATED"
         LABEL_DELETED = "LABEL_DELETED"
-        REVIEW_CREATED = "REVIEW_CREATED"
-        REVIEW_UPDATED = "REVIEW_UPDATED"
-        REVIEW_DELETED = "REVIEW_DELETED"
         WORKFLOW_ACTION = "WORKFLOW_ACTION"
 
     # For backwards compatibility
