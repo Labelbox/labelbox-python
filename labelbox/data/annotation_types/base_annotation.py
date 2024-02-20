@@ -1,5 +1,5 @@
 import abc
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Any, Dict, Optional
 from labelbox import pydantic_compat
 
@@ -15,4 +15,4 @@ class BaseAnnotation(FeatureSchema, abc.ABC):
     def __init__(self, **data):
         super().__init__(**data)
         extra_uuid = data.get("extra", {}).get("uuid")
-        self._uuid = data.get("_uuid") or extra_uuid or None
+        self._uuid = data.get("_uuid") or extra_uuid or uuid4()

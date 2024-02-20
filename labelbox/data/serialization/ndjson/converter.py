@@ -1,6 +1,16 @@
+import copy
 import logging
 import uuid
-from typing import Any, Dict, Generator, Iterable
+from collections import defaultdict, deque
+from typing import Any, Deque, Dict, Generator, Iterable, List, Set, Union
+
+from labelbox.data.annotation_types.annotation import ObjectAnnotation
+from labelbox.data.annotation_types.classification.classification import (
+    ClassificationAnnotation,)
+from labelbox.data.annotation_types.metrics.confusion_matrix import (
+    ConfusionMatrixMetric,)
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
+from labelbox.data.annotation_types.video import VideoMaskAnnotation
 
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.relationship import RelationshipAnnotation
@@ -42,51 +52,69 @@ class NDJsonConverter:
         Returns:
             A generator for accessing the ndjson representation of the data
         """
-        used_annotation_uuids = set()
+        used_uuids: Set[uuid.UUID] = set()
+
+        relationship_uuids: Dict[uuid.UUID,
+                                 Deque[uuid.UUID]] = defaultdict(deque)
+
+        # UUIDs are private properties used to enhance UX when defining relationships.
+        # They are created for all annotations, but only utilized for relationships.
+        # To avoid overwriting, UUIDs must be unique across labels.
+        # Non-relationship annotation UUIDs are regenerated when they are reused.
+        # For relationship annotations, during first pass, we update the UUIDs of the source and target annotations.
+        # During the second pass, we update the UUIDs of the annotations referenced by the relationship annotations.
         for label in labels:
-            annotation_uuid_to_generated_uuid_lookup = {}
-            # UUIDs are private properties used to enhance UX when defining relationships.
-            # They are created for all annotations, but only utilized for relationships.
-            # To avoid overwriting, UUIDs must be unique across labels.
-            # Non-relationship annotation UUIDs are dropped (server-side generation will occur).
-            # For relationship annotations, new UUIDs are generated and stored in a lookup table.
+            uuid_safe_annotations: List[Union[
+                ClassificationAnnotation,
+                ObjectAnnotation,
+                VideoMaskAnnotation,
+                ScalarMetric,
+                ConfusionMatrixMetric,
+                RelationshipAnnotation,
+            ]] = []
+            # First pass to get all RelatiohnshipAnnotaitons
+            # and update the UUIDs of the source and target annotations
+            for relationship_annotation in (
+                    annotation for annotation in label.annotations
+                    if isinstance(annotation, RelationshipAnnotation)):
+                if relationship_annotation in uuid_safe_annotations:
+                    relationship_annotation = copy.deepcopy(
+                        relationship_annotation)
+                new_source_uuid = uuid.uuid4()
+                new_target_uuid = uuid.uuid4()
+                relationship_uuids[relationship_annotation.value.source.
+                                   _uuid].append(new_source_uuid)
+                relationship_uuids[relationship_annotation.value.target.
+                                   _uuid].append(new_target_uuid)
+                relationship_annotation.value.source._uuid = new_source_uuid
+                relationship_annotation.value.target._uuid = new_target_uuid
+                if relationship_annotation._uuid in used_uuids:
+                    relationship_annotation._uuid = uuid.uuid4()
+                used_uuids.add(relationship_annotation._uuid)
+                uuid_safe_annotations.append(relationship_annotation)
+            # Second pass to update UUIDs for annotations referenced by RelationshipAnnotations
             for annotation in label.annotations:
-                if isinstance(annotation, RelationshipAnnotation):
-                    source_uuid = annotation.value.source._uuid
-                    target_uuid = annotation.value.target._uuid
+                if not isinstance(annotation, RelationshipAnnotation):
+                    if hasattr(annotation, "_uuid"):
+                        if annotation in uuid_safe_annotations:
+                            annotation = copy.deepcopy(annotation)
+                        next_uuids = relationship_uuids[annotation._uuid]
+                        if len(next_uuids) > 0:
+                            annotation._uuid = next_uuids.popleft()
 
-                    if (len(
-                            used_annotation_uuids.intersection(
-                                {source_uuid, target_uuid})) > 0):
-                        new_source_uuid = uuid.uuid4()
-                        new_target_uuid = uuid.uuid4()
+                        if annotation._uuid in used_uuids:
+                            annotation._uuid = uuid.uuid4()
+                        used_uuids.add(annotation._uuid)
+                    uuid_safe_annotations.append(annotation)
+            label.annotations = uuid_safe_annotations
+            for example in NDLabel.from_common([label]):
+                annotation_uuid = getattr(example, "uuid", None)
 
-                        annotation_uuid_to_generated_uuid_lookup[
-                            source_uuid] = new_source_uuid
-                        annotation_uuid_to_generated_uuid_lookup[
-                            target_uuid] = new_target_uuid
-                        annotation.value.source._uuid = new_source_uuid
-                        annotation.value.target._uuid = new_target_uuid
-                    else:
-                        annotation_uuid_to_generated_uuid_lookup[
-                            source_uuid] = source_uuid
-                        annotation_uuid_to_generated_uuid_lookup[
-                            target_uuid] = target_uuid
-                    used_annotation_uuids.add(annotation._uuid)
-
-            for annotation in label.annotations:
-                if (not isinstance(annotation, RelationshipAnnotation) and
-                        hasattr(annotation, "_uuid")):
-                    annotation._uuid = annotation_uuid_to_generated_uuid_lookup.get(
-                        annotation._uuid, annotation._uuid)
-
-        for example in NDLabel.from_common(labels):
-            annotation_uuid = getattr(example, "uuid", None)
-
-            res = example.dict(
-                by_alias=True,
-                exclude={"uuid"} if annotation_uuid == "None" else None)
-            for k, v in list(res.items()):
-                if k in IGNORE_IF_NONE and v is None:
-                    del res[k]
-            yield res
+                res = example.dict(
+                    by_alias=True,
+                    exclude={"uuid"} if annotation_uuid == "None" else None,
+                )
+                for k, v in list(res.items()):
+                    if k in IGNORE_IF_NONE and v is None:
+                        del res[k]
+                yield res

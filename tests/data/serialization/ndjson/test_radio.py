@@ -34,6 +34,7 @@ def test_serialization_with_radio_min():
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
 
+    res.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])
@@ -85,6 +86,7 @@ def test_serialization_with_radio_classification():
 
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
+    res.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize([res])

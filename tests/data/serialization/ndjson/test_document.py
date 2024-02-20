@@ -69,6 +69,7 @@ def test_pdf_with_name_only():
 
 def test_pdf_bbox_serialize():
     serialized = list(NDJsonConverter.serialize(bbox_labels))
+    serialized[0].pop('uuid')
     assert serialized == bbox_ndjson
 
 
