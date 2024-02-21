@@ -14,9 +14,9 @@ def test_relationship():
     res = list(NDJsonConverter.serialize(res))
     assert len(res) == len(data)
 
-    res_relationship_annotation = [
+    res_relationship_annotation, res_relationship_second_annotation = [
         annot for annot in res if "relationship" in annot
-    ][0]
+    ]
     res_source_and_target = [
         annot for annot in res if "relationship" not in annot
     ]
@@ -26,6 +26,18 @@ def test_relationship():
         annot["uuid"] for annot in res_source_and_target
     ]
     assert res_relationship_annotation["relationship"]["target"] in [
+        annot["uuid"] for annot in res_source_and_target
+    ]
+
+    assert res_relationship_second_annotation
+    assert res_relationship_second_annotation["relationship"][
+        "source"] != res_relationship_annotation["relationship"]["source"]
+    assert res_relationship_second_annotation["relationship"][
+        "target"] != res_relationship_annotation["relationship"]["target"]
+    assert res_relationship_second_annotation["relationship"]["source"] in [
+        annot["uuid"] for annot in res_source_and_target
+    ]
+    assert res_relationship_second_annotation["relationship"]["target"] in [
         annot["uuid"] for annot in res_source_and_target
     ]
 
