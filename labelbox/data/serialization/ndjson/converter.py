@@ -106,7 +106,6 @@ class NDJsonConverter:
                     if not isinstance(annotation, RelationshipAnnotation):
                         uuid_safe_annotations.append(annotation)
             label.annotations = uuid_safe_annotations
-            print(label.annotations)
             for example in NDLabel.from_common([label]):
                 annotation_uuid = getattr(example, "uuid", None)
 
