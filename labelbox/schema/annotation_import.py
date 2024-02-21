@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
+from collections import defaultdict
 
 from google.api_core import retry
 from labelbox import parser
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
     from labelbox.types import Label
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
+ANNOTATION_PER_LABEL_LIMIT = 5000
+
 logger = logging.getLogger(__name__)
 
 
@@ -189,15 +192,31 @@ class AnnotationImport(DbObject):
         """
         errors = []
         max_num_errors = 100
+        labels_per_datarow: Dict[str, Dict[str, int]] = defaultdict(
+            lambda: defaultdict(int))
         for object in objects:
             if 'dataRow' not in object:
                 errors.append(f"'dataRow' is missing in {object}")
-            elif not is_exactly_one_set(object['dataRow'].get('id'),
-                                        object['dataRow'].get('globalKey')):
+                continue
+            data_row_object = object['dataRow']
+            if not is_exactly_one_set(data_row_object.get('id'),
+                                      data_row_object.get('globalKey')):
                 errors.append(
                     f"Must provide only one of 'id' or 'globalKey' for 'dataRow' in {object}"
                 )
-
+            else:
+                data_row_id = data_row_object.get(
+                    'globalKey') or data_row_object.get('id')
+                name = object.get('name')
+                if name:
+                    labels_per_datarow[data_row_id][name] += 1
+        for data_row_id, label_annotations in labels_per_datarow.items():
+            for label_name, annotations in label_annotations.items():
+                if annotations > ANNOTATION_PER_LABEL_LIMIT:
+                    errors.append(
+                        f"Row with id or global key {data_row_id} has {annotations} annotations for label {label_name}.\
+                              Imports are limited to {ANNOTATION_PER_LABEL_LIMIT} annotations per data row."
+                    )
         if errors:
             errors_length = len(errors)
             formatted_errors = '\n'.join(errors[:max_num_errors])
@@ -507,8 +526,8 @@ class MALPredictionImport(AnnotationImport):
         Returns:
             MALPredictionImport
         """
-        data = cls._get_ndjson_from_objects(predictions, 'annotations')
 
+        data = cls._get_ndjson_from_objects(predictions, 'annotations')
         if len(predictions) > 0 and isinstance(predictions[0], Dict):
             predictions_dicts = cast(List[Dict[str, Any]], predictions)
             has_confidence = LabelsConfidencePresenceChecker.check(
