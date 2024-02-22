@@ -69,6 +69,8 @@ class Client:
     top-level data objects (Projects, Datasets).
     """
 
+    instance: Optional['Client'] = None
+
     def __init__(self,
                  api_key=None,
                  endpoint='https://api.labelbox.com/graphql',
@@ -117,6 +119,7 @@ class Client:
             'X-Python-Version': f"{python_version_info()}",
         }
         self._data_row_metadata_ontology = None
+        Client.instance = self
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
