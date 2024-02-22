@@ -9,7 +9,8 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
+import sys
+if TYPE_CHECKING or 'pytest' in sys.modules:
     from labelbox import Client
 
 

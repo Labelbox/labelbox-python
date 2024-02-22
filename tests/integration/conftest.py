@@ -17,6 +17,7 @@ from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
+from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
 from labelbox.schema.quality_mode import QualityMode
@@ -731,6 +732,33 @@ class ExportV2Helpers:
         }
         while (num_retries > 0):
             task = dataset.export_v2(task_name=task_name,
+                                     filters=filters,
+                                     params=params)
+            task.wait_till_done()
+            assert task.status == "COMPLETE"
+            assert task.errors is None
+            if len(task.result) == 0:
+                num_retries -= 1
+                time.sleep(5)
+            else:
+                break
+
+        return task.result
+
+    @classmethod
+    def run_catalog_export_v2_task(cls,
+                                   client,
+                                   num_retries=5,
+                                   task_name=None,
+                                   filters={},
+                                   params={}):
+        task = None
+        params = params if params else {
+            "performance_details": False,
+            "label_details": True
+        }
+        while (num_retries > 0):
+            task = Catalog.export_v2(task_name=task_name,
                                      filters=filters,
                                      params=params)
             task.wait_till_done()
