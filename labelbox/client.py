@@ -25,6 +25,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.enums import CollectionJobStatus
@@ -68,8 +69,6 @@ class Client:
     authentication key). Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
-
-    instance: Optional['Client'] = None
 
     def __init__(self,
                  api_key=None,
@@ -119,7 +118,6 @@ class Client:
             'X-Python-Version': f"{python_version_info()}",
         }
         self._data_row_metadata_ontology = None
-        Client.instance = self
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -1616,6 +1614,9 @@ class Client:
                 raise labelbox.exceptions.TimeoutError(
                     "Timed out waiting for clear_global_keys job to complete.")
             time.sleep(sleep_time)
+
+    def get_catalog(self) -> Catalog:
+        return Catalog(client=self)
 
     def get_catalog_slice(self, slice_id) -> CatalogSlice:
         """

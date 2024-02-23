@@ -9,6 +9,7 @@ from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport, LabelImport, MEAToMALPredictionImport
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.label import Label
 from labelbox.schema.batch import Batch

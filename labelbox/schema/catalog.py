@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Optional, Union
-from .. import client
 from labelbox.orm.db_object import experimental
 from labelbox.schema.export_filters import CatalogExportFilters, build_filters
 
@@ -9,23 +8,18 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 
 from typing import TYPE_CHECKING
-import sys
-if TYPE_CHECKING or 'pytest' in sys.modules:
+if TYPE_CHECKING:
     from labelbox import Client
 
 
 class Catalog:
+    client: "Client"
 
-    @staticmethod
-    def _get_client_instance():
-        if client.Client.instance is None:
-            raise RuntimeError(
-                "Client is not initialized. Please use `labelbox.Client(<api_key>)"
-            )
-        return client.Client.instance
+    def __init__(self, client: 'Client'):
+        self.client = client
 
-    @staticmethod
     def export_v2(
+        self,
         task_name: Optional[str] = None,
         filters: Union[CatalogExportFilters, Dict[str, List[str]], None] = None,
         params: Optional[CatalogExportParams] = None,
@@ -47,10 +41,8 @@ class Catalog:
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        client = Catalog._get_client_instance()
-        return Catalog._export(task_name, filters, params, False, client)
+        return self._export(task_name, filters, params, False)
 
-    @staticmethod
     @experimental
     def export(
         self,
@@ -63,7 +55,7 @@ class Catalog:
 
         >>>     import labelbox as lb
         >>>     client = lb.Client(<API_KEY>)
-        >>>     task = Catalog.export(
+        >>>     export_task = Catalog.export(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
@@ -72,22 +64,34 @@ class Catalog:
         >>>             "performance_details": False,
         >>>             "label_details": True
         >>>         })
-        >>>     task.wait_till_done()
-        >>>     task.result
+        >>>     export_task.wait_till_done()
+        >>>
+        >>>     # Return a JSON output string from the export task results/errors one by one:
+        >>>     def json_stream_handler(output: lb.JsonConverterOutput):
+        >>>       print(output.json_str)
+        >>>
+        >>>     if export_task.has_errors():
+        >>>       export_task.get_stream(
+        >>>         converter=lb.JsonConverter(),
+        >>>         stream_type=lb.StreamType.ERRORS
+        >>>       ).start(stream_handler=lambda error: print(error))
+        >>>
+        >>>     if export_task.has_result():
+        >>>       export_json = export_task.get_stream(
+        >>>         converter=lb.JsonConverter(),
+        >>>         stream_type=lb.StreamType.RESULT
+        >>>       ).start(stream_handler=json_stream_handler)
         """
-        client = Catalog._get_client_instance()
-        task = Catalog._export(task_name, filters, params, True, client)
+        task = self._export(task_name, filters, params, True)
         return ExportTask(task)
 
-    @staticmethod
-    def _export(task_name: Optional[str] = None,
+    def _export(self,
+                task_name: Optional[str] = None,
                 filters: Union[CatalogExportFilters, Dict[str, List[str]],
                                None] = None,
                 params: Optional[CatalogExportParams] = None,
-                streamable: bool = False,
-                client: Client = None) -> Task:
-        if client is None:
-            client = Catalog._get_client_instance()
+                streamable: bool = False) -> Task:
+
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -158,12 +162,12 @@ class Catalog:
             }
         }
 
-        search_query = build_filters(client, _filters)
+        search_query = build_filters(self.client, _filters)
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
-        res = client.execute(create_task_query_str,
-                             query_params,
-                             error_log_key="errors")
+        res = self.client.execute(create_task_query_str,
+                                  query_params,
+                                  error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        return Task.get_task(client, task_id)
+        return Task.get_task(self.client, task_id)

@@ -757,8 +757,10 @@ class ExportV2Helpers:
             "performance_details": False,
             "label_details": True
         }
+        catalog = client.get_catalog()
         while (num_retries > 0):
-            task = Catalog.export_v2(task_name=task_name,
+
+            task = catalog.export_v2(task_name=task_name,
                                      filters=filters,
                                      params=params)
             task.wait_till_done()
