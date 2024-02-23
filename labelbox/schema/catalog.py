@@ -29,7 +29,8 @@ class Catalog:
         
         >>>     import labelbox as lb
         >>>     client = lb.Client(<API_KEY>)
-        >>>     task = Catalog.export_v2(
+        >>>     catalog = client.get_catalog()
+        >>>     task = catalog.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
