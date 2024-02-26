@@ -7,10 +7,10 @@ from labelbox.orm.model import Field
 
 
 class AssetAttachment(DbObject):
-    """ Asset attachment provides extra context about an asset while labeling.
+    """Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
-        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, or TEXT_URL. TEXT attachment type is deprecated.
+        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL. TEXT attachment type is deprecated.
         attachment_value (str): URL to an external file or a string of text
     """
 
@@ -32,6 +32,7 @@ class AssetAttachment(DbObject):
         HTML = "HTML"
         RAW_TEXT = "RAW_TEXT"
         TEXT_URL = "TEXT_URL"
+        PDF_URL = "PDF_URL"
 
     for topic in AttachmentType:
         vars()[topic.name] = topic.value
@@ -41,12 +42,12 @@ class AssetAttachment(DbObject):
 
     @classmethod
     def validate_attachment_json(cls, attachment_json: Dict[str, str]) -> None:
-        for required_key in ['type', 'value']:
+        for required_key in ["type", "value"]:
             if required_key not in attachment_json:
                 raise ValueError(
                     f"Must provide a `{required_key}` key for each attachment. Found {attachment_json}."
                 )
-            cls.validate_attachment_type(attachment_json['type'])
+            cls.validate_attachment_type(attachment_json["type"])
 
     @classmethod
     def validate_attachment_type(cls, attachment_type: str) -> None:
