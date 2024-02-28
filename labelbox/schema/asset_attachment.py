@@ -42,12 +42,12 @@ class AssetAttachment(DbObject):
 
     @classmethod
     def validate_attachment_json(cls, attachment_json: Dict[str, str]) -> None:
-        for required_key in ["type", "value"]:
+        for required_key in ['type', 'value']:
             if required_key not in attachment_json:
                 raise ValueError(
                     f"Must provide a `{required_key}` key for each attachment. Found {attachment_json}."
                 )
-            cls.validate_attachment_type(attachment_json["type"])
+            cls.validate_attachment_type(attachment_json['type'])
 
     @classmethod
     def validate_attachment_type(cls, attachment_type: str) -> None:
