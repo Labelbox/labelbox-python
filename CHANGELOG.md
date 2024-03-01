@@ -1,4 +1,12 @@
 # Changelog
+# Version 3.64.0 (2024-02-29)
+
+## Added
+* Catalog schema class. Catalog exports can now be made without creating a slice first
+
+## Removed
+* Review related WebhookDataSource topics
+
 # Version 3.63.0 (2024-02-19)
 ## Added
 * Ability for users to install and use sdk with pydantic v.2.* while still maintaining support for pydantic v1.*
