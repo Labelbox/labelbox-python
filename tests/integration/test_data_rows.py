@@ -127,6 +127,18 @@ def test_get_data_row(data_row, client):
     assert client.get_data_row(data_row.uid)
 
 
+def test_create_invalid_aws_data_row(dataset, client):
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_row(row_data="s3://labelbox-public-data/invalid")
+    assert "s3" in exc.value.message
+
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_rows([{
+            "row_data": "s3://labelbox-public-data/invalid"
+        }])
+    assert "s3" in exc.value.message
+
+
 def test_lookup_data_rows(client, dataset):
     uid = str(uuid.uuid4())
     # 1 external id : 1 uid
@@ -540,6 +552,23 @@ def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
                 DataRow.metadata_fields: fields
             },
         ])
+
+
+def test_data_row_update_missing_or_empty_required_fields(
+        dataset, rand_gen, image_url):
+    external_id = rand_gen(str)
+    data_row = dataset.create_data_row(row_data=image_url,
+                                       external_id=external_id)
+    with pytest.raises(ValueError):
+        data_row.update(row_data="")
+    with pytest.raises(ValueError):
+        data_row.update(row_data={})
+    with pytest.raises(ValueError):
+        data_row.update(external_id="")
+    with pytest.raises(ValueError):
+        data_row.update(global_key="")
+    with pytest.raises(ValueError):
+        data_row.update()
 
 
 def test_data_row_update(client, dataset, rand_gen, image_url,

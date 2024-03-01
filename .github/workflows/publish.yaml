@@ -4,39 +4,46 @@ name: Publish Python Package
 
 on:
   release:
-    types: [created, updated]
+    types: [created]
 
 jobs:
-  deploy:
-
+  build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+
+      - name: Build
+        run: |
+          python setup.py sdist bdist_wheel
+      
+      - uses: actions/upload-artifact@v4
+        with:
+            path: ./dist
+
+  pypi-publish:   
+    needs: ['build']
+    environment: 
+      name: publish
+      url: 'https://pypi.org/project/labelbox/'
+    runs-on: ubuntu-latest
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
-
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: artifact/
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-
-    - name: Build
-      run: |
-        python setup.py sdist bdist_wheel
-
-    # - name: Publish
-    #   env:
-    #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-    #     TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-    #   run: |
-    #     twine upload dist/*
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+# Note that the build and pypi-publish jobs are split so that the additional permissions are only granted to the pypi-publish job.
