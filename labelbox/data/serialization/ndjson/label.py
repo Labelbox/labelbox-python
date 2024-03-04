@@ -172,6 +172,10 @@ class NDLabel(pydantic_compat.BaseModel):
     @staticmethod
     def _get_consecutive_frames(
             frames_indices: List[int]) -> List[Tuple[int, int]]:
+        """
+        Find all groups of consecutive integers in the frames_indices list
+        and store the start and end of each group in the consecutive list
+        """
         consecutive = []
         for k, g in groupby(enumerate(frames_indices), lambda x: x[0] - x[1]):
             group = list(map(itemgetter(1), g))
@@ -218,11 +222,13 @@ class NDLabel(pydantic_compat.BaseModel):
 
         video_annotations = defaultdict(list)
         for annot in label.annotations:
-            if isinstance(
-                    annot,
-                (VideoClassificationAnnotation, VideoObjectAnnotation)):
+            if isinstance(annot, VideoObjectAnnotation):
                 video_annotations[annot.feature_schema_id or
                                   annot.name].append(annot)
+            elif isinstance(annot, VideoClassificationAnnotation):
+                key = annot.feature_schema_id or annot.name
+                subkey = annot.value.answer.feature_schema_id or annot.value.answer.name
+                video_annotations[f"{key}_{subkey}"].append(annot)
             elif isinstance(annot, VideoMaskAnnotation):
                 yield NDObject.from_common(annotation=annot, data=label.data)
 
