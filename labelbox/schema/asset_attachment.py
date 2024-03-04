@@ -33,6 +33,7 @@ class AssetAttachment(DbObject):
         RAW_TEXT = "RAW_TEXT"
         TEXT_URL = "TEXT_URL"
         PDF_URL = "PDF_URL"
+        CAMERA_IMAGE = "CAMERA_IMAGE" # Used by experimental point-cloud editor
 
     for topic in AttachmentType:
         vars()[topic.name] = topic.value
