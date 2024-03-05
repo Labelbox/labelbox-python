@@ -676,8 +676,7 @@ def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
     dataset.delete()
 
 
-@pytest.fixture()
-def video_data_row(rand_gen):
+def create_video_data_row(rand_gen):
     return {
         "row_data":
             "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
@@ -686,6 +685,23 @@ def video_data_row(rand_gen):
         "media_type":
             "VIDEO",
     }
+
+
+@pytest.fixture
+def video_data_100_rows(client, rand_gen, wait_for_data_row_processing):
+    dataset = client.create_dataset(name=rand_gen(str))
+    data_row_ids = []
+    for _ in range(100):
+        data_row = dataset.create_data_row(create_video_data_row(rand_gen))
+        data_row = wait_for_data_row_processing(client, data_row)
+        data_row_ids.append(data_row.uid)
+    yield dataset, data_row_ids
+    dataset.delete()
+
+
+@pytest.fixture()
+def video_data_row(rand_gen):
+    return create_video_data_row(rand_gen)
 
 
 class ExportV2Helpers:

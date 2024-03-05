@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import uuid
 from labelbox import parser
 import pytest
@@ -368,5 +369,113 @@ def test_nested_video_object_annotations(client,
         name=f"import {str(uuid.uuid4())}",
         predictions=labels)
     import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
+
+
+def _create_label(row_index, data_row_uids, label_name_ids=['bbox']):
+    label_name = label_name_ids[row_index % len(label_name_ids)]
+    data_row_uid = data_row_uids[row_index % len(data_row_uids)]
+    return Label(data=VideoData(uid=data_row_uid),
+                 annotations=[
+                     VideoObjectAnnotation(name=label_name,
+                                           keyframe=True,
+                                           frame=4,
+                                           segment_index=0,
+                                           value=Rectangle(
+                                               start=Point(x=100, y=100),
+                                               end=Point(x=105, y=105),
+                                           ))
+                 ])
+
+
+@patch('labelbox.schema.annotation_import.ANNOTATION_PER_LABEL_LIMIT', 20)
+def test_below_annotation_limit_on_single_data_row(
+        client, configured_project_with_one_data_row, video_data, rand_gen):
+    _, data_row_uids = video_data
+    configured_project_with_one_data_row.update(media_type=MediaType.Video)
+    configured_project_with_one_data_row.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    labels = [_create_label(index, data_row_uids) for index in range(19)]
+    import_annotations = MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_with_one_data_row.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
+    import_annotations.wait_until_done()
+
+    assert import_annotations.errors == []
+
+
+@patch('labelbox.schema.annotation_import.ANNOTATION_PER_LABEL_LIMIT', 20)
+def test_above_annotation_limit_on_single_label_on_single_data_row(
+        client, configured_project_with_one_data_row, video_data, rand_gen):
+    _, data_row_uids = video_data
+
+    configured_project_with_one_data_row.update(media_type=MediaType.Video)
+    configured_project_with_one_data_row.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    labels = [_create_label(index, data_row_uids) for index in range(21)]
+    with pytest.raises(ValueError):
+        import_annotations = MALPredictionImport.create_from_objects(
+            client=client,
+            project_id=configured_project_with_one_data_row.uid,
+            name=f"import {str(uuid.uuid4())}",
+            predictions=labels)
+        import_annotations.wait_until_done()
+
+
+@patch('labelbox.schema.annotation_import.ANNOTATION_PER_LABEL_LIMIT', 20)
+def test_above_annotation_limit_divided_among_different_rows(
+        client, configured_project_with_one_data_row, video_data_100_rows,
+        rand_gen):
+    _, data_row_uids = video_data_100_rows
+
+    configured_project_with_one_data_row.update(media_type=MediaType.Video)
+    configured_project_with_one_data_row.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    labels = [_create_label(index, data_row_uids) for index in range(21)]
+
+    import_annotations = MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_with_one_data_row.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
+
+    assert import_annotations.errors == []
+
+
+@patch('labelbox.schema.annotation_import.ANNOTATION_PER_LABEL_LIMIT', 20)
+def test_above_annotation_limit_divided_among_labels_on_one_row(
+        client, configured_project_with_one_data_row, video_data, rand_gen):
+    _, data_row_uids = video_data
+
+    configured_project_with_one_data_row.update(media_type=MediaType.Video)
+    configured_project_with_one_data_row.create_batch(
+        rand_gen(str),
+        data_row_uids,  # sample of data row objects
+        5  # priority between 1(Highest) - 5(lowest)
+    )
+    labels = [
+        _create_label(index,
+                      data_row_uids,
+                      label_name_ids=['bbox', 'bbox_tool_with_nested_text'])
+        for index in range(21)
+    ]
+
+    import_annotations = MALPredictionImport.create_from_objects(
+        client=client,
+        project_id=configured_project_with_one_data_row.uid,
+        name=f"import {str(uuid.uuid4())}",
+        predictions=labels)
 
     assert import_annotations.errors == []
