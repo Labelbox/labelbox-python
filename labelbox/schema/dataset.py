@@ -1,4 +1,5 @@
-from typing import Dict, Generator, List, Optional, Union, Any
+from datetime import datetime
+from typing import Dict, Generator, List, Optional, Any
 import os
 import json
 import logging
@@ -14,7 +15,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
-from labelbox import pagination
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
 from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
@@ -65,16 +65,16 @@ class Dataset(DbObject, Updateable, Deletable):
         from_cursor: Optional[str] = None,
         where: Optional[Comparison] = None,
     ) -> PaginatedCollection:
-        """ 
+        """
         Custom method to paginate data_rows via cursor.
 
         Args:
             from_cursor (str): Cursor (data row id) to start from, if none, will start from the beginning
-            where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.    
+            where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.
             example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
 
 
-        NOTE: 
+        NOTE:
             Order of retrieval is newest data row first.
             Deleted data rows are not retrieved.
             Failed data rows are not retrieved.
@@ -639,13 +639,13 @@ class Dataset(DbObject, Updateable, Deletable):
     ) -> Task:
         """
         Creates a dataset export task with the given params and returns the task.
-        
+
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = dataset.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]   
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]
         >>>         },
         >>>         params={
         >>>             "performance_details": False,
@@ -750,3 +750,50 @@ class Dataset(DbObject, Updateable, Deletable):
         res = res[mutation_name]
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
+
+    def upsert_data_rows(self, items) -> "Task":
+        chunk_size = 3
+        chunks = [
+            items[i:i + chunk_size] for i in range(0, len(items), chunk_size)
+        ]
+        manifest = {"source": "SDK", "item_count": 0, "chunk_uris": []}
+        for chunk in chunks:
+            manifest["chunk_uris"].append(self._create_descriptor_file(chunk))
+            manifest["item_count"] += len(chunk)
+
+        data = json.dumps(manifest).encode("utf-8")
+        manifest_uri = self.client.upload_data(data,
+                                               content_type="application/json",
+                                               filename="manifest.json")
+
+        dataset_param = "datasetId"
+        manifest_uri_param = "manifestUri"
+        query_str = """mutation UpsertDataRowsPyApi($%s: ID!, $%s: String!){
+                upsertDataRows(data:{datasetId: $%s, manifestUri: $%s}
+                ){ taskId accepted errorMessage } } """ % (
+            dataset_param, manifest_uri_param, dataset_param,
+            manifest_uri_param)
+
+        res = self.client.execute(query_str, {
+            dataset_param: self.uid,
+            manifest_uri_param: manifest_uri
+        })
+        res = res["upsertDataRows"]
+        if not res["accepted"]:
+            msg = res['errorMessage']
+            raise InvalidQueryError(
+                f"Server did not accept DataRow upsert request. {msg}")
+
+        # Fetch and return the task.
+        task_id = res["taskId"]
+        user: User = self.client.get_user()
+        tasks: List[Task] = list(
+            user.created_tasks(where=Entity.Task.uid == task_id))
+        # Cache user in a private variable as the relationship can't be
+        # resolved due to server-side limitations (see Task.created_by)
+        # for more info.
+        if len(tasks) != 1:
+            raise ResourceNotFoundError(Entity.Task, task_id)
+        task: Task = tasks[0]
+        task._user = user
+        return task
