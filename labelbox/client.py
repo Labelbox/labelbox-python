@@ -754,8 +754,6 @@ class Client:
 
         res = self.get_data_row_ids_for_global_keys([global_key])
         if res['status'] != "SUCCESS":
-            raise labelbox.exceptions.MalformedQueryException(res['errors'][0])
-        if len(res['results']) == 0:
             raise labelbox.exceptions.ResourceNotFoundError(
                 Entity.DataRow, {global_key: global_key})
         data_row_id = res['results'][0]
