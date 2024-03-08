@@ -518,7 +518,7 @@ class Client:
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
 
-    def get_projects(self, where=None) -> List[Project]:
+    def get_projects(self, where=None) -> PaginatedCollection:
         """ Fetches all the projects the user has access to.
 
         >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
@@ -527,11 +527,11 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            An iterable of Projects (typically a PaginatedCollection).
+            PaginatedCollection of all projects the user has access to or projects with the criteria specified.
         """
         return self._get_all(Entity.Project, where)
 
-    def get_datasets(self, where=None) -> List[Dataset]:
+    def get_datasets(self, where=None) -> PaginatedCollection:
         """ Fetches one or more datasets.
 
         >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
@@ -540,7 +540,7 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            An iterable of Datasets (typically a PaginatedCollection).
+            PaginatedCollection of all projects the user has access to or projects with the criteria specified.
         """
         return self._get_all(Entity.Dataset, where)
 
