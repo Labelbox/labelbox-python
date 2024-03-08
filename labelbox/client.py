@@ -527,7 +527,7 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            PaginatedCollection of all projects the user has access to or projects with the criteria specified.
+            PaginatedCollection of all projects the user has access to or projects matching the criteria specified.
         """
         return self._get_all(Entity.Project, where)
 
@@ -540,7 +540,7 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            PaginatedCollection of all projects the user has access to or projects with the criteria specified.
+            PaginatedCollection of all datasets the user has access to or datasets matching the criteria specified.
         """
         return self._get_all(Entity.Dataset, where)
 
