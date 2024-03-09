@@ -1,11 +1,18 @@
-![Labelbox Python SDK Workflow Status](https://github.com/Labelbox/labelbox-python/actions/workflows/python-package.yaml/badge.svg?branch=develop)
-
 # Labelbox Python SDK
+[![Release Notes](https://img.shields.io/github/release/labelbox/labelbox-python)](https://github.com/Labelbox/labelbox-python/releases)
+[![CI](https://github.com/labelbox/labelbox-python/actions/workflows/python-package.yml/badge.svg)](https://github.com/labelbox/labelbox-python/actions)
+[![Downloads](https://pepy.tech/badge/labelbox)](https://pepy.tech/project/labelbox)
+[![Dependency Status](https://img.shields.io/librariesio/github/labelbox/labelbox-python)](https://libraries.io/github/labelbox/labelbox-python)
+[![Open Issues](https://img.shields.io/github/issues-raw/labelbox/labelbox-python)](https://github.com/labelbox/labelbox-python/issues)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Twitter Follow](https://img.shields.io/twitter/follow/labelbox.svg?style=social&label=Follow)](https://twitter.com/labelbox)
+[![LinkedIn Follow](https://img.shields.io/badge/Follow-LinkedIn-blue.svg?style=flat&logo=linkedin)](https://www.linkedin.com/company/labelbox/)
+
 
 Labelbox is a cloud-based data-centric AI platform designed to help teams create high-quality training data for their AI models. It provides a suite of tools and features that streamline the process of data curation, labeling, model output evaluation for computer vision and large language models. Visit [Labelbox](http://labelbox.com/) for more information.
 
 
-The Labelbox Python API offers a simple, user-friendly way to interact with the Labelbox back-end.
+The Labelbox Python API offers a simple, user-friendly way to work with the Labelbox programmatically. 
 
 ## Table of Contents
 
