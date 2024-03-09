@@ -3,7 +3,8 @@ google-api-core>=1.22.1
 imagesize
 nbconvert~=7.2.6
 nbformat~=5.7.0
-opencv-python-headlessPILLOW
+opencv-python-headless
+PILLOW
 pydantic>=1.8
 pygeotile
 pyproj
