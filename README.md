@@ -126,6 +126,10 @@ class CustomJsonConverter(Converter[CustomJsonOutput]):
         yield CustomJsonOutput(...)
 ```
 
+## Contribute with AI assistance
+### Load this repo code as context for large language models
+Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window
+
 ## Documentation
 
 - [Visit our docs](https://docs.labelbox.com/reference) to learn how the SDK works
