@@ -12,7 +12,11 @@
 Labelbox is a cloud-based data-centric AI platform designed to help teams create high-quality training data for their AI models. It provides a suite of tools and features that streamline the process of data curation, labeling, model output evaluation for computer vision and large language models. Visit [Labelbox](http://labelbox.com/) for more information.
 
 
-The Labelbox Python API offers a simple, user-friendly way to work with the Labelbox programmatically. 
+The Python SDK provides a convenient way to interact with Labelbox programmatically, offering advantages over REST or GraphQL APIs:
+
+* **Simplified interactions:** The SDK abstracts away the complexities of API calls, making it easier to work with Labelbox.
+* **Object-oriented approach:** The SDK provides an object-oriented interface, allowing you to interact with Labelbox entities (projects, datasets, labels, etc.) as Python objects.
+* **Extensibility:** The SDK can be extended to support custom data formats and operations.
 
 ## Table of Contents
 
@@ -26,46 +30,71 @@ The Labelbox Python API offers a simple, user-friendly way to work with the Labe
   - [Contribution](#contribution)
   - [Testing](#testing)
 
-## Requirements
-
-- Use Python 3.7, 3.8, 3.9 and 3.10
-- [Create an account](http://app.labelbox.com/)
-- [Generate an API key](https://docs.labelbox.com/docs/create-an-api-key)
-
 ## Installation
+![Python Version](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
+Welcome to the quick start guide for integrating Labelbox into your Python projects. Whether you're looking to incorporate advanced data labeling into your workflow or simply explore the capabilities of the Labelbox Python SDK, this guide will walk you through the two main methods of setting up Labelbox in your environment: via a package manager and by building it locally.
 
-Prerequisite: Install pip
+### Easy Installation with Package Manager
 
-`pip` is a package manager for Python. **On macOS**, you can set it up to use the default python3 install via -
+To get started with the least amount of hassle, follow these simple steps to install the Labelbox Python SDK using pip, Python's package manager.
 
-```
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python3 get-pip.py
-```
+1. **Ensure pip is Installed:** First, make sure you have `pip` installed on your system. It's the tool we'll use to install the SDK.
+   
+2. **Sign Up for Labelbox:** If you haven't already, create a free account at [Labelbox](http://app.labelbox.com/) to access its features.
 
-If the installation completes with a warning re: pip not being in your path, you'll need to add it by modifying your shell config (`.zshrc`, `.bashrc` or similar). You might have to modify the command below depending on the version of python3 on your machine.
+3. **Generate Your API Key:** Log into Labelbox and navigate to [Account > API Keys](https://docs.labelbox.com/docs/create-an-api-key) to generate an API key. You'll need this for programmatic access to Labelbox.
 
-```
-export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
-```
+4. **Install the SDK:** Open your terminal or command prompt and run the following command to install the Labelbox Python SDK:
+   
+   ```bash
+   pip install labelbox
+   ```
 
-Install SDK locally, using Python's Pip manager
+5. **Install Optional Dependencies:** For enhanced functionality, such as data processing, you can install additional dependencies with:
+   
+   ```bash
+   pip install "labelbox[data]"
+   ```
 
-```
-pip3 install -e .
-```
+   This includes essential libraries like Shapely, GeoJSON, NumPy, Pillow, and OpenCV-Python, enabling you to handle a wide range of data types and perform complex operations.
 
-Install dependencies
+### Building and Installing Locally
 
-```
-pip3 install -r requirements.txt
-```
+For those who prefer or require a more hands-on approach, such as contributing to the SDK or integrating it into a complex project, building the SDK locally is the way to go.
 
-To install dependencies required for data processing modules use:
+#### Prerequisites
 
-```
-pip install "labelbox[data]"
-```
+- **pip Installation:** Ensure `pip` is installed on your system. For macOS users, you can easily set it up with:
+  
+  ```bash
+  curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+  python3 get-pip.py
+  ```
+
+  If you encounter a warning about `pip` not being in your PATH, you'll need to add it manually by modifying your shell configuration (`.zshrc`, `.bashrc`, etc.):
+
+  ```bash
+  export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
+  ```
+
+#### Steps for Local Installation
+
+1. **Clone the SDK Repository:** First, clone the Labelbox SDK repository from GitHub to your local machine.
+
+2. **Install the SDK Locally:** Navigate to the root directory of the cloned repository and run:
+
+   ```bash
+   pip3 install -e .
+   ```
+
+3. **Install Required Dependencies:** To ensure all dependencies are met, run:
+
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+   For additional data processing capabilities, remember to install the `data` extra as mentioned in the easy installation section.
+
 
 ## Documentation
 
