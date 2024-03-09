@@ -116,28 +116,71 @@ Key files and classes include:
 
 The SDK wraps the GraphQL APIs and provides a Pythonic interface for interacting with Labelbox.
 
-
-## Extending the SDK
-The Labelbox Python SDK is designed to be extensible. Here are examples of how you can extend the SDK:
-
-### Adding an Export Format Converter
-
-You can add a new export format converter by creating a class that inherits from the `Converter` class and implements the `convert` method. For example, to add a converter for a custom JSON format:
-
-```python
-class CustomJsonConverter(Converter[CustomJsonOutput]):
-
-    def convert(self, input_args: Converter.ConverterInputArgs) -> Iterator[CustomJsonOutput]:
-        # Implement logic to convert data to custom JSON format
-        yield CustomJsonOutput(...)
-```
-
 ## Contribution guidelines
 We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
 
 ## Develop with AI assistance
 ### Load this repo code as context for large language models
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window
+
+### Ask Google Gemini to get started
+
+#### Extending the SDK
+The Labelbox Python SDK is designed to be extensible. Here are examples of how you can extend the SDK:
+
+##### Adding an Export Format Converter
+###### Adding a method to convert export v2 to COCO format in Labelbox Python SDK
+
+To add a method to the Labelbox Python SDK that converts export v2 into COCO format, you can follow these steps:
+
+**1. Create a new Python file:**
+
+Create a new file named `coco_converter.py` inside the `labelbox/schema/` directory. This file will contain the logic for converting export v2 data to COCO format.
+
+**2. Implement the conversion logic:**
+
+Inside `coco_converter.py`, define a function named `export_v2_to_coco`. This function should accept the export v2 data as input and perform the necessary conversion steps to generate the COCO format data structures. You can utilize existing libraries like `pycocotools` to achieve this.
+
+Here's a basic example of how the function might look:
+
+```python
+from labelbox.schema.export_task import ExportTask
+from pycocotools.coco import COCO
+
+def export_v2_to_coco(export_task: ExportTask) -> COCO:
+    # Extract data from export_task
+    # ...
+    
+    # Convert data to COCO format using pycocotools
+    # ...
+    
+    # Return COCO object
+    return coco_object
+```
+
+**3. Add the method to the utilities module:**
+
+Open the `labelbox/utilities.py` file and import the newly created `export_v2_to_coco` function. Then, add the function as a method to the `Utilities` class:
+
+```python
+from labelbox.schema.coco_converter import export_v2_to_coco
+
+class Utilities:
+    # ... existing methods ...
+
+    def export_v2_to_coco(self, export_task: ExportTask) -> COCO:
+        return export_v2_to_coco(export_task)
+```
+
+**4. Update the documentation:**
+
+Modify the README.md file to include information about the new `export_v2_to_coco` method in the `client.utilities` section. This will help users understand how to use the new functionality.
+
+**5. Test the implementation:**
+
+Write unit tests for the `export_v2_to_coco` function to ensure it works as expected with different export v2 data structures. This will help maintain the quality and reliability of the SDK.
+
+By following these steps, you can successfully add a method to the Labelbox Python SDK that converts export v2 data to COCO format, making it readily available for users through `client.utilities.export_v2_to_coco()`.
 
 ## Documentation
 The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
