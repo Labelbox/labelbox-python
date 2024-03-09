@@ -1,6 +1,9 @@
+![Labelbox Python SDK Workflow Status](https://github.com/Labelbox/labelbox-python/actions/workflows/python-package.yaml/badge.svg?branch=develop)
+
 # Labelbox Python SDK
 
-Labelbox is the enterprise-grade training data solution with fast AI enabled labeling tools, labeling automation, human workforce, data management, a powerful API for integration & SDK for extensibility. Visit [Labelbox](http://labelbox.com/) for more information.
+Labelbox is a cloud-based data-centric AI platform designed to help teams create high-quality training data for their AI models. It provides a suite of tools and features that streamline the process of data curation, labeling, model output evaluation for computer vision and large language models. Visit [Labelbox](http://labelbox.com/) for more information.
+
 
 The Labelbox Python API offers a simple, user-friendly way to interact with the Labelbox back-end.
 
