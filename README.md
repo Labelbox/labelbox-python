@@ -97,6 +97,35 @@ For those who prefer or require a more hands-on approach, such as contributing t
    For additional data processing capabilities, remember to install the `data` extra as mentioned in the easy installation section.
 
 
+## Code Architecture
+
+The Labelbox Python SDK is designed to be modular and extensible. Key files and classes include:
+
+- **`client.py`:** Contains the `Client` class, which provides methods for interacting with the Labelbox API.
+- **`orm/model.py`:** Defines the data model for Labelbox entities like projects, datasets, and labels.
+- **`schema/*.py`:** Contains classes representing specific Labelbox entities and their attributes.
+- **`data/annotation_types/*.py`:** Defines classes for different annotation types, such as bounding boxes, polygons, and classifications.
+- **`data/serialization/*.py`:** Provides converters for different data formats, including NDJSON and Labelbox v1 JSON.
+
+The SDK wraps the GraphQL APIs and provides a Pythonic interface for interacting with Labelbox.
+
+
+## Extending the SDK
+
+The Labelbox Python SDK is designed to be extensible. Here are examples of how you can extend the SDK:
+
+### Adding an Export Format Converter
+
+You can add a new export format converter by creating a class that inherits from the `Converter` class and implements the `convert` method. For example, to add a converter for a custom JSON format:
+
+```python
+class CustomJsonConverter(Converter[CustomJsonOutput]):
+
+    def convert(self, input_args: Converter.ConverterInputArgs) -> Iterator[CustomJsonOutput]:
+        # Implement logic to convert data to custom JSON format
+        yield CustomJsonOutput(...)
+```
+
 ## Documentation
 
 - [Visit our docs](https://docs.labelbox.com/reference) to learn how the SDK works
