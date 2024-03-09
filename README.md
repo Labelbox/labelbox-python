@@ -18,17 +18,23 @@ The Python SDK provides a convenient way to interact with Labelbox programmatica
 * **Object-oriented approach:** The SDK provides an object-oriented interface, allowing you to interact with Labelbox entities (projects, datasets, labels, etc.) as Python objects.
 * **Extensibility:** The SDK can be extended to support custom data formats and operations.
 
-## Table of Contents
 
-- [Labelbox Python SDK](#labelbox-python-sdk)
-  - [Table of Contents](#table-of-contents)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-    - [Note for Windows users](#note-for-windows-users)
-  - [Documentation](#documentation)
-  - [Authentication](#authentication)
-  - [Contribution](#contribution)
-  - [Testing](#testing)
+### Table of Contents
+- [Installation](#installation)
+    - [Easy Installation with Package Manager](#easy-installation-with-package-manager)
+    - [Building and Installing Locally](#building-and-installing-locally)
+        - [Prerequisites](#prerequisites)
+        - [Steps for Local Installation](#steps-for-local-installation)
+- [Code Architecture](#code-architecture)
+- [Extending the SDK](#extending-the-sdk)
+    - [Adding an Export Format Converter](#adding-an-export-format-converter)
+- [Contribution Guidelines](#contribution-guidelines)
+- [Develop with AI Assistance](#develop-with-ai-assistance)
+- [Documentation](#documentation)
+    - [Official Documentation](#official-documentation)
+    - [Notebook Examples](#notebook-examples)
+    - [API Reference](#api-reference)
+
 
 ## Installation
 ![Python Version](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
@@ -126,12 +132,12 @@ class CustomJsonConverter(Converter[CustomJsonOutput]):
         yield CustomJsonOutput(...)
 ```
 
-## Contribute with AI assistance
+## Contribution guidelines
+We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
+
+## Develop with AI assistance (lbx_prompt.txt)
 ### Load this repo code as context for large language models
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window
-
-## Contribution
-We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
 
 ## Documentation
 The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
