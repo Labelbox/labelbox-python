@@ -98,8 +98,9 @@ For those who prefer or require a more hands-on approach, such as contributing t
 
 
 ## Code Architecture
+The Labelbox Python SDK is designed to provide a clean and intuitive interface for interacting with the Labelbox API. It primarily uses GraphQL for communication, with some REST API calls for specific functionalities. The SDK wraps the GraphQL API calls and provides object-oriented representations of Labelbox entities like projects, datasets, and labels. This allows developers to interact with Labelbox in a more Pythonic way, making code easier to read and maintain.
 
-The Labelbox Python SDK is designed to be modular and extensible. Key files and classes include:
+Key files and classes include:
 
 - **`labelbox/client.py`:** Contains the `Client` class, which provides methods for interacting with the Labelbox API.
 - **`labelbox/orm/model.py`:** Defines the data model for Labelbox entities like projects, datasets, and labels.
@@ -111,7 +112,6 @@ The SDK wraps the GraphQL APIs and provides a Pythonic interface for interacting
 
 
 ## Extending the SDK
-
 The Labelbox Python SDK is designed to be extensible. Here are examples of how you can extend the SDK:
 
 ### Adding an Export Format Converter
@@ -130,12 +130,12 @@ class CustomJsonConverter(Converter[CustomJsonOutput]):
 ### Load this repo code as context for large language models
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window
 
-## Documentation
-
-- [Visit our docs](https://docs.labelbox.com/reference) to learn how the SDK works
-- Checkout our [notebook examples](examples/) to follow along with interactive tutorials
-- view our [API reference](https://labelbox-python.readthedocs.io/en/latest/index.html).
-
-
 ## Contribution
-Please consult `CONTRIB.md`
+We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
+
+## Documentation
+The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
+
+- **Official Documentation:** https://docs.labelbox.com/docs/overview
+- **Notebook Examples:** https://github.com/Labelbox/labelbox-python/tree/master/examples
+- **API Reference:** https://labelbox-python.readthedocs.io/en/latest/
