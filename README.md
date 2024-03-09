@@ -135,7 +135,7 @@ class CustomJsonConverter(Converter[CustomJsonOutput]):
 ## Contribution guidelines
 We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
 
-## Develop with AI assistance (lbx_prompt.txt)
+## Develop with AI assistance
 ### Load this repo code as context for large language models
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window
 
