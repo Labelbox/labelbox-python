@@ -32,6 +32,7 @@ The Python SDK provides a convenient way to interact with Labelbox programmatica
 
 ## Installation
 ![Python Version](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
+
 Welcome to the quick start guide for integrating Labelbox into your Python projects. Whether you're looking to incorporate advanced data labeling into your workflow or simply explore the capabilities of the Labelbox Python SDK, this guide will walk you through the two main methods of setting up Labelbox in your environment: via a package manager and by building it locally.
 
 ### Easy Installation with Package Manager
