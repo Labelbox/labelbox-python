@@ -18,18 +18,19 @@ The Python SDK provides a convenient way to interact with Labelbox programmatica
 * **Object-oriented approach:** The SDK provides an object-oriented interface, allowing you to interact with Labelbox entities (projects, datasets, labels, etc.) as Python objects.
 * **Extensibility:** The SDK can be extended to support custom data formats and operations.
 
+# Table of Contents
 
 ### Table of Contents
 - [Installation](#installation)
-    - [Easy Installation with Package Manager](#easy-installation-with-package-manager)
-    - [Building and Installing Locally](#building-and-installing-locally)
+    - [Install using pip](#install-using-pip)
+    - [Building and installing locally](#building-and-installing-locally)
         - [Prerequisites](#prerequisites)
         - [Steps for Local Installation](#steps-for-local-installation)
 - [Code Architecture](#code-architecture)
-- [Extending the SDK](#extending-the-sdk)
-    - [Adding an Export Format Converter](#adding-an-export-format-converter)
 - [Contribution Guidelines](#contribution-guidelines)
 - [Develop with AI Assistance](#develop-with-ai-assistance)
+   - [Use the Codebase as Context for Large Language Models](#use-the-codebase-as-context-for-large-language-models)
+   - [Ask Google Gemini to write a method](#ask-google-gemini-to-get-started)
 - [Documentation](#documentation)
     - [Official Documentation](#official-documentation)
     - [Notebook Examples](#notebook-examples)
@@ -37,19 +38,19 @@ The Python SDK provides a convenient way to interact with Labelbox programmatica
 
 
 ## Installation
-![Python Version](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
+![Supported python versions](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
 
 Welcome to the quick start guide for integrating Labelbox into your Python projects. Whether you're looking to incorporate advanced data labeling into your workflow or simply explore the capabilities of the Labelbox Python SDK, this guide will walk you through the two main methods of setting up Labelbox in your environment: via a package manager and by building it locally.
 
-### Easy Installation with Package Manager
+### Install using pip
 
 To get started with the least amount of hassle, follow these simple steps to install the Labelbox Python SDK using pip, Python's package manager.
 
-1. **Ensure pip is Installed:** First, make sure you have `pip` installed on your system. It's the tool we'll use to install the SDK.
+1. **Ensure pip is installed:** First, make sure you have `pip` installed on your system. It's the tool we'll use to install the SDK.
    
-2. **Sign Up for Labelbox:** If you haven't already, create a free account at [Labelbox](http://app.labelbox.com/) to access its features.
+2. **Sign up for Labelbox:** If you haven't already, create a free account at [Labelbox](http://app.labelbox.com/) to access its features.
 
-3. **Generate Your API Key:** Log into Labelbox and navigate to [Account > API Keys](https://docs.labelbox.com/docs/create-an-api-key) to generate an API key. You'll need this for programmatic access to Labelbox.
+3. **Generate your API key:** Log into Labelbox and navigate to [Account > API Keys](https://docs.labelbox.com/docs/create-an-api-key) to generate an API key. You'll need this for programmatic access to Labelbox.
 
 4. **Install the SDK:** Open your terminal or command prompt and run the following command to install the Labelbox Python SDK:
    
@@ -57,7 +58,7 @@ To get started with the least amount of hassle, follow these simple steps to ins
    pip install labelbox
    ```
 
-5. **Install Optional Dependencies:** For enhanced functionality, such as data processing, you can install additional dependencies with:
+5. **Install optional dependencies:** For enhanced functionality, such as data processing, you can install additional dependencies with:
    
    ```bash
    pip install "labelbox[data]"
@@ -65,22 +66,22 @@ To get started with the least amount of hassle, follow these simple steps to ins
 
    This includes essential libraries like Shapely, GeoJSON, NumPy, Pillow, and OpenCV-Python, enabling you to handle a wide range of data types and perform complex operations.
 
-### Building and Installing Locally
+### Building and installing locally
 
 For those who prefer or require a more hands-on approach, such as contributing to the SDK or integrating it into a complex project, building the SDK locally is the way to go.
 
 
-#### Steps for Local Installation
+#### Steps for local installation
 
-1. **Clone the SDK Repository:** First, clone the Labelbox SDK repository from GitHub to your local machine.
+1. **Clone the SDK repository:** First, clone the Labelbox SDK repository from GitHub to your local machine.
 
-2. **Install Required Dependencies:** To ensure all dependencies are met, run:
+2. **Install required dependencies:** To ensure all dependencies are met, run:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Install the SDK Locally:** Navigate to the root directory of the cloned repository and run:
+3. **Install the SDK locally:** Navigate to the root directory of the cloned repository and run:
 
    ```bash
    pip install -e .
@@ -89,7 +90,7 @@ For those who prefer or require a more hands-on approach, such as contributing t
    For additional data processing capabilities, remember to install the `data` extra as mentioned in the easy installation section.
 
 
-## Code Architecture
+## Code architecture
 The Labelbox Python SDK is designed to provide a clean and intuitive interface for interacting with the Labelbox API. It primarily uses GraphQL for communication, with some REST API calls for specific functionalities. The SDK wraps the GraphQL API calls and provides object-oriented representations of Labelbox entities like projects, datasets, and labels. This allows developers to interact with Labelbox in a more Pythonic way, making code easier to read and maintain.
 
 Key files and classes include:
@@ -106,15 +107,11 @@ The SDK wraps the GraphQL APIs and provides a Pythonic interface for interacting
 We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
 
 ## Develop with AI assistance
-### Load this repo code as context for large language models
+### Use the codebase as context for large language models
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window.
 
 ### Ask Google Gemini to get started
-We asked Gemini about how to add a data format converter that takes in chat logs and imports as a chat (conversational) datarow in Labelbox. Here's the response using `lbx_prompt.txt` as context.
-
-#### Adding a method to convert chat logs into Labelbox conversational datarow format
-
-Here's how you can add a method called `my_new_method` to the Labelbox Python SDK that converts chat logs into Labelbox conversational datarow format:
+We asked Gemini about how to add a data format converter that takes in chat logs and imports as a chat (conversational) datarow in Labelbox. Here's the response using `lbx_prompt.txt` as context. Here's how you can add a method called `my_new_method` to the Labelbox Python SDK that converts chat logs into Labelbox conversational datarow format:
 
 **1. Location:**
 
@@ -196,6 +193,6 @@ Remember to update the README file to reflect the addition of the new method and
 ## Documentation
 The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
 
-- **Official Documentation:** https://docs.labelbox.com/docs/overview
-- **Notebook Examples:** https://github.com/Labelbox/labelbox-python/tree/master/examples
-- **API Reference:** https://labelbox-python.readthedocs.io/en/latest/
+- **Official documentation:** https://docs.labelbox.com/docs/overview
+- **Notebook examples:** https://github.com/Labelbox/labelbox-python/tree/master/examples
+- **API reference:** https://labelbox-python.readthedocs.io/en/latest/
