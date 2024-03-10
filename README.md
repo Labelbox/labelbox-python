@@ -124,12 +124,7 @@ We encourage developers to contribute to the Labelbox Python SDK and help improv
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window
 
 ### Ask Google Gemini to get started
-
-#### Extending the SDK
-The Labelbox Python SDK is designed to be extensible. Here are examples of how you can extend the SDK:
-
-##### Adding an Export Format Converter
-###### Adding a method to convert export v2 to COCO format in Labelbox Python SDK
+#### Adding a method to convert export v2 to COCO format in Labelbox Python SDK
 
 To add a method to the Labelbox Python SDK that converts export v2 into COCO format, you can follow these steps:
 
