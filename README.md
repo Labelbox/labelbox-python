@@ -69,20 +69,6 @@ To get started with the least amount of hassle, follow these simple steps to ins
 
 For those who prefer or require a more hands-on approach, such as contributing to the SDK or integrating it into a complex project, building the SDK locally is the way to go.
 
-#### Prerequisites
-
-- **pip Installation:** Ensure `pip` is installed on your system. For macOS users, you can easily set it up with:
-  
-  ```bash
-  curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-  python3 get-pip.py
-  ```
-
-  If you encounter a warning about `pip` not being in your PATH, you'll need to add it manually by modifying your shell configuration (`.zshrc`, `.bashrc`, etc.):
-
-  ```bash
-  export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
-  ```
 
 #### Steps for Local Installation
 
@@ -91,13 +77,13 @@ For those who prefer or require a more hands-on approach, such as contributing t
 2. **Install the SDK Locally:** Navigate to the root directory of the cloned repository and run:
 
    ```bash
-   pip3 install -e .
+   pip install -e .
    ```
 
 3. **Install Required Dependencies:** To ensure all dependencies are met, run:
 
    ```bash
-   pip3 install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
    For additional data processing capabilities, remember to install the `data` extra as mentioned in the easy installation section.
