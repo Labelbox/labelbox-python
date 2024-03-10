@@ -1,8 +1,13 @@
 # Changelog
+# Version 3.65.0 (2024-03-05)
+## Notes
+* Rerelease of 3.64.0
+
 # Version 3.64.0 (2024-02-29)
 
 ## Added
-* Catalog schema class. Catalog exports can now be made without creating a slice first
+* `Client.get_catalog` Add catalog schema class. Catalog exports can now be made without creating a slice first
+* `last_activity_at` filter added to export_v2, allowing users to specify a datetime window without a slice
 
 ## Removed
 * Review related WebhookDataSource topics
