@@ -18,24 +18,12 @@ The Python SDK provides a convenient way to interact with Labelbox programmatica
 * **Object-oriented approach:** The SDK provides an object-oriented interface, allowing you to interact with Labelbox entities (projects, datasets, labels, etc.) as Python objects.
 * **Extensibility:** The SDK can be extended to support custom data formats and operations.
 
-# Table of contents
-
-### Table of Contents
+## Table of Contents
 - [Installation](#installation)
-    - [Install using pip](#install-using-pip)
-    - [Building and installing locally](#building-and-installing-locally)
-        - [Prerequisites](#prerequisites)
-        - [Steps for Local Installation](#steps-for-local-installation)
 - [Code Architecture](#code-architecture)
 - [Contribution Guidelines](#contribution-guidelines)
 - [Develop with AI Assistance](#develop-with-ai-assistance)
-   - [Use the Codebase as Context for Large Language Models](#use-the-codebase-as-context-for-large-language-models)
-   - [Ask Google Gemini to write a method](#ask-google-gemini-to-get-started)
 - [Documentation](#documentation)
-    - [Official Documentation](#official-documentation)
-    - [Notebook Examples](#notebook-examples)
-    - [API Reference](#api-reference)
-
 
 ## Installation
 ![Supported python versions](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
