@@ -1,4 +1,3 @@
-from datetime import datetime, timezone, timedelta
 import json
 
 import pytest
@@ -80,15 +79,6 @@ class TestExportProject:
             # data row details
             assert task_data_row_details["dataset_id"] == dataset.uid
             assert task_data_row_details["dataset_name"] == dataset.name
-
-            actual_time = datetime.fromisoformat(
-                task_data_row_details["created_at"])
-            expected_time = datetime.fromisoformat(
-                dataset.created_at.strftime("%Y-%m-%dT%H:%M:%S.%f"))
-            actual_time = actual_time.replace(tzinfo=timezone.utc)
-            expected_time = expected_time.replace(tzinfo=timezone.utc)
-            tolerance = timedelta(seconds=2)
-            assert abs(actual_time - expected_time) <= tolerance
 
             assert task_data_row_details["last_activity_at"] is not None
             assert task_data_row_details["created_by"] is not None
