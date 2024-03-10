@@ -751,7 +751,6 @@ class Client:
         """
             Returns: DataRow: returns a single data row given the global key
         """
-
         res = self.get_data_row_ids_for_global_keys([global_key])
         if res['status'] != "SUCCESS":
             raise labelbox.exceptions.ResourceNotFoundError(
