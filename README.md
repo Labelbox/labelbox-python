@@ -74,16 +74,16 @@ For those who prefer or require a more hands-on approach, such as contributing t
 
 1. **Clone the SDK Repository:** First, clone the Labelbox SDK repository from GitHub to your local machine.
 
-2. **Install the SDK Locally:** Navigate to the root directory of the cloned repository and run:
-
-   ```bash
-   pip install -e .
-   ```
-
-3. **Install Required Dependencies:** To ensure all dependencies are met, run:
+2. **Install Required Dependencies:** To ensure all dependencies are met, run:
 
    ```bash
    pip install -r requirements.txt
+   ```
+
+3. **Install the SDK Locally:** Navigate to the root directory of the cloned repository and run:
+
+   ```bash
+   pip install -e .
    ```
 
    For additional data processing capabilities, remember to install the `data` extra as mentioned in the easy installation section.
