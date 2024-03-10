@@ -124,58 +124,88 @@ We encourage developers to contribute to the Labelbox Python SDK and help improv
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window.
 
 ### Ask Google Gemini to get started
-#### Adding a method to convert export v2 to COCO format in Labelbox Python SDK
+We asked Gemini about how to add a data format converter that takes in chat logs and imports as a chat (conversational) datarow in Labelbox. Here's the response using `lbx_prompt.txt` as context.
 
-To add a method to the Labelbox Python SDK that converts export v2 into COCO format, you can follow these steps:
+#### Adding a method to convert chat logs into Labelbox conversational datarow format
 
-**1. Create a new Python file:**
+Here's how you can add a method called `my_new_method` to the Labelbox Python SDK that converts chat logs into Labelbox conversational datarow format:
 
-Create a new file named `coco_converter.py` inside the `labelbox/schema/` directory. This file will contain the logic for converting export v2 data to COCO format.
+**1. Location:**
 
-**2. Implement the conversion logic:**
+The method should be placed in the `labelbox/client.py` file within the `Client` class. This will allow you to access it using `client.utilities.my_new_method(params)`.
 
-Inside `coco_converter.py`, define a function named `export_v2_to_coco`. This function should accept the export v2 data as input and perform the necessary conversion steps to generate the COCO format data structures. You can utilize existing libraries like `pycocotools` to achieve this.
+**2. Code:**
 
-Here's a basic example of how the function might look:
-
-```python
-from labelbox.schema.export_task import ExportTask
-from pycocotools.coco import COCO
-
-def export_v2_to_coco(export_task: ExportTask) -> COCO:
-    # Extract data from export_task
-    # ...
-    
-    # Convert data to COCO format using pycocotools
-    # ...
-    
-    # Return COCO object
-    return coco_object
-```
-
-**3. Add the method to the utilities module:**
-
-Open the `labelbox/utilities.py` file and import the newly created `export_v2_to_coco` function. Then, add the function as a method to the `Utilities` class:
+Here's the code for the `my_new_method` function:
 
 ```python
-from labelbox.schema.coco_converter import export_v2_to_coco
+def my_new_method(self, chat_logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Converts chat logs into Labelbox conversational datarow format.
 
-class Utilities:
-    # ... existing methods ...
+    Args:
+        chat_logs: A list of dictionaries representing chat messages. Each dictionary should have the following keys:
+            - messageId: Unique identifier for the message.
+            - timestampUsec: Timestamp of the message in microseconds.
+            - content: The text content of the message.
+            - user: A dictionary containing information about the user who sent the message, including:
+                - userId: Unique identifier for the user.
+                - name: Name of the user.
+            - align: (Optional) "left" or "right" to indicate the alignment of the message. Defaults to "left".
+            - canLabel: (Optional) Boolean indicating if the message can be labeled. Defaults to True.
 
-    def export_v2_to_coco(self, export_task: ExportTask) -> COCO:
-        return export_v2_to_coco(export_task)
+    Returns:
+        A list of dictionaries in Labelbox conversational datarow format.
+    """
+
+    datarows = []
+    for chat_log in chat_logs:
+        datarow = {
+            "row_data": {
+                "messages": [chat_log],
+                "version": 1,
+                "type": "application/vnd.labelbox.conversational"
+            }
+        }
+        datarows.append(datarow)
+    return datarows
 ```
 
-**4. Update the documentation:**
+**3. Explanation:**
 
-Modify the README.md file to include information about the new `export_v2_to_coco` method in the `client.utilities` section. This will help users understand how to use the new functionality.
+This method takes a list of chat logs as input, where each chat log is represented as a dictionary with specific keys. The method then iterates through each chat log and creates a dictionary in Labelbox conversational datarow format. This format includes a `row_data` key with a nested dictionary containing the chat messages, version, and type information. Finally, the method returns a list of these datarow dictionaries.
 
-**5. Test the implementation:**
+**4. Usage:**
 
-Write unit tests for the `export_v2_to_coco` function to ensure it works as expected with different export v2 data structures. This will help maintain the quality and reliability of the SDK.
+After adding the `my_new_method` function to the `Client` class, you can use it as follows:
 
-By following these steps, you can successfully add a method to the Labelbox Python SDK that converts export v2 data to COCO format, making it readily available for users through `client.utilities.export_v2_to_coco()`.
+```python
+client = Client(api_key="YOUR_API_KEY")
+
+# Prepare your chat logs as a list of dictionaries
+chat_logs = [
+    {
+        "messageId": "message1",
+        "timestampUsec": 1669000000,
+        "content": "Hello, how are you?",
+        "user": {"userId": "user1", "name": "John Doe"},
+    },
+    # ... more chat logs ...
+]
+
+# Convert chat logs to Labelbox format
+datarows = client.utilities.my_new_method(chat_logs)
+
+# Create data rows in a dataset
+dataset = client.create_dataset(name="Chat Logs Dataset")
+dataset.create_data_rows(datarows)
+```
+
+This will create data rows in the specified dataset, with each data row containing the information from a single chat log in the Labelbox conversational format. 
+
+**5. Update README:**
+
+Remember to update the README file to reflect the addition of the new method and provide a brief description of its functionality and usage.
 
 ## Documentation
 The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
