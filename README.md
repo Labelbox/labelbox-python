@@ -18,7 +18,7 @@ The Python SDK provides a convenient way to interact with Labelbox programmatica
 * **Object-oriented approach:** The SDK provides an object-oriented interface, allowing you to interact with Labelbox entities (projects, datasets, labels, etc.) as Python objects.
 * **Extensibility:** The SDK can be extended to support custom data formats and operations.
 
-# Table of Contents
+# Table of contents
 
 ### Table of Contents
 - [Installation](#installation)
