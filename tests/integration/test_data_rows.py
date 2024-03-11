@@ -1,5 +1,4 @@
 from tempfile import NamedTemporaryFile
-import time
 import uuid
 from datetime import datetime
 import json
@@ -945,7 +944,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 
 
 @pytest.fixture
-def converstational_data_rows(dataset, conversational_content):
+def conversational_data_rows(dataset, conversational_content):
     examples = [
         {
             **conversational_content, 'media_type':
@@ -967,12 +966,12 @@ def converstational_data_rows(dataset, conversational_content):
         dr.delete()
 
 
-def test_create_conversational_text(converstational_data_rows,
+def test_create_conversational_text(conversational_data_rows,
                                     conversational_content):
-    data_rows = converstational_data_rows
+    data_rows = conversational_data_rows
     for data_row in data_rows:
-        assert requests.get(
-            data_row.row_data).json() == conversational_content['row_data']
+        assert json.loads(
+            data_row.row_data) == conversational_content['row_data']
 
 
 def test_invalid_media_type(dataset, conversational_content):
