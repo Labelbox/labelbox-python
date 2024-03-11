@@ -208,19 +208,23 @@ class Client:
         except Exception as e:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
-        try:
-            r_json = response.json()
-        except:
-            if "upstream connect error or disconnect/reset before headers" \
-                    in response.text:
+
+        if 200 <= response.status_code < 300 or response.status_code < 500 or response.status_code >= 600:
+            try:
+                r_json = response.json()
+            except Exception:
+                raise labelbox.exceptions.LabelboxError(
+                    "Failed to parse response as JSON: %s" % response.text)
+        else:
+            if "upstream connect error or disconnect/reset before headers" in response.text:
                 raise labelbox.exceptions.InternalServerError(
                     "Connection reset")
             elif response.status_code == 502:
                 error_502 = '502 Bad Gateway'
                 raise labelbox.exceptions.InternalServerError(error_502)
-
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s" % response.text)
+            elif 500 <= response.status_code < 600:
+                error_500 = f"Internal server http error {response.status_code}"
+                raise labelbox.exceptions.InternalServerError(error_500)
 
         errors = r_json.get("errors", [])
 
