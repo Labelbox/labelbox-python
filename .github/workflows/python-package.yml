@@ -114,6 +114,8 @@ jobs:
         run: |
           gh extension install actions/gh-actions-cache
           gh actions-cache delete ${{ env.cache-key }} --confirm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Save test cache
         id: cache-save
         uses: actions/cache/save@v3
