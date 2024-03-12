@@ -102,6 +102,6 @@ Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader
 ## Documentation
 The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
 
-- **Official documentation:** https://docs.labelbox.com/docs/overview
-- **Notebook examples:** https://github.com/Labelbox/labelbox-python/tree/master/examples
-- **API reference:** https://labelbox-python.readthedocs.io/en/latest/
+- [Official documentation](https://docs.labelbox.com/docs/overview)
+- [Notebook examples](https://github.com/Labelbox/labelbox-python/tree/master/examples)
+- [Python SDK reference docs](https://labelbox-python.readthedocs.io/en/latest/)
