@@ -84,12 +84,11 @@ jobs:
         run: |
           pip install tox==4.14.1 pytest-snapshot
 
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v3
         with:
           path: .testmondata
           key: testmon=${{ github.ref_name }}-${{ matrix.python-version }}
           restore-keys: testmon=develop-${{ matrix.python-version }}
-          save-always: true
 
       # TODO: replace tox.ini with what the Makefile does
       # to make sure local testing is
@@ -109,4 +108,9 @@ jobs:
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 8 --testmon tests/integration tests/data
+          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 8 --testmon tests/unit
+
+      - uses: actions/cache/save@v3
+        with:
+          path: .testmondata
+          key: testmon=${{ github.ref_name }}-${{ matrix.python-version }}
