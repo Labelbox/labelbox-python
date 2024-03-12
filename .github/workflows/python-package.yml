@@ -67,11 +67,11 @@ jobs:
           python -m pip install .
       - name: mypy
         run: |
-          pip install mypy==0.782
+          pip install mypy==1.9.0
           mypy -p labelbox --pretty --show-error-codes
       - name: Install package and test dependencies
         run: |
-          pip install tox==3.18.1 pytest-snapshot
+          pip install tox==4.14.1 pytest-snapshot
 
       # TODO: replace tox.ini with what the Makefile does
       # to make sure local testing is
