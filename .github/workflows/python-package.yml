@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.7
+          - python-version: 3.11
             prod-key: LABELBOX_API_KEY
             staging-key: STAGING_LABELBOX_API_KEY
             da-test-key: DA_GCP_LABELBOX_API_KEY
