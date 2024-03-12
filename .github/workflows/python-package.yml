@@ -106,7 +106,7 @@ jobs:
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- tests/unit
+          tox -e py -- tests/integration tests/data
       - name: Clear test cache
         id: cache-clear
         if: ${{ steps.cache-restore.outputs.cache-hit }}
