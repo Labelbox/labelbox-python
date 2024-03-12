@@ -22,7 +22,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row import DataRow
+from labelbox.schema.data_row import DataRow, DataRowUpsertItem
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
@@ -461,7 +461,12 @@ class Dataset(DbObject, Updateable, Deletable):
             item["row_data"] = one_conversation
             return item
 
-        def convert_item(item):
+        def convert_item(data_row_item):
+            if isinstance(data_row_item, DataRowUpsertItem):
+                item = data_row_item.payload.dict()
+            else:
+                item = data_row_item
+
             if "tileLayerUrl" in item:
                 validate_attachments(item)
                 return item
@@ -751,7 +756,7 @@ class Dataset(DbObject, Updateable, Deletable):
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
 
-    def upsert_data_rows(self, items) -> "Task":
+    def upsert_data_rows(self, items: list[DataRowUpsertItem]) -> "Task":
         chunk_size = 3
         chunks = [
             items[i:i + chunk_size] for i in range(0, len(items), chunk_size)
@@ -770,7 +775,7 @@ class Dataset(DbObject, Updateable, Deletable):
         manifest_uri_param = "manifestUri"
         query_str = """mutation UpsertDataRowsPyApi($%s: ID!, $%s: String!){
                 upsertDataRows(data:{datasetId: $%s, manifestUri: $%s}
-                ){ taskId accepted errorMessage } } """ % (
+                ){ id createdAt updatedAt name status completionPercentage result errors type metadata } } """ % (
             dataset_param, manifest_uri_param, dataset_param,
             manifest_uri_param)
 
@@ -779,21 +784,6 @@ class Dataset(DbObject, Updateable, Deletable):
             manifest_uri_param: manifest_uri
         })
         res = res["upsertDataRows"]
-        if not res["accepted"]:
-            msg = res['errorMessage']
-            raise InvalidQueryError(
-                f"Server did not accept DataRow upsert request. {msg}")
-
-        # Fetch and return the task.
-        task_id = res["taskId"]
-        user: User = self.client.get_user()
-        tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
-        # Cache user in a private variable as the relationship can't be
-        # resolved due to server-side limitations (see Task.created_by)
-        # for more info.
-        if len(tasks) != 1:
-            raise ResourceNotFoundError(Entity.Task, task_id)
-        task: Task = tasks[0]
-        task._user = user
+        task = Task(self.client, res)
+        task._user = self.client.get_user()
         return task

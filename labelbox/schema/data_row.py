@@ -1,10 +1,12 @@
 import logging
+from enum import Enum
 from typing import TYPE_CHECKING, List, Optional, Union
 import json
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
@@ -15,6 +17,35 @@ if TYPE_CHECKING:
     from labelbox import AssetAttachment, Client
 
 logger = logging.getLogger(__name__)
+
+
+class KeyType(str, Enum):
+    ID = 'ID'
+    """An existing CUID"""
+    GKEY = 'GKEY'
+    """A Global key, could be existing or non-existing"""
+    AUTO = 'AUTO'
+    """The key will be auto-generated. Only usable for creates"""
+
+
+class ResolvableId(BaseModel):
+    """
+    The ResolvableId class is a unique ID abstraction that allows us to reference
+    a DataRow by either a Global key or CUID
+    """
+    type: KeyType = KeyType.GKEY
+    value: str
+
+
+class DataRowSpec(BaseModel):
+    row_data: Union[str, dict]
+    external_id: Optional[str]
+    global_key: Optional[str]
+
+
+class DataRowUpsertItem(BaseModel):
+    id: ResolvableId
+    payload: DataRowSpec
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
@@ -220,13 +251,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             task_name (str): name of remote task
             params (CatalogExportParams): export params
 
-        
+
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = DataRow.export_v2(
-        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], 
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
         >>>             # or a list of DataRow objects: data_rows = data_set.data_rows.list()
-        >>>             # or a list of global_keys=["global_key_1", "global_key_2"], 
-        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time 
+        >>>             # or a list of global_keys=["global_key_1", "global_key_2"],
+        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time
         >>>             # and if data rows ids is present, global keys will be ignored
         >>>         params={
         >>>             "performance_details": False,
