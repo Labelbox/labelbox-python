@@ -20,7 +20,6 @@ def test_query_subquery():
 
 
 def test_query_where():
-    print('foo')
     q, p = query.Query("x", Project, Project.name > "name").format()
     assert q.startswith("x(where: {name_gt: $param_0}){")
     assert p == {"param_0": ("name", Project.name)}
