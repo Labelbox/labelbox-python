@@ -69,8 +69,7 @@ jobs:
         run: |
           pip install mypy==1.9.0
           # TODO: consider installing requests typing
-          mypy --install-types
-          mypy -p labelbox --pretty --show-error-codes
+          mypy -p labelbox --pretty --show-error-codes --non-interactive --install-types
       - name: Install package and test dependencies
         run: |
           pip install tox==4.14.1 pytest-snapshot
