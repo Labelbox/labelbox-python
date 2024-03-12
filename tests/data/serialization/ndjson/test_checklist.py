@@ -32,7 +32,6 @@ def test_serialization_min():
     }
     serialized = NDJsonConverter.serialize([label])
     res = next(serialized)
-
     res.pop("uuid")
     assert res == expected
 

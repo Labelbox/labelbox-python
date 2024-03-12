@@ -9,6 +9,16 @@
     "page": 4,
     "unit": "POINTS",
     "confidence": 0.53,
+    "customMetrics": [
+        {
+            "name": "customMetric1",
+            "value": 0.5
+        },
+        {
+            "name": "customMetric2",
+            "value": 0.3
+        }
+    ],
     "bbox": {
         "top": 162.73,
         "left": 32.45,
@@ -42,6 +52,16 @@
     "page": 6,
     "unit": "POINTS",
     "confidence": 0.99,
+    "customMetrics": [
+        {
+            "name": "customMetric1",
+            "value": 0.5
+        },
+        {
+            "name": "customMetric2",
+            "value": 0.3
+        }
+    ],
     "bbox": {
         "top": 32.52,
         "left": 218.17,
@@ -59,6 +79,16 @@
     "page": 7,
     "unit": "POINTS",
     "confidence": 0.89,
+    "customMetrics": [
+        {
+            "name": "customMetric1",
+            "value": 0.5
+        },
+        {
+            "name": "customMetric2",
+            "value": 0.3
+        }
+    ],
     "bbox": {
         "top": 117.39,
         "left": 4.25,

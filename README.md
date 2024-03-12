@@ -1,126 +1,107 @@
 # Labelbox Python SDK
+[![Release Notes](https://img.shields.io/github/release/labelbox/labelbox-python)](https://github.com/Labelbox/labelbox-python/releases)
+[![CI](https://github.com/labelbox/labelbox-python/actions/workflows/python-package.yml/badge.svg)](https://github.com/labelbox/labelbox-python/actions)
+[![Downloads](https://pepy.tech/badge/labelbox)](https://pepy.tech/project/labelbox)
+[![Dependency Status](https://img.shields.io/librariesio/github/labelbox/labelbox-python)](https://libraries.io/github/labelbox/labelbox-python)
+[![Open Issues](https://img.shields.io/github/issues-raw/labelbox/labelbox-python)](https://github.com/labelbox/labelbox-python/issues)
+[![Changelog](https://img.shields.io/badge/Changelog-Recent%20Updates-blue.svg)](https://docs.labelbox.com/changelog)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Twitter Follow](https://img.shields.io/twitter/follow/labelbox.svg?style=social&label=Follow)](https://twitter.com/labelbox)
+[![LinkedIn Follow](https://img.shields.io/badge/Follow-LinkedIn-blue.svg?style=flat&logo=linkedin)](https://www.linkedin.com/company/labelbox/)
 
-Labelbox is the enterprise-grade training data solution with fast AI enabled labeling tools, labeling automation, human workforce, data management, a powerful API for integration & SDK for extensibility. Visit [Labelbox](http://labelbox.com/) for more information.
 
-The Labelbox Python API offers a simple, user-friendly way to interact with the Labelbox back-end.
+Labelbox is a cloud-based data-centric AI platform designed to help teams create high-quality training data for their AI models. It provides a suite of tools and features that streamline the process of data curation, labeling, model output evaluation for computer vision and large language models. Visit [Labelbox](http://labelbox.com/) for more information.
+
+
+The Python SDK provides a convenient way to interact with Labelbox programmatically, offering advantages over REST or GraphQL APIs:
+
+* **Simplified interactions:** The SDK abstracts away the complexities of API calls, making it easier to work with Labelbox.
+* **Object-oriented approach:** The SDK provides an object-oriented interface, allowing you to interact with Labelbox entities (projects, datasets, labels, etc.) as Python objects.
+* **Extensibility:** The SDK can be extended to support custom data formats and operations.
 
 ## Table of Contents
-
-- [Labelbox Python SDK](#labelbox-python-sdk)
-  - [Table of Contents](#table-of-contents)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-    - [Note for Windows users](#note-for-windows-users)
-  - [Documentation](#documentation)
-  - [Authentication](#authentication)
-  - [Contribution](#contribution)
-  - [Testing](#testing)
-
-## Requirements
-
-- Use Python 3.7, 3.8, 3.9 and 3.10
-- [Create an account](http://app.labelbox.com/)
-- [Generate an API key](https://docs.labelbox.com/docs/create-an-api-key)
+- [Installation](#installation)
+- [Code Architecture](#code-architecture)
+- [Contribution Guidelines](#contribution-guidelines)
+- [Develop with AI Assistance](#develop-with-ai-assistance)
+- [Documentation](#documentation)
 
 ## Installation
+![Supported python versions](https://img.shields.io/badge/python-3.7%20|%203.8%20|%203.9%20|%203.10-blue.svg)
 
-Prerequisite: Install pip
+Welcome to the quick start guide for integrating Labelbox into your Python projects. Whether you're looking to incorporate advanced data labeling into your workflow or simply explore the capabilities of the Labelbox Python SDK, this guide will walk you through the two main methods of setting up Labelbox in your environment: via a package manager and by building it locally.
 
-`pip` is a package manager for Python. **On macOS**, you can set it up to use the default python3 install via -
+### Install using pip
 
-```
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python3 get-pip.py
-```
+To get started with the least amount of hassle, follow these simple steps to install the Labelbox Python SDK using pip, Python's package manager.
 
-If the installation completes with a warning re: pip not being in your path, you'll need to add it by modifying your shell config (`.zshrc`, `.bashrc` or similar). You might have to modify the command below depending on the version of python3 on your machine.
+1. **Ensure pip is installed:** First, make sure you have `pip` installed on your system. It's the tool we'll use to install the SDK.
+   
+2. **Sign up for Labelbox:** If you haven't already, create a free account at [Labelbox](http://app.labelbox.com/) to access its features.
 
-```
-export PATH=/Users/<your-macOS-username>/Library/Python/3.8/bin:$PATH
-```
+3. **Generate your API key:** Log into Labelbox and navigate to [Account > API Keys](https://docs.labelbox.com/docs/create-an-api-key) to generate an API key. You'll need this for programmatic access to Labelbox.
 
-Install SDK locally, using Python's Pip manager
+4. **Install the SDK:** Open your terminal or command prompt and run the following command to install the Labelbox Python SDK:
+   
+   ```bash
+   pip install labelbox
+   ```
 
-```
-pip3 install -e .
-```
+5. **Install optional dependencies:** For enhanced functionality, such as data processing, you can install additional dependencies with:
+   
+   ```bash
+   pip install "labelbox[data]"
+   ```
 
-Install dependencies
+   This includes essential libraries like Shapely, GeoJSON, NumPy, Pillow, and OpenCV-Python, enabling you to handle a wide range of data types and perform complex operations.
 
-```
-pip3 install -r requirements.txt
-```
+### Building and installing locally
 
-To install dependencies required for data processing modules use:
+For those who prefer or require a more hands-on approach, such as contributing to the SDK or integrating it into a complex project, building the SDK locally is the way to go.
 
-```
-pip install "labelbox[data]"
-```
+
+#### Steps for local installation
+
+1. **Clone the SDK repository:** First, clone the Labelbox SDK repository from GitHub to your local machine.
+
+2. **Install required dependencies:** To ensure all dependencies are met, run:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Install the SDK locally:** Navigate to the root directory of the cloned repository and run:
+
+   ```bash
+   pip install -e .
+   ```
+
+   For additional data processing capabilities, remember to install the `data` extra as mentioned in the easy installation section.
+
+
+## Code architecture
+The Labelbox Python SDK is designed to provide a clean and intuitive interface for interacting with the Labelbox API. It primarily uses GraphQL for communication, with some REST API calls for specific functionalities. The SDK wraps the GraphQL API calls and provides object-oriented representations of Labelbox entities like projects, datasets, and labels. This allows developers to interact with Labelbox in a more Pythonic way, making code easier to read and maintain.
+
+Key files and classes include:
+
+- **`labelbox/client.py`:** Contains the `Client` class, which provides methods for interacting with the Labelbox API.
+- **`labelbox/orm/model.py`:** Defines the data model for Labelbox entities like projects, datasets, and labels.
+- **`labelbox/schema/*.py`:** Contains classes representing specific Labelbox entities and their attributes.
+- **`labelbox/data/annotation_types/*.py`:** Defines classes for different annotation types, such as bounding boxes, polygons, and classifications.
+- **`labelbox/data/serialization/*.py`:** Provides converters for different data formats, including NDJSON and Labelbox v1 JSON.
+
+The SDK wraps the GraphQL APIs and provides a Pythonic interface for interacting with Labelbox.
+
+## Contribution guidelines
+We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
+
+## Develop with AI assistance
+### Use the codebase as context for large language models
+Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window.
 
 ## Documentation
+The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
 
-- [Visit our docs](https://docs.labelbox.com/reference) to learn how the SDK works
-- Checkout our [notebook examples](examples/) to follow along with interactive tutorials
-- view our [API reference](https://labelbox-python.readthedocs.io/en/latest/index.html).
-
-## Authentication
-
-Labelbox uses API keys to validate requests. You can create and manage API keys on [Labelbox](https://app.labelbox.com/account/api-keys). Pass your API key as an environment variable. Then, import and initialize the API Client.
-
-```
-user@machine:~$ export LABELBOX_API_KEY="<your local api key here>"
-user@machine:~$ python3
-
-from labelbox import Client
-client = Client()
-```
-
-- Update api_key and endpoint if not using the production cloud deployment
-
-```
-# On prem
-client = Client( endpoint = "<local deployment>")
-
-# Local
-client = Client(api_key=os.environ['LABELBOX_TEST_API_KEY_LOCAL'], endpoint="http://localhost:8080/graphql")
-
-# Staging
-client = Client(api_key=os.environ['LABELBOX_TEST_API_KEY_LOCAL'], endpoint="https://api.lb-stage.xyz/graphql")
-```
-
-## Contribution
-
-Please consult `CONTRIB.md`
-
-## Testing
-
-1. Update the `Makefile` with your `local`, `staging`, `prod` API key. Ensure that docker has been installed on your system. Make sure the key is not from a free tier account.
-2. To test on `local`:
-
-```
-user@machine:~$ export LABELBOX_TEST_API_KEY_LOCAL="<your local api key here>"
-make test-local  # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_LOCAL=specify_here_or_export_me
-```
-
-3. To test on `staging`:
-
-```
-user@machine:~$ export LABELBOX_TEST_API_KEY_STAGING="<your staging api key here>"
-make test-staging # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_STAGING=specify_here_or_export_me
-```
-
-4. To test on `prod`:
-
-```
-user@machine:~$ export LABELBOX_TEST_API_KEY_PROD="<your prod api key here>"
-make test-prod # with an optional flag: PATH_TO_TEST=tests/integration/...etc LABELBOX_TEST_API_KEY_PROD=specify_here_or_export_me
-```
-
-5. If you make any changes and need to rebuild the image used for testing, force a rebuild with the `-B` flag
-
-```
-make -B {build|test-staging|test-prod}
-```
-
-6. Testing against Delegated Access will be skipped unless the local env contains the key:
-DA_GCP_LABELBOX_API_KEY. These tests will be included when run against a PR. If you would like to test it manually, please reach out to the Devops team for information on the key.
+- **Official documentation:** https://docs.labelbox.com/docs/overview
+- **Notebook examples:** https://github.com/Labelbox/labelbox-python/tree/master/examples
+- **API reference:** https://labelbox-python.readthedocs.io/en/latest/

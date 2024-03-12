@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from io import TextIOWrapper
+import json
 from pathlib import Path
 from typing import (
     Callable,
@@ -18,7 +19,7 @@ from typing import (
 )
 
 import requests
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 
 from labelbox.schema.task import Task
 from labelbox.utils import _CamelCaseMixin
@@ -36,19 +37,19 @@ class StreamType(Enum):
     ERRORS = "ERRORS"
 
 
-class Range(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
+class Range(_CamelCaseMixin, pydantic_compat.BaseModel):  # pylint: disable=too-few-public-methods
     """Represents a range."""
 
     start: int
     end: int
 
 
-class _MetadataHeader(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
+class _MetadataHeader(_CamelCaseMixin, pydantic_compat.BaseModel):  # pylint: disable=too-few-public-methods
     total_size: int
     total_lines: int
 
 
-class _MetadataFileInfo(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
+class _MetadataFileInfo(_CamelCaseMixin, pydantic_compat.BaseModel):  # pylint: disable=too-few-public-methods
     offsets: Range
     lines: Range
     file: str
@@ -470,10 +471,23 @@ class ExportTask:
         self._task = task
 
     def __repr__(self):
-        return self._task.__repr__()
+        return f"<ExportTask ID: {self.uid}>" if getattr(
+            self, "uid", None) else "<ExportTask>"
 
     def __str__(self):
-        return self._task.__str__()
+        properties_to_include = [
+            "completion_percentage",
+            "created_at",
+            "metadata",
+            "name",
+            "result",
+            "status",
+            "type",
+            "uid",
+            "updated_at",
+        ]
+        props = {prop: getattr(self, prop) for prop in properties_to_include}
+        return f"<ExportTask {json.dumps(props, indent=4, default=str)}>"
 
     def __eq__(self, other):
         return self._task.__eq__(other)
@@ -510,6 +524,16 @@ class ExportTask:
     def status(self):
         """Returns the status of the task."""
         return self._task.status
+
+    @property
+    def metadata(self):
+        """Returns the metadata of the task."""
+        return self._task.metadata
+
+    @property
+    def result(self):
+        """Returns the result of the task."""
+        return self._task.result_url
 
     @property
     def completion_percentage(self):

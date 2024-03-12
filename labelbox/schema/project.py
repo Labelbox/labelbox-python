@@ -1,11 +1,12 @@
 import json
 import logging
+from string import Template
 import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, overload
 from urllib.parse import urlparse
 
 import requests
@@ -28,6 +29,8 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.id_type import IdType
+from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.queue_mode import QueueMode
@@ -43,7 +46,36 @@ try:
 except ImportError:
     pass
 
+DataRowPriority = int
+LabelingParameterOverrideInput = Tuple[Union[DataRow, DataRowIdentifier],
+                                       DataRowPriority]
+
 logger = logging.getLogger(__name__)
+
+
+def validate_labeling_parameter_overrides(
+        data: List[LabelingParameterOverrideInput]) -> None:
+    for idx, row in enumerate(data):
+        if len(row) < 2:
+            raise TypeError(
+                f"Data must be a list of tuples each containing two elements: a DataRow or a DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
+            )
+        data_row_identifier = row[0]
+        priority = row[1]
+        valid_types = (Entity.DataRow, UniqueId, GlobalKey)
+        if not isinstance(data_row_identifier, valid_types):
+            raise TypeError(
+                f"Data row identifier should be be of type DataRow, UniqueId or GlobalKey. Found {type(data_row_identifier)} for data_row_identifier {data_row_identifier}"
+            )
+
+        if not isinstance(priority, int):
+            if isinstance(data_row_identifier, Entity.DataRow):
+                id = data_row_identifier.uid
+            else:
+                id = data_row_identifier
+            raise TypeError(
+                f"Priority must be an int. Found {type(priority)} for data_row_identifier {id}"
+            )
 
 
 class Project(DbObject, Updateable, Deletable):
@@ -174,6 +206,22 @@ class Project(DbObject, Updateable, Deletable):
             for tag in res["project"]["updateProjectResourceTags"]
         ]
 
+    def get_resource_tags(self) -> List[ResourceTag]:
+        """
+        Returns tags for a project
+        """
+        query_str = """query GetProjectResourceTagsPyApi($projectId: ID!) {
+            project(where: {id: $projectId}) {
+                name
+                resourceTags {%s}
+            }
+            }""" % (query.results_query_part(ResourceTag))
+
+        results = self.client.execute(
+            query_str, {"projectId": self.uid})['project']['resourceTags']
+
+        return [ResourceTag(self.client, tag) for tag in results]
+
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
         """ Custom relationship expansion method to support limited filtering.
 
@@ -223,7 +271,7 @@ class Project(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
@@ -329,7 +377,7 @@ class Project(DbObject, Updateable, Deletable):
             generate during the `timeout_seconds` period, None is returned.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
@@ -429,7 +477,7 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self.export_v2(task_name, filters, params, streamable=True)
+        task = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
@@ -437,18 +485,17 @@ class Project(DbObject, Updateable, Deletable):
         task_name: Optional[str] = None,
         filters: Optional[ProjectExportFilters] = None,
         params: Optional[ProjectExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a project export task with the given params and returns the task.
 
         For more information visit: https://docs.labelbox.com/docs/exports-v2#export-from-a-project-python-sdk
-        
+
         >>>     task = project.export_v2(
         >>>         filters={
         >>>             "last_activity_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
         >>>             "label_created_at": ["2000-01-01 00:00:00", "2050-01-01 00:00:00"],
-        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]   
+        >>>             "data_row_ids": [DATA_ROW_ID_1, DATA_ROW_ID_2, ...] # or global_keys: [DATA_ROW_GLOBAL_KEY_1, DATA_ROW_GLOBAL_KEY_2, ...]
         >>>             "batch_ids": [BATCH_ID_1, BATCH_ID_2, ...]
         >>>         },
         >>>         params={
@@ -458,7 +505,15 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return self._export(task_name, filters, params)
 
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[ProjectExportFilters] = None,
+        params: Optional[ProjectExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or ProjectExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -745,8 +800,8 @@ class Project(DbObject, Updateable, Deletable):
 
         Args:
             name: a name for the batch, must be unique within a project
-            data_rows: Either a list of `DataRows` or Data Row ids. 
-            global_keys: global keys for data rows to add to the batch. 
+            data_rows: Either a list of `DataRows` or Data Row ids.
+            global_keys: global keys for data rows to add to the batch.
             priority: An optional priority for the Data Rows in the Batch. 1 highest -> 5 lowest
             consensus_settings: An optional dictionary with consensus settings: {'number_of_labels': 3,
                 'coverage_percentage': 0.1}
@@ -1094,6 +1149,20 @@ class Project(DbObject, Updateable, Deletable):
 
         return mode
 
+    def get_label_count(self) -> int:
+        """
+        Returns: the total number of labels in this project.
+        """
+
+        query_str = """query LabelCountPyApi($projectId: ID!) {
+            project(where: {id: $projectId}) {
+                labelCount
+            }
+        }"""
+
+        res = self.client.execute(query_str, {'projectId': self.uid})
+        return res["project"]["labelCount"]
+
     def get_queue_mode(self) -> "QueueMode":
         """
         Provides the queue mode used for this project.
@@ -1129,36 +1198,25 @@ class Project(DbObject, Updateable, Deletable):
         else:
             raise ValueError("Status not known")
 
-    def validate_labeling_parameter_overrides(self, data) -> None:
-        for idx, row in enumerate(data):
-            if len(row) < 2:
-                raise TypeError(
-                    f"Data must be a list of tuples containing a DataRow and priority (int). Found {len(row)} items. Index: {idx}"
-                )
-            data_row = row[0]
-            priority = row[1]
-            if not isinstance(data_row, Entity.DataRow):
-                raise TypeError(
-                    f"data_row should be be of type DataRow. Found {type(data_row)}. Index: {idx}"
-                )
-
-            if not isinstance(priority, int):
-                raise TypeError(
-                    f"Priority must be an int. Found {type(priority)} for data_row {data_row}. Index: {idx}"
-                )
-
-    def set_labeling_parameter_overrides(self, data) -> bool:
+    def set_labeling_parameter_overrides(
+            self, data: List[LabelingParameterOverrideInput]) -> bool:
         """ Adds labeling parameter overrides to this project.
 
         See information on priority here:
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
             >>> project.set_labeling_parameter_overrides([
-            >>>     (data_row_1, 2), (data_row_2, 1)])
+            >>>     (data_row_id1, 2), (data_row_id2, 1)])
+            or
+            >>> project.set_labeling_parameter_overrides([
+            >>>     (data_row_gk1, 2), (data_row_gk2, 1)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                (DataRow, priority<int>) for the new override.
+                either (DataRow, DataRowPriority<int>)
+                or (DataRowIdentifier, priority<int>) for the new override.
+                DataRowIdentifier is an object representing a data row id or a global key. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
+                NOTE - passing whole DatRow is deprecated. Please use a DataRowIdentifier instead.
 
                 Priority:
                     * Data will be labeled in priority order.
@@ -1174,15 +1232,31 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
         data = [t[:2] for t in data]
-        self.validate_labeling_parameter_overrides(data)
-        data_str = ",\n".join("{dataRow: {id: \"%s\"}, priority: %d }" %
-                              (data_row.uid, priority)
-                              for data_row, priority in data)
-        id_param = "projectId"
-        query_str = """mutation SetLabelingParameterOverridesPyApi($%s: ID!){
-            project(where: { id: $%s }) {setLabelingParameterOverrides
-            (data: [%s]) {success}}} """ % (id_param, id_param, data_str)
-        res = self.client.execute(query_str, {id_param: self.uid})
+        validate_labeling_parameter_overrides(data)
+
+        template = Template(
+            """mutation SetLabelingParameterOverridesPyApi($$projectId: ID!)
+                {project(where: { id: $$projectId })
+                {setLabelingParameterOverrides
+                (dataWithDataRowIdentifiers: [$dataWithDataRowIdentifiers])
+                {success}}}
+            """)
+
+        data_rows_with_identifiers = ""
+        for data_row, priority in data:
+            if isinstance(data_row, DataRow):
+                data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.uid}\", idType: {IdType.DataRowId}}}, priority: {priority}}},"
+            elif isinstance(data_row, UniqueId) or isinstance(
+                    data_row, GlobalKey):
+                data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.key}\", idType: {data_row.id_type}}}, priority: {priority}}},"
+            else:
+                raise TypeError(
+                    f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row)}."
+                )
+
+        query_str = template.substitute(
+            dataWithDataRowIdentifiers=data_rows_with_identifiers)
+        res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
     @overload
@@ -1214,7 +1288,7 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object 
+            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             priority (int): Priority for the new override. See above for more information.
 
@@ -1252,7 +1326,7 @@ class Project(DbObject, Updateable, Deletable):
                 project_param: self.uid,
                 data_rows_param: {
                     "ids": [id for id in data_rows],
-                    "idType": data_rows._id_type,
+                    "idType": data_rows.id_type,
                 },
             })["project"][method]
 
@@ -1263,31 +1337,6 @@ class Project(DbObject, Updateable, Deletable):
             raise LabelboxError(f"Priority was not updated successfully: " +
                                 json.dumps(task.errors))
         return True
-
-    def upsert_review_queue(self, quota_factor) -> None:
-        """ Sets the the proportion of total assets in a project to review.
-
-        More information can be found here:
-            https://docs.labelbox.com/en/quality-assurance/review-labels#configure-review-percentage
-
-        Args:
-            quota_factor (float): Which part (percentage) of the queue
-                to reinitiate. Between 0 and 1.
-        """
-
-        if not 0. <= quota_factor <= 1.:
-            raise ValueError("Quota factor must be in the range of [0,1]")
-
-        id_param = "projectId"
-        quota_param = "quotaFactor"
-        query_str = """mutation UpsertReviewQueuePyApi($%s: ID!, $%s: Float!){
-            upsertReviewQueue(where:{project: {id: $%s}}
-                            data:{quotaFactor: $%s}) {id}}""" % (
-            id_param, quota_param, id_param, quota_param)
-        res = self.client.execute(query_str, {
-            id_param: self.uid,
-            quota_param: quota_factor
-        })
 
     def extend_reservations(self, queue_type) -> int:
         """ Extends all the current reservations for the current user on the given
@@ -1412,7 +1461,7 @@ class Project(DbObject, Updateable, Deletable):
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object 
+            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
@@ -1447,7 +1496,7 @@ class Project(DbObject, Updateable, Deletable):
                 "queueId": task_queue_id,
                 "dataRowIdentifiers": {
                     "ids": [id for id in data_row_ids],
-                    "idType": data_row_ids._id_type,
+                    "idType": data_row_ids.id_type,
                 },
             },
             timeout=180.0,
@@ -1567,7 +1616,7 @@ class Project(DbObject, Updateable, Deletable):
             if (datetime.now() -
                     start_time).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
-                    """Maximum wait time exceeded while waiting for data rows to be processed. 
+                    """Maximum wait time exceeded while waiting for data rows to be processed.
                     Try creating a batch a bit later""")
 
             all_good = self.__check_data_rows_have_been_processed(

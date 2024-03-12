@@ -1,19 +1,19 @@
 from typing import Optional
 
-from pydantic import BaseModel, root_validator
+from labelbox import pydantic_compat
 
 from labelbox.utils import camel_case
 from ...annotation_types.types import Cuid
 
 
-class LBV1Feature(BaseModel):
+class LBV1Feature(pydantic_compat.BaseModel):
     keyframe: Optional[bool] = None
     title: str = None
     value: Optional[str] = None
     schema_id: Optional[Cuid] = None
     feature_id: Optional[Cuid] = None
 
-    @root_validator
+    @pydantic_compat.root_validator
     def check_ids(cls, values):
         if values.get('value') is None:
             values['value'] = values['title']

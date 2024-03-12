@@ -25,6 +25,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.enums import CollectionJobStatus
@@ -183,6 +184,7 @@ class Client:
 
         endpoint = self.endpoint if not experimental else self.endpoint.replace(
             "/graphql", "/_gql")
+
         try:
             request = {
                 'url': endpoint,
@@ -206,19 +208,23 @@ class Client:
         except Exception as e:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
-        try:
-            r_json = response.json()
-        except:
-            if "upstream connect error or disconnect/reset before headers" \
-                    in response.text:
+
+        if 200 <= response.status_code < 300 or response.status_code < 500 or response.status_code >= 600:
+            try:
+                r_json = response.json()
+            except Exception:
+                raise labelbox.exceptions.LabelboxError(
+                    "Failed to parse response as JSON: %s" % response.text)
+        else:
+            if "upstream connect error or disconnect/reset before headers" in response.text:
                 raise labelbox.exceptions.InternalServerError(
                     "Connection reset")
             elif response.status_code == 502:
                 error_502 = '502 Bad Gateway'
                 raise labelbox.exceptions.InternalServerError(error_502)
-
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s" % response.text)
+            elif 500 <= response.status_code < 600:
+                error_500 = f"Internal server http error {response.status_code}"
+                raise labelbox.exceptions.InternalServerError(error_500)
 
         errors = r_json.get("errors", [])
 
@@ -234,8 +240,11 @@ class Client:
                     return error
             return None
 
-        def get_error_status_code(error):
-            return error["extensions"].get("exception").get("status")
+        def get_error_status_code(error: dict) -> int:
+            try:
+                return int(error["extensions"].get("exception").get("status"))
+            except:
+                return 500
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
                         "code") is not None:
@@ -295,11 +304,14 @@ class Client:
                                              "extensions", "code")
         if internal_server_error is not None:
             message = internal_server_error.get("message")
+            error_status_code = get_error_status_code(internal_server_error)
 
-            if get_error_status_code(internal_server_error) == 400:
+            if error_status_code == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
-            elif get_error_status_code(internal_server_error) == 426:
+            elif error_status_code == 426:
                 raise labelbox.exceptions.OperationNotAllowedException(message)
+            elif error_status_code == 500:
+                raise labelbox.exceptions.LabelboxError(message)
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
@@ -510,7 +522,7 @@ class Client:
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
 
-    def get_projects(self, where=None) -> List[Project]:
+    def get_projects(self, where=None) -> PaginatedCollection:
         """ Fetches all the projects the user has access to.
 
         >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
@@ -519,11 +531,11 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            An iterable of Projects (typically a PaginatedCollection).
+            PaginatedCollection of all projects the user has access to or projects matching the criteria specified.
         """
         return self._get_all(Entity.Project, where)
 
-    def get_datasets(self, where=None) -> List[Dataset]:
+    def get_datasets(self, where=None) -> PaginatedCollection:
         """ Fetches one or more datasets.
 
         >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
@@ -532,7 +544,7 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            An iterable of Datasets (typically a PaginatedCollection).
+            PaginatedCollection of all datasets the user has access to or datasets matching the criteria specified.
         """
         return self._get_all(Entity.Dataset, where)
 
@@ -743,11 +755,8 @@ class Client:
         """
             Returns: DataRow: returns a single data row given the global key
         """
-
         res = self.get_data_row_ids_for_global_keys([global_key])
         if res['status'] != "SUCCESS":
-            raise labelbox.exceptions.MalformedQueryException(res['errors'][0])
-        if len(res['results']) == 0:
             raise labelbox.exceptions.ResourceNotFoundError(
                 Entity.DataRow, {global_key: global_key})
         data_row_id = res['results'][0]
@@ -1607,6 +1616,9 @@ class Client:
                     "Timed out waiting for clear_global_keys job to complete.")
             time.sleep(sleep_time)
 
+    def get_catalog(self) -> Catalog:
+        return Catalog(client=self)
+
     def get_catalog_slice(self, slice_id) -> CatalogSlice:
         """
         Fetches a Catalog Slice by ID.
@@ -1695,6 +1707,10 @@ class Client:
             }
         """
         res = self.execute(query_str, {"id": slice_id})
+        if res is None or res["getSavedQuery"] is None:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                ModelSlice, slice_id)
+
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
     def delete_feature_schema_from_ontology(

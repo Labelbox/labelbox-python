@@ -3,12 +3,16 @@ from datetime import datetime
 from copy import deepcopy
 from enum import Enum
 from itertools import chain
-from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator
+import warnings
 
-from pydantic import BaseModel, conlist, constr
+from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
+
+from labelbox import pydantic_compat
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.identifiable import UniqueId, GlobalKey
 
 from labelbox.schema.ontology import SchemaId
-from labelbox.utils import _CamelCaseMixin, format_iso_datetime, format_iso_from_string
+from labelbox.utils import _CamelCaseMixin, camel_case, format_iso_datetime, format_iso_from_string
 
 
 class DataRowMetadataKind(Enum):
@@ -21,9 +25,11 @@ class DataRowMetadataKind(Enum):
 
 
 # Metadata schema
-class DataRowMetadataSchema(BaseModel):
+class DataRowMetadataSchema(pydantic_compat.BaseModel):
     uid: SchemaId
-    name: constr(strip_whitespace=True, min_length=1, max_length=100)
+    name: pydantic_compat.constr(strip_whitespace=True,
+                                 min_length=1,
+                                 max_length=100)
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]]
@@ -32,8 +38,10 @@ class DataRowMetadataSchema(BaseModel):
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = conlist(float, min_items=128, max_items=128)
-String: Type[str] = constr(max_length=4096)
+Embedding: Type[List[float]] = pydantic_compat.conlist(float,
+                                                       min_items=128,
+                                                       max_items=128)
+String: Type[str] = pydantic_compat.constr(max_length=4096)
 
 
 # Metadata base class
@@ -48,19 +56,22 @@ class DataRowMetadataField(_CamelCaseMixin):
 
 
 class DataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str]
-    data_row_id: Optional[str]
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     fields: List[DataRowMetadataField]
 
 
 class DeleteDataRowMetadata(_CamelCaseMixin):
-    data_row_id: str
+    data_row_id: Union[str, UniqueId, GlobalKey]
     fields: List[SchemaId]
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
-    global_key: Optional[str]
-    data_row_id: Optional[str]
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     error: Optional[str] = None
     fields: List[Union[DataRowMetadataField, SchemaId]]
 
@@ -77,14 +88,33 @@ class _UpsertDataRowMetadataInput(_CamelCaseMixin):
 
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str]
-    data_row_id: Optional[str]
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     fields: List[_UpsertDataRowMetadataInput]
 
 
 class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
-    data_row_id: str
+    data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
+
+    class Config:
+        arbitrary_types_allowed = True
+        alias_generator = camel_case
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        if 'data_row_identifier' in res.keys():
+            key = 'data_row_identifier'
+            id_type_key = 'id_type'
+        else:
+            key = 'dataRowIdentifier'
+            id_type_key = 'idType'
+        data_row_identifier = res.pop(key)
+        res[key] = {
+            "id": data_row_identifier.key,
+            id_type_key: data_row_identifier.id_type
+        }
+        return res
 
 
 _BatchInputs = Union[List[_UpsertBatchDataRowMetadata],
@@ -94,13 +124,17 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: constr(strip_whitespace=True, min_length=1, max_length=100)
+    name: pydantic_compat.constr(strip_whitespace=True,
+                                 min_length=1,
+                                 max_length=100)
     kind: str
 
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: constr(strip_whitespace=True, min_length=1, max_length=100)
+    name: pydantic_compat.constr(strip_whitespace=True,
+                                 min_length=1,
+                                 max_length=100)
     kind: str
     options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]]
 
@@ -553,7 +587,7 @@ class DataRowMetadataOntology:
         """ Delete metadata from a datarow by specifiying the fields you want to remove
 
         >>> delete = DeleteDataRowMetadata(
-        >>>                 data_row_id="datarow-id",
+        >>>                 data_row_id=UniqueId("datarow-id"),
         >>>                 fields=[
         >>>                        "schema-id-1",
         >>>                        "schema-id-2"
@@ -562,8 +596,32 @@ class DataRowMetadataOntology:
         >>>    )
         >>> mdo.batch_delete([metadata])
 
+        >>> delete = DeleteDataRowMetadata(
+        >>>                 data_row_id=GlobalKey("global-key"),
+        >>>                 fields=[
+        >>>                        "schema-id-1",
+        >>>                        "schema-id-2"
+        >>>                        ...
+        >>>                    ]
+        >>>    )
+        >>> mdo.batch_delete([metadata])
+
+        >>> delete = DeleteDataRowMetadata(
+        >>>                 data_row_id="global-key",
+        >>>                 fields=[
+        >>>                        "schema-id-1",
+        >>>                        "schema-id-2"
+        >>>                        ...
+        >>>                    ]
+        >>>    )
+        >>> mdo.batch_delete([metadata])
+
+
         Args:
             deletes: Data row and schema ids to delete
+                For data row, we support UniqueId, str, and GlobalKey. 
+                If you pass a str, we will assume it is a UniqueId
+                Do not pass a mix of data row ids and global keys in the same list
 
         Returns:
             list of unsuccessful deletions.
@@ -572,13 +630,34 @@ class DataRowMetadataOntology:
         """
 
         if not len(deletes):
-            raise ValueError("Empty list passed")
+            raise ValueError("The 'deletes' list cannot be empty.")
+
+        passed_strings = False
+        for i, delete in enumerate(deletes):
+            if isinstance(delete.data_row_id, str):
+                passed_strings = True
+                deletes[i] = DeleteDataRowMetadata(data_row_id=UniqueId(
+                    delete.data_row_id),
+                                                   fields=delete.fields)
+            elif isinstance(delete.data_row_id, UniqueId):
+                continue
+            elif isinstance(delete.data_row_id, GlobalKey):
+                continue
+            else:
+                raise ValueError(
+                    f"Invalid data row identifier type '{type(delete.data_row_id)}' for '{delete.data_row_id}'"
+                )
+
+            if passed_strings:
+                warnings.warn(
+                    "Using string for data row id will be deprecated. Please use "
+                    "UniqueId instead.")
 
         def _batch_delete(
             deletes: List[_DeleteBatchDataRowMetadata]
         ) -> List[DataRowMetadataBatchResponse]:
-            query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowCustomMetadataBatchDeleteInput!]!) {
-                deleteDataRowCustomMetadata(data: $deletes) {
+            query = """mutation DeleteDataRowMetadataBetaPyApi($deletes: [DataRowIdentifierCustomMetadataBatchDeleteInput!]) {
+                deleteDataRowCustomMetadata(dataRowIdentifiers: $deletes) {
                     dataRowId
                     error
                     fields {
@@ -601,13 +680,23 @@ class DataRowMetadataOntology:
                                  items,
                                  batch_size=self._batch_size)
 
+    @overload
     def bulk_export(self, data_row_ids: List[str]) -> List[DataRowMetadata]:
+        pass
+
+    @overload
+    def bulk_export(self,
+                    data_row_ids: DataRowIdentifiers) -> List[DataRowMetadata]:
+        pass
+
+    def bulk_export(self, data_row_ids) -> List[DataRowMetadata]:
         """ Exports metadata for a list of data rows
 
         >>> mdo.bulk_export([data_row.uid for data_row in data_rows])
 
         Args:
-            data_row_ids: List of data data rows to fetch metadata for
+            data_row_ids: List of data data rows to fetch metadata for. This can be a list of strings or a DataRowIdentifiers object
+            DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
         Returns:
             A list of DataRowMetadata.
             There will be one DataRowMetadata for each data_row_id passed in.
@@ -615,13 +704,20 @@ class DataRowMetadataOntology:
             Data rows without metadata will have empty `fields`.
 
         """
-
         if not len(data_row_ids):
             raise ValueError("Empty list passed")
 
-        def _bulk_export(_data_row_ids: List[str]) -> List[DataRowMetadata]:
-            query = """query dataRowCustomMetadataPyApi($dataRowIds: [ID!]!) {
-                dataRowCustomMetadata(where: {dataRowIds : $dataRowIds}) {
+        if isinstance(data_row_ids,
+                      list) and len(data_row_ids) > 0 and isinstance(
+                          data_row_ids[0], str):
+            data_row_ids = UniqueIds(data_row_ids)
+            warnings.warn("Using data row ids will be deprecated. Please use "
+                          "UniqueIds or GlobalKeys instead.")
+
+        def _bulk_export(
+                _data_row_ids: DataRowIdentifiers) -> List[DataRowMetadata]:
+            query = """query dataRowCustomMetadataPyApi($dataRowIdentifiers: DataRowCustomMetadataDataRowIdentifiersInput) {
+                dataRowCustomMetadata(where: {dataRowIdentifiers : $dataRowIdentifiers}) {
                     dataRowId
                     globalKey
                     fields {
@@ -633,8 +729,12 @@ class DataRowMetadataOntology:
             """
             return self.parse_metadata(
                 self._client.execute(
-                    query,
-                    {"dataRowIds": _data_row_ids})['dataRowCustomMetadata'])
+                    query, {
+                        "dataRowIdentifiers": {
+                            "ids": [id for id in _data_row_ids],
+                            "idType": _data_row_ids.id_type
+                        }
+                    })['dataRowCustomMetadata'])
 
         return _batch_operations(_bulk_export,
                                  data_row_ids,
@@ -786,7 +886,7 @@ class DataRowMetadataOntology:
             deletes.add(schema.uid)
 
         return _DeleteBatchDataRowMetadata(
-            data_row_id=delete.data_row_id,
+            data_row_identifier=delete.data_row_id,
             schema_ids=list(delete.fields)).dict(by_alias=True)
 
     def _validate_custom_schema_by_name(self,

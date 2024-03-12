@@ -3,12 +3,13 @@ from typing import List, Optional, Union, Tuple
 import geojson
 import numpy as np
 import cv2
-from pydantic import validator
 
 from shapely.geometry import LineString as SLineString
 
 from .point import Point
 from .geometry import Geometry
+
+from labelbox import pydantic_compat
 
 
 class Line(Geometry):
@@ -64,7 +65,7 @@ class Line(Geometry):
                              color=color,
                              thickness=thickness)
 
-    @validator('points')
+    @pydantic_compat.validator('points')
     def is_geom_valid(cls, points):
         if len(points) < 2:
             raise ValueError(

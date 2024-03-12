@@ -111,6 +111,10 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
     assert len(project_resource_tag) == 1
     assert project_resource_tag[0].uid == tagA.uid
 
+    project_resource_tags = client.get_project(p1.uid).get_resource_tags()
+    assert len(project_resource_tags) == 1
+    assert project_resource_tags[0].uid == tagA.uid
+
     delete_tag(tagA.uid)
     delete_tag(tagB.uid)
 
@@ -123,18 +127,6 @@ def test_project_filtering(client, rand_gen, data_for_project_test):
 
     assert list(client.get_projects(where=Project.name == name_1)) == [p1]
     assert list(client.get_projects(where=Project.name == name_2)) == [p2]
-
-
-def test_upsert_review_queue(project):
-    project.upsert_review_queue(0.6)
-
-    with pytest.raises(ValueError) as exc_info:
-        project.upsert_review_queue(1.001)
-    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
-
-    with pytest.raises(ValueError) as exc_info:
-        project.upsert_review_queue(-0.001)
-    assert str(exc_info.value) == "Quota factor must be in the range of [0,1]"
 
 
 def test_extend_reservations(project):
@@ -276,3 +268,13 @@ def test_queue_mode(client, rand_gen):
                                     quality_mode=QualityMode.Consensus)
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
+
+
+def test_label_count(client, configured_batch_project_with_label):
+    project = client.create_project(name="test label count")
+    assert project.get_label_count() == 0
+    project.delete()
+
+    [source_project, _, _, _] = configured_batch_project_with_label
+    num_labels = sum([1 for _ in source_project.labels()])
+    assert source_project.get_label_count() == num_labels

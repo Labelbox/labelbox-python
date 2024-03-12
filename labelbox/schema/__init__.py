@@ -22,3 +22,5 @@ import labelbox.schema.batch
 import labelbox.schema.iam_integration
 import labelbox.schema.media_type
 import labelbox.schema.identifiables
+import labelbox.schema.identifiable
+import labelbox.schema.catalog

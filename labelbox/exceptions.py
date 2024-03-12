@@ -135,5 +135,9 @@ class ConfidenceNotSupportedException(Exception):
     """Raised when confidence is specified for unsupported annotation type"""
 
 
+class CustomMetricsNotSupportedException(Exception):
+    """Raised when custom_metrics is specified for unsupported annotation type"""
+
+
 class ProcessingWaitTimeout(Exception):
     """Raised when waiting for the data rows to be processed takes longer than allowed"""

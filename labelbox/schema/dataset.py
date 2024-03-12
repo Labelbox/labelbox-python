@@ -68,10 +68,10 @@ class Dataset(DbObject, Updateable, Deletable):
         """ 
         Custom method to paginate data_rows via cursor.
 
-        Params:
+        Args:
             from_cursor (str): Cursor (data row id) to start from, if none, will start from the beginning
             where (dict(str,str)): Filter to apply to data rows. Where value is a data row column name and key is the value to filter on.    
-                example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
+            example: {'external_id': 'my_external_id'} to get a data row with external_id = 'my_external_id'
 
 
         NOTE: 
@@ -153,6 +153,11 @@ class Dataset(DbObject, Updateable, Deletable):
                 "DataRow.row_data missing when creating DataRow.")
 
         row_data = args[DataRow.row_data.name]
+
+        if isinstance(row_data, str) and row_data.startswith("s3:/"):
+            raise InvalidQueryError(
+                "row_data: s3 assets must start with 'https'.")
+
         if not isinstance(row_data, str):
             # If the row data is an object, upload as a string
             args[DataRow.row_data.name] = json.dumps(row_data)
@@ -425,6 +430,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 raise InvalidQueryError(
                     "`row_data` missing when creating DataRow.")
 
+            if isinstance(item.get('row_data'),
+                          str) and item.get('row_data').startswith("s3:/"):
+                raise InvalidQueryError(
+                    "row_data: s3 assets must start with 'https'.")
             invalid_keys = set(item) - {
                 *{f.name for f in DataRow.fields()}, 'attachments', 'media_type'
             }
@@ -561,7 +570,7 @@ class Dataset(DbObject, Updateable, Deletable):
             LabelboxError: if the export fails or is unable to download within the specified time.
         """
         warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after December 31st, 2023. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
+            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
             DeprecationWarning)
         id_param = "datasetId"
         metadata_param = "includeMetadataInput"
@@ -619,7 +628,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self.export_v2(task_name, filters, params, streamable=True)
+        task = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
@@ -627,7 +636,6 @@ class Dataset(DbObject, Updateable, Deletable):
         task_name: Optional[str] = None,
         filters: Optional[DatasetExportFilters] = None,
         params: Optional[CatalogExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a dataset export task with the given params and returns the task.
@@ -646,7 +654,15 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return self._export(task_name, filters, params)
 
+    def _export(
+        self,
+        task_name: Optional[str] = None,
+        filters: Optional[DatasetExportFilters] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,

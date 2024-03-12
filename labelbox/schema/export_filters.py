@@ -59,6 +59,10 @@ class DatasetExportFilters(SharedExportFilters):
     pass
 
 
+class CatalogExportFilters(SharedExportFilters):
+    pass
+
+
 class DatarowExportFilters(BaseExportFilters):
     pass
 

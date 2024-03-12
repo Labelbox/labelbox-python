@@ -1,7 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Collection, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 import json
-from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
@@ -11,7 +10,6 @@ from labelbox.schema.export_filters import DatarowExportFilters, build_filters, 
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
-from labelbox.schema.user import User  # type: ignore
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment, Client
@@ -74,9 +72,19 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     def update(self, **kwargs):
         # Convert row data to string if it is an object
         # All other updates pass through
+        primary_fields = ["external_id", "global_key", "row_data"]
+        for field in primary_fields:
+            data = kwargs.get(field)
+            if data == "" or data == {}:
+                raise ValueError(f"{field} cannot be empty if it is set")
+        if not any(kwargs.get(field) for field in primary_fields):
+            raise ValueError(
+                f"At least one of these fields needs to be present: {primary_fields}"
+            )
+
         row_data = kwargs.get("row_data")
         if isinstance(row_data, dict):
-            kwargs['row_data'] = json.dumps(kwargs['row_data'])
+            kwargs['row_data'] = json.dumps(row_data)
         super().update(**kwargs)
 
     @staticmethod
@@ -188,12 +196,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = DataRow.export_v2(client,
-                                 data_rows,
-                                 global_keys,
-                                 task_name,
-                                 params,
-                                 streamable=True)
+        task = DataRow._export(client,
+                               data_rows,
+                               global_keys,
+                               task_name,
+                               params,
+                               streamable=True)
         return ExportTask(task)
 
     @staticmethod
@@ -203,7 +211,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
-        streamable: bool = False,
     ) -> Task:
         """
         Creates a data rows export task with the given list, params and returns the task.
@@ -228,7 +235,18 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+        return DataRow._export(client, data_rows, global_keys, task_name,
+                               params)
 
+    @staticmethod
+    def _export(
+        client: "Client",
+        data_rows: Optional[List[Union[str, "DataRow"]]] = None,
+        global_keys: Optional[List[str]] = None,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+        streamable: bool = False,
+    ) -> Task:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,

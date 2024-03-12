@@ -2,7 +2,7 @@ from typing import Tuple, List, Union
 from pathlib import Path
 from collections import defaultdict
 
-from pydantic import BaseModel
+from labelbox import pydantic_compat
 import numpy as np
 
 from .path import PathSerializerMixin
@@ -26,7 +26,7 @@ def get_annotation_lookup(annotations):
     return annotation_lookup
 
 
-class SegmentInfo(BaseModel):
+class SegmentInfo(pydantic_compat.BaseModel):
     id: int
     category_id: int
     area: int
@@ -34,12 +34,12 @@ class SegmentInfo(BaseModel):
     iscrowd: int = 0
 
 
-class RLE(BaseModel):
+class RLE(pydantic_compat.BaseModel):
     counts: List[int]
     size: Tuple[int, int]  # h,w or w,h?
 
 
-class COCOObjectAnnotation(BaseModel):
+class COCOObjectAnnotation(pydantic_compat.BaseModel):
     # All segmentations for a particular class in an image...
     # So each image will have one of these for each class present in the image..
     # Annotations only exist if there is data..

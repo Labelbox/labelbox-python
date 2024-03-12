@@ -3,8 +3,8 @@ from typing import Callable, Optional
 import requests
 from requests.exceptions import ConnectTimeout
 from google.api_core import retry
-from pydantic import root_validator
 
+from labelbox import pydantic_compat
 from labelbox.exceptions import InternalServerError
 from labelbox.typing_imports import Literal
 from labelbox.utils import _NoCoercionMixin
@@ -90,7 +90,7 @@ class TextData(BaseData, _NoCoercionMixin):
                 "One of url, im_bytes, file_path, numpy must not be None.")
         return self.url
 
-    @root_validator
+    @pydantic_compat.root_validator
     def validate_date(cls, values):
         file_path = values.get("file_path")
         text = values.get("text")

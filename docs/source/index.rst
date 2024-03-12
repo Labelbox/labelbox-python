@@ -179,6 +179,7 @@ DataRowMetadata
 
 .. automodule:: labelbox.schema.data_row_metadata
    :members:
+   :exclude-members: _DeleteBatchDataRowMetadata
    :show-inheritance:
 
 AnnotationImport
@@ -202,19 +203,11 @@ ResourceTag
    :members:
    :show-inheritance:
 
+
 Slice
------------------------------------------
-
+---------------------------
 .. automodule:: labelbox.schema.slice
-   :members: Slice
-   :exclude-members: CatalogSlice
-   :show-inheritance:
-
-CatalogSlice
------------------------------------------
-.. automodule:: labelbox.schema.slice
-   :members: CatalogSlice
-   :exclude-members: Slice
+   :members:
    :show-inheritance:
 
 QualityMode
@@ -233,6 +226,12 @@ ExportTask
 Identifiables
 ---------------------------
 .. automodule:: labelbox.schema.identifiables
+   :members:
+   :show-inheritance:
+
+Identifiable
+---------------------------
+.. automodule:: labelbox.schema.identifiable
    :members:
    :show-inheritance:
 

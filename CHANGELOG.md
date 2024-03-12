@@ -1,4 +1,98 @@
 # Changelog
+# Version 3.65.0 (2024-03-05)
+## Notes
+* Rerelease of 3.64.0
+
+# Version 3.64.0 (2024-02-29)
+
+## Added
+* `Client.get_catalog` Add catalog schema class. Catalog exports can now be made without creating a slice first
+* `last_activity_at` filter added to export_v2, allowing users to specify a datetime window without a slice
+
+## Removed
+* Review related WebhookDataSource topics
+
+## Notebooks
+* Added get_catalog notebook
+* Update custom metrics notebook
+* Update notebooks for video and image annotation import
+
+# Version 3.63.0 (2024-02-19)
+## Added
+* Ability for users to install and use sdk with pydantic v.2.* while still maintaining support for pydantic v1.*
+* `ModelRun` `export()` and `export_v2()` add model_run_details to support splits
+
+## Notebooks
+* Add composite mask notebook
+
+# Version 3.62.0 (2024-02-12)
+## Added
+* Support custom metrics for predictions (all applicable annotation classes)
+* `FoundryClient.run_app` Add data_row identifier validation for running foundry app
+* `Client.get_error_status_code` Default to 500 error if a server error is unparseable instead of throwing an exception
+
+## Updated
+* `DataRowMetadata, DataRowMetadataBatchResponse, _UpsertBatchDataRowMetadata` Make data_row_id and global_key optional in all schema types
+
+## Fixed
+* `ExportTask.__str__` Fix returned type in ExportTask instance representation
+
+## Removed
+* `Project.upsert_review_queue`
+
+## Notebooks
+* Update notebooks to new export methods
+* Add model slice notebook
+* Added support for annotation import with img bytes
+* Update user prompts for huggingface colab
+
+# Version 3.61.2 (2024-01-29)
+## Added 
+* `ModelSlice.get_data_row_identifiers` for Foundry data rows
+
+## Fixed
+* `ModelSlice.get_data_row_identifiers` scoping by model run id
+
+# Version 3.61.1 (2024-01-25)
+## Fixed
+* Removed export API limit (5000)
+
+# Version 3.61.0 (2024-01-22)
+# Added
+* `ModelSlice.get_data_row_identifiers`
+  * Fetches all data row ids and global keys for the model slice
+  * NOTE Foundry model slices are note supported yet
+## Updated
+* Updated exports v1 deprecation date to April 30th, 2024
+* Remove `streamable` param from export_v2 methods
+
+# Version 3.60.0 (2024-01-17)
+## Added
+* Get resource tags from a project
+* Method to CatalogSlice to get data row identifiers (both uids and global keys)
+* Added deprecation notice for the `upsert_review_queue` method in project
+## Notebooks
+* Update notebook for Project move_data_rows_to_task_queue
+* Added notebook for model foundry
+* Added notebook for migrating from Exports V1 to V2
+
+# Version 3.59.0 (2024-01-05)
+## Added
+* Support set_labeling_parameter_overrides for global keys 
+* Support bulk_delete of data row metadata for global keys
+* Support bulk_export of data row metadata for global keys
+## Fixed
+* Stop overwriting class annotations on prediction upload
+* Prevent users from uploading video annotations over the API limit (5000)
+* Make description optional for foundry app
+## Notebooks
+* Update notebooks for Project set_labeling_parameter_overrides add support for global keys
+
+# Version 3.58.1 (2023-12-15)
+## Added
+* Support to export all projects and all model runs to `export_v2` for a `dataset` and a `slice`
+## Notebooks
+* Update exports v2 notebook to include methods that return `ExportTask`
 
 # Version 3.58.0 (2023-12-11)
 ## Added

@@ -1,5 +1,4 @@
 from tempfile import NamedTemporaryFile
-import time
 import uuid
 from datetime import datetime
 import json
@@ -125,6 +124,18 @@ def test_get_data_row_by_global_key(data_row_and_global_key, client, rand_gen):
 
 def test_get_data_row(data_row, client):
     assert client.get_data_row(data_row.uid)
+
+
+def test_create_invalid_aws_data_row(dataset, client):
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_row(row_data="s3://labelbox-public-data/invalid")
+    assert "s3" in exc.value.message
+
+    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+        dataset.create_data_rows([{
+            "row_data": "s3://labelbox-public-data/invalid"
+        }])
+    assert "s3" in exc.value.message
 
 
 def test_lookup_data_rows(client, dataset):
@@ -542,6 +553,23 @@ def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
         ])
 
 
+def test_data_row_update_missing_or_empty_required_fields(
+        dataset, rand_gen, image_url):
+    external_id = rand_gen(str)
+    data_row = dataset.create_data_row(row_data=image_url,
+                                       external_id=external_id)
+    with pytest.raises(ValueError):
+        data_row.update(row_data="")
+    with pytest.raises(ValueError):
+        data_row.update(row_data={})
+    with pytest.raises(ValueError):
+        data_row.update(external_id="")
+    with pytest.raises(ValueError):
+        data_row.update(global_key="")
+    with pytest.raises(ValueError):
+        data_row.update()
+
+
 def test_data_row_update(client, dataset, rand_gen, image_url,
                          wait_for_data_row_processing):
     external_id = rand_gen(str)
@@ -916,7 +944,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 
 
 @pytest.fixture
-def converstational_data_rows(dataset, conversational_content):
+def conversational_data_rows(dataset, conversational_content):
     examples = [
         {
             **conversational_content, 'media_type':
@@ -938,12 +966,12 @@ def converstational_data_rows(dataset, conversational_content):
         dr.delete()
 
 
-def test_create_conversational_text(converstational_data_rows,
+def test_create_conversational_text(conversational_data_rows,
                                     conversational_content):
-    data_rows = converstational_data_rows
+    data_rows = conversational_data_rows
     for data_row in data_rows:
-        assert requests.get(
-            data_row.row_data).json() == conversational_content['row_data']
+        assert json.loads(
+            data_row.row_data) == conversational_content['row_data']
 
 
 def test_invalid_media_type(dataset, conversational_content):

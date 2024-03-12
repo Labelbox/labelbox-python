@@ -7,10 +7,10 @@ from labelbox.orm.model import Field
 
 
 class AssetAttachment(DbObject):
-    """ Asset attachment provides extra context about an asset while labeling.
+    """Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
-        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, or TEXT_URL. TEXT attachment type is deprecated.
+        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL. TEXT attachment type is deprecated.
         attachment_value (str): URL to an external file or a string of text
     """
 
@@ -32,6 +32,8 @@ class AssetAttachment(DbObject):
         HTML = "HTML"
         RAW_TEXT = "RAW_TEXT"
         TEXT_URL = "TEXT_URL"
+        PDF_URL = "PDF_URL"
+        CAMERA_IMAGE = "CAMERA_IMAGE"  # Used by experimental point-cloud editor
 
     for topic in AttachmentType:
         vars()[topic.name] = topic.value
