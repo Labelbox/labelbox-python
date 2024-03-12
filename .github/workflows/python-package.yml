@@ -83,7 +83,7 @@ jobs:
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 8 tests/unit
+          tox run-parallel -e ALL -- -n 10 -svv --reruns 5 --reruns-delay 8 tests/unit
       - name: Test with tox (integration / data)
         env:
           # make sure to tell tox to use these environs in tox.ini
@@ -91,4 +91,4 @@ jobs:
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 8 tests/integration tests/data
+          tox run-parallel -e ALL -- -n 10 -svv --reruns 5 --reruns-delay 8 tests/integration tests/data
