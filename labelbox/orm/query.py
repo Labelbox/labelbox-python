@@ -84,8 +84,6 @@ class Query:
         self.what = what
         self.subquery = subquery
         self.paginate = paginate
-        self.where = where
-        self.order_by = order_by
 
     def format_subquery(self):
         """ Formats the subquery (a Query or Entity subtype). """

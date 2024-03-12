@@ -86,7 +86,7 @@ jobs:
 
       - uses: actions/cache/restore@v3
         with:
-          path: .testmondata
+          path: ./.testmondata
           key: testmon=${{ github.ref_name }}-${{ matrix.python-version }}
           restore-keys: testmon=develop-${{ matrix.python-version }}
 
@@ -112,5 +112,5 @@ jobs:
 
       - uses: actions/cache/save@v3
         with:
-          path: .testmondata
+          path: ./.testmondata
           key: testmon=${{ github.ref_name }}-${{ matrix.python-version }}
