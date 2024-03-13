@@ -12,12 +12,9 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - python-version: 3.11
-            prod-key: LABELBOX_API_KEY
-            staging-key: STAGING_LABELBOX_API_KEY
-            da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.8
             prod-key: PROD_LABELBOX_API_KEY_2
             staging-key: STAGING_LABELBOX_API_KEY_2
@@ -29,6 +26,14 @@ jobs:
           - python-version: '3.10'
             prod-key: PROD_LABELBOX_API_KEY_4
             staging-key: STAGING_LABELBOX_API_KEY_4
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.11
+            prod-key: LABELBOX_API_KEY
+            staging-key: STAGING_LABELBOX_API_KEY
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.12
+            prod-key: PROD_LABELBOX_API_KEY_5
+            staging-key: STAGING_LABELBOX_API_KEY_5
             da-test-key: DA_GCP_LABELBOX_API_KEY
 
     env:
@@ -75,6 +80,7 @@ jobs:
                     libgl1-mesa-glx
       - name: mypy
         run: |
+          pip install strenum
           pip install mypy==1.9.0
           # TODO: consider installing requests typing
           mypy -p labelbox --pretty --show-error-codes --non-interactive --install-types
@@ -110,7 +116,6 @@ jobs:
       - name: Clear test cache
         id: cache-clear
         if: ${{ steps.cache-restore.outputs.cache-hit }}
-        continue-on-error: true
         run: |
           gh extension install actions/gh-actions-cache
           gh actions-cache delete ${{ env.cache-key }} --confirm

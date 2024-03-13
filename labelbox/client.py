@@ -197,7 +197,6 @@ class Client:
                 request['headers'] = {
                     'Authorization': self.headers['Authorization']
                 }
-
             response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
@@ -611,7 +610,6 @@ class Client:
             >>> dataset = client.create_dataset(name="<dataset_name>", description="<dataset_description>")
         """
         dataset = self._create(Entity.Dataset, kwargs)
-
         if iam_integration == IAMIntegration._DEFAULT:
             iam_integration = self.get_organization(
             ).get_default_iam_integration()

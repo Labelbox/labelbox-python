@@ -9,7 +9,7 @@ class Identifiable(ABC):
     Base class for any object representing a unique identifier.
     """
 
-    def __init__(self, key: str, id_type: IdType):
+    def __init__(self, key: str, id_type: str):
         self._key = key
         self._id_type = id_type
 
