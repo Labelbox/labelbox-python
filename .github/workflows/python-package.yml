@@ -115,7 +115,7 @@ jobs:
           tox -e py -- tests/integration tests/data
       - name: Clear test cache
         id: cache-clear
-        if: ${{ steps.cache-restore.outputs.cache-hit }} && ${{ github.ref == 'refs/heads/develop' }}
+        if: ${{ steps.cache-restore.outputs.cache-hit == 'true' && github.ref == 'refs/heads/develop' }}
         run: |
           gh extension install actions/gh-actions-cache
           gh actions-cache delete ${{ env.cache-key }} --confirm
@@ -123,7 +123,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Save test cache
         id: cache-save
-        if: ${{ steps.cache-restore.outputs.cache-hit }} && ${{ github.ref == 'refs/heads/develop' }}
+        if: ${{ steps.cache-restore.outputs.cache-hit == 'true' && github.ref == 'refs/heads/develop' }}
         uses: actions/cache/save@v3
         with:
           path: ./.testmon*
