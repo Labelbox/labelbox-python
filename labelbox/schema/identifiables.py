@@ -5,7 +5,7 @@ from labelbox.schema.id_type import IdType
 
 class Identifiables:
 
-    def __init__(self, iterable, id_type: IdType):
+    def __init__(self, iterable, id_type: str):
         """
         Args:
             iterable: Iterable of ids (unique or global keys)

@@ -3,10 +3,10 @@ from typing import Optional
 
 def pydantic_import(class_name, sub_module_path: Optional[str] = None):
     import importlib
-    import pkg_resources
+    import importlib.metadata
 
     # Get the version of pydantic
-    pydantic_version = pkg_resources.get_distribution("pydantic").version
+    pydantic_version = importlib.metadata.version("pydantic")
 
     # Determine the module name based on the version
     module_name = "pydantic" if pydantic_version.startswith(
