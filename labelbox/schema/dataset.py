@@ -484,7 +484,11 @@ class Dataset(DbObject, Updateable, Deletable):
             parse_metadata_fields(item)
             # Upload any local file paths
             item = upload_if_necessary(item)
-            return item
+
+            if isinstance(data_row_item, DataRowUpsertItem):
+                return {'id': data_row_item.id.dict(), 'payload': item}
+            else:
+                return item
 
         if not isinstance(items, Iterable):
             raise ValueError(
