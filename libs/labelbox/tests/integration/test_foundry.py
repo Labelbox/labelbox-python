@@ -91,7 +91,10 @@ def test_get_app_with_invalid_id(foundry_client):
     with pytest.raises(lb.exceptions.ResourceNotFoundError):
         foundry_client._get_app("invalid-id")
 
+<<<<<<< HEAD:tests/integration/test_foundry.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/integration/test_foundry.py
 @pytest.mark.skip(reason="broken")
 def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
                                           random_str):
@@ -103,7 +106,10 @@ def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
     task.wait_till_done()
     assert task.status == 'COMPLETE'
 
+<<<<<<< HEAD:tests/integration/test_foundry.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/integration/test_foundry.py
 @pytest.mark.skip(reason="broken")
 def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
                                          random_str):
@@ -115,7 +121,10 @@ def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
     task.wait_till_done()
     assert task.status == 'COMPLETE'
 
+<<<<<<< HEAD:tests/integration/test_foundry.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/integration/test_foundry.py
 @pytest.mark.skip(reason="broken")
 def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app,
                                               random_str):
@@ -128,7 +137,10 @@ def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app,
     model_run = foundry_client.client.get_model_run(model_run_id)
     assert model_run.uid == model_run_id
 
+<<<<<<< HEAD:tests/integration/test_foundry.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/integration/test_foundry.py
 @pytest.mark.skip(reason="broken")
 def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
     invalid_datarow_id = 'invalid-global-key'
@@ -140,7 +152,10 @@ def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
             app_id=app.id)
         assert invalid_datarow_id in exception.value
 
+<<<<<<< HEAD:tests/integration/test_foundry.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/integration/test_foundry.py
 @pytest.mark.skip(reason="broken")
 def test_run_foundry_with_invalid_global_key(foundry_client, app, random_str):
     invalid_global_key = 'invalid-global-key'

@@ -19,34 +19,51 @@ DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 @pytest.fixture()
 def audio_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data":
             "https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3",
         "global_key":
             f"https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3-{rand_gen(str)}",
         "media_type":
             "AUDIO",
+=======
+        "row_data": "https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3",
+        "global_key": f"https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3-{rand_gen(str)}",
+        "media_type": "AUDIO",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
 @pytest.fixture()
 def conversation_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data":
             "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
         "global_key":
             f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
+=======
+        "row_data": "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
+        "global_key": f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
 @pytest.fixture()
 def dicom_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data":
             "https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm",
         "global_key":
             f"https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm-{rand_gen(str)}",
         "media_type":
             "DICOM",
+=======
+        "row_data": "https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm",
+        "global_key": f"https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm-{rand_gen(str)}",
+        "media_type": "DICOM",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
@@ -54,12 +71,17 @@ def dicom_data_row(rand_gen):
 def geospatial_data_row(rand_gen):
     return {
         "row_data": {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             "tile_layer_url":
                 "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
+=======
+            "tile_layer_url": "https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/{z}/{x}/{y}.png",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             "bounds": [
                 [19.405662413477728, -99.21052827588443],
                 [19.400498983095076, -99.20534818927473],
             ],
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             "min_zoom":
                 12,
             "max_zoom":
@@ -71,28 +93,47 @@ def geospatial_data_row(rand_gen):
             f"https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/z/x/y.png-{rand_gen(str)}",
         "media_type":
             "TMS_GEO",
+=======
+            "min_zoom": 12,
+            "max_zoom": 20,
+            "epsg": "EPSG4326",
+        },
+        "global_key": f"https://s3-us-west-1.amazonaws.com/lb-tiler-layers/mexico_city/z/x/y.png-{rand_gen(str)}",
+        "media_type": "TMS_GEO",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
 @pytest.fixture()
 def html_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data":
             "https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html",
         "global_key":
             f"https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html-{rand_gen(str)}",
+=======
+        "row_data": "https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html",
+        "global_key": f"https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html-{rand_gen(str)}",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
 @pytest.fixture()
 def image_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data":
             "https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg",
         "global_key":
             f"https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-{rand_gen(str)}",
         "media_type":
             "IMAGE",
+=======
+        "row_data": "https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg",
+        "global_key": f"https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-{rand_gen(str)}",
+        "media_type": "IMAGE",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
@@ -100,6 +141,7 @@ def image_data_row(rand_gen):
 def document_data_row(rand_gen):
     return {
         "row_data": {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             "pdf_url":
                 "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf",
             "text_layer_url":
@@ -109,28 +151,45 @@ def document_data_row(rand_gen):
             f"https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf-{rand_gen(str)}",
         "media_type":
             "PDF",
+=======
+            "pdf_url": "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf",
+            "text_layer_url": "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json",
+        },
+        "global_key": f"https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf-{rand_gen(str)}",
+        "media_type": "PDF",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
 @pytest.fixture()
 def text_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data":
             "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
         "global_key":
             f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{rand_gen(str)}",
         "media_type":
             "TEXT",
+=======
+        "row_data": "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
+        "global_key": f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{rand_gen(str)}",
+        "media_type": "TEXT",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
 @pytest.fixture()
 def llm_prompt_creation_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data": {
             "type": "application/llm.prompt-creation",
             "version": 1
         },
+=======
+        "row_data": {"type": "application/llm.prompt-creation", "version": 1},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
         "global_key": rand_gen(str),
     }
 
@@ -138,10 +197,14 @@ def llm_prompt_creation_data_row(rand_gen):
 @pytest.fixture()
 def llm_prompt_response_data_row(rand_gen):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "row_data": {
             "type": "application/llm.prompt-response-creation",
             "version": 1
         },
+=======
+        "row_data": {"type": "application/llm.prompt-response-creation", "version": 1},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
         "global_key": rand_gen(str),
     }
 
@@ -191,6 +254,7 @@ def exports_v2_by_data_type(
     expected_export_v2_llm_response_creation,
 ):
     return {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "image":
             expected_export_v2_image,
         "audio":
@@ -213,6 +277,19 @@ def exports_v2_by_data_type(
             expected_export_v2_llm_prompt_response_creation,
         "llmresponsecreation":
             expected_export_v2_llm_response_creation,
+=======
+        "image": expected_export_v2_image,
+        "audio": expected_export_v2_audio,
+        "html": expected_export_v2_html,
+        "text": expected_export_v2_text,
+        "video": expected_export_v2_video,
+        "conversation": expected_export_v2_conversation,
+        "dicom": expected_export_v2_dicom,
+        "document": expected_export_v2_document,
+        "llmpromptcreation": expected_export_v2_llm_prompt_creation,
+        "llmpromptresponsecreation": expected_export_v2_llm_prompt_response_creation,
+        "llmresponsecreation": expected_export_v2_llm_response_creation,
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
 
@@ -303,6 +380,7 @@ def annotations_by_data_type_v2(
 @pytest.fixture(scope="session")
 def ontology():
     bbox_tool_with_nested_text = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "required":
             False,
         "name":
@@ -405,6 +483,92 @@ def ontology():
                 }],
             },],
         }],
+=======
+        "required": False,
+        "name": "bbox_tool_with_nested_text",
+        "tool": "rectangle",
+        "color": "#a23030",
+        "classifications": [
+            {
+                "required": False,
+                "instructions": "nested",
+                "name": "nested",
+                "type": "radio",
+                "options": [
+                    {
+                        "label": "radio_option_1",
+                        "value": "radio_value_1",
+                        "options": [
+                            {
+                                "required": False,
+                                "instructions": "nested_checkbox",
+                                "name": "nested_checkbox",
+                                "type": "checklist",
+                                "options": [
+                                    {
+                                        "label": "nested_checkbox_option_1",
+                                        "value": "nested_checkbox_value_1",
+                                        "options": [],
+                                    },
+                                    {
+                                        "label": "nested_checkbox_option_2",
+                                        "value": "nested_checkbox_value_2",
+                                    },
+                                ],
+                            },
+                            {
+                                "required": False,
+                                "instructions": "nested_text",
+                                "name": "nested_text",
+                                "type": "text",
+                                "options": [],
+                            },
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+
+    bbox_tool = {
+        "required": False,
+        "name": "bbox",
+        "tool": "rectangle",
+        "color": "#a23030",
+        "classifications": [
+            {
+                "required": False,
+                "instructions": "nested",
+                "name": "nested",
+                "type": "radio",
+                "options": [
+                    {
+                        "label": "radio_option_1",
+                        "value": "radio_value_1",
+                        "options": [
+                            {
+                                "required": False,
+                                "instructions": "nested_checkbox",
+                                "name": "nested_checkbox",
+                                "type": "checklist",
+                                "options": [
+                                    {
+                                        "label": "nested_checkbox_option_1",
+                                        "value": "nested_checkbox_value_1",
+                                        "options": [],
+                                    },
+                                    {
+                                        "label": "nested_checkbox_option_2",
+                                        "value": "nested_checkbox_value_2",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            }
+        ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
 
     polygon_tool = {
@@ -450,6 +614,7 @@ def ontology():
         "classifications": [],
     }
     checklist = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "required":
             False,
         "instructions":
@@ -497,6 +662,28 @@ def ontology():
                 "label": "optionN_index",
                 "value": "optionn_index"
             },
+=======
+        "required": False,
+        "instructions": "checklist",
+        "name": "checklist",
+        "type": "checklist",
+        "options": [
+            {"label": "option1", "value": "option1"},
+            {"label": "option2", "value": "option2"},
+            {"label": "optionN", "value": "optionn"},
+        ],
+    }
+    checklist_index = {
+        "required": False,
+        "instructions": "checklist_index",
+        "name": "checklist_index",
+        "type": "checklist",
+        "scope": "index",
+        "options": [
+            {"label": "option1_index", "value": "option1_index"},
+            {"label": "option2_index", "value": "option2_index"},
+            {"label": "optionN_index", "value": "optionn_index"},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
         ],
     }
     free_form_text = {
@@ -515,6 +702,7 @@ def ontology():
         "options": [],
     }
     radio = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "required":
             False,
         "instructions":
@@ -523,6 +711,12 @@ def ontology():
             "radio",
         "type":
             "radio",
+=======
+        "required": False,
+        "instructions": "radio",
+        "name": "radio",
+        "type": "radio",
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
         "options": [
             {
                 "label": "first_radio_answer",
@@ -593,7 +787,10 @@ def wait_for_label_processing():
 
 @pytest.fixture
 def configured_project_datarow_id(configured_project):
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     def get_data_row_id(indx=0):
         return configured_project.data_row_ids[indx]
 
@@ -602,7 +799,10 @@ def configured_project_datarow_id(configured_project):
 
 @pytest.fixture
 def configured_project_one_datarow_id(configured_project_with_one_data_row):
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     def get_data_row_id(indx=0):
         return configured_project_with_one_data_row.data_row_ids[0]
 
@@ -612,11 +812,18 @@ def configured_project_one_datarow_id(configured_project_with_one_data_row):
 @pytest.fixture
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     dataset = initial_dataset
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
+=======
+    project = client.create_project(name=rand_gen(str), queue_mode=QueueMode.Batch)
+    editor = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
+    )[0]
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     project.setup(editor, ontology)
 
     data_row_ids = []
@@ -627,9 +834,17 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
             dataset.create_data_row(
                 row_data=image_url,
                 global_key=f"gk_{ontologies[ind]['name']}_{rand_gen(str)}",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             ).uid)
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
+=======
+            ).uid
+        )
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids, sleep_interval=3
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
 
     project.create_batch(
         rand_gen(str),
@@ -645,12 +860,21 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 
 @pytest.fixture
 def project_with_ontology(client, configured_project, ontology, rand_gen):
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
+=======
+    project = client.create_project(
+        name=rand_gen(str), queue_mode=QueueMode.Batch, media_type=MediaType.Image
+    )
+    editor = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
+    )[0]
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     project.setup(editor, ontology)
 
     yield project, ontology
@@ -660,6 +884,7 @@ def project_with_ontology(client, configured_project, ontology, rand_gen):
 
 @pytest.fixture
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     project = client.create_project(name=rand_gen(str),
                                     queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Pdf)
@@ -667,6 +892,15 @@ def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
+=======
+    project = client.create_project(
+        name=rand_gen(str), queue_mode=QueueMode.Batch, media_type=MediaType.Pdf
+    )
+    dataset = client.create_dataset(name=rand_gen(str))
+    editor = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
+    )[0]
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     project.setup(editor, ontology)
     data_row = dataset.create_data_row(pdf_url)
     data_row_ids = [data_row.uid]
@@ -692,8 +926,14 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
                                 wait_for_data_row_processing):
+=======
+def dataset_conversation_entity(
+    client, rand_gen, conversation_entity_data_row, wait_for_data_row_processing
+):
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     dataset = client.create_dataset(name=rand_gen(str))
     data_row_ids = []
     data_row = dataset.create_data_row(conversation_entity_data_row)
@@ -705,6 +945,7 @@ def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
 
 
 @pytest.fixture
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 def configured_project_with_one_data_row(client, ontology, rand_gen,
                                          initial_dataset, image_url):
     project = client.create_project(name=rand_gen(str),
@@ -713,12 +954,29 @@ def configured_project_with_one_data_row(client, ontology, rand_gen,
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
+=======
+def configured_project_with_one_data_row(
+    client, ontology, rand_gen, initial_dataset, image_url
+):
+    project = client.create_project(
+        name=rand_gen(str), description=rand_gen(str), queue_mode=QueueMode.Batch
+    )
+    editor = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
+    )[0]
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     project.setup(editor, ontology)
 
     data_row = initial_dataset.create_data_row(row_data=image_url)
     data_row_ids = [data_row.uid]
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
+=======
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=data_row_ids, sleep_interval=3
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
 
     batch = project.create_batch(
         rand_gen(str),
@@ -759,17 +1017,27 @@ Custom Data Row IDs Strategy:
 def prediction_id_mapping(ontology, request):
     # Maps tool types to feature schema ids
     if "configured_project" in request.fixturenames:
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         data_row_id_factory = request.getfixturevalue(
             "configured_project_datarow_id")
+=======
+        data_row_id_factory = request.getfixturevalue("configured_project_datarow_id")
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
         project = request.getfixturevalue("configured_project")
     elif "hardcoded_datarow_id" in request.fixturenames:
         data_row_id_factory = request.getfixturevalue("hardcoded_datarow_id")
         project = request.getfixturevalue("configured_project_with_ontology")
     else:
         data_row_id_factory = request.getfixturevalue(
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             "configured_project_one_datarow_id")
         project = request.getfixturevalue(
             "configured_project_with_one_data_row")
+=======
+            "configured_project_one_datarow_id"
+        )
+        project = request.getfixturevalue("configured_project_with_one_data_row")
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
 
     ontology = project.ontology().normalized
 
@@ -779,9 +1047,17 @@ def prediction_id_mapping(ontology, request):
         if "tool" in tool:
             tool_type = tool["tool"]
         else:
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             tool_type = (tool["type"] if "scope" not in tool else
                          f"{tool['type']}_{tool['scope']}"
                         )  # so 'checklist' of 'checklist_index'
+=======
+            tool_type = (
+                tool["type"]
+                if "scope" not in tool
+                else f"{tool['type']}_{tool['scope']}"
+            )  # so 'checklist' of 'checklist_index'
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
 
         # TODO: remove this once we have a better way to associate multiple tools instances with a single tool type
         if tool_type == "rectangle":
@@ -813,6 +1089,7 @@ def prediction_id_mapping(ontology, request):
 @pytest.fixture
 def polygon_inference(prediction_id_mapping):
     polygon = prediction_id_mapping["polygon"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     polygon.update({
         "polygon": [
             {
@@ -833,6 +1110,18 @@ def polygon_inference(prediction_id_mapping):
             },
         ]
     })
+=======
+    polygon.update(
+        {
+            "polygon": [
+                {"x": 147.692, "y": 118.154},
+                {"x": 142.769, "y": 104.923},
+                {"x": 57.846, "y": 118.769},
+                {"x": 28.308, "y": 169.846},
+            ]
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del polygon["tool"]
     return polygon
 
@@ -846,6 +1135,7 @@ def find_tool_by_name(tool_instances, name):
 
 @pytest.fixture
 def rectangle_inference(prediction_id_mapping):
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     tool_instance = find_tool_by_name(prediction_id_mapping["rectangle"],
                                       "bbox")
     rectangle = tool_instance.copy()
@@ -875,12 +1165,39 @@ def rectangle_inference(prediction_id_mapping):
             },
         }],
     })
+=======
+    tool_instance = find_tool_by_name(prediction_id_mapping["rectangle"], "bbox")
+    rectangle = tool_instance.copy()
+    rectangle.update(
+        {
+            "bbox": {"top": 48, "left": 58, "height": 65, "width": 12},
+            "classifications": [
+                {
+                    "schemaId": rectangle["tool"]["classifications"][0][
+                        "featureSchemaId"
+                    ],
+                    "name": rectangle["tool"]["classifications"][0]["name"],
+                    "answer": {
+                        "schemaId": rectangle["tool"]["classifications"][0]["options"][
+                            0
+                        ]["featureSchemaId"],
+                        "name": rectangle["tool"]["classifications"][0]["options"][0][
+                            "value"
+                        ],
+                        "customMetrics": [{"name": "customMetric1", "value": 0.4}],
+                    },
+                }
+            ],
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del rectangle["tool"]
     return rectangle
 
 
 @pytest.fixture
 def rectangle_inference_with_confidence(prediction_id_mapping):
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     tool_instance = find_tool_by_name(prediction_id_mapping["rectangle"],
                                       "bbox_tool_with_nested_text")
     rectangle = tool_instance.copy()
@@ -921,6 +1238,48 @@ def rectangle_inference_with_confidence(prediction_id_mapping):
     rectangle["classifications"][0]["answer"]["confidence"] = 0.8
     rectangle["classifications"][0]["answer"]["classifications"][0][
         "confidence"] = 0.7
+=======
+    tool_instance = find_tool_by_name(
+        prediction_id_mapping["rectangle"], "bbox_tool_with_nested_text"
+    )
+    rectangle = tool_instance.copy()
+    rectangle.update(
+        {
+            "bbox": {"top": 48, "left": 58, "height": 65, "width": 12},
+            "classifications": [
+                {
+                    "schemaId": rectangle["tool"]["classifications"][0][
+                        "featureSchemaId"
+                    ],
+                    "name": rectangle["tool"]["classifications"][0]["name"],
+                    "answer": {
+                        "schemaId": rectangle["tool"]["classifications"][0]["options"][
+                            0
+                        ]["featureSchemaId"],
+                        "name": rectangle["tool"]["classifications"][0]["options"][0][
+                            "value"
+                        ],
+                        "classifications": [
+                            {
+                                "schemaId": rectangle["tool"]["classifications"][0][
+                                    "options"
+                                ][0]["options"][1]["featureSchemaId"],
+                                "name": rectangle["tool"]["classifications"][0][
+                                    "options"
+                                ][0]["options"][1]["name"],
+                                "answer": "nested answer",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    )
+
+    rectangle.update({"confidence": 0.9})
+    rectangle["classifications"][0]["answer"]["confidence"] = 0.8
+    rectangle["classifications"][0]["answer"]["classifications"][0]["confidence"] = 0.7
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
 
     del rectangle["tool"]
     return rectangle
@@ -936,6 +1295,7 @@ def rectangle_inference_document(rectangle_inference):
 @pytest.fixture
 def line_inference(prediction_id_mapping):
     line = prediction_id_mapping["line"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     line.update(
         {"line": [{
             "x": 147.692,
@@ -944,6 +1304,9 @@ def line_inference(prediction_id_mapping):
             "x": 150.692,
             "y": 160.154
         }]})
+=======
+    line.update({"line": [{"x": 147.692, "y": 118.154}, {"x": 150.692, "y": 160.154}]})
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del line["tool"]
     return line
 
@@ -952,6 +1315,7 @@ def line_inference(prediction_id_mapping):
 def line_inference_v2(prediction_id_mapping):
     line = prediction_id_mapping["line"].copy()
     line_data = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "groupKey":
             "axial",
         "segments": [{
@@ -970,6 +1334,22 @@ def line_inference_v2(prediction_id_mapping):
                 ],
             }]
         },],
+=======
+        "groupKey": "axial",
+        "segments": [
+            {
+                "keyframes": [
+                    {
+                        "frame": 1,
+                        "line": [
+                            {"x": 147.692, "y": 118.154},
+                            {"x": 150.692, "y": 160.154},
+                        ],
+                    }
+                ]
+            },
+        ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
     line.update(line_data)
     del line["tool"]
@@ -995,6 +1375,7 @@ def entity_inference(prediction_id_mapping):
 @pytest.fixture
 def entity_inference_index(prediction_id_mapping):
     entity = prediction_id_mapping["named-entity"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     entity.update({
         "location": {
             "start": 0,
@@ -1002,6 +1383,14 @@ def entity_inference_index(prediction_id_mapping):
         },
         "messageId": "0",
     })
+=======
+    entity.update(
+        {
+            "location": {"start": 0, "end": 8},
+            "messageId": "0",
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
 
     del entity["tool"]
     return entity
@@ -1011,6 +1400,7 @@ def entity_inference_index(prediction_id_mapping):
 def entity_inference_document(prediction_id_mapping):
     entity = prediction_id_mapping["named-entity"].copy()
     document_selections = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "textSelections": [{
             "tokenIds": [
                 "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
@@ -1025,6 +1415,24 @@ def entity_inference_document(prediction_id_mapping):
             "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
             "page": 1,
         }]
+=======
+        "textSelections": [
+            {
+                "tokenIds": [
+                    "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
+                    "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
+                    "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
+                    "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
+                    "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
+                    "67c7c19e-4654-425d-bf17-2adb8cf02c30",
+                    "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
+                    "b0e94071-2187-461e-8e76-96c58738a52c",
+                ],
+                "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+                "page": 1,
+            }
+        ]
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
     entity.update(document_selections)
     del entity["tool"]
@@ -1034,6 +1442,7 @@ def entity_inference_document(prediction_id_mapping):
 @pytest.fixture
 def segmentation_inference(prediction_id_mapping):
     segmentation = prediction_id_mapping["superpixel"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     segmentation.update({
         "mask": {
             "instanceURI":
@@ -1041,6 +1450,16 @@ def segmentation_inference(prediction_id_mapping):
             "colorRGB": (255, 255, 255),
         }
     })
+=======
+    segmentation.update(
+        {
+            "mask": {
+                "instanceURI": "https://storage.googleapis.com/labelbox-datasets/image_sample_data/raster_seg.png",
+                "colorRGB": (255, 255, 255),
+            }
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del segmentation["tool"]
     return segmentation
 
@@ -1048,6 +1467,7 @@ def segmentation_inference(prediction_id_mapping):
 @pytest.fixture
 def segmentation_inference_rle(prediction_id_mapping):
     segmentation = prediction_id_mapping["superpixel"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     segmentation.update({
         "uuid": str(uuid.uuid4()),
         "mask": {
@@ -1055,6 +1475,14 @@ def segmentation_inference_rle(prediction_id_mapping):
             "counts": [1, 0, 10, 100]
         },
     })
+=======
+    segmentation.update(
+        {
+            "uuid": str(uuid.uuid4()),
+            "mask": {"size": [10, 10], "counts": [1, 0, 10, 100]},
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del segmentation["tool"]
     return segmentation
 
@@ -1062,12 +1490,23 @@ def segmentation_inference_rle(prediction_id_mapping):
 @pytest.fixture
 def segmentation_inference_png(prediction_id_mapping):
     segmentation = prediction_id_mapping["superpixel"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     segmentation.update({
         "uuid": str(uuid.uuid4()),
         "mask": {
             "png": "somedata",
         },
     })
+=======
+    segmentation.update(
+        {
+            "uuid": str(uuid.uuid4()),
+            "mask": {
+                "png": "somedata",
+            },
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del segmentation["tool"]
     return segmentation
 
@@ -1075,11 +1514,17 @@ def segmentation_inference_png(prediction_id_mapping):
 @pytest.fixture
 def checklist_inference(prediction_id_mapping):
     checklist = prediction_id_mapping["checklist"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     checklist.update({
         "answers": [{
             "schemaId": checklist["tool"]["options"][0]["featureSchemaId"]
         }]
     })
+=======
+    checklist.update(
+        {"answers": [{"schemaId": checklist["tool"]["options"][0]["featureSchemaId"]}]}
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del checklist["tool"]
     return checklist
 
@@ -1087,12 +1532,23 @@ def checklist_inference(prediction_id_mapping):
 @pytest.fixture
 def checklist_inference_index(prediction_id_mapping):
     checklist = prediction_id_mapping["checklist_index"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     checklist.update({
         "answers": [{
             "schemaId": checklist["tool"]["options"][0]["featureSchemaId"]
         }],
         "messageId": "0",
     })
+=======
+    checklist.update(
+        {
+            "answers": [
+                {"schemaId": checklist["tool"]["options"][0]["featureSchemaId"]}
+            ],
+            "messageId": "0",
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del checklist["tool"]
     return checklist
 
@@ -1123,6 +1579,7 @@ def text_inference_index(prediction_id_mapping):
 @pytest.fixture
 def video_checklist_inference(prediction_id_mapping):
     checklist = prediction_id_mapping["checklist"].copy()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     checklist.update({
         "answers": [{
             "schemaId": checklist["tool"]["options"][0]["featureSchemaId"]
@@ -1140,13 +1597,37 @@ def video_checklist_inference(prediction_id_mapping):
                 "end": 19,
             },
         ]})
+=======
+    checklist.update(
+        {"answers": [{"schemaId": checklist["tool"]["options"][0]["featureSchemaId"]}]}
+    )
+
+    checklist.update(
+        {
+            "frames": [
+                {
+                    "start": 7,
+                    "end": 13,
+                },
+                {
+                    "start": 18,
+                    "end": 19,
+                },
+            ]
+        }
+    )
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     del checklist["tool"]
     return checklist
 
 
 @pytest.fixture
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 def model_run_predictions(polygon_inference, rectangle_inference,
                           line_inference):
+=======
+def model_run_predictions(polygon_inference, rectangle_inference, line_inference):
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     # Not supporting mask since there isn't a signed url representing a seg mask to upload
     return [polygon_inference, rectangle_inference, line_inference]
 
@@ -1169,10 +1650,16 @@ def object_predictions(
 
 
 @pytest.fixture
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 def object_predictions_for_annotation_import(polygon_inference,
                                              rectangle_inference,
                                              line_inference,
                                              segmentation_inference):
+=======
+def object_predictions_for_annotation_import(
+    polygon_inference, rectangle_inference, line_inference, segmentation_inference
+):
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     return [
         polygon_inference,
         rectangle_inference,
@@ -1192,8 +1679,14 @@ def predictions(object_predictions, classification_predictions):
 
 
 @pytest.fixture
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 def predictions_with_confidence(text_inference_with_confidence,
                                 rectangle_inference_with_confidence):
+=======
+def predictions_with_confidence(
+    text_inference_with_confidence, rectangle_inference_with_confidence
+):
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     return [text_inference_with_confidence, rectangle_inference_with_confidence]
 
 
@@ -1254,8 +1747,14 @@ def model_run_with_data_rows(
         model_run_predictions,
     )
     upload_task.wait_until_done()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     assert (upload_task.state == AnnotationImportState.FINISHED
            ), "Label Import did not finish"
+=======
+    assert (
+        upload_task.state == AnnotationImportState.FINISHED
+    ), "Label Import did not finish"
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     assert (
         len(upload_task.errors) == 0
     ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
@@ -1286,8 +1785,14 @@ def model_run_with_all_project_labels(
         model_run_predictions,
     )
     upload_task.wait_until_done()
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
     assert (upload_task.state == AnnotationImportState.FINISHED
            ), "Label Import did not finish"
+=======
+    assert (
+        upload_task.state == AnnotationImportState.FINISHED
+    ), "Label Import did not finish"
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     assert (
         len(upload_task.errors) == 0
     ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
@@ -1299,7 +1804,10 @@ def model_run_with_all_project_labels(
 
 
 class AnnotationImportTestHelpers:
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
 
+=======
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     @classmethod
     def assert_file_content(cls, url: str, predictions):
         response = requests.get(url)
@@ -1340,6 +1848,7 @@ def expected_export_v2_image():
     exported_annotations = {
         "objects": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "polygon",
                 "value":
@@ -1368,12 +1877,25 @@ def expected_export_v2_image():
                         "x": 147.692,
                         "y": 118.154
                     },
+=======
+                "name": "polygon",
+                "value": "polygon",
+                "annotation_kind": "ImagePolygon",
+                "classifications": [],
+                "polygon": [
+                    {"x": 147.692, "y": 118.154},
+                    {"x": 142.769, "y": 104.923},
+                    {"x": 57.846, "y": 118.769},
+                    {"x": 28.308, "y": 169.846},
+                    {"x": 147.692, "y": 118.154},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
                 ],
             },
             {
                 "name": "bbox",
                 "value": "bbox",
                 "annotation_kind": "ImageBoundingBox",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "classifications": [{
                     "name": "nested",
                     "value": "nested",
@@ -1383,6 +1905,19 @@ def expected_export_v2_image():
                         "classifications": [],
                     },
                 }],
+=======
+                "classifications": [
+                    {
+                        "name": "nested",
+                        "value": "nested",
+                        "radio_answer": {
+                            "name": "radio_option_1",
+                            "value": "radio_value_1",
+                            "classifications": [],
+                        },
+                    }
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
                 "bounding_box": {
                     "top": 48.0,
                     "left": 58.0,
@@ -1391,6 +1926,7 @@ def expected_export_v2_image():
                 },
             },
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "polyline",
                 "value":
@@ -1405,10 +1941,18 @@ def expected_export_v2_image():
                     "x": 150.692,
                     "y": 160.154
                 }],
+=======
+                "name": "polyline",
+                "value": "polyline",
+                "annotation_kind": "ImagePolyline",
+                "classifications": [],
+                "line": [{"x": 147.692, "y": 118.154}, {"x": 150.692, "y": 160.154}],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "classifications": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "checklist",
                 "value":
@@ -1418,13 +1962,24 @@ def expected_export_v2_image():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1439,6 +1994,7 @@ def expected_export_v2_audio():
         "objects": [],
         "classifications": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "checklist",
                 "value":
@@ -1448,13 +2004,24 @@ def expected_export_v2_audio():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1470,6 +2037,7 @@ def expected_export_v2_html():
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
@@ -1484,6 +2052,16 @@ def expected_export_v2_html():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "text_answer": {"content": "free form text..."},
+            },
+            {
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1494,6 +2072,7 @@ def expected_export_v2_html():
 @pytest.fixture()
 def expected_export_v2_text():
     expected_annotations = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "objects": [{
             "name": "named-entity",
             "value": "named_entity",
@@ -1515,13 +2094,35 @@ def expected_export_v2_text():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+        "objects": [
+            {
+                "name": "named-entity",
+                "value": "named_entity",
+                "annotation_kind": "TextEntity",
+                "classifications": [],
+                "location": {"start": 67, "end": 128},
+            }
+        ],
+        "classifications": [
+            {
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1533,6 +2134,7 @@ def expected_export_v2_text():
 def expected_export_v2_video():
     expected_annotations = {
         "frames": {},
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "segments": {
             "<cuid>": [[7, 13], [18, 19]]
         },
@@ -1548,6 +2150,19 @@ def expected_export_v2_video():
                 "classifications": []
             }],
         }],
+=======
+        "segments": {"<cuid>": [[7, 13], [18, 19]]},
+        "key_frame_feature_map": {},
+        "classifications": [
+            {
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+            }
+        ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
     }
     return expected_annotations
 
@@ -1555,6 +2170,7 @@ def expected_export_v2_video():
 @pytest.fixture()
 def expected_export_v2_conversation():
     expected_annotations = {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
         "objects": [{
             "name": "named-entity",
             "value": "named_entity",
@@ -1581,14 +2197,44 @@ def expected_export_v2_conversation():
                     "value": "option1_index",
                     "classifications": [],
                 }],
+=======
+        "objects": [
+            {
+                "name": "named-entity",
+                "value": "named_entity",
+                "annotation_kind": "ConversationalTextEntity",
+                "classifications": [],
+                "conversational_location": {
+                    "message_id": "0",
+                    "location": {"start": 0, "end": 8},
+                },
+            }
+        ],
+        "classifications": [
+            {
+                "name": "checklist_index",
+                "value": "checklist_index",
+                "message_id": "0",
+                "conversational_checklist_answers": [
+                    {
+                        "name": "option1_index",
+                        "value": "option1_index",
+                        "classifications": [],
+                    }
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text_index",
                 "value": "text_index",
                 "message_id": "0",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "conversational_text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "conversational_text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1607,6 +2253,7 @@ def expected_export_v2_dicom():
                     "1": {
                         "objects": {
                             "<cuid>": {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                                 "name":
                                     "polyline",
                                 "value":
@@ -1623,6 +2270,15 @@ def expected_export_v2_dicom():
                                         "x": 150.692,
                                         "y": 160.154
                                     },
+=======
+                                "name": "polyline",
+                                "value": "polyline",
+                                "annotation_kind": "DICOMPolyline",
+                                "classifications": [],
+                                "line": [
+                                    {"x": 147.692, "y": 118.154},
+                                    {"x": 150.692, "y": 160.154},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
                                 ],
                             }
                         },
@@ -1630,6 +2286,7 @@ def expected_export_v2_dicom():
                     }
                 },
             },
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
             "Sagittal": {
                 "name": "Sagittal",
                 "classifications": [],
@@ -1657,6 +2314,15 @@ def expected_export_v2_dicom():
                 "Coronal": {},
                 "Sagittal": {}
             }
+=======
+            "Sagittal": {"name": "Sagittal", "classifications": [], "frames": {}},
+            "Coronal": {"name": "Coronal", "classifications": [], "frames": {}},
+        },
+        "segments": {"Axial": {"<cuid>": [[1, 1]]}, "Sagittal": {}, "Coronal": {}},
+        "classifications": [],
+        "key_frame_feature_map": {
+            "<cuid>": {"Axial": {"1": True}, "Coronal": {}, "Sagittal": {}}
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
         },
     }
     return expected_annotations
@@ -1672,6 +2338,7 @@ def expected_export_v2_document():
                 "annotation_kind": "DocumentEntityToken",
                 "classifications": [],
                 "location": {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                     "groups": [{
                         "id":
                             "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
@@ -1690,12 +2357,32 @@ def expected_export_v2_document():
                         "text":
                             "Metal-insulator (MI) transitions have been one of the",
                     }]
+=======
+                    "groups": [
+                        {
+                            "id": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+                            "page_number": 1,
+                            "tokens": [
+                                "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
+                                "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
+                                "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
+                                "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
+                                "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
+                                "67c7c19e-4654-425d-bf17-2adb8cf02c30",
+                                "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
+                                "b0e94071-2187-461e-8e76-96c58738a52c",
+                            ],
+                            "text": "Metal-insulator (MI) transitions have been one of the",
+                        }
+                    ]
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
                 },
             },
             {
                 "name": "bbox",
                 "value": "bbox",
                 "annotation_kind": "DocumentBoundingBox",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "classifications": [{
                     "name": "nested",
                     "value": "nested",
@@ -1705,6 +2392,19 @@ def expected_export_v2_document():
                         "classifications": [],
                     },
                 }],
+=======
+                "classifications": [
+                    {
+                        "name": "nested",
+                        "value": "nested",
+                        "radio_answer": {
+                            "name": "radio_option_1",
+                            "value": "radio_value_1",
+                            "classifications": [],
+                        },
+                    }
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
                 "page_number": 1,
                 "bounding_box": {
                     "top": 48.0,
@@ -1716,6 +2416,7 @@ def expected_export_v2_document():
         ],
         "classifications": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "checklist",
                 "value":
@@ -1725,13 +2426,24 @@ def expected_export_v2_document():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1745,6 +2457,7 @@ def expected_export_v2_llm_prompt_creation():
         "objects": [],
         "classifications": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "checklist",
                 "value":
@@ -1754,13 +2467,24 @@ def expected_export_v2_llm_prompt_creation():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1774,6 +2498,7 @@ def expected_export_v2_llm_prompt_response_creation():
         "objects": [],
         "classifications": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "checklist",
                 "value":
@@ -1783,13 +2508,24 @@ def expected_export_v2_llm_prompt_response_creation():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1803,6 +2539,7 @@ def expected_export_v2_llm_response_creation():
         "objects": [],
         "classifications": [
             {
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "name":
                     "checklist",
                 "value":
@@ -1812,13 +2549,24 @@ def expected_export_v2_llm_response_creation():
                     "value": "option1",
                     "classifications": []
                 }],
+=======
+                "name": "checklist",
+                "value": "checklist",
+                "checklist_answers": [
+                    {"name": "option1", "value": "option1", "classifications": []}
+                ],
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
             {
                 "name": "text",
                 "value": "text",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                 "text_answer": {
                     "content": "free form text..."
                 },
+=======
+                "text_answer": {"content": "free form text..."},
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
             },
         ],
         "relationships": [],
@@ -1854,6 +2602,7 @@ def bbox_video_annotation_objects():
             classifications=[
                 ClassificationAnnotation(
                     name="nested",
+<<<<<<< HEAD:tests/data/annotation_import/conftest.py
                     value=Radio(answer=ClassificationAnswer(
                         name="radio_option_1",
                         classifications=[
@@ -1868,6 +2617,28 @@ def bbox_video_annotation_objects():
                             )
                         ],
                     )),
+=======
+                    value=Radio(
+                        answer=ClassificationAnswer(
+                            name="radio_option_1",
+                            classifications=[
+                                ClassificationAnnotation(
+                                    name="nested_checkbox",
+                                    value=Checklist(
+                                        answer=[
+                                            ClassificationAnswer(
+                                                name="nested_checkbox_option_1"
+                                            ),
+                                            ClassificationAnswer(
+                                                name="nested_checkbox_option_2"
+                                            ),
+                                        ]
+                                    ),
+                                )
+                            ],
+                        )
+                    ),
+>>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/conftest.py
                 )
             ],
         ),
