@@ -7,6 +7,7 @@ class NdjsonDecoder(json.JSONDecoder):
         super().__init__(*args, **kwargs)
 
     def decode(self, s: str, *args, **kwargs):
+        print('foo')
         lines = ','.join(s.splitlines())
         text = f"[{lines}]"  # NOTE: this is a hack to make json.loads work for ndjson
         return super().decode(text, *args, **kwargs)
