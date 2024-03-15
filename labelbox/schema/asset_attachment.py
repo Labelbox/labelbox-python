@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
@@ -67,7 +67,10 @@ class AssetAttachment(DbObject):
             }"""
         self.client.execute(query_str, {"attachment_id": self.uid})
 
-    def update(self, name: str = None, type: str = None, value: str = None):
+    def update(self,
+               name: Optional[str] = None,
+               type: Optional[str] = None,
+               value: Optional[str] = None):
         """Updates an attachment on the data row."""
         self.validate_attachment_type(type)
 
