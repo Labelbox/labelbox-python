@@ -2,8 +2,12 @@ name: Labelbox Python SDK
 
 on:
   push:
+    paths-ignore:
+      - "examples/**"
     branches: [develop, master]
   pull_request:
+    paths-ignore:
+      - "examples/**"
     branches: [develop, master]
 
 jobs:
@@ -26,7 +30,7 @@ jobs:
             prod-key: PROD_LABELBOX_API_KEY_3
             staging-key: STAGING_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
-          - python-version: '3.10'
+          - python-version: "3.10"
             prod-key: PROD_LABELBOX_API_KEY_4
             staging-key: STAGING_LABELBOX_API_KEY_4
             da-test-key: DA_GCP_LABELBOX_API_KEY
