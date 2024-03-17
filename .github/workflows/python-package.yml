@@ -2,22 +2,21 @@ name: Labelbox Python SDK
 
 on:
   push:
+    paths-ignore:
+      - "examples/**"
     branches: [develop, master]
   pull_request:
+    paths-ignore:
+      - "examples/**"
     branches: [develop, master]
 
 jobs:
   build:
-    if: github.event.pull_request.head.repo.full_name == github.repository
-
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - python-version: 3.7
-            prod-key: LABELBOX_API_KEY
-            staging-key: STAGING_LABELBOX_API_KEY
-            da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.8
             prod-key: PROD_LABELBOX_API_KEY_2
             staging-key: STAGING_LABELBOX_API_KEY_2
@@ -26,11 +25,21 @@ jobs:
             prod-key: PROD_LABELBOX_API_KEY_3
             staging-key: STAGING_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
-          - python-version: '3.10'
+          - python-version: "3.10"
             prod-key: PROD_LABELBOX_API_KEY_4
             staging-key: STAGING_LABELBOX_API_KEY_4
             da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.11
+            prod-key: LABELBOX_API_KEY
+            staging-key: STAGING_LABELBOX_API_KEY
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.12
+            prod-key: PROD_LABELBOX_API_KEY_5
+            staging-key: STAGING_LABELBOX_API_KEY_5
+            da-test-key: DA_GCP_LABELBOX_API_KEY
 
+    env:
+      cache-key: testmon=${{ github.ref_name }}-${{ matrix.python-version }}
     steps:
       - name: Cancel previous workflow
         uses: styfle/cancel-workflow-action@0.12.1
@@ -55,6 +64,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
       - name: yapf
         id: yapf
@@ -70,28 +80,53 @@ jobs:
                      libfontconfig1 \
                         libxrender1 \
                     libgl1-mesa-glx
-      - name: install labelbox package
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install .
       - name: mypy
         run: |
-          pip install mypy==0.782
-          mypy -p labelbox --pretty --show-error-codes
-      - name: Install package and test dependencies
+          pip install strenum
+          pip install mypy==1.9.0
+          # TODO: consider installing requests typing
+          mypy -p labelbox --pretty --show-error-codes --non-interactive --install-types
+      - name: Install test dependencies
         run: |
-          pip install tox==3.18.1 pytest-snapshot
-
+          pip install tox==4.14.1
+      - name: Restore test cache
+        uses: actions/cache/restore@v3
+        id: cache-restore
+        with:
+          path: ./.testmon*
+          key: ${{ env.cache-key }}
+          restore-keys: testmon=develop-${{ matrix.python-version }}
       # TODO: replace tox.ini with what the Makefile does
       # to make sure local testing is
       # identical to github actions which uses tox.ini
-      - name: Test with tox
+      - name: Test with tox (unit)
         env:
           # make sure to tell tox to use these environs in tox.ini
           LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
-
           LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
-
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
-          tox -e py -- -n 10 -svv --reruns 5 --reruns-delay 8
+          tox -e py -- tests/unit
+      - name: Test with tox (integration / data)
+        env:
+          # make sure to tell tox to use these environs in tox.ini
+          LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
+          LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+        run: |
+          tox -e py -- tests/integration tests/data
+      - name: Clear test cache
+        id: cache-clear
+        if: ${{ steps.cache-restore.outputs.cache-hit == 'true' && github.ref == 'refs/heads/develop' }}
+        run: |
+          gh extension install actions/gh-actions-cache
+          gh actions-cache delete ${{ env.cache-key }} --confirm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Save test cache
+        id: cache-save
+        if: ${{ github.ref == 'refs/heads/develop' }}
+        uses: actions/cache/save@v3
+        with:
+          path: ./.testmon*
+          key: ${{ env.cache-key }}
