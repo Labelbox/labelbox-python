@@ -21,7 +21,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "requests>=2.22.0", "google-api-core>=1.22.1", "pydantic>=1.8", "tqdm",
-        "python-dateutil>=2.8.2,<2.9.0"
+        "python-dateutil>=2.8.2,<2.9.0", "strenum>=0.4.15"
     ],
     extras_require={
         'data': [
@@ -33,10 +33,12 @@ setuptools.setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     keywords=["labelbox"],
 )

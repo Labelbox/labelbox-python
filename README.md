@@ -88,12 +88,12 @@ Key files and classes include:
 - **`labelbox/orm/model.py`:** Defines the data model for Labelbox entities like projects, datasets, and labels.
 - **`labelbox/schema/*.py`:** Contains classes representing specific Labelbox entities and their attributes.
 - **`labelbox/data/annotation_types/*.py`:** Defines classes for different annotation types, such as bounding boxes, polygons, and classifications.
-- **`labelbox/data/serialization/*.py`:** Provides converters for different data formats, including NDJSON and Labelbox v1 JSON.
+- **`labelbox/data/serialization/*.py`:** Provides converters for different data formats.
 
 The SDK wraps the GraphQL APIs and provides a Pythonic interface for interacting with Labelbox.
 
 ## Contribution guidelines
-We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the `CONTRIB.md` file in the root folder of the repository for detailed information on how to contribute.
+We encourage developers to contribute to the Labelbox Python SDK and help improve its functionality and usability. Please refer to the [CONTRIB.md](CONTRIB.md) file in the root folder of the repository for detailed information on how to contribute.
 
 ## Develop with AI assistance
 ### Use the codebase as context for large language models
@@ -102,6 +102,6 @@ Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader
 ## Documentation
 The Labelbox Python SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
 
-- **Official documentation:** https://docs.labelbox.com/docs/overview
-- **Notebook examples:** https://github.com/Labelbox/labelbox-python/tree/master/examples
-- **API reference:** https://labelbox-python.readthedocs.io/en/latest/
+- [Official documentation](https://docs.labelbox.com/docs/overview)
+- [Notebook examples](https://github.com/Labelbox/labelbox-python/tree/master/examples)
+- [Python SDK reference docs](https://labelbox-python.readthedocs.io/en/latest/)
