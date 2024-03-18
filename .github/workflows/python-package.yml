@@ -13,7 +13,7 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      backend: ${{ steps.filter.outputs.labelbox }}
+      labelbox: ${{ steps.filter.outputs.labelbox }}
     steps:
       - uses: dorny/paths-filter@v3
         id: filter
