@@ -21,7 +21,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "requests>=2.22.0", "google-api-core>=1.22.1", "pydantic>=1.8", "tqdm",
-        "python-dateutil>=2.8.2,<2.9.0"
+        "python-dateutil>=2.8.2,<2.9.0", "strenum>=0.4.15"
     ],
     extras_require={
         'data': [
