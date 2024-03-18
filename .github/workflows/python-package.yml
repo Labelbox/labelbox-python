@@ -2,16 +2,28 @@ name: Labelbox Python SDK
 
 on:
   push:
-    paths-ignore:
-      - "examples/**"
     branches: [develop, master]
   pull_request:
-    paths-ignore:
-      - "examples/**"
     branches: [develop, master]
 
 jobs:
+  # JOB to check if any files were in labelbox folder
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.labelbox }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            labelbox:
+              - 'backend/**'
   build:
+    needs: changes
+    if: ${{ needs.changes.outputs.labelbox == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -64,7 +76,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: "pip"
 
       - name: yapf
         id: yapf
