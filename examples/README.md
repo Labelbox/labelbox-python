@@ -18,19 +18,18 @@
 | Ontologies        | [Github](basics/ontologies.ipynb)        | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/basics/ontologies.ipynb)        |
 | Projects          | [Github](basics/projects.ipynb)          | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/basics/projects.ipynb)          |
 | User Management   | [Github](basics/user_management.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/basics/user_management.ipynb)   |
+| Export V1 to V2 migration   | [Github](basics/Export_V1_to_V2_migration_support.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/basics/Export_V1_to_V2_migration_support.ipynb)   |
 
 ---
+## [Exports](exports)
 
-## [Model Training](https://docs.labelbox.com/docs/integration-with-model-training-service)
 
-Train a model using data annotated on Labelbox
-
-| Notebook                        | Github                                                | Google Colab                                                                                                                                                                                                     |
-| ------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Object Detection (Detectron2)   | [Github](integrations/detectron2/coco_object.ipynb)   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/integrations/detectron2/coco_object.ipynb)   |
-| Panoptic Detection (Detectron2) | [Github](integrations/detectron2/coco_panoptic.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/integrations/detectron2/coco_panoptic.ipynb) |
-
+| Notebook                              | Github                                           | Google Colab                                                                                                                                                                                                | Learn more                                                                         |
+| ------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Export data            | [Github](exports/export_data.ipynb)          | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/exports/export_data.ipynb)          |
+| Composite mask export         | [Github](exports/composite_mask_export.ipynb)          | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/master/examples/exports/composite_mask_export.ipynb)          |
 ---
+
 
 ## [Annotation Import (Ground Truth & MAL)](annotation_import)
 
