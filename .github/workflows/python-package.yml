@@ -23,7 +23,6 @@ jobs:
               - 'labelbox/**'
   build:
     needs: changes
-    if: ${{ needs.changes.outputs.labelbox == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
