@@ -101,13 +101,6 @@ jobs:
       - name: Install test dependencies
         run: |
           pip install tox==4.14.1
-      - name: Restore test cache
-        uses: actions/cache/restore@v3
-        id: cache-restore
-        with:
-          path: ./.testmon*
-          key: ${{ env.cache-key }}
-          restore-keys: testmon=develop-${{ matrix.python-version }}
       # TODO: replace tox.ini with what the Makefile does
       # to make sure local testing is
       # identical to github actions which uses tox.ini
@@ -127,18 +120,3 @@ jobs:
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
         run: |
           tox -e py -- tests/integration tests/data
-      - name: Clear test cache
-        id: cache-clear
-        if: ${{ steps.cache-restore.outputs.cache-hit == 'true' && github.ref == 'refs/heads/develop' }}
-        run: |
-          gh extension install actions/gh-actions-cache
-          gh actions-cache delete ${{ env.cache-key }} --confirm
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Save test cache
-        id: cache-save
-        if: ${{ github.ref == 'refs/heads/develop' }}
-        uses: actions/cache/save@v3
-        with:
-          path: ./.testmon*
-          key: ${{ env.cache-key }}
