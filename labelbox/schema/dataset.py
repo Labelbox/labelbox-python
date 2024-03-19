@@ -22,7 +22,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row import DataRow, DataRowUpsertItem
+from labelbox.schema.data_row import DataRow, DataRowUpsertItem, DataRowSpec, DataRowKey, KeyType
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
@@ -434,9 +434,9 @@ class Dataset(DbObject, Updateable, Deletable):
                           str) and item.get('row_data').startswith("s3:/"):
                 raise InvalidQueryError(
                     "row_data: s3 assets must start with 'https'.")
-            invalid_keys = set(item) - {
-                *{f.name for f in DataRow.fields()}, 'attachments', 'media_type'
-            }
+            allowed_extra_fields = {'attachments', 'media_type', 'dataset_id'}
+            invalid_keys = set(item) - {f.name for f in DataRow.fields()
+                                       } - allowed_extra_fields
             if invalid_keys:
                 raise InvalidAttributeError(DataRow, invalid_keys)
             return item
@@ -760,7 +760,25 @@ class Dataset(DbObject, Updateable, Deletable):
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
 
-    def upsert_data_rows(self, items: list[DataRowUpsertItem]) -> "Task":
+    def upsert_data_rows(self, specs: list[DataRowSpec]) -> "Task":
+
+        def _convert_specs_to_upsert_items(_specs: list[DataRowSpec]):
+            _items: list[DataRowUpsertItem] = []
+            for spec in _specs:
+                if spec.key:
+                    key = spec.key
+                elif spec.global_key:
+                    key = DataRowKey(type=KeyType.GKEY, value=spec.global_key)
+                else:
+                    raise ValueError(
+                        "Either 'key' or 'global_key' must be provided")
+                _items.append(DataRowUpsertItem(
+                    payload=spec,
+                    id=key,
+                ))
+            return _items
+
+        items = _convert_specs_to_upsert_items(specs)
         chunk_size = 3
         chunks = [
             items[i:i + chunk_size] for i in range(0, len(items), chunk_size)

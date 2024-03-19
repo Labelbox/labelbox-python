@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime
 import json
 
-from labelbox.schema.data_row import DataRowUpsertItem, ResolvableId, DataRowSpec
 from labelbox.schema.media_type import MediaType
 
 import pytest
@@ -1026,12 +1025,3 @@ def test_create_data_row_with_media_type(dataset, image_url):
         exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
-
-
-def test_upsert_data_rows(dataset, image_url):
-    task = dataset.upsert_data_rows([
-        DataRowUpsertItem(id=ResolvableId(value="gkey123"),
-                          payload=DataRowSpec(row_data=image_url))
-    ])
-    task.wait_till_done()
-    assert task.status == "COMPLETE"

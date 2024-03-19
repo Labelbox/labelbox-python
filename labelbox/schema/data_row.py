@@ -1,12 +1,13 @@
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union, Any
 import json
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.pydantic_compat import BaseModel
+from labelbox.pydantic_compat import BaseModel, Field as PydanticField
+from labelbox.schema.asset_attachment import AttachmentType
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
@@ -28,23 +29,39 @@ class KeyType(str, Enum):
     """The key will be auto-generated. Only usable for creates"""
 
 
-class ResolvableId(BaseModel):
+class DataRowKey(BaseModel):
     """
-    The ResolvableId class is a unique ID abstraction that allows us to reference
+    The DataRowKey class is a unique ID abstraction that allows us to reference
     a DataRow by either a Global key or CUID
     """
     type: KeyType = KeyType.GKEY
     value: str
 
 
+class DataRowMetadataSpec(BaseModel):
+    schema_id: Optional[str]
+    value: Any
+    name: Optional[str]
+
+
+class DataRowAttachmentSpec(BaseModel):
+    type: AttachmentType
+    value: str
+    name: Optional[str]
+
+
 class DataRowSpec(BaseModel):
-    row_data: Union[str, dict]
+    key: Optional[DataRowKey] = PydanticField(exclude=True)
+    dataset_id: str
+    row_data: Optional[Union[str, dict]]
     external_id: Optional[str]
     global_key: Optional[str]
+    metadata: Optional[List[DataRowMetadataSpec]]
+    attachments: Optional[List[DataRowAttachmentSpec]]
 
 
 class DataRowUpsertItem(BaseModel):
-    id: ResolvableId
+    id: DataRowKey
     payload: DataRowSpec
 
 
@@ -93,7 +110,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
 
     supported_meta_types = supported_attachment_types = set(
-        Entity.AssetAttachment.AttachmentType.__members__)
+        AttachmentType.__members__)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -162,7 +179,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         Args:
             attachment_type (str): Asset attachment type, must be one of:
-                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetAttachment.AttachmentType)
+                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AttachmentType)
             attachment_value (str): Asset attachment value.
             attachment_name (str): (Optional) Asset attachment name.
         Returns:
