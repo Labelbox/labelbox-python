@@ -7,7 +7,7 @@ from labelbox.schema.media_type import MediaType
 import pytest
 import requests
 
-from labelbox import DataRow
+from labelbox import DataRow, AssetAttachment
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.task import Task
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
@@ -771,6 +771,24 @@ def test_delete_data_row_attachment(data_row, image_url):
         attachment.delete()
 
     assert len(list(data_row.attachments())) == 0
+
+
+def test_update_data_row_attachment(data_row, image_url):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    attachment.update(name="updated name", type="IMAGE", value=image_url)
+    assert attachment.attachment_name == "updated name"
+    assert attachment.attachment_type == "IMAGE"
+    assert attachment.attachment_value == image_url
+
+
+def test_update_data_row_attachment_invalid_type(data_row):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    with pytest.raises(ValueError):
+        attachment.update(name="updated name", type="INVALID", value="value")
 
 
 def test_create_data_rows_result(client, dataset, image_url):
