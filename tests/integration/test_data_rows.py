@@ -8,7 +8,7 @@ from labelbox.schema.media_type import MediaType
 import pytest
 import requests
 
-from labelbox import DataRow
+from labelbox import DataRow, AssetAttachment
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.task import Task
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
@@ -774,6 +774,24 @@ def test_delete_data_row_attachment(data_row, image_url):
     assert len(list(data_row.attachments())) == 0
 
 
+def test_update_data_row_attachment(data_row, image_url):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    attachment.update(name="updated name", type="IMAGE", value=image_url)
+    assert attachment.attachment_name == "updated name"
+    assert attachment.attachment_type == "IMAGE"
+    assert attachment.attachment_value == image_url
+
+
+def test_update_data_row_attachment_invalid_type(data_row):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    with pytest.raises(ValueError):
+        attachment.update(name="updated name", type="INVALID", value="value")
+
+
 def test_create_data_rows_result(client, dataset, image_url):
     task = dataset.create_data_rows([
         {
@@ -945,7 +963,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 
 
 @pytest.fixture
-def converstational_data_rows(dataset, conversational_content):
+def conversational_data_rows(dataset, conversational_content):
     examples = [
         {
             **conversational_content, 'media_type':
@@ -967,12 +985,12 @@ def converstational_data_rows(dataset, conversational_content):
         dr.delete()
 
 
-def test_create_conversational_text(converstational_data_rows,
+def test_create_conversational_text(conversational_data_rows,
                                     conversational_content):
-    data_rows = converstational_data_rows
+    data_rows = conversational_data_rows
     for data_row in data_rows:
-        assert requests.get(
-            data_row.row_data).json() == conversational_content['row_data']
+        assert json.loads(
+            data_row.row_data) == conversational_content['row_data']
 
 
 def test_invalid_media_type(dataset, conversational_content):

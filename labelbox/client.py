@@ -197,7 +197,6 @@ class Client:
                 request['headers'] = {
                     'Authorization': self.headers['Authorization']
                 }
-
             response = requests.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
@@ -208,19 +207,23 @@ class Client:
         except Exception as e:
             raise labelbox.exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e)
-        try:
-            r_json = response.json()
-        except:
-            if "upstream connect error or disconnect/reset before headers" \
-                    in response.text:
+
+        if 200 <= response.status_code < 300 or response.status_code < 500 or response.status_code >= 600:
+            try:
+                r_json = response.json()
+            except Exception:
+                raise labelbox.exceptions.LabelboxError(
+                    "Failed to parse response as JSON: %s" % response.text)
+        else:
+            if "upstream connect error or disconnect/reset before headers" in response.text:
                 raise labelbox.exceptions.InternalServerError(
                     "Connection reset")
             elif response.status_code == 502:
                 error_502 = '502 Bad Gateway'
                 raise labelbox.exceptions.InternalServerError(error_502)
-
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to parse response as JSON: %s" % response.text)
+            elif 500 <= response.status_code < 600:
+                error_500 = f"Internal server http error {response.status_code}"
+                raise labelbox.exceptions.InternalServerError(error_500)
 
         errors = r_json.get("errors", [])
 
@@ -518,7 +521,7 @@ class Client:
             [utils.camel_case(db_object_type.type_name()) + "s"],
             db_object_type)
 
-    def get_projects(self, where=None) -> List[Project]:
+    def get_projects(self, where=None) -> PaginatedCollection:
         """ Fetches all the projects the user has access to.
 
         >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
@@ -527,11 +530,11 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            An iterable of Projects (typically a PaginatedCollection).
+            PaginatedCollection of all projects the user has access to or projects matching the criteria specified.
         """
         return self._get_all(Entity.Project, where)
 
-    def get_datasets(self, where=None) -> List[Dataset]:
+    def get_datasets(self, where=None) -> PaginatedCollection:
         """ Fetches one or more datasets.
 
         >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
@@ -540,7 +543,7 @@ class Client:
             where (Comparison, LogicalOperation or None): The `where` clause
                 for filtering.
         Returns:
-            An iterable of Datasets (typically a PaginatedCollection).
+            PaginatedCollection of all datasets the user has access to or datasets matching the criteria specified.
         """
         return self._get_all(Entity.Dataset, where)
 
@@ -607,7 +610,6 @@ class Client:
             >>> dataset = client.create_dataset(name="<dataset_name>", description="<dataset_description>")
         """
         dataset = self._create(Entity.Dataset, kwargs)
-
         if iam_integration == IAMIntegration._DEFAULT:
             iam_integration = self.get_organization(
             ).get_default_iam_integration()
@@ -751,11 +753,8 @@ class Client:
         """
             Returns: DataRow: returns a single data row given the global key
         """
-
         res = self.get_data_row_ids_for_global_keys([global_key])
         if res['status'] != "SUCCESS":
-            raise labelbox.exceptions.MalformedQueryException(res['errors'][0])
-        if len(res['results']) == 0:
             raise labelbox.exceptions.ResourceNotFoundError(
                 Entity.DataRow, {global_key: global_key})
         data_row_id = res['results'][0]

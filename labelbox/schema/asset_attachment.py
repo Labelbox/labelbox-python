@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
@@ -23,6 +23,7 @@ class AttachmentType(str, Enum):
     RAW_TEXT = "RAW_TEXT"
     TEXT_URL = "TEXT_URL"
     PDF_URL = "PDF_URL"
+    CAMERA_IMAGE = "CAMERA_IMAGE"  # Used by experimental point-cloud editor
 
 
 class AssetAttachment(DbObject):
@@ -31,6 +32,7 @@ class AssetAttachment(DbObject):
     Attributes:
         attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL. TEXT attachment type is deprecated.
         attachment_value (str): URL to an external file or a string of text
+        attachment_name (str): The name of the attachment
     """
 
     for topic in AttachmentType:
@@ -38,6 +40,7 @@ class AssetAttachment(DbObject):
 
     attachment_type = Field.String("attachment_type", "type")
     attachment_value = Field.String("attachment_value", "value")
+    attachment_name = Field.String("attachment_name", "name")
 
     @classmethod
     def validate_attachment_json(cls, attachment_json: Dict[str, str]) -> None:
@@ -53,7 +56,7 @@ class AssetAttachment(DbObject):
         valid_types = set(AttachmentType.__members__)
         if attachment_type not in valid_types:
             raise ValueError(
-                f"meta_type must be one of {valid_types}. Found {attachment_type}"
+                f"attachment_type must be one of {valid_types}. Found {attachment_type}"
             )
 
     def delete(self) -> None:
@@ -63,3 +66,29 @@ class AssetAttachment(DbObject):
                     id}
             }"""
         self.client.execute(query_str, {"attachment_id": self.uid})
+
+    def update(self,
+               name: Optional[str] = None,
+               type: Optional[str] = None,
+               value: Optional[str] = None):
+        """Updates an attachment on the data row."""
+        if type:
+            self.validate_attachment_type(type)
+
+        query_str = """mutation updateDataRowAttachmentPyApi($attachment_id: ID!, $name: String, $type: AttachmentType, $value: String) {
+            updateDataRowAttachment(
+              where: {id: $attachment_id}, 
+              data: {name: $name, type: $type, value: $value}
+            ) { id name type value }
+            }"""
+        res = (self.client.execute(
+            query_str, {
+                "attachment_id": self.uid,
+                "name": name,
+                "type": type,
+                "value": value
+            }))['updateDataRowAttachment']
+
+        self.attachment_name = res['name']
+        self.attachment_value = res['value']
+        self.attachment_type = res['type']

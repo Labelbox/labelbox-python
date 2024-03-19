@@ -46,7 +46,6 @@ class Dataset(DbObject, Updateable, Deletable):
 
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
-
     """
     name = Field.String("name")
     description = Field.String("description")

@@ -126,7 +126,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# IntelliJ
 .idea
+*.iml
 
 # Vim swap files
 *.swp
