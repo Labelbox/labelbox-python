@@ -1,4 +1,21 @@
 # Changelog
+# Version 3.66 (2024-03-20)
+## Notes
+
+## Added
+* Added support for Python 3.11, 3.12
+* Added update method to attachments
+
+## Notebooks
+* Improved notebooks for integration and model diagnostics
+* Removed databricks integrations notebooks
+
+## Updated
+* Updated README for clarity and contribution guidelines
+
+## Removed
+* Removed support Python 3.7 as it has been end of life since June 2023
+
 # Version 3.65.0 (2024-03-05)
 ## Notes
 * Rerelease of 3.64.0
