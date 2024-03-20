@@ -1,7 +1,7 @@
-from enum import Enum
+from strenum import StrEnum
 
 
-class IdType(str, Enum):
+class IdType(StrEnum):
     """
     The type of id used to identify a data row.
     
