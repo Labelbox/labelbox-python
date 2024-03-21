@@ -49,7 +49,15 @@ class AssetAttachment(DbObject):
                 raise ValueError(
                     f"Must provide a `{required_key}` key for each attachment. Found {attachment_json}."
                 )
-            cls.validate_attachment_type(attachment_json['type'])
+        cls.validate_attachment_value(attachment_json['value'])
+        cls.validate_attachment_type(attachment_json['type'])
+
+    @classmethod
+    def validate_attachment_value(cls, attachment_value: str) -> None:
+        if not isinstance(attachment_value, str) or attachment_value == "":
+            raise ValueError(
+                f"Attachment value must be a non-empty string, got: '{attachment_value}'"
+            )
 
     @classmethod
     def validate_attachment_type(cls, attachment_type: str) -> None:
@@ -74,6 +82,7 @@ class AssetAttachment(DbObject):
         """Updates an attachment on the data row."""
         if type:
             self.validate_attachment_type(type)
+        self.validate_attachment_value(value)
 
         query_str = """mutation updateDataRowAttachmentPyApi($attachment_id: ID!, $name: String, $type: AttachmentType, $value: String) {
             updateDataRowAttachment(

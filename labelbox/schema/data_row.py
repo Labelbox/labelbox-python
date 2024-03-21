@@ -137,9 +137,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Returns:
             `AssetAttachment` DB object.
         Raises:
-            ValueError: asset_type must be one of the supported types.
+            ValueError: attachment_type must be one of the supported types.
+            ValueError: attachment_value must be a non-empty string.
         """
-        Entity.AssetAttachment.validate_attachment_type(attachment_type)
+        Entity.AssetAttachment.validate_attachment_json({
+            'type': attachment_type,
+            'value': attachment_value
+        })
 
         attachment_type_param = "type"
         attachment_value_param = "value"
@@ -220,13 +224,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             task_name (str): name of remote task
             params (CatalogExportParams): export params
 
-        
+
         >>>     dataset = client.get_dataset(DATASET_ID)
         >>>     task = DataRow.export_v2(
-        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()], 
+        >>>         data_rows=[data_row.uid for data_row in dataset.data_rows.list()],
         >>>             # or a list of DataRow objects: data_rows = data_set.data_rows.list()
-        >>>             # or a list of global_keys=["global_key_1", "global_key_2"], 
-        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time 
+        >>>             # or a list of global_keys=["global_key_1", "global_key_2"],
+        >>>             # Note that exactly one of: data_rows or global_keys parameters can be passed in at a time
         >>>             # and if data rows ids is present, global keys will be ignored
         >>>         params={
         >>>             "performance_details": False,
