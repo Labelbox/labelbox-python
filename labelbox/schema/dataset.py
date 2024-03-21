@@ -771,10 +771,10 @@ class Dataset(DbObject, Updateable, Deletable):
             def __init__(self):
                 self.source = "SDK"
                 self.item_count = 0
-                self.chunk_uris: list[str] = []
+                self.chunk_uris: List[str] = []
 
         def _convert_specs_to_upsert_items(_specs: list[DataRowSpec]):
-            _items: list[DataRowUpsertItem] = []
+            _items: List[DataRowUpsertItem] = []
             for spec in _specs:
                 spec.__dict__["dataset_id"] = self.uid
                 if spec.key:
