@@ -32,6 +32,7 @@ from labelbox.schema.user import User
 logger = logging.getLogger(__name__)
 
 MAX_DATAROW_PER_API_OPERATION = 150_000
+UPSERT_CHUNK_SIZE = 10_000
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -760,6 +761,10 @@ class Dataset(DbObject, Updateable, Deletable):
         return Task.get_task(self.client, task_id)
 
     def upsert_data_rows(self, specs: list[DataRowSpec]) -> "Task":
+        if len(specs) > MAX_DATAROW_PER_API_OPERATION:
+            raise MalformedQueryException(
+                f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
+            )
 
         class ManifestFile:
 
@@ -782,9 +787,9 @@ class Dataset(DbObject, Updateable, Deletable):
             return _items
 
         items = _convert_specs_to_upsert_items(specs)
-        chunk_size = 3
         chunks = [
-            items[i:i + chunk_size] for i in range(0, len(items), chunk_size)
+            items[i:i + UPSERT_CHUNK_SIZE]
+            for i in range(0, len(items), UPSERT_CHUNK_SIZE)
         ]
         manifest = ManifestFile()
         for chunk in chunks:
