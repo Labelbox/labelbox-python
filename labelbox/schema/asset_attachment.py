@@ -82,7 +82,8 @@ class AssetAttachment(DbObject):
         """Updates an attachment on the data row."""
         if type:
             self.validate_attachment_type(type)
-        self.validate_attachment_value(value)
+        if value is not None:
+            self.validate_attachment_value(value)
 
         query_str = """mutation updateDataRowAttachmentPyApi($attachment_id: ID!, $name: String, $type: AttachmentType, $value: String) {
             updateDataRowAttachment(
