@@ -22,7 +22,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row import DataRow, DataRowUpsertItem, DataRowSpec, DataRowGlobalKey
+from labelbox.schema.data_row import DataRow, DataRowUpsertItem, DataRowSpec, DataRowGlobalKey, DataRowAutoKey
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
@@ -761,6 +761,13 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def upsert_data_rows(self, specs: list[DataRowSpec]) -> "Task":
 
+        class ManifestFile:
+
+            def __init__(self):
+                self.source = "SDK"
+                self.item_count = 0
+                self.chunk_uris: list[str] = []
+
         def _convert_specs_to_upsert_items(_specs: list[DataRowSpec]):
             _items: list[DataRowUpsertItem] = []
             for spec in _specs:
@@ -770,12 +777,8 @@ class Dataset(DbObject, Updateable, Deletable):
                 elif spec.global_key:
                     key = DataRowGlobalKey(spec.global_key)
                 else:
-                    raise ValueError(
-                        "Either 'key' or 'global_key' must be provided")
-                _items.append(DataRowUpsertItem(
-                    payload=spec,
-                    id=key,
-                ))
+                    key = DataRowAutoKey()
+                _items.append(DataRowUpsertItem(payload=spec, id=key))
             return _items
 
         items = _convert_specs_to_upsert_items(specs)
@@ -783,28 +786,25 @@ class Dataset(DbObject, Updateable, Deletable):
         chunks = [
             items[i:i + chunk_size] for i in range(0, len(items), chunk_size)
         ]
-        manifest = {"source": "SDK", "item_count": 0, "chunk_uris": []}
+        manifest = ManifestFile()
         for chunk in chunks:
-            manifest["chunk_uris"].append(self._create_descriptor_file(chunk))
-            manifest["item_count"] += len(chunk)
+            manifest.chunk_uris.append(self._create_descriptor_file(chunk))
+            manifest.item_count += len(chunk)
 
-        data = json.dumps(manifest).encode("utf-8")
+        data = json.dumps(manifest.__dict__).encode("utf-8")
         manifest_uri = self.client.upload_data(data,
                                                content_type="application/json",
                                                filename="manifest.json")
 
-        dataset_param = "datasetId"
-        manifest_uri_param = "manifestUri"
-        query_str = """mutation UpsertDataRowsPyApi($%s: ID!, $%s: String!){
-                upsertDataRows(data:{datasetId: $%s, manifestUri: $%s}
-                ){ id createdAt updatedAt name status completionPercentage result errors type metadata } } """ % (
-            dataset_param, manifest_uri_param, dataset_param,
-            manifest_uri_param)
+        query_str = """
+            mutation UpsertDataRowsPyApi($manifestUri: String!) {
+                upsertDataRows(data: { manifestUri: $manifestUri }) { 
+                    id createdAt updatedAt name status completionPercentage result errors type metadata 
+                }
+            }
+            """
 
-        res = self.client.execute(query_str, {
-            dataset_param: self.uid,
-            manifest_uri_param: manifest_uri
-        })
+        res = self.client.execute(query_str, {"manifestUri": manifest_uri})
         res = res["upsertDataRows"]
         task = Task(self.client, res)
         task._user = self.client.get_user()

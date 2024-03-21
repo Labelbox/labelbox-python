@@ -47,6 +47,11 @@ class TestDataRowUpsert:
             ])
         return dr
 
+    def test_create_data_row_with_auto_key(self, dataset, image_url):
+        task = dataset.upsert_data_rows([DataRowSpec(row_data=image_url)])
+        task.wait_till_done()
+        assert len(list(dataset.data_rows())) == 1
+
     def test_create_data_row_with_upsert(self, client, dataset, image_url):
         task = dataset.upsert_data_rows([
             DataRowSpec(
@@ -69,6 +74,10 @@ class TestDataRowUpsert:
                         value=
                         "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
                     )
+                ],
+                metadata=[
+                    DataRowMetadataSpec(name="tag", value="tag_string"),
+                    DataRowMetadataSpec(name="split", value="train")
                 ])
         ])
         task.wait_till_done()
@@ -95,6 +104,12 @@ class TestDataRowUpsert:
         assert attachments[2].attachment_type == AttachmentType.PDF_URL
         assert attachments[
             2].attachment_value == "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
+
+        assert len(dr.metadata_fields) == 2
+        assert dr.metadata_fields[0]['name'] == "tag"
+        assert dr.metadata_fields[0]['value'] == "updated tag"
+        assert dr.metadata_fields[1]['name'] == "split"
+        assert dr.metadata_fields[1]['value'] == "train"
 
     def test_update_data_row_fields_with_upsert(self, client, dataset,
                                                 image_url):
@@ -167,9 +182,7 @@ class TestDataRowUpsert:
         dr = client.get_data_row(dr.uid)
         assert dr is not None
         assert len(dr.metadata_fields) == 2
-        tag_idx, split_idx = (
-            0, 1) if dr.metadata_fields[0]['name'] == "tag" else (1, 0)
-        assert dr.metadata_fields[tag_idx]['name'] == "tag"
-        assert dr.metadata_fields[tag_idx]['value'] == "updated tag"
-        assert dr.metadata_fields[split_idx]['name'] == "split"
-        assert dr.metadata_fields[split_idx]['value'] == "train"
+        assert dr.metadata_fields[0]['name'] == "tag"
+        assert dr.metadata_fields[0]['value'] == "updated tag"
+        assert dr.metadata_fields[1]['name'] == "split"
+        assert dr.metadata_fields[1]['value'] == "train"

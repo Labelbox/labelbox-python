@@ -57,6 +57,15 @@ class DataRowGlobalKey(DataRowKey):
         super().__init__(type=KeyType.GKEY, value=value)
 
 
+class DataRowAutoKey(DataRowKey):
+    """
+    This represents a key for a create-only data row.
+    """
+
+    def __init__(self):
+        super().__init__(type=KeyType.AUTO, value="")
+
+
 class DataRowMetadataSpec(BaseModel):
     schema_id: Optional[str]
     value: Any
