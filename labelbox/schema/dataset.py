@@ -760,7 +760,7 @@ class Dataset(DbObject, Updateable, Deletable):
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
 
-    def upsert_data_rows(self, specs: list[DataRowSpec]) -> "Task":
+    def upsert_data_rows(self, specs: List[DataRowSpec]) -> "Task":
         if len(specs) > MAX_DATAROW_PER_API_OPERATION:
             raise MalformedQueryException(
                 f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
@@ -773,7 +773,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 self.item_count = 0
                 self.chunk_uris: List[str] = []
 
-        def _convert_specs_to_upsert_items(_specs: list[DataRowSpec]):
+        def _convert_specs_to_upsert_items(_specs: List[DataRowSpec]):
             _items: List[DataRowUpsertItem] = []
             for spec in _specs:
                 spec.__dict__["dataset_id"] = self.uid
