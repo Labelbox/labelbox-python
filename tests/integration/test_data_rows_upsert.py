@@ -1,4 +1,6 @@
+import json
 import uuid
+from unittest.mock import patch
 
 import pytest
 
@@ -186,3 +188,27 @@ class TestDataRowUpsert:
         assert dr.metadata_fields[0]['value'] == "updated tag"
         assert dr.metadata_fields[1]['name'] == "split"
         assert dr.metadata_fields[1]['value'] == "train"
+
+    def test_multiple_chunks(self, client, dataset, image_url):
+        mocked_chunk_size = 3
+        with patch('labelbox.client.Client.upload_data',
+                   wraps=client.upload_data) as spy_some_function:
+            with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+                       new=mocked_chunk_size):
+                task = dataset.upsert_data_rows(
+                    [DataRowSpec(row_data=image_url) for i in range(10)])
+                task.wait_till_done()
+                assert len(list(dataset.data_rows())) == 10
+                assert spy_some_function.call_count == 5  # 4 chunks + manifest
+
+                first_call_args, _ = spy_some_function.call_args_list[0]
+                first_chunk_content = first_call_args[0]
+                data = json.loads(first_chunk_content)
+                assert len(data) == mocked_chunk_size
+
+                last_call_args, _ = spy_some_function.call_args_list[-1]
+                manifest_content = last_call_args[0].decode('utf-8')
+                data = json.loads(manifest_content)
+                assert data['source'] == "SDK"
+                assert data['item_count'] == 10
+                assert len(data['chunk_uris']) == 4
