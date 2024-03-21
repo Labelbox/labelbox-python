@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional, Union, Any
 import json
@@ -29,13 +30,31 @@ class KeyType(str, Enum):
     """The key will be auto-generated. Only usable for creates"""
 
 
-class DataRowKey(BaseModel):
+class DataRowKey(BaseModel, ABC):
     """
     The DataRowKey class is a unique ID abstraction that allows us to reference
     a DataRow by either a Global key or CUID
     """
-    type: KeyType = KeyType.GKEY
+    type: KeyType
     value: str
+
+
+class DataRowIdKey(DataRowKey):
+    """
+    This represents a data row identifier key that is provided by Labelbox upon data row creation.
+    """
+
+    def __init__(self, value: str):
+        super().__init__(type=KeyType.ID, value=value)
+
+
+class DataRowGlobalKey(DataRowKey):
+    """
+    This represents a unique data row key that is provided by the user.
+    """
+
+    def __init__(self, value: str):
+        super().__init__(type=KeyType.GKEY, value=value)
 
 
 class DataRowMetadataSpec(BaseModel):
@@ -52,7 +71,6 @@ class DataRowAttachmentSpec(BaseModel):
 
 class DataRowSpec(BaseModel):
     key: Optional[DataRowKey] = PydanticField(exclude=True)
-    dataset_id: str
     row_data: Optional[Union[str, dict]]
     external_id: Optional[str]
     global_key: Optional[str]

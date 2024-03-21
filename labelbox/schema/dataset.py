@@ -22,7 +22,7 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row import DataRow, DataRowUpsertItem, DataRowSpec, DataRowKey, KeyType
+from labelbox.schema.data_row import DataRow, DataRowUpsertItem, DataRowSpec, DataRowGlobalKey
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
@@ -764,10 +764,11 @@ class Dataset(DbObject, Updateable, Deletable):
         def _convert_specs_to_upsert_items(_specs: list[DataRowSpec]):
             _items: list[DataRowUpsertItem] = []
             for spec in _specs:
+                spec.__dict__["dataset_id"] = self.uid
                 if spec.key:
                     key = spec.key
                 elif spec.global_key:
-                    key = DataRowKey(type=KeyType.GKEY, value=spec.global_key)
+                    key = DataRowGlobalKey(spec.global_key)
                 else:
                     raise ValueError(
                         "Either 'key' or 'global_key' must be provided")
