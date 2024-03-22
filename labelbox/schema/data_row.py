@@ -80,6 +80,7 @@ class DataRowAttachmentSpec(BaseModel):
 
 class DataRowSpec(BaseModel):
     key: Optional[DataRowKey] = PydanticField(exclude=True)
+    dataset_id: Optional[str]
     row_data: Optional[Union[str, dict]]
     external_id: Optional[str]
     global_key: Optional[str]

@@ -767,6 +767,40 @@ class Dataset(DbObject, Updateable, Deletable):
         return Task.get_task(self.client, task_id)
 
     def upsert_data_rows(self, specs: List[DataRowSpec]) -> "Task":
+        """
+        Upserts data rows in this dataset.
+
+        >>>     task = dataset.upsert_data_rows([
+        >>>         # create new data row
+        >>>         DataRowSpec(
+        >>>             row_data="http://my_site.com/photos/img_01.jpg",
+        >>>             global_key="global_key1",
+        >>>             external_id="ex_id1",
+        >>>             attachments=[
+        >>>                 DataRowAttachmentSpec(type=AttachmentType.RAW_TEXT, name="att1", value="test1")
+        >>>             ],
+        >>>             metadata=[
+        >>>                 DataRowMetadataSpec(name="tag", value="tag value"),
+        >>>             ]
+        >>>         ),
+        >>>         # update existing data row by global key
+        >>>         DataRowSpec(
+        >>>             global_key="global_key1",
+        >>>             external_id="ex_id1_updated"
+        >>>         ),
+        >>>         # update global key of data row by existing global key
+        >>>         DataRowSpec(
+        >>>             key=DataRowGlobalKey("global_key1"),
+        >>>             global_key="global_key1_updated"
+        >>>         ),
+        >>>         # update data row by ID
+        >>>         DataRowSpec(
+        >>>             key=DataRowIdKey(dr.uid),
+        >>>             external_id="ex_id1_updated"
+        >>>         ),
+        >>>     ])
+        >>>     task.wait_till_done()
+        """
         if len(specs) > MAX_DATAROW_PER_API_OPERATION:
             raise MalformedQueryException(
                 f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
@@ -782,7 +816,7 @@ class Dataset(DbObject, Updateable, Deletable):
         def _convert_specs_to_upsert_items(_specs: List[DataRowSpec]):
             _items: List[DataRowUpsertItem] = []
             for spec in _specs:
-                spec.__dict__["dataset_id"] = self.uid
+                spec.dataset_id = self.uid
                 if spec.key:
                     key = spec.key
                 elif spec.global_key:
