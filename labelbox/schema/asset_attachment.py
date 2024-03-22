@@ -49,7 +49,15 @@ class AssetAttachment(DbObject):
                 raise ValueError(
                     f"Must provide a `{required_key}` key for each attachment. Found {attachment_json}."
                 )
-            cls.validate_attachment_type(attachment_json['type'])
+        cls.validate_attachment_value(attachment_json['value'])
+        cls.validate_attachment_type(attachment_json['type'])
+
+    @classmethod
+    def validate_attachment_value(cls, attachment_value: str) -> None:
+        if not isinstance(attachment_value, str) or attachment_value == "":
+            raise ValueError(
+                f"Attachment value must be a non-empty string, got: '{attachment_value}'"
+            )
 
     @classmethod
     def validate_attachment_type(cls, attachment_type: str) -> None:
@@ -72,8 +80,20 @@ class AssetAttachment(DbObject):
                type: Optional[str] = None,
                value: Optional[str] = None):
         """Updates an attachment on the data row."""
+        if not name and not type and value is None:
+            raise ValueError(
+                "At least one of the following must be provided: name, type, value"
+            )
+
+        query_params = {"attachment_id": self.uid}
         if type:
             self.validate_attachment_type(type)
+            query_params["type"] = type
+        if value is not None:
+            self.validate_attachment_value(value)
+            query_params["value"] = value
+        if name:
+            query_params["name"] = name
 
         query_str = """mutation updateDataRowAttachmentPyApi($attachment_id: ID!, $name: String, $type: AttachmentType, $value: String) {
             updateDataRowAttachment(
@@ -81,13 +101,8 @@ class AssetAttachment(DbObject):
               data: {name: $name, type: $type, value: $value}
             ) { id name type value }
             }"""
-        res = (self.client.execute(
-            query_str, {
-                "attachment_id": self.uid,
-                "name": name,
-                "type": type,
-                "value": value
-            }))['updateDataRowAttachment']
+        res = (self.client.execute(query_str,
+                                   query_params))['updateDataRowAttachment']
 
         self.attachment_name = res['name']
         self.attachment_value = res['value']

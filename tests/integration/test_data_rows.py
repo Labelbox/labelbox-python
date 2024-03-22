@@ -747,6 +747,26 @@ def test_create_data_rows_sync_mixed_upload(dataset, image_url):
     assert len(list(dataset.data_rows())) == n_local + n_urls
 
 
+def test_create_data_row_attachment(data_row):
+    att = data_row.create_attachment("IMAGE", "https://example.com/image.jpg",
+                                     "name")
+    assert att.attachment_type == "IMAGE"
+    assert att.attachment_value == "https://example.com/image.jpg"
+    assert att.attachment_name == "name"
+
+
+def test_create_data_row_attachment_invalid_type(data_row):
+    with pytest.raises(ValueError):
+        data_row.create_attachment("SOME_TYPE", "value", "name")
+
+
+def test_create_data_row_attachment_invalid_value(data_row):
+    with pytest.raises(ValueError):
+        data_row.create_attachment("IMAGE", "", "name")
+    with pytest.raises(ValueError):
+        data_row.create_attachment("IMAGE", None, "name")
+
+
 def test_delete_data_row_attachment(data_row, image_url):
     attachments = []
 
@@ -789,6 +809,26 @@ def test_update_data_row_attachment_invalid_type(data_row):
     assert attachment is not None
     with pytest.raises(ValueError):
         attachment.update(name="updated name", type="INVALID", value="value")
+
+
+def test_update_data_row_attachment_invalid_value(data_row):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    with pytest.raises(ValueError):
+        attachment.update(name="updated name", type="IMAGE", value="")
+
+
+def test_does_not_update_not_provided_attachment_fields(data_row):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    attachment.update(value=None, name="name")
+    assert attachment.attachment_value == "value"
+    attachment.update(name=None, value="value")
+    assert attachment.attachment_name == "name"
+    attachment.update(type=None, name="name")
+    assert attachment.attachment_type == "RAW_TEXT"
 
 
 def test_create_data_rows_result(client, dataset, image_url):
