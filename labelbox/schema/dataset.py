@@ -816,6 +816,7 @@ class Dataset(DbObject, Updateable, Deletable):
         def _convert_specs_to_upsert_items(_specs: List[DataRowSpec]):
             _items: List[DataRowUpsertItem] = []
             for spec in _specs:
+                # enforce current dataset's id for all specs
                 spec.dataset_id = self.uid
                 if spec.key:
                     key = spec.key
