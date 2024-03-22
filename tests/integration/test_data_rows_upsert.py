@@ -78,7 +78,7 @@ class TestDataRowUpsert:
                     )
                 ],
                 metadata=[
-                    DataRowMetadataSpec(name="tag", value="tag_string"),
+                    DataRowMetadataSpec(name="tag", value="updated tag"),
                     DataRowMetadataSpec(name="split", value="train")
                 ])
         ])
@@ -95,12 +95,12 @@ class TestDataRowUpsert:
         assert len(attachments) == 3
         assert attachments[0].attachment_name == "att1"
         assert attachments[0].attachment_type == AttachmentType.RAW_TEXT
-        assert attachments[
-            0].attachment_value == "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
+        assert attachments[0].attachment_value == "test1"
 
         assert attachments[1].attachment_name == "att2"
         assert attachments[1].attachment_type == AttachmentType.IMAGE
-        assert attachments[1].attachment_value == "test"
+        assert attachments[
+            1].attachment_value == "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
 
         assert attachments[2].attachment_name == "att3"
         assert attachments[2].attachment_type == AttachmentType.PDF_URL

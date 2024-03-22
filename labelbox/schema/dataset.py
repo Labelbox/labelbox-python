@@ -294,7 +294,10 @@ class Dataset(DbObject, Updateable, Deletable):
         task._user = user
         return task
 
-    def _create_descriptor_file(self, items, max_attachments_per_data_row=None):
+    def _create_descriptor_file(self,
+                                items,
+                                max_attachments_per_data_row=None,
+                                is_upsert=False):
         """
         This function is shared by both `Dataset.create_data_rows` and `Dataset.create_data_rows_sync`
         to prepare the input file. The user defined input is validated, processed, and json stringified.
@@ -347,6 +350,9 @@ class Dataset(DbObject, Updateable, Deletable):
         AssetAttachment = Entity.AssetAttachment
 
         def upload_if_necessary(item):
+            if is_upsert and 'row_data' not in item:
+                # When upserting, row_data is not required
+                return item
             row_data = item['row_data']
             if isinstance(row_data, str) and os.path.exists(row_data):
                 item_url = self.client.upload_file(row_data)
@@ -426,7 +432,7 @@ class Dataset(DbObject, Updateable, Deletable):
             return item
 
         def validate_keys(item):
-            if 'row_data' not in item:
+            if not is_upsert and 'row_data' not in item:
                 raise InvalidQueryError(
                     "`row_data` missing when creating DataRow.")
 
@@ -463,7 +469,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def convert_item(data_row_item):
             if isinstance(data_row_item, DataRowUpsertItem):
-                item = data_row_item.payload.dict()
+                item = data_row_item.payload.dict(exclude_none=True)
             else:
                 item = data_row_item
 
@@ -793,7 +799,8 @@ class Dataset(DbObject, Updateable, Deletable):
         ]
         manifest = ManifestFile()
         for chunk in chunks:
-            manifest.chunk_uris.append(self._create_descriptor_file(chunk))
+            manifest.chunk_uris.append(
+                self._create_descriptor_file(chunk, is_upsert=True))
             manifest.item_count += len(chunk)
 
         data = json.dumps(manifest.__dict__).encode("utf-8")
