@@ -212,3 +212,19 @@ class TestDataRowUpsert:
                 assert data['source'] == "SDK"
                 assert data['item_count'] == 10
                 assert len(data['chunk_uris']) == 4
+
+    def test_upsert_embedded_row_data(self, dataset):
+        pdf_url = "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/0801.3483.pdf"
+        task = dataset.upsert_data_rows([
+            DataRowSpec(row_data={
+                "pdf_url":
+                    pdf_url,
+                "text_layer_url":
+                    "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/0801.3483-lb-textlayer.json"
+            },
+                        media_type="PDF")
+        ])
+        task.wait_till_done()
+        data_rows = list(dataset.data_rows())
+        assert len(data_rows) == 1
+        assert data_rows[0].row_data == pdf_url
