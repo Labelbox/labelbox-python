@@ -80,10 +80,20 @@ class AssetAttachment(DbObject):
                type: Optional[str] = None,
                value: Optional[str] = None):
         """Updates an attachment on the data row."""
+        if not name and not type and value is None:
+            raise ValueError(
+                "At least one of the following must be provided: name, type, value"
+            )
+
+        query_params = {"attachment_id": self.uid}
         if type:
             self.validate_attachment_type(type)
+            query_params["type"] = type
         if value is not None:
             self.validate_attachment_value(value)
+            query_params["value"] = value
+        if name:
+            query_params["name"] = name
 
         query_str = """mutation updateDataRowAttachmentPyApi($attachment_id: ID!, $name: String, $type: AttachmentType, $value: String) {
             updateDataRowAttachment(
@@ -91,13 +101,8 @@ class AssetAttachment(DbObject):
               data: {name: $name, type: $type, value: $value}
             ) { id name type value }
             }"""
-        res = (self.client.execute(
-            query_str, {
-                "attachment_id": self.uid,
-                "name": name,
-                "type": type,
-                "value": value
-            }))['updateDataRowAttachment']
+        res = (self.client.execute(query_str,
+                                   query_params))['updateDataRowAttachment']
 
         self.attachment_name = res['name']
         self.attachment_value = res['value']

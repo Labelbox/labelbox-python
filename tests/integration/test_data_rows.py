@@ -817,8 +817,18 @@ def test_update_data_row_attachment_invalid_value(data_row):
     assert attachment is not None
     with pytest.raises(ValueError):
         attachment.update(name="updated name", type="IMAGE", value="")
-    with pytest.raises(ValueError):
-        attachment.update(name="updated name", type="IMAGE", value=None)
+
+
+def test_does_not_update_not_provided_attachment_fields(data_row):
+    attachment: AssetAttachment = data_row.create_attachment(
+        "RAW_TEXT", "value", "name")
+    assert attachment is not None
+    attachment.update(value=None, name="name")
+    assert attachment.attachment_value == "value"
+    attachment.update(name=None, value="value")
+    assert attachment.attachment_name == "name"
+    attachment.update(type=None, name="name")
+    assert attachment.attachment_type == "RAW_TEXT"
 
 
 def test_create_data_rows_result(client, dataset, image_url):
