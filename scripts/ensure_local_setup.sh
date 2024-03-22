@@ -33,7 +33,7 @@ if [ $label_consumer_service -eq 0 ]; then
 
   echo -e '\x1b[41;37mYou need to run label consumer service first: \x1b[K\x1b[0m';
   echo -e '# from intelligence root'
-  echo -e 'docker-compose -f docker-compose.yml -f docker-compose.lcs.yml up -d lcs-sync label-consumer-service'
+  echo -e 'docker-compose -f docker-compose.lcs.yml up -d lcs-sync label-consumer-service'
   exit 1
 fi
 
