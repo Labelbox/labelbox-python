@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Generator, List, Optional, Any
+from typing import Dict, Generator, List, Optional, Any, Final
 import os
 import json
 import logging
@@ -32,7 +32,6 @@ from labelbox.schema.user import User
 logger = logging.getLogger(__name__)
 
 MAX_DATAROW_PER_API_OPERATION = 150_000
-UPSERT_CHUNK_SIZE = 10_000
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -48,6 +47,8 @@ class Dataset(DbObject, Updateable, Deletable):
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
     """
+    __upsert_chunk_size: Final = 10_000
+
     name = Field.String("name")
     description = Field.String("description")
     updated_at = Field.DateTime("updated_at")
@@ -829,8 +830,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         items = _convert_specs_to_upsert_items(specs)
         chunks = [
-            items[i:i + UPSERT_CHUNK_SIZE]
-            for i in range(0, len(items), UPSERT_CHUNK_SIZE)
+            items[i:i + self.__upsert_chunk_size]
+            for i in range(0, len(items), self.__upsert_chunk_size)
         ]
         manifest = ManifestFile()
         for chunk in chunks:
