@@ -807,13 +807,6 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
             )
 
-        class ManifestFile:
-
-            def __init__(self):
-                self.source = "SDK"
-                self.item_count = 0
-                self.chunk_uris: List[str] = []
-
         def _convert_specs_to_upsert_items(_specs: List[DataRowSpec]):
             _items: List[DataRowUpsertItem] = []
             for spec in _specs:
@@ -833,13 +826,23 @@ class Dataset(DbObject, Updateable, Deletable):
             items[i:i + self.__upsert_chunk_size]
             for i in range(0, len(items), self.__upsert_chunk_size)
         ]
-        manifest = ManifestFile()
-        for chunk in chunks:
-            manifest.chunk_uris.append(
-                self._create_descriptor_file(chunk, is_upsert=True))
-            manifest.item_count += len(chunk)
 
-        data = json.dumps(manifest.__dict__).encode("utf-8")
+        def _upload_chunk(_chunk: list[DataRowUpsertItem]):
+            return self._create_descriptor_file(_chunk, is_upsert=True)
+
+        file_upload_thread_count = 20
+        with ThreadPoolExecutor(file_upload_thread_count) as executor:
+            futures = [
+                executor.submit(_upload_chunk, chunk) for chunk in chunks
+            ]
+            chunk_uris = [future.result() for future in as_completed(futures)]
+
+        manifest = {
+            "source": "SDK",
+            "item_count": len(items),
+            "chunk_uris": chunk_uris
+        }
+        data = json.dumps(manifest).encode("utf-8")
         manifest_uri = self.client.upload_data(data,
                                                content_type="application/json",
                                                filename="manifest.json")
