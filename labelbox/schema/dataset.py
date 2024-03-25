@@ -827,7 +827,7 @@ class Dataset(DbObject, Updateable, Deletable):
             for i in range(0, len(items), self.__upsert_chunk_size)
         ]
 
-        def _upload_chunk(_chunk: list[DataRowUpsertItem]):
+        def _upload_chunk(_chunk: List[DataRowUpsertItem]):
             return self._create_descriptor_file(_chunk, is_upsert=True)
 
         file_upload_thread_count = 20
