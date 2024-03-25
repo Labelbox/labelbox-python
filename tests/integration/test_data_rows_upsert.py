@@ -228,3 +228,14 @@ class TestDataRowUpsert:
         data_rows = list(dataset.data_rows())
         assert len(data_rows) == 1
         assert data_rows[0].row_data == pdf_url
+
+    def test_upsert_duplicate_global_key_error(self, dataset, image_url):
+        task = dataset.upsert_data_rows([
+            DataRowSpec(row_data=image_url, global_key="gk2"),
+            DataRowSpec(row_data=image_url, global_key="gk2")
+        ])
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+        assert task.errors is not None
+        assert len(task.errors) == 1  # one data row was created, one failed
+        assert "Duplicate global key: 'gk2'" in task.errors[0]['message']
