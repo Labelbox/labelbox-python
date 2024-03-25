@@ -214,9 +214,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         Returns:
             `AssetAttachment` DB object.
         Raises:
-            ValueError: asset_type must be one of the supported types.
+            ValueError: attachment_type must be one of the supported types.
+            ValueError: attachment_value must be a non-empty string.
         """
-        Entity.AssetAttachment.validate_attachment_type(attachment_type)
+        Entity.AssetAttachment.validate_attachment_json({
+            'type': attachment_type,
+            'value': attachment_value
+        })
 
         attachment_type_param = "type"
         attachment_value_param = "value"
