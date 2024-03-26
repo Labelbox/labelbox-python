@@ -24,6 +24,7 @@ from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
 from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.data_row import DataRow
+from labelbox.schema.embeddings import EmbeddingVector
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
@@ -179,6 +180,11 @@ class Dataset(DbObject, Updateable, Deletable):
             args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
                 args[DataRow.metadata_fields.name])
 
+        if "embeddings" in args:
+            args["embeddings"] = [
+                EmbeddingVector(**e).to_gql() for e in args["embeddings"]
+            ]
+
         query_str = """mutation CreateDataRowPyApi(
             $row_data: String!,
             $metadata_fields: [DataRowCustomMetadataUpsertInput!],
@@ -186,7 +192,8 @@ class Dataset(DbObject, Updateable, Deletable):
             $media_type : MediaType,
             $external_id : String,
             $global_key : String,
-            $dataset: ID!
+            $dataset: ID!,
+            $embeddings: [DataRowEmbeddingVectorInput!]
             ){
                 createDataRow(
                     data:
@@ -198,6 +205,7 @@ class Dataset(DbObject, Updateable, Deletable):
                         globalKey: $global_key
                         attachments: $attachments
                         dataset: {connect: {id: $dataset}}
+                        embeddings: $embeddings
                     }
                    )
                 {%s}
@@ -388,6 +396,13 @@ class Dataset(DbObject, Updateable, Deletable):
                     )
             return attachments
 
+        def validate_embeddings(item):
+            embeddings = item.get("embeddings")
+            if embeddings:
+                item["embeddings"] = [
+                    EmbeddingVector(**e).to_gql() for e in embeddings
+                ]
+
         def validate_conversational_data(conversational_data: list) -> None:
             """
             Checks each conversational message for keys expected as per https://docs.labelbox.com/reference/text-conversational#sample-conversational-json
@@ -448,7 +463,9 @@ class Dataset(DbObject, Updateable, Deletable):
                           str) and item.get('row_data').startswith("s3:/"):
                 raise InvalidQueryError(
                     "row_data: s3 assets must start with 'https'.")
-            allowed_extra_fields = {'attachments', 'media_type', 'dataset_id'}
+            allowed_extra_fields = {
+                'attachments', 'media_type', 'dataset_id', 'embeddings'
+            }
             invalid_keys = set(item) - {f.name for f in DataRow.fields()
                                        } - allowed_extra_fields
             if invalid_keys:
@@ -494,6 +511,8 @@ class Dataset(DbObject, Updateable, Deletable):
             validate_keys(item)
             # Make sure attachments are valid
             validate_attachments(item)
+            # Make sure embeddings are valid
+            validate_embeddings(item)
             # Parse metadata fields if they exist
             parse_metadata_fields(item)
             # Upload any local file paths
