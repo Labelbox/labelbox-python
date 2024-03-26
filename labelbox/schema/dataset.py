@@ -22,16 +22,23 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.data_row import DataRow, DataRowUpsertItem, DataRowSpec, DataRowGlobalKey, DataRowAutoKey
+from labelbox.pydantic_compat import BaseModel
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
 MAX_DATAROW_PER_API_OPERATION = 150_000
+
+
+class DataRowUpsertItem(BaseModel):
+    id: dict
+    payload: dict
 
 
 class Dataset(DbObject, Updateable, Deletable):
@@ -470,7 +477,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         def convert_item(data_row_item):
             if isinstance(data_row_item, DataRowUpsertItem):
-                item = data_row_item.payload.dict(exclude_none=True)
+                item = data_row_item.payload
             else:
                 item = data_row_item
 
@@ -493,7 +500,7 @@ class Dataset(DbObject, Updateable, Deletable):
             item = upload_if_necessary(item)
 
             if isinstance(data_row_item, DataRowUpsertItem):
-                return {'id': data_row_item.id.dict(), 'payload': item}
+                return {'id': data_row_item.id, 'payload': item}
             else:
                 return item
 
@@ -767,67 +774,76 @@ class Dataset(DbObject, Updateable, Deletable):
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
 
-    def upsert_data_rows(self, specs: List[DataRowSpec]) -> "Task":
+    def upsert_data_rows(self, items) -> "Task":
         """
         Upserts data rows in this dataset.
 
         >>>     task = dataset.upsert_data_rows([
         >>>         # create new data row
-        >>>         DataRowSpec(
-        >>>             row_data="http://my_site.com/photos/img_01.jpg",
-        >>>             global_key="global_key1",
-        >>>             external_id="ex_id1",
-        >>>             attachments=[
-        >>>                 DataRowAttachmentSpec(type=AttachmentType.RAW_TEXT, name="att1", value="test1")
+        >>>         {
+        >>>             "row_data": "http://my_site.com/photos/img_01.jpg",
+        >>>             "global_key": "global_key1",
+        >>>             "external_id": "ex_id1",
+        >>>             "attachments": [
+        >>>                 {"type": AttachmentType.RAW_TEXT, "name": "att1", "value": "test1"}
         >>>             ],
-        >>>             metadata=[
-        >>>                 DataRowMetadataSpec(name="tag", value="tag value"),
+        >>>             "metadata": [
+        >>>                 {"name": "tag", "value": "tag value"},
         >>>             ]
-        >>>         ),
+        >>>         },
         >>>         # update existing data row by global key
-        >>>         DataRowSpec(
-        >>>             global_key="global_key1",
-        >>>             external_id="ex_id1_updated"
-        >>>         ),
+        >>>         {
+        >>>             "global_key": "global_key1",
+        >>>             "external_id": "ex_id1_updated"
+        >>>         },
         >>>         # update global key of data row by existing global key
-        >>>         DataRowSpec(
-        >>>             key=DataRowGlobalKey("global_key1"),
-        >>>             global_key="global_key1_updated"
-        >>>         ),
+        >>>         {
+        >>>             "key": GlobalKey("global_key1"),
+        >>>             "global_key": "global_key1_updated"
+        >>>         },
         >>>         # update data row by ID
-        >>>         DataRowSpec(
-        >>>             key=DataRowIdKey(dr.uid),
-        >>>             external_id="ex_id1_updated"
-        >>>         ),
+        >>>         {
+        >>>             "key": UniqueId(dr.uid),
+        >>>             "external_id": "ex_id1_updated"
+        >>>         },
         >>>     ])
         >>>     task.wait_till_done()
         """
-        if len(specs) > MAX_DATAROW_PER_API_OPERATION:
+        if len(items) > MAX_DATAROW_PER_API_OPERATION:
             raise MalformedQueryException(
                 f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
             )
 
-        def _convert_specs_to_upsert_items(_specs: List[DataRowSpec]):
-            _items: List[DataRowUpsertItem] = []
-            for spec in _specs:
+        def _convert_items_to_upsert_format(_items):
+            _upsert_items: List[DataRowUpsertItem] = []
+            for item in _items:
                 # enforce current dataset's id for all specs
-                spec.dataset_id = self.uid
-                if spec.key:
-                    key = spec.key
-                elif spec.global_key:
-                    key = DataRowGlobalKey(spec.global_key)
+                item['dataset_id'] = self.uid
+                if 'key' not in item:
+                    key = {'type': 'AUTO', 'value': ''}
+                elif isinstance(item['key'], UniqueId):
+                    key = {'type': 'ID', 'value': item['key'].key}
+                    del item['key']
+                elif isinstance(item['key'], GlobalKey):
+                    key = {'type': 'GKEY', 'value': item['key'].key}
+                    del item['key']
                 else:
-                    key = DataRowAutoKey()
-                _items.append(DataRowUpsertItem(payload=spec, id=key))
-            return _items
+                    raise ValueError(
+                        f"Key must be an instance of UniqueId or GlobalKey, got: {type(item['key']).__name__}"
+                    )
+                item = {
+                    k: v for k, v in item.items() if v is not None
+                }  # remove None values
+                _upsert_items.append(DataRowUpsertItem(payload=item, id=key))
+            return _upsert_items
 
-        items = _convert_specs_to_upsert_items(specs)
+        specs = _convert_items_to_upsert_format(items)
         chunks = [
-            items[i:i + self.__upsert_chunk_size]
-            for i in range(0, len(items), self.__upsert_chunk_size)
+            specs[i:i + self.__upsert_chunk_size]
+            for i in range(0, len(specs), self.__upsert_chunk_size)
         ]
 
-        def _upload_chunk(_chunk: List[DataRowUpsertItem]):
+        def _upload_chunk(_chunk):
             return self._create_descriptor_file(_chunk, is_upsert=True)
 
         file_upload_thread_count = 20
@@ -839,7 +855,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
         manifest = {
             "source": "SDK",
-            "item_count": len(items),
+            "item_count": len(specs),
             "chunk_uris": chunk_uris
         }
         data = json.dumps(manifest).encode("utf-8")

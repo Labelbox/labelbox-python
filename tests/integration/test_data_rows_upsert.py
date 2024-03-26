@@ -5,8 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from labelbox.schema.asset_attachment import AttachmentType
-from labelbox.schema.data_row import DataRowSpec, DataRowAttachmentSpec, DataRowIdKey, \
-    DataRowGlobalKey, DataRowMetadataSpec
+from labelbox.schema.identifiable import UniqueId, GlobalKey
 
 
 class TestDataRowUpsert:
@@ -50,38 +49,45 @@ class TestDataRowUpsert:
         return dr
 
     def test_create_data_row_with_auto_key(self, dataset, image_url):
-        task = dataset.upsert_data_rows([DataRowSpec(row_data=image_url)])
+        task = dataset.upsert_data_rows([{'row_data': image_url}])
         task.wait_till_done()
         assert len(list(dataset.data_rows())) == 1
 
     def test_create_data_row_with_upsert(self, client, dataset, image_url):
-        task = dataset.upsert_data_rows([
-            DataRowSpec(
-                row_data=image_url,
-                global_key="gk1",
-                external_id="ex1",
-                attachments=[
-                    DataRowAttachmentSpec(type=AttachmentType.RAW_TEXT,
-                                          name="att1",
-                                          value="test1"),
-                    DataRowAttachmentSpec(
-                        type=AttachmentType.IMAGE,
-                        name="att2",
-                        value=
-                        "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
-                    ),
-                    DataRowAttachmentSpec(
-                        type=AttachmentType.PDF_URL,
-                        name="att3",
-                        value=
-                        "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
-                    )
-                ],
-                metadata=[
-                    DataRowMetadataSpec(name="tag", value="updated tag"),
-                    DataRowMetadataSpec(name="split", value="train")
-                ])
-        ])
+        task = dataset.upsert_data_rows([{
+            'row_data':
+                image_url,
+            'global_key':
+                "gk1",
+            'external_id':
+                "ex1",
+            'attachments': [{
+                'type': AttachmentType.RAW_TEXT,
+                'name': "att1",
+                'value': "test1"
+            }, {
+                'type':
+                    AttachmentType.IMAGE,
+                'name':
+                    "att2",
+                'value':
+                    "https://storage.googleapis.com/labelbox-sample-datasets/Docs/disease_attachment.jpeg"
+            }, {
+                'type':
+                    AttachmentType.PDF_URL,
+                'name':
+                    "att3",
+                'value':
+                    "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
+            }],
+            'metadata': [{
+                'name': "tag",
+                'value': "updated tag"
+            }, {
+                'name': "split",
+                'value': "train"
+            }]
+        }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row_by_global_key("gk1")
@@ -118,11 +124,11 @@ class TestDataRowUpsert:
         dr = dataset.create_data_row(row_data=image_url,
                                      external_id="ex1",
                                      global_key="gk1")
-        task = dataset.upsert_data_rows([
-            DataRowSpec(key=DataRowIdKey(dr.uid),
-                        external_id="ex1_updated",
-                        global_key="gk1_updated")
-        ])
+        task = dataset.upsert_data_rows([{
+            'key': UniqueId(dr.uid),
+            'external_id': "ex1_updated",
+            'global_key': "gk1_updated"
+        }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row(dr.uid)
@@ -135,11 +141,11 @@ class TestDataRowUpsert:
         dr = dataset.create_data_row(row_data=image_url,
                                      external_id="ex1",
                                      global_key="gk1")
-        task = dataset.upsert_data_rows([
-            DataRowSpec(key=DataRowGlobalKey(dr.global_key),
-                        external_id="ex1_updated",
-                        global_key="gk1_updated")
-        ])
+        task = dataset.upsert_data_rows([{
+            'key': GlobalKey(dr.global_key),
+            'external_id': "ex1_updated",
+            'global_key': "gk1_updated"
+        }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row(dr.uid)
@@ -150,15 +156,17 @@ class TestDataRowUpsert:
     def test_update_attachments_with_upsert(self, client,
                                             all_inclusive_data_row, dataset):
         dr = all_inclusive_data_row
-        task = dataset.upsert_data_rows([
-            DataRowSpec(key=DataRowIdKey(dr.uid),
-                        row_data=dr.row_data,
-                        attachments=[
-                            DataRowAttachmentSpec(type=AttachmentType.RAW_TEXT,
-                                                  name="att1",
-                                                  value="test")
-                        ])
-        ])
+        task = dataset.upsert_data_rows([{
+            'key':
+                UniqueId(dr.uid),
+            'row_data':
+                dr.row_data,
+            'attachments': [{
+                'type': AttachmentType.RAW_TEXT,
+                'name': "att1",
+                'value': "test"
+            }]
+        }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row(dr.uid)
@@ -170,15 +178,19 @@ class TestDataRowUpsert:
     def test_update_metadata_with_upsert(self, client, all_inclusive_data_row,
                                          dataset):
         dr = all_inclusive_data_row
-        task = dataset.upsert_data_rows([
-            DataRowSpec(key=DataRowGlobalKey(dr.global_key),
-                        row_data=dr.row_data,
-                        metadata=[
-                            DataRowMetadataSpec(name="tag",
-                                                value="updated tag"),
-                            DataRowMetadataSpec(name="split", value="train")
-                        ])
-        ])
+        task = dataset.upsert_data_rows([{
+            'key':
+                GlobalKey(dr.global_key),
+            'row_data':
+                dr.row_data,
+            'metadata': [{
+                'name': "tag",
+                'value': "updated tag"
+            }, {
+                'name': "split",
+                'value': "train"
+            }]
+        }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row(dr.uid)
@@ -196,8 +208,9 @@ class TestDataRowUpsert:
             with patch(
                     'labelbox.schema.dataset.Dataset._Dataset__upsert_chunk_size',
                     new=mocked_chunk_size):
-                task = dataset.upsert_data_rows(
-                    [DataRowSpec(row_data=image_url) for i in range(10)])
+                task = dataset.upsert_data_rows([{
+                    'row_data': image_url
+                } for i in range(10)])
                 task.wait_till_done()
                 assert len(list(dataset.data_rows())) == 10
                 assert spy_some_function.call_count == 5  # 4 chunks + manifest
@@ -216,15 +229,15 @@ class TestDataRowUpsert:
 
     def test_upsert_embedded_row_data(self, dataset):
         pdf_url = "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/0801.3483.pdf"
-        task = dataset.upsert_data_rows([
-            DataRowSpec(row_data={
+        task = dataset.upsert_data_rows([{
+            'row_data': {
                 "pdf_url":
                     pdf_url,
                 "text_layer_url":
                     "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/0801.3483-lb-textlayer.json"
             },
-                        media_type="PDF")
-        ])
+            'media_type': "PDF"
+        }])
         task.wait_till_done()
         data_rows = list(dataset.data_rows())
         assert len(data_rows) == 1
@@ -232,8 +245,14 @@ class TestDataRowUpsert:
 
     def test_upsert_duplicate_global_key_error(self, dataset, image_url):
         task = dataset.upsert_data_rows([
-            DataRowSpec(row_data=image_url, global_key="gk2"),
-            DataRowSpec(row_data=image_url, global_key="gk2")
+            {
+                'row_data': image_url,
+                'global_key': "gk2"
+            },
+            {
+                'row_data': image_url,
+                'global_key': "gk2"
+            },
         ])
         task.wait_till_done()
         assert task.status == "COMPLETE"

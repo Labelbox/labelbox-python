@@ -1,5 +1,4 @@
 import logging
-from abc import ABC
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional, Union, Any
 import json
@@ -7,7 +6,6 @@ import json
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
-from labelbox.pydantic_compat import BaseModel, Field as PydanticField
 from labelbox.schema.asset_attachment import AttachmentType
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
@@ -28,70 +26,6 @@ class KeyType(str, Enum):
     """A Global key, could be existing or non-existing"""
     AUTO = 'AUTO'
     """The key will be auto-generated. Only usable for creates"""
-
-
-class DataRowKey(BaseModel, ABC):
-    """
-    The DataRowKey class is a unique ID abstraction that allows us to reference
-    a DataRow by either a Global key or CUID
-    """
-    type: KeyType
-    value: str
-
-
-class DataRowIdKey(DataRowKey):
-    """
-    This represents a data row identifier key that is provided by Labelbox upon data row creation.
-    """
-
-    def __init__(self, value: str):
-        super().__init__(type=KeyType.ID, value=value)
-
-
-class DataRowGlobalKey(DataRowKey):
-    """
-    This represents a unique data row key that is provided by the user.
-    """
-
-    def __init__(self, value: str):
-        super().__init__(type=KeyType.GKEY, value=value)
-
-
-class DataRowAutoKey(DataRowKey):
-    """
-    This represents a key for a create-only data row.
-    """
-
-    def __init__(self):
-        super().__init__(type=KeyType.AUTO, value="")
-
-
-class DataRowMetadataSpec(BaseModel):
-    schema_id: Optional[str]
-    value: Any
-    name: Optional[str]
-
-
-class DataRowAttachmentSpec(BaseModel):
-    type: AttachmentType
-    value: str
-    name: Optional[str]
-
-
-class DataRowSpec(BaseModel):
-    key: Optional[DataRowKey] = PydanticField(exclude=True)
-    dataset_id: Optional[str]
-    row_data: Optional[Union[str, dict]]
-    media_type: Optional[str]
-    external_id: Optional[str]
-    global_key: Optional[str]
-    metadata: Optional[List[DataRowMetadataSpec]]
-    attachments: Optional[List[DataRowAttachmentSpec]]
-
-
-class DataRowUpsertItem(BaseModel):
-    id: DataRowKey
-    payload: DataRowSpec
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
