@@ -54,11 +54,12 @@ class TestDataRowUpsert:
         assert len(list(dataset.data_rows())) == 1
 
     def test_create_data_row_with_upsert(self, client, dataset, image_url):
+        gkey = str(uuid.uuid4())
         task = dataset.upsert_data_rows([{
             'row_data':
                 image_url,
             'global_key':
-                "gk1",
+                gkey,
             'external_id':
                 "ex1",
             'attachments': [{
@@ -90,11 +91,11 @@ class TestDataRowUpsert:
         }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
-        dr = client.get_data_row_by_global_key("gk1")
+        dr = client.get_data_row_by_global_key(gkey)
 
         assert dr is not None
         assert dr.row_data == image_url
-        assert dr.global_key == "gk1"
+        assert dr.global_key == gkey
         assert dr.external_id == "ex1"
 
         attachments = list(dr.attachments())
@@ -121,37 +122,39 @@ class TestDataRowUpsert:
 
     def test_update_data_row_fields_with_upsert(self, client, dataset,
                                                 image_url):
+        gkey = str(uuid.uuid4())
         dr = dataset.create_data_row(row_data=image_url,
                                      external_id="ex1",
-                                     global_key="gk1")
+                                     global_key=gkey)
         task = dataset.upsert_data_rows([{
             'key': UniqueId(dr.uid),
             'external_id': "ex1_updated",
-            'global_key': "gk1_updated"
+            'global_key': f"{gkey}_updated"
         }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row(dr.uid)
         assert dr is not None
         assert dr.external_id == "ex1_updated"
-        assert dr.global_key == "gk1_updated"
+        assert dr.global_key == f"{gkey}_updated"
 
     def test_update_data_row_fields_with_upsert_by_global_key(
             self, client, dataset, image_url):
+        gkey = str(uuid.uuid4())
         dr = dataset.create_data_row(row_data=image_url,
                                      external_id="ex1",
-                                     global_key="gk1")
+                                     global_key=gkey)
         task = dataset.upsert_data_rows([{
             'key': GlobalKey(dr.global_key),
             'external_id': "ex1_updated",
-            'global_key': "gk1_updated"
+            'global_key': f"{gkey}_updated"
         }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         dr = client.get_data_row(dr.uid)
         assert dr is not None
         assert dr.external_id == "ex1_updated"
-        assert dr.global_key == "gk1_updated"
+        assert dr.global_key == f"{gkey}_updated"
 
     def test_update_attachments_with_upsert(self, client,
                                             all_inclusive_data_row, dataset):
@@ -244,18 +247,19 @@ class TestDataRowUpsert:
         assert data_rows[0].row_data == pdf_url
 
     def test_upsert_duplicate_global_key_error(self, dataset, image_url):
+        gkey = str(uuid.uuid4())
         task = dataset.upsert_data_rows([
             {
                 'row_data': image_url,
-                'global_key': "gk2"
+                'global_key': gkey
             },
             {
                 'row_data': image_url,
-                'global_key': "gk2"
+                'global_key': gkey
             },
         ])
         task.wait_till_done()
         assert task.status == "COMPLETE"
         assert task.errors is not None
         assert len(task.errors) == 1  # one data row was created, one failed
-        assert "Duplicate global key: 'gk2'" in task.errors[0]['message']
+        assert f"Duplicate global key: '{gkey}'" in task.errors[0]['message']
