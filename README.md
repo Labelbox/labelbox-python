@@ -72,4 +72,4 @@ The SDK is well-documented to help developers get started quickly and use the SD
 
 - [Labelbox Official Documentation](https://docs.labelbox.com/docs/overview)
 - [Jupyter Notebook Examples](https://github.com/Labelbox/labelbox-python/tree/master/examples)
-- [Github Pages](https://labelbox.github.io/labelbox-python/)
+- [Python SDK reference docs](https://labelbox-python.readthedocs.io/en/latest/)
