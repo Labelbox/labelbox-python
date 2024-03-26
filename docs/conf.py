@@ -14,7 +14,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath('../..'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'Python SDK reference'
@@ -40,7 +39,7 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-multiproject_projects = { "labelbox": { "path": "labelbox" } }
+multiproject_projects = {"labelbox": {"path": "labelbox"}}
 
 # -- Options for HTML output -------------------------------------------------
 
