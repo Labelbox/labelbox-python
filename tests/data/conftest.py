@@ -1,8 +1,8 @@
 import pytest
+
 from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnnotation, ClassificationAnswer, Radio
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-
 from labelbox.data.annotation_types.video import VideoObjectAnnotation
 
 

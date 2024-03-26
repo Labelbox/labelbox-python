@@ -72,6 +72,7 @@ def test_no_integration(client, image_url):
     ds.delete()
 
 
+@pytest.mark.skip(reason="Assumes state of account doesn't have integration")
 def test_no_default_integration(client):
     ds = client.create_dataset(name="new_ds")
     assert ds.iam_integration() is None
