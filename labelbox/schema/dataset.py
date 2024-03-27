@@ -774,9 +774,10 @@ class Dataset(DbObject, Updateable, Deletable):
         task_id = res["taskId"]
         return Task.get_task(self.client, task_id)
 
-    def upsert_data_rows(self, items) -> "Task":
+    def upsert_data_rows(self, items, file_upload_thread_count=20) -> "Task":
         """
-        Upserts data rows in this dataset.
+        Upserts data rows in this dataset. When "key" is provided, and it references an existing data row,
+        an update will be performed. When "key" is not provided a new data row will be created.
 
         >>>     task = dataset.upsert_data_rows([
         >>>         # create new data row
@@ -790,11 +791,6 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>             "metadata": [
         >>>                 {"name": "tag", "value": "tag value"},
         >>>             ]
-        >>>         },
-        >>>         # update existing data row by global key
-        >>>         {
-        >>>             "global_key": "global_key1",
-        >>>             "external_id": "ex_id1_updated"
         >>>         },
         >>>         # update global key of data row by existing global key
         >>>         {
@@ -814,30 +810,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
             )
 
-        def _convert_items_to_upsert_format(_items):
-            _upsert_items: List[DataRowUpsertItem] = []
-            for item in _items:
-                # enforce current dataset's id for all specs
-                item['dataset_id'] = self.uid
-                if 'key' not in item:
-                    key = {'type': 'AUTO', 'value': ''}
-                elif isinstance(item['key'], UniqueId):
-                    key = {'type': 'ID', 'value': item['key'].key}
-                    del item['key']
-                elif isinstance(item['key'], GlobalKey):
-                    key = {'type': 'GKEY', 'value': item['key'].key}
-                    del item['key']
-                else:
-                    raise ValueError(
-                        f"Key must be an instance of UniqueId or GlobalKey, got: {type(item['key']).__name__}"
-                    )
-                item = {
-                    k: v for k, v in item.items() if v is not None
-                }  # remove None values
-                _upsert_items.append(DataRowUpsertItem(payload=item, id=key))
-            return _upsert_items
-
-        specs = _convert_items_to_upsert_format(items)
+        specs = self._convert_items_to_upsert_format(items)
         chunks = [
             specs[i:i + self.__upsert_chunk_size]
             for i in range(0, len(specs), self.__upsert_chunk_size)
@@ -846,7 +819,6 @@ class Dataset(DbObject, Updateable, Deletable):
         def _upload_chunk(_chunk):
             return self._create_descriptor_file(_chunk, is_upsert=True)
 
-        file_upload_thread_count = 20
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [
                 executor.submit(_upload_chunk, chunk) for chunk in chunks
@@ -876,3 +848,25 @@ class Dataset(DbObject, Updateable, Deletable):
         task = Task(self.client, res)
         task._user = self.client.get_user()
         return task
+
+    def _convert_items_to_upsert_format(self, _items):
+        _upsert_items: List[DataRowUpsertItem] = []
+        for item in _items:
+            # enforce current dataset's id for all specs
+            item['dataset_id'] = self.uid
+            key = item.pop('key', None)
+            if not key:
+                key = {'type': 'AUTO', 'value': ''}
+            elif isinstance(key, UniqueId):
+                key = {'type': 'ID', 'value': key.key}
+            elif isinstance(key, GlobalKey):
+                key = {'type': 'GKEY', 'value': key.key}
+            else:
+                raise ValueError(
+                    f"Key must be an instance of UniqueId or GlobalKey, got: {type(item['key']).__name__}"
+                )
+            item = {
+                k: v for k, v in item.items() if v is not None
+            }  # remove None values
+            _upsert_items.append(DataRowUpsertItem(payload=item, id=key))
+        return _upsert_items
