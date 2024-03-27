@@ -296,7 +296,9 @@ def test_import_data_types_v2(client, configured_project, initial_dataset,
     # to be similar to tests/integration/test_task_queue.py
 
     result = export_v2_test_helpers.run_project_export_v2_task(project)
-    exported_data = result[0]
+    find_data_row = lambda dr: dr['data_row']['id'] == data_row.uid
+    exported_data = list(filter(find_data_row, result))[0]
+    assert exported_data
 
     # timestamp fields are in iso format
     validate_iso_format(exported_data['data_row']['details']['created_at'])
