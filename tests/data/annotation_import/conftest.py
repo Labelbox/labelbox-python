@@ -116,9 +116,9 @@ def document_data_row(rand_gen):
 def text_data_row(rand_gen):
     return {
         "row_data":
-            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
+            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-2.txt",
         "global_key":
-            f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{rand_gen(str)}",
+            f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-2.txt-{rand_gen(str)}",
         "media_type":
             "TEXT",
     }
@@ -987,7 +987,7 @@ def point_inference(prediction_id_mapping):
 @pytest.fixture
 def entity_inference(prediction_id_mapping):
     entity = prediction_id_mapping["named-entity"].copy()
-    entity.update({"location": {"start": 67, "end": 128}})
+    entity.update({"location": {"start": 66, "end": 128}})
     del entity["tool"]
     return entity
 
@@ -1499,9 +1499,13 @@ def expected_export_v2_text():
             "value": "named_entity",
             "annotation_kind": "TextEntity",
             "classifications": [],
-            "location": {
-                "start": 67,
-                "end": 128
+            'location': {
+                'start':
+                    66,
+                'end':
+                    128,
+                'token':
+                    "more people to express themselves online😞😂, research suggests"
             },
         }],
         "classifications": [
