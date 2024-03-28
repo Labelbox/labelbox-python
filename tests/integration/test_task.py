@@ -3,8 +3,8 @@ import pytest
 import collections.abc
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
-from utils import INTEGRATION_SNAPSHOT_DIRECTORY
 
+INTEGRATION_SNAPSHOT_DIRECTORY = "tests/integration/snapshots"
 TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
 
 

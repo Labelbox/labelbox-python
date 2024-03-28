@@ -7,100 +7,60 @@ on:
     branches: [develop, master]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-prod:
     strategy:
       fail-fast: false
       matrix:
         include:
           - python-version: 3.8
-            prod-key: PROD_LABELBOX_API_KEY_2
-            staging-key: STAGING_LABELBOX_API_KEY_2
+            api-key: PROD_LABELBOX_API_KEY_2
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.9
-            prod-key: PROD_LABELBOX_API_KEY_3
-            staging-key: STAGING_LABELBOX_API_KEY_3
+            api-key: PROD_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: "3.10"
-            prod-key: PROD_LABELBOX_API_KEY_4
-            staging-key: STAGING_LABELBOX_API_KEY_4
+            api-key: PROD_LABELBOX_API_KEY_4
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.11
-            prod-key: LABELBOX_API_KEY
-            staging-key: STAGING_LABELBOX_API_KEY
+            api-key: LABELBOX_API_KEY
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.12
-            prod-key: PROD_LABELBOX_API_KEY_5
-            staging-key: STAGING_LABELBOX_API_KEY_5
+            api-key: PROD_LABELBOX_API_KEY_5
             da-test-key: DA_GCP_LABELBOX_API_KEY
-
-    env:
-      cache-key: testmon=${{ github.ref_name }}-${{ matrix.python-version }}
-    steps:
-      - name: Cancel previous workflow
-        uses: styfle/cancel-workflow-action@0.12.1
-        with:
-          access_token: ${{ github.token }}
-
-      - name: set environment for branch
-        run: |
-          if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
-            echo "LABELBOX_TEST_ENVIRON=prod" >> $GITHUB_ENV
-          else
-            echo "LABELBOX_TEST_ENVIRON=staging" >> $GITHUB_ENV
-            echo "FIXTURE_PROFILE=true" >> $GITHUB_ENV
-          fi
-
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-          ref: ${{ github.head_ref }}
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: yapf
-        id: yapf
-        uses: AlexanderMelde/yapf-action@master
-        with:
-          args: --verbose --recursive --parallel --style "google"
-      - name: dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt install -y libsm6 \
-                           libxext6 \
-                             ffmpeg \
-                     libfontconfig1 \
-                        libxrender1 \
-                    libgl1-mesa-glx
-      - name: mypy
-        run: |
-          pip install strenum
-          pip install mypy==1.9.0
-          # TODO: consider installing requests typing
-          mypy -p labelbox --pretty --show-error-codes --non-interactive --install-types
-      - name: Install test dependencies
-        run: |
-          pip install tox==4.14.1
-      # TODO: replace tox.ini with what the Makefile does
-      # to make sure local testing is
-      # identical to github actions which uses tox.ini
-      - name: Test with tox (unit)
-        env:
-          # make sure to tell tox to use these environs in tox.ini
-          LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
-          LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
-          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
-        run: |
-          tox -e py -- tests/unit
-      - name: Test with tox (integration / data)
-        env:
-          # make sure to tell tox to use these environs in tox.ini
-          LABELBOX_TEST_API_KEY_PROD: ${{ secrets[matrix.prod-key] }}
-          LABELBOX_TEST_API_KEY_STAGING: ${{ secrets[matrix.staging-key] }}
-          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
-        run: |
-          tox -e py -- tests/integration tests/data
+    uses: ./.github/workflows/python-package-shared.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      api-key: ${{ matrix.api-key }}
+      da-test-key: ${{ matrix.da-test-key }}
+      fixture-profile: false
+      test-env: 'prod'
+    secrets: inherit
+  build-staging:
+    if: ${{ github.event_name }} == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.8
+            api-key: STAGING_LABELBOX_API_KEY_2
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.9
+            api-key: STAGING_LABELBOX_API_KEY_3
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: "3.10"
+            api-key: STAGING_LABELBOX_API_KEY_4
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.11
+            api-key: STAGING_LABELBOX_API_KEY
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.12
+            api-key: STAGING_LABELBOX_API_KEY_5
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+    uses: ./.github/workflows/python-package-shared.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      api-key: ${{ matrix.api-key }}
+      da-test-key: ${{ matrix.da-test-key }}
+      fixture-profile: true
+      test-env: 'staging'
+    secrets: inherit
