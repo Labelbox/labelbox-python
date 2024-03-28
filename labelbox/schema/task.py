@@ -66,7 +66,7 @@ class Task(DbObject):
 
             Args:
                 timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
-                check_frequency (float): Frequency of queries to server to update the task attributes, in seconds. Defaults to two seconds. Minimal value is two seconds. 
+                check_frequency (float): Frequency of queries to server to update the task attributes, in seconds. Defaults to two seconds. Minimal value is two seconds.
             """
         if check_frequency < 2.0:
             raise ValueError(
@@ -90,7 +90,7 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Fetch the error associated with an import task.
         """
-        if self.name == 'JSON Import':
+        if self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows':
             if self.status == "FAILED":
                 result = self._fetch_remote_json()
                 return result["error"]
@@ -168,7 +168,7 @@ class Task(DbObject):
                     "Expected the result format to be either `ndjson` or `json`."
                 )
 
-        if self.name == 'JSON Import':
+        if self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows':
             format = 'json'
         elif self.type == 'export-data-rows':
             format = 'ndjson'
