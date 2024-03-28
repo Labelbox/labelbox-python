@@ -207,7 +207,6 @@ def test_import_data_types(
 
     data_type_string = data_type_class.__name__[:-4].lower()
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
-<<<<<<< HEAD:tests/data/annotation_import/test_data_types.py
     data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
                                            rand_gen(str))
 
@@ -219,18 +218,6 @@ def test_import_data_types(
     labels = [
         lb_types.Label(data=data_type_class(uid=data_row.uid),
                        annotations=annotations)
-=======
-    data_row = create_data_row_for_project(
-        project, dataset, data_row_ndjson, rand_gen(str)
-    )
-
-    annotations_ndjson = annotations_by_data_type[data_type_string]
-    annotations_list = [
-        label.annotations for label in NDJsonConverter.deserialize(annotations_ndjson)
-    ]
-    labels = [
-        lb_types.Label(data=data_type_class(uid=data_row.uid), annotations=annotations)
->>>>>>> bd0484c5 (Initial move):libs/labelbox/tests/data/annotation_import/test_data_types.py
         for annotations in annotations_list
     ]
 
