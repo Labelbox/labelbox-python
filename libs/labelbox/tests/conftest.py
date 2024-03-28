@@ -4,13 +4,13 @@ from string import ascii_letters
 
 import json
 import os
-import sys
 import re
-import time
 import uuid
+import time
 import requests
+import pytest
 from types import SimpleNamespace
-from typing import Type, List
+from typing import Type
 from enum import Enum
 from typing import Tuple
 
@@ -724,6 +724,69 @@ def configured_batch_project_with_multiple_datarows(project, dataset, data_rows,
 
     for label in project.labels():
         label.delete()
+
+
+# NOTE this is nice heuristics, also there is this logic _wait_until_data_rows_are_processed in Project
+#    in case we still have flakiness in the future, we can use it
+@pytest.fixture
+def wait_for_data_row_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns DataRow after waiting for it to finish processing media_attributes.
+    Some tests, specifically ones that rely on label export, rely on
+    DataRow be fully processed with media_attributes
+    """
+
+    def func(client, data_row, compare_with_prev_media_attrs=False):
+        """
+        added check_updated_at because when a data_row is updated from say
+        an image to pdf, it already has media_attributes and the loop does
+        not wait for processing to a pdf
+        """
+        prev_media_attrs = data_row.media_attributes if compare_with_prev_media_attrs else None
+        data_row_id = data_row.uid
+        timeout_seconds = 60
+        while True:
+            data_row = client.get_data_row(data_row_id)
+            if data_row.media_attributes and (prev_media_attrs is None or
+                                              prev_media_attrs
+                                              != data_row.media_attributes):
+                return data_row
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for DataRow '{data_row_id}' to finish processing media_attributes"
+                )
+            time.sleep(2)
+
+    return func
+
+
+@pytest.fixture
+def wait_for_label_processing():
+    """
+    Do not use. Only for testing.
+
+    Returns project's labels as a list after waiting for them to finish processing.
+    If `project.labels()` is called before label is fully processed,
+    it may return an empty set
+    """
+
+    def func(project):
+        timeout_seconds = 10
+        while True:
+            labels = list(project.labels())
+            if len(labels) > 0:
+                return labels
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for label for project '{project.uid}' to finish processing"
+                )
+            time.sleep(2)
+
+    return func
 
 
 @pytest.fixture
