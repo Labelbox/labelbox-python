@@ -308,17 +308,17 @@ def set_project_media_type_from_data_type(project, data_type_class):
 @pytest.mark.parametrize(
     "data_type_class",
     [
-        # AudioData,
-        # HTMLData,
-        # ImageData,
+        AudioData,
+        HTMLData,
+        ImageData,
         TextData,
-        # VideoData,
-        # ConversationData,
-        # DocumentData,
-        # DicomData,
-        # LlmPromptCreationData,
-        # LlmPromptResponseCreationData,
-        # LlmResponseCreationData,
+        VideoData,
+        ConversationData,
+        DocumentData,
+        DicomData,
+        LlmPromptCreationData,
+        LlmPromptResponseCreationData,
+        LlmResponseCreationData,
     ],
 )
 def test_import_data_types_v2(
