@@ -42,7 +42,7 @@ jobs:
       test-env: 'prod'
     secrets: inherit
   build-staging:
-    if: ${{ github.event_name }} == 'pull_request'
+    if: github.event_name == 'pull_request'
     strategy:
       fail-fast: false
       matrix:
