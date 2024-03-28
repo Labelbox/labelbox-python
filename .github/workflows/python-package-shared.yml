@@ -39,7 +39,7 @@ jobs:
         run: |
           rye config --set-bool behavior.use-uv=true
       - name: Python setup
-        run: rye pin ${{ matrix.python-version }}
+        run: rye pin ${{ inputs.python-version }}
       - name: Environment setup
         working-directory: libs/labelbox
         run: | 
