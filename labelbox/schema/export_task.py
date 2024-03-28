@@ -467,7 +467,8 @@ class ExportTask:
     class ExportTaskException(Exception):
         """Raised when the task is not ready yet."""
 
-    def __init__(self, task: Task) -> None:
+    def __init__(self, task: Task, is_export_v2: bool = False) -> None:
+        self._is_export_v2 = is_export_v2
         self._task = task
 
     def __repr__(self):
@@ -531,8 +532,59 @@ class ExportTask:
         return self._task.metadata
 
     @property
+    def errors(self):
+        """Returns the errors of the task."""
+        if not self._is_export_v2:
+            raise ExportTask.ExportTaskException(
+                "This property is only available for export_v2 tasks due to compatibility reasons, please use streamable errors instead"
+            )
+        if self.status == "FAILED":
+            raise ExportTask.ExportTaskException("Task failed")
+        if self.status != "COMPLETE":
+            raise ExportTask.ExportTaskException("Task is not ready yet")
+
+        if not self.has_errors():
+            return []
+
+        data = []
+
+        metadata_header = ExportTask._get_metadata_header(
+            self._task.client, self._task.uid, StreamType.ERRORS)
+        if metadata_header is None:
+            raise ValueError(
+                f"Task {self._task.uid} does not have a {StreamType.ERRORS.value} stream"
+            )
+        Stream(
+            _TaskContext(self._task.client, self._task.uid, StreamType.ERRORS,
+                         metadata_header),
+            _MultiGCSFileReader(),
+            JsonConverter(),
+        ).start(stream_handler=lambda output: data.append(output.json_str))
+        return data
+
+    @property
     def result(self):
         """Returns the result of the task."""
+        if self._is_export_v2:
+            if self.status == "FAILED":
+                raise ExportTask.ExportTaskException("Task failed")
+            if self.status != "COMPLETE":
+                raise ExportTask.ExportTaskException("Task is not ready yet")
+            data = []
+
+            metadata_header = ExportTask._get_metadata_header(
+                self._task.client, self._task.uid, StreamType.RESULT)
+            if metadata_header is None:
+                raise ValueError(
+                    f"Task {self._task.uid} does not have a {StreamType.RESULT.value} stream"
+                )
+            Stream(
+                _TaskContext(self._task.client, self._task.uid,
+                             StreamType.RESULT, metadata_header),
+                _MultiGCSFileReader(),
+                JsonConverter(),
+            ).start(stream_handler=lambda output: data.append(output.json_str))
+            return data
         return self._task.result_url
 
     @property
