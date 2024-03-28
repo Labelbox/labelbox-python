@@ -627,7 +627,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self._export(task_name, filters, params, streamable=True)
+        task, _ = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
@@ -635,7 +635,7 @@ class Dataset(DbObject, Updateable, Deletable):
         task_name: Optional[str] = None,
         filters: Optional[DatasetExportFilters] = None,
         params: Optional[CatalogExportParams] = None,
-    ) -> Task:
+    ) -> Union[Task, ExportTask]:
         """
         Creates a dataset export task with the given params and returns the task.
         
@@ -653,7 +653,10 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        return self._export(task_name, filters, params)
+        task, is_streamable = self._export(task_name, filters, params)
+        if (is_streamable):
+            return ExportTask(task, True)
+        return task
 
     def _export(
         self,
@@ -661,7 +664,7 @@ class Dataset(DbObject, Updateable, Deletable):
         filters: Optional[DatasetExportFilters] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
-    ) -> Task:
+    ) -> tuple[Task, bool]:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -689,7 +692,7 @@ class Dataset(DbObject, Updateable, Deletable):
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInCatalogInput!)"
-            f"{{{mutation_name}(input: $input){{taskId}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
         media_type_override = _params.get('media_type_override', None)
 
         if task_name is None:
@@ -703,6 +706,7 @@ class Dataset(DbObject, Updateable, Deletable):
                         "query": None,
                     }
                 },
+                "isStreamableReady": True,
                 "params": {
                     "mediaTypeOverride":
                         media_type_override.value
@@ -748,4 +752,5 @@ class Dataset(DbObject, Updateable, Deletable):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        return Task.get_task(self.client, task_id)
+        is_streamable = res["isStreamable"]
+        return Task.get_task(self.client, task_id), is_streamable
