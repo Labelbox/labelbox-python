@@ -1,36 +1,118 @@
-# Triggers a pypi publication when a release is created
-
-name: Publish Python Package
+name: Labelbox Python SDK Publish
 
 on:
   release:
     types: [created]
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Cancel previous workflow
+        uses: styfle/cancel-workflow-action@0.12.1
         with:
-          python-version: '3.x'
-
-      - name: Install dependencies
+          access_token: ${{ github.token }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@v2
+        with:
+          version: '0.29.0'
+          enable-cache: true
+      - name: Rye Setup
         run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel
-
-      - name: Build
+           rye config --set-bool behavior.use-uv=true
+      - name: Create build
+        working-directory: libs/labelbox
         run: |
-          python setup.py sdist bdist_wheel
-      
+          rye sync
+          rye build
       - uses: actions/upload-artifact@v4
         with:
-            path: ./dist
-
-  pypi-publish:   
+          name: build
+          path: ./dist
+  test-build:
     needs: ['build']
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.8
+            prod-key: PROD_LABELBOX_API_KEY_2
+            staging-key: STAGING_LABELBOX_API_KEY_2
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.9
+            prod-key: PROD_LABELBOX_API_KEY_3
+            staging-key: STAGING_LABELBOX_API_KEY_3
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: "3.10"
+            prod-key: PROD_LABELBOX_API_KEY_4
+            staging-key: STAGING_LABELBOX_API_KEY_4
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.11
+            prod-key: LABELBOX_API_KEY
+            staging-key: STAGING_LABELBOX_API_KEY
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+          - python-version: 3.12
+            prod-key: PROD_LABELBOX_API_KEY_5
+            staging-key: STAGING_LABELBOX_API_KEY_5
+            da-test-key: DA_GCP_LABELBOX_API_KEY
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@v2
+        with:
+          version: '0.29.0'
+          enable-cache: true
+      - name: Rye Setup
+        run: |
+           rye config --set-bool behavior.use-uv=true
+      - name: Python setup
+        run: rye pin ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ./dist
+      - name: Prepare package and environment
+        run: |
+          rye sync
+          rye run toml unset --toml-path pyproject.toml tool.rye.workspace
+          rye sync -f --update-all
+      - name: Integration Testing
+        env:
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 32
+          LABELBOX_TEST_API_KEY: ${{ secrets[matrix.prod-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: prod
+        run: |
+          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync
+          cd libs/labelbox
+          rm pyproject.toml
+          rye run pytest tests/integration
+      - name: Data Testing
+        env:
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 32
+          LABELBOX_TEST_API_KEY: ${{ secrets[matrix.prod-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: prod
+        run: |
+          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --features data
+          cd libs/labelbox
+          rye run pytest tests/data
+  pypi-publish:   
+    needs: ['test-build']
     environment: 
       name: publish
       url: 'https://pypi.org/project/labelbox/'
@@ -40,10 +122,43 @@ jobs:
       id-token: write
     steps:
       - uses: actions/download-artifact@v4
-
+        with:
+          name: build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: artifact/
-
+  github-pages:
+    needs: ['test-build']
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@v2
+        with:
+          version: '0.29.0'
+          enable-cache: true
+      - name: Rye Setup
+        run: |
+           rye config --set-bool behavior.use-uv=true
+      - name: Create build
+        run: |
+          rye sync
+          rye run docs
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: 'dist/'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 # Note that the build and pypi-publish jobs are split so that the additional permissions are only granted to the pypi-publish job.

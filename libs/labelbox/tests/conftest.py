@@ -122,9 +122,6 @@ def rest_url(environ: str) -> str:
 
 
 def testing_api_key(environ: str) -> str:
-    print('testing')
-    print(str)
-    print(os.environ)
     for var in [
             "LABELBOX_TEST_API_KEY_PROD", "LABELBOX_TEST_API_KEY_STAGING",
             "LABELBOX_TEST_API_KEY_CUSTOM", "LABELBOX_TEST_API_KEY_LOCAL",
@@ -132,7 +129,6 @@ def testing_api_key(environ: str) -> str:
     ]:
         value = os.environ.get(var)
         if value is not None:
-            print(value)
             return value
     raise Exception("Cannot find API to use for tests")
 
@@ -315,8 +311,6 @@ def environ() -> Environ:
     Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
     """
     try:
-        print('env')
-        print(os.environ['LABELBOX_TEST_ENVIRON'])
         return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
     except KeyError:
         raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')

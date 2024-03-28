@@ -1,0 +1,41 @@
+[project]
+name = "labelbox-python"
+version = "0.1.0"
+description = "Labelbox Python API"
+authors = [
+    { name = "Labelbox", email = "engineering@labelbox.com" }
+]
+dependencies = [
+    "sphinx-multiproject>=1.0.0rc1",
+    "sphinx>=7.1.2",
+    "sphinx-rtd-theme>=2.0.0",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[tool.rye]
+managed = true
+virtual = true
+dev-dependencies = [
+    "pytest>=8.1.1",
+    "pytest-cases>=3.8.4",
+    "pytest-rerunfailures>=14.0",
+    "pytest-snapshot>=0.9.0",
+    "nbconvert>=7.16.2",
+    "nbformat>=5.10.3",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.5.0",
+    "toml-cli>=0.6.0",
+]
+
+[tool.rye.workspace]
+members = ["libs/*"]
+
+[tool.pytest.ini_options]
+addopts = "-rP -vvv --reruns 5 --reruns-delay 10 --durations=20 -n auto --cov=labelbox --import-mode=importlib"
+markers = """
+    slow: marks tests as slow (deselect with '-m "not slow"')
+"""
+
+[tool.rye.scripts]
+docs = "sphinx-build ./docs ./dist"

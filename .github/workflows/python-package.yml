@@ -1,9 +1,15 @@
 name: Labelbox Python SDK
 
+concurrency: Integration-Tests
+
 on:
   push:
+    paths-ignore:
+      - "examples/**"
     branches: [develop, master]
   pull_request:
+    paths-ignore:
+      - "examples/**"
     branches: [develop, master]
 
 jobs:
@@ -36,7 +42,7 @@ jobs:
       test-env: 'prod'
     secrets: inherit
   build-staging:
-    if: ${{ github.event_name }} == 'pull_request'
+    if: github.event_name == 'pull_request'
     strategy:
       fail-fast: false
       matrix:
