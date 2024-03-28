@@ -1499,9 +1499,13 @@ def expected_export_v2_text():
             "value": "named_entity",
             "annotation_kind": "TextEntity",
             "classifications": [],
-            "location": {
-                "start": 67,
-                "end": 128
+            'location': {
+                'start':
+                    66,
+                'end':
+                    128,
+                'token':
+                    "more people to express themselves online😞😂‚, research suggests"
             },
         }],
         "classifications": [
