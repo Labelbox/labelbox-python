@@ -42,3 +42,4 @@ jobs:
         tags: |
           ${{ env.CONTAINER_IMAGE }}:develop
           ${{ env.CONTAINER_IMAGE }}:${{ github.sha }}
+          
