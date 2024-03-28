@@ -8,7 +8,6 @@ on:
 
 jobs:
   build-prod:
-    if: ${{ github.event_name }} != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
