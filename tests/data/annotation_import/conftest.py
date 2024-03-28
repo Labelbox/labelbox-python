@@ -116,9 +116,9 @@ def document_data_row(rand_gen):
 def text_data_row(rand_gen):
     return {
         "row_data":
-            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt",
+            "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-2.txt",
         "global_key":
-            f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-1.txt-{rand_gen(str)}",
+            f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-2.txt-{rand_gen(str)}",
         "media_type":
             "TEXT",
     }
