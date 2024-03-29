@@ -39,7 +39,8 @@ def test_project(client, rand_gen):
     assert project.description == update_data["description"]
 
     project.delete()
-    projects = list(client.get_projects())
+    projects = list(client.get_projects(where=(Project.uid == project.uid)))
+
     assert project not in projects
 
 
