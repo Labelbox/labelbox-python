@@ -44,6 +44,8 @@ If you'd like to install the SDK with enhanced functionality, which additional o
 pip install "labelbox[data]"
 ```
 
+**If you want to installed a version of Labelbox built locally, be aware that only tagged commits have been validated to fully work! Installing the latest from develop is at your own risk!**
+
 ### Validate Installation and API Key
 
 After installing the SDK and getting an API Key, it's time to validate them both. 
