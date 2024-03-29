@@ -6,7 +6,6 @@ import pytest
 
 from labelbox import Dataset, Project
 from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, ResourceConflict, LabelboxError
-from integration.conftest import upload_invalid_data_rows_for_dataset, IMAGE_URL, EXTERNAL_ID
 
 
 def get_data_row_ids(ds: Dataset):
@@ -163,9 +162,9 @@ def test_batch_creation_for_data_rows_with_issues(
     assert len(failed_data_row_ids_set.intersection(invalid_data_rows_set)) == 2
 
 
-def test_batch_creation_with_processing_timeout(project: Project,
-                                                small_dataset: Dataset,
-                                                unique_dataset: Dataset):
+def test_batch_creation_with_processing_timeout(
+        project: Project, small_dataset: Dataset, unique_dataset: Dataset,
+        upload_invalid_data_rows_for_dataset):
     """
     Create a batch with zero wait time, this means that the waiting logic will throw exception immediately
     """
@@ -187,12 +186,13 @@ def test_batch_creation_with_processing_timeout(project: Project,
     project._wait_processing_max_seconds = stashed_wait_timeout
 
 
-def test_export_data_rows(project: Project, dataset: Dataset):
+def test_export_data_rows(project: Project, dataset: Dataset, image_url: str,
+                          external_id: str):
     n_data_rows = 2
     task = dataset.create_data_rows([
         {
-            "row_data": IMAGE_URL,
-            "external_id": EXTERNAL_ID
+            "row_data": image_url,
+            "external_id": external_id
         },
     ] * n_data_rows)
     task.wait_till_done()
@@ -206,13 +206,13 @@ def test_export_data_rows(project: Project, dataset: Dataset):
     assert set(data_rows) == set(exported_data_rows)
 
 
-def test_list_all_batches(project: Project, client):
+def test_list_all_batches(project: Project, client, image_url: str):
     """
     Test to verify that we can retrieve all available batches in the project.
     """
     # Data to use
     img_assets = [{
-        "row_data": IMAGE_URL,
+        "row_data": image_url,
         "external_id": str(uuid4())
     } for asset in range(0, 2)]
     data = [img_assets for _ in range(0, 2)]

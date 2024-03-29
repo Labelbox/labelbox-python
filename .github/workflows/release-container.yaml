@@ -41,3 +41,4 @@ jobs:
         tags: |
           ${{ env.CONTAINER_IMAGE }}:latest
           ${{ env.CONTAINER_IMAGE }}:${{ github.event.release.tag_name }}
+          
