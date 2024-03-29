@@ -594,9 +594,10 @@ def test_data_row_update(client, dataset, rand_gen, image_url,
     pdf_url = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
     tileLayerUrl = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
     data_row.update(row_data={'pdfUrl': pdf_url, "tileLayerUrl": tileLayerUrl})
+    custom_check = lambda data_row: data_row.row_data and 'pdfUrl' not in data_row.row_data
     data_row = wait_for_data_row_processing(client,
                                             data_row,
-                                            compare_with_prev_media_attrs=True)
+                                            custom_check=custom_check)
     assert data_row.row_data == pdf_url
 
 
