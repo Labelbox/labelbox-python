@@ -92,7 +92,6 @@ def test_get_app_with_invalid_id(foundry_client):
         foundry_client._get_app("invalid-id")
 
 
-@pytest.mark.skip(reason="broken")
 def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
                                           random_str):
     data_rows = lb.DataRowIds([data_row.uid])
@@ -102,6 +101,7 @@ def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
         app_id=app.id)
     task.wait_till_done()
     assert task.status == 'COMPLETE'
+
 
 def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
                                          random_str):
