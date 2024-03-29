@@ -103,8 +103,6 @@ def test_run_foundry_app_with_data_row_id(foundry_client, data_row, app,
     task.wait_till_done()
     assert task.status == 'COMPLETE'
 
-
-@pytest.mark.skip(reason="broken")
 def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
                                          random_str):
     data_rows = lb.GlobalKeys([data_row.global_key])
@@ -116,7 +114,6 @@ def test_run_foundry_app_with_global_key(foundry_client, data_row, app,
     assert task.status == 'COMPLETE'
 
 
-@pytest.mark.skip(reason="broken")
 def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app,
                                               random_str):
     data_rows = lb.GlobalKeys([data_row.global_key])
@@ -129,7 +126,6 @@ def test_run_foundry_app_returns_model_run_id(foundry_client, data_row, app,
     assert model_run.uid == model_run_id
 
 
-@pytest.mark.skip(reason="broken")
 def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
     invalid_datarow_id = 'invalid-global-key'
     data_rows = lb.GlobalKeys([invalid_datarow_id])
@@ -141,7 +137,6 @@ def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
         assert invalid_datarow_id in exception.value
 
 
-@pytest.mark.skip(reason="broken")
 def test_run_foundry_with_invalid_global_key(foundry_client, app, random_str):
     invalid_global_key = 'invalid-global-key'
     data_rows = lb.GlobalKeys([invalid_global_key])
