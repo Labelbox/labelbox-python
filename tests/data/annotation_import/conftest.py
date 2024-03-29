@@ -987,7 +987,7 @@ def point_inference(prediction_id_mapping):
 @pytest.fixture
 def entity_inference(prediction_id_mapping):
     entity = prediction_id_mapping["named-entity"].copy()
-    entity.update({"location": {"start": 66, "end": 128}})
+    entity.update({"location": {"start": 112, "end": 128}})
     del entity["tool"]
     return entity
 
@@ -1500,12 +1500,9 @@ def expected_export_v2_text():
             "annotation_kind": "TextEntity",
             "classifications": [],
             'location': {
-                'start':
-                    66,
-                'end':
-                    128,
-                'token':
-                    "more people to express themselves online😞😂, research suggests"
+                'start': 112,
+                'end': 128,
+                'token': "research suggests"
             },
         }],
         "classifications": [
