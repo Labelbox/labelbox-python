@@ -1,6 +1,6 @@
 # Labelbox Python SDK
 [![Release Notes](https://img.shields.io/github/release/labelbox/labelbox-python)](https://github.com/Labelbox/labelbox-python/releases)
-[![CI](https://github.com/labelbox/labelbox-python/actions/workflows/python-package.yml/badge.svg)](https://github.com/labelbox/labelbox-python/actions)
+[![CI](https://github.com/Labelbox/labelbox-python/actions/workflows/python-package-develop.yaml/badge.svg)](https://github.com/Labelbox/labelbox-python/actions/workflows/python-package-develop.yaml)
 [![Downloads](https://pepy.tech/badge/labelbox)](https://pepy.tech/project/labelbox)
 [![Dependency Status](https://img.shields.io/librariesio/github/labelbox/labelbox-python)](https://libraries.io/github/labelbox/labelbox-python)
 [![Open Issues](https://img.shields.io/github/issues-raw/labelbox/labelbox-python)](https://github.com/labelbox/labelbox-python/issues)
