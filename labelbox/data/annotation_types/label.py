@@ -5,12 +5,13 @@ import warnings
 from labelbox import pydantic_compat
 
 import labelbox
+from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
 from .classification import ClassificationAnswer
-from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData, LlmPromptCreationData, LlmPromptResponseCreationData, LlmResponseCreationData
+from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData, VideoData, LlmPromptCreationData, LlmPromptResponseCreationData, LlmResponseCreationData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
@@ -21,7 +22,7 @@ from ..ontology import get_feature_schema_lookup
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  ConversationData, DicomData, DocumentData, HTMLData,
                  LlmPromptCreationData, LlmPromptResponseCreationData,
-                 LlmResponseCreationData]
+                 LlmResponseCreationData, GenericDataRowData]
 
 
 class Label(pydantic_compat.BaseModel):
@@ -50,6 +51,18 @@ class Label(pydantic_compat.BaseModel):
                             ConfusionMatrixMetric,
                             RelationshipAnnotation]] = []
     extra: Dict[str, Any] = {}
+
+    @staticmethod
+    def is_data_type(data: Union[Dict[str, Any], DataType]) -> bool:
+        if isinstance(data, DataType):
+            return True
+        return False
+
+    @pydantic_compat.root_validator(pre=True)
+    def validate_data(cls, label):
+        if not Label.is_data_type(label.get("data")):
+            label["data"]["class_name"] = "GenericDataRowData"
+        return label
 
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)
