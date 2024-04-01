@@ -6,6 +6,26 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 
 
+class AttachmentType(str, Enum):
+
+    @classmethod
+    def __missing__(cls, value: object):
+        if str(value) == "TEXT":
+            warnings.warn(
+                "The TEXT attachment type is deprecated. Use RAW_TEXT instead.")
+            return cls.RAW_TEXT
+        return value
+
+    VIDEO = "VIDEO"
+    IMAGE = "IMAGE"
+    IMAGE_OVERLAY = "IMAGE_OVERLAY"
+    HTML = "HTML"
+    RAW_TEXT = "RAW_TEXT"
+    TEXT_URL = "TEXT_URL"
+    PDF_URL = "PDF_URL"
+    CAMERA_IMAGE = "CAMERA_IMAGE"  # Used by experimental point-cloud editor
+
+
 class AssetAttachment(DbObject):
     """Asset attachment provides extra context about an asset while labeling.
 
@@ -14,26 +34,6 @@ class AssetAttachment(DbObject):
         attachment_value (str): URL to an external file or a string of text
         attachment_name (str): The name of the attachment
     """
-
-    class AttachmentType(Enum):
-
-        @classmethod
-        def __missing__(cls, value: object):
-            if str(value) == "TEXT":
-                warnings.warn(
-                    "The TEXT attachment type is deprecated. Use RAW_TEXT instead."
-                )
-                return cls.RAW_TEXT
-            return value
-
-        VIDEO = "VIDEO"
-        IMAGE = "IMAGE"
-        IMAGE_OVERLAY = "IMAGE_OVERLAY"
-        HTML = "HTML"
-        RAW_TEXT = "RAW_TEXT"
-        TEXT_URL = "TEXT_URL"
-        PDF_URL = "PDF_URL"
-        CAMERA_IMAGE = "CAMERA_IMAGE"  # Used by experimental point-cloud editor
 
     for topic in AttachmentType:
         vars()[topic.name] = topic.value
@@ -61,7 +61,7 @@ class AssetAttachment(DbObject):
 
     @classmethod
     def validate_attachment_type(cls, attachment_type: str) -> None:
-        valid_types = set(cls.AttachmentType.__members__)
+        valid_types = set(AttachmentType.__members__)
         if attachment_type not in valid_types:
             raise ValueError(
                 f"attachment_type must be one of {valid_types}. Found {attachment_type}"

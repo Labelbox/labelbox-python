@@ -1,10 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Union
+from enum import Enum
+from typing import TYPE_CHECKING, List, Optional, Union, Any
 import json
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
+from labelbox.schema.asset_attachment import AttachmentType
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
 from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
@@ -15,6 +17,15 @@ if TYPE_CHECKING:
     from labelbox import AssetAttachment, Client
 
 logger = logging.getLogger(__name__)
+
+
+class KeyType(str, Enum):
+    ID = 'ID'
+    """An existing CUID"""
+    GKEY = 'GKEY'
+    """A Global key, could be existing or non-existing"""
+    AUTO = 'AUTO'
+    """The key will be auto-generated. Only usable for creates"""
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
@@ -62,7 +73,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
 
     supported_meta_types = supported_attachment_types = set(
-        Entity.AssetAttachment.AttachmentType.__members__)
+        AttachmentType.__members__)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -131,7 +142,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         Args:
             attachment_type (str): Asset attachment type, must be one of:
-                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AssetAttachment.AttachmentType)
+                VIDEO, IMAGE, TEXT, IMAGE_OVERLAY (AttachmentType)
             attachment_value (str): Asset attachment value.
             attachment_name (str): (Optional) Asset attachment name.
         Returns:
