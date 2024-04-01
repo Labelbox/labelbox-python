@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import time
-from typing import Any, BinaryIO, Dict, List, Union, TYPE_CHECKING, cast
+from typing import Any, BinaryIO, Dict, List, Optional, Union, TYPE_CHECKING, cast
 from collections import defaultdict
 
 from google.api_core import retry
@@ -241,7 +241,47 @@ class AnnotationImport(DbObject):
         raise NotImplementedError("Inheriting class must override")
 
 
-class MEAPredictionImport(AnnotationImport):
+class CreatableAnnotationImport(AnnotationImport):
+
+    @classmethod
+    def create(
+        cls,
+        client: "labelbox.Client",
+        id: str,
+        name: str,
+        path: Optional[str] = None,
+        url: Optional[str] = None,
+        labels: Union[List[Dict[str, Any]], List["Label"]] = []
+    ) -> "AnnotationImport":
+        if (not is_exactly_one_set(url, labels, path)):
+            raise ValueError(
+                "Must pass in a nonempty argument for one and only one of the following arguments: url, path, predictions"
+            )
+        if url:
+            return cls.create_from_url(client, id, name, url)
+        if path:
+            return cls.create_from_file(client, id, name, path)
+        return cls.create_from_objects(client, id, name, labels)
+
+    @classmethod
+    def create_from_url(cls, client: "labelbox.Client", id: str, name: str,
+                        url: str) -> "AnnotationImport":
+        raise NotImplementedError("Inheriting class must override")
+
+    @classmethod
+    def create_from_file(cls, client: "labelbox.Client", id: str, name: str,
+                         path: str) -> "AnnotationImport":
+        raise NotImplementedError("Inheriting class must override")
+
+    @classmethod
+    def create_from_objects(
+        cls, client: "labelbox.Client", id: str, name: str,
+        labels: Union[List[Dict[str, Any]],
+                      List["Label"]]) -> "AnnotationImport":
+        raise NotImplementedError("Inheriting class must override")
+
+
+class MEAPredictionImport(CreatableAnnotationImport):
     model_run_id = Field.String("model_run_id")
 
     @property
@@ -478,7 +518,7 @@ class MEAToMALPredictionImport(AnnotationImport):
         }""" % query.results_query_part(cls)
 
 
-class MALPredictionImport(AnnotationImport):
+class MALPredictionImport(CreatableAnnotationImport):
     project = Relationship.ToOne("Project", cache=True)
 
     @property
@@ -638,7 +678,7 @@ class MALPredictionImport(AnnotationImport):
         return cls(client, res["createModelAssistedLabelingPredictionImport"])
 
 
-class LabelImport(AnnotationImport):
+class LabelImport(CreatableAnnotationImport):
     project = Relationship.ToOne("Project", cache=True)
 
     @property
