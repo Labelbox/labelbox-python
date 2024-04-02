@@ -1,5 +1,5 @@
 # Changelog
-# Version 3.66 (2024-03-20)
+# Version 3.66.0 (2024-03-20)
 ## Notes
 
 ## Added
