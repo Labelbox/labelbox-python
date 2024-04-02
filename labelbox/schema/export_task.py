@@ -532,6 +532,28 @@ class ExportTask:
         return self._task.metadata
 
     @property
+    def result_url(self):
+        """Returns the result URL of the task."""
+        if not self._is_export_v2:
+            raise ExportTask.ExportTaskException(
+                "This property is only available for export_v2 tasks due to compatibility reasons, please use streamable errors instead"
+            )
+        base_url = self._task.client.rest_endpoint
+        return base_url + '/export-results/' + self._task.uid + '/' + self._task.client.get_organization(
+        ).uid
+
+    @property
+    def errors_url(self):
+        """Returns the errors URL of the task."""
+        if not self._is_export_v2:
+            raise ExportTask.ExportTaskException(
+                "This property is only available for export_v2 tasks due to compatibility reasons, please use streamable errors instead"
+            )
+        base_url = self._task.client.rest_endpoint
+        return base_url + '/export-errors/' + self._task.uid + '/' + self._task.client.get_organization(
+        ).uid
+
+    @property
     def errors(self):
         """Returns the errors of the task."""
         if not self._is_export_v2:
