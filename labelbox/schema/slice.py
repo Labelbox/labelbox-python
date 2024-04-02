@@ -125,7 +125,6 @@ class CatalogSlice(Slice):
                 'getDataRowIdentifiersBySavedQuery', 'pageInfo', 'endCursor'
             ])
 
-    @experimental
     def export(self,
                task_name: Optional[str] = None,
                params: Optional[CatalogExportParams] = None) -> ExportTask:

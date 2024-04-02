@@ -453,7 +453,6 @@ class Project(DbObject, Updateable, Deletable):
                          self.uid)
             time.sleep(sleep_time)
 
-    @experimental
     def export(
         self,
         task_name: Optional[str] = None,

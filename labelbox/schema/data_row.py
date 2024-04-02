@@ -180,7 +180,6 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         return Entity.AssetAttachment(self.client,
                                       res["createDataRowAttachment"])
 
-    @experimental
     @staticmethod
     def export(
         client: "Client",
