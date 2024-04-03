@@ -521,33 +521,36 @@ class ModelRun(DbObject):
         >>>    export_task = export("my_export_task", params={"media_attributes": True})
 
         """
-        task = self._export(task_name, params, streamable=True)
+        task, _ = self._export(task_name, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
         self,
         task_name: Optional[str] = None,
         params: Optional[ModelRunExportParams] = None,
-    ) -> Task:
+    ) -> Union[Task, ExportTask]:
         """
         Creates a model run export task with the given params and returns the task.
 
         >>>    export_task = export_v2("my_export_task", params={"media_attributes": True})
 
         """
-        return self._export(task_name, params)
+        task, is_streamable = self._export(task_name, params)
+        if (is_streamable):
+            return ExportTask(task, True)
+        return task
 
     def _export(
         self,
         task_name: Optional[str] = None,
         params: Optional[ModelRunExportParams] = None,
         streamable: bool = False,
-    ) -> Task:
+    ) -> tuple[Task, bool]:
         mutation_name = "exportDataRowsInModelRun"
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInModelRunInput!)"
-            f"{{{mutation_name}(input: $input){{taskId}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
 
         _params = params or ModelRunExportParams()
 
@@ -557,6 +560,7 @@ class ModelRun(DbObject):
                 "filters": {
                     "modelRunId": self.uid
                 },
+                "isStreamableReady": True,
                 "params": {
                     "mediaTypeOverride":
                         _params.get('media_type_override', None),
@@ -579,7 +583,8 @@ class ModelRun(DbObject):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        return Task.get_task(self.client, task_id)
+        is_streamable = res["isStreamable"]
+        return Task.get_task(self.client, task_id), is_streamable
 
     def send_to_annotate_from_model(
             self, destination_project_id: str, task_queue_id: Optional[str],

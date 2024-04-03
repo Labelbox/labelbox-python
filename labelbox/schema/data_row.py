@@ -210,12 +210,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = DataRow._export(client,
-                               data_rows,
-                               global_keys,
-                               task_name,
-                               params,
-                               streamable=True)
+        task, _ = DataRow._export(client,
+                                  data_rows,
+                                  global_keys,
+                                  task_name,
+                                  params,
+                                  streamable=True)
         return ExportTask(task)
 
     @staticmethod
@@ -225,7 +225,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
-    ) -> Task:
+    ) -> Union[Task, ExportTask]:
         """
         Creates a data rows export task with the given list, params and returns the task.
         Args:
@@ -249,8 +249,11 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        return DataRow._export(client, data_rows, global_keys, task_name,
-                               params)
+        task, is_streamable = DataRow._export(client, data_rows, global_keys,
+                                              task_name, params)
+        if is_streamable:
+            return ExportTask(task, True)
+        return task
 
     @staticmethod
     def _export(
@@ -260,7 +263,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
-    ) -> Task:
+    ) -> tuple[Task, bool]:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -282,7 +285,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInCatalogInput!)"
-            f"{{{mutation_name}(input: $input){{taskId}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
 
         data_row_ids = []
         if data_rows is not None:
@@ -315,6 +318,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                         "query": search_query
                     }
                 },
+                "isStreamableReady": True,
                 "params": {
                     "mediaTypeOverride":
                         media_type_override.value
@@ -352,4 +356,5 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         print(res)
         res = res[mutation_name]
         task_id = res["taskId"]
-        return Task.get_task(client, task_id)
+        is_streamable = res["isStreamable"]
+        return Task.get_task(client, task_id), is_streamable
