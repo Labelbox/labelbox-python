@@ -41,6 +41,14 @@ class DataRowUpsertItem(BaseModel):
     id: dict
     payload: dict
 
+    def is_empty(self) -> bool:
+        """
+        The payload is considered empty if it's actually empty or the only key is `dataset_id`.
+        :return: bool
+        """
+        return (not self.payload or
+                len(self.payload.keys()) == 1 and "dataset_id" in self.payload)
+
 
 class Dataset(DbObject, Updateable, Deletable):
     """ A Dataset is a collection of DataRows.
@@ -829,6 +837,14 @@ class Dataset(DbObject, Updateable, Deletable):
             )
 
         specs = self._convert_items_to_upsert_format(items)
+
+        empty_specs = list(filter(lambda spec: spec.is_empty(), specs))
+
+        if empty_specs:
+            ids = list(map(lambda spec: spec.id.get("value"), empty_specs))
+            raise ValueError(
+                f"The following items have an empty payload: {ids}")
+
         chunks = [
             specs[i:i + self.__upsert_chunk_size]
             for i in range(0, len(specs), self.__upsert_chunk_size)
