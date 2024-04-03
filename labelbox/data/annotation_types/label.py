@@ -29,7 +29,7 @@ class Label(pydantic_compat.BaseModel):
     """Container for holding data and annotations
 
     >>> Label(
-    >>>    data = ImageData(url = "http://my-img.jpg"),
+    >>>    data = {'global_key': 'my-data-row-key'} # also accepts uid, external_id as keys
     >>>    annotations = [
     >>>        ObjectAnnotation(
     >>>            value = Point(x = 10, y = 10),
@@ -40,7 +40,8 @@ class Label(pydantic_compat.BaseModel):
 
     Args:
         uid: Optional Label Id in Labelbox
-        data: Data of Label, Image, Video, Text
+        data: Data of Label, Image, Video, Text or dict with a single key uid | global_key | external_id. 
+            Note use of classes as data is deprecated. Use GenericDataRowData or dict with a single key instead.
         annotations: List of Annotations in the label
         extra: additional context
     """
@@ -62,6 +63,10 @@ class Label(pydantic_compat.BaseModel):
     def validate_data(cls, label):
         if not Label.is_data_type(label.get("data")):
             label["data"]["class_name"] = "GenericDataRowData"
+        else:
+            warnings.warn(
+                f"Using {type(label['data']).__name__} class for label.data is deprecated. "
+                "Use a dict or an instance of GenericDataRowData instead.")
         return label
 
     def object_annotations(self) -> List[ObjectAnnotation]:

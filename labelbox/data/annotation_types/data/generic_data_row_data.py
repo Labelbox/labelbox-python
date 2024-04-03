@@ -6,7 +6,7 @@ from labelbox.utils import _NoCoercionMixin
 
 
 class GenericDataRowData(BaseData, _NoCoercionMixin):
-    """Generic data row data
+    """Generic data row data. This is replacing all other DataType passed into Label
     """
     url: Optional[str] = None
     class_name: Literal["GenericDataRowData"] = "GenericDataRowData"

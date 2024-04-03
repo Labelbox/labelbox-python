@@ -41,7 +41,8 @@ def test_video_data_type():
         'global_key':
             'https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-BEidMVWRmyXjVCnr',
     }
-    label = Label(data=VideoData(**data))
+    with pytest.warns(UserWarning, match="Use a dict"):
+        label = Label(data=VideoData(**data))
     data = label.data
     assert isinstance(data, VideoData)
     assert data.global_key == 'https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-BEidMVWRmyXjVCnr'
