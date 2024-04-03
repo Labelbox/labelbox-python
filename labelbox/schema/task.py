@@ -49,6 +49,10 @@ class Task(DbObject):
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
 
+    # Import and upsert have several instances of special casing
+    def is_creation_task(self) -> bool:
+        return self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows'
+
     def refresh(self) -> None:
         """ Refreshes Task data from the server. """
         assert self._user is not None
@@ -57,6 +61,8 @@ class Task(DbObject):
             raise ResourceNotFoundError(Task, self.uid)
         for field in self.fields():
             setattr(self, field.name, getattr(tasks[0], field.name))
+            if self.is_creation_task():
+                self.errors_url = self.result_url
 
     def wait_till_done(self,
                        timeout_seconds: float = 300.0,
@@ -90,7 +96,7 @@ class Task(DbObject):
     def errors(self) -> Optional[Dict[str, Any]]:
         """ Fetch the error associated with an import task.
         """
-        if self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows':
+        if self.is_creation_task():
             if self.status == "FAILED":
                 result = self._fetch_remote_json()
                 return result["error"]
@@ -168,7 +174,7 @@ class Task(DbObject):
                     "Expected the result format to be either `ndjson` or `json`."
                 )
 
-        if self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows':
+        if self.is_creation_task():
             format = 'json'
         elif self.type == 'export-data-rows':
             format = 'ndjson'
