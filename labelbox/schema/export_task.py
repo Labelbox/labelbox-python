@@ -573,9 +573,7 @@ class ExportTask:
         metadata_header = ExportTask._get_metadata_header(
             self._task.client, self._task.uid, StreamType.ERRORS)
         if metadata_header is None:
-            raise ValueError(
-                f"Task {self._task.uid} does not have a {StreamType.ERRORS.value} stream"
-            )
+            return None
         Stream(
             _TaskContext(self._task.client, self._task.uid, StreamType.ERRORS,
                          metadata_header),
@@ -597,9 +595,7 @@ class ExportTask:
             metadata_header = ExportTask._get_metadata_header(
                 self._task.client, self._task.uid, StreamType.RESULT)
             if metadata_header is None:
-                raise ValueError(
-                    f"Task {self._task.uid} does not have a {StreamType.RESULT.value} stream"
-                )
+                return []
             Stream(
                 _TaskContext(self._task.client, self._task.uid,
                              StreamType.RESULT, metadata_header),
