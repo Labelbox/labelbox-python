@@ -1,6 +1,6 @@
 import sys
 
-if sys.version_info > (3, 8):
+if sys.version_info >= (3, 9):
     from strenum import StrEnum
 
     class BaseStrEnum(StrEnum):

@@ -65,11 +65,28 @@ test_params = [
 ]
 
 
-def test_import_data_types_by_global_key(client, configured_project,
-                                         initial_dataset, rand_gen,
-                                         data_row_json_by_data_type,
-                                         annotations_by_data_type,
-                                         create_data_row_for_project):
+def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
+    data_row = dataset.create_data_row(data_row_ndjson)
+
+    project.create_batch(
+        batch_name,
+        [data_row.uid],  # sample of data row objects
+        5,  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids.append(data_row.uid)
+
+    return data_row
+
+
+def test_import_data_types_by_global_key(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+    export_v2_test_helpers,
+):
     project = configured_project
     project_id = project.uid
     dataset = initial_dataset
@@ -93,6 +110,9 @@ def test_import_data_types_by_global_key(client, configured_project,
         ) for annotations in annotations_list
     ]
 
+    def find_data_row(dr):
+        return dr['data_row']['id'] == data_row.uid
+
     label_import = lb.LabelImport.create_from_objects(client, project_id,
                                                       f"test-import-image",
                                                       labels)
@@ -100,10 +120,17 @@ def test_import_data_types_by_global_key(client, configured_project,
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
-    exported_labels = project.export_labels(download=True)
-    objects = exported_labels[0]["Label"]["objects"]
-    classifications = exported_labels[0]["Label"]["classifications"]
+
+    result = export_v2_test_helpers.run_project_export_v2_task(project)
+    exported_data = list(filter(find_data_row, result))[0]
+    assert exported_data
+
+    label = exported_data['projects'][project.uid]['labels'][0]
+    annotations = label['annotations']
+    objects = annotations['objects']
+    classifications = annotations['classifications']
     assert len(objects) + len(classifications) == len(labels)
+
     data_row.delete()
 
 
@@ -151,11 +178,18 @@ def set_project_media_type_from_data_type(project, data_type_class):
         LlmResponseCreationData,
     ],
 )
-def test_import_data_types_v2(client, configured_project, initial_dataset,
-                              data_row_json_by_data_type,
-                              annotations_by_data_type_v2, data_type_class,
-                              exports_v2_by_data_type, export_v2_test_helpers,
-                              rand_gen, helpers, create_data_row_for_project):
+def test_import_data_types_v2(
+    client,
+    configured_project,
+    initial_dataset,
+    data_row_json_by_data_type,
+    annotations_by_data_type_v2,
+    data_type_class,
+    exports_v2_by_data_type,
+    export_v2_test_helpers,
+    rand_gen,
+    helpers,
+):
     project = configured_project
     dataset = initial_dataset
     project_id = project.uid

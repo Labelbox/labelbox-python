@@ -11,8 +11,8 @@ class GenericDataRowData(BaseData, _NoCoercionMixin):
     url: Optional[str] = None
     class_name: Literal["GenericDataRowData"] = "GenericDataRowData"
 
-    def create_url(self, signer: Callable[[bytes], str]) -> None:
-        return None
+    def create_url(self, signer: Callable[[bytes], str]) -> Optional[str]:
+        return self.url
 
     @pydantic_compat.root_validator(pre=True)
     def validate_one_datarow_key_present(cls, data):

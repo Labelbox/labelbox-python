@@ -1922,20 +1922,3 @@ class Helpers:
 @pytest.fixture
 def helpers():
     return Helpers
-
-
-@pytest.fixture
-def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
-    data_row = dataset.create_data_row(data_row_ndjson)
-
-    project.create_batch(
-        batch_name,
-        [data_row.uid],  # sample of data row objects
-        5,  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids.append(data_row.uid)
-
-    yield data_row
-
-    data_row.delete()
-    project.delete()

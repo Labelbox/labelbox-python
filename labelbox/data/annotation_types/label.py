@@ -53,15 +53,9 @@ class Label(pydantic_compat.BaseModel):
                             RelationshipAnnotation]] = []
     extra: Dict[str, Any] = {}
 
-    @staticmethod
-    def is_data_type(data: Union[Dict[str, Any], DataType]) -> bool:
-        if isinstance(data, DataType):
-            return True
-        return False
-
     @pydantic_compat.root_validator(pre=True)
     def validate_data(cls, label):
-        if not Label.is_data_type(label.get("data")):
+        if isinstance(label.get("data"), Dict):
             label["data"]["class_name"] = "GenericDataRowData"
         else:
             warnings.warn(

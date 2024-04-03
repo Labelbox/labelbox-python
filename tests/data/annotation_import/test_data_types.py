@@ -131,6 +131,19 @@ def get_annotation_comparison_dicts_from_export(export_result, data_row_id,
     return converted_annotations
 
 
+def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
+    data_row = dataset.create_data_row(data_row_ndjson)
+
+    project.create_batch(
+        batch_name,
+        [data_row.uid],  # sample of data row objects
+        5,  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids.append(data_row.uid)
+
+    return data_row
+
+
 # TODO: Add VideoData. Currently label import job finishes without errors but project.export_labels() returns empty list.
 @pytest.mark.parametrize(
     "data_type_class",
@@ -147,10 +160,15 @@ def get_annotation_comparison_dicts_from_export(export_result, data_row_id,
         LlmResponseCreationData,
     ],
 )
-def test_import_data_types(client, configured_project, initial_dataset,
-                           rand_gen, data_row_json_by_data_type,
-                           annotations_by_data_type, data_type_class,
-                           create_data_row_for_project):
+def test_import_data_types(
+    client,
+    configured_project,
+    initial_dataset,
+    rand_gen,
+    data_row_json_by_data_type,
+    annotations_by_data_type,
+    data_type_class,
+):
     project = configured_project
     project_id = project.uid
     dataset = initial_dataset
@@ -193,7 +211,6 @@ def test_import_data_types_by_global_key(
     rand_gen,
     data_row_json_by_data_type,
     annotations_by_data_type,
-    create_data_row_for_project,
 ):
     project = configured_project
     project_id = project.uid
@@ -285,7 +302,6 @@ def test_import_data_types_v2(
     export_v2_test_helpers,
     rand_gen,
     helpers,
-    create_data_row_for_project,
 ):
     project = configured_project
     dataset = initial_dataset
@@ -355,7 +371,6 @@ def test_import_label_annotations(
     data_class,
     annotations,
     rand_gen,
-    create_data_row_for_project,
 ):
     project = configured_project_with_one_data_row
     dataset = initial_dataset
