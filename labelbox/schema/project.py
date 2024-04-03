@@ -515,7 +515,7 @@ class Project(DbObject, Updateable, Deletable):
         filters: Optional[ProjectExportFilters] = None,
         params: Optional[ProjectExportParams] = None,
         streamable: bool = False,
-    ) -> tuple[Task, bool]:
+    ) -> Tuple[Task, bool]:
         _params = params or ProjectExportParams({
             "attachments": False,
             "metadata_fields": False,

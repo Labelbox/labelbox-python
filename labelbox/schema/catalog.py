@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from labelbox.orm.db_object import experimental
 from labelbox.schema.export_filters import CatalogExportFilters, build_filters
 
@@ -94,7 +94,7 @@ class Catalog:
                 filters: Union[CatalogExportFilters, Dict[str, List[str]],
                                None] = None,
                 params: Optional[CatalogExportParams] = None,
-                streamable: bool = False) -> tuple[Task, bool]:
+                streamable: bool = False) -> Tuple[Task, bool]:
 
         _params = params or CatalogExportParams({
             "attachments": False,

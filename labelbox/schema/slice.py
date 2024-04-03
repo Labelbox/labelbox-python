@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 import warnings
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field
@@ -164,7 +164,7 @@ class CatalogSlice(Slice):
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
-    ) -> tuple[Task, bool]:
+    ) -> Tuple[Task, bool]:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,

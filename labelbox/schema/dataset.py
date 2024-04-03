@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Generator, List, Optional, Any, Final
+from typing import Dict, Generator, List, Optional, Any, Final, Tuple, Union
 import os
 import json
 import logging
@@ -687,7 +687,7 @@ class Dataset(DbObject, Updateable, Deletable):
         filters: Optional[DatasetExportFilters] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
-    ) -> tuple[Task, bool]:
+    ) -> Tuple[Task, bool]:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,

@@ -5,7 +5,7 @@ import time
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Union, List, Optional, Any
+from typing import TYPE_CHECKING, Dict, Iterable, Union, Tuple, List, Optional, Any
 
 import requests
 
@@ -545,7 +545,7 @@ class ModelRun(DbObject):
         task_name: Optional[str] = None,
         params: Optional[ModelRunExportParams] = None,
         streamable: bool = False,
-    ) -> tuple[Task, bool]:
+    ) -> Tuple[Task, bool]:
         mutation_name = "exportDataRowsInModelRun"
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"

@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Union, Any
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Any
 import json
 
 from labelbox.orm import query
@@ -263,7 +263,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
-    ) -> tuple[Task, bool]:
+    ) -> Tuple[Task, bool]:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
