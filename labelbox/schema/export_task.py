@@ -566,7 +566,7 @@ class ExportTask:
             raise ExportTask.ExportTaskException("Task is not ready yet")
 
         if not self.has_errors():
-            return []
+            return None
 
         data = []
 
