@@ -16,10 +16,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     make \
     && rm -rf /var/lib/apt/lists/*
 
-<<<<<<< HEAD
-RUN python setup.py install
-CMD tox -e py -- tests/integration tests/data
-=======
 RUN groupadd --gid 1000 python && \
     useradd  --uid 1000 --gid python --shell /bin/bash --create-home python
 
@@ -37,4 +33,3 @@ RUN rye config --set-bool behavior.global-python=true && \
     rye sync
 
 CMD cd libs/labelbox && rye run integration && rye sync -f --features labelbox/data && rye run unit && rye run data
->>>>>>> 6d9cf45c (Initial move)

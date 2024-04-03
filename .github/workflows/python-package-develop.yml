@@ -81,8 +81,7 @@ jobs:
           packages-dir: dist/
           repository-url: https://test.pypi.org/legacy/
   test-container:
-    runs-on: ubuntu-latest
-    if: github.event == 'push'
+    runs-on: ubuntu-latest    
     needs: ['build']
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
@@ -101,7 +100,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
   
-      - name: Build and push
+      - name: Build and push (Develop)
+        if: github.event == 'push'
         uses: docker/build-push-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -113,4 +113,18 @@ jobs:
 
           tags: |
             ${{ env.CONTAINER_IMAGE }}:develop
+            ${{ env.CONTAINER_IMAGE }}:${{ github.sha }}
+      
+      - name: Build and push (Pull Request)
+        if: github.event == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push: true
+  
+          platforms: |
+            linux/amd64
+            linux/arm64
+
+          tags: |
             ${{ env.CONTAINER_IMAGE }}:${{ github.sha }}
