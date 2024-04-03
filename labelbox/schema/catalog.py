@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from labelbox.orm.db_object import experimental
 from labelbox.schema.export_filters import CatalogExportFilters, build_filters
 
@@ -23,7 +23,7 @@ class Catalog:
         task_name: Optional[str] = None,
         filters: Union[CatalogExportFilters, Dict[str, List[str]], None] = None,
         params: Optional[CatalogExportParams] = None,
-    ) -> Task:
+    ) -> Union[Task, ExportTask]:
         """
         Creates a catalog export task with the given params, filters and returns the task.
         
@@ -42,7 +42,10 @@ class Catalog:
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        return self._export(task_name, filters, params, False)
+        task, is_streamable = self._export(task_name, filters, params)
+        if (is_streamable):
+            return ExportTask(task, True)
+        return task
 
     @experimental
     def export(
@@ -83,7 +86,7 @@ class Catalog:
         >>>         stream_type=lb.StreamType.RESULT
         >>>       ).start(stream_handler=json_stream_handler)
         """
-        task = self._export(task_name, filters, params, True)
+        task, _ = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
 
     def _export(self,
@@ -91,7 +94,7 @@ class Catalog:
                 filters: Union[CatalogExportFilters, Dict[str, List[str]],
                                None] = None,
                 params: Optional[CatalogExportParams] = None,
-                streamable: bool = False) -> Task:
+                streamable: bool = False) -> Tuple[Task, bool]:
 
         _params = params or CatalogExportParams({
             "attachments": False,
@@ -120,7 +123,7 @@ class Catalog:
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInCatalogInput!)"
-            f"{{{mutation_name}(input: $input){{taskId}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
 
         media_type_override = _params.get('media_type_override', None)
         query_params: Dict[str, Any] = {
@@ -132,6 +135,7 @@ class Catalog:
                         "query": None,
                     }
                 },
+                "isStreamableReady": True,
                 "params": {
                     "mediaTypeOverride":
                         media_type_override.value
@@ -171,4 +175,5 @@ class Catalog:
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        return Task.get_task(self.client, task_id)
+        is_streamable = res["isStreamable"]
+        return Task.get_task(self.client, task_id), is_streamable

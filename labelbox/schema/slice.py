@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple, Union
 import warnings
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field
@@ -137,14 +137,14 @@ class CatalogSlice(Slice):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task = self._export(task_name, params, streamable=True)
+        task, _ = self._export(task_name, params, streamable=True)
         return ExportTask(task)
 
     def export_v2(
         self,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
-    ) -> Task:
+    ) -> Union[Task, ExportTask]:
         """
         Creates a slice export task with the given params and returns the task.
         >>>     slice = client.get_catalog_slice("SLICE_ID")
@@ -154,14 +154,17 @@ class CatalogSlice(Slice):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        return self._export(task_name, params)
+        task, is_streamable = self._export(task_name, params)
+        if (is_streamable):
+            return ExportTask(task, True)
+        return task
 
     def _export(
         self,
         task_name: Optional[str] = None,
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
-    ) -> Task:
+    ) -> Tuple[Task, bool]:
         _params = params or CatalogExportParams({
             "attachments": False,
             "metadata_fields": False,
@@ -182,7 +185,7 @@ class CatalogSlice(Slice):
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInSliceInput!)"
-            f"{{{mutation_name}(input: $input){{taskId}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
 
         media_type_override = _params.get('media_type_override', None)
         query_params = {
@@ -191,6 +194,7 @@ class CatalogSlice(Slice):
                 "filters": {
                     "sliceId": self.uid
                 },
+                "isStreamableReady": True,
                 "params": {
                     "mediaTypeOverride":
                         media_type_override.value
@@ -227,7 +231,8 @@ class CatalogSlice(Slice):
                                   error_log_key="errors")
         res = res[mutation_name]
         task_id = res["taskId"]
-        return Task.get_task(self.client, task_id)
+        is_streamable = res["isStreamable"]
+        return Task.get_task(self.client, task_id), is_streamable
 
 
 class ModelSlice(Slice):
