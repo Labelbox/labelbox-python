@@ -64,6 +64,15 @@ class Task(DbObject):
             if self.is_creation_task():
                 self.errors_url = self.result_url
 
+    def has_errors(self) -> bool:
+        if self.type == "export-data-rows":
+            # self.errors fetches the error content.
+            # This first condition prevents us from downloading the content for v2 exports
+            return bool(self.errors_url or self.errors)
+        if self.is_creation_task():
+            return bool(self.failed_data_rows)
+        return self.status == "FAILED"
+
     def wait_till_done(self,
                        timeout_seconds: float = 300.0,
                        check_frequency: float = 2.0) -> None:
@@ -79,9 +88,7 @@ class Task(DbObject):
                 "Expected check frequency to be two seconds or more")
         while timeout_seconds > 0:
             if self.status != "IN_PROGRESS":
-                # self.errors fetches the error content.
-                # This first condition prevents us from downloading the content for v2 exports
-                if self.errors_url is not None or self.errors is not None:
+                if self.has_errors():
                     logger.warning(
                         "There are errors present. Please look at `task.errors` for more details"
                     )
