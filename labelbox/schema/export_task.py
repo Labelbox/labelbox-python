@@ -549,6 +549,8 @@ class ExportTask:
             raise ExportTask.ExportTaskException(
                 "This property is only available for export_v2 tasks due to compatibility reasons, please use streamable errors instead"
             )
+        if not self.has_errors():
+            return None
         base_url = self._task.client.rest_endpoint
         return base_url + '/export-errors/' + self._task.uid + '/' + self._task.client.get_organization(
         ).uid
