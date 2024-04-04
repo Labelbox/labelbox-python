@@ -123,7 +123,7 @@ def mock_response():
         @property
         def text(self):
             return self._text
-        
+
         @property
         def content(self):
             return self._text
