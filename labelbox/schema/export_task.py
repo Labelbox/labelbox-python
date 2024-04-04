@@ -223,10 +223,10 @@ class FileRetrieverStrategy(ABC):  # pylint: disable=too-few-public-methods
         response = requests.get(file_info.file, timeout=30)
         response.raise_for_status()
         assert len(
-            response.content
+            response.text
         ) == file_info.offsets.end - file_info.offsets.start + 1, (
             f"expected {file_info.offsets.end - file_info.offsets.start + 1} bytes, "
-            f"got {len(response.content)} bytes")
+            f"got {len(response.text)} bytes")
         return file_info, response.text
 
 
