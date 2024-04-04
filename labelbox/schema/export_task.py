@@ -223,10 +223,10 @@ class FileRetrieverStrategy(ABC):  # pylint: disable=too-few-public-methods
         response = requests.get(file_info.file, timeout=30)
         response.raise_for_status()
         assert len(
-            response.text
+            response.content
         ) == file_info.offsets.end - file_info.offsets.start + 1, (
             f"expected {file_info.offsets.end - file_info.offsets.start + 1} bytes, "
-            f"got {len(response.text)} bytes")
+            f"got {len(response.content)} bytes")
         return file_info, response.text
 
 
@@ -482,6 +482,9 @@ class ExportTask:
             "metadata",
             "name",
             "result",
+            "result_url",
+            "errors",
+            "errors_url",
             "status",
             "type",
             "uid",
@@ -549,6 +552,8 @@ class ExportTask:
             raise ExportTask.ExportTaskException(
                 "This property is only available for export_v2 tasks due to compatibility reasons, please use streamable errors instead"
             )
+        if not self.has_errors():
+            return None
         base_url = self._task.client.rest_endpoint
         return base_url + '/export-errors/' + self._task.uid + '/' + self._task.client.get_organization(
         ).uid

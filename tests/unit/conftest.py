@@ -124,6 +124,10 @@ def mock_response():
         def text(self):
             return self._text
 
+        @property
+        def content(self):
+            return self._text
+
         def raise_for_status(self):
             if self._exception:
                 raise self._exception
