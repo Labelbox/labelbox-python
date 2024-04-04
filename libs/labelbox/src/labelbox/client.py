@@ -18,6 +18,7 @@ from google.api_core import retry
 import labelbox.exceptions
 from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
+from labelbox.adv_client import AdvClient
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity
@@ -28,6 +29,7 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
+from labelbox.schema.embedding import Embedding
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
@@ -118,6 +120,7 @@ class Client:
             'X-Python-Version': f"{python_version_info()}",
         }
         self._data_row_metadata_ontology = None
+        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -1955,3 +1958,34 @@ class Client:
         """
         foundry_client = FoundryClient(self)
         return foundry_client.run_app(model_run_name, data_rows, app_id)
+
+    def create_embedding(self, name: str, dims: int) -> Embedding:
+        """
+        Create a new embedding.  You must provide a name and the
+        number of dimensions the embedding has.  Once an
+        embedding has been created, you can upload the vector
+        data associated with the embedding id.
+
+        Args:
+            name: The name of the embedding.
+            dims: The number of dimensions.
+
+        Returns:
+            A new Embedding object.
+        """
+        data = self._adv_client.create_embedding(name, dims)
+        return Embedding(self._adv_client, **data)
+
+    def get_embedding(self, id: str) -> Embedding:
+        """
+        Return the embedding for the provided embedding id.
+        """
+        data = self._adv_client.get_embedding(id)
+        return Embedding(self._adv_client, **data)
+
+    def get_embeddings(self) -> List[Embedding]:
+        """
+        Return a list of all embeddings for the current organization.
+        """
+        results = self._adv_client.get_embeddings()
+        return [Embedding(self._adv_client, **data) for data in results]
