@@ -221,7 +221,11 @@ class TestDataRowUpsert:
                 first_call_args, _ = spy_some_function.call_args_list[0]
                 first_chunk_content = first_call_args[0]
                 data = json.loads(first_chunk_content)
-                assert len(data) == mocked_chunk_size
+                """
+                Each chunk but the last will have 3 items, the last will have 1.
+                As the chunks are processed async, we cannot be sure of the order of the calls.
+                """
+                assert len(data) in {1, 3}
 
                 last_call_args, _ = spy_some_function.call_args_list[-1]
                 manifest_content = last_call_args[0].decode('utf-8')
