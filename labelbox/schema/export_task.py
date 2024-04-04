@@ -631,7 +631,7 @@ class ExportTask:
         """Returns the organization of the task."""
         return self._task.organization
 
-    def wait_till_done(self, timeout_seconds: int = 300) -> None:
+    def wait_till_done(self, timeout_seconds: int = 7200) -> None:
         """Waits until the task is done."""
         return self._task.wait_till_done(timeout_seconds)
 
