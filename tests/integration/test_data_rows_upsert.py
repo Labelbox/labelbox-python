@@ -263,3 +263,9 @@ class TestDataRowUpsert:
         assert task.errors is not None
         assert len(task.errors) == 1  # one data row was created, one failed
         assert f"Duplicate global key: '{gkey}'" in task.errors[0]['message']
+
+    def test_upsert_empty_items(self, dataset):
+        items = [{"key": GlobalKey("foo")}]
+        with pytest.raises(ValueError) as e_info:
+            dataset.upsert_data_rows(items)
+        e_info.match(r"The following items have an empty payload: \['foo'\]")
