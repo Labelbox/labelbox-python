@@ -39,8 +39,8 @@ def snake_case(s):
     return _convert(s, "_", lambda i: False)
 
 
-def is_exactly_one_set(*args):
-    return sum([bool(arg) for arg in args]) == 1
+def is_exactly_one_set(x, y):
+    return not (bool(x) == bool(y))
 
 
 def is_valid_uri(uri):
