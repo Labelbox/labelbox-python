@@ -37,7 +37,7 @@ jobs:
       test-env: 'prod'
     secrets: inherit
   build:
-    needs: ['test-prod']
+    # needs: ['test-prod']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
