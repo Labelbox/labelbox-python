@@ -9,7 +9,7 @@ from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, 
 
 
 def get_data_row_ids(ds: Dataset):
-    return [dr.uid for dr in list(ds.export_data_rows())]
+    return [dr.uid for dr in list(ds.data_rows())]
 
 
 def test_create_batch(project: Project, big_dataset_data_row_ids: List[str]):
