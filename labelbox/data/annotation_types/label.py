@@ -5,12 +5,13 @@ import warnings
 from labelbox import pydantic_compat
 
 import labelbox
+from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
 from .classification import ClassificationAnswer
-from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, MaskData, TextData, VideoData, LlmPromptCreationData, LlmPromptResponseCreationData, LlmResponseCreationData
+from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData, VideoData, LlmPromptCreationData, LlmPromptResponseCreationData, LlmResponseCreationData
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
@@ -21,14 +22,14 @@ from ..ontology import get_feature_schema_lookup
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  ConversationData, DicomData, DocumentData, HTMLData,
                  LlmPromptCreationData, LlmPromptResponseCreationData,
-                 LlmResponseCreationData]
+                 LlmResponseCreationData, GenericDataRowData]
 
 
 class Label(pydantic_compat.BaseModel):
     """Container for holding data and annotations
 
     >>> Label(
-    >>>    data = ImageData(url = "http://my-img.jpg"),
+    >>>    data = {'global_key': 'my-data-row-key'} # also accepts uid, external_id as keys
     >>>    annotations = [
     >>>        ObjectAnnotation(
     >>>            value = Point(x = 10, y = 10),
@@ -39,7 +40,8 @@ class Label(pydantic_compat.BaseModel):
 
     Args:
         uid: Optional Label Id in Labelbox
-        data: Data of Label, Image, Video, Text
+        data: Data of Label, Image, Video, Text or dict with a single key uid | global_key | external_id. 
+            Note use of classes as data is deprecated. Use GenericDataRowData or dict with a single key instead.
         annotations: List of Annotations in the label
         extra: additional context
     """
@@ -50,6 +52,16 @@ class Label(pydantic_compat.BaseModel):
                             ConfusionMatrixMetric,
                             RelationshipAnnotation]] = []
     extra: Dict[str, Any] = {}
+
+    @pydantic_compat.root_validator(pre=True)
+    def validate_data(cls, label):
+        if isinstance(label.get("data"), Dict):
+            label["data"]["class_name"] = "GenericDataRowData"
+        else:
+            warnings.warn(
+                f"Using {type(label['data']).__name__} class for label.data is deprecated. "
+                "Use a dict or an instance of GenericDataRowData instead.")
+        return label
 
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)

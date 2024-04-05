@@ -1,5 +1,4 @@
 import datetime
-import itertools
 import pytest
 import uuid
 
@@ -21,9 +20,6 @@ from labelbox.data.annotation_types.data import (
 )
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
-
-DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
-DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 
 radio_annotation = lb_types.ClassificationAnnotation(
     name="radio",
@@ -69,68 +65,6 @@ test_params = [
 ]
 
 
-def get_annotation_comparison_dicts_from_labels(labels):
-    labels_ndjson = list(NDJsonConverter.serialize(labels))
-    for annotation in labels_ndjson:
-        annotation.pop("uuid", None)
-        annotation.pop("dataRow")
-
-        if "masks" in annotation:
-            for frame in annotation["masks"]["frames"]:
-                frame.pop("instanceURI")
-                frame.pop("imBytes")
-            for instance in annotation["masks"]["instances"]:
-                instance.pop("colorRGB")
-    return labels_ndjson
-
-
-def get_annotation_comparison_dicts_from_export(export_result, data_row_id,
-                                                project_id):
-    exported_data_row = [
-        dr for dr in export_result if dr["data_row"]["id"] == data_row_id
-    ][0]
-    exported_label = exported_data_row["projects"][project_id]["labels"][0]
-    exported_annotations = exported_label["annotations"]
-    converted_annotations = []
-    if exported_label["label_kind"] == "Video":
-        frames = []
-        instances = []
-        for frame_id, frame in exported_annotations["frames"].items():
-            frames.append({"index": int(frame_id)})
-            for object in frame["objects"].values():
-                instances.append({"name": object["name"]})
-        converted_annotations.append(
-            {"masks": {
-                "frames": frames,
-                "instances": instances,
-            }})
-    else:
-        exported_annotations = list(
-            itertools.chain(*exported_annotations.values()))
-        for annotation in exported_annotations:
-            if annotation["name"] == "radio":
-                converted_annotations.append({
-                    "name": annotation["name"],
-                    "answer": {
-                        "name": annotation["radio_answer"]["name"]
-                    },
-                })
-            elif annotation["name"] == "checklist":
-                converted_annotations.append({
-                    "name":
-                        annotation["name"],
-                    "answer": [{
-                        "name": answer["name"]
-                    } for answer in annotation["checklist_answers"]],
-                })
-            elif annotation["name"] == "text":
-                converted_annotations.append({
-                    "name": annotation["name"],
-                    "answer": annotation["text_answer"]["content"],
-                })
-    return converted_annotations
-
-
 def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     data_row = dataset.create_data_row(data_row_ndjson)
 
@@ -144,67 +78,6 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     return data_row
 
 
-# TODO: Add VideoData. Currently label import job finishes without errors but project.export_labels() returns empty list.
-@pytest.mark.parametrize(
-    "data_type_class",
-    [
-        AudioData,
-        ConversationData,
-        DicomData,
-        DocumentData,
-        HTMLData,
-        ImageData,
-        TextData,
-        LlmPromptCreationData,
-        LlmPromptResponseCreationData,
-        LlmResponseCreationData,
-    ],
-)
-def test_import_data_types(
-    client,
-    configured_project,
-    initial_dataset,
-    rand_gen,
-    data_row_json_by_data_type,
-    annotations_by_data_type,
-    data_type_class,
-    helpers,
-):
-    project = configured_project
-    project_id = project.uid
-    dataset = initial_dataset
-
-    helpers.set_project_media_type_from_data_type(project, data_type_class)
-
-    data_type_string = data_type_class.__name__[:-4].lower()
-    data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
-                                           rand_gen(str))
-
-    annotations_ndjson = annotations_by_data_type[data_type_string]
-    annotations_list = [
-        label.annotations
-        for label in NDJsonConverter.deserialize(annotations_ndjson)
-    ]
-    labels = [
-        lb_types.Label(data=data_type_class(uid=data_row.uid),
-                       annotations=annotations)
-        for annotations in annotations_list
-    ]
-
-    label_import = lb.LabelImport.create_from_objects(
-        client, project_id, f"test-import-{data_type_string}", labels)
-    label_import.wait_until_done()
-
-    assert label_import.state == AnnotationImportState.FINISHED
-    assert len(label_import.errors) == 0
-    exported_labels = project.export_labels(download=True)
-    objects = exported_labels[0]["Label"]["objects"]
-    classifications = exported_labels[0]["Label"]["classifications"]
-    assert len(objects) + len(classifications) == len(labels)
-    data_row.delete()
-
-
 def test_import_data_types_by_global_key(
     client,
     configured_project,
@@ -212,6 +85,7 @@ def test_import_data_types_by_global_key(
     rand_gen,
     data_row_json_by_data_type,
     annotations_by_data_type,
+    export_v2_test_helpers,
     helpers,
 ):
     project = configured_project
@@ -232,10 +106,13 @@ def test_import_data_types_by_global_key(
     ]
     labels = [
         lb_types.Label(
-            data=data_type_class(global_key=data_row.global_key),
+            data={'global_key': data_row.global_key},
             annotations=annotations,
         ) for annotations in annotations_list
     ]
+
+    def find_data_row(dr):
+        return dr['data_row']['id'] == data_row.uid
 
     label_import = lb.LabelImport.create_from_objects(client, project_id,
                                                       f"test-import-image",
@@ -244,10 +121,17 @@ def test_import_data_types_by_global_key(
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
-    exported_labels = project.export_labels(download=True)
-    objects = exported_labels[0]["Label"]["objects"]
-    classifications = exported_labels[0]["Label"]["classifications"]
+
+    result = export_v2_test_helpers.run_project_export_v2_task(project)
+    exported_data = list(filter(find_data_row, result))[0]
+    assert exported_data
+
+    label = exported_data['projects'][project.uid]['labels'][0]
+    annotations = label['annotations']
+    objects = annotations['objects']
+    classifications = annotations['classifications']
     assert len(objects) + len(classifications) == len(labels)
+
     data_row.delete()
 
 
@@ -303,8 +187,7 @@ def test_import_data_types_v2(
         for label in NDJsonConverter.deserialize(annotations_ndjson)
     ]
     labels = [
-        lb_types.Label(data=data_type_class(uid=data_row.uid),
-                       annotations=annotations)
+        lb_types.Label(data={'uid': data_row.uid}, annotations=annotations)
         for annotations in annotations_list
     ]
 
@@ -319,8 +202,9 @@ def test_import_data_types_v2(
     # to be similar to tests/integration/test_task_queue.py
 
     result = export_v2_test_helpers.run_project_export_v2_task(project)
-    find_data_row = lambda dr: dr['data_row']['id'] == data_row.uid
-    exported_data = list(filter(find_data_row, result))[0]
+
+    exported_data = next(
+        dr for dr in result if dr['data_row']['id'] == data_row.uid)
     assert exported_data
 
     # timestamp fields are in iso format
@@ -342,56 +226,6 @@ def test_import_data_types_v2(
     assert exported_annotations == exports_v2_by_data_type[data_type_string]
 
     data_row = client.get_data_row(data_row.uid)
-    data_row.delete()
-
-
-@pytest.mark.parametrize("data_type, data_class, annotations", test_params)
-def test_import_label_annotations(
-    client,
-    configured_project_with_one_data_row,
-    initial_dataset,
-    data_row_json_by_data_type,
-    data_type,
-    data_class,
-    annotations,
-    rand_gen,
-    helpers,
-):
-    project = configured_project_with_one_data_row
-    dataset = initial_dataset
-    helpers.set_project_media_type_from_data_type(project, data_class)
-
-    data_row_json = data_row_json_by_data_type[data_type]
-    data_row = create_data_row_for_project(project, dataset, data_row_json,
-                                           rand_gen(str))
-
-    labels = [
-        lb_types.Label(data=data_class(uid=data_row.uid),
-                       annotations=annotations)
-    ]
-
-    label_import = lb.LabelImport.create_from_objects(client, project.uid,
-                                                      f"test-import-html",
-                                                      labels)
-    label_import.wait_until_done()
-
-    assert label_import.state == lb.AnnotationImportState.FINISHED
-    assert len(label_import.errors) == 0
-    export_params = {
-        "attachments": False,
-        "metadata_fields": False,
-        "data_row_details": False,
-        "project_details": False,
-        "performance_details": False,
-    }
-    export_task = project.export_v2(params=export_params)
-    export_task.wait_till_done()
-    assert export_task.errors is None
-    expected_annotations = get_annotation_comparison_dicts_from_labels(labels)
-    actual_annotations = get_annotation_comparison_dicts_from_export(
-        export_task.result, data_row.uid,
-        configured_project_with_one_data_row.uid)
-    assert actual_annotations == expected_annotations
     data_row.delete()
 
 
@@ -422,7 +256,6 @@ def one_datarow_global_key(client, rand_gen, data_row_json_by_data_type):
 def test_import_mal_annotations(
     client,
     configured_project_with_one_data_row,
-    data_type,
     data_class,
     annotations,
     rand_gen,
@@ -439,8 +272,7 @@ def test_import_mal_annotations(
     )
 
     labels = [
-        lb_types.Label(data=data_class(uid=data_row.uid),
-                       annotations=annotations)
+        lb_types.Label(data={'uid': data_row.uid}, annotations=annotations)
     ]
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
@@ -471,7 +303,7 @@ def test_import_mal_annotations_global_key(client,
     )
 
     labels = [
-        lb_types.Label(data=data_class(global_key=data_row.global_key),
+        lb_types.Label(data={'global_key': data_row.global_key},
                        annotations=annotations)
     ]
 

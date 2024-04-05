@@ -121,13 +121,13 @@ def rest_url(environ: str) -> str:
     return 'http://host.docker.internal:8080/api/v1'
 
 
-def testing_api_key(environ: str) -> str:
-    for var in [
-            "LABELBOX_TEST_API_KEY_PROD", "LABELBOX_TEST_API_KEY_STAGING",
-            "LABELBOX_TEST_API_KEY_CUSTOM", "LABELBOX_TEST_API_KEY_LOCAL",
-            "LABELBOX_TEST_API_KEY"
-    ]:
-        value = os.environ.get(var)
+def testing_api_key(environ: Environ) -> str:
+    keys = [
+        f"LABELBOX_TEST_API_KEY_{environ.value.upper()}",
+        "LABELBOX_TEST_API_KEY"
+    ]
+    for key in keys:
+        value = os.environ.get(key)
         if value is not None:
             return value
     raise Exception("Cannot find API to use for tests")
@@ -147,7 +147,6 @@ class IntegrationClient(Client):
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         rest_endpoint = rest_url(environ)
-
         super().__init__(api_key,
                          api_url,
                          enable_experimental=True,

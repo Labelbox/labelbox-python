@@ -1,7 +1,18 @@
-from strenum import StrEnum
+import sys
+
+if sys.version_info >= (3, 9):
+    from strenum import StrEnum
+
+    class BaseStrEnum(StrEnum):
+        pass
+else:
+    from enum import Enum
+
+    class BaseStrEnum(str, Enum):
+        pass
 
 
-class IdType(StrEnum):
+class IdType(BaseStrEnum):
     """
     The type of id used to identify a data row.
     
