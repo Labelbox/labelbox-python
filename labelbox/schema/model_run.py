@@ -286,17 +286,17 @@ class ModelRun(DbObject):
         Returns:
             AnnotationImport
         """
-        kwargs = dict(client=self.client, id=self.uid, name=name)
+        kwargs = dict(client=self.client, model_run_id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
             if os.path.exists(predictions):
-                return Entity.MEAPredictionImport.create(path=str(predictions),
-                                                         **kwargs)
+                return Entity.MEAPredictionImport.create_from_file(
+                    path=str(predictions), **kwargs)
             else:
-                return Entity.MEAPredictionImport.create(url=str(predictions),
-                                                         **kwargs)
+                return Entity.MEAPredictionImport.create_from_url(
+                    url=str(predictions), **kwargs)
         elif isinstance(predictions, Iterable):
-            return Entity.MEAPredictionImport.create(labels=predictions,
-                                                     **kwargs)
+            return Entity.MEAPredictionImport.create_from_objects(
+                predictions=predictions, **kwargs)
         else:
             raise ValueError(
                 f'Invalid predictions given of type: {type(predictions)}')
