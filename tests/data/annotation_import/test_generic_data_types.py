@@ -86,12 +86,13 @@ def test_import_data_types_by_global_key(
     data_row_json_by_data_type,
     annotations_by_data_type,
     export_v2_test_helpers,
+    helpers,
 ):
     project = configured_project
     project_id = project.uid
     dataset = initial_dataset
     data_type_class = ImageData
-    set_project_media_type_from_data_type(project, data_type_class)
+    helpers.set_project_media_type_from_data_type(project, data_type_class)
 
     data_row_ndjson = data_row_json_by_data_type["image"]
     data_row_ndjson["global_key"] = str(uuid.uuid4())
@@ -142,26 +143,6 @@ def validate_iso_format(date_string: str):
     assert parsed_t.second is not None
 
 
-def to_pascal_case(name: str) -> str:
-    return "".join([word.capitalize() for word in name.split("_")])
-
-
-def set_project_media_type_from_data_type(project, data_type_class):
-    data_type_string = data_type_class.__name__[:-4].lower()
-    media_type = to_pascal_case(data_type_string)
-    if media_type == "Conversation":
-        media_type = "Conversational"
-    elif media_type == "Llmpromptcreation":
-        media_type = "LLMPromptCreation"
-    elif media_type == "Llmpromptresponsecreation":
-        media_type = "LLMPromptResponseCreation"
-    elif media_type == "Llmresponsecreation":
-        media_type = "Text"
-    elif media_type == "Genericdatarow":
-        media_type = "Image"
-    project.update(media_type=MediaType[media_type])
-
-
 @pytest.mark.parametrize(
     "data_type_class",
     [
@@ -194,7 +175,7 @@ def test_import_data_types_v2(
     dataset = initial_dataset
     project_id = project.uid
 
-    set_project_media_type_from_data_type(project, data_type_class)
+    helpers.set_project_media_type_from_data_type(project, data_type_class)
 
     data_type_string = data_type_class.__name__[:-4].lower()
     data_row_ndjson = data_row_json_by_data_type[data_type_string]
@@ -221,8 +202,9 @@ def test_import_data_types_v2(
     # to be similar to tests/integration/test_task_queue.py
 
     result = export_v2_test_helpers.run_project_export_v2_task(project)
-    find_data_row = lambda dr: dr['data_row']['id'] == data_row.uid
-    exported_data = list(filter(find_data_row, result))[0]
+
+    exported_data = next(
+        dr for dr in result if dr['data_row']['id'] == data_row.uid)
     assert exported_data
 
     # timestamp fields are in iso format
@@ -274,15 +256,15 @@ def one_datarow_global_key(client, rand_gen, data_row_json_by_data_type):
 def test_import_mal_annotations(
     client,
     configured_project_with_one_data_row,
-    data_type,
     data_class,
     annotations,
     rand_gen,
     one_datarow,
+    helpers,
 ):
     data_row = one_datarow
-    set_project_media_type_from_data_type(configured_project_with_one_data_row,
-                                          data_class)
+    helpers.set_project_media_type_from_data_type(
+        configured_project_with_one_data_row, data_class)
 
     configured_project_with_one_data_row.create_batch(
         rand_gen(str),
@@ -307,12 +289,13 @@ def test_import_mal_annotations(
 
 def test_import_mal_annotations_global_key(client,
                                            configured_project_with_one_data_row,
-                                           rand_gen, one_datarow_global_key):
+                                           rand_gen, one_datarow_global_key,
+                                           helpers):
     data_class = lb_types.VideoData
     data_row = one_datarow_global_key
     annotations = [video_mask_annotation]
-    set_project_media_type_from_data_type(configured_project_with_one_data_row,
-                                          data_class)
+    helpers.set_project_media_type_from_data_type(
+        configured_project_with_one_data_row, data_class)
 
     configured_project_with_one_data_row.create_batch(
         rand_gen(str),

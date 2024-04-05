@@ -1918,6 +1918,30 @@ class Helpers:
                     if isinstance(i, dict):
                         Helpers.rename_cuid_key_recursive(i)
 
+    @staticmethod
+    def set_project_media_type_from_data_type(project, data_type_class):
+
+        def to_pascal_case(name: str) -> str:
+            return "".join([word.capitalize() for word in name.split("_")])
+
+        data_type_string = data_type_class.__name__[:-4].lower()
+        media_type = to_pascal_case(data_type_string)
+        if media_type == "Conversation":
+            media_type = "Conversational"
+        elif media_type == "Llmpromptcreation":
+            media_type = "LLMPromptCreation"
+        elif media_type == "Llmpromptresponsecreation":
+            media_type = "LLMPromptResponseCreation"
+        elif media_type == "Llmresponsecreation":
+            media_type = "Text"
+        elif media_type == "Genericdatarow":
+            media_type = "Image"
+        project.update(media_type=MediaType[media_type])
+
+    @staticmethod
+    def find_data_row_filter(data_row):
+        return lambda dr: dr['data_row']['id'] == data_row.uid
+
 
 @pytest.fixture
 def helpers():

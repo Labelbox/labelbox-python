@@ -17,10 +17,8 @@ class GenericDataRowData(BaseData, _NoCoercionMixin):
     @pydantic_compat.root_validator(pre=True)
     def validate_one_datarow_key_present(cls, data):
         keys = ['external_id', 'global_key', 'uid']
-        count = 0
-        for key in keys:
-            if data.get(key):
-                count += 1
+        count = sum([key in data for key in keys])
+
         if count < 1:
             raise ValueError(f"Exactly one of {keys} must be present.")
         if count > 1:
