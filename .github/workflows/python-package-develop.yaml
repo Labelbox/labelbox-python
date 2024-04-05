@@ -10,7 +10,6 @@ jobs:
   build:
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         include:
           - python-version: 3.8
