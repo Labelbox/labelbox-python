@@ -19,5 +19,4 @@ RUN pip install -r requirements.txt
 COPY . /usr/src/
 
 RUN python setup.py install
-RUN tox -e py
 CMD tox -e py -- tests/integration tests/data
