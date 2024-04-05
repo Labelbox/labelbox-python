@@ -1979,6 +1979,12 @@ class Client:
     def get_embedding(self, id: str) -> Embedding:
         """
         Return the embedding for the provided embedding id.
+
+        Args:
+            id: The embedding ID.
+
+        Returns:
+            The embedding object.
         """
         data = self._adv_client.get_embedding(id)
         return Embedding(self._adv_client, **data)
@@ -1986,6 +1992,9 @@ class Client:
     def get_embeddings(self) -> List[Embedding]:
         """
         Return a list of all embeddings for the current organization.
+
+        Returns:
+            A list of embedding objects.
         """
         results = self._adv_client.get_embeddings()
         return [Embedding(self._adv_client, **data) for data in results]

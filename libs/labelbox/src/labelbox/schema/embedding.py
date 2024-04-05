@@ -5,6 +5,14 @@ from labelbox.pydantic_compat import BaseModel, PrivateAttr
 
 
 class EmbeddingVector(BaseModel):
+    """
+    A Vector Embedding for Custom Embedding.
+
+    Attributes:
+        embedding_id (str): The ID of the associated Embedding
+        vector (list): The raw vector values - the number of entries should match the Embedding's dimensions
+        clusters (list): The cluster groupings
+    """
     embedding_id: str
     vector: List[float]
     clusters: Optional[List[int]]
@@ -17,6 +25,18 @@ class EmbeddingVector(BaseModel):
 
 
 class Embedding(BaseModel):
+    """
+    An Embedding is used to power similarity search in Catalog.
+
+    This model supports the representation of both `Precomputed` embeddings that Labelbox provides,
+    and `Custom` embeddings which can be imported directly into Labelbox.
+
+    Attributes:
+        id (str): The ID of the embedding
+        name (str): The name of the embedding
+        dims (int): Refers to the size of the vector space in which words, phrases, or other entities are embedded
+        custom (bool): Indicates whether the embedding is a Precomputed embedding or a Custom embedding
+    """
     id: str
     name: str
     custom: bool
