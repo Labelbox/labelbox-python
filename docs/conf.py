@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 project = 'Python SDK reference'
 copyright = '2024, Labelbox'
 author = 'Labelbox'
-release = '3.66.0'
+release = '3.67.0'
 
 # -- General configuration ---------------------------------------------------
 

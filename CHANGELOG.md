@@ -1,4 +1,27 @@
 # Changelog
+# Version 3.67.0 (2024-04-05)
+## Added
+* Added SECURITY.md file
+* Made export_v2 methods use streamable backend
+* Added support for custom embeddings to dataset _create data row(s)_ methods
+* Added ability to upsert data rows via dataset.upsert_data_rows() method
+* Added AssetAttachment with an ability to update() and delete()
+
+## Updated
+* Added check for 5000 labels per annotation per data row
+
+## Fixed
+* Errors and Failed data rows are included in the task.result for dataset.create_data_rows()
+* Fixed 500 error handling and reporting 
+
+# Notebooks
+* Updated import notebook for image data
+* Added attachment PDF example, removed requirements around text_layer_url
+* Included the get_catalog() method to the export notebook 
+* Added workflow status filter to export_data notebook for projects
+* Send predictions to a project demo
+* Removed model diagnostic notebooks
+
 # Version 3.66.0 (2024-03-20)
 ## Notes
 
