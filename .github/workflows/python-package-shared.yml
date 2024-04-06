@@ -50,7 +50,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - name: Integration Testing
         env:
-          PYTEST_XDIST_AUTO_NUM_WORKERS: 32
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
           LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
           LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
@@ -69,7 +69,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - name: Unit && Data Testing
         env:
-          PYTEST_XDIST_AUTO_NUM_WORKERS: 32
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
           LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
           LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}

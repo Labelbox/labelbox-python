@@ -3,12 +3,8 @@ name: Labelbox Python SDK Staging (Develop)
 on:
   push:
     branches: [develop]
-    #paths:
-    #  - 'libs/**'
   pull_request:
     branches: [develop]
-    #paths:
-    #  - 'libs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -101,7 +97,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
   
       - name: Build and push (Develop)
-        if: github.event == 'push'
+        if: github.event_name == 'push'
         uses: docker/build-push-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -116,7 +112,7 @@ jobs:
             ${{ env.CONTAINER_IMAGE }}:${{ github.sha }}
       
       - name: Build and push (Pull Request)
-        if: github.event == 'pull_request'
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -6,6 +6,15 @@ on:
       tag:
         description: 'Release Tag'
         required: true
+      skip-tests:
+        description: 'Skip PROD Test (Do not do this unless there is an emergency)'
+        default: 'false'
+        required: true
+        type: choice
+        options:
+          - false
+          - true
+
 
 concurrency:
   group: ${{ github.workflow }}
@@ -43,6 +52,7 @@ jobs:
           name: build
           path: ./dist
   test-build:
+    if: ${{ inputs.skip-tests }} != "true"
     needs: ['build']
     runs-on: ubuntu-latest
     strategy:
