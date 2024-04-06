@@ -32,7 +32,7 @@ dev-dependencies = [
 members = ["libs/*"]
 
 [tool.pytest.ini_options]
-addopts = "-rP -vvv --reruns 5 --reruns-delay 10 --durations=20 -n auto --cov=labelbox --import-mode=importlib"
+addopts = "-rP -vvv --reruns 0 --reruns-delay 10 --durations=20 -n auto --cov=labelbox --import-mode=importlib"
 markers = """
     slow: marks tests as slow (deselect with '-m "not slow"')
 """
