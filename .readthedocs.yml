@@ -13,8 +13,8 @@ build:
   jobs:
     pre_create_environment:
       - asdf plugin add rye
-      - asdf plugin install rye 0.29
-      - asdf global rye 0.29
+      - asdf install rye 0.32
+      - asdf global rye 0.32
       - rye config --set-bool behavior.global-python=true
       - rye config --set-bool behavior.use-uv=true
     post_install:
