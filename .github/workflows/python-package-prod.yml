@@ -1,10 +1,11 @@
-name: Labelbox Python SDK Develop
+name: Labelbox Python SDK Prod (Develop)
 
 on:
-  push:
-    branches: [develop]
-  pull_request:
-    branches: [develop]
+    workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -13,25 +14,25 @@ jobs:
       matrix:
         include:
           - python-version: 3.8
-            api-key: STAGING_LABELBOX_API_KEY_2
+            api-key: PROD_LABELBOX_API_KEY_2
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.9
-            api-key: STAGING_LABELBOX_API_KEY_3
+            api-key: PROD_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: "3.10"
-            api-key: STAGING_LABELBOX_API_KEY_4
+            api-key: PROD_LABELBOX_API_KEY_4
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.11
-            api-key: STAGING_LABELBOX_API_KEY
+            api-key: LABELBOX_API_KEY
             da-test-key: DA_GCP_LABELBOX_API_KEY
           - python-version: 3.12
-            api-key: STAGING_LABELBOX_API_KEY_5
+            api-key: PROD_LABELBOX_API_KEY_5
             da-test-key: DA_GCP_LABELBOX_API_KEY
     uses: ./.github/workflows/python-package-shared.yml
     with:
       python-version: ${{ matrix.python-version }}
       api-key: ${{ matrix.api-key }}
       da-test-key: ${{ matrix.da-test-key }}
-      fixture-profile: true
-      test-env: 'staging'
+      fixture-profile: false
+      test-env: 'prod'
     secrets: inherit

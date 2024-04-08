@@ -18,61 +18,63 @@ on:
       fixture-profile: 
         required: true
         type: boolean
+
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
-    env:
-      # make sure to tell tox to use these environs in tox.ini
-      LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
-      DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
-      LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
-      FIXTURE_PROFILE: ${{ inputs.fixture-profile }}
     steps:
-    - name: Cancel previous workflow
-      uses: styfle/cancel-workflow-action@0.12.1
-      with:
-        access_token: ${{ github.token }}
-
-    - uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-        ref: ${{ github.head_ref }}
-
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ inputs.python-version }}
-        cache: "pip"
-
-    - name: yapf
-      id: yapf
-      uses: AlexanderMelde/yapf-action@master
-      with:
-        args: --verbose --recursive --parallel --style "google"
-    - name: dependencies
-      run: |
-        sudo apt-get -y update
-        sudo apt install -y libsm6 \
-                          libxext6 \
-                            ffmpeg \
-                    libfontconfig1 \
-                      libxrender1 \
-                  libgl1-mesa-glx
-    - name: mypy
-      run: |
-        pip install strenum
-        pip install mypy==1.9.0
-        # TODO: consider installing requests typing
-        mypy -p labelbox --pretty --show-error-codes --non-interactive --install-types
-    - name: Install test dependencies
-      run: |
-        pip install tox==4.14.1
-    # TODO: replace tox.ini with what the Makefile does
-    # to make sure local testing is
-    # identical to github actions which uses tox.ini
-    - name: Test with tox (unit)
-      run: |
-        tox -e py -- tests/unit
-    - name: Test with tox (integration / data)
-      run: |
-        tox -e py -- tests/integration tests/data
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ inputs.python-version }}
+      - name: Linting
+        working-directory: libs/labelbox
+        run: rye run lint
+  integration:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ inputs.python-version }}
+      - name: Integration Testing
+        env:
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
+          LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
+        working-directory: libs/labelbox
+        run: rye run integration
+  unit-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ inputs.python-version }}
+      - name: Unit && Data Testing
+        env:
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
+          LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
+        working-directory: libs/labelbox
+        run: |
+          rye sync -f --features labelbox/data
+          rye run unit
+          rye run data 

@@ -5,10 +5,20 @@
 # Read the docs config file version (Required)
 version: 2
 
+# https://github.com/wemake-services/wemake-django-template/blob/master/.readthedocs.yml
 build:
-  os: ubuntu-22.04
+  os: ubuntu-lts-latest
   tools:
-    python: "3.10"
+    python: "3.12"
+  jobs:
+    pre_create_environment:
+      - asdf plugin add rye
+      - asdf plugin install rye 0.29
+      - asdf global rye 0.29
+      - rye config --set-bool behavior.global-python=true
+      - rye config --set-bool behavior.use-uv=true
+    post_install:
+      - rye sync
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -17,11 +27,3 @@ sphinx:
 # Not building additional formats, as PDF build is failing
 # formats: 
 #   - pdf
-
-# Optionally set the version of Python and requirements required to build your docs
-python:
-   install:
-   - requirements: requirements.txt
-   - requirements: docs/requirements.txt
-   - method: setuptools
-     path: .

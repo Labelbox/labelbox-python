@@ -80,9 +80,6 @@ target/
 profile_default/
 ipython_config.py
 
-# pyenv
-.python-version
-
 # vscode
 .vscode
 
@@ -144,3 +141,10 @@ docs/source/_static
 docs/source/_templates
 /.graphqlconfig
 /schema.graphql
+
+
+# pytest
+.testmondata*
+
+# rye
+.env
