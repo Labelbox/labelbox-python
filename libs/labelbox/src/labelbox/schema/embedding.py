@@ -88,3 +88,7 @@ class Embedding(BaseModel):
             The number of imported vectors.
         """
         return self._client.get_imported_vector_count(self.id)
+
+    @classmethod
+    def type_name(cls):
+        return cls.__name__.split(".")[-1]
