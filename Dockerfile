@@ -15,7 +15,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     inotify-tools \
     make \
     # cv2
+    libsm6 \
+    libxext6 \
+    ffmpeg \
+    libfontconfig1 \
+    libxrender1 \
     libgl1-mesa-glx \
+    libgeos-dev \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 python && \
