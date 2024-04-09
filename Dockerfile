@@ -14,6 +14,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     curl \
     inotify-tools \
     make \
+    # cv2
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 python && \
