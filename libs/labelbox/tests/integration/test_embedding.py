@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 
 import pytest
 
+import labelbox.exceptions
 from labelbox import Client, Dataset, DataRow
 from labelbox.schema.embedding import Embedding
 
@@ -19,9 +20,19 @@ def embedding(client: Client):
     embedding.delete()
 
 
-def test_get_embedding(client: Client, embedding: Embedding):
-    e = client.get_embedding(embedding.id)
+def test_get_embedding_by_id(client: Client, embedding: Embedding):
+    e = client.get_embedding_by_id(embedding.id)
     assert e.id == embedding.id
+
+
+def test_get_embedding_by_name(client: Client, embedding: Embedding):
+    e = client.get_embedding_by_name(embedding.name)
+    assert e.name == embedding.name
+
+
+def test_get_embedding_by_name_not_found(client: Client):
+    with pytest.raises(labelbox.exceptions.ResourceNotFoundError):
+        client.get_embedding_by_name("does-not-exist")
 
 
 def test_get_embeddings(client: Client, embedding: Embedding):

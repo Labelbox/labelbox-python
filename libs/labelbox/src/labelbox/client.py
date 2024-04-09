@@ -1976,7 +1976,17 @@ class Client:
         data = self._adv_client.create_embedding(name, dims)
         return Embedding(self._adv_client, **data)
 
-    def get_embedding(self, id: str) -> Embedding:
+    def get_embeddings(self) -> List[Embedding]:
+        """
+        Return a list of all embeddings for the current organization.
+
+        Returns:
+            A list of embedding objects.
+        """
+        results = self._adv_client.get_embeddings()
+        return [Embedding(self._adv_client, **data) for data in results]
+
+    def get_embedding_by_id(self, id: str) -> Embedding:
         """
         Return the embedding for the provided embedding id.
 
@@ -1989,12 +1999,20 @@ class Client:
         data = self._adv_client.get_embedding(id)
         return Embedding(self._adv_client, **data)
 
-    def get_embeddings(self) -> List[Embedding]:
+    def get_embedding_by_name(self, name: str) -> Embedding:
         """
-        Return a list of all embeddings for the current organization.
+        Return the embedding for the provided embedding name.
+
+        Args:
+            name: The embedding name
 
         Returns:
-            A list of embedding objects.
+            The embedding object.
         """
-        results = self._adv_client.get_embeddings()
-        return [Embedding(self._adv_client, **data) for data in results]
+        # NB: It's safe to do the filtering client-side as we only allow 10 embeddings per org.
+        embeddings = self.get_embeddings()
+        for e in embeddings:
+            if e.name == name:
+                return e
+        raise labelbox.exceptions.ResourceNotFoundError(Embedding,
+                                                        dict(name=name))
