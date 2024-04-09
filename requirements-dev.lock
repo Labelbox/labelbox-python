@@ -8,6 +8,7 @@
 #   with-sources: false
 
 -e file:libs/labelbox
+-e file:libs/labelbox-internal-utils
 alabaster==0.7.13
     # via sphinx
 annotated-types==0.6.0
