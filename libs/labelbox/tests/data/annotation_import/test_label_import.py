@@ -69,7 +69,6 @@ def test_create_from_objects(client, configured_project, object_predictions,
         label_import.input_file_url, object_predictions)
 
 
-@pytest.xfail("PLT-612")
 def test_create_with_path_arg(client, tmp_path, configured_project, object_predictions,
                               annotation_import_test_helpers):
     project = configured_project
@@ -90,7 +89,6 @@ def test_create_with_path_arg(client, tmp_path, configured_project, object_predi
         label_import.input_file_url, object_predictions)
 
 
-@pytest.xfail("PLT-612")
 def test_create_from_local_file(client, tmp_path, configured_project, object_predictions,
                                 annotation_import_test_helpers):
     project = configured_project
