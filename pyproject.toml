@@ -39,3 +39,6 @@ markers = """
 
 [tool.rye.scripts]
 docs = "sphinx-build ./docs ./dist"
+
+[tool.setuptools.packages.find]
+where = ["libs/labelbox/src"]
