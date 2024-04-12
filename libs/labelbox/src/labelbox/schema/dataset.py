@@ -24,7 +24,7 @@ from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
 from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.embeddings import EmbeddingVector
+from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
