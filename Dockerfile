@@ -41,4 +41,4 @@ RUN rye config --set-bool behavior.global-python=true && \
     rye pin 3.8 && \
     rye sync
 
-CMD cd libs/labelbox && rye run integration && rye sync -f --features labelbox/data && rye run unit && rye run data
+CMD cd libs/labelbox; rye run integration; rye sync -f --features labelbox/data; rye run unit; rye run data
