@@ -105,7 +105,7 @@ jobs:
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
           LABELBOX_TEST_ENVIRON: prod
         run: |
-          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync
+          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute
           cd libs/labelbox
           rm pyproject.toml
           rye run pytest tests/integration
@@ -116,7 +116,7 @@ jobs:
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
           LABELBOX_TEST_ENVIRON: prod
         run: |
-          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --features data
+          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute --features data
           cd libs/labelbox
           rye run pytest tests/data
   pypi-publish:   
