@@ -584,7 +584,8 @@ class ExportTask:
                          metadata_header),
             _MultiGCSFileReader(),
             JsonConverter(),
-        ).start(stream_handler=lambda output: data.append(output.json_str))
+        ).start(stream_handler=lambda output: data.append(
+            json.loads(output.json_str)))
         return data
 
     @property
