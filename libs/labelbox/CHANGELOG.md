@@ -1,4 +1,15 @@
 # Changelog
+# Version 3.68.0 (2024-04-16)
+## Added
+* Added support for embeddings.
+* Introduced the use of 'rye' as a package manager for SDK contributors.
+* Implemented a unified 'create' method for AnnotationImport, MEAPredictionImport, and MALPredictionImport.
+* Enhanced annotation upload functionality to accept data row IDs, global keys, or external IDs directly for labelbox.data.annotation_types.label
+
+## Fixed
+* Ensure items in dataset.upsert_data_rows are not empty
+* Streamable export fix to report export_v2 errors as list of dictionaries, compatible with older releases
+
 # Version 3.67.0 (2024-04-05)
 ## Added
 * Added SECURITY.md file
