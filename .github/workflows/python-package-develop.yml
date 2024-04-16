@@ -66,7 +66,7 @@ jobs:
         working-directory: libs/labelbox
         run: |
           VERSION=$(date +"%Y.%m.%d.%H.%M")
-          echo "pip install --index-url https://test.pypi.org/simple/ labelbox-test@$VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "pip install --index-url https://test.pypi.org/simple/ --extra-index-url=https://pypi.org/simple/ labelbox-test@$VERSION" >> "$GITHUB_STEP_SUMMARY"
           rye sync
           rye version "$VERSION"
           rye run toml set --toml-path pyproject.toml project.name labelbox-test
