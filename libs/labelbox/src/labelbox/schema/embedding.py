@@ -64,8 +64,8 @@ class Embedding(BaseModel):
         is valid JSON, but the entire file itself is NOT.  The format of the
         file looks like:
 
-            {"id": DATAROW ID1, "vector": [ array of floats ]}
-            {"id": DATAROW ID2, "vector": [ array of floats ]}
+            {"id": DATAROW ID1, "vector": [ array of floats ]}\n
+            {"id": DATAROW ID2, "vector": [ array of floats ]}\n
             {"id": DATAROW ID3, "vector": [ array of floats ]}
 
         The vectors are added to the system in an async manner and it may take

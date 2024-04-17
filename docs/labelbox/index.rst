@@ -16,6 +16,7 @@ Labelbox Python SDK Documentation
     datarow
     datarow-metadata
     dataset
+    embedding
     enums
     exceptions
     export-task
