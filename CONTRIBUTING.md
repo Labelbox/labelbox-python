@@ -74,7 +74,7 @@ Samples are in the `examples` directory. Using samples for testing can increase 
 Make sure your notebook uses your source code:
 1. `ipython profile create`
 2. `ipython locate` - shows the location of the jupyter server config file.
-3. Open the ipython_config.py file (usually located in ~/.ipython/profile_default/) and add the following line of code: 
+3. Open the ipython_config.py file (usually located in ~/.ipython/profile_default/) and add the following lines of code: 
 ```
 c.InteractiveShellApp.exec_lines = [
   'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
