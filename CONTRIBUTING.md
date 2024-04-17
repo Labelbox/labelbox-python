@@ -33,6 +33,19 @@ Thank you for expressing your interest in contributing! To ensure that your cont
 
 Your contributions will be released as soon as it is approved and merged into the `develop` branch. Please consult the [Labelbox](https://docs.labelbox.com/docs/contacting-customer-support) team for if you need a more specific timeframe of when your contributions may be released.
 
+## Github Workflows
+
+![workflow](./docs/github-workflow.svg)
+
+The above describes the workflows that currently exist.
+
+* Github Branch Workflow
+  * When you push to a branch, it will create a build of the SDK that runs tests against **staging**. It will publish the build to `test.pypi.org` which can be downloaded for testing. Also, a docker image is built which can be used for testing as it has the SDK installed.
+* Github Develop Workflow
+  * When you push to a `develop` (main branch), it will create a build of the SDK that runs tests against **staging**. It will publish the build to `test.pypi.org` which can be downloaded for testing. Also, a docker image is built which can be used for testing as it has the SDK installed. This docker image is tagged with `develop`.
+* Github Publish Workflow
+  * When you run the publish workflow, it will create a build of the SDK that runs tests against **production**. It will publish the build to `pypi.org` which is what consumers of the SDK will normally use. Also, a docker image is built which can be used for testing as it has the SDK installed. This docker image is tagged with `latest`.
+
 ## General Prerequisites
 
 [Rye](https://rye-up.com/) must be installed before contributing to the repository as it is the tool used to managed the repository. 
