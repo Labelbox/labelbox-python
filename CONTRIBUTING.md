@@ -1,8 +1,8 @@
 # Contribution Guide
 
-The repository is laid out as a monorepo where each moudle in the monorepo lives as a folder in `libs/`. Each module should have a `README.md` describing the specific purpose of the module and its development requirements. 
+Each module in this monorepo is in a folder in `libs/` with a `README.md` describing the purpose of the module and its development requirements. 
 
-This is a general guide applicable to all modules in the repository.
+This is a general guide for all modules in this repository.
 
 ## Table of Contents
 
@@ -16,45 +16,42 @@ This is a general guide applicable to all modules in the repository.
 
 ## General Guidelines
 
-Thank you for expressing your interest in contributing! To ensure that your contribution aligns with our guidelines, please carefully review the following before proceeding:
+Thank you for your interest in contributing! To ensure that your contribution aligns with our guidelines, review the following tips:
 
-* For feature requests, we recommend consulting with [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) support or creating a [Github Issue](https://github.com/Labelbox/labelbox-python/issues).
-* We can only accept general solutions that address common issues rather than solutions designed for specific use cases. Example contributions encompass a wide range of activities, such as bug fixes and updates to dependencies.
-* Ensure that any new libraries added are compliant with the Apache license that governs the repository.
-* Ensure that you update any relevant docstrings and comments within the code you may add or change.
-* Ensure that any new Python components, such as classes, packages, or methods, that need to feature in the Labelbox documentation have entries in the file [index.rst](https://github.com/Labelbox/labelbox-python/blob/develop/docs/source/index.rst).
+* For feature requests, ask [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) or create a [Github Issue](https://github.com/Labelbox/labelbox-python/issues).
+* We accept general solutions that address common issues rather than specific use cases. Example contributions include a wide range of activities, such as bug fixes and updates to dependencies.
+* Ensure that any new libraries comply with this repository's Apache license.
+* Update any relevant docstrings and comments in the code you add or change.
+* Ensure that new Python components, such as classes, packages, or methods, that need to feature in the Labelbox documentation have entries in the file [index.rst](https://github.com/Labelbox/labelbox-python/blob/develop/docs/source/index.rst).
+* Add entries in [index.rst](https://github.com/Labelbox/labelbox-python/blob/develop/docs/source/index.rst) for new Python components, such as classes, packages, or methods, that need to feature in the Labelbox documentation.
 
 ## Branches and Tags
 
-* All development happens in per-feature branches prefixed by contributor's initials. For example `fs/feature_name`.
+* Develop in per-feature branches prefixed by your initials. For example `fs/feature_name`.
 * Approved PRs are merged to the `develop` branch.
 
 ## Release Steps
 
-Your contributions will be released as soon as it is approved and merged into the `develop` branch. Please consult the [Labelbox](https://docs.labelbox.com/docs/contacting-customer-support) team for if you need a more specific timeframe of when your contributions may be released.
+Your contributions are released when approved and merged. Consult [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) for a timeframe.
 
 ## General Prerequisites
 
-[Rye](https://rye-up.com/) must be installed before contributing to the repository as it is the tool used to managed the repository. 
+Install [Rye](https://rye-up.com/) before contributing. Rye manages this repository. [See details on why we use Rye](https://alpopkes.com/posts/python/packaging_tools/). TLDR: We use Rye for Environment, Package, Python, management, and Package publishing, and building is unified under a single tool for consistency of development. Alternatively, use one of our [Docker containers](https://github.com/Labelbox/labelbox-python/pkgs/container/labelbox-python) with `Rye` set up.
 
-To understand why Rye was chosen, see [here](https://alpopkes.com/posts/python/packaging_tools/). TLDR: Environment, Package, Python, management along with Package publishing and Package building is unified under a single tool for consistency of development.
-
-If you want to not deal with setting up `Rye`, feel free to use one of [Docker containers](https://github.com/Labelbox/labelbox-python/pkgs/container/labelbox-python) Labelbox has built which contains the entire with `Rye` setup.
-
-**You can use Poetry to manage the virtual environment.** There's nothing blocking you from using Poetry to manage the virtual environment as the standard `pyproject.toml` format is used, but you'll have to deal with managing Python yourself + be asked not to check in any `poetry.lock` files. Also, you'll have to run equivalent poetry commands that may not be listed in the documentation to perform the same general operations (testing, building, etc.).
+**You can use Poetry to manage the virtual environment** but must manage Python yourself and must run equivalent poetry commands not listed in the documentation to perform the same general operations (testing, building, etc.). The standard `pyproject.toml` format is used. Don't check in `poetry.lock` files.
 
 ## Setup and Building
 
-These are general steps that all modules in `libs/` adhere to given the prerequisite of the installation of `Rye` that are needed to setup a module for development and build it.
+Because `Rye` is used, all modules in `libs/` must adhere to these steps:
 
 * `rye sync` in the module folder you want to work on (EG `rye sync --all-features` to work on `labelbox`).
 * `rye build` to create a distribution in `dist/` which you can install into a Python environment (EG `pip install dist/labelbox-build.tar.gz`).
 
-It is generally **not** recommended to do `pip install -e .` with any Labelbox module to avoid virtual environment pollution. If you want to modify any module while making it compatible with your existing `pip` based projects, build a distribution and install it in your `pip` environment.
+To avoid virtual environment pollution, **don't** `pip install -e .` with any Labelbox module. To modify any module and make it compatible with your existing `pip` based projects, build a distribution and install it in your `pip` environment.
 
 ## Testing
 
-Each module within the repository will generally expected to implement three commands for testing: unit testing, integration testing, and linting/formatting. See the details in each module's `README.md` for more information.
+Each module is expected to implement three commands for testing: unit testing, integration testing, and linting/formatting. See the details in each module's `README.md` for details.
 
 ```bash
 rye run unit
@@ -64,7 +61,7 @@ rye run lint
 
 ## Documentation
 
-To generate documentation for all modules (`ReadTheDocs`), run the following command.
+To generate documentation for all modules (`ReadTheDocs`), run the following:
 
 ```bash
 rye run docs
@@ -72,15 +69,15 @@ rye run docs
 
 ## Jupyter Notebooks
 
-We have samples in the `examples` directory and using them for testing can help increase your productivity.
+Samples are in the `examples` directory. Using samples for testing can increase your productivity.
 
-Make sure your notebook will use your source code:
+Make sure your notebook uses your source code:
 1. `ipython profile create`
-2. `ipython locate` - will show where the config file is. This is the config file used by the jupyter server, since it runs via ipython
-3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
+2. `ipython locate` - shows the location of the jupyter server config file.
+3. Open the ipython_config.py file (usually located in ~/.ipython/profile_default/) and add the following line of code: 
 ```
 c.InteractiveShellApp.exec_lines = [
   'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
 ]
 ```
-4. Go to the root of your project and run `jupyter notebook` to start the server
+4. Go to the root of your project and run `jupyter notebook` to start the server.
