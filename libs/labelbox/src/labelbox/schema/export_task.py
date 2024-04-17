@@ -609,8 +609,10 @@ class ExportTask:
                              StreamType.RESULT, metadata_header),
                 _MultiGCSFileReader(),
                 JsonConverter(),
-            ).start(stream_handler=lambda output: data.append(
-                json.loads(output.json_str)))
+            ).start(stream_handler=lambda output: [
+                data.append(json.loads(row)) for row in output.json_str.split(
+                    '\n') if row
+            ])
             return data
         return self._task.result_url
 
