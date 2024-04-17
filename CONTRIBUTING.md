@@ -16,7 +16,7 @@ This is a general guide for all modules in this repository.
 
 ## General Guidelines
 
-Thank you for your interest in contributing! To ensure that your contribution aligns with our guidelines, review the following tips:
+Thank you for your interest in contributing! To ensure that your contribution meets our guidelines, review the following tips:
 
 * For feature requests, ask [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) or create a [Github Issue](https://github.com/Labelbox/labelbox-python/issues).
 * We accept general solutions that address common issues rather than specific use cases. Example contributions include a wide range of activities, such as bug fixes and updates to dependencies.
