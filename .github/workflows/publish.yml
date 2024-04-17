@@ -8,12 +8,8 @@ on:
         required: true
       skip-tests:
         description: 'Skip PROD Test (Do not do this unless there is an emergency)'
-        default: 'false'
-        required: true
-        type: choice
-        options:
-          - false
-          - true
+        default: false
+        type: boolean
 
 
 concurrency:
@@ -52,7 +48,7 @@ jobs:
           name: build
           path: ./dist
   test-build:
-    if: ${{ inputs.skip-tests }} != "true"
+    if: ${{ !inputs.skip-tests }}
     needs: ['build']
     runs-on: ubuntu-latest
     strategy:
@@ -121,7 +117,10 @@ jobs:
           rye run pytest tests/data
   pypi-publish:   
     runs-on: ubuntu-latest
-    needs: ['test-build']
+    needs: ['build', 'test-build']
+    if: |
+      always() &&
+      (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
     environment: 
       name: publish
       url: 'https://pypi.org/project/labelbox/'
@@ -138,7 +137,10 @@ jobs:
           packages-dir: artifact/
   container-publish:
     runs-on: ubuntu-latest
-    needs: ['test-build'] 
+    needs: ['build', 'test-build']
+    if: |
+      always() &&
+      (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
     steps:
