@@ -26,7 +26,7 @@ class Catalog:
     ) -> Union[Task, ExportTask]:
         """
         Creates a catalog export task with the given params, filters and returns the task.
-        
+
         >>>     import labelbox as lb
         >>>     client = lb.Client(<API_KEY>)
         >>>     catalog = client.get_catalog()
@@ -98,6 +98,7 @@ class Catalog:
 
         _params = params or CatalogExportParams({
             "attachments": False,
+            "embeddings": False,
             "metadata_fields": False,
             "data_row_details": False,
             "project_details": False,
@@ -142,6 +143,8 @@ class Catalog:
                         if media_type_override is not None else None,
                     "includeAttachments":
                         _params.get('attachments', False),
+                    "includeEmbeddings":
+                        _params.get('embeddings', False),
                     "includeMetadata":
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":

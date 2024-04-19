@@ -518,6 +518,7 @@ class Project(DbObject, Updateable, Deletable):
     ) -> Tuple[Task, bool]:
         _params = params or ProjectExportParams({
             "attachments": False,
+            "embeddings": False,
             "metadata_fields": False,
             "data_row_details": False,
             "project_details": False,
@@ -560,6 +561,8 @@ class Project(DbObject, Updateable, Deletable):
                         if media_type_override is not None else None,
                     "includeAttachments":
                         _params.get('attachments', False),
+                    "includeEmbeddings":
+                        _params.get('embeddings', False),
                     "includeMetadata":
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":

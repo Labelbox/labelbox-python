@@ -57,7 +57,7 @@ class ModelRun(DbObject):
                       label_ids: Optional[List[str]] = None,
                       project_id: Optional[str] = None,
                       timeout_seconds=3600):
-        """ 
+        """
         Adds data rows and labels to a Model Run
 
         Args:
@@ -273,16 +273,16 @@ class ModelRun(DbObject):
         name: str,
         predictions: Union[str, Path, Iterable[Dict], Iterable["Label"]],
     ) -> 'MEAPredictionImport':  # type: ignore
-        """ 
+        """
         Uploads predictions to a new Editor project.
-        
+
         Args:
             name (str): name of the AnnotationImport job
             predictions (str or Path or Iterable): url that is publicly accessible by Labelbox containing an
                 ndjson file
                 OR local path to an ndjson file
                 OR iterable of annotation rows
-        
+
         Returns:
             AnnotationImport
         """
@@ -566,6 +566,8 @@ class ModelRun(DbObject):
                         _params.get('media_type_override', None),
                     "includeAttachments":
                         _params.get('attachments', False),
+                    "includeEmbeddings":
+                        _params.get('embeddings', False),
                     "includeMetadata":
                         _params.get('metadata_fields', False),
                     "includeDataRowDetails":

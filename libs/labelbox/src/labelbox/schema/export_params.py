@@ -15,6 +15,7 @@ class DataRowParams(TypedDict):
     data_row_details: Optional[bool]
     metadata_fields: Optional[bool]
     attachments: Optional[bool]
+    embeddings: Optional[bool]
     media_type_override: Optional[MediaType]
 
 
