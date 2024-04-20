@@ -14,7 +14,6 @@ As a note, the repository is organized as a monorepo, with each module residing 
 - [Setup and Building](#setup-and-building)
 - [Testing](#testing)
 - [Documentation](#documentation)
-- [Jupyter Notebooks](#jupyter-notebooks)
 
 ## General Guidelines
 
