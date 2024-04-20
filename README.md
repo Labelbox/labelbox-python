@@ -15,9 +15,9 @@
 
 # Labelbox
 
-Labelbox is a data-centric AI platform for enterprises to develop, optimize, and use AI to solve problems and power new products and services.
+Labelbox is a powerful data-centric AI platform that empowers enterprises to develop, optimize, and leverage AI to solve complex problems and drive innovation in their products and services.
 
-Enterprises use Labelbox to curate data, generate high-quality human feedback data for computer vision and LLMs, evaluate model performance, and automate tasks by combining AI and human-centric workflows. The academic & research community uses Labelbox for cutting-edge AI research.
+With Labelbox, enterprises can easily curate and annotate data, generate high-quality human feedback data for computer vision and language models, evaluate and improve model performance, and automate tasks by seamlessly combining AI and human-centric workflows. The academic and research community also relies on Labelbox for cutting-edge AI research and experimentation.
 
 Visit [Labelbox](http://labelbox.com/) for more information.
 
@@ -26,6 +26,7 @@ Visit [Labelbox](http://labelbox.com/) for more information.
 - [Contribution Guidelines](#contribution-guidelines)
 - [Develop with AI Assistance](#develop-with-ai-assistance)
 - [Documentation](#documentation)
+- [Jupyter Notebooks](#jupyter-notebooks)
 
 ## Quick Start
    
@@ -49,7 +50,7 @@ If you'd like to install the SDK with enhanced functionality, which additional o
 pip install "labelbox[data]"
 ```
 
-**If you want to installed a version of Labelbox built locally, be aware that only tagged commits have been validated to fully work! Installing the latest from develop is at your own risk!**
+**Please note that if you prefer to build and install your own version of the SDK, it is important to be aware that only tagged commits have been thoroughly tested. Building from the head of develop branch carries some level of risk.**
 
 ### Validate Installation and API Key
 
@@ -65,7 +66,7 @@ task = dataset.create_data_rows(data_rows)
 task.wait_till_done()
 ```
 
-You should be set! Running the snippet above should create a dataset called `Test Dataset` with a single datarow with the text contents being `My First Data Row`. You can log into [Labelbox](http://labelbox.com/) to verify this. If you have any issues please file a Github Issue or contact [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support)  directly. For more advanced examples and information on the SDK, see [Documentation](#documentation) below.
+You should be set! Running the snippet above should create a dataset called `Test Dataset` with its content being `My First Data Row`. You can log into [Labelbox](http://labelbox.com/) to verify this. If you have any issues please file a Github Issue or contact [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) directly. For more advanced examples and information on the SDK, see [Documentation](#documentation) below.
 
 ## Contribution Guidelines
 We encourage anyone to contribute to this repository to help improve it. Please refer to [Contributing Guide](CONTRIBUTING.md) for detailed information on how to contribute. This guide also includes instructions for how to build and run the SDK locally.
@@ -75,8 +76,22 @@ We encourage anyone to contribute to this repository to help improve it. Please 
 Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window.
 
 ## Documentation
-The SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are some resources:
+The SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are links to that documentation:
 
 - [Labelbox Official Documentation](https://docs.labelbox.com/docs/overview)
 - [Jupyter Notebook Examples](https://github.com/Labelbox/labelbox-python/tree/master/examples)
 - [Python SDK Reference](https://labelbox-python.readthedocs.io/en/latest/)
+
+## Jupyter Notebooks
+We have samples in the `examples` directory to help you get started with the SDK.
+
+Make sure your notebook will use your source code:
+1. `ipython profile create`
+2. `ipython locate` - will show where the config file is. This is the config file used by the Jupyter server, since it runs via ipython
+3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
+```
+c.InteractiveShellApp.exec_lines = [
+  'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
+]
+```
+4. Go to the root of your project and run `jupyter notebook` to start the server.
