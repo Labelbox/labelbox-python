@@ -49,12 +49,12 @@ data = [
     "shapely>=2.0.3",
     "numpy>=1.24.4",
     "pillow>=10.2.0",
-    "opencv-python>=4.9.0.80",
     "typeguard>=4.1.5",
     "imagesize>=1.4.1",
     "pyproj>=3.5.0",
     "pygeotile>=1.0.6",
     "typing-extensions>=4.10.0",
+    "opencv-python-headless>=4.9.0.80",
 ]
 
 [build-system]
