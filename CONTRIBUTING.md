@@ -1,33 +1,32 @@
 # Contribution Guide
 
-The repository is laid out as a monorepo where each moudle in the monorepo lives as a folder in `libs/`. Each module should have a `README.md` describing the specific purpose of the module and its development requirements. 
+Thank you for expressing your interest in contributing! To ensure that your contribution aligns with our guidelines, please carefully review the following guide.
 
-This is a general guide applicable to all modules in the repository.
+As a note, the repository is organized as a monorepo, with each module residing in a folder within the `libs/` directory. Each module should have a corresponding `README.md` file that provides information on its purpose and how to contribute to it. This contribution guide applies to all modules in the repository.
 
 ## Table of Contents
 
 - [General Guidelines](#general-guidelines)
-- [Branches](#branches-and-tags)
+- [Branche and Tags](#branches-and-tags)
 - [Release Steps](#release-steps)
-- [Jupyter Notebooks](#jupyter-notebooks)
+- [Github Workflows](#github-workflows)
 - [General Prerequisites](#general-prerequisites)
 - [Setup and Building](#setup-and-building)
 - [Testing](#testing)
+- [Documentation](#documentation)
 
 ## General Guidelines
 
-Thank you for expressing your interest in contributing! To ensure that your contribution aligns with our guidelines, please carefully review the following before proceeding:
-
 * For feature requests, we recommend consulting with [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) support or creating a [Github Issue](https://github.com/Labelbox/labelbox-python/issues).
-* We can only accept general solutions that address common issues rather than solutions designed for specific use cases. Example contributions encompass a wide range of activities, such as bug fixes and updates to dependencies.
 * Ensure that any new libraries added are compliant with the Apache license that governs the repository.
 * Ensure that you update any relevant docstrings and comments within the code you may add or change.
 * Ensure that any new Python components, such as classes, packages, or methods, that need to feature in the Labelbox documentation have entries in the file [index.rst](https://github.com/Labelbox/labelbox-python/blob/develop/docs/source/index.rst).
 
 ## Branches and Tags
 
-* All development happens in per-feature branches prefixed by contributor's initials. For example `fs/feature_name`.
+* All development happens in feature branches ideally prefixed by contributor's initials. For example `fs/feature_name`.
 * Approved PRs are merged to the `develop` branch.
+* All releases align to a git tag.
 
 ## Release Steps
 
@@ -37,7 +36,7 @@ Your contributions will be released as soon as it is approved and merged into th
 
 ![workflow](./docs/github-workflow.svg)
 
-The above describes the workflows that currently exist.
+The above shows the Github workflows that currently exist in the repository.
 
 * Github Branch Workflow
   * When you push to a branch, it will create a build of the SDK that runs tests against **staging**. It will publish the build to `test.pypi.org` which can be downloaded for testing. Also, a docker image is built which can be used for testing as it has the SDK installed.
@@ -77,23 +76,8 @@ rye run lint
 
 ## Documentation
 
-To generate documentation for all modules (`ReadTheDocs`), run the following command.
+To generate documentation for all modules (`ReadTheDocs`), run the following command in the root of the repository.
 
 ```bash
 rye run docs
 ```
-
-## Jupyter Notebooks
-
-We have samples in the `examples` directory and using them for testing can help increase your productivity.
-
-Make sure your notebook will use your source code:
-1. `ipython profile create`
-2. `ipython locate` - will show where the config file is. This is the config file used by the jupyter server, since it runs via ipython
-3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
-```
-c.InteractiveShellApp.exec_lines = [
-  'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
-]
-```
-4. Go to the root of your project and run `jupyter notebook` to start the server
