@@ -78,7 +78,7 @@ class Environ(Enum):
 
 @pytest.fixture
 def image_url() -> str:
-    return IMAGE_URL
+    return MASKABLE_IMG_URL
 
 
 @pytest.fixture
