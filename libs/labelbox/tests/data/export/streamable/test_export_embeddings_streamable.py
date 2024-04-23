@@ -42,7 +42,7 @@ class TestExportEmbeddings:
         dataset.create_data_row(
             row_data=image_url,
             embeddings=[{
-                "embedding_id": "cbgvs529h0703001clvc6r2pm",  # embedding.id,
+                "embedding_id": embedding.id,
                 "vector": vector,
             }],
         )
