@@ -377,14 +377,6 @@ def client(environ: str):
 
 
 @pytest.fixture(scope="session")
-def image_url(client):
-    return client.upload_data(requests.get(MASKABLE_IMG_URL).content,
-                              content_type="image/jpeg",
-                              filename="image.jpeg",
-                              sign=True)
-
-
-@pytest.fixture(scope="session")
 def pdf_url(client):
     pdf_url = client.upload_file('tests/assets/loremipsum.pdf')
     return {"row_data": {"pdf_url": pdf_url,}, "global_key": str(uuid.uuid4())}
