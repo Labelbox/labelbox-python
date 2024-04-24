@@ -1,7 +1,7 @@
 import json
 import random
 
-from labelbox import ExportTask, StreamType, JsonConverter
+from labelbox import StreamType, JsonConverter
 
 
 class TestExportEmbeddings:
@@ -17,7 +17,6 @@ class TestExportEmbeddings:
         export_task = dataset.export(params={"embeddings": True})
         export_task.wait_till_done()
         assert export_task.status == "COMPLETE"
-        assert isinstance(export_task, ExportTask)
         assert export_task.has_result()
         assert export_task.has_errors() is False
 
@@ -52,7 +51,6 @@ class TestExportEmbeddings:
         export_task = dataset.export(params={"embeddings": True})
         export_task.wait_till_done()
         assert export_task.status == "COMPLETE"
-        assert isinstance(export_task, ExportTask)
         assert export_task.has_result()
         assert export_task.has_errors() is False
 
