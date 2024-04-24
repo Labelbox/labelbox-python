@@ -39,7 +39,7 @@ def get_annotation_lookup(
     annotation_lookup = defaultdict(list)
     for annotation in annotations:
         annotation_lookup[getattr(annotation, 'image_id', None) or
-                          getattr(annotation, 'name')].append(annotation)
+                          getattr(annotation, 'name', None)].append(annotation)
     return annotation_lookup
 
 
