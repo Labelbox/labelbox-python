@@ -1,7 +1,7 @@
 import sys
 from hashlib import md5
 
-from labelbox import pydantic_compat
+from .... import pydantic_compat
 
 
 class Categories(pydantic_compat.BaseModel):

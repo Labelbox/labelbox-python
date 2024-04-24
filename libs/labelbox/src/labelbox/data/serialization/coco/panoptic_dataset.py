@@ -6,7 +6,6 @@ from labelbox import pydantic_compat
 from tqdm import tqdm
 import numpy as np
 from PIL import Image
-import warnings
 
 from ...annotation_types.geometry import Polygon, Rectangle
 from ...annotation_types import Label
@@ -23,11 +22,6 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
                                 annotation: ObjectAnnotation,
                                 annotation_idx: int, image: CocoImage,
                                 category_id: int):
-
-    warnings.warn(
-        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
-        DeprecationWarning,
-        stacklevel=2)
 
     shapely = annotation.value.shapely
     if shapely.is_empty:
@@ -47,12 +41,6 @@ def vector_to_coco_segment_info(canvas: np.ndarray,
 
 def mask_to_coco_segment_info(canvas: np.ndarray, annotation,
                               annotation_idx: int, category_id):
-
-    warnings.warn(
-        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
-        DeprecationWarning,
-        stacklevel=2)
-
     color = id_to_rgb(annotation_idx)
     mask = annotation.value.draw(color=color)
     shapely = annotation.value.shapely
@@ -76,12 +64,6 @@ def process_label(label: Label,
     Masks become stuff
     Polygon and rectangle become thing
     """
-
-    warnings.warn(
-        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
-        DeprecationWarning,
-        stacklevel=2)
-
     annotations = get_annotation_lookup(label.annotations)
     image_id = get_image_id(label, idx)
     image = get_image(label, image_root, image_id)
