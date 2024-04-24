@@ -78,7 +78,7 @@ class Environ(Enum):
 
 @pytest.fixture
 def image_url() -> str:
-    return IMAGE_URL
+    return MASKABLE_IMG_URL
 
 
 @pytest.fixture
@@ -374,14 +374,6 @@ def client(environ: str):
     if environ == Environ.EPHEMERAL:
         return EphemeralClient()
     return IntegrationClient(environ)
-
-
-@pytest.fixture(scope="session")
-def image_url(client):
-    return client.upload_data(requests.get(MASKABLE_IMG_URL).content,
-                              content_type="image/jpeg",
-                              filename="image.jpeg",
-                              sign=True)
 
 
 @pytest.fixture(scope="session")
@@ -1043,3 +1035,11 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
 
     yield [project, data_row]
     project.delete()
+
+
+@pytest.fixture
+def embedding(client: Client):
+    uuid_str = uuid.uuid4().hex
+    embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
+    yield embedding
+    embedding.delete()
