@@ -5,7 +5,8 @@ from PIL import Image
 import imagesize
 
 from .path import PathSerializerMixin
-from labelbox.data.annotation_types import Label
+from ...annotation_types import Label
+import warnings
 
 
 class CocoImage(PathSerializerMixin):
@@ -19,6 +20,12 @@ class CocoImage(PathSerializerMixin):
 
 
 def get_image_id(label: Label, idx: int) -> int:
+
+    warnings.warn(
+        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+        DeprecationWarning,
+        stacklevel=2)
+
     if label.data.file_path is not None:
         file_name = label.data.file_path.replace(".jpg", "")
         if file_name.isdecimal():
@@ -27,6 +34,12 @@ def get_image_id(label: Label, idx: int) -> int:
 
 
 def get_image(label: Label, image_root: Path, image_id: str) -> CocoImage:
+
+    warnings.warn(
+        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+        DeprecationWarning,
+        stacklevel=2)
+
     path = Path(image_root, f"{image_id}.jpg")
     if not path.exists():
         im = Image.fromarray(label.data.value)
@@ -38,6 +51,12 @@ def get_image(label: Label, image_root: Path, image_id: str) -> CocoImage:
 
 
 def id_to_rgb(id: int) -> Tuple[int, int, int]:
+
+    warnings.warn(
+        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+        DeprecationWarning,
+        stacklevel=2)
+
     digits = []
     for _ in range(3):
         digits.append(id % 256)
@@ -46,6 +65,12 @@ def id_to_rgb(id: int) -> Tuple[int, int, int]:
 
 
 def rgb_to_id(red: int, green: int, blue: int) -> int:
+
+    warnings.warn(
+        "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+        DeprecationWarning,
+        stacklevel=2)
+
     id = blue * 256 * 256
     id += (green * 256)
     id += red
