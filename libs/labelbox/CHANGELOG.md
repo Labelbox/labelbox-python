@@ -1,4 +1,11 @@
 # Changelog
+# Version 3.69.0 (2024-04-25)
+## Added
+* Support to export embeddings from the SDK
+
+## Fixed
+* Used OpenCV's headless library in replacement of OpenCV's default library
+
 # Version 3.68.0 (2024-04-16)
 ## Added
 * Added support for embeddings.
