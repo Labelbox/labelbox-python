@@ -415,18 +415,18 @@ class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
 
 
 @dataclass
-class BufferedJSONConverterOutput:
+class BufferedJsonConverterOutput:
     """Output with the JSON object"""
     json: Any
 
 
-class _BufferedJSONConverter(Converter[BufferedJSONConverterOutput]):
+class _BufferedJsonConverter(Converter[BufferedJsonConverterOutput]):
     """Converts JSON data in a buffered manner
     """
     def convert(
         self, input_args: Converter.ConverterInputArgs
-    ) -> Iterator[BufferedJSONConverterOutput]:
-        yield BufferedJSONConverterOutput(json=json.loads(input_args.raw_data))
+    ) -> Iterator[BufferedJsonConverterOutput]:
+        yield BufferedJsonConverterOutput(json=json.loads(input_args.raw_data))
 
 
 class _BufferedGCSFileReader(_Reader): 
@@ -646,7 +646,7 @@ class ExportTask:
             _TaskContext(self._task.client, self._task.uid, StreamType.ERRORS,
                          metadata_header),
             _BufferedGCSFileReader(),
-            _BufferedJSONConverter(),
+            _BufferedJsonConverter(),
         ).start(stream_handler=lambda output: data.append(output.json))
         return data
 
@@ -668,7 +668,7 @@ class ExportTask:
                 _TaskContext(self._task.client, self._task.uid,
                              StreamType.RESULT, metadata_header),
                 _BufferedGCSFileReader(),
-                _BufferedJSONConverter(),
+                _BufferedJsonConverter(),
             ).start(stream_handler=lambda output: data.append(output.json))
             return data
         return self._task.result_url
