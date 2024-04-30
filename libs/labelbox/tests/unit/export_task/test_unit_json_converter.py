@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 from labelbox.schema.export_task import Converter, JsonConverter, Range, _MetadataFileInfo
@@ -25,6 +26,25 @@ class TestJsonConverter:
                 assert output.current_offset == current_offset
                 assert output.json_str == ndjson[idx]
                 current_offset += len(output.json_str) + 1
+
+    def test_with_correct_ndjson_with_odd_characters(self):
+        content = json.dumps({ "data_row": "\n{}{\n$" })
+        file_content = "{}\n".format(content)
+        input_args = Converter.ConverterInputArgs(
+            ctx=MagicMock(),
+            file_info=_MetadataFileInfo(
+                offsets=Range(start=0, end=len(file_content) - 1),
+                lines=Range(start=0, end=1),
+                file="file.ndjson",
+            ),
+            raw_data=file_content,
+        )
+        print(file_content)
+        with JsonConverter() as converter:
+            output = next(converter.convert(input_args))
+            assert output.current_line == 0
+            assert output.current_offset == 0
+            assert output.json_str == content
 
     def test_with_no_newline_at_end(self, generate_random_ndjson):
         line_count = 10

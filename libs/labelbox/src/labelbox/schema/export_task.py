@@ -106,33 +106,15 @@ class JsonConverterOutput:
 
 
 class JsonConverter(Converter[JsonConverterOutput]):  # pylint: disable=too-few-public-methods
-    """Converts JSON data."""
+    """Converts NDJSON data."""
 
     def _find_json_object_offsets(self, data: str) -> List[Tuple[int, int]]:
         object_offsets: List[Tuple[int, int]] = []
-        stack = []
-        current_object_start = None
-
-        for index, char in enumerate(data):
-            if char == "{":
-                stack.append(char)
-                if len(stack) == 1:
-                    current_object_start = index
-                    # we need to account for scenarios where data lands in the middle of an object
-                    # and the object is not the last one in the data
-                    if index > 0 and data[index -
-                                          1] == "\n" and not object_offsets:
-                        object_offsets.append((0, index - 1))
-            elif char == "}" and stack:
-                stack.pop()
-                # this covers cases where the last object is either followed by a newline or
-                # it is missing
-                if len(stack) == 0 and (len(data) == index + 1 or
-                                        data[index + 1] == "\n"
-                                       ) and current_object_start is not None:
-                    object_offsets.append((current_object_start, index + 1))
-                    current_object_start = None
-
+        split_data = data.strip().split("\n")
+        current_offset = 0
+        for line in split_data:
+            object_offsets.append((current_offset, current_offset + len(line) - 1))
+            current_offset += len(line) + 1
         # we also need to account for scenarios where data lands in the middle of the last object
         return object_offsets if object_offsets else [(0, len(data) - 1)]
 
@@ -415,7 +397,7 @@ class Stream(Generic[OutputT]):
     def __iter__(self):
         yield from self._fetch()
 
-    def _fetch(self,) -> Iterator[OutputT]:
+    def _fetch(self) -> Iterator[OutputT]:
         """Fetches the result data.
         Returns an iterator that yields the offset and the data.
         """
