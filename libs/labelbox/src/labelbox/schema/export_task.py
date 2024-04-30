@@ -16,6 +16,7 @@ from typing import (
     Union,
     TYPE_CHECKING,
     overload,
+    Any,
 )
 
 import requests
@@ -414,17 +415,19 @@ class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
 
 
 @dataclass
-class BufferedJSONConvertorOutput:
+class BufferedJSONConverterOutput:
     """Output with the JSON object"""
-    json: any
+    json: Any
 
-class _BufferedJSONConvertor(Converter[BufferedJSONConvertorOutput]): 
+
+class _BufferedJSONConverter(Converter[BufferedJSONConverterOutput]):
     """Converts JSON data in a buffered manner
     """
     def convert(
         self, input_args: Converter.ConverterInputArgs
-    ) -> Iterator[BufferedJSONConvertorOutput]:
-        yield BufferedJSONConvertorOutput(json=json.loads(input_args.raw_data))
+    ) -> Iterator[BufferedJSONConverterOutput]:
+        yield BufferedJSONConverterOutput(json=json.loads(input_args.raw_data))
+
 
 class _BufferedGCSFileReader(_Reader): 
     """Reads data from multiple GCS files and buffer them to disk"""
@@ -643,7 +646,7 @@ class ExportTask:
             _TaskContext(self._task.client, self._task.uid, StreamType.ERRORS,
                          metadata_header),
             _BufferedGCSFileReader(),
-            _BufferedJSONConvertor(),
+            _BufferedJSONConverter(),
         ).start(stream_handler=lambda output: data.append(output.json))
         return data
 
@@ -665,7 +668,7 @@ class ExportTask:
                 _TaskContext(self._task.client, self._task.uid,
                              StreamType.RESULT, metadata_header),
                 _BufferedGCSFileReader(),
-                _BufferedJSONConvertor(),
+                _BufferedJSONConverter(),
             ).start(stream_handler=lambda output: data.append(output.json))
             return data
         return self._task.result_url
