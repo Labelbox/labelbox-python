@@ -19,6 +19,8 @@ from typing import (
 )
 
 import requests
+import warnings
+import tempfile
 from labelbox import pydantic_compat
 
 from labelbox.schema.task import Task
@@ -106,7 +108,14 @@ class JsonConverterOutput:
 
 
 class JsonConverter(Converter[JsonConverterOutput]):  # pylint: disable=too-few-public-methods
-    """Converts JSON data."""
+    """Converts JSON data.
+    
+    Deprecated: This converter is deprecated and will be removed in a future release.
+    """
+    
+    def __init__(self) -> None:
+        warnings.warn("JSON converter is deprecated and will be removed in a future release")
+        super().__init__()
 
     def _find_json_object_offsets(self, data: str) -> List[Tuple[int, int]]:
         object_offsets: List[Tuple[int, int]] = []
@@ -166,7 +175,8 @@ class FileConverterOutput:
 
 
 class FileConverter(Converter[FileConverterOutput]):
-    """Converts data to a file."""
+    """Converts data to a file.
+    """
 
     def __init__(self, file_path: str) -> None:
         super().__init__()
@@ -248,6 +258,7 @@ class FileRetrieverByOffset(FileRetrieverStrategy):  # pylint: disable=too-few-p
 
     def _find_line_at_offset(self, file_content: str,
                              target_offset: int) -> int:
+        # TODO: Remove this, incorrect parsing of JSON to find braces
         stack = []
         line_number = 0
 
@@ -313,6 +324,7 @@ class FileRetrieverByLine(FileRetrieverStrategy):  # pylint: disable=too-few-pub
             )
 
     def _find_offset_of_line(self, file_content: str, target_line: int):
+        # TODO: Remove this, incorrect parsing of JSON to find braces
         start_offset = None
         stack = []
         line_number = 0
@@ -377,9 +389,13 @@ class _Reader(ABC):  # pylint: disable=too-few-public-methods
 
 
 class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
-    """Reads data from multiple GCS files in a seamless way."""
+    """Reads data from multiple GCS files in a seamless way.
+    
+    Deprecated: This reader is deprecated and will be removed in a future release.
+    """
 
     def __init__(self):
+        warnings.warn("_MultiGCSFileReader is deprecated and will be removed in a future release")
         super().__init__()
         self._retrieval_strategy = None
 
@@ -395,6 +411,50 @@ class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
             file_info, raw_data = result
             yield file_info, raw_data
             result = self._retrieval_strategy.get_next_chunk()
+
+
+@dataclass
+class BufferedJSONConvertorOutput:
+    """Output with the JSON object"""
+    json: any
+
+class _BufferedJSONConvertor(Converter[BufferedJSONConvertorOutput]): 
+    """Converts JSON data in a buffered manner
+    """
+    def convert(
+        self, input_args: Converter.ConverterInputArgs
+    ) -> Iterator[BufferedJSONConvertorOutput]:
+        yield BufferedJSONConvertorOutput(json=json.loads(input_args.raw_data))
+
+class _BufferedGCSFileReader(_Reader): 
+    """Reads data from multiple GCS files and buffer them to disk"""
+
+    def __init__(self):
+        super().__init__()
+        self._retrieval_strategy = None
+
+    def set_retrieval_strategy(self, strategy: FileRetrieverStrategy) -> None:
+        """Sets the retrieval strategy."""
+        self._retrieval_strategy = strategy
+
+    def read(self) -> Iterator[Tuple[_MetadataFileInfo, str]]:
+        if not self._retrieval_strategy:
+            raise ValueError("retrieval strategy not set")
+
+        with tempfile.NamedTemporaryFile(mode='w+') as temp_file:
+            result = self._retrieval_strategy.get_next_chunk()
+            while result:
+                file_info, raw_data = result
+                temp_file.seek(file_info.offsets.start)
+                temp_file.write(raw_data)
+                result = self._retrieval_strategy.get_next_chunk()
+            # reset the line to starting to read
+            temp_file.seek(0)
+            for idx, line in enumerate(temp_file):
+                yield _MetadataFileInfo(
+                    offsets=Range(start=0, end=len(line) - 1), 
+                    lines=Range(start=idx, end=idx + 1), 
+                    file=temp_file.name), line
 
 
 class Stream(Generic[OutputT]):
@@ -582,12 +642,9 @@ class ExportTask:
         Stream(
             _TaskContext(self._task.client, self._task.uid, StreamType.ERRORS,
                          metadata_header),
-            _MultiGCSFileReader(),
-            JsonConverter(),
-        ).start(stream_handler=lambda output: [
-            data.append(json.loads(row)) for row in output.json_str.split(
-                '\n') if row
-        ])
+            _BufferedGCSFileReader(),
+            _BufferedJSONConvertor(),
+        ).start(stream_handler=lambda output: data.append(output.json))
         return data
 
     @property
@@ -607,12 +664,9 @@ class ExportTask:
             Stream(
                 _TaskContext(self._task.client, self._task.uid,
                              StreamType.RESULT, metadata_header),
-                _MultiGCSFileReader(),
-                JsonConverter(),
-            ).start(stream_handler=lambda output: [
-                data.append(json.loads(row)) for row in output.json_str.split(
-                    '\n') if row
-            ])
+                _BufferedGCSFileReader(),
+                _BufferedJSONConvertor(),
+            ).start(stream_handler=lambda output: data.append(output.json))
             return data
         return self._task.result_url
 
