@@ -39,7 +39,6 @@ class TestJsonConverter:
             ),
             raw_data=file_content,
         )
-        print(file_content)
         with JsonConverter() as converter:
             output = next(converter.convert(input_args))
             assert output.current_line == 0
