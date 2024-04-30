@@ -22,6 +22,7 @@ from typing import (
 import requests
 import warnings
 import tempfile
+import os
 from labelbox import pydantic_compat
 
 from labelbox.schema.task import Task
@@ -443,21 +444,23 @@ class _BufferedGCSFileReader(_Reader):
     def read(self) -> Iterator[Tuple[_MetadataFileInfo, str]]:
         if not self._retrieval_strategy:
             raise ValueError("retrieval strategy not set")
-
-        with tempfile.NamedTemporaryFile(mode='w+') as temp_file:
+        # create a buffer
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
             result = self._retrieval_strategy.get_next_chunk()
             while result:
                 file_info, raw_data = result
                 temp_file.seek(file_info.offsets.start)
                 temp_file.write(raw_data)
                 result = self._retrieval_strategy.get_next_chunk()
-            # reset the line to starting to read
-            temp_file.seek(0)
-            for idx, line in enumerate(temp_file):
+        # read buffer
+        with open(temp_file.name, 'r') as temp_file_reopened:
+            for idx, line in enumerate(temp_file_reopened):
                 yield _MetadataFileInfo(
                     offsets=Range(start=0, end=len(line) - 1), 
                     lines=Range(start=idx, end=idx + 1), 
                     file=temp_file.name), line
+        # manually delete buffer
+        os.unlink(temp_file.name)
 
 
 class Stream(Generic[OutputT]):
