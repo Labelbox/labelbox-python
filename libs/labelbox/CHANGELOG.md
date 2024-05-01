@@ -1,4 +1,8 @@
 # Changelog
+# Version 3.69.1 (2024-05-01)
+## Fixed
+* Fixed a bug with certain types of content not being returned as a result of `ExportTask.result` or `ExportTask.errors`
+
 # Version 3.69.0 (2024-04-25)
 ## Added
 * Support to export embeddings from the SDK
