@@ -38,6 +38,7 @@ from labelbox.schema.identifiables import GlobalKeys
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.media_type import MediaType, get_media_type_validation_error
 from labelbox.schema.model import Model
+from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 from labelbox.schema.ontology import Tool, Classification, FeatureSchema
@@ -594,6 +595,56 @@ class Client:
         res = self.execute(query_string, params)
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
+
+    def create_model_config(self, name: str, model_id: str, inference_params: dict) -> ModelConfig:
+        """ Creates a new model config with the given params.
+            Model configs are scoped to organizations, and can be reused between projects.
+
+        Args:
+            name (str): Name of the model config
+            model_id (str): ID of model to configure
+            inference_params (dict): JSON of model configuration parameters.
+
+        Returns:
+            str, id of the created model config
+        """
+
+        query = """mutation CreateModelConfigPyApi($modelId: ID!, $inferenceParams: Json!, $name: String!)  {
+                    createModelConfig(input: {modelId: $modelId, inferenceParams: $inferenceParams, name: $name}) {
+                        modelId
+                        inferenceParams
+                        id
+                        name
+                    }
+                }"""
+        params = {
+            "modelId": model_id,
+            "inferenceParams": inference_params,
+            "name": name
+        }
+        result = self.execute(query, params)
+        return ModelConfig(self, result['createModelConfig'])
+
+    def delete_model_config(self, id: str) -> bool:
+        """ Deletes an existing model config with the given id
+
+        Args:
+            id (str): ID of existing model config
+
+        Returns:
+            bool, indicates if the operation was a success.
+        """
+
+        query = """mutation DeleteModelConfigPyApi($id: ID!)  {
+                    deleteModelConfig(input: {id: $id}) {
+                        success
+                    }
+                }"""
+        params = {
+            "id": id
+        }
+        result = self.execute(query, params)
+        return result['deleteModelConfig']['success']
 
     def create_dataset(self,
                        iam_integration=IAMIntegration._DEFAULT,
