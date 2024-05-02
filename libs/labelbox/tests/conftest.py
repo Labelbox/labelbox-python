@@ -429,6 +429,12 @@ def consensus_project(client, rand_gen):
 
 
 @pytest.fixture
+def model_config(client, rand_gen, valid_model_id):
+    model_config = client.create_model_config(name=rand_gen(str), model_id=valid_model_id, inference_params = {"param": "value"})
+    yield model_config
+    client.delete_model_config(model_config.uid)
+
+@pytest.fixture
 def consensus_project_with_batch(consensus_project, initial_dataset, rand_gen,
                                  image_url):
     project = consensus_project
@@ -1043,3 +1049,7 @@ def embedding(client: Client):
     embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
     yield embedding
     embedding.delete()
+
+@pytest.fixture
+def valid_model_id():
+    return "2c903542-d1da-48fd-9db1-8c62571bd3d2"

@@ -5,6 +5,7 @@ __version__ = "3.69.1"
 from labelbox.client import Client
 from labelbox.schema.project import Project
 from labelbox.schema.model import Model
+from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.annotation_import import MALPredictionImport, MEAPredictionImport, LabelImport, MEAToMALPredictionImport
 from labelbox.schema.dataset import Dataset
@@ -29,6 +30,7 @@ from labelbox.schema.model_run import ModelRun, DataSplit
 from labelbox.schema.benchmark import Benchmark
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.project_resource_tag import ProjectResourceTag
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.slice import Slice, CatalogSlice, ModelSlice

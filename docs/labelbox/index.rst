@@ -29,12 +29,14 @@ Labelbox Python SDK Documentation
     labeling-frontend-options
     labeling-parameter-override
     model
+    model-config
     model-run
     ontology
     ontology_kind
     organization
     pagination
     project
+    project-model-config
     quality-mode
     resource-tag
     review

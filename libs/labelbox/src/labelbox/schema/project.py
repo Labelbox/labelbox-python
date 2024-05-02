@@ -33,6 +33,7 @@ from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
@@ -135,6 +136,28 @@ class Project(DbObject, Updateable, Deletable):
 
     def is_chat_evaluation(self) -> bool:
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
+
+    def project_model_configs(self):
+        query_str = """query ProjectModelConfigsPyApi($id: ID!) {
+            project(where: {id : $id}) {
+                projectModelConfigs {
+                    id
+                    modelConfigId
+                    modelConfig {
+                        id
+                        modelId
+                        inferenceParams
+                    }
+                    projectId
+                }
+            }
+        }"""
+        data = {"id": self.uid}
+        res = self.client.execute(query_str, data)
+        return [
+            ProjectModelConfig(self.client, projectModelConfig)
+            for projectModelConfig in res["project"]["projectModelConfigs"]
+        ]
 
     def update(self, **kwargs):
         """ Updates this project with the specified attributes
@@ -1225,6 +1248,50 @@ class Project(DbObject, Updateable, Deletable):
             return QueueMode.Dataset
         else:
             raise ValueError("Status not known")
+
+    def add_model_config(self, model_config_id: str) -> str:
+        """ Adds a model config to this project.
+
+        Args:
+            model_config_id (str): ID of a model config to add to this project.
+
+        Returns:
+            str, ID of the project model config association. This is needed for updating and deleting associations.
+        """
+
+        query = """mutation CreateProjectModelConfigPyApi($projectId: ID!, $modelConfigId: ID!)  {
+                    createProjectModelConfig(input: {projectId: $projectId, modelConfigId: $modelConfigId}) {
+                        projectModelConfigId
+                    }
+                }"""
+
+        params = {
+            "projectId": self.uid,
+            "modelConfigId": model_config_id,
+        }
+        result = self.client.execute(query, params)
+        return result["createProjectModelConfig"]["projectModelConfigId"]
+
+    def remove_project_model_config(self, project_model_config_id: str) -> bool:
+        """ Deletes the association between a model config and this project.
+
+        Args:
+            project_model_config_id (str): ID of a project model config association to delete for this project.
+
+        Returns:
+            bool, indicates if the operation was a success.
+        """
+        query = """mutation DeleteProjectModelConfigPyApi($id: ID!)  {
+                    deleteProjectModelConfig(input: {id: $id}) {
+                        success
+                    }
+                }"""
+
+        params = {
+            "id": project_model_config_id,
+        }
+        result = self.client.execute(query, params)
+        return result["deleteProjectModelConfig"]["success"]
 
     def set_labeling_parameter_overrides(
             self, data: List[LabelingParameterOverrideInput]) -> bool:
