@@ -7,7 +7,7 @@ As a note, the repository is organized as a monorepo, with each module residing 
 ## Table of Contents
 
 - [General Guidelines](#general-guidelines)
-- [Branche and Tags](#branches-and-tags)
+- [Branches and Tags](#branches-and-tags)
 - [Release Steps](#release-steps)
 - [Github Workflows](#github-workflows)
 - [General Prerequisites](#general-prerequisites)
