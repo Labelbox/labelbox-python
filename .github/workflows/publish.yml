@@ -150,7 +150,7 @@ jobs:
       - name: downcase CONTAINER_IMAGE
         run: |
           echo "CONTAINER_IMAGE=${CONTAINER_IMAGE,,}" >> ${GITHUB_ENV}
-  
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
   
@@ -164,6 +164,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
+          context: .
+          file: ./libs/labelbox/Dockerfile
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: true
   
