@@ -939,10 +939,12 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self,
-                                             name,
-                                             feature_schema_ids,
-                                             media_type=None) -> Ontology:
+    def create_ontology_from_feature_schemas(
+            self,
+            name,
+            feature_schema_ids,
+            media_type: MediaType = None,
+            editor_task_type: EditorTaskType = None) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -980,7 +982,10 @@ class Client:
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
         normalized = {'tools': tools, 'classifications': classifications}
-        return self.create_ontology(name, normalized, media_type)
+        return self.create_ontology(name=name,
+                                    normalized=normalized,
+                                    media_type=media_type,
+                                    editor_task_type=editor_task_type)
 
     def delete_unused_feature_schema(self, feature_schema_id: str) -> None:
         """
@@ -1167,13 +1172,11 @@ class Client:
                 "Failed to get unused feature schemas, message: " +
                 str(response.json()['message']))
 
-    def create_ontology(
-            self,
-            name,
-            normalized,
-            media_type: MediaType = None,
-            editor_task_type: EditorTaskType = None
-    ) -> Ontology:
+    def create_ontology(self,
+                        name,
+                        normalized,
+                        media_type: MediaType = None,
+                        editor_task_type: EditorTaskType = None) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -1205,7 +1208,8 @@ class Client:
             if EditorTaskType.is_supported(editor_task_type):
                 editor_task_type = editor_task_type.value
             else:
-                raise EditorTaskType.get_editor_task_type_validation_error(editor_task_type)
+                raise EditorTaskType.get_editor_task_type_validation_error(
+                    editor_task_type)
 
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
                            upsertOntology(data: $data){ %s }
@@ -1228,8 +1232,15 @@ class Client:
             name=name,
             normalized=normalized,
             media_type=MediaType.Conversational,
-            editor_task_type=EditorTaskType.ModelChatEvaluation
-        )
+            editor_task_type=EditorTaskType.ModelChatEvaluation)
+
+    def create_model_chat_evaluation_ontology_from_feature_schemas(
+            self, name, feature_schema_ids):
+        return self.create_ontology_from_feature_schemas(
+            name=name,
+            feature_schema_ids=feature_schema_ids,
+            media_type=MediaType.Conversational,
+            editor_task_type=EditorTaskType.ModelChatEvaluation)
 
     def create_feature_schema(self, normalized):
         """
