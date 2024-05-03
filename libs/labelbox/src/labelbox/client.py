@@ -1230,19 +1230,19 @@ class Client:
     def create_model_chat_evaluation_ontology(self, name, normalized):
         """
         Creates a model chat evalutation ontology from normalized data
-            >>> normalized = {"tools" : [{'tool': 'model-output-single-selection', 'name': 'model output single selection', 'color': '#ff0000',}, 
-                                         {'tool': 'model-output-multi-selection', 'name': 'model output multi selection', 'color': '#00ff00',}, 
-                                         {'tool': 'model-output-ranking', 'name': 'model output multi ranking', 'color': '#0000ff',}]
+            >>> normalized = {"tools" : [{'tool': 'message-single-selection', 'name': 'model output single selection', 'color': '#ff0000',},
+                                         {'tool': 'message-multi-selection', 'name': 'model output multi selection', 'color': '#00ff00',},
+                                         {'tool': 'message-ranking', 'name': 'model output multi ranking', 'color': '#0000ff',}]
                              }
             >>> ontology = client.create_ontology("ontology-name", normalized)
 
         Or use the ontology builder
             >>> ontology_builder = OntologyBuilder(tools=[
-                Tool(tool=Tool.Type.MODEL_OUTPUT_SINGLE_SELECTION,
+                Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
                     name="model output single selection"),
-                Tool(tool=Tool.Type.MODEL_OUTPUT_MULTI_SELECTION,
+                Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
                     name="model output multi selection"),
-                Tool(tool=Tool.Type.MODEL_OUTPUT_MULTI_RANKING,
+                Tool(tool=Tool.Type.MESSAGE_RANKING,
                     name="model output multi ranking"),
             ],)
 

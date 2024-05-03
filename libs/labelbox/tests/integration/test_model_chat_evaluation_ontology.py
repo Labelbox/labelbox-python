@@ -5,12 +5,11 @@ from labelbox import MediaType
 def test_create_model_chat_evaluation_ontology(client, rand_gen):
     ontology_name = f"test-model-chat-evaluation-ontology-{rand_gen(str)}"
     ontology_builder = OntologyBuilder(tools=[
-        Tool(tool=Tool.Type.MODEL_OUTPUT_SINGLE_SELECTION,
+        Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
              name="model output single selection"),
-        Tool(tool=Tool.Type.MODEL_OUTPUT_MULTI_SELECTION,
+        Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
              name="model output multi selection"),
-        Tool(tool=Tool.Type.MODEL_OUTPUT_MULTI_RANKING,
-             name="model output multi ranking"),
+        Tool(tool=Tool.Type.MESSAGE_RANKING, name="model output multi ranking"),
     ],)
     ontology = None
 
@@ -35,7 +34,7 @@ def test_ontology_create_feature_schema(client, rand_gen):
         features = None
         ontology_name = f"test-model-chat-evaluation-ontology-from-features{rand_gen(str)}"
         tools = [{
-            'tool': 'model-output-single-selection',
+            'tool': 'message-single-selection',
             'name': 'model output single selection',
             'required': False,
             'color': '#ff0000',
@@ -43,7 +42,7 @@ def test_ontology_create_feature_schema(client, rand_gen):
             'schemaNodeId': None,
             'featureSchemaId': None
         }, {
-            'tool': 'model-output-multi-selection',
+            'tool': 'message-multi-selection',
             'name': 'model output multi selection',
             'required': False,
             'color': '#00ff00',
@@ -51,7 +50,7 @@ def test_ontology_create_feature_schema(client, rand_gen):
             'schemaNodeId': None,
             'featureSchemaId': None
         }, {
-            'tool': 'model-output-ranking',
+            'tool': 'message-ranking',
             'name': 'model output multi ranking',
             'required': False,
             'color': '#0000ff',
