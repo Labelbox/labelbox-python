@@ -37,6 +37,7 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
+from labelbox.schema.ontology_kind import (EditorTaskType)
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -115,6 +116,7 @@ class Project(DbObject, Updateable, Deletable):
     auto_audit_percentage = Field.Float("auto_audit_percentage")
     # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
     media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
+    editor_task_type = Field.Enum(EditorTaskType, "editor_task_type")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")

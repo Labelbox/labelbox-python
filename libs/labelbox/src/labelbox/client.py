@@ -21,7 +21,7 @@ from labelbox import utils
 from labelbox.adv_client import AdvClient
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Entity
+from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
@@ -52,7 +52,8 @@ from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogPar
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
-from labelbox.schema.editor_task_type import EditorTaskType
+from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
+                                           EditorTaskType)
 
 logger = logging.getLogger(__name__)
 
@@ -564,7 +565,7 @@ class Client:
         """
         return self._get_all(Entity.LabelingFrontend, where)
 
-    def _create(self, db_object_type, data):
+    def _create(self, db_object_type, data, extra_params={}):
         """ Creates an object on the server. Attribute values are
             passed as keyword arguments:
 
@@ -580,12 +581,14 @@ class Client:
         """
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
+
         data = {
             db_object_type.attribute(attr) if isinstance(attr, str) else attr:
                 value.uid if isinstance(value, DbObject) else value
             for attr, value in data.items()
         }
 
+        data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)
         res = res["create%s" % db_object_type.type_name()]
@@ -700,17 +703,25 @@ class Client:
             )
 
         media_type = kwargs.get("media_type")
-        if media_type:
-            if MediaType.is_supported(media_type):
-                media_type = media_type.value
-            else:
-                raise TypeError(f"{media_type} is not a valid media type. Use"
-                                f" any of {MediaType.get_supported_members()}"
-                                " from MediaType. Example: MediaType.Image.")
+        if media_type and MediaType.is_supported(media_type):
+            media_type_value = media_type.value
+        elif media_type:
+            raise TypeError(f"{media_type} is not a valid media type. Use"
+                            f" any of {MediaType.get_supported_members()}"
+                            " from MediaType. Example: MediaType.Image.")
         else:
             logger.warning(
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
+
+        ontology_kind = kwargs.pop("ontology_kind", None)
+        if ontology_kind and OntologyKind.is_supported(ontology_kind):
+            editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
+                ontology_kind, media_type).value
+        elif ontology_kind:
+            raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
+        else:
+            editor_task_type_value = None
 
         quality_mode = kwargs.get("quality_mode")
         if not quality_mode:
@@ -729,16 +740,34 @@ class Client:
         else:
             raise ValueError(f"{quality_mode} is not a valid quality mode.")
 
-        return self._create(Entity.Project, {
-            **data,
-            **({
-                "media_type": media_type
-            } if media_type else {})
-        })
+        params = {**data}
+        if media_type_value:
+            params["media_type"] = media_type_value
+        if editor_task_type_value:
+            params["editor_task_type"] = editor_task_type_value
 
-    def create_model_chat_project(self, **kwargs) -> Project:
-        kwargs["media_type"] = media_type.MediaType.Conversational
-        kwargs["editor_task_type"] = editor_task_type.EditorTaskType.ModelChatEvaluation
+        extra_params = {
+            Field.String("dataset_name_or_id"):
+                params.pop("dataset_name_or_id", None),
+            Field.Boolean("append_to_existing_dataset"):
+                params.pop("append_to_existing_dataset", None),
+            Field.Int("data_row_count"):
+                params.pop("data_row_count", None),
+        }
+        extra_params = {k: v for k, v in extra_params.items() if v is not None}
+
+        return self._create(Entity.Project, params, extra_params)
+
+    def create_model_evalution_project(self,
+                                       dataset_name_or_id: str,
+                                       append_to_existing_dataset: bool = False,
+                                       data_row_count: int = 100,
+                                       **kwargs) -> Project:
+        kwargs["media_type"] = MediaType.Conversational
+        kwargs["ontology_kind"] = OntologyKind.ModelEvaluation
+        kwargs["dataset_name_or_id"] = dataset_name_or_id
+        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
+        kwargs["data_row_count"] = data_row_count
 
         return self.create_project(**kwargs)
 
@@ -950,7 +979,7 @@ class Client:
             name,
             feature_schema_ids,
             media_type: MediaType = None,
-            editor_task_type: EditorTaskType = None) -> Ontology:
+            ontology_kind: OntologyKind = None) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -988,10 +1017,11 @@ class Client:
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
         normalized = {'tools': tools, 'classifications': classifications}
+
         return self.create_ontology(name=name,
                                     normalized=normalized,
                                     media_type=media_type,
-                                    editor_task_type=editor_task_type)
+                                    ontology_kind=ontology_kind)
 
     def delete_unused_feature_schema(self, feature_schema_id: str) -> None:
         """
@@ -1182,7 +1212,7 @@ class Client:
                         name,
                         normalized,
                         media_type: MediaType = None,
-                        editor_task_type: EditorTaskType = None) -> Ontology:
+                        ontology_kind: OntologyKind = None) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -1206,16 +1236,17 @@ class Client:
 
         if media_type:
             if MediaType.is_supported(media_type):
-                media_type = media_type.value
+                media_type_value = media_type.value
             else:
                 raise get_media_type_validation_error(media_type)
 
-        if editor_task_type:
-            if EditorTaskType.is_supported(editor_task_type):
-                editor_task_type = editor_task_type.value
-            else:
-                raise EditorTaskType.get_editor_task_type_validation_error(
-                    editor_task_type)
+        if ontology_kind and OntologyKind.is_supported(ontology_kind):
+            editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
+                ontology_kind, media_type).value
+        elif ontology_kind:
+            raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
+        else:
+            editor_task_type_value = None
 
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
                            upsertOntology(data: $data){ %s }
@@ -1224,67 +1255,14 @@ class Client:
             'data': {
                 'name': name,
                 'normalized': json.dumps(normalized),
-                'mediaType': media_type
+                'mediaType': media_type_value
             }
         }
-        if editor_task_type:
-            params['data']['editorTaskType'] = editor_task_type
+        if editor_task_type_value:
+            params['data']['editorTaskType'] = editor_task_type_value
 
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
-
-    def create_model_chat_evaluation_ontology(self, name, normalized):
-        """
-        Creates a model chat evalutation ontology from normalized data
-            >>> normalized = {"tools" : [{'tool': 'message-single-selection', 'name': 'model output single selection', 'color': '#ff0000',},
-                                         {'tool': 'message-multi-selection', 'name': 'model output multi selection', 'color': '#00ff00',},
-                                         {'tool': 'message-ranking', 'name': 'model output multi ranking', 'color': '#0000ff',}]
-                             }
-            >>> ontology = client.create_ontology("ontology-name", normalized)
-
-        Or use the ontology builder
-            >>> ontology_builder = OntologyBuilder(tools=[
-                Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
-                    name="model output single selection"),
-                Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
-                    name="model output multi selection"),
-                Tool(tool=Tool.Type.MESSAGE_RANKING,
-                    name="model output multi ranking"),
-            ],)
-
-            >>> ontology = client.create_model_chat_evaluation_ontology("Multi-chat ontology", ontology_builder.asdict())
-
-        Args:
-            name (str): Name of the ontology
-            normalized (dict): A normalized ontology payload. See above for details.
-        Returns:
-            The created Ontology
-        """
-
-        return self.create_ontology(
-            name=name,
-            normalized=normalized,
-            media_type=MediaType.Conversational,
-            editor_task_type=EditorTaskType.ModelChatEvaluation)
-
-    def create_model_chat_evaluation_ontology_from_feature_schemas(
-            self, name, feature_schema_ids):
-        """
-        Creates an ontology from a list of feature schema ids
-
-        Args:
-            name (str): Name of the ontology
-            feature_schema_ids (List[str]): List of feature schema ids corresponding to
-                top level tools and classifications to include in the ontology
-        Returns:
-            The created Ontology
-        """
-
-        return self.create_ontology_from_feature_schemas(
-            name=name,
-            feature_schema_ids=feature_schema_ids,
-            media_type=MediaType.Conversational,
-            editor_task_type=EditorTaskType.ModelChatEvaluation)
 
     def create_feature_schema(self, normalized):
         """
