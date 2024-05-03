@@ -339,6 +339,25 @@ def upload_invalid_data_rows_for_dataset():
     return _upload_invalid_data_rows_for_dataset
 
 
+@pytest.fixture
+def model_chat_evaluation_ontology(client, rand_gen):
+    ontology_name = f"test-model-chat-evaluation-ontology-{rand_gen(str)}"
+    ontology_builder = OntologyBuilder(tools=[
+        Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
+             name="model output single selection"),
+        Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
+             name="model output multi selection"),
+        Tool(tool=Tool.Type.MESSAGE_RANKING, name="model output multi ranking"),
+    ],)
+
+    ontology = client.create_model_chat_evaluation_ontology(
+        ontology_name, ontology_builder.asdict())
+
+    yield ontology
+
+    client.delete_unused_ontology(ontology.uid)
+
+
 def pytest_configure():
     pytest.report = defaultdict(int)
 

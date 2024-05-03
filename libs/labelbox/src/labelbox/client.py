@@ -52,6 +52,7 @@ from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogPar
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
+from labelbox.schema.editor_task_type import EditorTaskType
 
 logger = logging.getLogger(__name__)
 
@@ -735,6 +736,12 @@ class Client:
             } if media_type else {})
         })
 
+    def create_model_chat_project(self, **kwargs) -> Project:
+        kwargs["media_type"] = media_type.MediaType.Conversational
+        kwargs["editor_task_type"] = editor_task_type.EditorTaskType.ModelChatEvaluation
+
+        return self.create_project(**kwargs)
+
     def get_roles(self) -> List[Role]:
         """
         Returns:
@@ -938,10 +945,12 @@ class Client:
                                    rootSchemaPayloadToFeatureSchema,
                                    ['rootSchemaNodes', 'nextCursor'])
 
-    def create_ontology_from_feature_schemas(self,
-                                             name,
-                                             feature_schema_ids,
-                                             media_type=None) -> Ontology:
+    def create_ontology_from_feature_schemas(
+            self,
+            name,
+            feature_schema_ids,
+            media_type: MediaType = None,
+            editor_task_type: EditorTaskType = None) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -979,7 +988,10 @@ class Client:
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
         normalized = {'tools': tools, 'classifications': classifications}
-        return self.create_ontology(name, normalized, media_type)
+        return self.create_ontology(name=name,
+                                    normalized=normalized,
+                                    media_type=media_type,
+                                    editor_task_type=editor_task_type)
 
     def delete_unused_feature_schema(self, feature_schema_id: str) -> None:
         """
@@ -1166,7 +1178,11 @@ class Client:
                 "Failed to get unused feature schemas, message: " +
                 str(response.json()['message']))
 
-    def create_ontology(self, name, normalized, media_type=None) -> Ontology:
+    def create_ontology(self,
+                        name,
+                        normalized,
+                        media_type: MediaType = None,
+                        editor_task_type: EditorTaskType = None) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -1194,6 +1210,13 @@ class Client:
             else:
                 raise get_media_type_validation_error(media_type)
 
+        if editor_task_type:
+            if EditorTaskType.is_supported(editor_task_type):
+                editor_task_type = editor_task_type.value
+            else:
+                raise EditorTaskType.get_editor_task_type_validation_error(
+                    editor_task_type)
+
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
                            upsertOntology(data: $data){ %s }
         } """ % query.results_query_part(Entity.Ontology)
@@ -1204,8 +1227,64 @@ class Client:
                 'mediaType': media_type
             }
         }
+        if editor_task_type:
+            params['data']['editorTaskType'] = editor_task_type
+
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
+
+    def create_model_chat_evaluation_ontology(self, name, normalized):
+        """
+        Creates a model chat evalutation ontology from normalized data
+            >>> normalized = {"tools" : [{'tool': 'message-single-selection', 'name': 'model output single selection', 'color': '#ff0000',},
+                                         {'tool': 'message-multi-selection', 'name': 'model output multi selection', 'color': '#00ff00',},
+                                         {'tool': 'message-ranking', 'name': 'model output multi ranking', 'color': '#0000ff',}]
+                             }
+            >>> ontology = client.create_ontology("ontology-name", normalized)
+
+        Or use the ontology builder
+            >>> ontology_builder = OntologyBuilder(tools=[
+                Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
+                    name="model output single selection"),
+                Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
+                    name="model output multi selection"),
+                Tool(tool=Tool.Type.MESSAGE_RANKING,
+                    name="model output multi ranking"),
+            ],)
+
+            >>> ontology = client.create_model_chat_evaluation_ontology("Multi-chat ontology", ontology_builder.asdict())
+
+        Args:
+            name (str): Name of the ontology
+            normalized (dict): A normalized ontology payload. See above for details.
+        Returns:
+            The created Ontology
+        """
+
+        return self.create_ontology(
+            name=name,
+            normalized=normalized,
+            media_type=MediaType.Conversational,
+            editor_task_type=EditorTaskType.ModelChatEvaluation)
+
+    def create_model_chat_evaluation_ontology_from_feature_schemas(
+            self, name, feature_schema_ids):
+        """
+        Creates an ontology from a list of feature schema ids
+
+        Args:
+            name (str): Name of the ontology
+            feature_schema_ids (List[str]): List of feature schema ids corresponding to
+                top level tools and classifications to include in the ontology
+        Returns:
+            The created Ontology
+        """
+
+        return self.create_ontology_from_feature_schemas(
+            name=name,
+            feature_schema_ids=feature_schema_ids,
+            media_type=MediaType.Conversational,
+            editor_task_type=EditorTaskType.ModelChatEvaluation)
 
     def create_feature_schema(self, normalized):
         """
