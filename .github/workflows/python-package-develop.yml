@@ -78,7 +78,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
   test-container:
     runs-on: ubuntu-latest    
-    # needs: ['build']
+    needs: ['build']
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
     steps:
