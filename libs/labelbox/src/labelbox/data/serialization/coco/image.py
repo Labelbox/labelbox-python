@@ -5,7 +5,7 @@ from PIL import Image
 import imagesize
 
 from .path import PathSerializerMixin
-from labelbox.data.annotation_types import Label
+from ...annotation_types import Label
 
 
 class CocoImage(PathSerializerMixin):

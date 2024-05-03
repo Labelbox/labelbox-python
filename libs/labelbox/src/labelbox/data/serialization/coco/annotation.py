@@ -1,8 +1,16 @@
-from typing import Tuple, List, Union
+from typing import Any, Tuple, List, Union
 from pathlib import Path
 from collections import defaultdict
+import warnings
 
-from labelbox import pydantic_compat
+from ...annotation_types.relationship import RelationshipAnnotation
+from ...annotation_types.metrics.confusion_matrix import ConfusionMatrixMetric
+from ...annotation_types.metrics.scalar import ScalarMetric
+from ...annotation_types.video import VideoMaskAnnotation
+from ...annotation_types.annotation import ObjectAnnotation
+from ...annotation_types.classification.classification import ClassificationAnnotation
+
+from .... import pydantic_compat
 import numpy as np
 
 from .path import PathSerializerMixin
@@ -18,11 +26,20 @@ def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
     return mask.reshape((w, h)).T
 
 
-def get_annotation_lookup(annotations):
+def get_annotation_lookup(
+    annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
+                            VideoMaskAnnotation, ScalarMetric,
+                            ConfusionMatrixMetric, RelationshipAnnotation]]
+) -> defaultdict[Any, list]:
+    """Get annotations from Label.annotations objects
+
+    Args:
+        annotations (Label.annotations): Annotations attached to labelbox Label object used as private method
+    """
     annotation_lookup = defaultdict(list)
     for annotation in annotations:
         annotation_lookup[getattr(annotation, 'image_id', None) or
-                          getattr(annotation, 'name')].append(annotation)
+                          getattr(annotation, 'name', None)].append(annotation)
     return annotation_lookup
 
 

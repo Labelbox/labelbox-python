@@ -1,10 +1,11 @@
 from typing import Dict, Any, Union
 from pathlib import Path
 import os
+import warnings
 
-from labelbox.data.annotation_types.collection import LabelCollection, LabelGenerator
-from labelbox.data.serialization.coco.instance_dataset import CocoInstanceDataset
-from labelbox.data.serialization.coco.panoptic_dataset import CocoPanopticDataset
+from ...annotation_types.collection import LabelCollection, LabelGenerator
+from ...serialization.coco.instance_dataset import CocoInstanceDataset
+from ...serialization.coco.panoptic_dataset import CocoPanopticDataset
 
 
 def create_path_if_not_exists(path: Union[Path, str],
@@ -28,7 +29,7 @@ def validate_path(path: Union[Path, str], name: str):
 
 class COCOConverter:
     """
-    Class for convertering between coco and labelbox formats
+    Class for converting between coco and labelbox formats
     Note that this class is only compatible with image data.
 
     Subclasses are currently ignored.
@@ -55,6 +56,12 @@ class COCOConverter:
         Returns:
             A dictionary containing labels in the coco object format.
         """
+
+        warnings.warn(
+            "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+            DeprecationWarning,
+            stacklevel=2)
+
         image_root = create_path_if_not_exists(image_root, ignore_existing_data)
         return CocoInstanceDataset.from_common(labels=labels,
                                                image_root=image_root,
@@ -85,6 +92,12 @@ class COCOConverter:
         Returns:
             A dictionary containing labels in the coco panoptic format.
         """
+
+        warnings.warn(
+            "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+            DeprecationWarning,
+            stacklevel=2)
+
         image_root = create_path_if_not_exists(image_root, ignore_existing_data)
         mask_root = create_path_if_not_exists(mask_root, ignore_existing_data)
         return CocoPanopticDataset.from_common(labels=labels,
@@ -107,6 +120,12 @@ class COCOConverter:
         Returns:
             LabelGenerator
         """
+
+        warnings.warn(
+            "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+            DeprecationWarning,
+            stacklevel=2)
+
         image_root = validate_path(image_root, 'image_root')
         mask_root = validate_path(mask_root, 'mask_root')
         objs = CocoPanopticDataset(**json_data)
@@ -125,6 +144,12 @@ class COCOConverter:
         Returns:
             LabelGenerator
         """
+
+        warnings.warn(
+            "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
+            DeprecationWarning,
+            stacklevel=2)
+
         image_root = validate_path(image_root, 'image_root')
         objs = CocoInstanceDataset(**json_data)
         gen = objs.to_common(image_root)
