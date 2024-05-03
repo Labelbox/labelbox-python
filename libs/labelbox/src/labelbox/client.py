@@ -1228,6 +1228,33 @@ class Client:
         return Entity.Ontology(self, res['upsertOntology'])
 
     def create_model_chat_evaluation_ontology(self, name, normalized):
+        """
+        Creates a model chat evalutation ontology from normalized data
+            >>> normalized = {"tools" : [{'tool': 'model-output-single-selection', 'name': 'model output single selection', 'color': '#ff0000',}, 
+                                         {'tool': 'model-output-multi-selection', 'name': 'model output multi selection', 'color': '#00ff00',}, 
+                                         {'tool': 'model-output-ranking', 'name': 'model output multi ranking', 'color': '#0000ff',}]
+                             }
+            >>> ontology = client.create_ontology("ontology-name", normalized)
+
+        Or use the ontology builder
+            >>> ontology_builder = OntologyBuilder(tools=[
+                Tool(tool=Tool.Type.MODEL_OUTPUT_SINGLE_SELECTION,
+                    name="model output single selection"),
+                Tool(tool=Tool.Type.MODEL_OUTPUT_MULTI_SELECTION,
+                    name="model output multi selection"),
+                Tool(tool=Tool.Type.MODEL_OUTPUT_MULTI_RANKING,
+                    name="model output multi ranking"),
+            ],)
+
+            >>> ontology = client.create_model_chat_evaluation_ontology("Multi-chat ontology", ontology_builder.asdict())
+
+        Args:
+            name (str): Name of the ontology
+            normalized (dict): A normalized ontology payload. See above for details.
+        Returns:
+            The created Ontology
+        """
+
         return self.create_ontology(
             name=name,
             normalized=normalized,
@@ -1236,6 +1263,17 @@ class Client:
 
     def create_model_chat_evaluation_ontology_from_feature_schemas(
             self, name, feature_schema_ids):
+        """
+        Creates an ontology from a list of feature schema ids
+
+        Args:
+            name (str): Name of the ontology
+            feature_schema_ids (List[str]): List of feature schema ids corresponding to
+                top level tools and classifications to include in the ontology
+        Returns:
+            The created Ontology
+        """
+
         return self.create_ontology_from_feature_schemas(
             name=name,
             feature_schema_ids=feature_schema_ids,

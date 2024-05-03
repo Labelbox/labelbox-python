@@ -60,7 +60,7 @@ def test_ontology_create_feature_schema(client, rand_gen):
             'featureSchemaId': None
         }]
 
-        features = {client.create_feature_schema(t) for t in tools}
+        features = {client.create_feature_schema(t) for t in tools if t}
         feature_schema_ids = {f.uid for f in features}
         assert len(feature_schema_ids) == 3
 
