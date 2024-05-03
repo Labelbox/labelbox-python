@@ -147,6 +147,11 @@ jobs:
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
     steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ inputs.tag }}
+
       - name: downcase CONTAINER_IMAGE
         run: |
           echo "CONTAINER_IMAGE=${CONTAINER_IMAGE,,}" >> ${GITHUB_ENV}
