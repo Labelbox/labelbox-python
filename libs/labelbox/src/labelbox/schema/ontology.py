@@ -252,6 +252,9 @@ class Tool:
         LINE = "line"
         NER = "named-entity"
         RELATIONSHIP = "edge"
+        MODEL_OUTPUT_SINGLE_SELECTION = "model-output-single-selection"
+        MODEL_OUTPUT_MULTI_SELECTION = "model-output-multi-selection"
+        MODEL_OUTPUT_MULTI_RANKING = "model-output-ranking"
 
     tool: Type
     name: str

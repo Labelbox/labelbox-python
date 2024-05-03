@@ -52,6 +52,7 @@ from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogPar
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
+from labelbox.schema.editor_task_type import EditorTaskType
 
 logger = logging.getLogger(__name__)
 
@@ -1166,7 +1167,13 @@ class Client:
                 "Failed to get unused feature schemas, message: " +
                 str(response.json()['message']))
 
-    def create_ontology(self, name, normalized, media_type=None) -> Ontology:
+    def create_ontology(
+            self,
+            name,
+            normalized,
+            media_type: MediaType = None,
+            editor_task_type: EditorTaskType = None
+    ) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -1194,6 +1201,12 @@ class Client:
             else:
                 raise get_media_type_validation_error(media_type)
 
+        if editor_task_type:
+            if EditorTaskType.is_supported(editor_task_type):
+                editor_task_type = editor_task_type.value
+            else:
+                raise EditorTaskType.get_editor_task_type_validation_error(editor_task_type)
+
         query_str = """mutation upsertRootSchemaNodePyApi($data:  UpsertOntologyInput!){
                            upsertOntology(data: $data){ %s }
         } """ % query.results_query_part(Entity.Ontology)
@@ -1204,8 +1217,19 @@ class Client:
                 'mediaType': media_type
             }
         }
+        if editor_task_type:
+            params['data']['editorTaskType'] = editor_task_type
+
         res = self.execute(query_str, params)
         return Entity.Ontology(self, res['upsertOntology'])
+
+    def create_model_chat_evaluation_ontology(self, name, normalized):
+        return self.create_ontology(
+            name=name,
+            normalized=normalized,
+            media_type=MediaType.Conversational,
+            editor_task_type=EditorTaskType.ModelChatEvaluation
+        )
 
     def create_feature_schema(self, normalized):
         """
