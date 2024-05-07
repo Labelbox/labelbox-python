@@ -26,21 +26,12 @@ def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
     return mask.reshape((w, h)).T
 
 
-def get_annotation_lookup(
-    annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
-                            VideoMaskAnnotation, ScalarMetric,
-                            ConfusionMatrixMetric, RelationshipAnnotation]]
-) -> defaultdict[Any, List]:
-    """Get annotations from Label.annotations objects
-
-    Args:
-        annotations (Label.annotations): Annotations attached to labelbox Label object used as private method
-    """
-    annotation_lookup = defaultdict(List)
+def get_annotation_lookup(annotations):
+    annotation_lookup = defaultdict(list)
     for annotation in annotations:
         annotation_lookup[getattr(annotation, 'image_id', None) or
-                          getattr(annotation, 'name', None)].append(annotation)
-    return annotation_lookup
+                          getattr(annotation, 'name')].append(annotation)
+    return annotation_lookup 
 
 
 class SegmentInfo(pydantic_compat.BaseModel):
