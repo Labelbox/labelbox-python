@@ -766,10 +766,10 @@ class ExportTask:
     @overload
     def get_stream(
         self,
-        converter: _BufferedJsonConverter,
+        converter: _BufferedJsonConverter = _BufferedJsonConverter(),
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream[BufferedJsonConverterOutput]:
-        """Overload for getting the right typing hints when using a FileConverter."""
+        """Overload for getting the right typing hints when using a BufferedJsonConvertor."""
 
     def get_stream(
         self,
@@ -799,3 +799,4 @@ class ExportTask:
     def get_task(client, task_id):
         """Returns the task with the given id."""
         return ExportTask(Task.get_task(client, task_id))
+
