@@ -37,7 +37,7 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
-from labelbox.schema.ontology_kind import (EditorTaskType)
+from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -132,6 +132,9 @@ class Project(DbObject, Updateable, Deletable):
 
     #
     _wait_processing_max_seconds = 3600
+
+    def is_chat_evalution(self) -> bool:
+        return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
 
     def update(self, **kwargs):
         """ Updates this project with the specified attributes
@@ -734,27 +737,35 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
-        if self.labeling_frontend() is not None:
+
+        if self.labeling_frontend(
+        ) is not None and not self.is_chat_evalution():
             raise ResourceConflict("Editor is already set up.")
 
-        labeling_frontend = next(
-            self.client.get_labeling_frontends(
-                where=Entity.LabelingFrontend.name == "Editor"))
-        self.labeling_frontend.connect(labeling_frontend)
+        if not self.is_chat_evalution():
+            labeling_frontend = next(
+                self.client.get_labeling_frontends(
+                    where=Entity.LabelingFrontend.name == "Editor"))
+            self.labeling_frontend.connect(labeling_frontend)
 
-        LFO = Entity.LabelingFrontendOptions
-        self.client._create(
-            LFO, {
-                LFO.project:
-                    self,
-                LFO.labeling_frontend:
-                    labeling_frontend,
-                LFO.customization_options:
-                    json.dumps({
-                        "tools": [],
-                        "classifications": []
-                    })
-            })
+            LFO = Entity.LabelingFrontendOptions
+            self.client._create(
+                LFO, {
+                    LFO.project:
+                        self,
+                    LFO.labeling_frontend:
+                        labeling_frontend,
+                    LFO.customization_options:
+                        json.dumps({
+                            "tools": [],
+                            "classifications": []
+                        })
+                })
+        else:
+            warnings.warn("""
+            Skipping editor setup for a chat evaluation project.
+            Editor was setup automatically.
+            """)
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
@@ -775,6 +786,14 @@ class Project(DbObject, Updateable, Deletable):
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
         """
+
+        if self.is_chat_evalution():
+            warnings.warn("""
+            This project is a chat evaluation project.
+            Editor was setup automatically.
+            No need to call this method.
+            """)
+            return
 
         if self.labeling_frontend() is not None:
             raise ResourceConflict("Editor is already set up.")
