@@ -48,9 +48,8 @@ class EditorTaskTypeMapper:
         return editor_task_type
 
     @staticmethod
-    def map_to_editor_task_type(
-            onotology_kind: OntologyKind,
-            media_type: MediaType) -> Optional[EditorTaskType]:
+    def map_to_editor_task_type(onotology_kind: OntologyKind,
+                                media_type: MediaType) -> EditorTaskType:
         if onotology_kind == OntologyKind.ModelEvaluation and media_type == MediaType.Conversational:
             return EditorTaskType.ModelChatEvaluation
         else:

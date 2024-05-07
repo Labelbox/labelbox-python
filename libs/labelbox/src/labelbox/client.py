@@ -715,6 +715,7 @@ class Client:
             logger.warning(
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
+            media_type_value = None
 
         ontology_kind = kwargs.pop("ontology_kind", None)
         if ontology_kind and OntologyKind.is_supported(ontology_kind):
@@ -1262,6 +1263,7 @@ class Client:
         NOTE caller of this method is expected to set media_type to Conversational if ontology_kind is ModelEvaluation
         """
 
+        media_type_value = None
         if media_type:
             if MediaType.is_supported(media_type):
                 media_type_value = media_type.value
