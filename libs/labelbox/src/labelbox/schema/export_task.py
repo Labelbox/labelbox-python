@@ -750,7 +750,7 @@ class ExportTask:
     @overload
     def get_stream(
         self,
-        converter: JsonConverter = JsonConverter(),
+        converter: JsonConverter,
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream[JsonConverterOutput]:
         """Overload for getting the right typing hints when using a JsonConverter."""
@@ -763,9 +763,17 @@ class ExportTask:
     ) -> Stream[FileConverterOutput]:
         """Overload for getting the right typing hints when using a FileConverter."""
 
+    @overload
     def get_stream(
         self,
-        converter: Converter = JsonConverter(),
+        converter: _BufferedJsonConverter,
+        stream_type: StreamType = StreamType.RESULT,
+    ) -> Stream[BufferedJsonConverterOutput]:
+        """Overload for getting the right typing hints when using a FileConverter."""
+
+    def get_stream(
+        self,
+        converter: Converter = _BufferedJsonConverter(),
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream:
         """Returns the result of the task."""
@@ -783,7 +791,7 @@ class ExportTask:
         return Stream(
             _TaskContext(self._task.client, self._task.uid, stream_type,
                          metadata_header),
-            _MultiGCSFileReader(),
+            _BufferedGCSFileReader(),
             converter,
         )
 
