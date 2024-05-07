@@ -30,13 +30,13 @@ def get_annotation_lookup(
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoMaskAnnotation, ScalarMetric,
                             ConfusionMatrixMetric, RelationshipAnnotation]]
-) -> defaultdict[Any, list]:
+) -> defaultdict[Any, List]:
     """Get annotations from Label.annotations objects
 
     Args:
         annotations (Label.annotations): Annotations attached to labelbox Label object used as private method
     """
-    annotation_lookup = defaultdict(list)
+    annotation_lookup = defaultdict(List)
     for annotation in annotations:
         annotation_lookup[getattr(annotation, 'image_id', None) or
                           getattr(annotation, 'name', None)].append(annotation)
