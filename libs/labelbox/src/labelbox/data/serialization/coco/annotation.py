@@ -26,10 +26,7 @@ def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
     return mask.reshape((w, h)).T
 
 
-def get_annotation_lookup(annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
-                            VideoMaskAnnotation, ScalarMetric,
-                            ConfusionMatrixMetric, RelationshipAnnotation]]
-                          ) -> defaultdict[Any, List]:
+def get_annotation_lookup(annotations):
     """Get annotations from Label.annotations objects
 
     Args:
