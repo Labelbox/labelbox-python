@@ -765,7 +765,7 @@ class ExportTask:
 
     def get_stream(
         self,
-        converter: Converter,
+        converter: Converter = None,
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream:
         if converter is None:
