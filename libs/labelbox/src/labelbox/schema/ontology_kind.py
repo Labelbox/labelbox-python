@@ -5,6 +5,10 @@ from labelbox.schema.media_type import MediaType
 
 
 class OntologyKind(Enum):
+    """
+    OntologyKind is an enum that represents the different types of ontologies
+    At the moment it is only limited to ModelEvaluation
+    """
     ModelEvaluation = "MODEL_EVALUATION"
     Missing = None
 

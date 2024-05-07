@@ -738,8 +738,8 @@ class Project(DbObject, Updateable, Deletable):
             ontology (Ontology): The ontology to attach to the project
         """
 
-        if self.labeling_frontend(
-        ) is not None and not self.is_chat_evalution():
+        if self.labeling_frontend() is not None and not self.is_chat_evalution(
+        ):  # Chat evaluation projects are automatically set up via the same api that creates a project
             raise ResourceConflict("Editor is already set up.")
 
         if not self.is_chat_evalution():

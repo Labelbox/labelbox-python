@@ -573,6 +573,8 @@ class Client:
             db_object_type (type): A DbObjectType subtype.
             data (dict): Keys are attributes or their names (in Python,
                 snake-case convention) and values are desired attribute values.
+            extra_params (dict): Additional parameters to pass to GraphQL.
+                These have to be Field(...): value pairs.
         Returns:
             A new object of the given DB object type.
         Raises:
@@ -763,6 +765,16 @@ class Client:
                                        append_to_existing_dataset: bool = False,
                                        data_row_count: int = 100,
                                        **kwargs) -> Project:
+        """
+        Use this method exclusively to create a chat model evaluation project.
+        Args:
+            dataset_name_or_id: The name or id of the dataset to use for the project
+            append_to_existing_dataset: If True, the project will append assets (data rows) to the existing dataset
+            data_row_count: The number of data row assets to use for the project
+            **kwargs: Additional parameters to pass to the the create_project method
+        Returns:
+            Project: The created project
+        """
         kwargs["media_type"] = MediaType.Conversational
         kwargs["ontology_kind"] = OntologyKind.ModelEvaluation
         kwargs["dataset_name_or_id"] = dataset_name_or_id
@@ -987,7 +999,9 @@ class Client:
             name (str): Name of the ontology
             feature_schema_ids (List[str]): List of feature schema ids corresponding to
                 top level tools and classifications to include in the ontology
-            media_type (MediaType or None): Media type of a new ontology
+            media_type (MediaType or None): Media type of a new ontology. NOTE for chat evaluation, we currently foce media_type to Conversational
+            ontology_kind (OntologyKind or None): set to OntologyKind.ModelEvaluation if the ontology is for chat evaluation,
+                leave as None otherwise.
         Returns:
             The created Ontology
         """
@@ -1017,6 +1031,15 @@ class Client:
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
         normalized = {'tools': tools, 'classifications': classifications}
+
+        if ontology_kind and ontology_kind is OntologyKind.ModelEvaluation:
+            if media_type is None:
+                media_type = MediaType.Conversational
+            else:
+                if media_type is not MediaType.Conversational:
+                    raise ValueError(
+                        "For chat evaluation, media_type must be Conversational."
+                    )
 
         return self.create_ontology(name=name,
                                     normalized=normalized,
@@ -1230,8 +1253,13 @@ class Client:
             name (str): Name of the ontology
             normalized (dict): A normalized ontology payload. See above for details.
             media_type (MediaType or None): Media type of a new ontology
+            ontology_kind (OntologyKind or None): set to OntologyKind.ModelEvaluation if the ontology is for chat evaluation,
+                leave as None otherwise.
+
         Returns:
             The created Ontology
+
+        NOTE caller of this method is expected to set media_type to Conversational if ontology_kind is ModelEvaluation
         """
 
         if media_type:
