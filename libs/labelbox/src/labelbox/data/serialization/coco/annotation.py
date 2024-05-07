@@ -34,8 +34,9 @@ def get_annotation_lookup(annotations):
     """
     annotation_lookup = defaultdict(list)
     for annotation in annotations:
-        annotation_lookup[getattr(annotation, 'image_id', None) or
-                          getattr(annotation, 'name')].append(annotation)
+        # Provide a default value of None if the attribute doesn't exist
+        attribute_value = getattr(annotation, 'image_id', None) or getattr(annotation, 'name', None)
+        annotation_lookup[attribute_value].append(annotation)
     return annotation_lookup 
 
 
