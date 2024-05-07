@@ -36,3 +36,4 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
+from labelbox.schema.ontology_kind import OntologyKind

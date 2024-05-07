@@ -24,3 +24,4 @@ import labelbox.schema.media_type
 import labelbox.schema.identifiables
 import labelbox.schema.identifiable
 import labelbox.schema.catalog
+import labelbox.schema.ontology_kind
