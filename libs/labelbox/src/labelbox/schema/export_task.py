@@ -750,7 +750,7 @@ class ExportTask:
     @overload
     def get_stream(
         self,
-        converter: JsonConverter = JsonConverter(),
+        converter: JsonConverter,
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream[JsonConverterOutput]:
         """Overload for getting the right typing hints when using a JsonConverter."""
@@ -765,9 +765,11 @@ class ExportTask:
 
     def get_stream(
         self,
-        converter: Converter = JsonConverter(),
+        converter: Optional[Converter] = None,
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream:
+        if converter is None:
+            converter = JsonConverter()
         """Returns the result of the task."""
         if self._task.status == "FAILED":
             raise ExportTask.ExportTaskException("Task failed")
