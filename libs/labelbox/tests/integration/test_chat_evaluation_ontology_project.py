@@ -19,11 +19,6 @@ def test_create_chat_evaluation_ontology_project(client,
         assert tool.feature_schema_id
 
     project = chat_evaluation_project
-    # editor = list(
-    #     client.get_labeling_frontends(
-    #         where=LabelingFrontend.name == "editor"))[0]
-    # project.setup(editor, ontology)
-
     project.setup_editor(ontology)
 
     assert project.labeling_frontend().name == "Editor"

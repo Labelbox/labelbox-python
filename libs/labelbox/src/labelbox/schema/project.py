@@ -133,7 +133,7 @@ class Project(DbObject, Updateable, Deletable):
     #
     _wait_processing_max_seconds = 3600
 
-    def is_chat_evalution(self) -> bool:
+    def is_chat_evaluation(self) -> bool:
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
 
     def update(self, **kwargs):
@@ -738,11 +738,11 @@ class Project(DbObject, Updateable, Deletable):
             ontology (Ontology): The ontology to attach to the project
         """
 
-        if self.labeling_frontend() is not None and not self.is_chat_evalution(
+        if self.labeling_frontend() is not None and not self.is_chat_evaluation(
         ):  # Chat evaluation projects are automatically set up via the same api that creates a project
             raise ResourceConflict("Editor is already set up.")
 
-        if not self.is_chat_evalution():
+        if not self.is_chat_evaluation():
             labeling_frontend = next(
                 self.client.get_labeling_frontends(
                     where=Entity.LabelingFrontend.name == "Editor"))
@@ -787,7 +787,7 @@ class Project(DbObject, Updateable, Deletable):
                 to `str` using `json.dumps`.
         """
 
-        if self.is_chat_evalution():
+        if self.is_chat_evaluation():
             warnings.warn("""
             This project is a chat evaluation project.
             Editor was setup automatically.

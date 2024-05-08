@@ -583,7 +583,6 @@ class Client:
         """
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
-
         data = {
             db_object_type.attribute(attr) if isinstance(attr, str) else attr:
                 value.uid if isinstance(value, DbObject) else value
@@ -761,11 +760,12 @@ class Client:
 
         return self._create(Entity.Project, params, extra_params)
 
-    def create_model_evalution_project(self,
-                                       dataset_name_or_id: str,
-                                       append_to_existing_dataset: bool = False,
-                                       data_row_count: int = 100,
-                                       **kwargs) -> Project:
+    def create_model_evaluation_project(
+            self,
+            dataset_name_or_id: str,
+            append_to_existing_dataset: bool = False,
+            data_row_count: int = 100,
+            **kwargs) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
         Args:
