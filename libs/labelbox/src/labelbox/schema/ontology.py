@@ -252,6 +252,9 @@ class Tool:
         LINE = "line"
         NER = "named-entity"
         RELATIONSHIP = "edge"
+        MESSAGE_SINGLE_SELECTION = 'message-single-selection'
+        MESSAGE_MULTI_SELECTION = 'message-multi-selection'
+        MESSAGE_RANKING = 'message-ranking'
 
     tool: Type
     name: str

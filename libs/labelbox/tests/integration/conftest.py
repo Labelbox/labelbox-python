@@ -28,6 +28,7 @@ from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 from labelbox import Client
+from labelbox.schema.ontology_kind import OntologyKind
 
 
 @pytest.fixture
@@ -337,6 +338,40 @@ def upload_invalid_data_rows_for_dataset():
         task.wait_till_done()
 
     return _upload_invalid_data_rows_for_dataset
+
+
+@pytest.fixture
+def chat_evaluation_ontology(client, rand_gen):
+    ontology_name = f"test-chat-evaluation-ontology-{rand_gen(str)}"
+    ontology_builder = OntologyBuilder(tools=[
+        Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
+             name="model output single selection"),
+        Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
+             name="model output multi selection"),
+        Tool(tool=Tool.Type.MESSAGE_RANKING, name="model output multi ranking"),
+    ],)
+
+    ontology = client.create_ontology(
+        ontology_name,
+        ontology_builder.asdict(),
+        media_type=MediaType.Conversational,
+        ontology_kind=OntologyKind.ModelEvaluation)
+
+    yield ontology
+
+    client.delete_unused_ontology(ontology.uid)
+
+
+@pytest.fixture
+def chat_evaluation_project(client, rand_gen):
+    project_name = f"test-model-evaluation-project-{rand_gen(str)}"
+    dataset_name_or_id = f"test-model-evaluation-dataset-{rand_gen(str)}"
+    project = client.create_model_evaluation_project(
+        name=project_name, dataset_name_or_id=dataset_name_or_id)
+
+    yield project
+
+    project.delete()
 
 
 def pytest_configure():

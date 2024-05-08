@@ -31,6 +31,7 @@ Labelbox Python SDK Documentation
     model
     model-run
     ontology
+    ontology_kind
     organization
     pagination
     project
