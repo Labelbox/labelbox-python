@@ -38,7 +38,7 @@ from labelbox.schema.user import User
 from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
-MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
+MASKABLE_IMG_URL_ = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
@@ -78,7 +78,7 @@ class Environ(Enum):
 
 @pytest.fixture
 def image_url() -> str:
-    return MASKABLE_IMG_URL
+    return MASKABLE_IMG_URL_
 
 
 @pytest.fixture
