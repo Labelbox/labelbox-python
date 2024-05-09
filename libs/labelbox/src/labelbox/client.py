@@ -310,9 +310,10 @@ class Client:
         if internal_server_error is not None:
             message = internal_server_error.get("message")
             error_status_code = get_error_status_code(internal_server_error)
-
             if error_status_code == 400:
                 raise labelbox.exceptions.InvalidQueryError(message)
+            elif error_status_code == 422:
+                raise labelbox.exceptions.UnprocessableEntityError(message)
             elif error_status_code == 426:
                 raise labelbox.exceptions.OperationNotAllowedException(message)
             elif error_status_code == 500:
@@ -853,8 +854,8 @@ class Client:
             >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0")
             >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
 
-            >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=0)
-            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
+            >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10)
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created 10 data rows to the project.
 
 
         """
