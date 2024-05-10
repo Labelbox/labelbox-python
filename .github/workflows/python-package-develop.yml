@@ -85,6 +85,7 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
+      packages: write
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
     steps:
