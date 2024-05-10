@@ -343,13 +343,51 @@ def upload_invalid_data_rows_for_dataset():
 @pytest.fixture
 def chat_evaluation_ontology(client, rand_gen):
     ontology_name = f"test-chat-evaluation-ontology-{rand_gen(str)}"
-    ontology_builder = OntologyBuilder(tools=[
-        Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
-             name="model output single selection"),
-        Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
-             name="model output multi selection"),
-        Tool(tool=Tool.Type.MESSAGE_RANKING, name="model output multi ranking"),
-    ],)
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.MESSAGE_SINGLE_SELECTION,
+                 name="model output single selection"),
+            Tool(tool=Tool.Type.MESSAGE_MULTI_SELECTION,
+                 name="model output multi selection"),
+            Tool(tool=Tool.Type.MESSAGE_RANKING,
+                 name="model output multi ranking"),
+        ],
+        classifications=[
+            Classification(class_type=Classification.Type.TEXT,
+                           name="global model output text classification",
+                           scope=Classification.Scope.GLOBAL),
+            Classification(class_type=Classification.Type.RADIO,
+                           name="global model output radio classification",
+                           scope=Classification.Scope.GLOBAL,
+                           options=[
+                               Option(value="global first option answer"),
+                               Option(value="global second option answer"),
+                           ]),
+            Classification(class_type=Classification.Type.CHECKLIST,
+                           name="global model output checklist classification",
+                           scope=Classification.Scope.GLOBAL,
+                           options=[
+                               Option(value="global first option answer"),
+                               Option(value="global second option answer"),
+                           ]),
+            Classification(class_type=Classification.Type.TEXT,
+                           name="index model output text classification",
+                           scope=Classification.Scope.INDEX),
+            Classification(class_type=Classification.Type.RADIO,
+                           name="index model output radio classification",
+                           scope=Classification.Scope.INDEX,
+                           options=[
+                               Option(value="index first option answer"),
+                               Option(value="index second option answer"),
+                           ]),
+            Classification(class_type=Classification.Type.CHECKLIST,
+                           name="index model output checklist classification",
+                           scope=Classification.Scope.INDEX,
+                           options=[
+                               Option(value="index first option answer"),
+                               Option(value="index second option answer"),
+                           ]),
+        ])
 
     ontology = client.create_ontology(
         ontology_name,

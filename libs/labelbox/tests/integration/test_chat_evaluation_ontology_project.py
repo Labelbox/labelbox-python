@@ -18,6 +18,11 @@ def test_create_chat_evaluation_ontology_project(
         assert tool.schema_id
         assert tool.feature_schema_id
 
+    assert (len(ontology.classifications()) == 6)
+    for classification in ontology.classifications():
+        assert classification.schema_id
+        assert classification.feature_schema_id
+
     project = chat_evaluation_project_create_dataset
     project.setup_editor(ontology)
 
