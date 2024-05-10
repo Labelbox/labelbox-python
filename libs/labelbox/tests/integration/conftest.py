@@ -363,11 +363,25 @@ def chat_evaluation_ontology(client, rand_gen):
 
 
 @pytest.fixture
-def chat_evaluation_project(client, rand_gen):
+def chat_evaluation_project_create_dataset(client, rand_gen):
     project_name = f"test-model-evaluation-project-{rand_gen(str)}"
-    dataset_name_or_id = f"test-model-evaluation-dataset-{rand_gen(str)}"
-    project = client.create_model_evaluation_project(
-        name=project_name, dataset_name_or_id=dataset_name_or_id)
+    dataset_name = f"test-model-evaluation-dataset-{rand_gen(str)}"
+    project = client.create_model_evaluation_project(name=project_name,
+                                                     dataset_name=dataset_name,
+                                                     data_row_count=1)
+
+    yield project
+
+    project.delete()
+
+
+@pytest.fixture
+def chat_evaluation_project_append_to_dataset(client, dataset, rand_gen):
+    project_name = f"test-model-evaluation-project-{rand_gen(str)}"
+    dataset_id = dataset.uid
+    project = client.create_model_evaluation_project(name=project_name,
+                                                     dataset_id=dataset_id,
+                                                     data_row_count=1)
 
     yield project
 
