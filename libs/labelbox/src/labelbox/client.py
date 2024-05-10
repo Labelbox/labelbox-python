@@ -9,7 +9,7 @@ import time
 import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, List, Dict, Union, Optional
+from typing import Any, List, Dict, Union, Optional, overload
 
 import requests
 import requests.exceptions
@@ -596,7 +596,8 @@ class Client:
         res = res["create%s" % db_object_type.type_name()]
         return db_object_type(self, res)
 
-    def create_model_config(self, name: str, model_id: str, inference_params: dict) -> ModelConfig:
+    def create_model_config(self, name: str, model_id: str,
+                            inference_params: dict) -> ModelConfig:
         """ Creates a new model config with the given params.
             Model configs are scoped to organizations, and can be reused between projects.
 
@@ -608,6 +609,8 @@ class Client:
         Returns:
             str, id of the created model config
         """
+        if not name:
+            raise ValueError("Model config name must not be an empty string.")
 
         query = """mutation CreateModelConfigPyApi($modelId: ID!, $inferenceParams: Json!, $name: String!)  {
                     createModelConfig(input: {modelId: $modelId, inferenceParams: $inferenceParams, name: $name}) {
@@ -640,9 +643,7 @@ class Client:
                         success
                     }
                 }"""
-        params = {
-            "id": id
-        }
+        params = {"id": id}
         result = self.execute(query, params)
         return result['deleteModelConfig']['success']
 
@@ -811,22 +812,66 @@ class Client:
 
         return self._create(Entity.Project, params, extra_params)
 
-    def create_model_evaluation_project(
-            self,
-            dataset_name_or_id: str,
-            append_to_existing_dataset: bool = False,
-            data_row_count: int = 100,
-            **kwargs) -> Project:
+    @overload
+    def create_model_evaluation_project(self,
+                                        dataset_name: str,
+                                        dataset_id: str = None,
+                                        data_row_count: int = 100,
+                                        **kwargs) -> Project:
+        pass
+
+    @overload
+    def create_model_evaluation_project(self,
+                                        dataset_id: str,
+                                        dataset_name: str = None,
+                                        data_row_count: int = 100,
+                                        **kwargs) -> Project:
+        pass
+
+    def create_model_evaluation_project(self,
+                                        dataset_id: Optional[str] = None,
+                                        dataset_name: Optional[str] = None,
+                                        data_row_count: int = 100,
+                                        **kwargs) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
         Args:
-            dataset_name_or_id: The name or id of the dataset to use for the project
-            append_to_existing_dataset: If True, the project will append assets (data rows) to the existing dataset
+            dataset_name: When creating a new dataset, pass the name
+            dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
             **kwargs: Additional parameters to pass to the the create_project method
         Returns:
             Project: The created project
+
+        Examples:
+            >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set")
+            >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
+
+            >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set", data_row_count=10)
+            >>>     This creates a new dataset with 10 data rows, creates new project and assigns a batch of the newly created datarows to the project.
+
+            >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0")
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
+
+            >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=0)
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
+
+
         """
+        if not dataset_id and not dataset_name:
+            raise ValueError(
+                "dataset_name or data_set_id must be present and not be an empty string."
+            )
+        if data_row_count <= 0:
+            raise ValueError("data_row_count must be a positive integer.")
+
+        if dataset_id:
+            append_to_existing_dataset = True
+            dataset_name_or_id = dataset_id
+        else:
+            append_to_existing_dataset = False
+            dataset_name_or_id = dataset_name
+
         kwargs["media_type"] = MediaType.Conversational
         kwargs["ontology_kind"] = OntologyKind.ModelEvaluation
         kwargs["dataset_name_or_id"] = dataset_name_or_id

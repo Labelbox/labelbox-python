@@ -5,9 +5,9 @@ from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.labeling_frontend import LabelingFrontend
 
 
-def test_create_chat_evaluation_ontology_project(client,
-                                                 chat_evaluation_ontology,
-                                                 chat_evaluation_project):
+def test_create_chat_evaluation_ontology_project(
+        client, chat_evaluation_ontology,
+        chat_evaluation_project_create_dataset):
     ontology = chat_evaluation_ontology
 
     # here we are essentially testing the ontology creation which is a fixture
@@ -18,7 +18,20 @@ def test_create_chat_evaluation_ontology_project(client,
         assert tool.schema_id
         assert tool.feature_schema_id
 
-    project = chat_evaluation_project
+    project = chat_evaluation_project_create_dataset
+    project.setup_editor(ontology)
+
+    assert project.labeling_frontend().name == "Editor"
+    assert project.ontology().name == ontology.name
+
+
+def test_create_chat_evaluation_ontology_project_existing_dataset(
+        client, chat_evaluation_ontology,
+        chat_evaluation_project_append_to_dataset):
+    ontology = chat_evaluation_ontology
+
+    project = chat_evaluation_project_append_to_dataset
+    assert project
     project.setup_editor(ontology)
 
     assert project.labeling_frontend().name == "Editor"
