@@ -48,7 +48,7 @@ class SendToAnnotateFromCatalogParams(pydantic_compat.BaseModel):
             )
         if values.get("source_model_run_id") and values.get("source_project_id"):
             raise ValueError(
-                'Provide either only a source_project_id or source_model_id'
+                'Provide only a source_project_id or source_model_id not both'
             ) 
 
 
