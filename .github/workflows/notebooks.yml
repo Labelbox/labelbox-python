@@ -10,6 +10,10 @@ on:
     paths:
       - examples/**
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -17,6 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
       - name: Install databooks
         run: sudo pip3 install databooks
       - name: Remove notebook metadata
