@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ gihub.head_ref }}
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
       - name: Install databooks
         run: sudo pip3 install databooks
