@@ -50,7 +50,7 @@ class SendToAnnotateFromCatalogParams(pydantic_compat.BaseModel):
             raise ValueError(
                 'Provide only a source_project_id or source_model_id not both'
             ) 
-
+        return values
 
 class SendToAnnotateFromModelParams(TypedDict):
     """
