@@ -11,12 +11,21 @@ on:
       - examples/**
 
 jobs:
+  env:
+    BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Install databooks
         run: sudo pip3 install databooks
       - name: Remove notebook metadata
         run: databooks meta examples/. --rm-outs | echo Y
+      - name: Stage files
+        run: git add examples/.
+      - name: Commit changed files
+        run: git commit -m "Removed metadata"
+      - name: git push
