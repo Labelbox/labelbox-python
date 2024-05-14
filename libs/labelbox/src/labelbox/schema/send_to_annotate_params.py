@@ -3,8 +3,7 @@ import sys
 from typing import Optional, Dict
 
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
-from pydantic import model_validator, ConfigDict
-from pydantic.main import BaseModel
+from labelbox import pydantic_compat
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -12,7 +11,7 @@ else:
     from typing_extensions import TypedDict
 
 
-class SendToAnnotateFromCatalogParams(BaseModel):
+class SendToAnnotateFromCatalogParams(pydantic_compat.BaseModel):
     """
     Extra parameters for sending data rows to a project through catalog. At least one of source_model_run_id or
     source_project_id must be provided.
@@ -31,7 +30,6 @@ class SendToAnnotateFromCatalogParams(BaseModel):
         ConflictResolutionStrategy.KEEP_EXISTING.
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
-    model_config = ConfigDict(extra='forbid')
 
     source_model_run_id: Optional[str] = None
     source_project_id: Optional[str] = None
@@ -42,12 +40,16 @@ class SendToAnnotateFromCatalogParams(BaseModel):
         ConflictResolutionStrategy] = ConflictResolutionStrategy.KeepExisting
     batch_priority: Optional[int] = 5
 
-    @model_validator(mode='after')
+    @pydantic_compat.root_validator
     def check_project_id_or_model_run_id(self):
         if not self.source_model_run_id and not self.source_project_id:
             raise ValueError(
-                'source_project_id or source_model_id are required inside params dictionary'
+                'Either source_project_id or source_model_id are required'
             )
+        if self.source_model_run_id and self.source_project_id:
+            raise ValueError(
+                'Provide either only a source_project_id or source_model_id'
+            ) 
 
 
 class SendToAnnotateFromModelParams(TypedDict):
