@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ gihub.head_ref }}
           fetch-depth: 0
       - name: Install databooks
         run: sudo pip3 install databooks
@@ -28,4 +28,4 @@ jobs:
             git config --global user.email "gunderwood@labelbox.com"
             git add examples/.
             git commit -m "Removed metadata"
-            git push ${{ github.ref }}
+            git push
