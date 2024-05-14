@@ -594,7 +594,11 @@ class Client:
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)
+        if not res:
+            raise labelbox.exceptions.LabelboxError("Failed to create %s" %
+                                                    db_object_type.type_name())
         res = res["create%s" % db_object_type.type_name()]
+
         return db_object_type(self, res)
 
     def create_model_config(self, name: str, model_id: str,
