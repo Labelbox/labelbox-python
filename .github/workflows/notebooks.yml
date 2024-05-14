@@ -17,15 +17,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
       - name: Install databooks
         run: sudo pip3 install databooks
       - name: Remove notebook metadata
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
         run: databooks meta examples/. --rm-outs | echo Y
-      - name: Stage files
-        run: git add examples/.
-      - name: Commit changed files
-        run: git commit -m "Removed metadata"
-      - name: git push
+      - name: Modify and commit changes
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+        run: |
+        git add examples/.
+        git commit -m "Removed metadata"
+        git push
