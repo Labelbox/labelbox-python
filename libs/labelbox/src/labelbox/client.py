@@ -2033,6 +2033,8 @@ class Client:
 
         """
 
+        validated_params = SendToAnnotateFromCatalogParams(**params)
+
         mutation_str = """mutation SendToAnnotateFromCatalogPyApi($input: SendToAnnotateFromCatalogInput!) {
                             sendToAnnotateFromCatalog(input: $input) {
                               taskId
@@ -2044,26 +2046,14 @@ class Client:
             task_queue_id)
         data_rows_query = self.build_catalog_query(data_rows)
 
-        source_model_run_id = params.get("source_model_run_id", None)
-        predictions_ontology_mapping = params.get(
-            "predictions_ontology_mapping", None)
         predictions_input = build_predictions_input(
-            predictions_ontology_mapping,
-            source_model_run_id) if source_model_run_id else None
+            validated_params.predictions_ontology_mapping,
+            validated_params.source_model_run_id
+        ) if validated_params.source_model_run_id else None
 
-        source_project_id = params.get("source_project_id", None)
-        annotations_ontology_mapping = params.get(
-            "annotations_ontology_mapping", None)
         annotations_input = build_annotations_input(
-            annotations_ontology_mapping,
-            source_project_id) if source_project_id else None
-
-        batch_priority = params.get("batch_priority", 5)
-        exclude_data_rows_in_project = params.get(
-            "exclude_data_rows_in_project", False)
-        override_existing_annotations_rule = params.get(
-            "override_existing_annotations_rule",
-            ConflictResolutionStrategy.KeepExisting)
+            validated_params.annotations_ontology_mapping, validated_params.
+            source_project_id) if validated_params.source_project_id else None
 
         res = self.execute(
             mutation_str, {
@@ -2072,18 +2062,18 @@ class Client:
                         destination_project_id,
                     "batchInput": {
                         "batchName": batch_name,
-                        "batchPriority": batch_priority
+                        "batchPriority": validated_params.batch_priority
                     },
                     "destinationTaskQueue":
                         destination_task_queue,
                     "excludeDataRowsInProject":
-                        exclude_data_rows_in_project,
+                        validated_params.exclude_data_rows_in_project,
                     "annotationsInput":
                         annotations_input,
                     "predictionsInput":
                         predictions_input,
                     "conflictLabelsResolutionStrategy":
-                        override_existing_annotations_rule,
+                        validated_params.override_existing_annotations_rule,
                     "searchQuery": {
                         "scope": None,
                         "query": [data_rows_query]

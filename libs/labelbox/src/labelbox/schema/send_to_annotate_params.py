@@ -3,6 +3,8 @@ import sys
 from typing import Optional, Dict
 
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from pydantic import model_validator
+from pydantic.main import BaseModel
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -10,7 +12,7 @@ else:
     from typing_extensions import TypedDict
 
 
-class SendToAnnotateFromCatalogParams(TypedDict):
+class SendToAnnotateFromCatalogParams(BaseModel):
     """
     Extra parameters for sending data rows to a project through catalog. At least one of source_model_run_id or
     source_project_id must be provided.
@@ -30,13 +32,21 @@ class SendToAnnotateFromCatalogParams(TypedDict):
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
 
-    source_model_run_id: Optional[str]
-    predictions_ontology_mapping: Optional[Dict[str, str]]
-    source_project_id: Optional[str]
-    annotations_ontology_mapping: Optional[Dict[str, str]]
-    exclude_data_rows_in_project: Optional[bool]
-    override_existing_annotations_rule: Optional[ConflictResolutionStrategy]
-    batch_priority: Optional[int]
+    source_model_run_id: Optional[str] = None
+    source_project_id: Optional[str] = None
+    predictions_ontology_mapping: Optional[Dict[str, str]] = {}
+    annotations_ontology_mapping: Optional[Dict[str, str]] = {}
+    exclude_data_rows_in_project: Optional[bool] = False
+    override_existing_annotations_rule: Optional[
+        ConflictResolutionStrategy] = ConflictResolutionStrategy.KeepExisting
+    batch_priority: Optional[int] = 5
+
+    @model_validator(mode='after')
+    def check_project_id_or_model_run_id(self):
+        if not self.source_model_run_id and not self.source_project_id:
+            raise ValueError(
+                'source_project_id or source_model_id are required inside params dictionary'
+            )
 
 
 class SendToAnnotateFromModelParams(TypedDict):
