@@ -2002,7 +2002,7 @@ class Client:
                                       task_queue_id: Optional[str],
                                       batch_name: str,
                                       data_rows: Union[DataRowIds, GlobalKeys],
-                                      params: SendToAnnotateFromCatalogParams):
+                                      params: Dict[str: Any]):
         """
         Sends data rows from catalog to a specified project for annotation.
 
