@@ -59,3 +59,36 @@ Our notebooks contain practical examples for labelbox sdk uses. To update a note
 
 ## New Features and Extensions
 - Coming up in the future
+
+
+## Helpful steps
+### Branches and Tags
+* Begin by creating a branch off the develop branch.
+* All development should occur in feature branches, ideally prefixed with the contributor's initials. For example, use `fs/feature_name` for a feature branch.
+* Once a PR is approved, merge it into the develop branch using the standard GitHub _PR merge button_   s labeled Merge pull request. This action will squash all commits.
+* Ensure that you review all comments thoroughly and make necessary edits or deletions before completing the merge.
+
+
+
+### Internal Code Documentation Update
+
+Our internal developer documentation is generated from Python docstrings and hosted on [ReadTheDocs](https://readthedocs.org/projects/labelbox-python/) using Sphinx.
+
+Docstrings should be formatted according to the guidelines found [here](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html).
+
+Unless you're adding a new package or file, documentation updates are automated. You can review your updated documentation by running the following command at the root of the repository:
+```bash
+rye run docs
+```
+
+After running the command, navigate to `docs/build/html` and open the index.html file to confirm that your documentation updates are reflected:
+```bash
+open index.html
+```
+
+**Adding New Packages:**
+If you add a new package, you must update the Sphinx configuration:
+* Add the new package to docs/labelbox/index.rst.
+* Create a new .rst file for the new package.
+
+Re-run the documentation command to generate the updated docs and verify your changes.
