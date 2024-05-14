@@ -23,7 +23,7 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
       - name: Install databooks
-        run: sudo pip3 install databooks
+        run: pip install databooks
       - name: Remove notebook metadata
         run: echo "y" | databooks meta examples/. --rm-outs
       - name: Commit changes
