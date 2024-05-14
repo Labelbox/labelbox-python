@@ -11,7 +11,7 @@ on:
       - examples/**
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   
 jobs:
@@ -35,4 +35,5 @@ jobs:
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
