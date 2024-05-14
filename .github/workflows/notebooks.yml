@@ -10,12 +10,17 @@ on:
     paths:
       - examples/**
 
+permissions:
+  contents: write
+  id-token: write
+  
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
           fetch-depth: 0
       - name: Install databooks
