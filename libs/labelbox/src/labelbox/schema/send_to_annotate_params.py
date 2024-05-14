@@ -3,7 +3,7 @@ import sys
 from typing import Optional, Dict
 
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
-from pydantic import model_validator
+from pydantic import model_validator, ConfigDict
 from pydantic.main import BaseModel
 
 if sys.version_info >= (3, 8):
@@ -31,6 +31,7 @@ class SendToAnnotateFromCatalogParams(BaseModel):
         ConflictResolutionStrategy.KEEP_EXISTING.
     :param batch_priority: Optional[int] - The priority of the batch. Defaults to 5.
     """
+    model_config = ConfigDict(extra='forbid')
 
     source_model_run_id: Optional[str] = None
     source_project_id: Optional[str] = None
