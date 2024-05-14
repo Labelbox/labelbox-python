@@ -1,0 +1,22 @@
+name: Labelbox Python SDK Notebooks (Develop)
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - examples/**
+  pull_request:
+    branches: [develop]
+    paths:
+      - examples/**
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install databooks
+        run: sudo pip3 install databooks
+      - name: Remove notebook metadata
+        run: databooks meta examples/. --rm-outs
