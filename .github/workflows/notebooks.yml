@@ -11,8 +11,8 @@ on:
       - examples/**
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
+  pull-requests: write
   
 jobs:
   update:
@@ -20,7 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
           fetch-depth: 0
       - name: Install databooks
@@ -29,8 +28,11 @@ jobs:
         run: echo "y" | databooks meta examples/. --rm-outs
       - name: Commit changes
         run: |
-            git config --global user.name "github-actions"
-            git config --global user.email "github-actions@github.com"
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
             git add examples/.
             git commit -m "Removed metadata" || exit 0
-            git push
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: ${{ github.head_ref }}
