@@ -41,12 +41,12 @@ class SendToAnnotateFromCatalogParams(pydantic_compat.BaseModel):
     batch_priority: Optional[int] = 5
 
     @pydantic_compat.root_validator
-    def check_project_id_or_model_run_id(self):
-        if not self.source_model_run_id and not self.source_project_id:
+    def check_project_id_or_model_run_id(cls, values):
+        if not values.get("source_model_run_id") and not values.get("source_project_id"):
             raise ValueError(
                 'Either source_project_id or source_model_id are required'
             )
-        if self.source_model_run_id and self.source_project_id:
+        if values.get("source_model_run_id") and values.get("source_project_id"):
             raise ValueError(
                 'Provide either only a source_project_id or source_model_id'
             ) 
