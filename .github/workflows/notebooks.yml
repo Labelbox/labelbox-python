@@ -19,6 +19,4 @@ jobs:
       - name: Install databooks
         run: sudo pip3 install databooks
       - name: Remove notebook metadata
-        run: |
-        databooks meta examples/. --rm-outs
-        y
+        run: echo y | databooks meta examples/. --rm-outs
