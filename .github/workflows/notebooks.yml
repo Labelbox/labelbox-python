@@ -27,10 +27,10 @@ jobs:
         run: sudo pip3 install databooks
       - name: Remove notebook metadata
         run: echo "y" | databooks meta examples/. --rm-outs
-      - name: Modify and commit changes
+      - name: Commit changes
         run: |
-            git config --global user.name "github_actions"
-            git config --global user.email "gunderwood@labelbox.com"
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
             git add examples/.
-            git commit -m "Removed metadata"
+            git commit -m "Removed metadata" || exit 0
             git push
