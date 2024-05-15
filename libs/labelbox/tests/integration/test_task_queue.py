@@ -1,5 +1,5 @@
 import time
-
+from typing import Dict
 from labelbox import Project
 from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
@@ -10,6 +10,19 @@ def test_get_task_queue(project: Project):
     review_queue = next(
         tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE")
     assert review_queue
+
+
+def test_get_overview(project: Project):
+    po = project.get_overview()
+
+    assert isinstance(po.to_label, int)
+    assert isinstance(po.in_review, Dict[str, int])
+    assert isinstance(po.in_rework, int)
+    assert isinstance(po.skipped, int)
+    assert isinstance(po.done, int)
+    assert isinstance(po.issues, int)
+    assert isinstance(po.labeled, int)
+    assert isinstance(po.all_in_data_rows, int)
 
 
 def _validate_moved(project, queue_name, data_row_count):
