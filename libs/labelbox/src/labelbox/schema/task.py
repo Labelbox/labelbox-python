@@ -2,12 +2,15 @@ import json
 import logging
 import requests
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
+from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union, Final
 from labelbox import parser
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship, Entity
+
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.internal.datarow_upload_constants import MAX_DATAROW_PER_API_OPERATION
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -214,3 +217,77 @@ class Task(DbObject):
         task: Task = tasks[0]
         task._user = user
         return task
+
+
+class DataUpsertTask(Task):
+    __max_donwload_size: Final = MAX_DATAROW_PER_API_OPERATION
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._user = None
+
+    @property
+    def result(self) -> Union[List[Dict[str, Any]]]:
+        if self.status == "FAILED":
+            raise ValueError(f"Job failed. Errors : {self.errors}")
+        return self._result_as_list()
+
+    @property
+    def created_data_rows(self) -> Optional[Dict[str, Any]]:
+        return self.result
+
+    @property
+    def result_all(self) -> PaginatedCollection:
+        return self._download_result_paginated()
+
+    def _download_result_paginated(self) -> PaginatedCollection:
+        page_size = 5000  # hardcode to avoid overloading the server
+        from_cursor = None
+
+        query_str = """query SuccessesfulDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
+                    successesfulDataRowImports(data: { taskId: $taskId, first: $first, from: $from})
+                        {
+                            nodes { 
+                                id
+                                externalId
+                                globalKey
+                                rowData
+                                }
+                            after
+                            total
+                        }
+                    }
+                """
+
+        params = {
+            'taskId': self.uid,
+            'first': page_size,
+            'from': from_cursor,
+        }
+
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params=params,
+            dereferencing=['successesfulDataRowImports', 'nodes'],
+            obj_class=lambda _, data_row: {
+                'id': data_row['id'],
+                'external_id': data_row.get('externalId'),
+                'row_data': data_row['rowData'],
+                'global_key': data_row.get('globalKey'),
+            },
+            cursor_path=['successesfulDataRowImports', 'after'],
+        )
+
+    def _result_as_list(self) -> List[Dict[str, Any]]:
+        total_downloaded = 0
+        results = []
+        data = self._download_result_paginated()
+
+        for row in data:
+            results.append(row)
+            total_downloaded += 1
+            if total_downloaded >= self.__max_donwload_size:
+                break
+
+        return results

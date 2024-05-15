@@ -2,12 +2,12 @@ from tempfile import NamedTemporaryFile
 import uuid
 from datetime import datetime
 import json
-
-from labelbox.schema.media_type import MediaType
-
-import pytest
 import requests
 
+from unittest.mock import patch
+import pytest
+
+from labelbox.schema.media_type import MediaType
 from labelbox import DataRow, AssetAttachment
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.task import Task
@@ -173,18 +173,28 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
-    # Test creation using URL
-    task = dataset.create_data_rows([
-        {
-            DataRow.row_data: image_url
-        },
-        {
-            "row_data": image_url
-        },
-    ])
-    assert task in client.get_user().created_tasks()
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+               new=1):  # Force chunking
+        # Test creation using URL
+        task = dataset.create_data_rows([
+            {
+                DataRow.row_data: image_url
+            },
+            {
+                "row_data": image_url
+            },
+        ])
     task.wait_till_done()
+    assert task.has_errors() is False
     assert task.status == "COMPLETE"
+
+    results = task.result
+    assert len(results) == 2
+    row_data = [result["row_data"] for result in results]
+    assert row_data == [image_url, image_url]
+    results_all = task.result_all
+    row_data = [result["row_data"] for result in results_all]
+    assert row_data == [image_url, image_url]
 
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == 2
