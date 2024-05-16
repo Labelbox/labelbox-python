@@ -1,5 +1,4 @@
 import time
-from typing import Dict
 from labelbox import Project
 from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
@@ -16,7 +15,7 @@ def test_get_overview(project: Project):
     po = project.get_overview()
 
     assert isinstance(po.to_label, int)
-    assert isinstance(po.in_review, Dict[str, int])
+    assert isinstance(po.in_review, dict)
     assert isinstance(po.in_rework, int)
     assert isinstance(po.skipped, int)
     assert isinstance(po.done, int)
