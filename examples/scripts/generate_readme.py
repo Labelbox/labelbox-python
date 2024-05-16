@@ -27,12 +27,14 @@ def create_title(link):
     title = []
     acronyms = ["html", "pdf", "llm", "dicom"]
     for word in split_link:
-        print(word)
         if word.lower() in acronyms:
             title.append(word.upper())
         else:
             title.append(word.capitalize())
     return " ".join(title).split(".")[0]
+
+def make_link(link, photo, link_type):
+    return f"<a href=\"{link}\" target=\"_blank\"><img src=\"{photo}\" alt=\"Open In {link_type}\"></a>"
 
 def make_links_dict(links):
     link_dict = defaultdict(list)
@@ -49,11 +51,11 @@ def make_table(base):
         generated_markdown += f"## {create_header(link_list[0])}\n\n"
         for link in link_list:
             pandas_dict["Notebook"].append(create_title(link))
-            pandas_dict["Github"].append(f"[![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)]({GITHUB_TEMPLATE.format(filename = '/'.join(link.split('/')[1:]))})")
-            pandas_dict["Google Colab"].append(f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({COLAB_TEMPLATE.format(filename='/'.join(link.split('/')[1:]))})")
+            pandas_dict["Github"].append(make_link(GITHUB_TEMPLATE.format(filename = '/'.join(link.split('/')[1:])),"https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white", "Github"))
+            pandas_dict["Google Colab"].append(make_link(COLAB_TEMPLATE.format(filename='/'.join(link.split('/')[1:])), "https://colab.research.google.com/assets/colab-badge.svg", "Colab"))
         df = pandas.DataFrame(pandas_dict)
-        generated_markdown += f"{df.to_markdown(index=False,tablefmt='github')}\n\n"
+        generated_markdown += f"{df.to_html(col_space=[400, 20, 20],index=False, escape=False)}\n\n"
     return generated_markdown
 
 with open("./examples/README.md", "w") as readme:
-    readme.write(make_table(BASE_MARKDOWN))
+    readme.write(f"{make_table(BASE_MARKDOWN).rstrip()}\n")

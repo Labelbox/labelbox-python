@@ -7,90 +7,346 @@
 
 ## Basics
 
-| Notebook                    | Github                                                                                                                                                                                          | Google Colab                                                                                                                                                                                                   |
-|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Basics                      | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/basics.ipynb)                      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/basics.ipynb)                      |
-| Batches                     | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/batches.ipynb)                     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/batches.ipynb)                     |
-| Custom Embeddings           | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/custom_embeddings.ipynb)           | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/custom_embeddings.ipynb)           |
-| Projects                    | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/projects.ipynb)                    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/projects.ipynb)                    |
-| User Management             | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/user_management.ipynb)             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/user_management.ipynb)             |
-| Export V1 Migration Support | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/export_v1_migration_support.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/export_v1_migration_support.ipynb) |
-| Data Row Metadata           | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/data_row_metadata.ipynb)           | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_row_metadata.ipynb)           |
-| Ontologies                  | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/ontologies.ipynb)                  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb)                  |
-| Data Rows                   | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/data_rows.ipynb)                   | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_rows.ipynb)                   |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Basics</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/basics.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/basics.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Batches</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/batches.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/batches.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Custom Embeddings</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/custom_embeddings.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/custom_embeddings.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Projects</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/projects.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/projects.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>User Management</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/user_management.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/user_management.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Export V1 Migration Support</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/export_v1_migration_support.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/export_v1_migration_support.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Data Row Metadata</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/data_row_metadata.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_row_metadata.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Ontologies</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/ontologies.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/ontologies.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Data Rows</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/data_rows.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_rows.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Foundry
 
-| Notebook         | Github                                                                                                                                                                                | Google Colab                                                                                                                                                                                         |
-|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Object Detection | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/foundry/object_detection.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/foundry/object_detection.ipynb) |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Object Detection</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/foundry/object_detection.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/foundry/object_detection.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Project Configuration
 
-| Notebook         | Github                                                                                                                                                                                              | Google Colab                                                                                                                                                                                                       |
-|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Project Setup    | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/project_setup.ipynb)    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/project_setup.ipynb)    |
-| Webhooks         | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/webhooks.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/webhooks.ipynb)         |
-| Queue Management | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/queue_management.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/queue_management.ipynb) |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Project Setup</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/project_setup.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/project_setup.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Webhooks</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/webhooks.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/webhooks.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Queue Management</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/queue_management.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/queue_management.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Annotation Import
 
-| Notebook                           | Github                                                                                                                                                                                                            | Google Colab                                                                                                                                                                                                                     |
-|------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Import Labeled Dataset Image       | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/import_labeled_dataset_image.ipynb)       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/import_labeled_dataset_image.ipynb)       |
-| Audio                              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/audio.ipynb)                              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/audio.ipynb)                              |
-| Video                              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/video.ipynb)                              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/video.ipynb)                              |
-| Text                               | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/text.ipynb)                               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/text.ipynb)                               |
-| Tiled                              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/tiled.ipynb)                              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/tiled.ipynb)                              |
-| Conversational                     | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/conversational.ipynb)                     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/conversational.ipynb)                     |
-| PDF                                | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/PDF.ipynb)                                | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/PDF.ipynb)                                |
-| Conversational LLM Data Generation | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/conversational_LLM_data_generation.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/conversational_LLM_data_generation.ipynb) |
-| DICOM                              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/dicom.ipynb)                              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/dicom.ipynb)                              |
-| Image                              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/image.ipynb)                              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/image.ipynb)                              |
-| HTML                               | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/html.ipynb)                               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/html.ipynb)                               |
-| Conversational LLM                 | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/conversational_LLM.ipynb)                 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/conversational_LLM.ipynb)                 |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Import Labeled Dataset Image</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/import_labeled_dataset_image.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/import_labeled_dataset_image.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Audio</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/audio.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/audio.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Video</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/video.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/video.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Text</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/text.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/text.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Tiled</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/tiled.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/tiled.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Conversational</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/conversational.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/conversational.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>PDF</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/PDF.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/PDF.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Conversational LLM Data Generation</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/conversational_LLM_data_generation.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/conversational_LLM_data_generation.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>DICOM</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/dicom.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/dicom.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Image</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/image.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/image.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>HTML</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/html.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/html.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Conversational LLM</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/conversational_LLM.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/conversational_LLM.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Prediction Upload
 
-| Notebook                       | Github                                                                                                                                                                                                        | Google Colab                                                                                                                                                                                                                 |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Conversational Predictions     | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/conversational_predictions.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/conversational_predictions.ipynb)     |
-| Text Predictions               | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/text_predictions.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/text_predictions.ipynb)               |
-| HTML Predictions               | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/html_predictions.ipynb)               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/html_predictions.ipynb)               |
-| Conversational LLM Predictions | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/conversational_LLM_predictions.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/conversational_LLM_predictions.ipynb) |
-| Geospatial Predictions         | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/geospatial_predictions.ipynb)         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/geospatial_predictions.ipynb)         |
-| PDF Predictions                | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/pdf_predictions.ipynb)                | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/pdf_predictions.ipynb)                |
-| Video Predictions              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/video_predictions.ipynb)              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/video_predictions.ipynb)              |
-| Image Predictions              | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/image_predictions.ipynb)              | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/image_predictions.ipynb)              |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Conversational Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/conversational_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/conversational_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Text Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/text_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/text_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>HTML Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/html_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/html_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Conversational LLM Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/conversational_LLM_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/conversational_LLM_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Geospatial Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/geospatial_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/geospatial_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>PDF Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/pdf_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/pdf_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Video Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/video_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/video_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Image Predictions</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/prediction_upload/image_predictions.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/prediction_upload/image_predictions.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Exports
 
-| Notebook              | Github                                                                                                                                                                                     | Google Colab                                                                                                                                                                                              |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Composite Mask Export | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/exports/composite_mask_export.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/exports/composite_mask_export.ipynb) |
-| Export Data           | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/exports/export_data.ipynb)           | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/exports/export_data.ipynb)           |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Composite Mask Export</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/exports/composite_mask_export.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/exports/composite_mask_export.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Export Data</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/exports/export_data.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/exports/export_data.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Integrations
 
-| Notebook       | Github                                                                                                                                                                                            | Google Colab                                                                                                                                                                                                     |
-|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Meta Sam       | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/sam/meta_sam.ipynb)            | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/sam/meta_sam.ipynb)            |
-| Meta Sam Video | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/sam/meta_sam_video.ipynb)      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/sam/meta_sam_video.ipynb)      |
-| Langchain      | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/langchain/langchain.ipynb)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/langchain/langchain.ipynb)     |
-| Huggingface    | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/huggingface/huggingface.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/huggingface/huggingface.ipynb) |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Meta Sam</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/sam/meta_sam.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/sam/meta_sam.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Meta Sam Video</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/sam/meta_sam_video.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/sam/meta_sam_video.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Langchain</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/langchain/langchain.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/langchain/langchain.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Huggingface</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/huggingface/huggingface.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/huggingface/huggingface.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Model Experiments
 
-| Notebook                     | Github                                                                                                                                                                                                      | Google Colab                                                                                                                                                                                                               |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Model Slices                 | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/model_slices.ipynb)                 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/model_slices.ipynb)                 |
-| Custom Metrics Basics        | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/custom_metrics_basics.ipynb)        | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/custom_metrics_basics.ipynb)        |
-| Custom Metrics Demo          | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/custom_metrics_demo.ipynb)          | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/custom_metrics_demo.ipynb)          |
-| Model Predictions To Project | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/model_predictions_to_project.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/model_predictions_to_project.ipynb) |
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Model Slices</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/model_slices.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/model_slices.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Custom Metrics Basics</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/custom_metrics_basics.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/custom_metrics_basics.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Custom Metrics Demo</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/custom_metrics_demo.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/custom_metrics_demo.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
+      <td>Model Predictions To Project</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/model_predictions_to_project.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/model_predictions_to_project.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Extras
 
-| Notebook                        | Github                                                                                                                                                                                              | Google Colab                                                                                                                                                                                                       |
-|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Classification Confusion Matrix | [![Github](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/Labelbox/labelbox-python/tree/develop/examples/extras/classification_confusion_matrix.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/extras/classification_confusion_matrix.ipynb) |
-
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th style="min-width: 400px;">Notebook</th>
+      <th style="min-width: 20px;">Github</th>
+      <th style="min-width: 20px;">Google Colab</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Classification Confusion Matrix</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/extras/classification_confusion_matrix.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/extras/classification_confusion_matrix.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+  </tbody>
+</table>
