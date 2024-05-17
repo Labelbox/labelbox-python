@@ -39,7 +39,7 @@ from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
-from labelbox.schema.project_overview import Project_Overview
+from labelbox.schema.project_overview import ProjectOverview
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -1747,7 +1747,7 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_overview(self) -> Project_Overview:
+    def get_overview(self) -> ProjectOverview:
         """ Return the number of data rows per task queue, and issues of a project
             Equivalent of the Overview tab of a project
 
@@ -1802,7 +1802,7 @@ class Project(DbObject, Updateable, Deletable):
         overview["to_label"] = overview.pop("unlabeled")
         overview["all_in_data_rows"] = overview.pop("all")
 
-        return Project_Overview(**overview)
+        return ProjectOverview(**overview)
 
 
 class ProjectMember(DbObject):
