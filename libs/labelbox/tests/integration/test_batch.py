@@ -120,9 +120,15 @@ def test_archive_batch(project: Project, small_dataset: Dataset):
     stream = export_task.get_stream()
     data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
     batch = project.create_batch("batch to archive", data_rows)
+    
     batch.remove_queued_data_rows()
-    exported_data_rows = list(batch.export_data_rows())
-
+    
+    export_params = {"batch_ids": [batch.uid]}
+    export_task = project.export(params=export_params)
+    export_task.wait_till_done()  
+    stream = export_task.get_stream()
+    exported_data_rows = [dr for dr in stream]
+    
     assert len(exported_data_rows) == 0
 
 

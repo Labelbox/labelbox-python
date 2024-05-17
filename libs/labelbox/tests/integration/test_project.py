@@ -10,7 +10,6 @@ from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.export_task import BufferedJsonConverterOutput
 
 
 def test_project(client, rand_gen):
