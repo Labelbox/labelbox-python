@@ -2,7 +2,7 @@ import pandas
 import glob
 from collections import defaultdict
 
-BASE_MARKDOWN = """
+SDK_EXAMPLE_HEADER = """
 # Labelbox SDK Examples\n
 - Learn how to use the SDK by following along\n
 - Run in google colab, view the notebooks on github, or clone the repo and run locally\n
@@ -13,28 +13,62 @@ GITHUB_TEMPLATE = (
     "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
 )
 
-def create_header(link: list[str]):
+def create_header(link: str) -> str:
+    """Creates headers of tables with h2 tags to support readme
+
+    Args:
+        link (str): file path
+
+    Returns:
+        str: formatted file path for header
+    """
+    # Splits up link uses directory name
     split_link = link.split("/")[1].replace("_", " ").split(" ")
     header = []
-    # Capitalize first letter avoided .capitalize to keep abbreviations
+    
+    # Capitalize first letter of each word
     for word in split_link:
-        formatted_word = word[0].upper() + word[1:]
-        header.append(formatted_word)
-    return " ".join(header)
+        header.append(word.capitalize())
+    return f"<h2>{' '.join(header)}</h2>"
 
-def create_title(link):
+def create_title(link: str) -> str:
+    """Create notebook titles will be name of notebooks with _ replaced with spaces and file extension removed
+
+    Args:
+        link (str): file path
+
+    Returns:
+        str: formatted file path for notebook title
+    """
     split_link = link.split(".")[-2].split("/")[-1].replace("_", " ").split(" ")
     title = []
-    acronyms = ["html", "pdf", "llm", "dicom"]
+    
+    # List to lower case certain words and list to keep certain acronyms capitalized
+    lower_case_words = ["to"]
+    acronyms = ["html", "pdf", "llm", "dicom", "sam"]
+
     for word in split_link:
         if word.lower() in acronyms:
             title.append(word.upper())
+        elif word.lower in lower_case_words:
+            title.append(word.lower())
         else:
             title.append(word.capitalize())
     return " ".join(title).split(".")[0]
 
-def make_link(link, photo, link_type):
-    return f"<a href=\"{link}\" target=\"_blank\"><img src=\"{photo}\" alt=\"Open In {link_type}\"></a>"
+def make_link(link: str, photo: str, link_type: str) -> str:
+    """Creates the actually links to the notebooks
+
+    Args:
+        link (str): file path
+        photo (str): _description_
+        link_type (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    return f"<a href=\"{link}\" target=\"_blank\"><img src=\"{photo}\" alt=\"Open In {link_type}\" onclick=\"(function prevent(e){{e.preventDefault()}}()\"></a>"
+
 
 def make_links_dict(links):
     link_dict = defaultdict(list)
@@ -48,14 +82,14 @@ def make_table(base):
     generated_markdown = base
     for link_list in link_dict.values():
         pandas_dict = {"Notebook": [], "Github": [], "Google Colab": []}
-        generated_markdown += f"## {create_header(link_list[0])}\n\n"
+        generated_markdown += f"{create_header(link_list[0])}\n\n"
         for link in link_list:
             pandas_dict["Notebook"].append(create_title(link))
             pandas_dict["Github"].append(make_link(GITHUB_TEMPLATE.format(filename = '/'.join(link.split('/')[1:])),"https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white", "Github"))
             pandas_dict["Google Colab"].append(make_link(COLAB_TEMPLATE.format(filename='/'.join(link.split('/')[1:])), "https://colab.research.google.com/assets/colab-badge.svg", "Colab"))
         df = pandas.DataFrame(pandas_dict)
-        generated_markdown += f"{df.to_html(col_space=[400, 20, 20],index=False, escape=False)}\n\n"
+        generated_markdown += f"{df.to_html(col_space={'Notebook':400},index=False, escape=False, justify='left')}\n\n"
     return generated_markdown
 
 with open("./examples/README.md", "w") as readme:
-    readme.write(f"{make_table(BASE_MARKDOWN).rstrip()}\n")
+    readme.write(f"{make_table(SDK_EXAMPLE_HEADER).rstrip()}\n")
