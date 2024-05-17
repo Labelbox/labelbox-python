@@ -95,6 +95,21 @@ def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
 
     batch.delete()
 
+@pytest.fixture
+def configured_project_with_basic_ontology(client, rand_gen):
+    ontology_builder = OntologyBuilder(tools=[Tool(tool=Tool.Type.BBOX, name="Box 1", color="#ff0000")])
+    project = client.create_project(name=rand_gen(str),
+                                    queue_mode=QueueMode.Batch,
+                                    media_type=MediaType.Image)
+    ontology = client.create_ontology('Integration Test Ontology',
+                                      ontology_builder.asdict(),
+                                      MediaType.Image)
+    project.setup_editor(ontology)
+    
+    yield project
+    project.delete()
+    client.delete_unused_ontology(ontology.uid)
+
 
 @pytest.fixture
 def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
@@ -317,7 +332,7 @@ def big_dataset_data_row_ids(big_dataset: Dataset):
     export_task = big_dataset.export()
     export_task.wait_till_done()
     stream = export_task.get_stream()
-    yield [dr.json_str["data_row"]["id"] for dr in stream]
+    yield [json.loads(dr.json_str)["data_row"]["id"] for dr in stream]
 
 
 @pytest.fixture(scope='function')

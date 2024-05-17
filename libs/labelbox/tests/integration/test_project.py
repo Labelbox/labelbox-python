@@ -1,11 +1,10 @@
 import time
 import os
 import uuid
-
 import pytest
 import requests
 
-from labelbox import Project, LabelingFrontend, Dataset
+from labelbox import Project, LabelingFrontend, Dataset, StreamType
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
@@ -203,7 +202,7 @@ def test_batches(project: Project, dataset: Dataset, image_url):
     task.wait_till_done()
     export_task = dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream()
+    stream = export_task.get_buffered_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
@@ -215,23 +214,32 @@ def test_batches(project: Project, dataset: Dataset, image_url):
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
-def test_create_batch_with_global_keys_sync(project: Project, data_rows):
+def test_create_batch_with_global_keys_sync(configured_project_with_basic_ontology: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
-    batch = project.create_batch(batch_name, global_keys=global_keys)
-    # TODO: Move to export_v2
-    batch_data_rows = set(batch.export_data_rows())
-    assert batch_data_rows == set(data_rows)
+    batch = configured_project_with_basic_ontology.create_batch(batch_name, global_keys=global_keys)
+    
+    export_task = configured_project_with_basic_ontology.export(filters={"batch_ids": [batch.uid]})
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    
+    batch_data_rows_global_keys = [dr.json["data_row"]["global_key"] for dr in stream]
+    assert batch_data_rows_global_keys == global_keys
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
-def test_create_batch_with_global_keys_async(project: Project, data_rows):
+def test_create_batch_with_global_keys_async(configured_project_with_basic_ontology: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
-    batch = project._create_batch_async(batch_name, global_keys=global_keys)
-    # TODO: Move to export_v2
-    batch_data_rows = set(batch.export_data_rows())
-    assert batch_data_rows == set(data_rows)
+    batch = configured_project_with_basic_ontology._create_batch_async(batch_name, global_keys=global_keys)
+    
+    export_task = configured_project_with_basic_ontology.export(filters={"batch_ids": [batch.uid]})
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    
+    batch_data_rows_global_keys = [dr.json["data_row"]["global_key"] for dr in stream]
+
+    assert batch_data_rows_global_keys == global_keys
 
 
 def test_media_type(client, project: Project, rand_gen):

@@ -20,7 +20,10 @@ def test_create_batches(project: Project, big_dataset_data_row_ids: List[str]):
 
 
 def test_create_batches_from_dataset(project: Project, big_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(big_dataset.export_data_rows())]
+    export_task = big_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     project._wait_until_data_rows_are_processed(data_rows, [], 300)
 
     task = project.create_batches_from_dataset("test-batch",

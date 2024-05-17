@@ -1,11 +1,12 @@
-from labelbox import UniqueIds, OntologyBuilder, LabelingFrontend
+from labelbox import UniqueIds, OntologyBuilder, LabelingFrontend, Project, Ontology, Client
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from typing import List
 
 
 def test_send_to_annotate_include_annotations(
-        client, configured_batch_project_with_label, project_pack, ontology):
+        client: Client, configured_batch_project_with_label: Project, project_pack: List[Project], ontology: Ontology):
     [source_project, _, data_row, _] = configured_batch_project_with_label
-    destination_project = project_pack[0]
+    destination_project: Project = project_pack[0]
 
     src_ontology = source_project.ontology()
     destination_project.setup_editor(ontology)
@@ -45,10 +46,14 @@ def test_send_to_annotate_include_annotations(
         # Check that the data row was sent to the new project
         destination_batches = list(destination_project.batches())
         assert len(destination_batches) == 1
-
-        destination_data_rows = list(destination_batches[0].export_data_rows())
+        
+        export_task = destination_project.export(filters={"batch_ids": [destination_batches[0].uid]})
+        export_task.wait_till_done()
+        stream = export_task.get_buffered_stream()
+        
+        destination_data_rows = [dr.json["data_row"]["id"] for dr in stream]
         assert len(destination_data_rows) == 1
-        assert destination_data_rows[0].uid == data_row.uid
+        assert destination_data_rows[0] == data_row.uid
 
         # Verify annotations were copied into the destination project
         destination_project_labels = (list(destination_project.labels()))

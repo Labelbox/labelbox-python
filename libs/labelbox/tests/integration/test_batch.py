@@ -1,10 +1,10 @@
 import time
 from typing import List
 from uuid import uuid4
-
+import json
 import pytest
 
-from labelbox import Dataset, Project
+from labelbox import Dataset, Project, Ontology
 from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, ResourceConflict, LabelboxError
 
 
@@ -94,8 +94,8 @@ def test_create_batch_with_consensus_settings(project: Project,
                                               small_dataset: Dataset):
     export_task = small_dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream()
-    data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     consensus_settings = {"coverage_percentage": 0.1, "number_of_labels": 3}
     batch = project.create_batch("batch with consensus settings",
                                  data_rows,
@@ -108,32 +108,35 @@ def test_create_batch_with_consensus_settings(project: Project,
 
 def test_create_batch_with_data_row_class(project: Project,
                                           small_dataset: Dataset):
-    data_rows = list(small_dataset.export_data_rows())
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch = project.create_batch("test-batch-data-rows", data_rows, 3)
     assert batch.name == "test-batch-data-rows"
     assert batch.size == len(data_rows)
 
-
-def test_archive_batch(project: Project, small_dataset: Dataset):
+def test_archive_batch(configured_project_with_basic_ontology: Project, small_dataset: Dataset):
     export_task = small_dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream()
-    data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
-    batch = project.create_batch("batch to archive", data_rows)
-    
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
+    batch = configured_project_with_basic_ontology.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
     
-    export_params = {"batch_ids": [batch.uid]}
-    export_task = project.export(params=export_params)
+    export_task = configured_project_with_basic_ontology.export(filters={"batch_ids": [batch.uid]})
     export_task.wait_till_done()  
-    stream = export_task.get_stream()
+    stream = export_task.get_buffered_stream()
     exported_data_rows = [dr for dr in stream]
-    
+    print(exported_data_rows)
     assert len(exported_data_rows) == 0
 
 
 def test_delete(project: Project, small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch = project.create_batch("batch to delete", data_rows)
     batch.delete()
 
@@ -141,7 +144,10 @@ def test_delete(project: Project, small_dataset: Dataset):
 
 
 def test_batch_project(project: Project, small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch = project.create_batch("batch to test project relationship",
                                  data_rows)
 
@@ -197,9 +203,9 @@ def test_batch_creation_with_processing_timeout(
         project.create_batch("batch to test failed data rows", data_row_ids)
     project._wait_processing_max_seconds = stashed_wait_timeout
 
-
+@pytest.mark.export_v1("export_v1 test remove later")
 def test_export_data_rows(project: Project, dataset: Dataset, image_url: str,
-                          external_id: str):
+                          external_id: str , ontology: Ontology):
     n_data_rows = 2
     task = dataset.create_data_rows([
         {
@@ -267,7 +273,10 @@ def test_list_project_batches_with_no_batches(project: Project):
     reason="Test cannot be used effectively with MAL/LabelImport. \
 Fix/Unskip after resolving deletion with MAL/LabelImport")
 def test_delete_labels(project, small_dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch = project.create_batch("batch to delete labels", data_rows)
 
 
@@ -275,10 +284,23 @@ def test_delete_labels(project, small_dataset):
     reason="Test cannot be used effectively with MAL/LabelImport. \
 Fix/Unskip after resolving deletion with MAL/LabelImport")
 def test_delete_labels_with_templates(project: Project, small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch = project.create_batch("batch to delete labels w templates",
                                  data_rows)
-    exported_data_rows = list(batch.export_data_rows())
+    
+    export_task = project.export(filters={"batch_ids": [batch.uid]})
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    exported_data_rows = [dr.json["data_row"]["id"] for dr in stream]
+
     res = batch.delete_labels(labels_as_template=True)
-    exported_data_rows = list(batch.export_data_rows())
+    
+    export_task = project.export(filters={"batch_ids": [batch.uid]})
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    exported_data_rows = [dr.json["data_row"]["id"] for dr in stream]
+
     assert len(exported_data_rows) == 5

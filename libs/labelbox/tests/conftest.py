@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from typing import Type
 from enum import Enum
 from typing import Tuple
+import json
 
 from labelbox import Dataset, DataRow
 from labelbox import MediaType
@@ -28,7 +29,6 @@ from labelbox import LabelingFrontend
 from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.export_task import BufferedJsonConverterOutput
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
@@ -933,7 +933,7 @@ def big_dataset_data_row_ids(big_dataset: Dataset):
     export_task = big_dataset.export()
     export_task.wait_till_done()
     stream = export_task.get_stream()
-    yield [dr.json["data_row"]["id"] for dr in stream]
+    yield [json.loads(dr.json_str)["data_row"]["id"] for dr in stream]
 
 
 @pytest.fixture(scope='function')
