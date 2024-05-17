@@ -5,7 +5,7 @@ import uuid
 import pytest
 import requests
 
-from labelbox import Project, LabelingFrontend, Dataset
+from labelbox import Project, LabelingFrontend, Dataset, DataRow
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
@@ -201,8 +201,10 @@ def test_batches(project: Project, dataset: Dataset, image_url):
         },
     ] * 2)
     task.wait_till_done()
-    # TODO: Move to export_v2
-    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    export_task = dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_stream()
+    data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
     project.create_batch(batch_one, [data_rows[0]])
