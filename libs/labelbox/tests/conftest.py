@@ -932,7 +932,7 @@ def export_v2_test_helpers() -> Type[ExportV2Helpers]:
 def big_dataset_data_row_ids(big_dataset: Dataset):
     export_task = big_dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream(converter=BufferedJsonConverterOutput)
+    stream = export_task.get_stream()
     yield [dr.json["data_row"]["id"] for dr in stream]
 
 

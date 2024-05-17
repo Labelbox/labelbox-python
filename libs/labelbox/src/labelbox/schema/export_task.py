@@ -896,7 +896,7 @@ class ExportTask:
             "get_stream is deprecated and will be removed in a future release, use get_buffered_stream"
         )
         if converter is None:
-            converter = BufferedJsonConverterOutput()
+            converter = BufferedJsonConverterOutput
         """Returns the result of the task."""
         if self._task.status == "FAILED":
             raise ExportTask.ExportTaskException("Task failed")

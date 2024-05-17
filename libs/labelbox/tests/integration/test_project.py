@@ -204,7 +204,7 @@ def test_batches(project: Project, dataset: Dataset, image_url):
     task.wait_till_done()
     export_task = dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream(converter=BufferedJsonConverterOutput)
+    stream = export_task.get_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
