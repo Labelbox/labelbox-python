@@ -5,11 +5,12 @@ import uuid
 import pytest
 import requests
 
-from labelbox import Project, LabelingFrontend, Dataset, DataRow
+from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.export_task import BufferedJsonConverterOutput
 
 
 def test_project(client, rand_gen):
@@ -203,8 +204,8 @@ def test_batches(project: Project, dataset: Dataset, image_url):
     task.wait_till_done()
     export_task = dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream()
-    data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
+    stream = export_task.get_stream(converter=BufferedJsonConverterOutput)
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
     project.create_batch(batch_one, [data_rows[0]])

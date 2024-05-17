@@ -92,7 +92,10 @@ def test_create_batch_async(project: Project,
 
 def test_create_batch_with_consensus_settings(project: Project,
                                               small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_stream()
+    data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
     consensus_settings = {"coverage_percentage": 0.1, "number_of_labels": 3}
     batch = project.create_batch("batch with consensus settings",
                                  data_rows,
@@ -112,7 +115,10 @@ def test_create_batch_with_data_row_class(project: Project,
 
 
 def test_archive_batch(project: Project, small_dataset: Dataset):
-    data_rows = [dr.uid for dr in list(small_dataset.export_data_rows())]
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_stream()
+    data_rows = [dr.json_str["data_row"]["id"] for dr in stream]
     batch = project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
     exported_data_rows = list(batch.export_data_rows())
