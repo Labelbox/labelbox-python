@@ -325,7 +325,7 @@
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/custom_metrics_demo.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" onclick="(function prevent(e){e.preventDefault()}()"></a></td>
     </tr>
     <tr>
-      <td>Model Predictions To Project</td>
+      <td>Model Predictions to Project</td>
       <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/model_experiments/model_predictions_to_project.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github" onclick="(function prevent(e){e.preventDefault()}()"></a></td>
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/model_experiments/model_predictions_to_project.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" onclick="(function prevent(e){e.preventDefault()}()"></a></td>
     </tr>

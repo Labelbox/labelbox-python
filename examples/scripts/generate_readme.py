@@ -50,7 +50,7 @@ def create_title(link: str) -> str:
     for word in split_link:
         if word.lower() in acronyms:
             title.append(word.upper())
-        elif word.lower in lower_case_words:
+        elif word.lower() in lower_case_words:
             title.append(word.lower())
         else:
             title.append(word.capitalize())
