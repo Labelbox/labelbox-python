@@ -14,9 +14,7 @@ SDK_EXAMPLE_HEADER = """
 """
 
 COLAB_TEMPLATE = "https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/{filename}"
-GITHUB_TEMPLATE = (
-    "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
-)
+GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
 
 
 def create_header(link: str) -> str:
@@ -103,7 +101,9 @@ def make_table(base: str = "") -> str:
     Returns:
         str: markdown string file
     """
-    link_dict = make_links_dict(glob.glob("**/examples/**/*.ipynb", recursive=True))
+    link_dict = make_links_dict(
+        glob.glob("**/examples/**/*.ipynb", recursive=True)
+    )
     generated_markdown = base
     for link_list in link_dict.values():
         pandas_dict = {"Notebook": [], "Github": [], "Google Colab": []}
@@ -112,14 +112,18 @@ def make_table(base: str = "") -> str:
             pandas_dict["Notebook"].append(create_title(link))
             pandas_dict["Github"].append(
                 make_link(
-                    GITHUB_TEMPLATE.format(filename="/".join(link.split("/")[1:])),
+                    GITHUB_TEMPLATE.format(
+                        filename="/".join(link.split("/")[1:])
+                    ),
                     "https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white",
                     "Github",
                 )
             )
             pandas_dict["Google Colab"].append(
                 make_link(
-                    COLAB_TEMPLATE.format(filename="/".join(link.split("/")[1:])),
+                    COLAB_TEMPLATE.format(
+                        filename="/".join(link.split("/")[1:])
+                    ),
                     "https://colab.research.google.com/assets/colab-badge.svg",
                     "Colab",
                 )
