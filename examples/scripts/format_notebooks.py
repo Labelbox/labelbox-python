@@ -2,7 +2,7 @@ import glob
 import json
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
-import multiprocessing
+import string
 
 from yapf.yapflib.yapf_api import FormatCode
 
@@ -43,7 +43,7 @@ GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/exam
 def format_cell(source):
     for line in source.split("\n"):
         if line.strip().startswith(("!", "%")):
-            return source
+            return source.replace("!", "%")
     return FormatCode(source, style_config="google")[0]
 
 
@@ -71,14 +71,21 @@ def format_file(file_name):
     with open(file_name, "r") as file:
         data = json.load(file)
 
-    idx = 1
+    colab_path = COLAB_TEMPLATE.format(filename=file_name)
+    github_path = GITHUB_TEMPLATE.format(filename=file_name)
+
+    link_cell = deepcopy(LINK_CELL)
+
+    link_cell["source"][1] = link_cell["source"][1].format(colab=colab_path)
+    link_cell["source"][6] = link_cell["source"][6].format(github=github_path)
+
+    data["cells"] = [BANNER_CELL, link_cell] + data["cells"][2:]
+
     for cell in data["cells"]:
         if cell["cell_type"] == "code":
-            cell["execution_count"] = idx
             if isinstance(cell["source"], list):
                 cell["source"] = "".join(cell["source"])
             cell["source"] = format_cell(cell["source"])
-            idx += 1
             if cell["source"].endswith("\n"):
                 cell["source"] = cell["source"][:-1]
 
