@@ -37,7 +37,7 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - uses: ./.github/workflows/actions
+      - uses: ./.github/actions/notebooks
         with:
           rye-version: ${{ vars.RYE_VERSION }}
           python-version: ${{ inputs.python-version }}

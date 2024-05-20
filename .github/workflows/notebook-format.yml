@@ -1,4 +1,4 @@
-name: Labelbox Python SDK Notebooks (Develop)
+name: Labelbox Example Notebook Format
 
 on:
   push:
@@ -15,6 +15,7 @@ permissions:
   pull-requests: write
   
 jobs:
+  if: github.event.pull_request.merged == False
   update:
     runs-on: ubuntu-latest
     steps:
@@ -22,16 +23,19 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - name: Install databooks
-        run: pip install databooks
-      - name: Remove notebook metadata
-        run: echo "y" | databooks meta examples/. --rm-outs
+      - uses: ./.github/actions/notebooks
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ inputs.python-version }}
+      - name: Format
+        working-directory: examples
+        run: rye run clean
       - name: Commit changes
         run: |
             git config --local user.email "github-actions[bot]@users.noreply.github.com"
             git config --local user.name "github-actions[bot]"
             git add examples/.
-            git commit -m "Removed metadata" || exit 0
+            git commit -m ":art: Cleaned" || exit 0
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
