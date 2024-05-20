@@ -15,8 +15,8 @@ permissions:
   pull-requests: write
   
 jobs:
-  if: github.event.pull_request.merged == false
   update:
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

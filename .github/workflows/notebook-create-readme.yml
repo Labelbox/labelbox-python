@@ -15,8 +15,8 @@ permissions:
   pull-requests: write
   
 jobs:
-  if: github.event.pull_request.merged == false
   changes:
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     # Set job outputs to values from filter step
     outputs:
@@ -29,6 +29,7 @@ jobs:
           addedOrModified:
             - added|deleted: 'examples/**.ipynb'
   update:
+    if: github.event.pull_request.merged == false
     needs: changes
     if: ${{ needs.changes.outputs.addedOrModified == 'true' }}
     runs-on: ubuntu-latest
