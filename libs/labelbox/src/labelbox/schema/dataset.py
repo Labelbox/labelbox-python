@@ -934,7 +934,7 @@ class Dataset(DbObject, Updateable, Deletable):
           >>>      in iam_integrations
           >>>      if integration.name == "My S3 integration"][0]
           >>>
-          >>>   # Set IAM integration for integration object
+          >>>   # Set IAM integration for IAMIntegrtion object
           >>>   dataset.set_iam_integration(iam_integration)
           >>>
           >>>   # Unset IAM integration
@@ -956,7 +956,7 @@ class Dataset(DbObject, Updateable, Deletable):
               if response:
                  return response["clearSignerForDataset"]["signer"]
               else:
-                raise lb.exceptions.LabelboxError("Can't unset IAM integration")
+                raise LabelboxError("Can't unset IAM integration")
               
           else:
 
