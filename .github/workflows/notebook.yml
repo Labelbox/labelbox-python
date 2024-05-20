@@ -51,7 +51,7 @@ jobs:
       with:
         filters: |
           addedOrModified:
-            - added|deleted: 'examples/**.ipynb'
+            - added|deleted: 'examples/**/*.ipynb'
   create:
     needs: changes
     if: ${{ needs.changes.outputs.addedOrModified == 'true' }}
