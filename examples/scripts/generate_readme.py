@@ -1,7 +1,7 @@
 import pandas
 import glob
 from collections import defaultdict
-import argparse
+from pprint import pprint
 
 """
 Script used to generate readme programmatically works by taking the links of all the notebooks
@@ -10,10 +10,18 @@ then dividing them to different tables based on directory name. Pandas is used t
 
 IGNORE = ["template.ipynb"]
 
+ORDER = ["basics", "exports", "project_configuration", "annotation_import", "integrations", "model_experiments", "prediction_upload"]
+
 SDK_EXAMPLE_HEADER = """
 # Labelbox SDK Examples\n
 - Learn how to use the SDK by following along\n
 - Run in google colab, view the notebooks on github, or clone the repo and run locally\n
+"""
+
+README_EXAMPLE_HEADER = """---
+title: Python tutorials
+---
+
 """
 
 COLAB_TEMPLATE = "https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/{filename}"
@@ -89,15 +97,23 @@ def make_links_dict(links: str):
         defaultdict[list]: returns dict that is in pandas dataFrame format
     """
     link_dict = defaultdict(list)
+    extra_links = []
+    for section in ORDER:
+        link_dict[section] = []
     for link in links:
         if link.split("/")[-1] in IGNORE:
             continue
-        split_link = link.split("/")[0]
-        link_dict[split_link].append(link)
+        if link.split("/")[0] == "extras":
+            extra_links.append(link)
+        else:
+            split_link = link.split("/")[0]
+            link_dict[split_link].append(link)
+    link_dict["Extras"] = extra_links
+    pprint(link_dict)
     return link_dict
 
 
-def make_table(base: str = "") -> str:
+def make_table(base: str) -> str:
     """main function to make table
 
     Args:
@@ -125,7 +141,7 @@ def make_table(base: str = "") -> str:
             pandas_dict["Google Colab"].append(
                 make_link(
                     COLAB_TEMPLATE.format(
-                        filename="/".join(link.split("/")[1:])
+                        filename="/".join(link.split("/"))
                     ),
                     "https://colab.research.google.com/assets/colab-badge.svg",
                     "Colab",
@@ -145,8 +161,8 @@ def main(github: bool):
         with open("./README.md", "w") as readme:
             readme.write(make_table(SDK_EXAMPLE_HEADER))
     else:
-        with open("./tmp.html", "w") as readme:
-            readme.write(make_table())
+        with open("./tutorials.html", "w") as readme:
+            readme.write(make_table(README_EXAMPLE_HEADER))
 
 
 if __name__ == "__main__":
