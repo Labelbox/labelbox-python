@@ -102,9 +102,7 @@ def make_table(base: str = "") -> str:
     Returns:
         str: markdown string file
     """
-    link_dict = make_links_dict(
-        glob.glob("**/*.ipynb", recursive=True)
-    )
+    link_dict = make_links_dict(glob.glob("**/*.ipynb", recursive=True))
     generated_markdown = base
     for link_list in link_dict.values():
         pandas_dict = {"Notebook": [], "Github": [], "Google Colab": []}
@@ -133,10 +131,11 @@ def make_table(base: str = "") -> str:
         generated_markdown += f"{df.to_html(col_space={'Notebook':400}, index=False, escape=False, justify='left')}\n\n"
     return f"{generated_markdown.rstrip()}\n"
 
+
 def main(github: bool):
     """
     Args:
-        github (bool): if this is the readme for github. 
+        github (bool): if this is the readme for github.
     """
     if github:
         with open("./README.md", "w") as readme:
@@ -145,6 +144,6 @@ def main(github: bool):
         with open("./tmp.html", "w") as readme:
             readme.write(make_table())
 
+
 if __name__ == "__main__":
     main(True)
-

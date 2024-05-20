@@ -48,6 +48,7 @@ def format_cell(source):
             return source.replace("!", "%")
     return FormatCode(source, style_config="google")[0]
 
+
 def format_file(file_name):
     with open(file_name, "r") as file:
         data = json.load(file)
