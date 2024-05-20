@@ -29,9 +29,8 @@ jobs:
           addedOrModified:
             - added|deleted: 'examples/**.ipynb'
   update:
-    if: github.event.pull_request.merged == false
+    if: github.event.pull_request.merged == false &&	${{ needs.changes.outputs.addedOrModified == 'true' }}
     needs: changes
-    if: ${{ needs.changes.outputs.addedOrModified == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
