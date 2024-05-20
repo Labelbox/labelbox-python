@@ -4,17 +4,24 @@ Thank you for contributing to our notebook examples! To ensure that your contrib
 
 ## Table of Contents
 
-- [General Guidelines](#general-guidelines)
+- [General Notebook Requirements](#general-notebook-requirements)
 - [Branches and Tags](#branches-and-tags)
 - [Github Workflows](#github-workflows)
 - [General Prerequisites](#general-prerequisites)
 - [Styling Tools](#styling-tools)
-- [General Notebook Requirements](#general-notebook-requirements)
 
-## General Guidelines
+# General Notebook Requirements
 
-* Ensure that any modified notebooks run when edited.
-* Ensure that you update any relevant headers and comments within the code block you may add or change.
+Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. This notebook and section just serves as a guide and exception can be made. Here are our general requirements:
+
+1. Ensure that any modified notebooks run when edited.
+2. Ensure that you update any relevant headers and comments within the code block you may add or change.
+3. Notebooks should start with a top header below the Labelbox and link icons with the title of the notebook as a main header "#" and a overview of what the notebook shows.
+4. Use "labelbox[data]" over labelbox for installs to ensure you have the correct dependencies.
+5. Imports and installs should come after the main header under a Setup section
+6. Labelbox and other platforms with clients and API keys should be specified under a single section.
+7. Subsections need a second level header "##" and an overview of the section.
+8. The last cell should be a clean up section to delete any labelbox objects created.
 
 ## Branches and Tags
 
@@ -39,15 +46,3 @@ Rye is setup in this directory to use a customs script that will run the noteboo
 * `rye sync` in the examples folder to install the correct dev dependencies.
 * `rye run clean` runs a series of formatting tools.
 * `rye run create-readme` creates a readme based off our notebooks.
-
-# General Notebook Requirements
-
-Review our [template notebook](https://github.com/Labelbox/labelbox-python/blob/develop/examples/template.ipynb) for general overview on how notebooks should be structure. This notebook and section just serves as a guide and exception can be made. Here are our general requirements:
- 
-1. Notebooks should start with a top header below the Labelbox and link icons with the title of the notebook as a main header "#" and a overview of what the notebook shows
-2. Use "labelbox[data]" over labelbox for installs to ensure you have the correct dependencies.
-3. Imports and installs should come after the main header under a Setup section
-4. Labelbox and other platform with clients API keys should be specified under a single section.
-5. Subsections need a second level header "##".
-6. Subsections includes an overview of the section does any links to our docs.
-7. The last cell should be a clean up section to delete any labelbox objects created.
