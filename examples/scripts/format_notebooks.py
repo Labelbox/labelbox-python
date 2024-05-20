@@ -8,8 +8,6 @@ from yapf.yapflib.yapf_api import FormatCode
 Script used to format notebooks. To mass change any links or headers cells change the variables below. Hooks into github action CI tools.
 """
 
-IGNORE = ["template.ipynb"]
-
 BANNER_CELL = {
     "cell_type": "markdown",
     "id": "db768cda",
@@ -45,7 +43,7 @@ GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/exam
 def format_cell(source):
     for line in source.split("\n"):
         if line.strip().startswith(("!", "%")):
-            return source.replace("!", "%")
+            return source.replace("!", "%").replace("'", '"')
     return FormatCode(source, style_config="google")[0]
 
 
@@ -80,7 +78,6 @@ if __name__ == "__main__":
     files = [
         file
         for file in glob.glob("**/*.ipynb", recursive=True)
-        if file.split("/")[-1] not in IGNORE
     ]
     with ProcessPoolExecutor(10) as pool:
         pool.map(format_file, files)

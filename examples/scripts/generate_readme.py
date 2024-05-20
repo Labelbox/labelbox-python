@@ -8,6 +8,8 @@ Script used to generate readme programmatically works by taking the links of all
 then dividing them to different tables based on directory name. Pandas is used to make the tables. Using inline HTML to support our doc page. 
 """
 
+IGNORE = ["template.ipynb"]
+
 SDK_EXAMPLE_HEADER = """
 # Labelbox SDK Examples\n
 - Learn how to use the SDK by following along\n
@@ -88,7 +90,9 @@ def make_links_dict(links: str):
     """
     link_dict = defaultdict(list)
     for link in links:
-        split_link = link.split("/")[0]
+        if link.split("/")[-1] in IGNORE:
+            continue
+        split_link = link .split("/")[0]
         link_dict[split_link].append(link)
     return link_dict
 
