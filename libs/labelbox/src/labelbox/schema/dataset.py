@@ -31,6 +31,7 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
+from labelbox.schema.iam_integration import IAMIntegration
 
 logger = logging.getLogger(__name__)
 
@@ -912,3 +913,80 @@ class Dataset(DbObject, Updateable, Deletable):
             }  # remove None values
             _upsert_items.append(DataRowUpsertItem(payload=item, id=key))
         return _upsert_items
+    
+    def set_iam_integration(self, iam_integration: Union[str, IAMIntegration, None] = None) -> Optional[IAMIntegration]:
+          """
+          Sets the IAM integration for the dataset. IAM integration is used to sign URLs for data row assets.
+
+          >>>    # Get all IAM integrations
+          >>>    iam_integrations = client.get_organization().get_iam_integrations()
+          >>>    
+          >>>    # Get IAM integration id
+          >>>    iam_integration_id = [integration.uid for integration
+          >>>      in iam_integrations
+          >>>      if integration.name == "My S3 integration"][0]
+          >>>
+          >>>   # Set IAM integration for integration id
+          >>>   dataset.set_iam_integration(iam_integration_id)
+          >>>
+          >>>    # Get IAM integration object
+          >>>    iam_integration = [integration.uid for integration
+          >>>      in iam_integrations
+          >>>      if integration.name == "My S3 integration"][0]
+          >>>
+          >>>   # Set IAM integration for integration object
+          >>>   dataset.set_iam_integration(iam_integration)
+          >>>
+          >>>   # Unset IAM integration
+          >>>   dataset.set_iam_integration()
+          """
+
+          # Unset IAM integration if iam_integration is None
+          if iam_integration is None:
+              query = """mutation DetachSignerPyApi($id: ID!) {
+                  clearSignerForDataset(where: {id: $id}) {
+                      id
+                      signer {
+                      id
+                      }
+                  }
+                  }"""
+              response = self.client.execute(query, {"id": self.uid})
+              
+              if response:
+                 return response["clearSignerForDataset"]["signer"]
+              else:
+                raise lb.exceptions.LabelboxError("Can't unset IAM integration")
+              
+          else:
+
+              if isinstance(iam_integration, IAMIntegration):
+                  iam_integration_id = iam_integration.uid
+              else:
+                  iam_integration_id = iam_integration
+
+              query = """mutation AttachSignerPyApi($signerId: ID!, $datasetId: ID!) {
+                  setSignerForDataset(data: {signerId: $signerId}, where: {id: $datasetId}) {
+                      id
+                      signer {
+                      id
+                      }
+                  }
+                  }"""
+              response = self.client.execute(query, {"signerId": iam_integration_id, "datasetId": self.uid})
+              
+              # Return IAM Integration object if  
+              if response:
+                try:
+
+                  iam_integration_id = response.get("setSignerForDataset", {}).get("signer", {})["id"]
+                  return [integration for integration 
+                          in self.client.get_organization().get_iam_integrations() 
+                          if integration.uid == iam_integration_id][0]
+                except:
+                  raise LabelboxError(f"Can't retrieve IAM integration {iam_integration_id}")
+                
+              else:
+                raise LabelboxError(f"Can't set IAM integration {iam_integration_id}")
+
+          return response
