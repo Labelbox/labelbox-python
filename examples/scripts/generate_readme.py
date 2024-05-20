@@ -92,7 +92,7 @@ def make_links_dict(links: str):
     for link in links:
         if link.split("/")[-1] in IGNORE:
             continue
-        split_link = link .split("/")[0]
+        split_link = link.split("/")[0]
         link_dict[split_link].append(link)
     return link_dict
 

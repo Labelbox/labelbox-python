@@ -75,9 +75,6 @@ def format_file(file_name):
 
 
 if __name__ == "__main__":
-    files = [
-        file
-        for file in glob.glob("**/*.ipynb", recursive=True)
-    ]
+    files = [file for file in glob.glob("**/*.ipynb", recursive=True)]
     with ProcessPoolExecutor(10) as pool:
         pool.map(format_file, files)
