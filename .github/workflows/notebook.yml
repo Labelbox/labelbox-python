@@ -24,9 +24,6 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
       - uses: ./.github/actions/notebooks
-        with:
-          rye-version: ${{ vars.RYE_VERSION }}
-          python-version: ${{ inputs.python-version }}
       - name: Format
         working-directory: examples
         run: rye run clean
@@ -65,9 +62,6 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
       - uses: ./.github/actions/notebooks
-        with:
-          rye-version: ${{ vars.RYE_VERSION }}
-          python-version: ${{ inputs.python-version }}
       - name: Create readme
         working-directory: examples
         run: rye run create-readme
