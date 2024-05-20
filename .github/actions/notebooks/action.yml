@@ -1,6 +1,7 @@
 name: Labelbox Example Notebook Setup
     
-runs:
+runs:  
+  using: "composite"
   steps:
     - name: Install the latest version of rye
       uses: eifinger/setup-rye@v2
