@@ -1,0 +1,43 @@
+name: Labelbox Example Notebook Format
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - examples/**
+  pull_request:
+    branches: [develop]
+    paths:
+      - examples/**
+
+permissions:
+  contents: write
+  pull-requests: write
+  
+jobs:
+  if: github.event.pull_request.merged == False
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: ./.github/workflows/actions
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ inputs.python-version }}
+      - name: Format
+        working-directory: examples
+        run: rye run clean
+      - name: Commit changes
+        run: |
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add examples/.
+            git commit -m ":art: Cleaned" || exit 0
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}

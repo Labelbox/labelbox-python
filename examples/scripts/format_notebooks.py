@@ -2,9 +2,11 @@ import glob
 import json
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
-import string
-
 from yapf.yapflib.yapf_api import FormatCode
+
+"""
+Script used to format notebooks. To mass change any links or headers cells change the variables below. Hooks into github action CI tools.
+"""
 
 IGNORE = ["template.ipynb"]
 
@@ -45,27 +47,6 @@ def format_cell(source):
         if line.strip().startswith(("!", "%")):
             return source.replace("!", "%")
     return FormatCode(source, style_config="google")[0]
-
-
-def add_headers(file_name):
-    with open(file_name, "r") as file:
-        data = json.load(file)
-
-    colab_path = COLAB_TEMPLATE.format(filename=file_name)
-    github_path = GITHUB_TEMPLATE.format(filename=file_name)
-
-    link_cell = deepcopy(LINK_CELL)
-
-    link_cell["source"][1] = link_cell["source"][1].format(colab=colab_path)
-    link_cell["source"][6] = link_cell["source"][6].format(github=github_path)
-
-    data["cells"] = [BANNER_CELL, link_cell] + data["cells"]
-
-    with open(file_name, "w") as file:
-        file.write(json.dumps(data, indent=4))
-
-    print("Formatted", file_name)
-
 
 def format_file(file_name):
     with open(file_name, "r") as file:

@@ -1,0 +1,57 @@
+name: Labelbox Example Notebook Update Readme
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - examples/**
+  pull_request:
+    branches: [develop]
+    paths:
+      - examples/**
+
+permissions:
+  contents: write
+  pull-requests: write
+  
+jobs:
+  if: github.event.pull_request.merged == False
+  changes:
+    runs-on: ubuntu-latest
+    # Set job outputs to values from filter step
+    outputs:
+      addedOrModified: ${{ steps.filter.outputs.addedOrModified }}
+    steps:
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          addedOrModified:
+            - added|deleted: 'examples/**.ipynb'
+  update:
+    needs: changes
+    if: ${{ needs.changes.outputs.addedOrModified == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: ./.github/workflows/actions
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ inputs.python-version }}
+      - name: Create readme
+        working-directory: examples
+        run: rye run create-readme
+      - name: Commit changes
+        run: |
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add examples/.
+            git commit -m ":memo: README updated" || exit 0
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}

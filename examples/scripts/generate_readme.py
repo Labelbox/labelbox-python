@@ -1,6 +1,7 @@
 import pandas
 import glob
 from collections import defaultdict
+import argparse
 
 """
 Script used to generate readme programmatically works by taking the links of all the notebooks
@@ -27,7 +28,7 @@ def create_header(link: str) -> str:
         str: formatted file path for header
     """
     # Splits up link uses directory name
-    split_link = link.split("/")[1].replace("_", " ").split(" ")
+    split_link = link.split("/")[0].replace("_", " ").split(" ")
     header = []
 
     # Capitalize first letter of each word
@@ -73,10 +74,10 @@ def make_link(link: str, photo: str, link_type: str) -> str:
     Returns:
         str: anchor tag with image
     """
-    return f'<a href="{link}" target="_blank"><img src="{photo}" alt="Open In {link_type}" onclick="(function prevent(e){{e.preventDefault()}}()"></a>'
+    return f'<a href="{link}" target="_blank"><img src="{photo}" alt="Open In {link_type}"></a>'
 
 
-def make_links_dict(links: str) -> defaultdict[list]:
+def make_links_dict(links: str):
     """Creates dictionary needed for pandas to generate the table takes all the links and makes each directory its own table
 
     Args:
@@ -87,7 +88,7 @@ def make_links_dict(links: str) -> defaultdict[list]:
     """
     link_dict = defaultdict(list)
     for link in links:
-        split_link = link.split("/")[1]
+        split_link = link.split("/")[0]
         link_dict[split_link].append(link)
     return link_dict
 
@@ -102,7 +103,7 @@ def make_table(base: str = "") -> str:
         str: markdown string file
     """
     link_dict = make_links_dict(
-        glob.glob("**/examples/**/*.ipynb", recursive=True)
+        glob.glob("**/*.ipynb", recursive=True)
     )
     generated_markdown = base
     for link_list in link_dict.values():
@@ -130,9 +131,20 @@ def make_table(base: str = "") -> str:
             )
         df = pandas.DataFrame(pandas_dict)
         generated_markdown += f"{df.to_html(col_space={'Notebook':400}, index=False, escape=False, justify='left')}\n\n"
-    return generated_markdown
+    return f"{generated_markdown.rstrip()}\n"
 
+def main(github: bool):
+    """
+    Args:
+        github (bool): if this is the readme for github. 
+    """
+    if github:
+        with open("./README.md", "w") as readme:
+            readme.write(make_table(SDK_EXAMPLE_HEADER))
+    else:
+        with open("./tmp.html", "w") as readme:
+            readme.write(make_table())
 
 if __name__ == "__main__":
-    with open("./examples/README.md", "w") as readme:
-        readme.write(f"{make_table(SDK_EXAMPLE_HEADER).rstrip()}\n")
+    main(True)
+

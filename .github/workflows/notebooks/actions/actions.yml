@@ -1,0 +1,28 @@
+name: Labelbox Example Notebook Setup
+
+inputs:
+  rye-version:
+    required: true
+  python-version:
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+    - name: Install the latest version of rye
+      uses: eifinger/setup-rye@v2
+      with:
+        version: ${{ inputs.rye-version }}
+        enable-cache: true
+    - name: Rye Setup
+      shell: bash
+      run: |
+        rye config --set-bool behavior.use-uv=true
+    - name: Python setup
+      shell: bash
+      run: rye pin ${{ inputs.python-version }}
+    - name: Environment setup
+      working-directory: examples
+      shell: bash
+      run: | 
+        rye sync -f --update-all
