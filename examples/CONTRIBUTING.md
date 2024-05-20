@@ -16,11 +16,11 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 
 1. Ensure that any modified notebooks run when edited.
 2. Ensure that you update any relevant headers and comments within the code block you may add or change.
-3. Notebooks should start with a top header below the Labelbox and link icons with the title of the notebook as a main header "#" and a overview of what the notebook shows.
+3. Notebooks should start with a top header below the Labelbox and link icons with the title of the notebook as a main header **#** and a overview of what the notebook shows.
 4. Use "labelbox[data]" over labelbox for installs to ensure you have the correct dependencies.
-5. Imports and installs should come after the main header under a Setup section
+5. Imports and installs should come after the main header under a **Setup** section.
 6. Labelbox and other platforms with clients and API keys should be specified under a single section.
-7. Subsections need a second level header "##" and an overview of the section.
+7. Subsections need a second level header **##** and an overview of the section.
 8. The last cell should be a clean up section to delete any labelbox objects created.
 
 > [!IMPORTANT]
@@ -36,11 +36,11 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 
 - Github Branch Workflow
   - When you push to a branch that contains files inside the examples directory, it will automatically reformat your notebook to match our given style and provide appropriate headers. Once this workflow is completed it will commit back to your branch which then you can then pull.
-  - If your push contains new notebooks or modifies the names of notebooks the readme will be updated to reflect the change with updated links
+  - If your push contains new notebooks or modifies the names of notebooks the readme will be updated to reflect the change with updated links.
 
 ## General Prerequisites
 
-[Rye](https://rye-up.com/) may be installed before contributing to the repository as it is the tool used to style our example notebooks. This could be used to avoid the github styling workflow. This is also the packaging tool used for the main SDK. The pyproject used for the example notebooks is a virtual package and does not get published. 
+[Rye](https://rye-up.com/) may be installed before contributing to the repository as it is the tool used to style our example notebooks. This could be used to avoid the github styling workflow. This is also the packaging tool used for the main SDK. The pyproject used for the example notebooks is a virtual package and does not get published.
 
 ## Styling Tools
 
