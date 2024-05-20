@@ -1,12 +1,11 @@
 # Contribution Guide
 
-Thank you for expressing your interest in contributing to our notebook examples! To ensure that your contribution aligns with our guidelines, please carefully review the following guide.
+Thank you for contributing to our notebook examples! To ensure that your contribution aligns with our guidelines, please carefully review the following guide.
 
 ## Table of Contents
 
 - [General Guidelines](#general-guidelines)
 - [Branches and Tags](#branches-and-tags)
-- [Release Steps](#release-steps)
 - [Github Workflows](#github-workflows)
 - [General Prerequisites](#general-prerequisites)
 - [Styling Tools](#styling-tools)
@@ -23,10 +22,6 @@ Thank you for expressing your interest in contributing to our notebook examples!
 * Approved PRs are merged to the `develop` branch.
 * All releases align to a git tag.
 
-## Release Steps
-
-Your contributions will be released as soon as it is approved and merged into the `develop` branch. Please consult the [Labelbox](https://docs.labelbox.com/docs/contacting-customer-support) team for if you need a more specific time frame of when your contributions may be released.
-
 ## Github Workflows
 
 * Github Branch Workflow
@@ -35,7 +30,7 @@ Your contributions will be released as soon as it is approved and merged into th
 
 ## General Prerequisites
 
-[Rye](https://rye-up.com/) may be installed before contributing to the repository as it is the tool used to style our example notebooks. This could be used to avoid the github styling workflow. This is also the packaging tool used for the main SDK. The pyproject used for the example notebooks is a virtual package and does not get published. Rye is used for the sack of consistency.
+[Rye](https://rye-up.com/) may be installed before contributing to the repository as it is the tool used to style our example notebooks. This could be used to avoid the github styling workflow. This is also the packaging tool used for the main SDK. The pyproject used for the example notebooks is a virtual package and does not get published. 
 
 ## Styling Tools
 
