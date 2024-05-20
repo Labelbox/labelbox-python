@@ -10,7 +10,7 @@ Thank you for contributing to our notebook examples! To ensure that your contrib
 - [General Prerequisites](#general-prerequisites)
 - [Styling Tools](#styling-tools)
 
-# General Notebook Requirements
+## General Notebook Requirements
 
 Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. This notebook and section just serves as a guide and exception can be made. Here are our general requirements:
 
@@ -23,17 +23,20 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 7. Subsections need a second level header "##" and an overview of the section.
 8. The last cell should be a clean up section to delete any labelbox objects created.
 
+> [!IMPORTANT]
+> Please make sure to remove any API keys before pushing changes
+
 ## Branches and Tags
 
-* All development happens in feature branches ideally prefixed by contributor's initials. For example `fs/feature_name`.
-* Approved PRs are merged to the `develop` branch.
-* All releases align to a git tag.
+- All development happens in feature branches ideally prefixed by contributor's initials. For example `fs/feature_name`.
+- Approved PRs are merged to the `develop` branch.
+- All releases align to a git tag.
 
 ## Github Workflows
 
-* Github Branch Workflow
-  * When you push to a branch that contains files inside the examples directory, it will automatically reformat your notebook to match our given style and provide appropriate headers. Once this workflow is completed it will commit back to your branch which then you can then pull.
-  * If your push contains new notebooks or modifies the names of notebooks the readme will be updated to reflect the change with updated links
+- Github Branch Workflow
+  - When you push to a branch that contains files inside the examples directory, it will automatically reformat your notebook to match our given style and provide appropriate headers. Once this workflow is completed it will commit back to your branch which then you can then pull.
+  - If your push contains new notebooks or modifies the names of notebooks the readme will be updated to reflect the change with updated links
 
 ## General Prerequisites
 
@@ -43,6 +46,6 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 
 Rye is setup in this directory to use a customs script that will run the notebooks through our formatting tools and create readmes.
 
-* `rye sync` in the examples folder to install the correct dev dependencies.
-* `rye run clean` runs a series of formatting tools.
-* `rye run create-readme` creates a readme based off our notebooks.
+- `rye sync` in the examples folder to install the correct dev dependencies.
+- `rye run clean` runs a series of formatting tools.
+- `rye run create-readme` creates a readme based off our notebooks.
