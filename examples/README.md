@@ -5,25 +5,6 @@
 
 - Run in google colab, view the notebooks on github, or clone the repo and run locally
 
-<h2>Test.ipynb</h2>
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: left;">
-      <th style="min-width: 400px;">Notebook</th>
-      <th>Github</th>
-      <th>Google Colab</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Test</td>
-      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
-      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
-    </tr>
-  </tbody>
-</table>
-
 <h2>Model Experiments</h2>
 
 <table border="1" class="dataframe">
@@ -118,6 +99,11 @@
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/ontologies.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
     <tr>
+      <td>Export V1 V2 Migration Support</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/export_v1_v2_migration_support.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/export_v1_v2_migration_support.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
       <td>Data Rows</td>
       <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/data_rows.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/data_rows.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
@@ -126,11 +112,6 @@
       <td>Batches</td>
       <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/batches.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/batches.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
-    </tr>
-    <tr>
-      <td>Export V1 Migration Support</td>
-      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/export_v1_migration_support.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
-      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/export_v1_migration_support.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
     <tr>
       <td>Projects</td>
