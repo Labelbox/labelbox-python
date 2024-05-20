@@ -12,7 +12,7 @@ Thank you for contributing to our notebook examples! To ensure that your contrib
 
 ## General Notebook Requirements
 
-Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. This notebook and section just serves as a guide and exception can be made. Here are our general requirements:
+Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. This notebook and section just serves as a guide and exceptions can be made. Here are our general requirements:
 
 1. Ensure that any modified notebooks run when edited.
 2. Ensure that you update any relevant headers and comments within the code block you may add or change.
@@ -35,7 +35,7 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 ## Github Workflows
 
 - Github Branch Workflow
-  - When you push to a branch that contains files inside the examples directory, it will automatically reformat your notebook to match our given style and provide appropriate headers. Once this workflow is completed it will commit back to your branch which then you can then pull.
+  - When you push to a branch that contains files inside the examples directory, it will automatically reformat your notebook to match our given style and provide appropriate headers. Once this workflow is completed it will commit back to your branch which then you can pull.
   - If your push contains new notebooks or modifies the names of notebooks the readme will be updated to reflect the change with updated links.
 
 ## General Prerequisites
