@@ -28,8 +28,8 @@ dev-dependencies = [
 
 [tool.rye.scripts]
 clean = { chain = ["clean:databooks", "clean:black", "clean:format"] }
-"clean:databooks" = 'databooks meta --no-rm-exec . --yes'
-"clean:black" = 'black --line-length 80 .'
+"clean:databooks" = 'databooks meta --rm-outs . --yes'
+"clean:black" = 'black --line-length 80 . --quiet'
 "clean:format" = { call = "scripts.format_notebooks" }
 "create-readme" = { call = "scripts.generate_readme:main(True)" }
 "create-doc-readme" = { call = "scripts.generate_readme:main(False)" }

@@ -71,10 +71,10 @@ def format_file(file_name):
 
     with open(file_name, "w") as file:
         file.write(json.dumps(data, indent=4))
-    print("Formatted", file_name)
 
 
 if __name__ == "__main__":
     files = [file for file in glob.glob("**/*.ipynb", recursive=True)]
     with ProcessPoolExecutor(10) as pool:
         pool.map(format_file, files)
+    print("Cleaning Completed! 🍻 ")
