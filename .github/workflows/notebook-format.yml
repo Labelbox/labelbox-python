@@ -15,7 +15,7 @@ permissions:
   pull-requests: write
   
 jobs:
-  if: github.event.pull_request.merged == False
+  if: github.event.pull_request.merged == 'false'
   update:
     runs-on: ubuntu-latest
     steps:
