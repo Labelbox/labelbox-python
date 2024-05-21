@@ -100,13 +100,13 @@ def test_add_integration_from_object():
     client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
     integrations = client.get_organization().get_iam_integrations()
 
-    # Prepare dataset with an existing integration
+    # Prepare dataset with no integration
     integration = [
         integration for integration 
         in integrations 
         if 'aws-da-test-bucket' in integration.name][0]
 
-    ds = client.create_dataset(iam_integration=None, name=f"integration_change-{uuid.uuid4()}")
+    ds = client.create_dataset(iam_integration=None, name=f"integration_add_obj-{uuid.uuid4()}")
 
     # Test set integration with object
     new_integration = ds.add_iam_integration(integration)
@@ -135,13 +135,13 @@ def test_add_integration_from_uid():
     client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
     integrations = client.get_organization().get_iam_integrations()
 
-    # Prepare dataset with an existing integration
+    # Prepare dataset with no integration
     integration = [
         integration for integration 
         in integrations 
         if 'aws-da-test-bucket' in integration.name][0]
 
-    ds = client.create_dataset(iam_integration=None, name=f"integration_change-{uuid.uuid4()}")
+    ds = client.create_dataset(iam_integration=None, name=f"integration_add_id-{uuid.uuid4()}")
 
     # Test set integration with integration id
     integration_id = [
@@ -155,7 +155,7 @@ def test_add_integration_from_uid():
     # Cleaning
     ds.delete()
 
-    @pytest.mark.skip(
+@pytest.mark.skip(
     reason=
     "Google credentials are being updated for this test, disabling till it's all sorted out"
 )
@@ -181,7 +181,7 @@ def test_integration_remove():
         in integrations 
         if 'aws-da-test-bucket' in integration.name][0]
 
-    ds = client.create_dataset(iam_integration=integration, name=f"integration_change-{uuid.uuid4()}")
+    ds = client.create_dataset(iam_integration=integration, name=f"integration_remove-{uuid.uuid4()}")
 
     # Test unset integration
     ds.remove_iam_integration()
