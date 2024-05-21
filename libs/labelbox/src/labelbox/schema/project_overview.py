@@ -1,9 +1,9 @@
 from typing import Dict
-from labelbox import pydantic_compat
+from labelbox.pydantic_compat import BaseModel
 
 from typing import Dict
 
-class ProjectOverview(pydantic_compat.BaseModel):
+class ProjectOverview(BaseModel):
     """
     Class that represents a project summary as displayed in the UI, in Annotate, 
     under the "Overview" tab of a particular project.
