@@ -86,7 +86,82 @@ def test_no_default_integration(client):
 )
 @pytest.mark.skipif(not os.environ.get("DA_GCP_LABELBOX_API_KEY"),
                     reason="DA_GCP_LABELBOX_API_KEY not found")
-def test_integration_change():
+def test_add_integration_from_object():
+    """
+    This test is based on test_non_default_integration() and assumes the following:
+    
+    1. aws delegated access is configured to work with lbox-test-bucket
+    2. an integration called aws is available to the org
+
+    Currently tests against:
+    Org ID: cl26d06tk0gch10901m7jeg9v
+    Email: jtso+aws_sdk_tests@labelbox.com
+    """
+    client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
+    integrations = client.get_organization().get_iam_integrations()
+
+    # Prepare dataset with an existing integration
+    integration = [
+        integration for integration 
+        in integrations 
+        if 'aws-da-test-bucket' in integration.name][0]
+
+    ds = client.create_dataset(iam_integration=None, name=f"integration_change-{uuid.uuid4()}")
+
+    # Test set integration with object
+    new_integration = ds.add_iam_integration(integration)
+    assert new_integration == integration
+
+    # Cleaning
+    ds.delete()
+
+@pytest.mark.skip(
+    reason=
+    "Google credentials are being updated for this test, disabling till it's all sorted out"
+)
+@pytest.mark.skipif(not os.environ.get("DA_GCP_LABELBOX_API_KEY"),
+                    reason="DA_GCP_LABELBOX_API_KEY not found")
+def test_add_integration_from_uid():
+    """
+    This test is based on test_non_default_integration() and assumes the following:
+    
+    1. aws delegated access is configured to work with lbox-test-bucket
+    2. an integration called aws is available to the org
+
+    Currently tests against:
+    Org ID: cl26d06tk0gch10901m7jeg9v
+    Email: jtso+aws_sdk_tests@labelbox.com
+    """
+    client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
+    integrations = client.get_organization().get_iam_integrations()
+
+    # Prepare dataset with an existing integration
+    integration = [
+        integration for integration 
+        in integrations 
+        if 'aws-da-test-bucket' in integration.name][0]
+
+    ds = client.create_dataset(iam_integration=None, name=f"integration_change-{uuid.uuid4()}")
+
+    # Test set integration with integration id
+    integration_id = [
+        integration.uid for integration 
+        in integrations 
+        if 'aws-da-test-bucket' in integration.name][0]
+    
+    new_integration = ds.add_iam_integration(integration_id)
+    assert new_integration == integration
+
+    # Cleaning
+    ds.delete()
+
+    @pytest.mark.skip(
+    reason=
+    "Google credentials are being updated for this test, disabling till it's all sorted out"
+)
+@pytest.mark.skipif(not os.environ.get("DA_GCP_LABELBOX_API_KEY"),
+                    reason="DA_GCP_LABELBOX_API_KEY not found")
+def test_integration_remove():
     """
     This test is based on test_non_default_integration() and assumes the following:
     
@@ -109,21 +184,8 @@ def test_integration_change():
     ds = client.create_dataset(iam_integration=integration, name=f"integration_change-{uuid.uuid4()}")
 
     # Test unset integration
-    ds.set_iam_integration()
+    ds.remove_iam_integration()
     assert ds.iam_integration() is None
-
-    # Test set integration with object
-    new_integration = ds.set_iam_integration(integration)
-    assert new_integration == integration
-
-    # Test set integration with integration id
-    integration_id = [
-        integration.uid for integration 
-        in integrations 
-        if 'aws-da-test-bucket' in integration.name][0]
-    
-    new_integration = ds.set_iam_integration(integration_id)
-    assert new_integration == integration
 
     # Cleaning
     ds.delete()
