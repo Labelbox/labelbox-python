@@ -4,7 +4,7 @@ on:
   push:
     branches: [develop]
     paths:
-    - examples/README.md
+      - examples/README.md
   pull_request:
     branches: [develop]
     paths:
@@ -14,8 +14,8 @@ jobs:
   custompages:
     runs-on: ubuntu-latest
     steps:
-        uses: actions/checkout@v4
-        uses: ./.github/actions/notebooks
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/notebooks
       - name: Create readme
         working-directory: examples
         run: rye run create-doc-readme
