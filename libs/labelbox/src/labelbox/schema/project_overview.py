@@ -1,8 +1,7 @@
-from typing import Dict, Optional
+from typing import Dict
 from labelbox import pydantic_compat
 
 from typing import Dict
-import pydantic_compat
 
 class ProjectOverview(pydantic_compat.BaseModel):
     """
