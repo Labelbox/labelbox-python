@@ -10,15 +10,7 @@ then dividing them to different tables based on directory name. Pandas is used t
 
 IGNORE = ["template.ipynb"]
 
-ORDER = [
-    "basics",
-    "exports",
-    "project_configuration",
-    "annotation_import",
-    "integrations",
-    "model_experiments",
-    "prediction_upload",
-]
+ORDER = ["basics", "exports", "project_configuration", "annotation_import", "integrations", "model_experiments", "prediction_upload"]
 
 SDK_EXAMPLE_HEADER = """
 # Labelbox SDK Examples\n
@@ -117,7 +109,6 @@ def make_links_dict(links: str):
             split_link = link.split("/")[0]
             link_dict[split_link].append(link)
     link_dict["Extras"] = extra_links
-    pprint(link_dict)
     return link_dict
 
 
@@ -140,7 +131,7 @@ def make_table(base: str) -> str:
             pandas_dict["Github"].append(
                 make_link(
                     GITHUB_TEMPLATE.format(
-                        filename="/".join(link.split("/")[1:])
+                        filename="/".join(link.split("/"))
                     ),
                     "https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white",
                     "Github",
@@ -148,7 +139,9 @@ def make_table(base: str) -> str:
             )
             pandas_dict["Google Colab"].append(
                 make_link(
-                    COLAB_TEMPLATE.format(filename="/".join(link.split("/"))),
+                    COLAB_TEMPLATE.format(
+                        filename="/".join(link.split("/"))
+                    ),
                     "https://colab.research.google.com/assets/colab-badge.svg",
                     "Colab",
                 )
