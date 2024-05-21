@@ -968,7 +968,7 @@ class Dataset(DbObject, Updateable, Deletable):
           response = self.client.execute(query, {"signerId": iam_integration_id, "datasetId": self.uid})
 
           if not response:
-            raise LabelboxError(f"Can't set IAM integration {iam_integration_id}")
+            raise ResourceNotFoundError(IAMIntegration, {"signerId": iam_integration_id, "datasetId": self.uid})
           
           try:
             iam_integration_id = response.get("setSignerForDataset", {}).get("signer", {})["id"]
@@ -1011,6 +1011,6 @@ class Dataset(DbObject, Updateable, Deletable):
         if response:
             return response.get("clearSignerForDataset", {}).get("signer")
         else:
-            raise LabelboxError("Can't unset IAM integration")
+            raise ResourceNotFoundError(IAMIntegration, {"datasetId": self.uid})
               
           
