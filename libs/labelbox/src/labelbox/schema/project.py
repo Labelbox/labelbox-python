@@ -39,6 +39,7 @@ from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
+from labelbox.schema.project_overview import ProjectOverview
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -1745,6 +1746,63 @@ class Project(DbObject, Updateable, Deletable):
         response = self.client.execute(query_str, params)
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
+
+    def get_overview(self) -> ProjectOverview:
+        """ Return the number of data rows per task queue, and issues of a project
+            Equivalent of the Overview tab of a project
+
+                Args:
+                    with_issues: (optional) boolean to include issues in the overview
+                Returns:
+                    Object Project_Overview
+                """
+
+        query = """query ProjectGetOverviewPyApi($projectId: ID!) {
+            project(where: { id: $projectId }) {      
+            workstreamStateCounts {
+                state
+                count
+            }
+            taskQueues {
+                queueType
+                name
+                dataRowCount
+            }
+            issues {
+                totalCount
+            }
+            completedDataRowCount
+            }
+        }
+        """
+
+        # Must use experimental to access "issues"
+        result = self.client.execute(query, {"projectId": self.uid},
+                                     experimental=True)["project"]
+
+        overview = {
+            utils.snake_case(st["state"]): st["count"]
+            for st in result.get("workstreamStateCounts")
+            if st["state"] != "NotInTaskQueue"
+        }
+
+        review_queues = {
+            tq["name"]: tq.get("dataRowCount")
+            for tq in result.get("taskQueues")
+            if tq.get("queueType") == "MANUAL_REVIEW_QUEUE"
+        }
+
+        # Store the total number of data rows in review
+        review_queues["all"] = overview.get("in_review")
+        overview["in_review"] = review_queues
+
+        overview["issues"] = result.get("issues", {}).get("totalCount")
+
+        # Rename keys
+        overview["to_label"] = overview.pop("unlabeled")
+        overview["all_in_data_rows"] = overview.pop("all")
+
+        return ProjectOverview(**overview)
 
 
 class ProjectMember(DbObject):
