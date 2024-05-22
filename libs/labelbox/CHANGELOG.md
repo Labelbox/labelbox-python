@@ -1,4 +1,31 @@
 # Changelog
+# Version 3.70.0 (2024-05-20)
+## Added
+* Added chat model evaluation support
+  * client.create_model_config()
+  * ModelConfig project_model_configs()
+  * ModelConfig add_model_config()
+  * ModelConfig delete_project_model_config()
+  * ProjectModelConfig delete()
+  * client.create_model_evaluation_project()
+* Update existing methods to support chat model evaluation project
+  * client.create_ontology()
+  * client.create_ontology_from_feature_schemas()
+* Coco deprecation message
+
+## Fixed
+* Fixed error reporting for client.create_project()
+* Do not retry http 422 errors
+
+## Notebooks
+* Send_to_annotate_from_catalog functionalities outside Foundry
+
+## Fixed in Notebooks
+* Fixed meta notebook
+* Modified queue_management.ipynb to remove some parameters
+* Update_huggingface.ipynb
+* Corrected_HF.ipynb
+
 # Version 3.69.1 (2024-05-01)
 ## Fixed
 * Fixed a bug with certain types of content not being returned as a result of `ExportTask.result` or `ExportTask.errors`

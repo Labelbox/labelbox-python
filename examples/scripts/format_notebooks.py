@@ -15,23 +15,22 @@ BANNER_CELL = {
     "source": [
         "<td>",
         '   <a target="_blank" href="https://labelbox.com" ><img src="https://labelbox.com/blog/content/images/2021/02/logo-v4.svg" width=256/></a>',
-        "</td>",
+        "</td>\n",
     ],
 }
-
 LINK_CELL = {
     "cell_type": "markdown",
     "id": "cb5611d0",
     "metadata": {},
     "source": [
-        "<td>",
-        '<a href="{colab}" target="_blank"><img',
-        'src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>',
-        "</td>",
+        "<td>\n",
+        '<a href="{colab}" target="_blank"><img\n',
+        'src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>\n',
+        "</td>\n",
         "\n",
-        "<td>",
-        '<a href="{github}" target="_blank"><img',
-        'src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="GitHub"></a>',
+        "<td>\n",
+        '<a href="{github}" target="_blank"><img\n',
+        'src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="GitHub"></a>\n',
         "</td>",
     ],
 }

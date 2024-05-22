@@ -18,6 +18,7 @@ from labelbox.exceptions import (
     LabelboxError,
     ProcessingWaitTimeout,
     ResourceConflict,
+    ResourceNotFoundError
 )
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
@@ -33,12 +34,14 @@ from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
+from labelbox.schema.project_overview import ProjectOverview
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -1270,6 +1273,8 @@ class Project(DbObject, Updateable, Deletable):
             "modelConfigId": model_config_id,
         }
         result = self.client.execute(query, params)
+        if not result:
+            raise ResourceNotFoundError(ModelConfig, params)
         return result["createProjectModelConfig"]["projectModelConfigId"]
 
     def delete_project_model_config(self, project_model_config_id: str) -> bool:
@@ -1291,6 +1296,8 @@ class Project(DbObject, Updateable, Deletable):
             "id": project_model_config_id,
         }
         result = self.client.execute(query, params)
+        if not result:
+            raise ResourceNotFoundError(ProjectModelConfig, params)
         return result["deleteProjectModelConfig"]["success"]
 
     def set_labeling_parameter_overrides(
@@ -1745,6 +1752,63 @@ class Project(DbObject, Updateable, Deletable):
         response = self.client.execute(query_str, params)
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
+
+    def get_overview(self) -> ProjectOverview:
+        """ Return the number of data rows per task queue, and issues of a project
+            Equivalent of the Overview tab of a project
+
+                Args:
+                    with_issues: (optional) boolean to include issues in the overview
+                Returns:
+                    Object Project_Overview
+                """
+
+        query = """query ProjectGetOverviewPyApi($projectId: ID!) {
+            project(where: { id: $projectId }) {      
+            workstreamStateCounts {
+                state
+                count
+            }
+            taskQueues {
+                queueType
+                name
+                dataRowCount
+            }
+            issues {
+                totalCount
+            }
+            completedDataRowCount
+            }
+        }
+        """
+
+        # Must use experimental to access "issues"
+        result = self.client.execute(query, {"projectId": self.uid},
+                                     experimental=True)["project"]
+
+        overview = {
+            utils.snake_case(st["state"]): st["count"]
+            for st in result.get("workstreamStateCounts")
+            if st["state"] != "NotInTaskQueue"
+        }
+
+        review_queues = {
+            tq["name"]: tq.get("dataRowCount")
+            for tq in result.get("taskQueues")
+            if tq.get("queueType") == "MANUAL_REVIEW_QUEUE"
+        }
+
+        # Store the total number of data rows in review
+        review_queues["all"] = overview.get("in_review")
+        overview["in_review"] = review_queues
+
+        overview["issues"] = result.get("issues", {}).get("totalCount")
+
+        # Rename keys
+        overview["to_label"] = overview.pop("unlabeled")
+        overview["all_in_data_rows"] = overview.pop("all")
+
+        return ProjectOverview(**overview)
 
 
 class ProjectMember(DbObject):

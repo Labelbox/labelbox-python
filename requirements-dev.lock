@@ -10,7 +10,7 @@
 -e file:libs/labelbox
 alabaster==0.7.13
     # via sphinx
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via pydantic
 appnope==0.1.4
     # via ipython
@@ -19,7 +19,7 @@ asttokens==2.4.1
 attrs==23.2.0
     # via jsonschema
     # via referencing
-babel==2.14.0
+babel==2.15.0
     # via sphinx
 backcall==0.2.0
     # via ipython
@@ -51,9 +51,9 @@ defusedxml==0.7.1
 docutils==0.20.1
     # via sphinx
     # via sphinx-rtd-theme
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via pytest
-execnet==2.0.2
+execnet==2.1.1
     # via pytest-xdist
 executing==2.0.1
     # via stack-data
@@ -67,20 +67,20 @@ gitpython==3.1.43
     # via databooks
 google-api-core==2.17.1
     # via labelbox
-google-auth==2.28.2
+google-auth==2.29.0
     # via google-api-core
 googleapis-common-protos==1.63.0
     # via google-api-core
-idna==3.6
+idna==3.7
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.0.2
+importlib-metadata==7.1.0
     # via jupyter-client
     # via nbconvert
     # via sphinx
     # via yapf
-importlib-resources==6.3.1
+importlib-resources==6.4.0
     # via jsonschema
     # via jsonschema-specifications
 iniconfig==2.0.0
@@ -92,11 +92,11 @@ jedi==0.19.1
 jinja2==3.1.3
     # via nbconvert
     # via sphinx
-jsonschema==4.21.1
+jsonschema==4.22.0
     # via nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.1
+jupyter-client==8.6.2
     # via nbclient
 jupyter-core==5.7.2
     # via jupyter-client
@@ -115,14 +115,14 @@ matplotlib-inline==0.1.7
     # via ipython
 mistune==3.0.2
     # via nbconvert
-mypy==1.9.0
+mypy==1.10.0
 mypy-extensions==1.0.0
     # via black
     # via mypy
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.2
-nbformat==5.10.3
+nbconvert==7.16.4
+nbformat==5.10.4
     # via nbclient
     # via nbconvert
 numpy==1.24.4
@@ -151,7 +151,7 @@ platformdirs==4.2.0
     # via black
     # via jupyter-core
     # via yapf
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 prompt-toolkit==3.0.43
     # via ipython
@@ -165,28 +165,28 @@ pure-eval==0.2.2
 pyasn1==0.5.1
     # via pyasn1-modules
     # via rsa
-pyasn1-modules==0.3.0
+pyasn1-modules==0.4.0
     # via google-auth
 pydantic==2.6.4
     # via databooks
     # via labelbox
-pydantic-core==2.16.3
+pydantic-core==2.18.2
     # via pydantic
 pygments==2.17.2
     # via ipython
     # via nbconvert
     # via rich
     # via sphinx
-pytest==8.1.1
+pytest==8.2.1
     # via pytest-cov
     # via pytest-rerunfailures
     # via pytest-snapshot
     # via pytest-xdist
-pytest-cases==3.8.4
-pytest-cov==4.1.0
+pytest-cases==3.8.5
+pytest-cov==5.0.0
 pytest-rerunfailures==14.0
 pytest-snapshot==0.9.0
-pytest-xdist==3.5.0
+pytest-xdist==3.6.1
 python-dateutil==2.8.2
     # via jupyter-client
     # via labelbox
@@ -196,12 +196,12 @@ pytz==2024.1
     # via pandas
 pyzmq==25.1.2
     # via jupyter-client
-referencing==0.34.0
+referencing==0.35.1
     # via jsonschema
     # via jsonschema-specifications
-regex==2023.12.25
+regex==2024.5.15
     # via toml-cli
-requests==2.31.0
+requests==2.32.2
     # via google-api-core
     # via labelbox
     # via sphinx
@@ -212,6 +212,8 @@ rpds-py==0.18.0
     # via referencing
 rsa==4.9
     # via google-auth
+shellingham==1.5.4
+    # via typer
 six==1.16.0
     # via asttokens
     # via bleach
@@ -245,7 +247,7 @@ stack-data==0.6.3
     # via ipython
 strenum==0.4.15
     # via labelbox
-tinycss2==1.2.1
+tinycss2==1.3.0
     # via nbconvert
 tokenize-rt==5.2.0
     # via black
@@ -257,11 +259,11 @@ tomli==2.0.1
     # via mypy
     # via pytest
     # via yapf
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via toml-cli
 tornado==6.4
     # via jupyter-client
-tqdm==4.66.2
+tqdm==4.66.4
     # via labelbox
 traitlets==5.14.2
     # via ipython
@@ -274,11 +276,11 @@ traitlets==5.14.2
 typer==0.9.0
     # via databooks
     # via toml-cli
-types-pillow==10.2.0.20240311
+types-pillow==10.2.0.20240520
 types-python-dateutil==2.9.0.20240316
-types-requests==2.31.0.20240311
-types-tqdm==4.66.0.20240106
-typing-extensions==4.10.0
+types-requests==2.32.0.20240523
+types-tqdm==4.66.0.20240417
+typing-extensions==4.11.0
     # via annotated-types
     # via black
     # via databooks
@@ -297,6 +299,6 @@ webencodings==0.5.1
     # via bleach
     # via tinycss2
 yapf==0.40.2
-zipp==3.18.1
+zipp==3.18.2
     # via importlib-metadata
     # via importlib-resources
