@@ -999,18 +999,15 @@ class Dataset(DbObject, Updateable, Deletable):
         mutation DetachSignerPyApi($id: ID!) {
             clearSignerForDataset(where: { id: $id }) {
                 id
-                signer {
-                    id
-                }
             }
         }
         """
 
         response = self.client.execute(query, {"id": self.uid})
 
-        if response:
-            return response.get("clearSignerForDataset", {}).get("signer")
-        else:
-            raise ResourceNotFoundError(IAMIntegration, {"datasetId": self.uid})
+        if not response:
+            raise ResourceNotFoundError(Dataset, {"id": self.uid})
+        
+            
               
           
