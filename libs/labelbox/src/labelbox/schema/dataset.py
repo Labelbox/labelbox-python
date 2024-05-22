@@ -1008,6 +1008,3 @@ class Dataset(DbObject, Updateable, Deletable):
         if not response:
             raise ResourceNotFoundError(Dataset, {"id": self.uid})
         
-            
-              
-          
