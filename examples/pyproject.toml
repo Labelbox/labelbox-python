@@ -2,7 +2,7 @@
 name = "examples"
 version = "0.1.0"
 description = "Labelbox Python Example Notebooks"
-authors = [{ name = "Labelbox", email = "support@labelbox.com" }]
+authors = [{ name = "Labelbox", email = "docs@labelbox.com" }]
 readme = "README.md"
 # Python version matches labelbox SDK
 requires-python = ">=3.8"
