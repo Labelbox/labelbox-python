@@ -27,7 +27,7 @@ dev-dependencies = [
 ]
 
 [tool.rye.scripts]
-clean = { chain = ["clean:databooks", "clean:black", "clean:format"] }
+clean = { chain = ["clean:black", "clean:format", "clean:databooks"] }
 "clean:databooks" = 'databooks meta --rm-outs . --yes'
 "clean:black" = 'black --line-length 80 . --quiet'
 "clean:format" = { call = "scripts.format_notebooks" }
