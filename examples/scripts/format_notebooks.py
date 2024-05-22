@@ -15,7 +15,7 @@ BANNER_CELL = {
     "source": [
         "<td>",
         '   <a target="_blank" href="https://labelbox.com" ><img src="https://labelbox.com/blog/content/images/2021/02/logo-v4.svg" width=256/></a>',
-        "</td>",
+        "</td>\n",
     ],
 }
 LINK_CELL = {
