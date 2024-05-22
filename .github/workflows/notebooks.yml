@@ -15,6 +15,7 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Get installs from rye and run rye run clean to format
   format:
     if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
@@ -38,11 +39,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
+  # See if notebooks were added or deleted (name change counts as both)
   changes:
     needs: format
     if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
-    # Set job outputs to values from filter step
     outputs:
       addedOrModified: ${{ steps.filter.outputs.addedOrModified }}
     steps:
@@ -52,6 +53,7 @@ jobs:
           filters: |
             addedOrModified:
               - added|deleted: 'examples/**/*.ipynb'
+  # Create readme if the above job shows true using rye run create-readme
   create:
     needs: changes
     if: ${{ needs.changes.outputs.addedOrModified == 'true' }} && github.event.pull_request.merged == false
