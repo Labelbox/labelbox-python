@@ -1803,6 +1803,24 @@ class Project(DbObject, Updateable, Deletable):
         overview["all_in_data_rows"] = overview.pop("all")
 
         return ProjectOverview(**overview)
+    
+    def clone(self) -> "Project":
+        """
+        Clones the current project.
+
+        Returns:
+            Project: The cloned project.
+        """
+        mutation = """
+            mutation CloneProjectPyApi($projectId: ID!) {
+                cloneProject(data: { projectId: $projectId }) {
+                    id
+                }
+            }
+        """
+        print(self.uid)
+        result = self.client.execute(mutation, {"projectId": self.uid})
+        return self.client.get_project(result["cloneProject"]["id"])
 
 
 class ProjectMember(DbObject):

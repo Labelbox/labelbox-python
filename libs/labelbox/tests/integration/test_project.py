@@ -279,3 +279,19 @@ def test_label_count(client, configured_batch_project_with_label):
     [source_project, _, _, _] = configured_batch_project_with_label
     num_labels = sum([1 for _ in source_project.labels()])
     assert source_project.get_label_count() == num_labels
+
+
+def test_clone(client, project, rand_gen):
+    # cannot clone unknown project media type
+    project = client.create_project(name=rand_gen(str), media_type=MediaType.Image)
+    cloned_project = project.clone()
+
+    assert cloned_project.description == project.description
+    assert cloned_project.media_type == project.media_type
+    assert cloned_project.queue_mode == project.queue_mode
+    assert cloned_project.auto_audit_number_of_labels == project.auto_audit_number_of_labels
+    assert cloned_project.auto_audit_percentage == project.auto_audit_percentage
+    assert cloned_project.get_label_count() == 0
+
+    project.delete()
+    cloned_project.delete()
