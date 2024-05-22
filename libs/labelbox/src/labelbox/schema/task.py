@@ -230,18 +230,30 @@ class DataUpsertTask(Task):
     def result(self) -> Union[List[Dict[str, Any]]]:
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
-        return self._result_as_list()
+        return self._results_as_list()
+
+    @property
+    def errors(self) -> Optional[Dict[str, Any]]:
+        return self._errors_as_list()
 
     @property
     def created_data_rows(self) -> Optional[Dict[str, Any]]:
         return self.result
 
     @property
-    def result_all(self) -> PaginatedCollection:
-        return self._download_result_paginated()
+    def failed_data_rows(self) -> Optional[Dict[str, Any]]:
+        return self.errors
 
-    def _download_result_paginated(self) -> PaginatedCollection:
-        page_size = 5000  # hardcode to avoid overloading the server
+    @property
+    def result_all(self) -> PaginatedCollection:
+        return self._download_results_paginated()
+
+    @property
+    def errors_all(self) -> PaginatedCollection:
+        return self._download_errors_paginated()
+
+    def _download_results_paginated(self) -> PaginatedCollection:
+        page_size = 900  # hardcode to avoid overloading the server
         from_cursor = None
 
         query_str = """query SuccessesfulDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
@@ -271,18 +283,66 @@ class DataUpsertTask(Task):
             params=params,
             dereferencing=['successesfulDataRowImports', 'nodes'],
             obj_class=lambda _, data_row: {
-                'id': data_row['id'],
+                'id': data_row.get('id'),
                 'external_id': data_row.get('externalId'),
-                'row_data': data_row['rowData'],
+                'row_data': data_row.get('rowData'),
                 'global_key': data_row.get('globalKey'),
             },
             cursor_path=['successesfulDataRowImports', 'after'],
         )
 
-    def _result_as_list(self) -> List[Dict[str, Any]]:
+    def _download_errors_paginated(self) -> PaginatedCollection:
+        page_size = 5000  # hardcode to avoid overloading the server
+        from_cursor = None
+
+        query_str = """query FailedDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
+                    failedDataRowImports(data: { taskId: $taskId, first: $first, from: $from})
+                        {
+                            after
+                            total
+                            results {
+                                message
+                                spec {
+                                    externalId
+                                    globalKey
+                                    rowData
+                                }
+                            }
+                        }
+                    }
+                """
+
+        params = {
+            'taskId': self.uid,
+            'first': page_size,
+            'from': from_cursor,
+        }
+
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params=params,
+            dereferencing=['failedDataRowImports', 'results'],
+            obj_class=lambda _, data_row: {
+                'error':
+                    data_row.get('message'),
+                'external_id':
+                    data_row.get('spec').get('externalId')
+                    if data_row.get('spec') else None,
+                'row_data':
+                    data_row.get('spec').get('rowData')
+                    if data_row.get('spec') else None,
+                'global_key':
+                    data_row.get('spec').get('globalKey')
+                    if data_row.get('spec') else None,
+            },
+            cursor_path=['failedDataRowImports', 'after'],
+        )
+
+    def _results_as_list(self) -> List[Dict[str, Any]]:
         total_downloaded = 0
         results = []
-        data = self._download_result_paginated()
+        data = self._download_results_paginated()
 
         for row in data:
             results.append(row)
@@ -291,3 +351,16 @@ class DataUpsertTask(Task):
                 break
 
         return results
+
+    def _errors_as_list(self) -> List[Dict[str, Any]]:
+        total_downloaded = 0
+        errors = []
+        data = self._download_errors_paginated()
+
+        for row in data:
+            errors.append(row)
+            total_downloaded += 1
+            if total_downloaded >= self.__max_donwload_size:
+                break
+
+        return errors
