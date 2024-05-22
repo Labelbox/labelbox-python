@@ -13,7 +13,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  
+
 jobs:
   format:
     if: github.event.pull_request.merged == false
@@ -29,10 +29,10 @@ jobs:
         run: rye run clean
       - name: Commit changes
         run: |
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add examples/.
-            git commit -m ":art: Cleaned" || exit 0
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add examples/.
+          git commit -m ":art: Cleaned" || exit 0
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
@@ -46,16 +46,15 @@ jobs:
     outputs:
       addedOrModified: ${{ steps.filter.outputs.addedOrModified }}
     steps:
-    - uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          addedOrModified:
-            - added|deleted: 'examples/**/*.ipynb'
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            addedOrModified:
+              - added|deleted: 'examples/**/*.ipynb'
   create:
     needs: changes
-    if: github.event.pull_request.merged == false
-    if: ${{ needs.changes.outputs.addedOrModified == 'true' }}
+    if: ${{ needs.changes.outputs.addedOrModified == 'true' }} && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,10 +67,10 @@ jobs:
         run: rye run create-readme
       - name: Commit changes
         run: |
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add examples/.
-            git commit -m ":memo: README updated" || exit 0
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add examples/.
+          git commit -m ":memo: README updated" || exit 0
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
