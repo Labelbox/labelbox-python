@@ -24,14 +24,14 @@ LINK_CELL = {
     "id": "cb5611d0",
     "metadata": {},
     "source": [
-        "<td>",
+        "<td>\n",
         '<a href="{colab}" target="_blank"><img',
         'src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>',
-        "</td>",
+        "</td>\n",
         "\n",
-        "<td>",
+        "<td>\n",
         '<a href="{github}" target="_blank"><img',
-        'src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="GitHub"></a>',
+        'src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="GitHub"></a>\n',
         "</td>",
     ],
 }

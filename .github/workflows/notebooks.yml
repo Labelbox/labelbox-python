@@ -54,6 +54,7 @@ jobs:
             - added|deleted: 'examples/**/*.ipynb'
   create:
     needs: changes
+    if: github.event.pull_request.merged == false
     if: ${{ needs.changes.outputs.addedOrModified == 'true' }}
     runs-on: ubuntu-latest
     steps:
