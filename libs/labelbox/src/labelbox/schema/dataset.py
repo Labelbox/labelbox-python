@@ -915,43 +915,43 @@ class Dataset(DbObject, Updateable, Deletable):
         return _upsert_items
     
     def add_iam_integration(self, iam_integration: Union[str, IAMIntegration]) -> IAMIntegration:
-          """          
-          Sets the IAM integration for the dataset. IAM integration is used to sign URLs for data row assets.
+        """          
+        Sets the IAM integration for the dataset. IAM integration is used to sign URLs for data row assets.
 
-            Args:
-                iam_integration (Union[str, IAMIntegration]): IAM integration object or IAM integration id.
+        Args:
+            iam_integration (Union[str, IAMIntegration]): IAM integration object or IAM integration id.
 
-            Returns:
-                IAMIntegration: IAM integration object.
+        Returns:
+            IAMIntegration: IAM integration object.
 
-            Raises:
-                LabelboxError: If the IAM integration can't be set.
+        Raises:
+            LabelboxError: If the IAM integration can't be set.
 
-            Examples:
-            
-                >>>    # Get all IAM integrations
-                >>>    iam_integrations = client.get_organization().get_iam_integrations()
-                >>>    
-                >>>    # Get IAM integration id
-                >>>    iam_integration_id = [integration.uid for integration
-                >>>      in iam_integrations
-                >>>      if integration.name == "My S3 integration"][0]
-                >>>
-                >>>   # Set IAM integration for integration id
-                >>>   dataset.set_iam_integration(iam_integration_id)
-                >>>
-                >>>    # Get IAM integration object
-                >>>    iam_integration = [integration.uid for integration
-                >>>      in iam_integrations
-                >>>      if integration.name == "My S3 integration"][0]
-                >>>
-                >>>   # Set IAM integration for IAMIntegrtion object
-                >>>   dataset.set_iam_integration(iam_integration)
-          """
+        Examples:
+        
+            >>>    # Get all IAM integrations
+            >>>    iam_integrations = client.get_organization().get_iam_integrations()
+            >>>    
+            >>>    # Get IAM integration id
+            >>>    iam_integration_id = [integration.uid for integration
+            >>>      in iam_integrations
+            >>>      if integration.name == "My S3 integration"][0]
+            >>>
+            >>>   # Set IAM integration for integration id
+            >>>   dataset.set_iam_integration(iam_integration_id)
+            >>>
+            >>>    # Get IAM integration object
+            >>>    iam_integration = [integration.uid for integration
+            >>>      in iam_integrations
+            >>>      if integration.name == "My S3 integration"][0]
+            >>>
+            >>>   # Set IAM integration for IAMIntegrtion object
+            >>>   dataset.set_iam_integration(iam_integration)
+        """
 
-          iam_integration_id = iam_integration.uid if isinstance(iam_integration, IAMIntegration) else iam_integration
+        iam_integration_id = iam_integration.uid if isinstance(iam_integration, IAMIntegration) else iam_integration
 
-          query = """
+        query = """
             mutation SetSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
                 setSignerForDataset(
                     data: { signerId: $signerId }
@@ -963,19 +963,20 @@ class Dataset(DbObject, Updateable, Deletable):
                     }
                 }
             }
-         """
+        """
 
-          response = self.client.execute(query, {"signerId": iam_integration_id, "datasetId": self.uid})
+        response = self.client.execute(query, {"signerId": iam_integration_id, "datasetId": self.uid})
 
-          if not response:
+        if not response:
             raise ResourceNotFoundError(IAMIntegration, {"signerId": iam_integration_id, "datasetId": self.uid})
-          
-          try:
+        
+        try:
             iam_integration_id = response.get("setSignerForDataset", {}).get("signer", {})["id"]
+
             return [integration for integration 
                     in self.client.get_organization().get_iam_integrations() 
                     if integration.uid == iam_integration_id][0]
-          except:
+        except:
             raise LabelboxError(f"Can't retrieve IAM integration {iam_integration_id}")
               
     def remove_iam_integration(self) -> None:
