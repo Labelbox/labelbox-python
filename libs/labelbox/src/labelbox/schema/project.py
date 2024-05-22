@@ -1818,7 +1818,6 @@ class Project(DbObject, Updateable, Deletable):
                 }
             }
         """
-        print(self.uid)
         result = self.client.execute(mutation, {"projectId": self.uid})
         return self.client.get_project(result["cloneProject"]["id"])
 
