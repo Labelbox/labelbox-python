@@ -21,7 +21,7 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 5. Imports and installs should come after the main header under a **Setup** section.
 6. Labelbox and other platforms with clients and API keys should be specified under a single section.
 7. Subsections need a second level header **##** and an overview of the section.
-8. The last cell should be a clean up section to delete any labelbox objects created.
+8. The last cell should be a clean up section to delete any labelbox objects created and commented out to prevent accidentally running code blocks.
 
 > [!IMPORTANT]
 > Please make sure to remove any API keys before pushing changes
