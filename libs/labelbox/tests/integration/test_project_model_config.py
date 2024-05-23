@@ -1,4 +1,5 @@
 import pytest
+from labelbox.exceptions import ResourceNotFoundError
 
 def test_add_single_model_config(configured_project, model_config):
     project_model_config_id = configured_project.add_model_config(model_config.uid)
@@ -23,3 +24,7 @@ def test_add_multiple_model_config(client, rand_gen, configured_project, model_c
 def test_delete_project_model_config(configured_project, model_config):
     assert configured_project.delete_project_model_config(configured_project.add_model_config(model_config.uid))
     assert not len(configured_project.project_model_configs())
+
+def test_delete_nonexistant_project_model_config(configured_project):
+    with pytest.raises(ResourceNotFoundError):
+        configured_project.delete_project_model_config("nonexistant_project_model_config")
