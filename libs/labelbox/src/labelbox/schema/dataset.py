@@ -284,10 +284,34 @@ class Dataset(DbObject, Updateable, Deletable):
             InvalidAttributeError: If there are fields in `items` not valid for
                 a DataRow.
             ValueError: When the upload parameters are invalid
-        """
 
+        NOTE  dicts and strings items can not be mixed in the same call. It is a responsibility of the caller to ensure that all items are of the same type.
+        """
+        if isinstance(items[0], str):
+            items = self._build_from_local_paths(items)  # Assume list of file paths
         specs = DataRowCreateItem.build(self.uid, items)
         return self._exec_upsert_data_rows(specs, file_upload_thread_count)
+
+    def _build_from_local_paths(
+            self,
+            items: List[str],
+            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> List[dict]:
+        uploaded_items = []
+
+        def upload_file(item):
+            item_url = self.client.upload_file(item)
+            return {'row_data': item_url, 'external_id': item}
+
+        with ThreadPoolExecutor(file_upload_thread_count) as executor:
+            futures = [
+                executor.submit(upload_file, item)
+                for item in items
+                if isinstance(item, str) and os.path.exists(item)
+            ]
+            more_items = [future.result() for future in as_completed(futures)]
+            uploaded_items.extend(more_items)
+
+        return uploaded_items
 
     def data_rows_for_external_id(self,
                                   external_id,
@@ -593,6 +617,7 @@ class Dataset(DbObject, Updateable, Deletable):
             self,
             specs: List[DataRowItemBase],
             file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT) -> "Task":
+
         manifest = DataRowUploader.upload_in_chunks(
             client=self.client,
             specs=specs,

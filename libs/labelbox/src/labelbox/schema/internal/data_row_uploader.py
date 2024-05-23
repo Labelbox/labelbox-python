@@ -2,7 +2,7 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from typing import Iterable, List
+from typing import Iterable, List, Union
 
 from labelbox.exceptions import InvalidQueryError
 from labelbox.exceptions import InvalidAttributeError
