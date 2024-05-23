@@ -331,22 +331,3 @@
     </tr>
   </tbody>
 </table>
-
-<h2>Extras</h2>
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: left;">
-      <th style="min-width: 400px;">Notebook</th>
-      <th>Github</th>
-      <th>Google Colab</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Classification Confusion Matrix</td>
-      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/extras/classification_confusion_matrix.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
-      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/extras/classification_confusion_matrix.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
-    </tr>
-  </tbody>
-</table>
