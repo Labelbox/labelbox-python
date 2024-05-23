@@ -26,8 +26,8 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/python-package-shared-setup
         with:
-          rye-version: ${{ vars.RYE_VERSION }}
-          python-version: 3.8
+          rye-version: 0.33.0
+          python-version: 3.12
       - name: Format
         working-directory: examples
         run: rye run clean
@@ -68,8 +68,8 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/python-package-shared-setup
         with:
-          rye-version: ${{ vars.RYE_VERSION }}
-          python-version: 3.8
+          rye-version: 0.33.0
+          python-version: 3.12
       - name: Create readme
         working-directory: examples
         run: rye run create-readme
