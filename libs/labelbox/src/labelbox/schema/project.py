@@ -18,6 +18,7 @@ from labelbox.exceptions import (
     LabelboxError,
     ProcessingWaitTimeout,
     ResourceConflict,
+    ResourceNotFoundError
 )
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
@@ -33,6 +34,7 @@ from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
@@ -1271,6 +1273,8 @@ class Project(DbObject, Updateable, Deletable):
             "modelConfigId": model_config_id,
         }
         result = self.client.execute(query, params)
+        if not result:
+            raise ResourceNotFoundError(ModelConfig, params)
         return result["createProjectModelConfig"]["projectModelConfigId"]
 
     def delete_project_model_config(self, project_model_config_id: str) -> bool:
@@ -1292,6 +1296,8 @@ class Project(DbObject, Updateable, Deletable):
             "id": project_model_config_id,
         }
         result = self.client.execute(query, params)
+        if not result:
+            raise ResourceNotFoundError(ProjectModelConfig, params)
         return result["deleteProjectModelConfig"]["success"]
 
     def set_labeling_parameter_overrides(
