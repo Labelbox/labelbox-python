@@ -5,7 +5,7 @@ ENV LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     PATH="/home/python/.local/bin:/home/python/.rye/shims:$PATH" \
     PIP_NO_CACHE_DIR="false" \
-    RYE_VERSION="0.32.0" \
+    RYE_VERSION="0.34.0" \
     RYE_INSTALL_OPTION="--yes" \
     LABELBOX_TEST_ENVIRON="prod"
 
@@ -31,7 +31,7 @@ RUN groupadd --gid 1000 python && \
 USER 1000
 WORKDIR /home/python/
 
-RUN curl -sSf https://rye-up.com/get | bash -
+RUN curl -sSf https://rye.astral.sh/get | bash -
 
 COPY --chown=python:python . /home/python/labelbox-python/
 WORKDIR /home/python/labelbox-python
