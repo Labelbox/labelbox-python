@@ -61,11 +61,12 @@ def test_task_success_json(dataset, image_url, snapshot):
 @pytest.mark.export_v1("export_v1 test remove later")
 def test_task_success_label_export(client, configured_project_with_label):
     project, _, _, _ = configured_project_with_label
-    project.export_labels()
+    # TODO: Move to export_v2
+    res = project.export_labels()
     user = client.get_user()
     task = None
     for task in user.created_tasks():
-        if task.name != 'JSON Import':
+        if task.name != 'JSON Import' and task.type != 'adv-upsert-data-rows':
             break
 
     with pytest.raises(ValueError) as exc_info:

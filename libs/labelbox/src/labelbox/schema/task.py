@@ -10,7 +10,10 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship, Entity
 
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.internal.datarow_upload_constants import MAX_DATAROW_PER_API_OPERATION
+from labelbox.schema.internal.datarow_upload_constants import (
+    MAX_DATAROW_PER_API_OPERATION,
+    DOWNLOAD_RESULT_PAGE_SIZE,
+)
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -51,6 +54,10 @@ class Task(DbObject):
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
+
+    def __eq__(self, task):
+        return isinstance(
+            task, Task) and task.uid == self.uid and task.type == self.type
 
     # Import and upsert have several instances of special casing
     def is_creation_task(self) -> bool:
@@ -227,21 +234,23 @@ class DataUpsertTask(Task):
         self._user = None
 
     @property
-    def result(self) -> Union[List[Dict[str, Any]]]:
+    def result(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
         return self._results_as_list()
 
     @property
-    def errors(self) -> Optional[Dict[str, Any]]:
+    def errors(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
         return self._errors_as_list()
 
     @property
-    def created_data_rows(self) -> Optional[Dict[str, Any]]:
+    def created_data_rows(  # type: ignore
+            self) -> Optional[List[Dict[str, Any]]]:
         return self.result
 
     @property
-    def failed_data_rows(self) -> Optional[Dict[str, Any]]:
+    def failed_data_rows(  # type: ignore
+            self) -> Optional[List[Dict[str, Any]]]:
         return self.errors
 
     @property
@@ -253,7 +262,7 @@ class DataUpsertTask(Task):
         return self._download_errors_paginated()
 
     def _download_results_paginated(self) -> PaginatedCollection:
-        page_size = 900  # hardcode to avoid overloading the server
+        page_size = DOWNLOAD_RESULT_PAGE_SIZE
         from_cursor = None
 
         query_str = """query SuccessesfulDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
@@ -292,7 +301,7 @@ class DataUpsertTask(Task):
         )
 
     def _download_errors_paginated(self) -> PaginatedCollection:
-        page_size = 5000  # hardcode to avoid overloading the server
+        page_size = DOWNLOAD_RESULT_PAGE_SIZE  # hardcode to avoid overloading the server
         from_cursor = None
 
         query_str = """query FailedDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
@@ -306,6 +315,16 @@ class DataUpsertTask(Task):
                                     externalId
                                     globalKey
                                     rowData
+                                        metadata {
+                                            schemaId
+                                            value
+                                            name
+                                        }
+                                        attachments {
+                                            type
+                                            value
+                                            name
+                                        }                                    
                                 }
                             }
                         }
@@ -318,28 +337,30 @@ class DataUpsertTask(Task):
             'from': from_cursor,
         }
 
+        def convert_errors_to_legacy_format(client, data_row):
+            spec = data_row.get('spec', {})
+            return {
+                'message':
+                    data_row.get('message'),
+                'failedDataRows': [{
+                    'externalId': spec.get('externalId'),
+                    'rowData': spec.get('rowData'),
+                    'globalKey': spec.get('globalKey'),
+                    'metadata': spec.get('metadata', []),
+                    'attachments': spec.get('attachments', []),
+                }]
+            }
+
         return PaginatedCollection(
             client=self.client,
             query=query_str,
             params=params,
             dereferencing=['failedDataRowImports', 'results'],
-            obj_class=lambda _, data_row: {
-                'error':
-                    data_row.get('message'),
-                'external_id':
-                    data_row.get('spec').get('externalId')
-                    if data_row.get('spec') else None,
-                'row_data':
-                    data_row.get('spec').get('rowData')
-                    if data_row.get('spec') else None,
-                'global_key':
-                    data_row.get('spec').get('globalKey')
-                    if data_row.get('spec') else None,
-            },
+            obj_class=convert_errors_to_legacy_format,
             cursor_path=['failedDataRowImports', 'after'],
         )
 
-    def _results_as_list(self) -> List[Dict[str, Any]]:
+    def _results_as_list(self) -> Optional[List[Dict[str, Any]]]:
         total_downloaded = 0
         results = []
         data = self._download_results_paginated()
@@ -350,9 +371,12 @@ class DataUpsertTask(Task):
             if total_downloaded >= self.__max_donwload_size:
                 break
 
+        if len(results) == 0:
+            return None
+
         return results
 
-    def _errors_as_list(self) -> List[Dict[str, Any]]:
+    def _errors_as_list(self) -> Optional[List[Dict[str, Any]]]:
         total_downloaded = 0
         errors = []
         data = self._download_errors_paginated()
@@ -362,5 +386,8 @@ class DataUpsertTask(Task):
             total_downloaded += 1
             if total_downloaded >= self.__max_donwload_size:
                 break
+
+        if len(errors) == 0:
+            return None
 
         return errors

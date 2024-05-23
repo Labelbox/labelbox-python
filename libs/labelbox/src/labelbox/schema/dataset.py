@@ -287,9 +287,14 @@ class Dataset(DbObject, Updateable, Deletable):
 
         NOTE  dicts and strings items can not be mixed in the same call. It is a responsibility of the caller to ensure that all items are of the same type.
         """
-        if isinstance(items[0], str):
-            items = self._build_from_local_paths(items)  # Assume list of file paths
-        specs = DataRowCreateItem.build(self.uid, items)
+        string_items = [item for item in items if isinstance(item, str)]
+        dict_items = [item for item in items if isinstance(item, dict)]
+        dict_string_items = []
+
+        if len(string_items) > 0:
+            dict_string_items = self._build_from_local_paths(string_items)
+        specs = DataRowCreateItem.build(self.uid,
+                                        dict_items + dict_string_items)
         return self._exec_upsert_data_rows(specs, file_upload_thread_count)
 
     def _build_from_local_paths(

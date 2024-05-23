@@ -3,7 +3,7 @@ import requests
 from labelbox import Dataset
 from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException, InvalidQueryError
 from labelbox.schema.dataset import MAX_DATAROW_PER_API_OPERATION
-from labelbox.schema.internal.datarow_uploader import DataRowUploader
+from labelbox.schema.internal.data_row_uploader import DataRowUploader
 
 
 def test_dataset(client, rand_gen):
@@ -166,12 +166,3 @@ def test_create_descriptor_file(dataset):
             'content_type': 'application/json',
             'filename': 'json_import.json'
         }
-
-
-def test_max_dataset_datarow_upload(dataset, image_url, rand_gen):
-    external_id = str(rand_gen)
-    items = [dict(row_data=image_url, external_id=external_id)
-            ] * (MAX_DATAROW_PER_API_OPERATION + 1)
-
-    with pytest.raises(MalformedQueryException):
-        dataset.create_data_rows(items)

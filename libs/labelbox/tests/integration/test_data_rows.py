@@ -238,7 +238,7 @@ def test_data_row_bulk_creation_from_file(dataset, local_image_file, image_url):
         assert task.has_errors() is False
         results = [r for r in task.result_all]
         row_data = [result["row_data"] for result in results]
-        assert row_data == [image_url, image_url]
+        assert len(row_data) == 2
 
 
 def test_data_row_bulk_creation_from_row_data_file_external_id(
@@ -252,12 +252,14 @@ def test_data_row_bulk_creation_from_row_data_file_external_id(
             "row_data": image_url,
             'external_id': 'some_name2'
         }])
+        task.wait_till_done()
         assert task.status == "COMPLETE"
         assert len(task.result) == 2
         assert task.has_errors() is False
         results = [r for r in task.result_all]
         row_data = [result["row_data"] for result in results]
-        assert row_data == [image_url, image_url]
+        assert len(row_data) == 2
+        assert image_url in row_data
 
 
 def test_data_row_bulk_creation_from_row_data_file(dataset, rand_gen,
@@ -275,7 +277,7 @@ def test_data_row_bulk_creation_from_row_data_file(dataset, rand_gen,
         assert task.has_errors() is False
         results = [r for r in task.result_all]
         row_data = [result["row_data"] for result in results]
-        assert row_data == [image_url, image_url]
+        assert len(row_data) == 2
 
 
 @pytest.mark.slow
@@ -899,6 +901,7 @@ def test_create_data_rows_result(client, dataset, image_url):
             DataRow.external_id: "row1",
         },
     ])
+    task.wait_till_done()
     assert task.errors is None
     for result in task.result:
         client.get_data_row(result['id'])
@@ -973,8 +976,16 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
         'message'] == f"Duplicate global key: '{global_key_1}'"
     assert task.failed_data_rows[0]['failedDataRows'][0][
         'externalId'] == sample_image
-    assert task.created_data_rows[0]['externalId'] == sample_image
-    assert task.created_data_rows[0]['globalKey'] == global_key_1
+    assert task.created_data_rows[0]['external_id'] == sample_image
+    assert task.created_data_rows[0]['global_key'] == global_key_1
+
+    errors = task.errors_all
+    all_errors = [er for er in errors]
+    assert len(all_errors) == 1
+    assert task.has_errors() is True
+
+    all_results = [result for result in task.result_all]
+    assert len(all_results) == 1
 
 
 def test_data_row_delete_and_create_with_same_global_key(

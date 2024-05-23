@@ -25,13 +25,12 @@ class DataRowItemBase(BaseModel, ABC):
             key = item.pop('key', None)
             if not key:
                 key = {'type': 'AUTO', 'value': ''}
-            elif isinstance(key, key_types):
+            elif isinstance(key, key_types):  # type: ignore
                 key = {'type': key.id_type.value, 'value': key.key}
             else:
                 if not key_types:
                     raise ValueError(
-                        f"Can not have a key for this item, got: {key}"
-                    )
+                        f"Can not have a key for this item, got: {key}")
                 raise ValueError(
                     f"Key must be an instance of {', '.join([t.__name__ for t in key_types])}, got: {type(item['key']).__name__}"
                 )
@@ -53,14 +52,22 @@ class DataRowItemBase(BaseModel, ABC):
 class DataRowUpsertItem(DataRowItemBase):
 
     @classmethod
-    def build(cls, dataset_id: str,
-              items: List[dict]) -> List["DataRowUpsertItem"]:
+    def build(
+        cls,
+        dataset_id: str,
+        items: List[dict],
+        key_types: Optional[Tuple[type, ...]] = ()
+    ) -> List["DataRowItemBase"]:
         return super().build(dataset_id, items, (UniqueId, GlobalKey))
 
 
 class DataRowCreateItem(DataRowItemBase):
 
     @classmethod
-    def build(cls, dataset_id: str,
-              items: List[dict]) -> List["DataRowCreateItem"]:
+    def build(
+        cls,
+        dataset_id: str,
+        items: List[dict],
+        key_types: Optional[Tuple[type, ...]] = ()
+    ) -> List["DataRowItemBase"]:
         return super().build(dataset_id, items, ())
