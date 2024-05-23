@@ -105,18 +105,14 @@ def make_links_dict(links: str):
         defaultdict[list]: returns dict that is in pandas dataFrame format
     """
     link_dict = defaultdict(list)
-    extra_links = []
     for section in ORDER:
         link_dict[section] = []
     for link in links:
         if link.split("/")[-1] in IGNORE:
             continue
-        if link.split("/")[0] == "extras":
-            extra_links.append(link)
         else:
             split_link = link.split("/")[0]
             link_dict[split_link].append(link)
-    link_dict["Extras"] = extra_links
     return link_dict
 
 
