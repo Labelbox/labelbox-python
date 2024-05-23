@@ -14,7 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/notebooks
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: 3.8
       - name: Create readme
         working-directory: examples
         run: rye run create-doc-readme

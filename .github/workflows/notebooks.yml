@@ -24,7 +24,10 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - uses: ./.github/actions/notebooks
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: 3.8
       - name: Format
         working-directory: examples
         run: rye run clean
@@ -63,7 +66,10 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - uses: ./.github/actions/notebooks
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: 3.8
       - name: Create readme
         working-directory: examples
         run: rye run create-readme
