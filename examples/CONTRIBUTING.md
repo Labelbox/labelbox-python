@@ -12,7 +12,7 @@ Thank you for contributing to our notebook examples! To ensure that your contrib
 
 ## General Notebook Requirements
 
-Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. This notebook and section just serves as a guide and exceptions can be made. Here are our general requirements:
+Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. The template notebook and this section just serves as a guide and exceptions can be made. Here are our general requirements:
 
 1. Ensure that any modified notebooks run when edited.
 2. Ensure that you update any relevant headers and comments within the code block you may add or change.
