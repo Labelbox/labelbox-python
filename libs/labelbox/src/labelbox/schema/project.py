@@ -42,6 +42,7 @@ from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
 from labelbox.schema.project_overview import ProjectOverview
+from labelbox.schema.external_workforce import ExternalWorkforce
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -1826,6 +1827,114 @@ class Project(DbObject, Updateable, Deletable):
         """
         result = self.client.execute(mutation, {"projectId": self.uid})
         return self.client.get_project(result["cloneProject"]["id"])
+    
+    def add_external_workforce(self, workforce_id: Union[str, ExternalWorkforce]) -> List[ExternalWorkforce]:
+        
+        """
+        Add an external workforce (organization) to a project.
+
+        Args:
+            workforce_id (Union[str, ExternalWorkforce]): Organization id of the external workforce.
+
+        Returns:
+            List[ExternalWorkforce]: The remaining external workforces or an empty list if no external workforces are left.
+
+        Raises:
+            LabelboxError: If the external workforce with the given ID cannot be found.
+
+        Note:
+            This method adds an external workforce (organization) to the current project. 
+            The `workforce_id` parameter can be either a string representing the organization ID or an instance of the `ExternalWorkforce` class.
+        """
+        workforce_id = workforce_id.uid if isinstance(workforce_id, ExternalWorkforce) else workforce_id
+
+        mutation = """
+            mutation ShareProjectWithExternalOrganizationPyApi($projectId: ID!, $organizationId: ID!) {
+                shareProjectWithExternalOrganization(
+                    data: { projectId: $projectId, organizationId: $organizationId }
+                ) {
+                    id
+                    sharedWithOrganizations {
+                        id
+                        name
+                    }
+                    }
+            }
+        """
+
+        result = self.client.execute(mutation, {"projectId": self.uid, "organizationId": workforce_id})
+
+        if not result:
+            raise LabelboxError(f"Can't find External Workforce {workforce_id}")
+
+        return [ExternalWorkforce(**workforce_dic) 
+                    for workforce_dic 
+                    in result["shareProjectWithExternalOrganization"]["sharedWithOrganizations"]]
+
+
+    def remove_external_workforce(self, workforce_id: Union[str, ExternalWorkforce]) -> List[ExternalWorkforce]:
+        """Remove an external workforce (organization) from a project.
+
+        Args:
+            workforce_id (Union[str, ExternalWorkforce]): Organization id of the external workforce
+            or an instance of the ExternalWorkforce class.
+
+        Returns:
+            List[ExternalWorkforce]: The remaining external workforces or an empty list if no external workforces are left.
+
+        Raises:
+            LabelboxError: If the external workforce cannot be found.
+        """
+
+        mutation = """
+            mutation UnshareProjectWithExternalOrganizationPyApi($projectId: ID!, $organizationId: ID!) {
+                unshareProjectWithExternalOrganization(
+                    data: { projectId: $projectId, organizationId: $organizationId }
+                ) {
+                    id
+                    sharedWithOrganizations {
+                        id
+                        name
+                    }
+                }
+            }
+            """
+        
+        result = self.client.execute(mutation, {"projectId": self.uid, "organizationId": workforce_id})
+        
+        if not result:
+            raise LabelboxError(f"Can't find External Workforce {workforce_id}")
+
+        return [ExternalWorkforce(**workforce_dic) 
+                for workforce_dic 
+                in result["unshareProjectWithExternalOrganization"]["sharedWithOrganizations"]]
+
+
+    def get_external_workforces(self) -> List[ExternalWorkforce]:
+        """List the external workforces (organizations) attached to a project
+
+        Args:
+            project_id: Id of the project to check Project to check
+
+        Returns:
+            list of dictionaries with id and name for each external workforce (aka organization)
+            or empty list if no external workforces were found
+        """
+
+        query = """
+            query GetProjectExternalOganizationsPyApi($projectId: ID!) {
+                project(where: { id: $projectId }) {
+                    id
+                    sharedWithOrganizations {
+                        id
+                        name
+                    }
+                }
+            }
+            """
+
+        result = self.client.execute(query, {"projectId": self.uid})["project"]["sharedWithOrganizations"]
+        return [ExternalWorkforce(**workforce_dic) for workforce_dic in result]  
 
 
 class ProjectMember(DbObject):
