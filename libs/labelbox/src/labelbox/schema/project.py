@@ -1885,6 +1885,7 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             LabelboxError: If the external workforce cannot be found.
         """
+        workforce_id = workforce_id.uid if isinstance(workforce_id, ExternalWorkforce) else workforce_id
 
         mutation = """
             mutation UnshareProjectWithExternalOrganizationPyApi($projectId: ID!, $organizationId: ID!) {
