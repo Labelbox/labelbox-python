@@ -448,8 +448,12 @@ class _BufferedGCSFileReader(_Reader):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
             result = self._retrieval_strategy.get_next_chunk()
             while result:
-                file_info, raw_data = result
-                temp_file.seek(file_info.offsets.start)
+                _, raw_data = result
+                # there is something wrong with the way the offsets are being calculated
+                # so just write all of the chunks as is too the file, with pointer initially
+                # pointed to the start of the file (like what is in GCS) and do not
+                # rely on offsets for file location
+                # temp_file.seek(file_info.offsets.start)
                 temp_file.write(raw_data)
                 result = self._retrieval_strategy.get_next_chunk()
         # read buffer
