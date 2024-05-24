@@ -12,7 +12,7 @@ def test_add_external_workforce(project: Project):
 
 
 def test_get_external_workforces(project: Project):
-    external_workforces = project.external_workforces()
+    external_workforces = project.get_external_workforces()
     assert len(external_workforces) == 1
     assert isinstance(external_workforces[0], ExternalWorkforce)
 
