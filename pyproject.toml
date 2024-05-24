@@ -2,9 +2,7 @@
 name = "labelbox-python"
 version = "0.1.0"
 description = "Labelbox Python API"
-authors = [
-    { name = "Labelbox", email = "engineering@labelbox.com" }
-]
+authors = [{ name = "Labelbox", email = "engineering@labelbox.com" }]
 dependencies = [
     "sphinx-multiproject>=1.0.0rc1",
     "sphinx>=7.1.2",
@@ -29,7 +27,7 @@ dev-dependencies = [
 ]
 
 [tool.rye.workspace]
-members = ["libs/*"]
+members = ["libs/*", "examples"]
 
 [tool.pytest.ini_options]
 addopts = "-rP -vvv --reruns 2 --reruns-delay 10 --durations=20 -n auto --cov=labelbox --import-mode=importlib"
