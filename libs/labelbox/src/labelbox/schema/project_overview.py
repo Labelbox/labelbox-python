@@ -1,5 +1,6 @@
-from typing import Dict, List, TypedDict
+from typing import Dict, List
 from labelbox.pydantic_compat import BaseModel
+from typing_extensions import TypedDict
 
 class ProjectOverview(BaseModel):
     """
