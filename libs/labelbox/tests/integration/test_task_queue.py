@@ -21,7 +21,7 @@ def test_get_overview_no_details(project: Project):
     assert isinstance(po.done, int)
     assert isinstance(po.issues, int)
     assert isinstance(po.labeled, int)
-    assert isinstance(po.all_in_data_rows, int)
+    assert isinstance(po.total_data_rows, int)
 
 def test_get_overview_with_details(project: Project):
     po = project.get_overview(details=True)
@@ -35,7 +35,7 @@ def test_get_overview_with_details(project: Project):
     assert isinstance(po.done, int)
     assert isinstance(po.issues, int)
     assert isinstance(po.labeled, int)
-    assert isinstance(po.all_in_data_rows, int)
+    assert isinstance(po.total_data_rows, int)
 
 def _validate_moved(project, queue_name, data_row_count):
     timeout_seconds = 30
