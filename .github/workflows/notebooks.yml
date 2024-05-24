@@ -1,4 +1,4 @@
-name: Labelbox Python SDK Notebooks (Develop)
+name: Labelbox Example Notebook Workflow
 
 on:
   push:
@@ -13,25 +13,72 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  
+
 jobs:
-  update:
+  # Get installs from rye and run rye run clean to format
+  format:
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - name: Install databooks
-        run: pip install databooks
-      - name: Remove notebook metadata
-        run: echo "y" | databooks meta examples/. --rm-outs
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: 3.12
+      - name: Format
+        working-directory: examples
+        run: rye run clean
       - name: Commit changes
         run: |
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add examples/.
-            git commit -m "Removed metadata" || exit 0
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add examples/.
+          git commit -m ":art: Cleaned" || exit 0
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
+  # See if notebooks were added or deleted (name change counts as both)
+  changes:
+    needs: format
+    if: github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    outputs:
+      addedOrModified: ${{ steps.filter.outputs.addedOrModified }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            addedOrModified:
+              - added|deleted: 'examples/**/*.ipynb'
+  # Create readme if the above job shows true using rye run create-readme
+  create:
+    needs: changes
+    if: ${{ needs.changes.outputs.addedOrModified == 'true' }} && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: 3.12
+      - name: Create readme
+        working-directory: examples
+        run: rye run create-readme
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add examples/.
+          git commit -m ":memo: README updated" || exit 0
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:

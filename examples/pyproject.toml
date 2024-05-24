@@ -1,0 +1,35 @@
+[project]
+name = "examples"
+version = "0.1.0"
+description = "Labelbox Python Example Notebooks"
+authors = [{ name = "Labelbox", email = "docs@labelbox.com" }]
+readme = "README.md"
+# Python version matches labelbox SDK
+requires-python = ">=3."
+dependencies = []
+
+[project.urls]
+Homepage = "https://labelbox.com/"
+Documentation = "https://docs.labelbox.com/"
+Tutorials = "https://docs.labelbox.com/page/tutorials"
+Repository = "https://github.com/Labelbox/labelbox-python/examples"
+Issues = "https://github.com/Labelbox/labelbox-python/issues"
+
+[tool.rye]
+managed = true
+virtual = true
+dev-dependencies = [
+    "yapf>=0.40.2",
+    "black[jupyter]>=24.4.2",
+    "databooks>=1.3.10",
+    # higher versions dont support python 3.8
+    "pandas>=1.5.3",
+]
+
+[tool.rye.scripts]
+clean = { chain = ["clean:black", "clean:format", "clean:databooks"] }
+"clean:databooks" = 'databooks meta --rm-outs . --yes'
+"clean:black" = 'black --line-length 80 . --quiet'
+"clean:format" = { call = "scripts.format_notebooks" }
+"create-readme" = { call = "scripts.generate_readme:main(True)" }
+"create-doc-readme" = { call = "scripts.generate_readme:main(False)" }

@@ -1,11 +1,24 @@
 import pandas
 import glob
 from collections import defaultdict
+from pprint import pprint
 
 """
 Script used to generate readme programmatically works by taking the links of all the notebooks
 then dividing them to different tables based on directory name. Pandas is used to make the tables. Using inline HTML to support our doc page. 
 """
+
+IGNORE = ["template.ipynb"]
+
+ORDER = [
+    "basics",
+    "exports",
+    "project_configuration",
+    "annotation_import",
+    "integrations",
+    "model_experiments",
+    "prediction_upload",
+]
 
 SDK_EXAMPLE_HEADER = """
 # Labelbox SDK Examples\n
@@ -13,10 +26,14 @@ SDK_EXAMPLE_HEADER = """
 - Run in google colab, view the notebooks on github, or clone the repo and run locally\n
 """
 
+README_EXAMPLE_HEADER = """---
+title: Python tutorials
+---
+
+"""
+
 COLAB_TEMPLATE = "https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/{filename}"
-GITHUB_TEMPLATE = (
-    "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
-)
+GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
 
 
 def create_header(link: str) -> str:
@@ -29,7 +46,7 @@ def create_header(link: str) -> str:
         str: formatted file path for header
     """
     # Splits up link uses directory name
-    split_link = link.split("/")[1].replace("_", " ").split(" ")
+    split_link = link.split("/")[0].replace("_", " ").split(" ")
     header = []
 
     # Capitalize first letter of each word
@@ -75,10 +92,10 @@ def make_link(link: str, photo: str, link_type: str) -> str:
     Returns:
         str: anchor tag with image
     """
-    return f'<a href="{link}" target="_blank"><img src="{photo}" alt="Open In {link_type}" onclick="(function prevent(e){{e.preventDefault()}}()"></a>'
+    return f'<a href="{link}" target="_blank"><img src="{photo}" alt="Open In {link_type}"></a>'
 
 
-def make_links_dict(links: str) -> defaultdict[list]:
+def make_links_dict(links: str):
     """Creates dictionary needed for pandas to generate the table takes all the links and makes each directory its own table
 
     Args:
@@ -88,13 +105,18 @@ def make_links_dict(links: str) -> defaultdict[list]:
         defaultdict[list]: returns dict that is in pandas dataFrame format
     """
     link_dict = defaultdict(list)
+    for section in ORDER:
+        link_dict[section] = []
     for link in links:
-        split_link = link.split("/")[1]
-        link_dict[split_link].append(link)
+        if link.split("/")[-1] in IGNORE:
+            continue
+        else:
+            split_link = link.split("/")[0]
+            link_dict[split_link].append(link)
     return link_dict
 
 
-def make_table(base: str = "") -> str:
+def make_table(base: str) -> str:
     """main function to make table
 
     Args:
@@ -103,7 +125,7 @@ def make_table(base: str = "") -> str:
     Returns:
         str: markdown string file
     """
-    link_dict = make_links_dict(glob.glob("**/examples/**/*.ipynb", recursive=True))
+    link_dict = make_links_dict(glob.glob("**/*.ipynb", recursive=True))
     generated_markdown = base
     for link_list in link_dict.values():
         pandas_dict = {"Notebook": [], "Github": [], "Google Colab": []}
@@ -112,23 +134,35 @@ def make_table(base: str = "") -> str:
             pandas_dict["Notebook"].append(create_title(link))
             pandas_dict["Github"].append(
                 make_link(
-                    GITHUB_TEMPLATE.format(filename="/".join(link.split("/")[1:])),
+                    GITHUB_TEMPLATE.format(filename="/".join(link.split("/"))),
                     "https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white",
                     "Github",
                 )
             )
             pandas_dict["Google Colab"].append(
                 make_link(
-                    COLAB_TEMPLATE.format(filename="/".join(link.split("/")[1:])),
+                    COLAB_TEMPLATE.format(filename="/".join(link.split("/"))),
                     "https://colab.research.google.com/assets/colab-badge.svg",
                     "Colab",
                 )
             )
         df = pandas.DataFrame(pandas_dict)
         generated_markdown += f"{df.to_html(col_space={'Notebook':400}, index=False, escape=False, justify='left')}\n\n"
-    return generated_markdown
+    return f"{generated_markdown.rstrip()}\n"
+
+
+def main(github: bool):
+    """
+    Args:
+        github (bool): if this is the readme for github.
+    """
+    if github:
+        with open("./README.md", "w") as readme:
+            readme.write(make_table(SDK_EXAMPLE_HEADER))
+    else:
+        with open("./tutorials.html", "w") as readme:
+            readme.write(make_table(README_EXAMPLE_HEADER))
 
 
 if __name__ == "__main__":
-    with open("./examples/README.md", "w") as readme:
-        readme.write(f"{make_table(SDK_EXAMPLE_HEADER).rstrip()}\n")
+    main(True)
