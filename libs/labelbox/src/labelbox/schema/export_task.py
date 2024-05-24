@@ -114,9 +114,11 @@ class JsonConverter(Converter[JsonConverterOutput]):  # pylint: disable=too-few-
     
     Deprecated: This converter is deprecated and will be removed in a future release.
     """
-    
+
     def __init__(self) -> None:
-        warnings.warn("JSON converter is deprecated and will be removed in a future release")
+        warnings.warn(
+            "JSON converter is deprecated and will be removed in a future release"
+        )
         super().__init__()
 
     def _find_json_object_offsets(self, data: str) -> List[Tuple[int, int]]:
@@ -397,7 +399,9 @@ class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
     """
 
     def __init__(self):
-        warnings.warn("_MultiGCSFileReader is deprecated and will be removed in a future release")
+        warnings.warn(
+            "_MultiGCSFileReader is deprecated and will be removed in a future release"
+        )
         super().__init__()
         self._retrieval_strategy = None
 
@@ -413,6 +417,7 @@ class _MultiGCSFileReader(_Reader):  # pylint: disable=too-few-public-methods
             file_info, raw_data = result
             yield file_info, raw_data
             result = self._retrieval_strategy.get_next_chunk()
+
 
 class Stream(Generic[OutputT]):
     """Streams data from a Reader."""
@@ -481,7 +486,7 @@ class _BufferedFileRetrieverByOffset(FileRetrieverStrategy):  # pylint: disable=
     ) -> None:
         super().__init__(ctx)
         self._current_offset = offset
-        self._current_line: Optional[int] = None
+        self._current_line = 0
         if self._current_offset >= self._ctx.metadata_header.total_size:
             raise ValueError(
                 f"offset is out of range, max offset is {self._ctx.metadata_header.total_size - 1}"
@@ -523,7 +528,8 @@ class BufferedStream(Generic[OutputT]):
         self._ctx = ctx
         self._reader = _BufferedGCSFileReader()
         self._converter = _BufferedJsonConverter()
-        self._reader.set_retrieval_strategy(_BufferedFileRetrieverByOffset(self._ctx, 0))
+        self._reader.set_retrieval_strategy(
+            _BufferedFileRetrieverByOffset(self._ctx, 0))
 
     def __iter__(self):
         yield from self._fetch()
@@ -564,13 +570,14 @@ class BufferedJsonConverterOutput:
 class _BufferedJsonConverter(Converter[BufferedJsonConverterOutput]):
     """Converts JSON data in a buffered manner
     """
+
     def convert(
         self, input_args: Converter.ConverterInputArgs
     ) -> Iterator[BufferedJsonConverterOutput]:
         yield BufferedJsonConverterOutput(json=json.loads(input_args.raw_data))
 
 
-class _BufferedGCSFileReader(_Reader): 
+class _BufferedGCSFileReader(_Reader):
     """Reads data from multiple GCS files and buffer them to disk"""
 
     def __init__(self):
@@ -599,10 +606,10 @@ class _BufferedGCSFileReader(_Reader):
         # read buffer
         with open(temp_file.name, 'r') as temp_file_reopened:
             for idx, line in enumerate(temp_file_reopened):
-                yield _MetadataFileInfo(
-                    offsets=Range(start=0, end=len(line) - 1), 
-                    lines=Range(start=idx, end=idx + 1), 
-                    file=temp_file.name), line
+                yield _MetadataFileInfo(offsets=Range(start=0,
+                                                      end=len(line) - 1),
+                                        lines=Range(start=idx, end=idx + 1),
+                                        file=temp_file.name), line
         # manually delete buffer
         os.unlink(temp_file.name)
 
@@ -733,9 +740,10 @@ class ExportTask:
         if metadata_header is None:
             return None
         BufferedStream(
-            _TaskContext(self._task.client, self._task.uid, StreamType.ERRORS,
-                         metadata_header),
-        ).start(stream_handler=lambda output: data.append(output.json))
+            _TaskContext(
+                self._task.client, self._task.uid, StreamType.ERRORS,
+                metadata_header),).start(
+                    stream_handler=lambda output: data.append(output.json))
         return data
 
     @property
@@ -753,9 +761,10 @@ class ExportTask:
             if metadata_header is None:
                 return []
             BufferedStream(
-                _TaskContext(self._task.client, self._task.uid,
-                             StreamType.RESULT, metadata_header),
-            ).start(stream_handler=lambda output: data.append(output.json))
+                _TaskContext(
+                    self._task.client, self._task.uid, StreamType.RESULT,
+                    metadata_header),).start(
+                        stream_handler=lambda output: data.append(output.json))
             return data
         return self._task.result_url
 
@@ -830,6 +839,38 @@ class ExportTask:
         total_size = self.get_total_file_size(StreamType.ERRORS)
         return total_size is not None and total_size > 0
 
+    def get_buffered_stream(
+        self,
+        stream_type: StreamType = StreamType.RESULT,
+    ) -> BufferedStream:
+        """
+        Returns the result of the task.
+
+        Args:
+            stream_type (StreamType, optional): The type of stream to retrieve. Defaults to StreamType.RESULT.
+
+        Returns:
+            Stream: The buffered stream object.
+
+        Raises:
+            ExportTask.ExportTaskException: If the task has failed or is not ready yet.
+            ValueError: If the task does not have the specified stream type.
+        """
+        if self._task.status == "FAILED":
+            raise ExportTask.ExportTaskException("Task failed")
+        if self._task.status != "COMPLETE":
+            raise ExportTask.ExportTaskException("Task is not ready yet")
+
+        metadata_header = self._get_metadata_header(self._task.client,
+                                                    self._task.uid, stream_type)
+        if metadata_header is None:
+            raise ValueError(
+                f"Task {self._task.uid} does not have a {stream_type.value} stream"
+            )
+        return BufferedStream(
+            _TaskContext(self._task.client, self._task.uid, stream_type,
+                         metadata_header),)
+
     @overload
     def get_stream(
         self,
@@ -846,33 +887,14 @@ class ExportTask:
     ) -> Stream[FileConverterOutput]:
         """Overload for getting the right typing hints when using a FileConverter."""
 
-    def get_buffered_stream(
-        self,
-        stream_type: StreamType = StreamType.RESULT,
-    ) -> Stream:
-        """Returns the result of the task."""
-        if self._task.status == "FAILED":
-            raise ExportTask.ExportTaskException("Task failed")
-        if self._task.status != "COMPLETE":
-            raise ExportTask.ExportTaskException("Task is not ready yet")
-
-        metadata_header = self._get_metadata_header(self._task.client,
-                                                    self._task.uid, stream_type)
-        if metadata_header is None:
-            raise ValueError(
-                f"Task {self._task.uid} does not have a {stream_type.value} stream"
-            )
-        return BufferedStream(
-            _TaskContext(self._task.client, self._task.uid, stream_type,
-                         metadata_header),
-        )
-
     def get_stream(
         self,
         converter: Optional[Converter] = None,
         stream_type: StreamType = StreamType.RESULT,
     ) -> Stream:
-        warnings.warn("get_stream is deprecated and will be removed in a future release, use get_buffered_stream")
+        warnings.warn(
+            "get_stream is deprecated and will be removed in a future release, use get_buffered_stream"
+        )
         if converter is None:
             converter = JsonConverter()
         """Returns the result of the task."""
