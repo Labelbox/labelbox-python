@@ -56,21 +56,16 @@ jobs:
         with:
           token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
-      - name: Install the latest version of rye
-        uses: eifinger/setup-rye@v2
+      - uses: ./.github/actions/python-package-shared-setup
         with:
-          version: '0.32.0'
-          enable-cache: true
-      - name: Rye Setup
-        run: |
-          rye config --set-bool behavior.use-uv=true
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: '3.8'
       - name: Create build
         id: create-build
         working-directory: libs/labelbox
         run: |
           VERSION=$(date +"%Y.%m.%d.%H.%M")
           echo "pip install --index-url https://test.pypi.org/simple/ --extra-index-url=https://pypi.org/simple/ labelbox-test@$VERSION" >> "$GITHUB_STEP_SUMMARY"
-          rye sync
           rye version "$VERSION"
           rye run toml set --toml-path pyproject.toml project.name labelbox-test
           rye build
