@@ -41,7 +41,7 @@ from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
-from labelbox.schema.project_overview import ProjectOverview
+from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -1753,62 +1753,97 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_overview(self) -> ProjectOverview:
-        """ Return the number of data rows per task queue, and issues of a project
-            Equivalent of the Overview tab of a project
+    def get_overview(self, details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
+            """Return the overview of a project.
+
+            This method returns the number of data rows per task queue and issues of a project,
+            which is equivalent to the Overview tab of a project.
+
+            Args:
+                details (bool, optional): Whether to include detailed queue information for review and rework queues.
+                    Defaults to False.
+
+            Returns:
+                Union[ProjectOverview, ProjectOverviewDetailed]: An object representing the project overview.
+                    If `details` is False, returns a `ProjectOverview` object.
+                    If `details` is True, returns a `ProjectOverviewDetailed` object.
+
+            Raises:
+                Exception: If there is an error executing the query.
+
+            """
+            def _build_queue_details(overview_category: str, queue_type: str, total: int):
+                """
+                Builds the queue details for a given overview category and queue type.
 
                 Args:
-                    with_issues: (optional) boolean to include issues in the overview
+                    overview_category (str): The overview category.
+                    queue_type (str): The queue type.
+                    total (int): The total number of items in the queue.
+
                 Returns:
-                    Object Project_Overview
+                    dict: A dictionary containing the queue details.
+                        - data (list): A list of dictionaries representing the queues.
+                            Each dictionary contains the queue name and the number of data rows.
+                        - total (int): The total number of data rows for the category
                 """
+                queues = [
+                    {tq["name"]: tq.get("dataRowCount")}
+                    for tq in result.get("taskQueues")
+                    if tq.get("queueType") == queue_type
+                ]
 
-        query = """query ProjectGetOverviewPyApi($projectId: ID!) {
-            project(where: { id: $projectId }) {      
-            workstreamStateCounts {
-                state
-                count
+                return {
+                    "data": queues,
+                    "total": total
+                }
+
+            query = """query ProjectGetOverviewPyApi($projectId: ID!) {
+                project(where: { id: $projectId }) {      
+                workstreamStateCounts {
+                    state
+                    count
+                }
+                taskQueues {
+                    queueType
+                    name
+                    dataRowCount
+                }
+                issues {
+                    totalCount
+                }
+                completedDataRowCount
+                }
             }
-            taskQueues {
-                queueType
-                name
-                dataRowCount
+            """
+
+            # Must use experimental to access "issues"
+            result = self.client.execute(query, {"projectId": self.uid},
+                                         experimental=True)["project"]
+
+            # Reformat category names
+            overview = {
+                utils.snake_case(st["state"]): st["count"]
+                for st in result.get("workstreamStateCounts")
+                if st["state"] != "NotInTaskQueue"
             }
-            issues {
-                totalCount
-            }
-            completedDataRowCount
-            }
-        }
-        """
 
-        # Must use experimental to access "issues"
-        result = self.client.execute(query, {"projectId": self.uid},
-                                     experimental=True)["project"]
+            overview["issues"] = result.get("issues", {}).get("totalCount")
 
-        overview = {
-            utils.snake_case(st["state"]): st["count"]
-            for st in result.get("workstreamStateCounts")
-            if st["state"] != "NotInTaskQueue"
-        }
+            # Rename categories
+            overview["to_label"] = overview.pop("unlabeled")
+            overview["total_data_rows"] = overview.pop("all")        
 
-        review_queues = {
-            tq["name"]: tq.get("dataRowCount")
-            for tq in result.get("taskQueues")
-            if tq.get("queueType") == "MANUAL_REVIEW_QUEUE"
-        }
-
-        # Store the total number of data rows in review
-        review_queues["all"] = overview.get("in_review")
-        overview["in_review"] = review_queues
-
-        overview["issues"] = result.get("issues", {}).get("totalCount")
-
-        # Rename keys
-        overview["to_label"] = overview.pop("unlabeled")
-        overview["all_in_data_rows"] = overview.pop("all")
-
-        return ProjectOverview(**overview)
+            if not details:
+                return ProjectOverview(**overview)
+            else:
+                # Build queue details for review and rework queues
+                for category in ["rework", "review"]:
+                    overview[f"in_{category}"] = _build_queue_details(f"in_{category}", 
+                                                                    f"MANUAL_{category.upper()}_QUEUE",
+                                                                    overview[f"in_{category}"])
+                
+                return ProjectOverviewDetailed(**overview)
     
     def clone(self) -> "Project":
         """
