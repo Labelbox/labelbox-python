@@ -1022,8 +1022,6 @@ class Project(DbObject, Updateable, Deletable):
             consensus_settings = ConsensusSettings(**consensus_settings).dict(
                 by_alias=True)
 
-        print("Creating batches from dataset %s", dataset_id)
-
         method = 'createBatchesFromDataset'
         mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesFromDatasetInput!) {
                                         project(where: {id: $projectId}) {
