@@ -59,6 +59,9 @@ class Task(DbObject):
         return isinstance(
             task, Task) and task.uid == self.uid and task.type == self.type
 
+    def __hash__(self):
+        return hash(self.uid)
+
     # Import and upsert have several instances of special casing
     def is_creation_task(self) -> bool:
         return self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows'
