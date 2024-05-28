@@ -1,13 +1,15 @@
 from enum import Enum
-from typing import Set, List, TypedDict, Optional
+from typing import Set, List, Optional, Union, TypedDict, Iterator
+
 
 from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
+from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
-from labelbox.pydantic_compat import BaseModel, PrivateAttr
 
-class GroupColor(Enum):
+
+class UserGroupColor(Enum):
     """
     Enum representing the colors available for a group.
 
@@ -33,7 +35,7 @@ class GroupColor(Enum):
     GRAY = "B8C4D3"
 
 
-class GroupUser(BaseModel):
+class UserGroupUser(BaseModel):
     """
     Represents a user in a group.
 
@@ -44,17 +46,16 @@ class GroupUser(BaseModel):
     id: str
     email: str
 
-
     def __hash__(self):
         return hash((self.id))
 
     def __eq__(self, other):
-        if not isinstance(other, GroupUser):
+        if not isinstance(other, UserGroupUser):
             return False
         return self.id == other.id
 
 
-class GroupProject(BaseModel):
+class UserGroupProject(BaseModel):
     """
     Represents a project in a group.
 
@@ -78,53 +79,53 @@ class GroupProject(BaseModel):
         Returns:
             bool: True if the two GroupProject objects are equal, False otherwise.
         """
-        if not isinstance(other, GroupProject):
+        if not isinstance(other, UserGroupProject):
             return False
         return self.id == other.id
     
 
-class GroupParmeters(TypedDict):
+class UserGroupParameters(TypedDict):
     """
-    Represents the parameters for a group.
+    Represents the parameters for a user group.
 
     Attributes:
-        id (Optional[str]): The ID of the group.
-        name (Optional[str]): The name of the group.
-        color (Optional[GroupColor]): The color of the group.
-        users (Optional[Set[GroupUser]]): The users in the group.
-        projects (Optional[Set[GroupProject]]): The projects associated with the group.
+        id (Optional[str]): The ID of the user group.
+        name (Optional[str]): The name of the user group.
+        color (Optional[UserGroupColor]): The color of the user group.
+        users (Optional[Set[Union[UserGroupUser, User]]]): The users in the user group.
+        projects (Optional[Set[Union[UserGroupProject, Project]]]): The projects associated with the user group.
     """
     id: Optional[str]
     name: Optional[str]
-    color: Optional[GroupColor] 
-    users: Optional[Set[GroupUser]]
-    projects: Optional[Set[GroupProject]]
+    color: Optional[UserGroupColor] 
+    users: Optional[Set[Union[UserGroupUser, User]]]
+    projects: Optional[Set[Union[UserGroupProject, Project]]]
 
 
-class Group():
+class UserGroup:
     """
-    Represents a group of users in Labelbox.
+    Represents a user group in Labelbox.
 
     Args:
         client (Client): The Labelbox client.
-        data (dict): The data dictionary containing group information.
+        **kwargs: Additional keyword arguments for initializing the UserGroup object.
 
     Attributes:
-        id (str): The ID of the group.
-        name (str): The name of the group.
-        color (GroupColor): The color of the group.
-        users (List[str]): The list of user IDs in the group.
-        projects (List[str]): The list of project IDs in the group.
-        client (Client): The Labelbox client.
+        _id (str): The ID of the user group.
+        _name (str): The name of the user group.
+        _color (UserGroupColor): The color of the user group.
+        _users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group.
+        _projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group.
+        _client (Client): The Labelbox client.
     """
-    _id: str
+    _id: str = None
     _name: str = None
-    _color: GroupColor = None
-    _users: Set[GroupUser] = None
-    _projects: Set[GroupProject] = None
-    _client: Client
+    _color: UserGroupColor = None
+    _users: Set[Union[UserGroupUser, User]] = None
+    _projects: Set[Union[UserGroupProject, Project]] = None
+    _client: Client 
 
-    def __init__(self, client: Client, **kwargs: GroupParmeters):
+    def __init__(self, client: Client, reload=True, **kwargs: UserGroupParameters):
         """
         Initializes a Group object.
 
@@ -132,22 +133,24 @@ class Group():
             client (Client): The Labelbox client.
             **kwargs: Additional keyword arguments for initializing the Group object.
         """
-        self.id = kwargs['id']
-        self.color = kwargs.get('color', GroupColor.BLUE)
-        self.users = kwargs.get('users', {})
-        self.projects = kwargs.get('projects', {})
+        super().__init__()
+        self.color = kwargs.get('color', UserGroupColor.BLUE)
+        self.users = kwargs.get('users', set())
+        self.projects = kwargs.get('projects', set())
         self.client = client
 
         # runs against _gql
-        if client.enable_experimental is False:
+        if not client.enable_experimental:
             raise RuntimeError("Experimental features are not enabled. Please enable them in the client to use this feature.")
 
+        if 'id' not in kwargs and 'name' not in kwargs:
+            raise ValueError("Either 'id' or 'name' must be provided")
+
+        self.name = kwargs.get('name', None)
+        self.id = kwargs.get('id', None)
         # partial respentation of the group, reload
-        if self.id is not None:
+        if self.id is not None and reload:
             self._reload()
-        else:
-            self.name = kwargs['name']
-        super().__init__()
 
     def _reload(self):
         """
@@ -188,9 +191,9 @@ class Group():
         }
         result = self.client.execute(query, params)
         self.name = result["userGroup"]["name"]
-        self.color = GroupColor(result["userGroup"]["color"])
-        self.projects = {GroupProject(id=project["id"], name=project["name"]) for project in result["userGroup"]["projects"]["nodes"]}
-        self.users = {GroupUser(id=member["id"], email=member["email"]) for member in result["userGroup"]["members"]["nodes"]}
+        self.color = UserGroupColor(result["userGroup"]["color"])
+        self.projects = {UserGroupProject(id=project["id"], name=project["name"]) for project in result["userGroup"]["projects"]["nodes"]}
+        self.users = {UserGroupUser(id=member["id"], email=member["email"]) for member in result["userGroup"]["members"]["nodes"]}
 
     @property
     def id(self) -> str:
@@ -233,7 +236,7 @@ class Group():
         self._name = value
 
     @property
-    def color(self) -> GroupColor:
+    def color(self) -> UserGroupColor:
         """
         Gets the color of the group.
 
@@ -243,7 +246,7 @@ class Group():
         return self._color
 
     @color.setter
-    def color(self, value: GroupColor) -> None:
+    def color(self, value: UserGroupColor) -> None:
         """
         Sets the color of the group.
 
@@ -251,10 +254,9 @@ class Group():
             value (GroupColor): The color to set.
         """
         self._color = value
-        self._update()
 
     @property
-    def users(self) -> Set[GroupUser]:
+    def users(self) -> Set[Union[UserGroupUser, User]]:
         """
         Gets the list of user IDs in the group.
 
@@ -264,7 +266,7 @@ class Group():
         return self._users
 
     @users.setter
-    def users(self, value: Set[GroupUser]) -> None:
+    def users(self, value: Set[Union[UserGroupUser, User]]) -> None:
         """
         Sets the list of user IDs in the group.
 
@@ -274,7 +276,7 @@ class Group():
         self._users = value
 
     @property
-    def projects(self) -> Set[GroupProject]:
+    def projects(self) -> Set[UserGroupProject]:
         """
         Gets the list of project IDs in the group.
 
@@ -284,7 +286,7 @@ class Group():
         return self._projects
 
     @projects.setter
-    def projects(self, value: Set[GroupProject]) -> None:
+    def projects(self, value: Set[UserGroupProject]) -> None:
         """
         Sets the list of project IDs in the group.
 
@@ -293,7 +295,7 @@ class Group():
         """
         self._projects = value
 
-    def update(self):
+    def update(self) -> "UserGroup":
         """
         Updates the group in Labelbox.
         """
@@ -331,8 +333,9 @@ class Group():
             "userIds": [user.id for user in self.users]
         }
         self.client.execute(query, params)
+        return self
 
-    def create(self):
+    def create(self) -> "UserGroup":
         """
         Creates a new group in Labelbox.
 
@@ -386,6 +389,7 @@ class Group():
         }
         result = self.client.execute(query, params)["createUserGroup"]["group"]
         self.id = result["id"]
+        return self
 
     def delete(self) -> bool:
         """
@@ -408,7 +412,7 @@ class Group():
         return result["deleteUserGroup"]["success"]
     
     @staticmethod  
-    def groups(client: Client) -> List["Group"]:
+    def user_groups(client: Client) -> Iterator["UserGroup"]:
         """
         Gets all groups in Labelbox.
 
@@ -419,7 +423,7 @@ class Group():
             List[Group]: The list of groups.
         """
         query = """
-            query GetUserGroups {
+            query GetUserGroupsPyApi {
                 userGroups {
                     nodes {
                         id
@@ -444,16 +448,21 @@ class Group():
                 }
             }
         """
-        userGroups = client.execute(query)["userGroups"]
-        groups = userGroups["nodes"]
-        return [
-            Group(
-                client,
-                group["id"],
-                group["name"],
-                GroupColor(group["color"]),
-                {GroupUser(id=member["id"], email=member["email"]) for member in group["members"]["nodes"]},
-                {GroupProject(id=project["id"], name=project["name"]) for project in group["projects"]["nodes"]}
-            )
-            for group in groups
-        ]
+        nextCursor = None
+        while True:
+            userGroups = client.execute(query, { "nextCursor": nextCursor })["userGroups"]
+            groups = userGroups["nodes"]
+            for group in groups:
+                yield UserGroup(
+                    client,
+                    reload=False,
+                    id=group["id"],
+                    name=group["name"],
+                    color=UserGroupColor(group["color"]),
+                    users={UserGroupUser(id=member["id"], email=member["email"]) for member in group["members"]["nodes"]},
+                    projects={UserGroupProject(id=project["id"], name=project["name"]) for project in group["projects"]["nodes"]}
+                )
+            nextCursor = userGroups.get("nextCursor", None)
+            # this doesn't seem to be used right now
+            if nextCursor is None:
+                break   

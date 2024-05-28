@@ -543,6 +543,19 @@ class Client:
         """
         return self._get_all(Entity.Project, where)
 
+    def get_users(self, where=None) -> PaginatedCollection:
+        """ Fetches all the users.
+
+        >>> users = client.get_users(where=User.email == "<user_email>")
+
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Returns:
+            An iterable of Users (typically a PaginatedCollection).
+        """
+        return self._get_all(Entity.User, where, filter_deleted=False)
+    
     def get_datasets(self, where=None) -> PaginatedCollection:
         """ Fetches one or more datasets.
 

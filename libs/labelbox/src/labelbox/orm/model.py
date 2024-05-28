@@ -382,6 +382,7 @@ class Entity(metaclass=EntityMeta):
         CatalogSlice: Type[labelbox.CatalogSlice]
         ModelSlice: Type[labelbox.ModelSlice]
         TaskQueue: Type[labelbox.TaskQueue]
+        UserGroup: Type[labelbox.UserGroup]
 
     @classmethod
     def _attributes_of_type(cls, attr_type):
