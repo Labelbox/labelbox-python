@@ -57,7 +57,7 @@ pip install "labelbox[data]"
 After installing the SDK and getting an API Key, it's time to validate them both. 
 
 ```python
-import labelbox as lb test
+import labelbox as lb
 
 client = lb.Client(API_KEY) # API_KEY = API Key generated from labelbox.com
 dataset = client.create_dataset(name="Test Dataset")
