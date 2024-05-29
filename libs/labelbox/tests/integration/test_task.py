@@ -58,11 +58,12 @@ def test_task_success_json(dataset, image_url, snapshot):
                           'test_task.test_task_success_json.json')
     assert len(task.result)
 
+
 @pytest.mark.export_v1("export_v1 test remove later")
 def test_task_success_label_export(client, configured_project_with_label):
     project, _, _, _ = configured_project_with_label
     # TODO: Move to export_v2
-    res = project.export_labels()
+    project.export_labels()
     user = client.get_user()
     task = None
     for task in user.created_tasks():

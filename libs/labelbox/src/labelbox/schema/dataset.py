@@ -260,10 +260,10 @@ class Dataset(DbObject, Updateable, Deletable):
             url_param: descriptor_url
         })
 
-    def create_data_rows(
-            self,
-            items,
-            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> "Task":
+    def create_data_rows(self,
+                         items,
+                         file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+                        ) -> "DataUpsertTask":
         """ Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
@@ -576,10 +576,10 @@ class Dataset(DbObject, Updateable, Deletable):
         is_streamable = res["isStreamable"]
         return Task.get_task(self.client, task_id), is_streamable
 
-    def upsert_data_rows(
-            self,
-            items,
-            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> "Task":
+    def upsert_data_rows(self,
+                         items,
+                         file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+                        ) -> "DataUpsertTask":
         """
         Upserts data rows in this dataset. When "key" is provided, and it references an existing data row,
         an update will be performed. When "key" is not provided a new data row will be created.
@@ -610,18 +610,14 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     ])
         >>>     task.wait_till_done()
         """
-        if len(items) > MAX_DATAROW_PER_API_OPERATION:
-            raise MalformedQueryException(
-                f"Cannot upsert more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
-            )
-
         specs = DataRowUpsertItem.build(self.uid, items)
         return self._exec_upsert_data_rows(specs, file_upload_thread_count)
 
     def _exec_upsert_data_rows(
-            self,
-            specs: List[DataRowItemBase],
-            file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT) -> "Task":
+        self,
+        specs: List[DataRowItemBase],
+        file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT
+    ) -> "DataUpsertTask":
 
         manifest = DataRowUploader.upload_in_chunks(
             client=self.client,
