@@ -6,6 +6,9 @@ from labelbox.pydantic_compat import BaseModel
 
 
 class DataRowItemBase(BaseModel, ABC):
+    """
+    Base class for creating payloads for upsert operations.
+    """
     id: dict
     payload: dict
 

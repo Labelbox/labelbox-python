@@ -31,16 +31,13 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
-<<<<<<< HEAD
 from labelbox.schema.iam_integration import IAMIntegration
-=======
 from labelbox.schema.internal.data_row_create_upsert import (DataRowItemBase,
                                                              DataRowUpsertItem,
                                                              DataRowCreateItem)
 from labelbox.schema.internal.data_row_uploader import DataRowUploader
 from labelbox.schema.internal.datarow_upload_constants import (
     MAX_DATAROW_PER_API_OPERATION, FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE)
->>>>>>> 58e48ccf (Refactor upsert code so that it can be reused for create)
 
 logger = logging.getLogger(__name__)
 
@@ -644,11 +641,13 @@ class Dataset(DbObject, Updateable, Deletable):
         task._user = self.client.get_user()
         return task
 
-    def add_iam_integration(self, iam_integration: Union[str, IAMIntegration]) -> IAMIntegration:
+    def add_iam_integration(
+            self, iam_integration: Union[str,
+                                         IAMIntegration]) -> IAMIntegration:
         """          
         Sets the IAM integration for the dataset. IAM integration is used to sign URLs for data row assets.
 
-        Args:
+    Args:
             iam_integration (Union[str, IAMIntegration]): IAM integration object or IAM integration id.
 
         Returns:
@@ -679,7 +678,8 @@ class Dataset(DbObject, Updateable, Deletable):
             >>>   dataset.set_iam_integration(iam_integration)
         """
 
-        iam_integration_id = iam_integration.uid if isinstance(iam_integration, IAMIntegration) else iam_integration
+        iam_integration_id = iam_integration.uid if isinstance(
+            iam_integration, IAMIntegration) else iam_integration
 
         query = """
             mutation SetSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
@@ -695,20 +695,30 @@ class Dataset(DbObject, Updateable, Deletable):
             }
         """
 
-        response = self.client.execute(query, {"signerId": iam_integration_id, "datasetId": self.uid})
+        response = self.client.execute(query, {
+            "signerId": iam_integration_id,
+            "datasetId": self.uid
+        })
 
         if not response:
-            raise ResourceNotFoundError(IAMIntegration, {"signerId": iam_integration_id, "datasetId": self.uid})
-        
-        try:
-            iam_integration_id = response.get("setSignerForDataset", {}).get("signer", {})["id"]
+            raise ResourceNotFoundError(IAMIntegration, {
+                "signerId": iam_integration_id,
+                "datasetId": self.uid
+            })
 
-            return [integration for integration 
-                    in self.client.get_organization().get_iam_integrations() 
-                    if integration.uid == iam_integration_id][0]
+        try:
+            iam_integration_id = response.get("setSignerForDataset",
+                                              {}).get("signer", {})["id"]
+
+            return [
+                integration for integration in
+                self.client.get_organization().get_iam_integrations()
+                if integration.uid == iam_integration_id
+            ][0]
         except:
-            raise LabelboxError(f"Can't retrieve IAM integration {iam_integration_id}")
-              
+            raise LabelboxError(
+                f"Can't retrieve IAM integration {iam_integration_id}")
+
     def remove_iam_integration(self) -> None:
         """
         Unsets the IAM integration for the dataset.
@@ -738,4 +748,3 @@ class Dataset(DbObject, Updateable, Deletable):
 
         if not response:
             raise ResourceNotFoundError(Dataset, {"id": self.uid})
-        

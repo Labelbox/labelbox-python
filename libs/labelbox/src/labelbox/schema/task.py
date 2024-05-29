@@ -230,6 +230,9 @@ class Task(DbObject):
 
 
 class DataUpsertTask(Task):
+    """
+    Task class for data row upsert operations
+    """
     __max_donwload_size: Final = MAX_DATAROW_PER_API_OPERATION
 
     def __init__(self, *args, **kwargs):
@@ -238,12 +241,18 @@ class DataUpsertTask(Task):
 
     @property
     def result(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
+        """
+        Fetches maximum 150K results. If you need to fetch more, use `result_all` property
+        """
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
         return self._results_as_list()
 
     @property
     def errors(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
+        """
+        Fetches maximum 150K errors. If you need to fetch more, use `errors_all` property
+        """
         return self._errors_as_list()
 
     @property
@@ -258,10 +267,19 @@ class DataUpsertTask(Task):
 
     @property
     def result_all(self) -> PaginatedCollection:
+        """
+        This method uses our standard PaginatedCollection and allow to fetch any number of results
+        See here for more https://docs.labelbox.com/reference/sdk-fundamental-concepts-1#iterate-over-paginatedcollection
+        """
         return self._download_results_paginated()
 
     @property
     def errors_all(self) -> PaginatedCollection:
+        """
+        This method uses our standard PaginatedCollection and allow to fetch any number of errors
+        See here for more https://docs.labelbox.com/reference/sdk-fundamental-concepts-1#iterate-over-paginatedcollection
+        """
+
         return self._download_errors_paginated()
 
     def _download_results_paginated(self) -> PaginatedCollection:
