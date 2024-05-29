@@ -13,7 +13,6 @@ from types import SimpleNamespace
 from typing import Type
 from enum import Enum
 from typing import Tuple
-import json
 
 from labelbox import Dataset, DataRow
 from labelbox import MediaType
@@ -932,8 +931,8 @@ def export_v2_test_helpers() -> Type[ExportV2Helpers]:
 def big_dataset_data_row_ids(big_dataset: Dataset):
     export_task = big_dataset.export()
     export_task.wait_till_done()
-    stream = export_task.get_stream()
-    yield [json.loads(dr.json_str)["data_row"]["id"] for dr in stream]
+    stream = export_task.get_buffered_stream()
+    yield [dr.json["data_row"]["id"] for dr in stream]
 
 
 @pytest.fixture(scope='function')

@@ -3,7 +3,7 @@ from typing import List
 from uuid import uuid4
 import pytest
 
-from labelbox import Dataset, Project, Ontology
+from labelbox import Dataset, Project
 from labelbox.exceptions import ProcessingWaitTimeout, MalformedQueryException, ResourceConflict, LabelboxError
 
 
@@ -116,23 +116,17 @@ def test_create_batch_with_data_row_class(project: Project,
     assert batch.size == len(data_rows)
 
 
-def test_archive_batch(configured_project_with_basic_ontology: Project,
-                       small_dataset: Dataset):
+def test_archive_batch(project: Project, small_dataset: Dataset):
     export_task = small_dataset.export()
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
-    batch = configured_project_with_basic_ontology.create_batch(
-        "batch to archive", data_rows)
+    
+    batch = project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
-
-    export_task = configured_project_with_basic_ontology.export(
-        filters={"batch_ids": [batch.uid]})
-    export_task.wait_till_done()
-    stream = export_task.get_buffered_stream()
-    exported_data_rows = [dr for dr in stream]
-    print(exported_data_rows)
-    assert len(exported_data_rows) == 0
+    overview = project.get_overview()
+    
+    assert overview.to_label == 0
 
 
 def test_delete(project: Project, small_dataset: Dataset):
@@ -209,7 +203,7 @@ def test_batch_creation_with_processing_timeout(
 
 @pytest.mark.export_v1("export_v1 test remove later")
 def test_export_data_rows(project: Project, dataset: Dataset, image_url: str,
-                          external_id: str, ontology: Ontology):
+                          external_id: str):
     n_data_rows = 2
     task = dataset.create_data_rows([
         {

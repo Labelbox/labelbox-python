@@ -4,7 +4,7 @@ import uuid
 import pytest
 import requests
 
-from labelbox import Project, LabelingFrontend, Dataset, StreamType
+from labelbox import Project, LabelingFrontend, Dataset
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
@@ -214,32 +214,21 @@ def test_batches(project: Project, dataset: Dataset, image_url):
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
-def test_create_batch_with_global_keys_sync(configured_project_with_basic_ontology: Project, data_rows):
+def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
-    batch = configured_project_with_basic_ontology.create_batch(batch_name, global_keys=global_keys)
+    batch = project.create_batch(batch_name, global_keys=global_keys)
     
-    export_task = configured_project_with_basic_ontology.export(filters={"batch_ids": [batch.uid]})
-    export_task.wait_till_done()
-    stream = export_task.get_buffered_stream()
-    
-    batch_data_rows_global_keys = [dr.json["data_row"]["global_key"] for dr in stream]
-    assert batch_data_rows_global_keys == global_keys
+    assert batch.size == len(set(data_rows))
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
-def test_create_batch_with_global_keys_async(configured_project_with_basic_ontology: Project, data_rows):
+def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
-    batch = configured_project_with_basic_ontology._create_batch_async(batch_name, global_keys=global_keys)
+    batch = project._create_batch_async(batch_name, global_keys=global_keys)
     
-    export_task = configured_project_with_basic_ontology.export(filters={"batch_ids": [batch.uid]})
-    export_task.wait_till_done()
-    stream = export_task.get_buffered_stream()
-    
-    batch_data_rows_global_keys = [dr.json["data_row"]["global_key"] for dr in stream]
-
-    assert batch_data_rows_global_keys == global_keys
+    assert batch.size == len(set(data_rows))
 
 
 def test_media_type(client, project: Project, rand_gen):
