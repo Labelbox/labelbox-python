@@ -1,4 +1,4 @@
-ProjectOverview
+Project Overview
 ===============================================================================================
 
 .. automodule:: labelbox.schema.project-overview

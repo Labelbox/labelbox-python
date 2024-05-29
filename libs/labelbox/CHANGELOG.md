@@ -1,4 +1,16 @@
 # Changelog
+# Version 3.71.0 (2024-05-28)
+## Added
+* `project.get_overview()` to be able to retrieve project details (#1615)
+* `project.clone()` to be able to clone projects (#1624)
+* Support for Rye 0.34 (#1625)
+* Requirements.lock, Requirements-dev.lock to latest depdenencies (#1625)
+* `ExportTask.get_buffered_stream` to replace `ExportTask.get_stream` (#1628)
+
+## Fixed
+* `ExportTask.result` / `ExportTask.errors` parsing content incorrectly (#1628)
+* Lack of exceptions related to updating model config (#1634)
+
 # Version 3.70.0 (2024-05-20)
 ## Added
 * Added chat model evaluation support
