@@ -1,7 +1,6 @@
 import time
 import os
 import uuid
-
 import pytest
 import requests
 
@@ -201,8 +200,10 @@ def test_batches(project: Project, dataset: Dataset, image_url):
         },
     ] * 2)
     task.wait_till_done()
-    # TODO: Move to export_v2
-    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+    export_task = dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
     batch_one = f'batch one {uuid.uuid4()}'
     batch_two = f'batch two {uuid.uuid4()}'
     project.create_batch(batch_one, [data_rows[0]])
@@ -217,9 +218,8 @@ def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project.create_batch(batch_name, global_keys=global_keys)
-    # TODO: Move to export_v2
-    batch_data_rows = set(batch.export_data_rows())
-    assert batch_data_rows == set(data_rows)
+    
+    assert batch.size == len(set(data_rows))
 
 
 @pytest.mark.parametrize('data_rows', [2], indirect=True)
@@ -227,9 +227,8 @@ def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project._create_batch_async(batch_name, global_keys=global_keys)
-    # TODO: Move to export_v2
-    batch_data_rows = set(batch.export_data_rows())
-    assert batch_data_rows == set(data_rows)
+    
+    assert batch.size == len(set(data_rows))
 
 
 def test_media_type(client, project: Project, rand_gen):

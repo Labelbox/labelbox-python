@@ -314,7 +314,10 @@ def export_v2_test_helpers() -> Type[ExportV2Helpers]:
 
 @pytest.fixture
 def big_dataset_data_row_ids(big_dataset: Dataset):
-    yield [dr.uid for dr in list(big_dataset.export_data_rows())]
+    export_task = big_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    yield [dr.json["data_row"]["id"] for dr in stream]
 
 
 @pytest.fixture(scope='function')

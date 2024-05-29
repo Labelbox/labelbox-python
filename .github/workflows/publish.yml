@@ -91,7 +91,7 @@ jobs:
           path: ./dist
       - name: Prepare package and environment
         run: |
-          rye sync
+          rye sync -f --update-all
           rye run toml unset --toml-path pyproject.toml tool.rye.workspace
           rye sync -f --update-all
       - name: Integration Testing
