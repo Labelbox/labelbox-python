@@ -24,6 +24,7 @@ Please delete options that are not relevant.
 - [ ] Does your submission pass tests?
 - [ ] Have you added thorough tests for your new feature?
 - [ ] Have you commented your code, particularly in hard-to-understand areas?
+- [ ] Have you added a Docstring?
 
 ## Changes to Core Features
 
