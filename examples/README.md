@@ -47,6 +47,11 @@
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/data_row_metadata.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
     <tr>
+      <td>Quick Start</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/quick_start.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/quick_start.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+    </tr>
+    <tr>
       <td>Basics</td>
       <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/basics/basics.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/basics/basics.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
