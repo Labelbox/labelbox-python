@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional
 
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.pydantic_compat import BaseModel
 
 
-class DataRowItemBase(BaseModel, ABC):
+class DataRowUpsertItem(BaseModel):
     """
     Base class for creating payloads for upsert operations.
     """
@@ -13,13 +12,12 @@ class DataRowItemBase(BaseModel, ABC):
     payload: dict
 
     @classmethod
-    @abstractmethod
     def build(
         cls,
         dataset_id: str,
         items: List[dict],
         key_types: Optional[Tuple[type, ...]] = ()
-    ) -> List["DataRowItemBase"]:
+    ) -> List["DataRowUpsertItem"]:
         upload_items = []
 
         for item in items:
@@ -50,27 +48,3 @@ class DataRowItemBase(BaseModel, ABC):
         """
         return (not self.payload or
                 len(self.payload.keys()) == 1 and "dataset_id" in self.payload)
-
-
-class DataRowUpsertItem(DataRowItemBase):
-
-    @classmethod
-    def build(
-        cls,
-        dataset_id: str,
-        items: List[dict],
-        key_types: Optional[Tuple[type, ...]] = ()
-    ) -> List["DataRowItemBase"]:
-        return super().build(dataset_id, items, (UniqueId, GlobalKey))
-
-
-class DataRowCreateItem(DataRowItemBase):
-
-    @classmethod
-    def build(
-        cls,
-        dataset_id: str,
-        items: List[dict],
-        key_types: Optional[Tuple[type, ...]] = ()
-    ) -> List["DataRowItemBase"]:
-        return super().build(dataset_id, items, ())

@@ -2,7 +2,7 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from typing import Iterable, List, Union
+from typing import Iterable, List
 
 from labelbox.exceptions import InvalidQueryError
 from labelbox.exceptions import InvalidAttributeError
@@ -10,23 +10,16 @@ from labelbox.exceptions import MalformedQueryException
 from labelbox.orm.model import Entity
 from labelbox.orm.model import Field
 from labelbox.schema.embedding import EmbeddingVector
-from labelbox.schema.internal.data_row_create_upsert import DataRowItemBase
-from labelbox.schema.internal.datarow_upload_constants import MAX_DATAROW_PER_API_OPERATION
+from labelbox.pydantic_compat import BaseModel
+from labelbox.schema.internal.datarow_upload_constants import (
+    MAX_DATAROW_PER_API_OPERATION, FILE_UPLOAD_THREAD_COUNT)
+from labelbox.schema.internal.data_row_upsert_item import DataRowUpsertItem
 
 
-class UploadManifest:
-
-    def __init__(self, source: str, item_count: int, chunk_uris: List[str]):
-        self.source = source
-        self.item_count = item_count
-        self.chunk_uris = chunk_uris
-
-    def to_dict(self):
-        return {
-            "source": self.source,
-            "item_count": self.item_count,
-            "chunk_uris": self.chunk_uris
-        }
+class UploadManifest(BaseModel):
+    source: str
+    item_count: int
+    chunk_uris: List[str]
 
 
 class DataRowUploader:
@@ -39,7 +32,7 @@ class DataRowUploader:
         """
         This function is shared by `Dataset.create_data_rows`, `Dataset.create_data_rows_sync` and `Dataset.update_data_rows`.
         It is used to prepare the input file. The user defined input is validated, processed, and json stringified.
-        Finally the json data is uploaded to gcs and a uri is returned. This uri can be passed to
+        Finally the json data is uploaded to gcs and a uri is returned. This uri can be passed as a parameter to a mutation that uploads data rows
 
         Each element in `items` can be either a `str` or a `dict`. If
         it is a `str`, then it is interpreted as a local file path. The file
@@ -47,7 +40,7 @@ class DataRowUploader:
 
         If an item is a `dict`, then it could support one of the two following structures
             1. For static imagery, video, and text it should map `DataRow` field names to values.
-               At the minimum an `item` passed as a `dict` must contain a `row_data` key and value.
+               At the minimum an `items` passed as a `dict` must contain a `row_data` key and value.
                If the value for row_data is a local file path and the path exists,
                then the local file will be uploaded to labelbox.
 
@@ -81,7 +74,7 @@ class DataRowUploader:
                 a DataRow.
             ValueError: When the upload parameters are invalid
         """
-        file_upload_thread_count = 20
+        file_upload_thread_count = FILE_UPLOAD_THREAD_COUNT
         DataRow = Entity.DataRow
         AssetAttachment = Entity.AssetAttachment
 
@@ -192,7 +185,7 @@ class DataRowUploader:
                 raise InvalidAttributeError(DataRow, invalid_keys)
             return item
 
-        def formatLegacyConversationalData(item):
+        def format_legacy_conversational_data(item):
             messages = item.pop("conversationalData")
             version = item.pop("version", 1)
             type = item.pop("type", "application/vnd.labelbox.conversational")
@@ -213,7 +206,7 @@ class DataRowUploader:
             return item
 
         def convert_item(data_row_item):
-            if isinstance(data_row_item, DataRowItemBase):
+            if isinstance(data_row_item, DataRowUpsertItem):
                 item = data_row_item.payload
             else:
                 item = data_row_item
@@ -223,7 +216,7 @@ class DataRowUploader:
                 return item
 
             if "conversationalData" in item:
-                formatLegacyConversationalData(item)
+                format_legacy_conversational_data(item)
 
             # Convert all payload variations into the same dict format
             item = format_row(item)
@@ -238,7 +231,7 @@ class DataRowUploader:
             # Upload any local file paths
             item = upload_if_necessary(item)
 
-            if isinstance(data_row_item, DataRowItemBase):
+            if isinstance(data_row_item, DataRowUpsertItem):
                 return {'id': data_row_item.id, 'payload': item}
             else:
                 return item
@@ -263,7 +256,7 @@ class DataRowUploader:
                                   filename="json_import.json")
 
     @staticmethod
-    def upload_in_chunks(client, specs: List[DataRowItemBase],
+    def upload_in_chunks(client, specs: List[DataRowUpsertItem],
                          file_upload_thread_count: int,
                          upsert_chunk_size: int) -> UploadManifest:
         empty_specs = list(filter(lambda spec: spec.is_empty(), specs))
@@ -278,9 +271,9 @@ class DataRowUploader:
             for i in range(0, len(specs), upsert_chunk_size)
         ]
 
-        def _upload_chunk(_chunk):
+        def _upload_chunk(chunk):
             return DataRowUploader.create_descriptor_file(client,
-                                                          _chunk,
+                                                          chunk,
                                                           is_upsert=True)
 
         with ThreadPoolExecutor(file_upload_thread_count) as executor:

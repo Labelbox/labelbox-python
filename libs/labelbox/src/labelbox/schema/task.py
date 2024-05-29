@@ -233,7 +233,7 @@ class DataUpsertTask(Task):
     """
     Task class for data row upsert operations
     """
-    __max_donwload_size: Final = MAX_DATAROW_PER_API_OPERATION
+    MAX_DOWNLOAD_SIZE: Final = MAX_DATAROW_PER_API_OPERATION
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -389,7 +389,7 @@ class DataUpsertTask(Task):
         for row in data:
             results.append(row)
             total_downloaded += 1
-            if total_downloaded >= self.__max_donwload_size:
+            if total_downloaded >= self.MAX_DOWNLOAD_SIZE:
                 break
 
         if len(results) == 0:
@@ -405,7 +405,7 @@ class DataUpsertTask(Task):
         for row in data:
             errors.append(row)
             total_downloaded += 1
-            if total_downloaded >= self.__max_donwload_size:
+            if total_downloaded >= self.MAX_DOWNLOAD_SIZE:
                 break
 
         if len(errors) == 0:

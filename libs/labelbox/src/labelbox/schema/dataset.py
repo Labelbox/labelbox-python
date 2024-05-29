@@ -32,9 +32,7 @@ from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.internal.data_row_create_upsert import (DataRowItemBase,
-                                                             DataRowUpsertItem,
-                                                             DataRowCreateItem)
+from labelbox.schema.internal.data_row_upsert_item import (DataRowUpsertItem)
 from labelbox.schema.internal.data_row_uploader import DataRowUploader
 from labelbox.schema.internal.datarow_upload_constants import (
     MAX_DATAROW_PER_API_OPERATION, FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE)
@@ -284,13 +282,18 @@ class Dataset(DbObject, Updateable, Deletable):
 
         NOTE  dicts and strings items can not be mixed in the same call. It is a responsibility of the caller to ensure that all items are of the same type.
         """
+
+        if file_upload_thread_count < 1:
+            raise ValueError(
+                "file_upload_thread_count must be a positive integer")
+
         string_items = [item for item in items if isinstance(item, str)]
         dict_items = [item for item in items if isinstance(item, dict)]
         dict_string_items = []
 
         if len(string_items) > 0:
             dict_string_items = self._build_from_local_paths(string_items)
-        specs = DataRowCreateItem.build(self.uid,
+        specs = DataRowUpsertItem.build(self.uid,
                                         dict_items + dict_string_items)
         return self._exec_upsert_data_rows(specs, file_upload_thread_count)
 
@@ -607,12 +610,12 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     ])
         >>>     task.wait_till_done()
         """
-        specs = DataRowUpsertItem.build(self.uid, items)
+        specs = DataRowUpsertItem.build(self.uid, items, (UniqueId, GlobalKey))
         return self._exec_upsert_data_rows(specs, file_upload_thread_count)
 
     def _exec_upsert_data_rows(
         self,
-        specs: List[DataRowItemBase],
+        specs: List[DataRowUpsertItem],
         file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT
     ) -> "DataUpsertTask":
 
@@ -622,7 +625,7 @@ class Dataset(DbObject, Updateable, Deletable):
             file_upload_thread_count=file_upload_thread_count,
             upsert_chunk_size=UPSERT_CHUNK_SIZE)
 
-        data = json.dumps(manifest.to_dict()).encode("utf-8")
+        data = json.dumps(manifest.dict()).encode("utf-8")
         manifest_uri = self.client.upload_data(data,
                                                content_type="application/json",
                                                filename="manifest.json")

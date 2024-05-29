@@ -186,7 +186,8 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
                 {
                     "row_data": image_url
                 },
-            ])
+            ],
+                                            file_upload_thread_count=2)
         task.wait_till_done()
         assert task.has_errors() is False
         assert task.status == "COMPLETE"
