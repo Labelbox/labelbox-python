@@ -1,4 +1,4 @@
-from labelbox import UniqueIds, OntologyBuilder, LabelingFrontend, Project, Ontology, Client
+from labelbox import UniqueIds, Project, Ontology, Client
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from typing import List
 
@@ -47,7 +47,7 @@ def test_send_to_annotate_include_annotations(
         destination_batches = list(destination_project.batches())
         assert len(destination_batches) == 1
         
-        export_task = destination_project.export(filters={"batch_ids": [destination_batches[0].uid]})
+        export_task = destination_project.export()
         export_task.wait_till_done()
         stream = export_task.get_buffered_stream()
         
