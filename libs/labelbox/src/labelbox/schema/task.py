@@ -242,7 +242,8 @@ class DataUpsertTask(Task):
     @property
     def result(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
         """
-        Fetches maximum 150K results. If you need to fetch more, use `result_all` property
+        Fetches all results.
+        Note, for large uploads (>150K data rows), it could take multiple minutes to complete
         """
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
@@ -251,7 +252,8 @@ class DataUpsertTask(Task):
     @property
     def errors(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
         """
-        Fetches maximum 150K errors. If you need to fetch more, use `errors_all` property
+        Fetches all errors.
+        Note, for large uploads / large number of errors (>150K), it could take multiple minutes to complete
         """
         return self._errors_as_list()
 
@@ -264,23 +266,6 @@ class DataUpsertTask(Task):
     def failed_data_rows(  # type: ignore
             self) -> Optional[List[Dict[str, Any]]]:
         return self.errors
-
-    @property
-    def result_all(self) -> PaginatedCollection:
-        """
-        This method uses our standard PaginatedCollection and allow to fetch any number of results
-        See here for more https://docs.labelbox.com/reference/sdk-fundamental-concepts-1#iterate-over-paginatedcollection
-        """
-        return self._download_results_paginated()
-
-    @property
-    def errors_all(self) -> PaginatedCollection:
-        """
-        This method uses our standard PaginatedCollection and allow to fetch any number of errors
-        See here for more https://docs.labelbox.com/reference/sdk-fundamental-concepts-1#iterate-over-paginatedcollection
-        """
-
-        return self._download_errors_paginated()
 
     def _download_results_paginated(self) -> PaginatedCollection:
         page_size = DOWNLOAD_RESULT_PAGE_SIZE
@@ -389,8 +374,6 @@ class DataUpsertTask(Task):
         for row in data:
             results.append(row)
             total_downloaded += 1
-            if total_downloaded >= self.MAX_DOWNLOAD_SIZE:
-                break
 
         if len(results) == 0:
             return None
@@ -405,8 +388,6 @@ class DataUpsertTask(Task):
         for row in data:
             errors.append(row)
             total_downloaded += 1
-            if total_downloaded >= self.MAX_DOWNLOAD_SIZE:
-                break
 
         if len(errors) == 0:
             return None
