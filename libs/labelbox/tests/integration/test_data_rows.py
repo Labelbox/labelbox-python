@@ -2,12 +2,13 @@ from tempfile import NamedTemporaryFile
 import uuid
 from datetime import datetime
 import json
+import requests
+import os
+
+from unittest.mock import patch
+import pytest
 
 from labelbox.schema.media_type import MediaType
-
-import pytest
-import requests
-
 from labelbox import DataRow, AssetAttachment
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.task import Task
@@ -171,56 +172,110 @@ def test_lookup_data_rows(client, dataset):
 
 def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     client = dataset.client
+    data_rows = []
     assert len(list(dataset.data_rows())) == 0
 
-    # Test creation using URL
-    task = dataset.create_data_rows([
-        {
-            DataRow.row_data: image_url
-        },
-        {
-            "row_data": image_url
-        },
-    ])
-    assert task in client.get_user().created_tasks()
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-
-    data_rows = list(dataset.data_rows())
-    assert len(data_rows) == 2
-    assert {data_row.row_data for data_row in data_rows} == {image_url}
-    assert {data_row.global_key for data_row in data_rows} == {None}
-
-    data_rows = list(dataset.data_rows(from_cursor=data_rows[0].uid))
-    assert len(data_rows) == 1
-
-    # Test creation using file name
-    with NamedTemporaryFile() as fp:
-        data = rand_gen(str).encode()
-        fp.write(data)
-        fp.flush()
-        task = dataset.create_data_rows([fp.name])
+    try:
+        with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+                   new=1):  # Force chunking
+            # Test creation using URL
+            task = dataset.create_data_rows([
+                {
+                    DataRow.row_data: image_url
+                },
+                {
+                    "row_data": image_url
+                },
+            ],
+                                            file_upload_thread_count=2)
         task.wait_till_done()
+        assert task.has_errors() is False
         assert task.status == "COMPLETE"
 
+        results = task.result
+        assert len(results) == 2
+        row_data = [result["row_data"] for result in results]
+        assert row_data == [image_url, image_url]
+
+        data_rows = list(dataset.data_rows())
+        assert len(data_rows) == 2
+        assert {data_row.row_data for data_row in data_rows} == {image_url}
+        assert {data_row.global_key for data_row in data_rows} == {None}
+
+        data_rows = list(dataset.data_rows(from_cursor=data_rows[0].uid))
+        assert len(data_rows) == 1
+
+    finally:
+        for dr in data_rows:
+            dr.delete()
+
+
+@pytest.fixture
+def local_image_file(image_url) -> NamedTemporaryFile:
+    response = requests.get(image_url, stream=True)
+    response.raise_for_status()
+
+    with NamedTemporaryFile(delete=False) as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+
+    yield f  # Return the path to the temp file
+
+    os.remove(f.name)
+
+
+def test_data_row_bulk_creation_from_file(dataset, local_image_file, image_url):
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+               new=1):  # Force chunking
+        task = dataset.create_data_rows(
+            [local_image_file.name, local_image_file.name])
+        task.wait_till_done()
+        assert task.status == "COMPLETE"
+        assert len(task.result) == 2
+        assert task.has_errors() is False
+        results = task.result
+        row_data = [result["row_data"] for result in results]
+        assert len(row_data) == 2
+
+
+def test_data_row_bulk_creation_from_row_data_file_external_id(
+        dataset, local_image_file, image_url):
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+               new=1):  # Force chunking
         task = dataset.create_data_rows([{
-            "row_data": fp.name,
+            "row_data": local_image_file.name,
             'external_id': 'some_name'
+        }, {
+            "row_data": image_url,
+            'external_id': 'some_name2'
         }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
+        assert len(task.result) == 2
+        assert task.has_errors() is False
+        results = task.result
+        row_data = [result["row_data"] for result in results]
+        assert len(row_data) == 2
+        assert image_url in row_data
 
-        task = dataset.create_data_rows([{"row_data": fp.name}])
+
+def test_data_row_bulk_creation_from_row_data_file(dataset, rand_gen,
+                                                   local_image_file, image_url):
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+               new=1):  # Force chunking
+        task = dataset.create_data_rows([{
+            "row_data": local_image_file.name
+        }, {
+            "row_data": local_image_file.name
+        }])
         task.wait_till_done()
         assert task.status == "COMPLETE"
-
-    data_rows = list(dataset.data_rows())
-    assert len(data_rows) == 5
-    url = ({data_row.row_data for data_row in data_rows} - {image_url}).pop()
-    assert requests.get(url).content == data
-
-    for dr in data_rows:
-        dr.delete()
+        assert len(task.result) == 2
+        assert task.has_errors() is False
+        results = task.result
+        row_data = [result["row_data"] for result in results]
+        assert len(row_data) == 2
 
 
 @pytest.mark.slow
@@ -844,6 +899,7 @@ def test_create_data_rows_result(client, dataset, image_url):
             DataRow.external_id: "row1",
         },
     ])
+    task.wait_till_done()
     assert task.errors is None
     for result in task.result:
         client.get_data_row(result['id'])
@@ -918,8 +974,14 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
         'message'] == f"Duplicate global key: '{global_key_1}'"
     assert task.failed_data_rows[0]['failedDataRows'][0][
         'externalId'] == sample_image
-    assert task.created_data_rows[0]['externalId'] == sample_image
-    assert task.created_data_rows[0]['globalKey'] == global_key_1
+    assert task.created_data_rows[0]['external_id'] == sample_image
+    assert task.created_data_rows[0]['global_key'] == global_key_1
+
+    assert len(task.errors) == 1
+    assert task.has_errors() is True
+
+    all_results = task.result
+    assert len(all_results) == 1
 
 
 def test_data_row_delete_and_create_with_same_global_key(

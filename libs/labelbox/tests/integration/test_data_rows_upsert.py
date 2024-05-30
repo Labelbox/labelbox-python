@@ -208,9 +208,8 @@ class TestDataRowUpsert:
         mocked_chunk_size = 3
         with patch('labelbox.client.Client.upload_data',
                    wraps=client.upload_data) as spy_some_function:
-            with patch(
-                    'labelbox.schema.dataset.Dataset._Dataset__upsert_chunk_size',
-                    new=mocked_chunk_size):
+            with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+                       new=mocked_chunk_size):
                 task = dataset.upsert_data_rows([{
                     'row_data': image_url
                 } for i in range(10)])

@@ -2,12 +2,18 @@ import json
 import logging
 import requests
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
+from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union, Final
 from labelbox import parser
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship, Entity
+
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.internal.datarow_upload_constants import (
+    MAX_DATAROW_PER_API_OPERATION,
+    DOWNLOAD_RESULT_PAGE_SIZE,
+)
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -48,6 +54,13 @@ class Task(DbObject):
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization")
+
+    def __eq__(self, task):
+        return isinstance(
+            task, Task) and task.uid == self.uid and task.type == self.type
+
+    def __hash__(self):
+        return hash(self.uid)
 
     # Import and upsert have several instances of special casing
     def is_creation_task(self) -> bool:
@@ -214,3 +227,169 @@ class Task(DbObject):
         task: Task = tasks[0]
         task._user = user
         return task
+
+
+class DataUpsertTask(Task):
+    """
+    Task class for data row upsert operations
+    """
+    MAX_DOWNLOAD_SIZE: Final = MAX_DATAROW_PER_API_OPERATION
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._user = None
+
+    @property
+    def result(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
+        """
+        Fetches all results.
+        Note, for large uploads (>150K data rows), it could take multiple minutes to complete
+        """
+        if self.status == "FAILED":
+            raise ValueError(f"Job failed. Errors : {self.errors}")
+        return self._results_as_list()
+
+    @property
+    def errors(self) -> Optional[List[Dict[str, Any]]]:  # type: ignore
+        """
+        Fetches all errors.
+        Note, for large uploads / large number of errors (>150K), it could take multiple minutes to complete
+        """
+        return self._errors_as_list()
+
+    @property
+    def created_data_rows(  # type: ignore
+            self) -> Optional[List[Dict[str, Any]]]:
+        return self.result
+
+    @property
+    def failed_data_rows(  # type: ignore
+            self) -> Optional[List[Dict[str, Any]]]:
+        return self.errors
+
+    def _download_results_paginated(self) -> PaginatedCollection:
+        page_size = DOWNLOAD_RESULT_PAGE_SIZE
+        from_cursor = None
+
+        query_str = """query SuccessesfulDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
+                    successesfulDataRowImports(data: { taskId: $taskId, first: $first, from: $from})
+                        {
+                            nodes { 
+                                id
+                                externalId
+                                globalKey
+                                rowData
+                                }
+                            after
+                            total
+                        }
+                    }
+                """
+
+        params = {
+            'taskId': self.uid,
+            'first': page_size,
+            'from': from_cursor,
+        }
+
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params=params,
+            dereferencing=['successesfulDataRowImports', 'nodes'],
+            obj_class=lambda _, data_row: {
+                'id': data_row.get('id'),
+                'external_id': data_row.get('externalId'),
+                'row_data': data_row.get('rowData'),
+                'global_key': data_row.get('globalKey'),
+            },
+            cursor_path=['successesfulDataRowImports', 'after'],
+        )
+
+    def _download_errors_paginated(self) -> PaginatedCollection:
+        page_size = DOWNLOAD_RESULT_PAGE_SIZE  # hardcode to avoid overloading the server
+        from_cursor = None
+
+        query_str = """query FailedDataRowImportsPyApi($taskId: ID!, $first: Int, $from: String)  {
+                    failedDataRowImports(data: { taskId: $taskId, first: $first, from: $from})
+                        {
+                            after
+                            total
+                            results {
+                                message
+                                spec {
+                                    externalId
+                                    globalKey
+                                    rowData
+                                        metadata {
+                                            schemaId
+                                            value
+                                            name
+                                        }
+                                        attachments {
+                                            type
+                                            value
+                                            name
+                                        }                                    
+                                }
+                            }
+                        }
+                    }
+                """
+
+        params = {
+            'taskId': self.uid,
+            'first': page_size,
+            'from': from_cursor,
+        }
+
+        def convert_errors_to_legacy_format(client, data_row):
+            spec = data_row.get('spec', {})
+            return {
+                'message':
+                    data_row.get('message'),
+                'failedDataRows': [{
+                    'externalId': spec.get('externalId'),
+                    'rowData': spec.get('rowData'),
+                    'globalKey': spec.get('globalKey'),
+                    'metadata': spec.get('metadata', []),
+                    'attachments': spec.get('attachments', []),
+                }]
+            }
+
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params=params,
+            dereferencing=['failedDataRowImports', 'results'],
+            obj_class=convert_errors_to_legacy_format,
+            cursor_path=['failedDataRowImports', 'after'],
+        )
+
+    def _results_as_list(self) -> Optional[List[Dict[str, Any]]]:
+        total_downloaded = 0
+        results = []
+        data = self._download_results_paginated()
+
+        for row in data:
+            results.append(row)
+            total_downloaded += 1
+
+        if len(results) == 0:
+            return None
+
+        return results
+
+    def _errors_as_list(self) -> Optional[List[Dict[str, Any]]]:
+        total_downloaded = 0
+        errors = []
+        data = self._download_errors_paginated()
+
+        for row in data:
+            errors.append(row)
+            total_downloaded += 1
+
+        if len(errors) == 0:
+            return None
+
+        return errors
