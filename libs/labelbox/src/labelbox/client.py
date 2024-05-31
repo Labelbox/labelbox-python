@@ -407,6 +407,7 @@ class Client:
                 }),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
+
         response = requests.post(
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
