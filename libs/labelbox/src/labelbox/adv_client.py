@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Dict, Any, Optional, List, Callable
 from urllib.parse import urlparse
+from labelbox.exceptions import LabelboxError
 
 import requests
 from requests import Session, Response
@@ -59,7 +60,12 @@ class AdvClient:
                                         url,
                                         data=requests_data,
                                         headers=headers)
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            message = response.json().get('message')
+            if message:
+                raise LabelboxError(message)
+            else:
+                response.raise_for_status()
         return response.json()
 
     def _send_ndjson(self,
