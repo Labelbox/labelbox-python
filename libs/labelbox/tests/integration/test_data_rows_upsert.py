@@ -205,17 +205,17 @@ class TestDataRowUpsert:
         assert dr.metadata_fields[1]['value'] == "train"
 
     def test_multiple_chunks(self, client, dataset, image_url):
-        mocked_chunk_size = 3
+        mocked_chunk_size = 300
         with patch('labelbox.client.Client.upload_data',
                    wraps=client.upload_data) as spy_some_function:
-            with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
+            with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE_BYTES',
                        new=mocked_chunk_size):
                 task = dataset.upsert_data_rows([{
                     'row_data': image_url
                 } for i in range(10)])
                 task.wait_till_done()
                 assert len(list(dataset.data_rows())) == 10
-                assert spy_some_function.call_count == 5  # 4 chunks + manifest
+                assert spy_some_function.call_count == 11  # one per each data row + manifest
 
                 first_call_args, _ = spy_some_function.call_args_list[0]
                 first_chunk_content = first_call_args[0]

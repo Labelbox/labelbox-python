@@ -2,6 +2,7 @@ from tempfile import NamedTemporaryFile
 import uuid
 from datetime import datetime
 import json
+import math
 import requests
 import os
 
@@ -176,18 +177,18 @@ def test_data_row_bulk_creation(dataset, rand_gen, image_url):
     assert len(list(dataset.data_rows())) == 0
 
     try:
-        with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
-                   new=1):  # Force chunking
+        payload = [
+            {
+                DataRow.row_data: image_url
+            },
+            {
+                "row_data": image_url
+            },
+        ]
+        with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE_BYTES',
+                   new=300):  # To make 2 chunks
             # Test creation using URL
-            task = dataset.create_data_rows([
-                {
-                    DataRow.row_data: image_url
-                },
-                {
-                    "row_data": image_url
-                },
-            ],
-                                            file_upload_thread_count=2)
+            task = dataset.create_data_rows(payload, file_upload_thread_count=2)
         task.wait_till_done()
         assert task.has_errors() is False
         assert task.status == "COMPLETE"
@@ -226,8 +227,8 @@ def local_image_file(image_url) -> NamedTemporaryFile:
 
 
 def test_data_row_bulk_creation_from_file(dataset, local_image_file, image_url):
-    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
-               new=1):  # Force chunking
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE_BYTES',
+               new=500):  # Force chunking
         task = dataset.create_data_rows(
             [local_image_file.name, local_image_file.name])
         task.wait_till_done()
@@ -241,8 +242,8 @@ def test_data_row_bulk_creation_from_file(dataset, local_image_file, image_url):
 
 def test_data_row_bulk_creation_from_row_data_file_external_id(
         dataset, local_image_file, image_url):
-    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
-               new=1):  # Force chunking
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE_BYTES',
+               new=500):  # Force chunking
         task = dataset.create_data_rows([{
             "row_data": local_image_file.name,
             'external_id': 'some_name'
@@ -262,8 +263,8 @@ def test_data_row_bulk_creation_from_row_data_file_external_id(
 
 def test_data_row_bulk_creation_from_row_data_file(dataset, rand_gen,
                                                    local_image_file, image_url):
-    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE',
-               new=1):  # Force chunking
+    with patch('labelbox.schema.dataset.UPSERT_CHUNK_SIZE_BYTES',
+               new=500):  # Force chunking
         task = dataset.create_data_rows([{
             "row_data": local_image_file.name
         }, {
