@@ -1,8 +1,11 @@
 import pytest
 import requests
+from unittest.mock import MagicMock
 from labelbox import Dataset
 from labelbox.exceptions import ResourceNotFoundError, InvalidQueryError
 from labelbox.schema.internal.data_row_uploader import DataRowUploader
+
+from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 
 
 def test_dataset(client, rand_gen):
@@ -150,13 +153,12 @@ def test_bulk_conversation(dataset, sample_bulk_conversation: list) -> None:
 
 def test_create_descriptor_file(dataset):
     import unittest.mock as mock
-    with mock.patch.object(dataset.client,
-                           'upload_data',
-                           wraps=dataset.client.upload_data) as upload_data_spy:
-        DataRowUploader.create_descriptor_file(dataset.client,
-                                               items=[{
-                                                   'row_data': 'some text...'
-                                               }])
+    client = MagicMock()
+    with mock.patch.object(client, 'upload_data',
+                           wraps=client.upload_data) as upload_data_spy:
+        DescriptorFileCreator(client).create_one(items=[{
+            'row_data': 'some text...'
+        }])
         upload_data_spy.assert_called()
         call_args, call_kwargs = upload_data_spy.call_args_list[0][
             0], upload_data_spy.call_args_list[0][1]

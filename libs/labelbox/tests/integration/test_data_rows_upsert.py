@@ -231,7 +231,7 @@ class TestDataRowUpsert:
                 data = json.loads(manifest_content)
                 assert data['source'] == "SDK"
                 assert data['item_count'] == 10
-                assert len(data['chunk_uris']) == 4
+                assert len(data['chunk_uris']) == 10
 
     def test_upsert_embedded_row_data(self, dataset):
         pdf_url = "https://lb-test-data.s3.us-west-1.amazonaws.com/document-samples/0801.3483.pdf"
