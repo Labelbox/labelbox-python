@@ -303,6 +303,13 @@ class DescriptorFileCreator:
 
     def _chunk_down_by_bytes(self, items: List[dict],
                              max_chunk_size: int) -> Generator[str, None, None]:
+        """
+        Recursively chunks down a list of items into smaller lists until each list is less than or equal to max_chunk_size bytes
+        NOTE: of one data row is large than max_chunk_size, it will be returned as one chunk
+
+        Returns:
+            Generator[str, None, None]: A generator that yields a json string
+        """
         if not items:
             return
         data = json.dumps(items)
