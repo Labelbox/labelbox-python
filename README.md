@@ -79,7 +79,7 @@ Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader
 The SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are links to that documentation:
 
 - [Labelbox Official Documentation](https://docs.labelbox.com/docs/overview)
-- [Jupyter Notebook Examples](https://github.com/Labelbox/labelbox-python/tree/master/examples)
+- [Jupyter Notebook Examples](https://github.com/Labelbox/labelbox-python/tree/develop/examples)
 - [Python SDK Reference](https://labelbox-python.readthedocs.io/en/latest/)
 
 ## Jupyter Notebooks
