@@ -1,8 +1,7 @@
 import pytest
 import requests
 from labelbox import Dataset
-from labelbox.exceptions import ResourceNotFoundError, MalformedQueryException, InvalidQueryError
-from labelbox.schema.dataset import MAX_DATAROW_PER_API_OPERATION
+from labelbox.exceptions import ResourceNotFoundError, InvalidQueryError
 from labelbox.schema.internal.data_row_uploader import DataRowUploader
 
 

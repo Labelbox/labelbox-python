@@ -12,8 +12,12 @@ from labelbox.orm.model import Entity
 from labelbox.orm.model import Field
 from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.internal.datarow_upload_constants import (
-    MAX_DATAROW_PER_API_OPERATION, FILE_UPLOAD_THREAD_COUNT)
+    FILE_UPLOAD_THREAD_COUNT)
 from labelbox.schema.internal.data_row_upsert_item import DataRowUpsertItem
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from labelbox import Client
 
 
 class DescriptorFileCreator:
@@ -291,32 +295,26 @@ class DescriptorFileCreator:
                 f"Must pass an iterable to create_data_rows. Found {type(items)}"
             )
 
-        if len(items) > MAX_DATAROW_PER_API_OPERATION:
-            raise MalformedQueryException(
-                f"Cannot create more than {MAX_DATAROW_PER_API_OPERATION} DataRows per function call."
-            )
-
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [executor.submit(convert_item, item) for item in items]
             items = [future.result() for future in as_completed(futures)]
 
         return items
 
-    def _chunk_down_by_bytes(
-            self, items: List[dict],
-            max_chunk_size: int) -> Generator[List[str], None, None]:
+    def _chunk_down_by_bytes(self, items: List[dict],
+                             max_chunk_size: int) -> Generator[str, None, None]:
         if not items:
             return
         data = json.dumps(items)
-        chunk_size = sys.getsizeof(data)
-        if sys.getsizeof(data) <= max_chunk_size:
+        chunk_size = len(data.encode("utf-8"))
+        if chunk_size <= max_chunk_size:
             yield data
             return
 
         if len(items) == 1:
-            raise ValueError(
-                f"Item {items[0]} size exceeds max_chunk_size: {chunk_size} > {max_chunk_size}"
-            )
+            yield data
+            return
+
         half = len(items) // 2
         yield from self._chunk_down_by_bytes(items[:half], max_chunk_size)
         yield from self._chunk_down_by_bytes(items[half:], max_chunk_size)

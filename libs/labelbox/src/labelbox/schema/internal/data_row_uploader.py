@@ -17,7 +17,7 @@ class DataRowUploader:
 
     @staticmethod
     def upload_in_chunks(client, specs: List[DataRowUpsertItem],
-                         file_upload_thread_count: int, upsert_chunk_size: int,
+                         file_upload_thread_count: int,
                          max_chunk_size_bytes: int) -> UploadManifest:
         empty_specs = list(filter(lambda spec: spec.is_empty(), specs))
 

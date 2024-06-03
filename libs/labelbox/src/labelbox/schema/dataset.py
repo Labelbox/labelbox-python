@@ -34,9 +34,9 @@ from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.internal.data_row_upsert_item import (DataRowUpsertItem)
 from labelbox.schema.internal.data_row_uploader import DataRowUploader
+from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 from labelbox.schema.internal.datarow_upload_constants import (
-    MAX_DATAROW_PER_API_OPERATION, FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE,
-    UPSERT_CHUNK_SIZE_BYTES)
+    FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE_BYTES)
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,6 @@ class Dataset(DbObject, Updateable, Deletable):
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
     """
-    __upsert_chunk_size: Final = UPSERT_CHUNK_SIZE
 
     name = Field.String("name")
     description = Field.String("description")
@@ -241,10 +240,8 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Dataset.create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
                 " For larger imports use the async function Dataset.create_data_rows()"
             )
-        descriptor_url = DataRowUploader.create_descriptor_file(
-            self.client,
-            items,
-            max_attachments_per_data_row=max_attachments_per_data_row)
+        descriptor_url = DescriptorFileCreator(self.client).create_one(
+            items, max_attachments_per_data_row=max_attachments_per_data_row)
         dataset_param = "datasetId"
         url_param = "jsonUrl"
         query_str = """mutation AppendRowsToDatasetSyncPyApi($%s: ID!, $%s: String!){
@@ -624,7 +621,6 @@ class Dataset(DbObject, Updateable, Deletable):
             client=self.client,
             specs=specs,
             file_upload_thread_count=file_upload_thread_count,
-            upsert_chunk_size=UPSERT_CHUNK_SIZE,
             max_chunk_size_bytes=UPSERT_CHUNK_SIZE_BYTES)
 
         data = json.dumps(manifest.dict()).encode("utf-8")
