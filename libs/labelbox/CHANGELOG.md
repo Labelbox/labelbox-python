@@ -1,4 +1,15 @@
 # Changelog
+# Version 3.72.0 (2024-06-04)
+## Added
+* Update Dataset `create_data_rows` to allow upload of unlimited number of  data rows
+* New Dataset methods for iam_integraton: `add_iam_integration`, `remove_iam_integration`
+* Project `clone`
+* Project `get_overview`
+
+## Notebooks
+* Added model evaluation SDK method notebook
+* Added quick start notebook geared towards new users
+
 # Version 3.71.0 (2024-05-28)
 ## Added
 * `project.get_overview()` to be able to retrieve project details (#1615)
