@@ -1,14 +1,12 @@
 # Changelog
 # Version 3.72.0 (2024-06-04)
 ## Added
-* Update Dataset `create_data_rows` to allow upload of unlimited number of  data rows
-* New Dataset methods for iam_integraton: `add_iam_integration`, `remove_iam_integration`
-* Project `clone`
-* Project `get_overview`
+* Update Dataset `create_data_rows` to allow upload of unlimited number of  data rows [PR #1627](https://github.com/Labelbox/labelbox-python/pull/1627), [PR #1648](https://github.com/Labelbox/labelbox-python/pull/1648)
+* New Dataset methods for iam_integraton: `add_iam_integration`, `remove_iam_integration` [PR #1622](https://github.com/Labelbox/labelbox-python/pull/1622)
 
 ## Notebooks
-* Added model evaluation SDK method notebook
-* Added quick start notebook geared towards new users
+* Added model evaluation SDK method notebook [PR #1645](https://github.com/Labelbox/labelbox-python/pull/1645)
+* Added quick start notebook geared towards new users [PR #1640](https://github.com/Labelbox/labelbox-python/pull/1640)
 
 # Version 3.71.0 (2024-05-28)
 ## Added
