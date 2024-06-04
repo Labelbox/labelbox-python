@@ -5,7 +5,9 @@ from enum import Enum
 from itertools import chain
 import warnings
 
-from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
+from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload, Annotated
+
+from pydantic import StringConstraints
 
 from labelbox import pydantic_compat
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
@@ -124,17 +126,17 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     kind: str
 
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     kind: str
     options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]]
 

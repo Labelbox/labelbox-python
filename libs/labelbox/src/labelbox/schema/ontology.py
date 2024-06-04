@@ -3,8 +3,10 @@
 import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Type
+from typing import Any, Dict, List, Optional, Union, Type, Annotated
 import warnings
+
+from pydantic import StringConstraints
 
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
@@ -12,9 +14,10 @@ from labelbox.orm.model import Field, Relationship
 from labelbox import pydantic_compat
 import json
 
-FeatureSchemaId: Type[str] = pydantic_compat.constr(min_length=25,
-                                                    max_length=25)
-SchemaId: Type[str] = pydantic_compat.constr(min_length=25, max_length=25)
+FeatureSchemaId: Type[str] = Annotated[
+    str, StringConstraints(min_length=25, max_length=25)]
+SchemaId: Type[str] = Annotated[str,
+                                StringConstraints(min_length=25, max_length=25)]
 
 
 class DeleteFeatureFromOntologyResult:
