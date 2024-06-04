@@ -1,13 +1,15 @@
 import sys
 from typing import Generic, TypeVar, Any
 
+from pydantic import StringConstraints
+
 from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
-from pydantic import BaseModel
+from pydantic import Field
 
-Cuid = Annotated[str, pydantic_compat.Field(min_length=25, max_length=25)]
+Cuid = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
 DType = TypeVar('DType')
 DShape = TypeVar('DShape')

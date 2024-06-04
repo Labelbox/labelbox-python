@@ -8,10 +8,10 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, StringConstraints
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
-                    Type, Set, TYPE_CHECKING)
+                    Type, Set, TYPE_CHECKING, Annotated)
 
 from labelbox import exceptions as lb_exceptions
 from labelbox.orm.model import Entity
@@ -502,7 +502,7 @@ def get_mal_schemas(ontology):
     return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
-LabelboxID: str = pydantic_compat.Field(..., min_length=25, max_length=25)
+LabelboxID = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
 
 class Bbox(BaseModel):
