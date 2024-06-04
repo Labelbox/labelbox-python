@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
@@ -17,7 +17,8 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = []
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode='before')
+    @classmethod()
     def must_set_one(cls, values):
         if ('schema_id' not in values or values['schema_id']
                 is None) and ('name' not in values or values['name'] is None):
@@ -43,12 +44,12 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
         alias_generator = camel_case
 
 
-class FrameLocation(pydantic_compat.BaseModel):
+class FrameLocation(BaseModel):
     end: int
     start: int
 
 
-class VideoSupported(pydantic_compat.BaseModel):
+class VideoSupported(BaseModel):
     # Note that frames are only allowed as top level inferences for video
     frames: Optional[List[FrameLocation]] = None
 

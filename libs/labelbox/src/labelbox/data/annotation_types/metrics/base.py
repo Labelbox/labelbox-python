@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Dict, Optional, Any, Union
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 ConfidenceValue = pydantic_compat.confloat(ge=0, le=1)
 
@@ -9,7 +9,7 @@ MIN_CONFIDENCE_SCORES = 2
 MAX_CONFIDENCE_SCORES = 15
 
 
-class BaseMetric(pydantic_compat.BaseModel, ABC):
+class BaseMetric(BaseModel, ABC):
     value: Union[Any, Dict[float, Any]]
     feature_name: Optional[str] = None
     subclass_name: Optional[str] = None

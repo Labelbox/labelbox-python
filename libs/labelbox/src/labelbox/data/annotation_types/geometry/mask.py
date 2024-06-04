@@ -8,7 +8,7 @@ from shapely.geometry import MultiPolygon, Polygon
 from ..data import MaskData
 from .geometry import Geometry
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 
 class Mask(Geometry):

@@ -11,7 +11,7 @@ from pydantic import StringConstraints
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 import json
 
 FeatureSchemaId: Type[str] = Annotated[

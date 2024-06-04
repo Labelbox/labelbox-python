@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Tuple, Dict, Union
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from .base import ConfidenceValue, BaseMetric
 

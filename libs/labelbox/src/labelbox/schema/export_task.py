@@ -26,7 +26,7 @@ import os
 
 from pydantic import BaseModel
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from labelbox.schema.task import Task
 from labelbox.utils import _CamelCaseMixin

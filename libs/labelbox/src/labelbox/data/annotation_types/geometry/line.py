@@ -9,7 +9,7 @@ from shapely.geometry import LineString as SLineString
 from .point import Point
 from .geometry import Geometry
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 
 class Line(Geometry):

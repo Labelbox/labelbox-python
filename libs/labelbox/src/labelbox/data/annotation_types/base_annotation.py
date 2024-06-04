@@ -1,7 +1,7 @@
 import abc
 from uuid import UUID, uuid4
 from typing import Any, Dict, Optional
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from .feature import FeatureSchema
 

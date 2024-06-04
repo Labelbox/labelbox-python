@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 Cuid = Annotated[str, pydantic_compat.Field(min_length=25, max_length=25)]
 

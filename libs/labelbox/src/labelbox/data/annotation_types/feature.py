@@ -1,11 +1,11 @@
 from typing import Optional
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 
 from .types import Cuid
 
 
-class FeatureSchema(pydantic_compat.BaseModel):
+class FeatureSchema(BaseModel):
     """
     Class that represents a feature schema.
     Could be a annotation, a subclass, or an option.
@@ -14,7 +14,8 @@ class FeatureSchema(pydantic_compat.BaseModel):
     name: Optional[str] = None
     feature_schema_id: Optional[Cuid] = None
 
-    @pydantic_compat.root_validator
+    @model_validator(mode='before')
+    @classmethod
     def must_set_one(cls, values):
         if values['feature_schema_id'] is None and values['name'] is None:
             raise ValueError(

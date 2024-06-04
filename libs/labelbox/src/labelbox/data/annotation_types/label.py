@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Union, Optional
 import warnings
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 
 import labelbox
 from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
@@ -25,7 +25,7 @@ DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  LlmResponseCreationData, GenericDataRowData]
 
 
-class Label(pydantic_compat.BaseModel):
+class Label(BaseModel):
     """Container for holding data and annotations
 
     >>> Label(
@@ -53,7 +53,8 @@ class Label(pydantic_compat.BaseModel):
                             RelationshipAnnotation]] = []
     extra: Dict[str, Any] = {}
 
-    @pydantic_compat.root_validator(pre=True)
+    @model_validator(mode='before')
+    @classmethod
     def validate_data(cls, label):
         if isinstance(label.get("data"), Dict):
             label["data"]["class_name"] = "GenericDataRowData"

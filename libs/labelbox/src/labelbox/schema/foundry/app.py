@@ -1,11 +1,11 @@
 from labelbox.utils import _CamelCaseMixin
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from typing import Any, Dict, Optional
 
 
-class App(_CamelCaseMixin, pydantic_compat.BaseModel):
+class App(_CamelCaseMixin, BaseModel):
     id: Optional[str]
     model_id: str
     name: str

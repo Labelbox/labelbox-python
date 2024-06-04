@@ -1,10 +1,12 @@
 from typing import List
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
+
+from pydantic import BaseModel
 from labelbox.utils import _CamelCaseMixin
 
 
-class DocumentTextSelection(_CamelCaseMixin, pydantic_compat.BaseModel):
+class DocumentTextSelection(_CamelCaseMixin, BaseModel):
     token_ids: List[str]
     group_id: str
     page: int
@@ -16,6 +18,6 @@ class DocumentTextSelection(_CamelCaseMixin, pydantic_compat.BaseModel):
         return v
 
 
-class DocumentEntity(_CamelCaseMixin, pydantic_compat.BaseModel):
+class DocumentEntity(_CamelCaseMixin, BaseModel):
     """ Represents a text entity """
     text_selections: List[DocumentTextSelection]

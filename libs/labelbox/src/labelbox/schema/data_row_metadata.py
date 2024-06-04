@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, 
 
 from pydantic import StringConstraints
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 
@@ -27,7 +27,7 @@ class DataRowMetadataKind(Enum):
 
 
 # Metadata schema
-class DataRowMetadataSchema(pydantic_compat.BaseModel):
+class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
     name: pydantic_compat.constr(strip_whitespace=True,
                                  min_length=1,

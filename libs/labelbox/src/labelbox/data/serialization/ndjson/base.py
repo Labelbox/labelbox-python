@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 from ...annotation_types.types import Cuid
 
 
@@ -10,7 +10,8 @@ class DataRow(_CamelCaseMixin):
     id: str = None
     global_key: str = None
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode='before')
+    @classmethod()
     def must_set_one(cls, values):
         if not is_exactly_one_set(values.get('id'), values.get('global_key')):
             raise ValueError("Must set either id or global_key")
@@ -42,7 +43,8 @@ class NDAnnotation(NDJsonBase):
     page: Optional[int] = None
     unit: Optional[str] = None
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode='before')
+    @classmethod()
     def must_set_one(cls, values):
         if ('schema_id' not in values or values['schema_id']
                 is None) and ('name' not in values or values['name'] is None):

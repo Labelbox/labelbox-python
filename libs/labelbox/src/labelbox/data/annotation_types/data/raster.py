@@ -9,13 +9,13 @@ from requests.exceptions import ConnectTimeout
 import requests
 import numpy as np
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 from ..types import TypedArray
 
 
-class RasterData(pydantic_compat.BaseModel, ABC):
+class RasterData(BaseModel, ABC):
     """Represents an image or segmentation mask.
     """
     im_bytes: Optional[bytes] = None
@@ -155,7 +155,8 @@ class RasterData(pydantic_compat.BaseModel, ABC):
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode='before')
+    @classmethod()
     def validate_args(cls, values):
         file_path = values.get("file_path")
         im_bytes = values.get("im_bytes")

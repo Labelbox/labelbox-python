@@ -9,7 +9,7 @@ from shapely.geometry import Polygon as SPolygon
 from .geometry import Geometry
 from .point import Point
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 
 class Polygon(Geometry):

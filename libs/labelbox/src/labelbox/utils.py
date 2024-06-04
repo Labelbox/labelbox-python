@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
 ISO_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'

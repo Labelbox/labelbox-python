@@ -1,15 +1,16 @@
 from typing import Dict, Any
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 
 
-class TextEntity(pydantic_compat.BaseModel):
+class TextEntity(BaseModel):
     """ Represents a text entity """
     start: int
     end: int
     extra: Dict[str, Any] = {}
 
-    @pydantic_compat.root_validator
+    @model_validator(mode='before')
+    @classmethod
     def validate_start_end(cls, values):
         if 'start' in values and 'end' in values:
             if (isinstance(values['start'], int) and

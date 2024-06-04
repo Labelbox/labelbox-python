@@ -8,7 +8,7 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING)
@@ -505,24 +505,24 @@ def get_mal_schemas(ontology):
 LabelboxID: str = pydantic_compat.Field(..., min_length=25, max_length=25)
 
 
-class Bbox(pydantic_compat.BaseModel):
+class Bbox(BaseModel):
     top: float
     left: float
     height: float
     width: float
 
 
-class Point(pydantic_compat.BaseModel):
+class Point(BaseModel):
     x: float
     y: float
 
 
-class FrameLocation(pydantic_compat.BaseModel):
+class FrameLocation(BaseModel):
     end: int
     start: int
 
 
-class VideoSupported(pydantic_compat.BaseModel):
+class VideoSupported(BaseModel):
     #Note that frames are only allowed as top level inferences for video
     frames: Optional[List[FrameLocation]]
 
@@ -554,18 +554,17 @@ class SpecialUnion:
         return union_types[0].__args__[0].__args__
 
     @classmethod
-    def build(cls: Any, data: Union[dict,
-                                    pydantic_compat.BaseModel]) -> "NDBase":
+    def build(cls: Any, data: Union[dict, BaseModel]) -> "NDBase":
         """
             Checks through all objects in the union to see which matches the input data.
             Args:
-                data  (Union[dict, pydantic_compat.BaseModel]) : The data for constructing one of the objects in the union
+                data  (Union[dict, BaseModel]) : The data for constructing one of the objects in the union
             raises:
                 KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
                 pydantic_compat.ValidationError: Error while trying to construct a specific object in the union
 
         """
-        if isinstance(data, pydantic_compat.BaseModel):
+        if isinstance(data, BaseModel):
             data = data.dict()
 
         top_level_fields = []
@@ -607,15 +606,16 @@ class SpecialUnion:
         return results
 
 
-class DataRow(pydantic_compat.BaseModel):
+class DataRow(BaseModel):
     id: str
 
 
-class NDFeatureSchema(pydantic_compat.BaseModel):
+class NDFeatureSchema(BaseModel):
     schemaId: Optional[str] = None
     name: Optional[str] = None
 
-    @pydantic_compat.root_validator
+    @model_validator(mode='before')
+    @classmethod
     def must_set_one(cls, values):
         if values['schemaId'] is None and values['name'] is None:
             raise ValueError(
@@ -814,7 +814,7 @@ class NDPoint(NDBaseTool):
     #Could check if points are positive
 
 
-class EntityLocation(pydantic_compat.BaseModel):
+class EntityLocation(BaseModel):
     start: int
     end: int
 
@@ -825,7 +825,7 @@ class NDTextEntity(NDBaseTool):
 
     @pydantic_compat.validator('location')
     def is_valid_location(cls, v):
-        if isinstance(v, pydantic_compat.BaseModel):
+        if isinstance(v, BaseModel):
             v = v.dict()
 
         if len(v) < 2:
@@ -840,7 +840,7 @@ class NDTextEntity(NDBaseTool):
         return v
 
 
-class RLEMaskFeatures(pydantic_compat.BaseModel):
+class RLEMaskFeatures(BaseModel):
     counts: List[int]
     size: List[int]
 
@@ -864,12 +864,12 @@ class RLEMaskFeatures(pydantic_compat.BaseModel):
         return size
 
 
-class PNGMaskFeatures(pydantic_compat.BaseModel):
+class PNGMaskFeatures(BaseModel):
     # base64 encoded png bytes
     png: str
 
 
-class URIMaskFeatures(pydantic_compat.BaseModel):
+class URIMaskFeatures(BaseModel):
     instanceURI: str
     colorRGB: Union[List[int], Tuple[int, int, int]]
 

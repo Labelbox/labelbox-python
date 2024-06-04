@@ -4,7 +4,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
@@ -49,19 +49,19 @@ class LBV1ObjectBase(LBV1Feature):
         return value
 
 
-class TIPointCoordinate(pydantic_compat.BaseModel):
+class TIPointCoordinate(BaseModel):
     coordinates: List[float]
 
 
-class TILineCoordinate(pydantic_compat.BaseModel):
+class TILineCoordinate(BaseModel):
     coordinates: List[List[float]]
 
 
-class TIPolygonCoordinate(pydantic_compat.BaseModel):
+class TIPolygonCoordinate(BaseModel):
     coordinates: List[List[List[float]]]
 
 
-class TIRectangleCoordinate(pydantic_compat.BaseModel):
+class TIRectangleCoordinate(BaseModel):
     coordinates: List[List[List[float]]]
 
 
@@ -111,12 +111,12 @@ class LBV1TIRectangle(LBV1ObjectBase):
                          end=Point(x=end[0], y=end[1]))
 
 
-class _Point(pydantic_compat.BaseModel):
+class _Point(BaseModel):
     x: float
     y: float
 
 
-class _Box(pydantic_compat.BaseModel):
+class _Box(BaseModel):
     top: float
     left: float
     height: float
@@ -230,12 +230,12 @@ class LBV1Mask(LBV1ObjectBase):
                    })
 
 
-class _TextPoint(pydantic_compat.BaseModel):
+class _TextPoint(BaseModel):
     start: int
     end: int
 
 
-class _Location(pydantic_compat.BaseModel):
+class _Location(BaseModel):
     location: _TextPoint
 
 
@@ -263,7 +263,7 @@ class LBV1TextEntity(LBV1ObjectBase):
                    **extra)
 
 
-class LBV1Objects(pydantic_compat.BaseModel):
+class LBV1Objects(BaseModel):
     objects: List[Union[
         LBV1Line,
         LBV1Point,

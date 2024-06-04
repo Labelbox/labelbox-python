@@ -35,12 +35,13 @@ def get_annotation_lookup(annotations):
     annotation_lookup = defaultdict(list)
     for annotation in annotations:
         # Provide a default value of None if the attribute doesn't exist
-        attribute_value = getattr(annotation, 'image_id', None) or getattr(annotation, 'name', None)
+        attribute_value = getattr(annotation, 'image_id', None) or getattr(
+            annotation, 'name', None)
         annotation_lookup[attribute_value].append(annotation)
-    return annotation_lookup 
+    return annotation_lookup
 
 
-class SegmentInfo(pydantic_compat.BaseModel):
+class SegmentInfo(BaseModel):
     id: int
     category_id: int
     area: int
@@ -48,12 +49,12 @@ class SegmentInfo(pydantic_compat.BaseModel):
     iscrowd: int = 0
 
 
-class RLE(pydantic_compat.BaseModel):
+class RLE(BaseModel):
     counts: List[int]
     size: Tuple[int, int]  # h,w or w,h?
 
 
-class COCOObjectAnnotation(pydantic_compat.BaseModel):
+class COCOObjectAnnotation(BaseModel):
     # All segmentations for a particular class in an image...
     # So each image will have one of these for each class present in the image..
     # Annotations only exist if there is data..

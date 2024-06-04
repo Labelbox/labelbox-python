@@ -2,7 +2,7 @@ from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
 from typing import List, Optional, Union, Dict, Any
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
@@ -104,7 +104,7 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
         allow_population_by_field_name = True
 
 
-class Review(pydantic_compat.BaseModel):
+class Review(BaseModel):
     score: int
     id: str
     created_at: str
@@ -118,7 +118,7 @@ class Review(pydantic_compat.BaseModel):
 Extra = lambda name: pydantic_compat.Field(None, alias=name, extra_field=True)
 
 
-class LBV1Label(pydantic_compat.BaseModel):
+class LBV1Label(BaseModel):
     label: Union[LBV1LabelAnnotations,
                  List[LBV1LabelAnnotationsVideo]] = pydantic_compat.Field(
                      ..., alias='Label')

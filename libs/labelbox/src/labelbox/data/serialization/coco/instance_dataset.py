@@ -129,7 +129,7 @@ def process_label(
     return image, coco_annotations, categories
 
 
-class CocoInstanceDataset(pydantic_compat.BaseModel):
+class CocoInstanceDataset(BaseModel):
     info: Dict[str, Any] = {}
     images: List[CocoImage]
     annotations: List[COCOObjectAnnotation]

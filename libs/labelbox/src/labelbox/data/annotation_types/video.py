@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, model_validator
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
@@ -104,11 +104,11 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return values
 
-    # @pydantic_compat.validator("instance_uri")
-    # def validate_uri(cls, v):
-    #     if not is_valid_uri(v):
-    #         raise ValueError(f"{v} is not a valid uri")
-    #     return v
+    @pydantic_compat.validator("instance_uri")
+    def validate_uri(cls, v):
+        if not is_valid_uri(v):
+            raise ValueError(f"{v} is not a valid uri")
+        return v
 
 
 class MaskInstance(_CamelCaseMixin, FeatureSchema):
@@ -116,7 +116,7 @@ class MaskInstance(_CamelCaseMixin, FeatureSchema):
     name: str
 
 
-class VideoMaskAnnotation(pydantic_compat.BaseModel):
+class VideoMaskAnnotation(BaseModel):
     """Video mask annotation
        >>> VideoMaskAnnotation(
        >>>     frames=[
