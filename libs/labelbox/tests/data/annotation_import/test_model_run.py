@@ -168,16 +168,14 @@ def test_model_run_status(model_run_with_data_rows):
                                                errorMessage)
 
 
-def test_model_run_split_assignment_by_data_row_ids(
-        model_run, dataset, image_url, configured_project_with_one_data_row):
+def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
+                                                    image_url):
     n_data_rows = 2
     data_rows = dataset.create_data_rows([{
         "row_data": image_url
     } for _ in range(n_data_rows)])
     data_rows.wait_till_done()
     data_row_ids = [data_row['id'] for data_row in data_rows.result]
-    configured_project_with_one_data_row._wait_until_data_rows_are_processed(
-        data_row_ids=data_row_ids)
     model_run.upsert_data_rows(data_row_ids)
 
     with pytest.raises(ValueError):
