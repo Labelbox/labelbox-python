@@ -13,22 +13,21 @@ class UploadManifest(pydantic_compat.BaseModel):
     chunk_uris: List[str]
 
 
-class DataRowUploader:
+SOURCE_SDK = "SDK"
 
-    @staticmethod
-    def upload_in_chunks(client, specs: List[DataRowUpsertItem],
-                         file_upload_thread_count: int,
-                         max_chunk_size_bytes: int) -> UploadManifest:
-        empty_specs = list(filter(lambda spec: spec.is_empty(), specs))
 
-        if empty_specs:
-            ids = list(map(lambda spec: spec.id.get("value"), empty_specs))
-            raise ValueError(
-                f"The following items have an empty payload: {ids}")
+def upload_in_chunks(client, specs: List[DataRowUpsertItem],
+                     file_upload_thread_count: int,
+                     max_chunk_size_bytes: int) -> UploadManifest:
+    empty_specs = list(filter(lambda spec: spec.is_empty(), specs))
 
-        chunk_uris = DescriptorFileCreator(client).create(
-            specs, max_chunk_size_bytes=max_chunk_size_bytes)
+    if empty_specs:
+        ids = list(map(lambda spec: spec.id.get("value"), empty_specs))
+        raise ValueError(f"The following items have an empty payload: {ids}")
 
-        return UploadManifest(source="SDK",
-                              item_count=len(specs),
-                              chunk_uris=chunk_uris)
+    chunk_uris = DescriptorFileCreator(client).create(
+        specs, max_chunk_size_bytes=max_chunk_size_bytes)
+
+    return UploadManifest(source=SOURCE_SDK,
+                          item_count=len(specs),
+                          chunk_uris=chunk_uris)

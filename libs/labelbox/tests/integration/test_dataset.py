@@ -3,7 +3,6 @@ import requests
 from unittest.mock import MagicMock
 from labelbox import Dataset
 from labelbox.exceptions import ResourceNotFoundError, InvalidQueryError
-from labelbox.schema.internal.data_row_uploader import DataRowUploader
 
 from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 

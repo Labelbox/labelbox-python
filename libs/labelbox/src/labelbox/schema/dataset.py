@@ -33,7 +33,7 @@ from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.internal.data_row_upsert_item import (DataRowUpsertItem)
-from labelbox.schema.internal.data_row_uploader import DataRowUploader
+import labelbox.schema.internal.data_row_uploader as data_row_uploader
 from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 from labelbox.schema.internal.datarow_upload_constants import (
     FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE_BYTES)
@@ -262,7 +262,7 @@ class Dataset(DbObject, Updateable, Deletable):
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
 
         Args:
-            items (iterable of (dict or str)): See the docstring for `DataRowUploader.create_descriptor_file` for more information
+            items (iterable of (dict or str))
 
         Returns:
             Task representing the data import on the server side. The Task
@@ -617,7 +617,7 @@ class Dataset(DbObject, Updateable, Deletable):
         file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT
     ) -> "DataUpsertTask":
 
-        manifest = DataRowUploader.upload_in_chunks(
+        manifest = data_row_uploader.upload_in_chunks(
             client=self.client,
             specs=specs,
             file_upload_thread_count=file_upload_thread_count,

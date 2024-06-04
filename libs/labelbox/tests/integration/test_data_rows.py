@@ -2,7 +2,6 @@ from tempfile import NamedTemporaryFile
 import uuid
 from datetime import datetime
 import json
-import math
 import requests
 import os
 

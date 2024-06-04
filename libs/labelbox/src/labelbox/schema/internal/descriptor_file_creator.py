@@ -28,26 +28,22 @@ class DescriptorFileCreator:
 
     Args:
         client (Client): The client object
-        is_upsert (bool): Whether the upload is an upsert. This is a legacy parameter and should always be True because this class will only support upsert
         max_chunk_size_bytes (int): The maximum size of the file in bytes
-
-    TODO: Remove is_upsert parameter
     """
 
     def __init__(self, client: "Client"):
         self.client = client
+        """"
+        This method is used to convert a list to json and upload it in a file to gcs.
+        It will create multiple files if the size of upload is greater than max_chunk_size_bytes in bytes,
+        It uploads the files to gcs in parallel, and return a list of urls
 
-    """"
-    This method is used to convert a list to json and upload it in a file to gcs.
-    It will create multiple files if the size of upload is greater than max_chunk_size_bytes in bytes,
-    It uploads the files to gcs in parallel, and return a list of urls
-
-        Args:
-        items: The list to upload
-        is_upsert (bool): Whether the upload is an upsert
-        max_attachments_per_data_row (int): The maximum number of attachments per data row
-        max_chunk_size_bytes (int): The maximum size of the file in bytes
-    """
+            Args:
+            items: The list to upload
+            is_upsert (bool): Whether the upload is an upsert
+            max_attachments_per_data_row (int): The maximum number of attachments per data row
+            max_chunk_size_bytes (int): The maximum size of the file in bytes
+        """
 
     def create(self,
                items,
@@ -56,7 +52,7 @@ class DescriptorFileCreator:
         is_upsert = True  # This class will only support upsert use cases
         items = self._prepare_items_for_upload(items,
                                                max_attachments_per_data_row,
-                                               is_upsert)
+                                               is_upsert=is_upsert)
         json_chunks = self._chunk_down_by_bytes(items, max_chunk_size_bytes)
         with ThreadPoolExecutor(FILE_UPLOAD_THREAD_COUNT) as executor:
             futures = [
@@ -66,14 +62,10 @@ class DescriptorFileCreator:
             ]
             return [future.result() for future in as_completed(futures)]
 
-    def create_one(self,
-                   items,
-                   max_attachments_per_data_row=None,
-                   is_upsert=False) -> List[str]:
+    def create_one(self, items, max_attachments_per_data_row=None) -> List[str]:
         items = self._prepare_items_for_upload(items,
-                                               max_attachments_per_data_row,
-                                               is_upsert)
-        # Prepare and upload the desciptor file
+                                               max_attachments_per_data_row)
+        # Prepare and upload the descriptor file
         data = json.dumps(items)
         return self.client.upload_data(data,
                                        content_type="application/json",
@@ -84,8 +76,7 @@ class DescriptorFileCreator:
                                   max_attachments_per_data_row=None,
                                   is_upsert=False):
         """
-        This function is shared by `Dataset.create_data_rows`, `Dataset.create_data_rows_sync` and `Dataset.update_data_rows`.
-        It is used to prepare the input file. The user defined input is validated, processed, and json stringified.
+        This function is used to prepare the input file. The user defined input is validated, processed, and json stringified.
         Finally the json data is uploaded to gcs and a uri is returned. This uri can be passed as a parameter to a mutation that uploads data rows
 
         Each element in `items` can be either a `str` or a `dict`. If
@@ -108,9 +99,6 @@ class DescriptorFileCreator:
         >>>     {DataRow.row_data: {"tileLayerUrl" : "http://", ...}}
         >>>     {DataRow.row_data: {"type" : ..., 'version' : ..., 'messages' : [...]}}
         >>>     ])
-
-        For an example showing how to upload tiled data_rows see the following notebook:
-            https://github.com/Labelbox/labelbox-python/blob/ms/develop/model_assisted_labeling/tiled_imagery_mal.ipynb
 
         Args:
             items (iterable of (dict or str)): See above for details.
@@ -305,7 +293,7 @@ class DescriptorFileCreator:
                              max_chunk_size: int) -> Generator[str, None, None]:
         """
         Recursively chunks down a list of items into smaller lists until each list is less than or equal to max_chunk_size bytes
-        NOTE: of one data row is large than max_chunk_size, it will be returned as one chunk
+        NOTE: if one data row is larger than max_chunk_size, it will be returned as one chunk
 
         Returns:
             Generator[str, None, None]: A generator that yields a json string
