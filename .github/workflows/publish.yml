@@ -25,10 +25,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
         uses: eifinger/setup-rye@v2
@@ -43,143 +45,159 @@ jobs:
         run: |
           rye sync
           rye build
+      - name: "Generate hashes"
+        id: hash
+        run: |
+          cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
           name: build
           path: ./dist
-  test-build:
-    if: ${{ !inputs.skip-tests }}
-    needs: ['build']
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - python-version: 3.8
-            prod-key: PROD_LABELBOX_API_KEY_2
-            da-test-key: DA_GCP_LABELBOX_API_KEY
-          - python-version: 3.9
-            prod-key: PROD_LABELBOX_API_KEY_3
-            da-test-key: DA_GCP_LABELBOX_API_KEY
-          - python-version: "3.10"
-            prod-key: PROD_LABELBOX_API_KEY_4
-            da-test-key: DA_GCP_LABELBOX_API_KEY
-          - python-version: 3.11
-            prod-key: LABELBOX_API_KEY
-            da-test-key: DA_GCP_LABELBOX_API_KEY
-          - python-version: 3.12
-            prod-key: PROD_LABELBOX_API_KEY_5
-            da-test-key: DA_GCP_LABELBOX_API_KEY
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-          ref: ${{ inputs.tag }}
-      - name: Install the latest version of rye
-        uses: eifinger/setup-rye@v2
-        with:
-          version: ${{ vars.RYE_VERSION }}
-          enable-cache: true
-      - name: Rye Setup
-        run: |
-           rye config --set-bool behavior.use-uv=true
-      - name: Python setup
-        run: rye pin ${{ matrix.python-version }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: ./dist
-      - name: Prepare package and environment
-        run: |
-          rye sync -f --update-all
-          rye run toml unset --toml-path pyproject.toml tool.rye.workspace
-          rye sync -f --update-all
-      - name: Integration Testing
-        env:
-          PYTEST_XDIST_AUTO_NUM_WORKERS: 32
-          LABELBOX_TEST_API_KEY: ${{ secrets[matrix.prod-key] }}
-          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
-          LABELBOX_TEST_ENVIRON: prod
-        run: |
-          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute
-          cd libs/labelbox
-          rm pyproject.toml
-          rye run pytest tests/integration
-      - name: Data Testing
-        env:
-          PYTEST_XDIST_AUTO_NUM_WORKERS: 32
-          LABELBOX_TEST_API_KEY: ${{ secrets[matrix.prod-key] }}
-          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
-          LABELBOX_TEST_ENVIRON: prod
-        run: |
-          rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute --features data
-          cd libs/labelbox
-          rye run pytest tests/data
-  pypi-publish:   
-    runs-on: ubuntu-latest
-    needs: ['build', 'test-build']
-    if: |
-      always() &&
-      (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
-    environment: 
-      name: publish
-      url: 'https://pypi.org/project/labelbox/'
+  provenance:
+    needs: [build]
     permissions:
-      # IMPORTANT: this permission is mandatory for trusted publishing
-      id-token: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: ./artifact
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: artifact/
-  container-publish:
-    runs-on: ubuntu-latest
-    needs: ['build', 'test-build']
-    permissions:
-      packages: write
-    if: |
-      always() &&
-      (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
-    env:
-      CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-          ref: ${{ inputs.tag }}
+      actions: read
+      contents: write
+      id-token: write # Needed to access the workflow's OIDC identity.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: true
+    #   compile-generator: true # Workaround for https://github.com/slsa-framework/slsa-github-generator/issues/1163
+  
+  # test-build:
+  #   if: ${{ !inputs.skip-tests }}
+  #   needs: ['build']
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - python-version: 3.8
+  #           prod-key: PROD_LABELBOX_API_KEY_2
+  #           da-test-key: DA_GCP_LABELBOX_API_KEY
+  #         - python-version: 3.9
+  #           prod-key: PROD_LABELBOX_API_KEY_3
+  #           da-test-key: DA_GCP_LABELBOX_API_KEY
+  #         - python-version: "3.10"
+  #           prod-key: PROD_LABELBOX_API_KEY_4
+  #           da-test-key: DA_GCP_LABELBOX_API_KEY
+  #         - python-version: 3.11
+  #           prod-key: LABELBOX_API_KEY
+  #           da-test-key: DA_GCP_LABELBOX_API_KEY
+  #         - python-version: 3.12
+  #           prod-key: PROD_LABELBOX_API_KEY_5
+  #           da-test-key: DA_GCP_LABELBOX_API_KEY
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+  #         ref: ${{ inputs.tag }}
+  #     - name: Install the latest version of rye
+  #       uses: eifinger/setup-rye@v2
+  #       with:
+  #         version: ${{ vars.RYE_VERSION }}
+  #         enable-cache: true
+  #     - name: Rye Setup
+  #       run: |
+  #          rye config --set-bool behavior.use-uv=true
+  #     - name: Python setup
+  #       run: rye pin ${{ matrix.python-version }}
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: build
+  #         path: ./dist
+  #     - name: Prepare package and environment
+  #       run: |
+  #         rye sync -f --update-all
+  #         rye run toml unset --toml-path pyproject.toml tool.rye.workspace
+  #         rye sync -f --update-all
+  #     - name: Integration Testing
+  #       env:
+  #         PYTEST_XDIST_AUTO_NUM_WORKERS: 32
+  #         LABELBOX_TEST_API_KEY: ${{ secrets[matrix.prod-key] }}
+  #         DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+  #         LABELBOX_TEST_ENVIRON: prod
+  #       run: |
+  #         rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute
+  #         cd libs/labelbox
+  #         rm pyproject.toml
+  #         rye run pytest tests/integration
+  #     - name: Data Testing
+  #       env:
+  #         PYTEST_XDIST_AUTO_NUM_WORKERS: 32
+  #         LABELBOX_TEST_API_KEY: ${{ secrets[matrix.prod-key] }}
+  #         DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+  #         LABELBOX_TEST_ENVIRON: prod
+  #       run: |
+  #         rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute --features data
+  #         cd libs/labelbox
+  #         rye run pytest tests/data
+#   pypi-publish:   
+#     runs-on: ubuntu-latest
+#     needs: ['build', 'test-build']
+#     if: |
+#       always() &&
+#       (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
+#     environment: 
+#       name: publish
+#       url: 'https://pypi.org/project/labelbox/'
+#     permissions:
+#       # IMPORTANT: this permission is mandatory for trusted publishing
+#       id-token: write
+#     steps:
+#       - uses: actions/download-artifact@v4
+#         with:
+#           name: build
+#           path: ./artifact
+#       - name: Publish package distributions to PyPI
+#         uses: pypa/gh-action-pypi-publish@release/v1
+#         with:
+#           packages-dir: artifact/
+#   container-publish:
+#     runs-on: ubuntu-latest
+#     needs: ['build', 'test-build']
+#     permissions:
+#       packages: write
+#     if: |
+#       always() &&
+#       (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
+#     env:
+#       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+#           ref: ${{ inputs.tag }}
 
-      - name: downcase CONTAINER_IMAGE
-        run: |
-          echo "CONTAINER_IMAGE=${CONTAINER_IMAGE,,}" >> ${GITHUB_ENV}
+#       - name: downcase CONTAINER_IMAGE
+#         run: |
+#           echo "CONTAINER_IMAGE=${CONTAINER_IMAGE,,}" >> ${GITHUB_ENV}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
   
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Log in to the Container registry
+#         uses: docker/login-action@v3
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
   
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./libs/labelbox/Dockerfile
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          push: true
+#       - name: Build and push
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: .
+#           file: ./libs/labelbox/Dockerfile
+#           github-token: ${{ secrets.GITHUB_TOKEN }}
+#           push: true
   
-          platforms: |
-            linux/amd64
-            linux/arm64
+#           platforms: |
+#             linux/amd64
+#             linux/arm64
   
-          tags: |
-            ${{ env.CONTAINER_IMAGE }}:latest
-            ${{ env.CONTAINER_IMAGE }}:${{ inputs.tag }}
+#           tags: |
+#             ${{ env.CONTAINER_IMAGE }}:latest
+#             ${{ env.CONTAINER_IMAGE }}:${{ inputs.tag }}
                     
-# Note that the build and pypi-publish jobs are split so that the additional permissions are only granted to the pypi-publish job.
+# # Note that the build and pypi-publish jobs are split so that the additional permissions are only granted to the pypi-publish job.
