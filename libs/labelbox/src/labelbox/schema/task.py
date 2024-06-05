@@ -11,9 +11,7 @@ from labelbox.orm.model import Field, Relationship, Entity
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.internal.datarow_upload_constants import (
-    MAX_DATAROW_PER_API_OPERATION,
-    DOWNLOAD_RESULT_PAGE_SIZE,
-)
+    DOWNLOAD_RESULT_PAGE_SIZE,)
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -233,7 +231,6 @@ class DataUpsertTask(Task):
     """
     Task class for data row upsert operations
     """
-    MAX_DOWNLOAD_SIZE: Final = MAX_DATAROW_PER_API_OPERATION
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
