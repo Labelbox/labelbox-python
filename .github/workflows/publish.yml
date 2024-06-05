@@ -62,8 +62,8 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
       base64-subjects: "${{ needs.build.outputs.hashes }}"
-      upload-assets: true
-    #   compile-generator: true # Workaround for https://github.com/slsa-framework/slsa-github-generator/issues/1163
+      upload-assets: true # upload to a new release
+      upload-tag-name: ${{ inputs.tag }} # Tag from the initiation of the workflow
   
   # test-build:
   #   if: ${{ !inputs.skip-tests }}
