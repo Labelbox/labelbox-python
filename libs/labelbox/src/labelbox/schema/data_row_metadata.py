@@ -7,7 +7,7 @@ import warnings
 
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload, Annotated
 
-from pydantic import StringConstraints
+from pydantic import StringConstraints, Field
 
 from pydantic import BaseModel
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
@@ -29,9 +29,9 @@ class DataRowMetadataKind(Enum):
 # Metadata schema
 class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]]
@@ -40,10 +40,10 @@ class DataRowMetadataSchema(BaseModel):
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = pydantic_compat.conlist(float,
+Embedding: Type[List[float]] = Annotated[List[float], Field(
                                                        min_items=128,
-                                                       max_items=128)
-String: Type[str] = pydantic_compat.constr(max_length=4096)
+                                                       max_items=128)]
+String: Type[str] = Annotated[List[str], Field(max_length=4096)]
 
 
 # Metadata base class

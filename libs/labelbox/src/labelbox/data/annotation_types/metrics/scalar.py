@@ -1,12 +1,12 @@
 from dataclasses import field
-from typing import Dict, Optional, Union
+from typing import Annotated, Dict, Optional, Union
 from enum import Enum
 
 from .base import ConfidenceValue, BaseMetric
 
-from pydantic import BaseModel
+from pydantic import Field
 
-ScalarMetricValue = pydantic_compat.confloat(ge=0, le=100_000_000)
+ScalarMetricValue = Annotated[float, Field(ge=0, le=100_000_000)]
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
 
 

@@ -1,9 +1,9 @@
 from abc import ABC
-from typing import Dict, Optional, Any, Union
+from typing import Annotated, Dict, Optional, Any, Union
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 
-ConfidenceValue = pydantic_compat.confloat(ge=0, le=1)
+ConfidenceValue = Annotated[float, Field(ge=0, le=1)]
 
 MIN_CONFIDENCE_SCORES = 2
 MAX_CONFIDENCE_SCORES = 15

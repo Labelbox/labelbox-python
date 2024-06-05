@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, Annotated
 
 from pydantic import Field
 
 from .base import ConfidenceValue, BaseMetric
 
-Count = pydantic_compat.conint(ge=0, le=1e10)
+Count = Annotated[int, Field(ge=0, le=1e10)]
 
 ConfusionMatrixMetricValue = Tuple[Count, Count, Count, Count]
 ConfusionMatrixMetricConfidenceValue = Dict[ConfidenceValue,
