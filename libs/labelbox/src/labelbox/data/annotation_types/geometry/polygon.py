@@ -68,7 +68,8 @@ class Polygon(Geometry):
             return cv2.fillPoly(canvas, pts, color)
         return cv2.polylines(canvas, pts, True, color, thickness)
 
-    @pydantic_compat.validator('points')
+    @field_validator('points')
+    @classmethod
     def is_geom_valid(cls, points):
         if len(points) < 3:
             raise ValueError(

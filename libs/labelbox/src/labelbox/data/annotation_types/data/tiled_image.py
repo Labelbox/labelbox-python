@@ -54,7 +54,8 @@ class TiledBounds(BaseModel):
     epsg: EPSG
     bounds: List[Point]
 
-    @pydantic_compat.validator('bounds')
+    @field_validator('bounds')
+    @classmethod
     def validate_bounds_not_equal(cls, bounds):
         first_bound = bounds[0]
         second_bound = bounds[1]
@@ -99,7 +100,8 @@ class TileLayer(BaseModel):
     def asdict(self) -> Dict[str, str]:
         return {"tileLayerUrl": self.url, "name": self.name}
 
-    @pydantic_compat.validator('url')
+    @field_validator('url')
+    @classmethod
     def validate_url(cls, url):
         xyz_format = "/{z}/{x}/{y}"
         if xyz_format not in url:
@@ -344,7 +346,8 @@ class TiledImageData(BaseData):
                              f"Max allowed tiles are {max_tiles}"
                              f"Increase max tiles or reduce zoom level.")
 
-    @pydantic_compat.validator('zoom_levels')
+    @field_validator('zoom_levels')
+    @classmethod
     def validate_zoom_levels(cls, zoom_levels):
         if zoom_levels[0] > zoom_levels[1]:
             raise ValueError(

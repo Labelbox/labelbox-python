@@ -8,7 +8,8 @@ from labelbox.exceptions import ConfidenceNotSupportedException, CustomMetricsNo
 class ConfidenceMixin(BaseModel):
     confidence: Optional[float] = None
 
-    @pydantic_compat.validator("confidence")
+    @field_validator('confidence')
+    @classmethod
     def confidence_valid_float(cls, value):
         if value is None:
             return value
@@ -36,13 +37,15 @@ class CustomMetric(BaseModel):
     name: str
     value: float
 
-    @pydantic_compat.validator("name")
+    @field_validator("name")
+    @classmethod
     def confidence_valid_float(cls, value):
         if not isinstance(value, str):
             raise ValueError("Name must be a string")
         return value
 
-    @pydantic_compat.validator("value")
+    @field_validator("value")
+    @classmethod
     def value_valid_float(cls, value):
         if not isinstance(value, (int, float)):
             raise ValueError("Value must be a number")

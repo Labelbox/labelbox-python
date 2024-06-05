@@ -104,7 +104,8 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return values
 
-    @pydantic_compat.validator("instance_uri")
+    @field_validator("instance_uri")
+    @classmethod
     def validate_uri(cls, v):
         if not is_valid_uri(v):
             raise ValueError(f"{v} is not a valid uri")

@@ -1,3 +1,4 @@
+from dataclasses import field
 from typing import Dict, Optional, Union
 from enum import Enum
 
@@ -33,7 +34,8 @@ class ScalarMetric(BaseMetric):
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
-    @pydantic_compat.validator('metric_name')
+    @field_validator('metric_name')
+    @classmethod
     def validate_metric_name(cls, name: Union[str, None]):
         if name is None:
             return None

@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator, field_validator
 from ...annotation_types.types import Cuid
 
 
@@ -11,7 +11,7 @@ class DataRow(_CamelCaseMixin):
     global_key: str = None
 
     @model_validator(mode='before')
-    @classmethod()
+    @classmethod
     def must_set_one(cls, values):
         if not is_exactly_one_set(values.get('id'), values.get('global_key')):
             raise ValueError("Must set either id or global_key")
@@ -22,7 +22,8 @@ class NDJsonBase(_CamelCaseMixin):
     uuid: str = None
     data_row: DataRow
 
-    @pydantic_compat.validator('uuid', pre=True, always=True)
+    @field_validator('uuid', mode='before', validate_default=True)
+    @classmethod
     def set_id(cls, v):
         return v or str(uuid4())
 

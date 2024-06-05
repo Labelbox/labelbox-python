@@ -202,11 +202,11 @@ class Label(BaseModel):
                 f"Unexpected type for answer found. {type(classification.value.answer)}"
             )
 
-    @pydantic_compat.validator("annotations", pre=True)
+    @field_validator("annotations", mode='before')
     def validate_union(cls, value):
         supported = tuple([
-            field.type_
-            for field in cls.__fields__['annotations'].sub_fields[0].sub_fields
+            field.type_ for field in
+            cls.__model_fields__['annotations'].sub_fields[0].sub_fields
         ])
         if not isinstance(value, list):
             raise TypeError(f"Annotations must be a list. Found {type(value)}")

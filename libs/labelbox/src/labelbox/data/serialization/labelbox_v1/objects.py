@@ -4,7 +4,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
@@ -32,8 +32,9 @@ class LBV1ObjectBase(LBV1Feature):
             res.pop('instanceURI')
         return res
 
-    @pydantic_compat.validator('classifications', pre=True)
-    def validate_subclasses(cls, value, field):
+    @field_validator('classifications', mode='before')
+    @classmethod
+    def validate_subclasses(cls, value):
         # checklist subclasses create extra unessesary nesting. So we just remove it.
         if isinstance(value, list) and len(value):
             subclasses = []

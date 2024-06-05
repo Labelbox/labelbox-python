@@ -12,7 +12,7 @@ from google.api_core import retry
 from .base_data import BaseData
 from ..types import TypedArray
 
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator, field_validator
 
 logger = logging.getLogger(__name__)
 

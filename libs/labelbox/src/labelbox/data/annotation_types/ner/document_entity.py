@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from labelbox.utils import _CamelCaseMixin
 
 
@@ -11,7 +11,8 @@ class DocumentTextSelection(_CamelCaseMixin, BaseModel):
     group_id: str
     page: int
 
-    @pydantic_compat.validator("page")
+    @field_validator("page")
+    @classmethod
     def validate_page(cls, v):
         if v < 1:
             raise ValueError("Page must be greater than 1")

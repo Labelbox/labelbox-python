@@ -9,7 +9,7 @@ from shapely.geometry import LineString as SLineString
 from .point import Point
 from .geometry import Geometry
 
-from pydantic import BaseModel
+from pydantic import field_validator
 
 
 class Line(Geometry):
@@ -65,7 +65,8 @@ class Line(Geometry):
                              color=color,
                              thickness=thickness)
 
-    @pydantic_compat.validator('points')
+    @field_validator('points')
+    @classmethod
     def is_geom_valid(cls, points):
         if len(points) < 2:
             raise ValueError(

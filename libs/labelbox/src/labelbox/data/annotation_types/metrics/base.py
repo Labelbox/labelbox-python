@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Dict, Optional, Any, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 ConfidenceValue = pydantic_compat.confloat(ge=0, le=1)
 
@@ -19,7 +19,8 @@ class BaseMetric(BaseModel, ABC):
         res = super().dict(*args, **kwargs)
         return {k: v for k, v in res.items() if v is not None}
 
-    @pydantic_compat.validator('value')
+    @field_validator('value')
+    @classmethod
     def validate_value(cls, value):
         if isinstance(value, Dict):
             if not (MIN_CONFIDENCE_SCORES <= len(value) <=

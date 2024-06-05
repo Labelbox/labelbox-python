@@ -685,7 +685,7 @@ class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
     answers: List[NDFeatureSchema] = pydantic_compat.Field(determinant=True)
 
-    @pydantic_compat.validator('answers', pre=True)
+    @field_validator('answers', mode='before')
     def validate_answers(cls, value, field):
         #constr not working with mypy.
         if not len(value):
@@ -762,7 +762,8 @@ class NDBaseTool(NDBase):
                 if self.name else valid_feature_schemas_by_id[
                     self.schemaId]['classificationsByName'])
 
-    @pydantic_compat.validator('classifications', pre=True)
+    @field_validator('classifications', mode='before')
+    @classmethod
     def validate_subclasses(cls, value, field):
         #Create uuid and datarow id so we don't have to define classification objects twice
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
@@ -782,7 +783,8 @@ class NDPolygon(NDBaseTool):
     ontology_type: Literal["polygon"] = "polygon"
     polygon: List[Point] = PydanticField(determinant=True)
 
-    @pydantic_compat.validator('polygon')
+    @field_validator('polygon')
+    @classmethod
     def is_geom_valid(cls, v):
         if len(v) < 3:
             raise ValueError(
@@ -794,7 +796,8 @@ class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
     line: List[Point] = PydanticField(determinant=True)
 
-    @pydantic_compat.validator('line')
+    @field_validator('line')
+    @classmethod
     def is_geom_valid(cls, v):
         if len(v) < 2:
             raise ValueError(
@@ -823,7 +826,8 @@ class NDTextEntity(NDBaseTool):
     ontology_type: Literal["named-entity"] = "named-entity"
     location: EntityLocation = PydanticField(determinant=True)
 
-    @pydantic_compat.validator('location')
+    @field_validator('location')
+    @classmethod
     def is_valid_location(cls, v):
         if isinstance(v, BaseModel):
             v = v.dict()
@@ -844,7 +848,8 @@ class RLEMaskFeatures(BaseModel):
     counts: List[int]
     size: List[int]
 
-    @pydantic_compat.validator('counts')
+    @field_validator('counts')
+    @classmethod
     def validate_counts(cls, counts):
         if not all([count >= 0 for count in counts]):
             raise ValueError(
@@ -852,7 +857,8 @@ class RLEMaskFeatures(BaseModel):
             )
         return counts
 
-    @pydantic_compat.validator('size')
+    @field_validator('size')
+    @classmethod
     def validate_size(cls, size):
         if len(size) != 2:
             raise ValueError(
@@ -873,7 +879,8 @@ class URIMaskFeatures(BaseModel):
     instanceURI: str
     colorRGB: Union[List[int], Tuple[int, int, int]]
 
-    @pydantic_compat.validator('colorRGB')
+    @field_validator('colorRGB')
+    @classmethod
     def validate_color(cls, colorRGB):
         #Does the dtype matter? Can it be a float?
         if not isinstance(colorRGB, (tuple, list)):
