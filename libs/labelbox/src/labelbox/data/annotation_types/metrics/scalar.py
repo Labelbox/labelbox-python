@@ -4,7 +4,7 @@ from enum import Enum
 
 from .base import ConfidenceValue, BaseMetric
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 ScalarMetricValue = Annotated[float, Field(ge=0, le=100_000_000)]
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]

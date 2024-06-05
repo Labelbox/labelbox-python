@@ -22,7 +22,7 @@ class NDJsonBase(_CamelCaseMixin):
     uuid: str = None
     data_row: DataRow
 
-    @field_validator('uuid', mode='before', validate_default=True)
+    @field_validator('uuid', mode='before')
     @classmethod
     def set_id(cls, v):
         return v or str(uuid4())
@@ -45,7 +45,7 @@ class NDAnnotation(NDJsonBase):
     unit: Optional[str] = None
 
     @model_validator(mode='before')
-    @classmethod()
+    @classmethod
     def must_set_one(cls, values):
         if ('schema_id' not in values or values['schema_id']
                 is None) and ('name' not in values or values['name'] is None):

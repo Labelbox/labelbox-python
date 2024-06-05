@@ -15,7 +15,7 @@ class GenericDataRowData(BaseData, _NoCoercionMixin):
         return self.url
 
     @model_validator(mode='before')
-    @classmethod(pre=True)
+    @classmethod
     def validate_one_datarow_key_present(cls, data):
         keys = ['external_id', 'global_key', 'uid']
         count = sum([key in data for key in keys])

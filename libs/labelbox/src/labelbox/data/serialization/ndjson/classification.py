@@ -18,7 +18,7 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     classifications: Optional[List['NDSubclassificationType']] = []
 
     @model_validator(mode='before')
-    @classmethod()
+    @classmethod
     def must_set_one(cls, values):
         if ('schema_id' not in values or values['schema_id']
                 is None) and ('name' not in values or values['name'] is None):
@@ -40,7 +40,7 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
         return res
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         alias_generator = camel_case
 
 

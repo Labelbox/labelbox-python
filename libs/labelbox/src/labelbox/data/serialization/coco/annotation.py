@@ -10,7 +10,7 @@ from ...annotation_types.video import VideoMaskAnnotation
 from ...annotation_types.annotation import ObjectAnnotation
 from ...annotation_types.classification.classification import ClassificationAnnotation
 
-from .... import pydantic_compat
+from pydantic import BaseModel
 import numpy as np
 
 from .path import PathSerializerMixin

@@ -101,7 +101,7 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
         return result
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 
 class Review(BaseModel):
@@ -120,13 +120,11 @@ Extra = lambda name: Field(None, alias=name, extra_field=True)
 
 class LBV1Label(BaseModel):
     label: Union[LBV1LabelAnnotations,
-                 List[LBV1LabelAnnotationsVideo]] = Field(
-                     ..., alias='Label')
+                 List[LBV1LabelAnnotationsVideo]] = Field(..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
     row_data: str = Field(None, alias="Labeled Data")
     id: Optional[str] = Field(None, alias='ID')
-    external_id: Optional[str] = Field(None,
-                                                       alias="External ID")
+    external_id: Optional[str] = Field(None, alias="External ID")
     data_row_media_attributes: Optional[Dict[str, Any]] = Field(
         {}, alias="Media Attributes")
     data_row_metadata: Optional[List[Dict[str, Any]]] = Field(
@@ -248,4 +246,4 @@ class LBV1Label(BaseModel):
              "s3://")) or "tileLayerUrl" in self.row_data
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True

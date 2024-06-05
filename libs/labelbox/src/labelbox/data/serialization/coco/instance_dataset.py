@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from tqdm import tqdm
-from .... import pydantic_compat
+from pydantic import BaseModel
 
 from ...annotation_types import ImageData, MaskData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
 from ...annotation_types.collection import LabelCollection

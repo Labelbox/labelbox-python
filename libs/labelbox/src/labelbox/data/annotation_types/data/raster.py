@@ -9,7 +9,7 @@ from requests.exceptions import ConnectTimeout
 import requests
 import numpy as np
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, ConfigDict, Extra
 from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 from ..types import TypedArray
@@ -156,7 +156,7 @@ class RasterData(BaseModel, ABC):
         return self.url
 
     @model_validator(mode='before')
-    @classmethod()
+    @classmethod
     def validate_args(cls, values):
         file_path = values.get("file_path")
         im_bytes = values.get("im_bytes")
@@ -186,11 +186,7 @@ class RasterData(BaseModel, ABC):
                f"url={self.url}," \
                f"arr={symbol_or_none(self.arr)})"
 
-    class Config:
-        # Required for sharing references
-        copy_on_model_validation = 'none'
-        # Required for discriminating between data types
-        extra = 'forbid'
+    model_config = ConfigDict(extra=Extra.forbid,)
 
 
 class MaskData(RasterData):
