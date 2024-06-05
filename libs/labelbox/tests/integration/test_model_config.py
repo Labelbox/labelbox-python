@@ -15,3 +15,8 @@ def test_delete_model_config(client, valid_model_id):
 def test_delete_nonexistant_model_config(client):
     with pytest.raises(ResourceNotFoundError):
         client.delete_model_config("invalid_model_id")
+
+def test_get_model_configs(client, valid_model_id):
+    model_config = client.create_model_config("model_config_1", valid_model_id, {"param": "value"})
+    model_config = client.create_model_config("model_config_2", valid_model_id, {"param": "value"})
+    assert len(client.get_model_configs(valid_model_id)) == 2

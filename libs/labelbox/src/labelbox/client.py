@@ -654,6 +654,29 @@ class Client:
         if not result:
             raise labelbox.exceptions.ResourceNotFoundError(Entity.ModelConfig, params)
         return result['deleteModelConfig']['success']
+    
+    def get_model_configs(self, model_id: str) -> List[ModelConfig]:
+        """ Gets all model configs attached to a given model id
+
+        Args:
+            model_id (str): ID of the model associated with the model configs
+
+        Returns:
+            List[ModelConfig], list of ModelConfigs if the operation was a success.
+        """
+        
+        query = """query SearchModelConfigsPyApi($modelId: ID!) {
+                    modelConfigs(
+                        where: {modelId: $modelId}
+                    ) {
+                        id
+                        inferenceParams
+                        name
+                    }
+                }"""
+        params = {"modelId": model_id}
+        result = self.execute(query, params)
+        return [ModelConfig(self, {**model_config, "modelId":model_id}) for model_config in result["modelConfigs"]]
 
     def create_dataset(self,
                        iam_integration=IAMIntegration._DEFAULT,
