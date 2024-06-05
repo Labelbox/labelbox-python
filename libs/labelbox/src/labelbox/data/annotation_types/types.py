@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
-from pydantic import Field
+from pydantic import ValidationInfo
 
 Cuid = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
@@ -22,14 +22,11 @@ class _TypedArray(np.ndarray, Generic[DType, DShape]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, val, field: pydantic_compat.ModelField):
+    def validate(cls, val, field: ValidationInfo):
         if not isinstance(val, np.ndarray):
             raise TypeError(f"Expected numpy array. Found {type(val)}")
 
-        if sys.version_info.minor > 6:
-            actual_dtype = field.sub_fields[-1].type_.__args__[0]
-        else:
-            actual_dtype = field.sub_fields[-1].type_.__values__[0]
+        actual_dtype = field.sub_fields[-1].type_.__args__[0]
 
         if val.dtype != actual_dtype:
             raise TypeError(

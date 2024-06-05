@@ -40,9 +40,8 @@ class DataRowMetadataSchema(BaseModel):
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = Annotated[List[float], Field(
-                                                       min_items=128,
-                                                       max_items=128)]
+Embedding: Type[List[float]] = Annotated[List[float],
+                                         Field(min_items=128, max_items=128)]
 String: Type[str] = Annotated[List[str], Field(max_length=4096)]
 
 
