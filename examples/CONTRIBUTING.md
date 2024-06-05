@@ -1,16 +1,16 @@
-# Contribution Guide
+# Contribution guide
 
 Thank you for contributing to our notebook examples! To ensure that your contribution aligns with our guidelines, please carefully review the following guide.
 
-## Table of Contents
+## Table of contents
 
-- [General Notebook Requirements](#general-notebook-requirements)
-- [Branches and Tags](#branches-and-tags)
-- [Github Workflows](#github-workflows)
-- [General Prerequisites](#general-prerequisites)
-- [Styling Tools](#styling-tools)
+- [General notebook requirements](#general-notebook-requirements)
+- [Branches and tags](#branches-and-tags)
+- [Github workflows](#github-workflows)
+- [General prerequisites](#general-prerequisites)
+- [Styling tools](#styling-tools)
 
-## General Notebook Requirements
+## General notebook requirements
 
 Review our [template notebook](template.ipynbs) for general overview on how notebooks should be structure. The template notebook and this section just serves as a guide and exceptions can be made. Here are our general requirements:
 
@@ -27,23 +27,23 @@ Review our [template notebook](template.ipynbs) for general overview on how note
 > [!IMPORTANT]
 > Please make sure to remove any API keys before pushing changes
 
-## Branches and Tags
+## Branches and tags
 
 - All development happens in feature branches ideally prefixed by contributor's initials. For example `fs/feature_name`.
 - Approved PRs are merged to the `develop` branch.
 - All releases align to a git tag.
 
-## Github Workflows
+## Github workflows
 
 - Github Branch Workflow
   - When you push to a branch that contains files inside the examples directory, it will automatically reformat your notebook to match our given style and provide appropriate headers. Once this workflow is completed it will commit back to your branch which then you can pull.
   - If your push contains new notebooks or modifies the names of notebooks the readme will be updated to reflect the change with updated links.
 
-## General Prerequisites
+## General prerequisites
 
 [Rye](https://rye-up.com/) may be installed before contributing to the repository as it is the tool used to style our example notebooks. This could be used to avoid the github styling workflow. This is also the packaging tool used for the main SDK. The pyproject used for the example notebooks is a virtual package and does not get published.
 
-## Styling Tools
+## Styling tools
 
 Rye is setup in this directory to use a customs script that will run the notebooks through our formatting tools and create readmes.
 
