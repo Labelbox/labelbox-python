@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
@@ -82,7 +82,7 @@ class NDTextSubclass(NDAnswer):
 
 
 class NDChecklistSubclass(NDAnswer):
-    answer: List[NDAnswer] = pydantic_compat.Field(..., alias='answers')
+    answer: List[NDAnswer] = Field(..., alias='answers')
 
     def to_common(self) -> Checklist:
 

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_validator
 
 from pydantic import BaseModel
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation

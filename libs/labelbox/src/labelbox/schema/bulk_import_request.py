@@ -8,7 +8,7 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from pydantic import BaseModel, model_validator, StringConstraints
+from pydantic import BaseModel, model_validator, StringConstraints, Field as PydanticField, field_validator
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING, Annotated)
@@ -716,7 +716,7 @@ class NDChecklist(VideoSupported, NDBase):
 
 class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
-    answer: NDFeatureSchema = pydantic_compat.Field(determinant=True)
+    answer: NDFeatureSchema = PydanticField(determinant=True)
 
     def validate_feature_schemas(self, valid_feature_schemas_by_id,
                                  valid_feature_schemas_by_name):
@@ -780,7 +780,7 @@ class NDBaseTool(NDBase):
 
 class NDPolygon(NDBaseTool):
     ontology_type: Literal["polygon"] = "polygon"
-    polygon: List[Point] = pydantic_compat.Field(determinant=True)
+    polygon: List[Point] = PydanticField(determinant=True)
 
     @pydantic_compat.validator('polygon')
     def is_geom_valid(cls, v):
@@ -792,7 +792,7 @@ class NDPolygon(NDBaseTool):
 
 class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
-    line: List[Point] = pydantic_compat.Field(determinant=True)
+    line: List[Point] = PydanticField(determinant=True)
 
     @pydantic_compat.validator('line')
     def is_geom_valid(cls, v):
@@ -804,13 +804,13 @@ class NDPolyline(NDBaseTool):
 
 class NDRectangle(NDBaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
-    bbox: Bbox = pydantic_compat.Field(determinant=True)
+    bbox: Bbox = PydanticField(determinant=True)
     #Could check if points are positive
 
 
 class NDPoint(NDBaseTool):
     ontology_type: Literal["point"] = "point"
-    point: Point = pydantic_compat.Field(determinant=True)
+    point: Point = PydanticField(determinant=True)
     #Could check if points are positive
 
 
@@ -821,7 +821,7 @@ class EntityLocation(BaseModel):
 
 class NDTextEntity(NDBaseTool):
     ontology_type: Literal["named-entity"] = "named-entity"
-    location: EntityLocation = pydantic_compat.Field(determinant=True)
+    location: EntityLocation = PydanticField(determinant=True)
 
     @pydantic_compat.validator('location')
     def is_valid_location(cls, v):
@@ -893,7 +893,7 @@ class URIMaskFeatures(BaseModel):
 class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
     mask: Union[URIMaskFeatures, PNGMaskFeatures,
-                RLEMaskFeatures] = pydantic_compat.Field(determinant=True)
+                RLEMaskFeatures] = PydanticField(determinant=True)
 
 
 #A union with custom construction logic to improve error messages

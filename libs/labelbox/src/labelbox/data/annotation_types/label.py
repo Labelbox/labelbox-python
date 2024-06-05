@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Union, Optional
 import warnings
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_validator
 
 import labelbox
 from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData

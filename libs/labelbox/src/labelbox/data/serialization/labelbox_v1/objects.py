@@ -4,7 +4,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
@@ -66,7 +66,7 @@ class TIRectangleCoordinate(BaseModel):
 
 
 class LBV1TIPoint(LBV1ObjectBase):
-    object_type: Literal['point'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['point'] = Field(..., alias='type')
     geometry: TIPointCoordinate
 
     def to_common(self) -> Point:
@@ -75,7 +75,7 @@ class LBV1TIPoint(LBV1ObjectBase):
 
 
 class LBV1TILine(LBV1ObjectBase):
-    object_type: Literal['polyline'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['polyline'] = Field(..., alias='type')
     geometry: TILineCoordinate
 
     def to_common(self) -> Line:
@@ -85,7 +85,7 @@ class LBV1TILine(LBV1ObjectBase):
 
 
 class LBV1TIPolygon(LBV1ObjectBase):
-    object_type: Literal['polygon'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['polygon'] = Field(..., alias='type')
     geometry: TIPolygonCoordinate
 
     def to_common(self) -> Polygon:
@@ -95,7 +95,7 @@ class LBV1TIPolygon(LBV1ObjectBase):
 
 
 class LBV1TIRectangle(LBV1ObjectBase):
-    object_type: Literal['rectangle'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['rectangle'] = Field(..., alias='type')
     geometry: TIRectangleCoordinate
 
     def to_common(self) -> Rectangle:
