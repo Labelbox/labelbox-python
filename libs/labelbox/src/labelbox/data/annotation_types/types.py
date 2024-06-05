@@ -1,15 +1,14 @@
 import sys
 from typing import Generic, TypeVar, Any
 
-from pydantic import StringConstraints
-
 from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
 from pydantic import ValidationInfo
+from labelbox import pydantic_compat
 
-Cuid = Annotated[str, StringConstraints(min_length=25, max_length=25)]
+Cuid = Annotated[str, pydantic_compat.Field(min_length=25, max_length=25)]
 
 DType = TypeVar('DType')
 DShape = TypeVar('DShape')
@@ -22,11 +21,11 @@ class _TypedArray(np.ndarray, Generic[DType, DShape]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, val, field: ValidationInfo):
+    def validate(cls, val, field_info: ValidationInfo):
         if not isinstance(val, np.ndarray):
             raise TypeError(f"Expected numpy array. Found {type(val)}")
 
-        actual_dtype = field.sub_fields[-1].type_.__args__[0]
+        actual_dtype = cls.model_fields[field_info.name].type_.__args__[0]
 
         if val.dtype != actual_dtype:
             raise TypeError(
