@@ -677,13 +677,13 @@ class NDBase(NDFeatureSchema):
 
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
-    answer: str = pydantic_compat.Field(determinant=True)
+    answer: str = PydanticField(determinant=True)
     #No feature schema to check
 
 
 class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: List[NDFeatureSchema] = pydantic_compat.Field(determinant=True)
+    answers: List[NDFeatureSchema] = PydanticField(determinant=True)
 
     @field_validator('answers', mode='before')
     def validate_answers(cls, value, field):
