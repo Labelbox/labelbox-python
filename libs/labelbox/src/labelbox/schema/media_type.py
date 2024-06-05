@@ -13,6 +13,7 @@ class MediaType(Enum):
     LLMPromptCreation = "LLM_PROMPT_CREATION"
     LLMPromptResponseCreation = "LLM_PROMPT_RESPONSE_CREATION"
     Pdf = "PDF"
+    PointCloud = "POINT_CLOUD"
     Simple_Tile = "TMS_SIMPLE"
     Text = "TEXT"
     Tms_Geo = "TMS_GEO"

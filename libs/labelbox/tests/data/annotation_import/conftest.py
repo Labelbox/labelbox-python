@@ -1921,17 +1921,9 @@ class Helpers:
     @staticmethod
     def set_project_media_type_from_data_type(project, data_type_class):
 
-        def to_pascal_case(name: str) -> str:
-            return "".join([word.capitalize() for word in name.split("_")])
-
-        data_type_string = data_type_class.__name__[:-4].lower()
-        media_type = to_pascal_case(data_type_string)
+        media_type = data_type_class.__name__[:-4]
         if media_type == "Conversation":
             media_type = "Conversational"
-        elif media_type == "Llmpromptcreation":
-            media_type = "LLMPromptCreation"
-        elif media_type == "Llmpromptresponsecreation":
-            media_type = "LLMPromptResponseCreation"
         elif media_type == "Llmresponsecreation":
             media_type = "Text"
         elif media_type == "Genericdatarow":

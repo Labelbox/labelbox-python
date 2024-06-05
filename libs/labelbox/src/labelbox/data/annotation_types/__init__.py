@@ -39,12 +39,13 @@ from .data import DicomData
 from .data import DocumentData
 from .data import HTMLData
 from .data import ImageData
-from .data import MaskData
-from .data import TextData
-from .data import VideoData
 from .data import LlmPromptResponseCreationData
 from .data import LlmPromptCreationData
 from .data import LlmResponseCreationData
+from .data import MaskData
+from .data import PointCloudData
+from .data import TextData
+from .data import VideoData
 
 from .label import Label
 from .collection import LabelList
