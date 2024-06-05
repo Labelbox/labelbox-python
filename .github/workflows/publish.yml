@@ -163,9 +163,9 @@ jobs:
     outputs:
       image: ${{ steps.image.outputs.image }}
       digest: ${{ steps.build.outputs.digest }}
-    if: |
-      always() &&
-      (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
+    # if: |
+    #   always() &&
+    #   (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
     steps:
