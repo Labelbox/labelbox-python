@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Set, List, Optional, Union, TypedDict, Iterator
 
-
 from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
 from labelbox.pydantic_compat import BaseModel
@@ -82,7 +81,7 @@ class UserGroupProject(BaseModel):
         if not isinstance(other, UserGroupProject):
             return False
         return self.id == other.id
-    
+
 
 class UserGroupParameters(TypedDict):
     """
@@ -97,7 +96,7 @@ class UserGroupParameters(TypedDict):
     """
     id: Optional[str]
     name: Optional[str]
-    color: Optional[UserGroupColor] 
+    color: Optional[UserGroupColor]
     users: Optional[Set[Union[UserGroupUser, User]]]
     projects: Optional[Set[Union[UserGroupProject, Project]]]
 
@@ -123,9 +122,12 @@ class UserGroup:
     _color: UserGroupColor = None
     _users: Set[Union[UserGroupUser, User]] = None
     _projects: Set[Union[UserGroupProject, Project]] = None
-    _client: Client 
+    _client: Client
 
-    def __init__(self, client: Client, reload=True, **kwargs: UserGroupParameters):
+    def __init__(self,
+                 client: Client,
+                 reload=True,
+                 **kwargs: UserGroupParameters):
         """
         Initializes a Group object.
 
@@ -141,10 +143,9 @@ class UserGroup:
 
         # runs against _gql
         if not client.enable_experimental:
-            raise RuntimeError("Experimental features are not enabled. Please enable them in the client to use this feature.")
-
-        if 'id' not in kwargs and 'name' not in kwargs:
-            raise ValueError("Either 'id' or 'name' must be provided")
+            raise RuntimeError(
+                "Experimental features are not enabled. Please enable them in the client to use this feature."
+            )
 
         self.name = kwargs.get('name', None)
         self.id = kwargs.get('id', None)
@@ -192,8 +193,14 @@ class UserGroup:
         result = self.client.execute(query, params)
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
-        self.projects = {UserGroupProject(id=project["id"], name=project["name"]) for project in result["userGroup"]["projects"]["nodes"]}
-        self.users = {UserGroupUser(id=member["id"], email=member["email"]) for member in result["userGroup"]["members"]["nodes"]}
+        self.projects = {
+            UserGroupProject(id=project["id"], name=project["name"])
+            for project in result["userGroup"]["projects"]["nodes"]
+        }
+        self.users = {
+            UserGroupUser(id=member["id"], email=member["email"])
+            for member in result["userGroup"]["members"]["nodes"]
+        }
 
     @property
     def id(self) -> str:
@@ -326,11 +333,20 @@ class UserGroup:
         }
         """
         params = {
-            "id": self.id,
-            "name": self.name,
-            "color": self.color.value,
-            "projectIds": [project.id for project in self.projects],
-            "userIds": [user.id for user in self.users]
+            "id":
+                self.id,
+            "name":
+                self.name,
+            "color":
+                self.color.value,
+            "projectIds": [
+                project.id if hasattr(project, 'id') else project.uid
+                for project in self.projects
+            ],
+            "userIds": [
+                user.id if hasattr(user, 'id') else user.uid
+                for user in self.users
+            ]
         }
         self.client.execute(query, params)
         return self
@@ -382,10 +398,18 @@ class UserGroup:
         }
         """
         params = {
-            "name": self.name,
-            "color": self.color.value,
-            "projectIds": [project.id for project in self.projects],
-            "userIds": [user.id for user in self.users]
+            "name":
+                self.name,
+            "color":
+                self.color.value,
+            "projectIds": [
+                project.id if hasattr(project, 'id') else project.uid
+                for project in self.projects
+            ],
+            "userIds": [
+                user.id if hasattr(user, 'id') else user.uid
+                for user in self.users
+            ]
         }
         result = self.client.execute(query, params)["createUserGroup"]["group"]
         self.id = result["id"]
@@ -405,14 +429,12 @@ class UserGroup:
             }
         }
         """
-        params = {
-            "id": self.id
-        }
+        params = {"id": self.id}
         result = self.client.execute(query, params)
         return result["deleteUserGroup"]["success"]
-    
-    @staticmethod  
-    def user_groups(client: Client) -> Iterator["UserGroup"]:
+
+    @staticmethod
+    def get_user_groups(client: Client) -> Iterator["UserGroup"]:
         """
         Gets all groups in Labelbox.
 
@@ -450,19 +472,26 @@ class UserGroup:
         """
         nextCursor = None
         while True:
-            userGroups = client.execute(query, { "nextCursor": nextCursor })["userGroups"]
+            userGroups = client.execute(
+                query, {"nextCursor": nextCursor})["userGroups"]
             groups = userGroups["nodes"]
             for group in groups:
-                yield UserGroup(
-                    client,
-                    reload=False,
-                    id=group["id"],
-                    name=group["name"],
-                    color=UserGroupColor(group["color"]),
-                    users={UserGroupUser(id=member["id"], email=member["email"]) for member in group["members"]["nodes"]},
-                    projects={UserGroupProject(id=project["id"], name=project["name"]) for project in group["projects"]["nodes"]}
-                )
-            nextCursor = userGroups.get("nextCursor", None)
-            # this doesn't seem to be used right now
-            if nextCursor is None:
-                break   
+                yield UserGroup(client,
+                                reload=False,
+                                id=group["id"],
+                                name=group["name"],
+                                color=UserGroupColor(group["color"]),
+                                users={
+                                    UserGroupUser(id=member["id"],
+                                                  email=member["email"])
+                                    for member in group["members"]["nodes"]
+                                },
+                                projects={
+                                    UserGroupProject(id=project["id"],
+                                                     name=project["name"])
+                                    for project in group["projects"]["nodes"]
+                                })
+            nextCursor = userGroups["nextCursor"]
+            # this doesn't seem to be implemented right now to return a value other than null from the api
+            if nextCursor:
+                break

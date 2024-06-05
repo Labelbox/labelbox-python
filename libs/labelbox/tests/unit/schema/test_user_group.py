@@ -61,8 +61,7 @@ class TestUserGroupParameters:
             name="Test Group",
             color=UserGroupColor.BLUE,
             users={UserGroupUser(id="user_id", email="test@example.com")},
-            projects={UserGroupProject(id="project_id", name="Test Project")}
-        )
+            projects={UserGroupProject(id="project_id", name="Test Project")})
 
         assert params["id"] == "group_id"
         assert params["name"] == "Test Group"
@@ -86,37 +85,26 @@ class TestUserGroup:
         with pytest.raises(RuntimeError):
             group = UserGroup(client)
 
-    def test_constructor_id_or_name_needed(self):
-        client = MagicMock(Client)
-        with pytest.raises(ValueError):
-            group = UserGroup(self.client)
-
     def test_constructor_name(self):
         group = self.group
         assert group.name == "Test Group"
         assert group.color == UserGroupColor.BLUE
 
     def test_constructor_id_no_reload(self):
-        projects = [
-            {
-                "id": "project_id_1",
-                "name": "project_1"
-            },
-            {
-                "id": "project_id_2",
-                "name": "project_2"
-            }
-        ]
-        group_members = [
-            { 
-                "id": "user_id_1",
-                "email": "email_1"
-            },
-            {
-                "id": "user_id_2",
-                "email": "email_2"
-            }
-        ]
+        projects = [{
+            "id": "project_id_1",
+            "name": "project_1"
+        }, {
+            "id": "project_id_2",
+            "name": "project_2"
+        }]
+        group_members = [{
+            "id": "user_id_1",
+            "email": "email_1"
+        }, {
+            "id": "user_id_2",
+            "email": "email_2"
+        }]
         self.client.execute.return_value = {
             "userGroup": {
                 "id": "group_id",
@@ -140,26 +128,20 @@ class TestUserGroup:
         assert len(group.users) == 0
 
     def test_constructor_id(self):
-        projects = [
-            {
-                "id": "project_id_1",
-                "name": "project_1"
-            },
-            {
-                "id": "project_id_2",
-                "name": "project_2"
-            }
-        ]
-        group_members = [
-            { 
-                "id": "user_id_1",
-                "email": "email_1"
-            },
-            {
-                "id": "user_id_2",
-                "email": "email_2"
-            }
-        ]
+        projects = [{
+            "id": "project_id_1",
+            "name": "project_1"
+        }, {
+            "id": "project_id_2",
+            "name": "project_2"
+        }]
+        group_members = [{
+            "id": "user_id_1",
+            "email": "email_1"
+        }, {
+            "id": "user_id_2",
+            "email": "email_2"
+        }]
         self.client.execute.return_value = {
             "userGroup": {
                 "id": "group_id",
@@ -217,7 +199,10 @@ class TestUserGroup:
         group.users = {UserGroupUser(id="user_id", email="user_id@email")}
         assert len(group.users) == 1
 
-        group.users = {UserGroupUser(id="user_id", email="user_id@email"), UserGroupUser(id="user_id", email="user_id@email")}
+        group.users = {
+            UserGroupUser(id="user_id", email="user_id@email"),
+            UserGroupUser(id="user_id", email="user_id@email")
+        }
         assert len(group.users) == 1
 
         group.users = {}
@@ -227,10 +212,15 @@ class TestUserGroup:
         group = self.group
         assert len(group.projects) == 0
 
-        group.projects = {UserGroupProject(id="project_id", name="Test Project")}
+        group.projects = {
+            UserGroupProject(id="project_id", name="Test Project")
+        }
         assert len(group.projects) == 1
 
-        group.projects = {UserGroupProject(id="project_id", name="Test Project"), UserGroupProject(id="project_id", name="Test Project")}
+        group.projects = {
+            UserGroupProject(id="project_id", name="Test Project"),
+            UserGroupProject(id="project_id", name="Test Project")
+        }
         assert len(group.projects) == 1
 
         group.projects = {}
@@ -242,12 +232,14 @@ class TestUserGroup:
         group.name = "Test Group"
         group.color = UserGroupColor.BLUE
         group.users = {UserGroupUser(id="user_id", email="test@example.com")}
-        group.projects = {UserGroupProject(id="project_id", name="Test Project")}
-        
+        group.projects = {
+            UserGroupProject(id="project_id", name="Test Project")
+        }
+
         updated_group = group.update()
 
         execute = self.client.execute.call_args[0]
-        
+
         assert "UpdateUserGroupPyApi" in execute[0]
         assert execute[1]["id"] == "group_id"
         assert execute[1]["name"] == "Test Group"
@@ -268,18 +260,26 @@ class TestUserGroup:
     def test_create_with_exception(self):
         group = self.group
         group.id = "group_id"
-        
+
         with pytest.raises(Exception):
             group.create()
-        
+
     def test_create(self):
         group = self.group
         group.name = "New Group"
         group.color = UserGroupColor.PINK
         group.users = {UserGroupUser(id="user_id", email="test@example.com")}
-        group.projects = {UserGroupProject(id="project_id", name="Test Project")}
+        group.projects = {
+            UserGroupProject(id="project_id", name="Test Project")
+        }
 
-        self.client.execute.return_value = { "createUserGroup": { "group": { "id": "group_id" } } }
+        self.client.execute.return_value = {
+            "createUserGroup": {
+                "group": {
+                    "id": "group_id"
+                }
+            }
+        }
         created_group = group.create()
         execute = self.client.execute.call_args[0]
 
@@ -302,11 +302,15 @@ class TestUserGroup:
     def test_delete(self):
         group = self.group
         group.id = "group_id"
-        
-        self.client.execute.return_value = { "deleteUserGroup": { "success": True } }
+
+        self.client.execute.return_value = {
+            "deleteUserGroup": {
+                "success": True
+            }
+        }
         deleted = group.delete()
         execute = self.client.execute.call_args[0]
-        
+
         assert "DeleteUserGroupPyApi" in execute[0]
         assert execute[1]["id"] == "group_id"
         assert deleted is True
@@ -314,63 +318,77 @@ class TestUserGroup:
     def test_user_groups(self):
         self.client.execute.return_value = {
             "userGroups": {
-            "nodes": [
-                {
+                "nodes": [{
                     "id": "group_id_1",
                     "name": "Group 1",
                     "color": "9EC5FF",
                     "projects": {
-                        "nodes": [
-                            {"id": "project_id_1", "name": "Project 1"},
-                            {"id": "project_id_2", "name": "Project 2"}
-                        ]
+                        "nodes": [{
+                            "id": "project_id_1",
+                            "name": "Project 1"
+                        }, {
+                            "id": "project_id_2",
+                            "name": "Project 2"
+                        }]
                     },
                     "members": {
-                        "nodes": [
-                            {"id": "user_id_1", "email": "user1@example.com"},
-                            {"id": "user_id_2", "email": "user2@example.com"}
-                        ]
+                        "nodes": [{
+                            "id": "user_id_1",
+                            "email": "user1@example.com"
+                        }, {
+                            "id": "user_id_2",
+                            "email": "user2@example.com"
+                        }]
                     }
-                },
-                {
+                }, {
                     "id": "group_id_2",
                     "name": "Group 2",
                     "color": "9EC5FF",
                     "projects": {
-                        "nodes": [
-                            {"id": "project_id_3", "name": "Project 3"},
-                            {"id": "project_id_4", "name": "Project 4"}
-                        ]
+                        "nodes": [{
+                            "id": "project_id_3",
+                            "name": "Project 3"
+                        }, {
+                            "id": "project_id_4",
+                            "name": "Project 4"
+                        }]
                     },
                     "members": {
-                        "nodes": [
-                            {"id": "user_id_3", "email": "user3@example.com"},
-                            {"id": "user_id_4", "email": "user4@example.com"}
-                        ]
+                        "nodes": [{
+                            "id": "user_id_3",
+                            "email": "user3@example.com"
+                        }, {
+                            "id": "user_id_4",
+                            "email": "user4@example.com"
+                        }]
                     }
-                },
-                {
+                }, {
                     "id": "group_id_3",
                     "name": "Group 3",
                     "color": "9EC5FF",
                     "projects": {
-                        "nodes": [
-                            {"id": "project_id_5", "name": "Project 5"},
-                            {"id": "project_id_6", "name": "Project 6"}
-                        ]
+                        "nodes": [{
+                            "id": "project_id_5",
+                            "name": "Project 5"
+                        }, {
+                            "id": "project_id_6",
+                            "name": "Project 6"
+                        }]
                     },
                     "members": {
-                        "nodes": [
-                            {"id": "user_id_5", "email": "user5@example.com"},
-                            {"id": "user_id_6", "email": "user6@example.com"}
-                        ]
+                        "nodes": [{
+                            "id": "user_id_5",
+                            "email": "user5@example.com"
+                        }, {
+                            "id": "user_id_6",
+                            "email": "user6@example.com"
+                        }]
                     }
-                }
-            ]
+                }]
             }
         }
-        
-        user_groups = list(UserGroup.user_groups(self.client))
+
+        user_groups = list(UserGroup.get_user_groups(self.client))
 
         assert len(user_groups) == 3
 
@@ -395,5 +413,7 @@ class TestUserGroup:
         assert len(user_groups[2].projects) == 2
         assert len(user_groups[2].users) == 2
 
+
 if __name__ == "__main__":
-    pytest.main(["-v", __file__])
+    import subprocess
+    subprocess.call(["pytest", "-v", __file__])
