@@ -69,7 +69,7 @@ def create_title(link: str) -> str:
 
     # List to lower case certain words and list to keep certain acronyms capitalized
     lower_case_words = ["to"]
-    acronyms = ["html", "pdf", "llm", "dicom", "sam"]
+    acronyms = ["html", "pdf", "llm", "dicom", "sam", "csv"]
 
     for word in split_link:
         if word.lower() in acronyms:
