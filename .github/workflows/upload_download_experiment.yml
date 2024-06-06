@@ -55,7 +55,8 @@ jobs:
       - name: List artifact contents
         run: ls -R ./artifact
       - name: Upload dist to release
+        working-directory: ${{ github.workspace }}  
         run: |
-           gh release upload ${{ inputs.tag }} ./artifact/*
+            gh release upload ${{ inputs.tag }} ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
