@@ -56,6 +56,8 @@ jobs:
       - name: Upload dist to release
         run: |
            gh release upload ${{ inputs.tag }} ./dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   provenance_python:
     needs: [build]
     permissions:
