@@ -100,7 +100,7 @@ c.InteractiveShellApp.exec_lines = [
 ## Provenance
 
 To enhance the software supply chain security of Labelbox's users, as of v3.73.0, every SDK release contains a [SLSA Level 3 Provenance](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md) document.  
-The provenance document refers to the Python wheel, as well as the generated docker image.  
+The provenance document refers to the Python package, as well as the generated docker image.  
 You can use [SLSA framework's official verifier](https://github.com/slsa-framework/slsa-verifier) to verify the provenance.  
 Example of usage for the v3.73.0 release wheel:
 
