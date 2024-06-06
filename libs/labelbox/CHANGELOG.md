@@ -1,4 +1,9 @@
 # Changelog
+# Version 3.72.1 (2024-06-06)
+## Fixed
+* Fix client.get_project() for LLM projects [PR #1658](https://github.com/Labelbox/labelbox-python/pull/1658)
+* Throw user readable errors when creating a custom embedding [PR #1644](https://github.com/Labelbox/labelbox-python/pull/1644)
+
 # Version 3.72.0 (2024-06-04)
 ## Added
 * Update Dataset `create_data_rows` to allow upload of unlimited number of  data rows [PR #1627](https://github.com/Labelbox/labelbox-python/pull/1627), [PR #1648](https://github.com/Labelbox/labelbox-python/pull/1648)
