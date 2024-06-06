@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Tuple, Dict, Union, Annotated
+from typing import Tuple, Dict, Union
+from labelbox.typing_imports import Annotated
 
 from pydantic import Field
 

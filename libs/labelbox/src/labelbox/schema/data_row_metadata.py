@@ -5,7 +5,8 @@ from enum import Enum
 from itertools import chain
 import warnings
 
-from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload, Annotated
+from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
+from labelbox.typing_imports import Annotated
 
 from pydantic import StringConstraints, Field, ConfigDict
 

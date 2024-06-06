@@ -11,7 +11,8 @@ import requests
 from pydantic import BaseModel, model_validator, StringConstraints, Field as PydanticField, field_validator, ValidationError, Extra, ConfigDict
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
-                    Type, Set, TYPE_CHECKING, Annotated)
+                    Type, Set, TYPE_CHECKING)
+from labelbox.typing_imports import Annotated
 
 from labelbox import exceptions as lb_exceptions
 from labelbox.orm.model import Entity

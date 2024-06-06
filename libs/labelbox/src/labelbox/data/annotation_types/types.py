@@ -1,7 +1,7 @@
 import sys
 from typing import Generic, TypeVar, Any
 
-from typing_extensions import Annotated
+from labelbox.typing_imports import Annotated
 from packaging import version
 import numpy as np
 

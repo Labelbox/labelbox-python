@@ -1,5 +1,7 @@
 from dataclasses import field
-from typing import Annotated, Dict, Optional, Union
+from typing import Dict, Optional, Union
+from labelbox.typing_imports import Annotated
+
 from enum import Enum
 
 from .base import ConfidenceValue, BaseMetric

@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import Annotated, Dict, Optional, Any, Union
+from typing import Dict, Optional, Any, Union
+from labelbox.typing_imports import Annotated
 
 from pydantic import BaseModel, field_validator, Field, ValidationError
 

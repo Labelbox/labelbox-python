@@ -3,7 +3,9 @@
 import colorsys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Type, Annotated
+from typing import Any, Dict, List, Optional, Union, Type
+from labelbox.typing_imports import Annotated
+
 import warnings
 
 from pydantic import StringConstraints
