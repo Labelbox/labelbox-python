@@ -53,6 +53,9 @@ jobs:
         with:
           name: build
           path: ./dist
+      - name: Upload dist to release
+        run: |
+           gh release upload ${{ inputs.tag }} ./dist
   provenance_python:
     needs: [build]
     permissions:
