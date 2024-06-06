@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, ConfigDict
 
 from labelbox.utils import camel_case
 from ...annotation_types.types import Cuid
@@ -27,6 +27,5 @@ class LBV1Feature(BaseModel):
             res.pop('keyframe')
         return res
 
-    class Config:
-        populate_by_name = True
-        alias_generator = camel_case
+    model_config = ConfigDict(allow_population_by_field_name=True,
+                              alias_generator=camel_case)

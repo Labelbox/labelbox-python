@@ -5,10 +5,9 @@ from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
-from pydantic import ValidationInfo
-from labelbox import pydantic_compat
+from pydantic import ValidationInfo, Field
 
-Cuid = Annotated[str, pydantic_compat.Field(min_length=25, max_length=25)]
+Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
 DType = TypeVar('DType')
 DShape = TypeVar('DShape')

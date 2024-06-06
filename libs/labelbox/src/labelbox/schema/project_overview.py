@@ -1,6 +1,7 @@
 from typing import Dict, List
-from labelbox.pydantic_compat import BaseModel
+from pydantic import BaseModel
 from typing_extensions import TypedDict
+
 
 class ProjectOverview(BaseModel):
     """
@@ -19,7 +20,7 @@ class ProjectOverview(BaseModel):
     The `labeled` attribute represents the number of data rows that have been labeled.
     The `total_data_rows` attribute represents the total number of data rows in the project.
     """
-    to_label: int   
+    to_label: int
     in_review: int
     in_rework: int
     skipped: int
@@ -37,7 +38,7 @@ class _QueueDetail(TypedDict):
     """
     data: List[Dict[str, int]]
     total: int
-    
+
 
 class ProjectOverviewDetailed(BaseModel):
     """
@@ -62,7 +63,7 @@ class ProjectOverviewDetailed(BaseModel):
     The `total_data_rows` attribute represents the total number of data rows in the project.
     """
 
-    to_label: int   
+    to_label: int
     in_review: _QueueDetail
     in_rework: _QueueDetail
     skipped: int

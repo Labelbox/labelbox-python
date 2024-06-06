@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 from labelbox.data.annotation_types.geometry.polygon import Polygon
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.line import Line
@@ -7,7 +8,6 @@ from labelbox.data.annotation_types.data.tiled_image import (EPSG, TiledBounds,
                                                              TileLayer,
                                                              TiledImageData,
                                                              EPSGTransformer)
-from labelbox import pydantic_compat
 
 
 @pytest.mark.parametrize("epsg", list(EPSG))
@@ -28,7 +28,7 @@ def test_tiled_bounds(epsg):
 @pytest.mark.parametrize("epsg", list(EPSG))
 def test_tiled_bounds_same(epsg):
     single_bound = Point(x=0, y=0)
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         tiled_bounds = TiledBounds(epsg=epsg,
                                    bounds=[single_bound, single_bound])
 

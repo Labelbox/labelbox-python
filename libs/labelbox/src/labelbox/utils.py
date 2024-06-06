@@ -7,9 +7,7 @@ from dateutil.utils import default_tzinfo
 
 from urllib.parse import urlparse
 
-from pydantic import BaseModel
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
 ISO_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
@@ -55,10 +53,8 @@ def is_valid_uri(uri):
 
 
 class _CamelCaseMixin(BaseModel):
-
-    class Config:
-        populate_by_name = True
-        alias_generator = camel_case
+    model_config = ConfigDict(allow_population_by_field_name=True,
+                              alias_generator=camel_case)
 
 
 class _NoCoercionMixin:

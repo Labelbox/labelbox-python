@@ -7,7 +7,7 @@ import warnings
 
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload, Annotated
 
-from pydantic import StringConstraints, Field
+from pydantic import StringConstraints, Field, ConfigDict
 
 from pydantic import BaseModel
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
@@ -66,8 +66,7 @@ class DeleteDataRowMetadata(_CamelCaseMixin):
     data_row_id: Union[str, UniqueId, GlobalKey]
     fields: List[SchemaId]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
@@ -98,9 +97,8 @@ class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
 
-    class Config:
-        arbitrary_types_allowed = True
-        alias_generator = camel_case
+    model_config = ConfigDict(arbitrary_types_allowed=True,
+                              alias_generator=camel_case)
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

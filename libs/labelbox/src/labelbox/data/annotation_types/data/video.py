@@ -12,7 +12,7 @@ from google.api_core import retry
 from .base_data import BaseData
 from ..types import TypedArray
 
-from pydantic import model_validator, field_validator
+from pydantic import model_validator, ConfigDict, Extra
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +168,4 @@ class VideoData(BaseData):
                 f"frames={'...' if self.frames is not None else None}," \
                 f"url={self.url})"
 
-    class Config:
-        # Required for discriminating between data types
-        extra = 'forbid'
+    model_config = ConfigDict(extra=Extra.forbid,)

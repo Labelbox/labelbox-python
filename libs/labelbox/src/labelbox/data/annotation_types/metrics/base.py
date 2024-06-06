@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Annotated, Dict, Optional, Any, Union
 
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, field_validator, Field, ValidationError
 
 ConfidenceValue = Annotated[float, Field(ge=0, le=1)]
 
@@ -25,12 +25,11 @@ class BaseMetric(BaseModel, ABC):
         if isinstance(value, Dict):
             if not (MIN_CONFIDENCE_SCORES <= len(value) <=
                     MAX_CONFIDENCE_SCORES):
-                raise pydantic_compat.ValidationError([
-                    pydantic_compat.ErrorWrapper(ValueError(
+                raise ValidationError([
+                    ValueError(
                         "Number of confidence scores must be greater"
                         f" than or equal to {MIN_CONFIDENCE_SCORES} and"
                         f" less than or equal to {MAX_CONFIDENCE_SCORES}. Found {len(value)}"
                     ),
-                                                 loc='value')
                 ], cls)
         return value

@@ -1,5 +1,7 @@
 from typing import Optional, Union, Type
 
+from pydantic import ConfigDict
+
 from labelbox.data.annotation_types.data import ImageData, TextData
 from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase
 from labelbox.data.annotation_types.metrics.scalar import (
@@ -15,8 +17,7 @@ class BaseNDMetric(NDJsonBase):
     feature_name: Optional[str] = None
     subclass_name: Optional[str] = None
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

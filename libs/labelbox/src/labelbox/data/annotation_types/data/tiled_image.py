@@ -12,7 +12,7 @@ from google.api_core import retry
 from PIL import Image
 from pyproj import Transformer
 from pygeotile.point import Point as PygeoPoint
-from pydantic import BaseModel, model_validator, field_validator
+from pydantic import BaseModel, model_validator, field_validator, ConfigDict
 
 from labelbox.data.annotation_types import Rectangle, Point, Line, Polygon
 from .base_data import BaseData
@@ -361,8 +361,7 @@ class EPSGTransformer(BaseModel):
     in different formats.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     transformer: Any
 

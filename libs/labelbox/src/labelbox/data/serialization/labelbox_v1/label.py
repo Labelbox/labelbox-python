@@ -1,8 +1,9 @@
+from pyexpat import model
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
 from typing import List, Optional, Union, Dict, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
@@ -100,8 +101,7 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
 
         return result
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(allow_population_by_field_name=True)
 
 
 class Review(BaseModel):
@@ -111,8 +111,7 @@ class Review(BaseModel):
     created_by: str
     label_id: Optional[str] = None
 
-    class Config:
-        alias_generator = camel_case
+    model_config = ConfigDict(alias_generator=camel_case)
 
 
 Extra = lambda name: Field(None, alias=name, extra_field=True)
@@ -245,5 +244,4 @@ class LBV1Label(BaseModel):
             ("http://", "https://", "gs://",
              "s3://")) or "tileLayerUrl" in self.row_data
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(allow_population_by_field_name=True)

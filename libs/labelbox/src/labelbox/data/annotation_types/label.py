@@ -59,9 +59,10 @@ class Label(BaseModel):
         if isinstance(label.get("data"), Dict):
             label["data"]["class_name"] = "GenericDataRowData"
         else:
-            warnings.warn(
-                f"Using {type(label['data']).__name__} class for label.data is deprecated. "
-                "Use a dict or an instance of GenericDataRowData instead.")
+            if not isinstance(label.get("data"), GenericDataRowData):
+                warnings.warn(
+                    f"Using {type(label['data']).__name__} class for label.data is deprecated. "
+                    "Use a dict or an instance of GenericDataRowData instead.")
         return label
 
     def object_annotations(self) -> List[ObjectAnnotation]:

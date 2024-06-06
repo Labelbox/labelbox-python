@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, model_validator, Field
+from pydantic import BaseModel, ConfigDict, model_validator, Field
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
@@ -39,9 +39,8 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
             ]
         return res
 
-    class Config:
-        populate_by_name = True
-        alias_generator = camel_case
+    model_config = ConfigDict(allow_population_by_field_name=True,
+                              alias_generator=camel_case)
 
 
 class FrameLocation(BaseModel):

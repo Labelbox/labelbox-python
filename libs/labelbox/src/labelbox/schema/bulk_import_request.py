@@ -8,7 +8,7 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from pydantic import BaseModel, model_validator, StringConstraints, Field as PydanticField, field_validator
+from pydantic import BaseModel, model_validator, StringConstraints, Field as PydanticField, field_validator, ValidationError, Extra, ConfigDict
 from typing_extensions import Literal
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING, Annotated)
@@ -428,8 +428,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
             uids.add(uuid)
-        except (pydantic_compat.ValidationError, ValueError, TypeError,
-                KeyError) as e:
+        except (ValidationError, ValueError, TypeError, KeyError) as e:
             raise lb_exceptions.MALValidationError(
                 f"Invalid NDJson on line {idx}") from e
 
@@ -528,7 +527,7 @@ class VideoSupported(BaseModel):
 
 
 #Base class for a special kind of union.
-# Compatible with pydantic_compat. Improves error messages over a traditional union
+# Improves error messages over a traditional union
 class SpecialUnion:
 
     def __new__(cls, **kwargs):
@@ -561,7 +560,7 @@ class SpecialUnion:
                 data  (Union[dict, BaseModel]) : The data for constructing one of the objects in the union
             raises:
                 KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
-                pydantic_compat.ValidationError: Error while trying to construct a specific object in the union
+                ValidationError: Error while trying to construct a specific object in the union
 
         """
         if isinstance(data, BaseModel):
@@ -659,9 +658,7 @@ class NDBase(NDFeatureSchema):
         self.validate_feature_schemas(valid_feature_schemas_by_id,
                                       valid_feature_schemas_by_name)
 
-    class Config:
-        #Users shouldn't to add extra data to the payload
-        extra = 'forbid'
+        model_config = ConfigDict(extra=Extra.forbid,)
 
         @staticmethod
         def determinants(parent_cls) -> List[str]:
