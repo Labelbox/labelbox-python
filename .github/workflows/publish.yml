@@ -25,6 +25,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+        contents: write
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     steps:
