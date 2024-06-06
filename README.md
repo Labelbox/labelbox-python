@@ -12,6 +12,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/labelbox.svg?style=social&label=Follow)](https://twitter.com/labelbox)
 [![LinkedIn Follow](https://img.shields.io/badge/Follow-LinkedIn-blue.svg?style=flat&logo=linkedin)](https://www.linkedin.com/company/labelbox/)
 [![Supported Python Versions](https://img.shields.io/pypi/pyversions/labelbox)](https://img.shields.io/pypi/pyversions/labelbox)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 # Labelbox
 
@@ -95,3 +96,26 @@ c.InteractiveShellApp.exec_lines = [
 ]
 ```
 4. Go to the root of your project and run `jupyter notebook` to start the server.
+
+## Provenance
+
+To enhance the software supply chain security of Labelbox's users, as of v3.73.0, every legitify release contains a [SLSA Level 3 Provenance](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md) document.  
+The provenance document refers to the Python wheel, as well as the generated docker image.  
+You can use [SLSA framework's official verifier](https://github.com/slsa-framework/slsa-verifier) to verify the provenance.  
+Example of usage for the v3.73.0 release wheel:
+
+```
+pip download --no-deps labelbox==3.72.0
+
+slsa-verifier verify-artifact --source-branch develop --builder-id 'https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@refs/tags/v2.0.0' --source-uri "git+https://github.com/Labelbox/labelbox-python-slsa-temp" --provenance-path multiple.intoto.jsonl ./labelbox-3.72.0-py3-none-any.whl
+```
+
+Example of usage for the v3.73.0 release docker image:
+```
+Brew install crane
+brew install slsa-verifier
+IMAGE=ghcr.io/labelbox/labelbox-python-slsa-temp:6.5
+IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
+slsa-verifier verify-image "$IMAGE" \
+    --source-uri github.com/Labelbox/labelbox-python-slsa-temp
+```
