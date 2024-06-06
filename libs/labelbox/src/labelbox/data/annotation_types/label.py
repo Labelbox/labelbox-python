@@ -19,10 +19,10 @@ from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from ..ontology import get_feature_schema_lookup
 
-DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
-                 ConversationData, DicomData, DocumentData, HTMLData,
-                 LlmPromptCreationData, LlmPromptResponseCreationData,
-                 LlmResponseCreationData, GenericDataRowData]
+DataType = Union[GenericDataRowData, VideoData, ImageData, TextData,
+                 TiledImageData, AudioData, ConversationData, DicomData,
+                 DocumentData, HTMLData, LlmPromptCreationData,
+                 LlmPromptResponseCreationData, LlmResponseCreationData]
 
 
 class Label(BaseModel):
