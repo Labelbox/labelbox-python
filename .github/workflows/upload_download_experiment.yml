@@ -59,6 +59,6 @@ jobs:
         run: ls -R ./artifact
       - name: Upload dist to release
         run: |
-            gh release upload 6.5 ./artifact/*
+            gh release upload 6.7 ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
