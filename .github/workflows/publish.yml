@@ -225,18 +225,3 @@ jobs:
       registry-username: ${{ github.actor }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
-
-
-#### Testing verification
-
-  verify:
-    runs-on: ubuntu-latest
-    needs: [provenance_container]
-    
-    steps:
-    - name: Verify image
-      uses: slsa-framework/slsa-verifier/actions/installer@v2.5.1
-      run: |
-        slsa-verifier verify-image "${{ needs. container-publish.outputs.image }}@${{ needs. container-publish.outputs.digest }}" \
-        --source-uri https://github.com/${{ github.repository }} \
-        --source-tag ${{ inputs.tag }}
