@@ -1,0 +1,60 @@
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag'
+        required: true
+
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ inputs.tag }}
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@v2
+        with:
+          version: ${{ vars.RYE_VERSION }}
+          enable-cache: true
+      - name: Rye Setup
+        run: |
+           rye config --set-bool behavior.use-uv=true
+      - name: Create build
+        working-directory: libs/labelbox
+        run: |
+          rye sync
+          rye build
+      - name: "Generate hashes"
+        id: hash
+        run: |
+          cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ./dist
+
+
+  publish-python-package-to-release:
+    runs-on: ubuntu-latest
+    needs: ['build']
+    permissions:
+      contents: write    
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ./artifact
+      - name: List artifact contents
+        run: ls -R ./artifact
+      - name: Upload dist to release
+        run: |
+           gh release upload ${{ inputs.tag }} ./artifact/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
