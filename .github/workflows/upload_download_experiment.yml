@@ -48,6 +48,9 @@ jobs:
     permissions:
       contents: write    
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -55,8 +58,7 @@ jobs:
       - name: List artifact contents
         run: ls -R ./artifact
       - name: Upload dist to release
-        working-directory: ${{ github.workspace }}  
         run: |
-            gh release upload ${{ inputs.tag }} ./artifact/*
+            gh release upload 6.5 ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
