@@ -148,7 +148,7 @@ jobs:
           path: ./artifact
       - name: Upload dist to release
         run: |
-            gh release upload ${{ inputs.tag }} ./artifact/*
+          gh release upload ${{ inputs.tag }} ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
