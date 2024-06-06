@@ -658,7 +658,7 @@ class NDBase(NDFeatureSchema):
         self.validate_feature_schemas(valid_feature_schemas_by_id,
                                       valid_feature_schemas_by_name)
 
-        model_config = ConfigDict(extra=Extra.forbid,)
+        model_config = ConfigDict(extra='forbid',)
 
         @staticmethod
         def determinants(parent_cls) -> List[str]:
@@ -674,13 +674,13 @@ class NDBase(NDFeatureSchema):
 
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
-    answer: str = PydanticField(determinant=True)
+    answer: str = PydanticField({"determinant": True})
     #No feature schema to check
 
 
 class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: List[NDFeatureSchema] = PydanticField(determinant=True)
+    answers: List[NDFeatureSchema] = PydanticField({"determinant": True})
 
     @field_validator('answers', mode='before')
     def validate_answers(cls, value, field):
@@ -713,7 +713,7 @@ class NDChecklist(VideoSupported, NDBase):
 
 class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
-    answer: NDFeatureSchema = PydanticField(determinant=True)
+    answer: NDFeatureSchema = PydanticField({"determinant": True})
 
     def validate_feature_schemas(self, valid_feature_schemas_by_id,
                                  valid_feature_schemas_by_name):
@@ -778,7 +778,7 @@ class NDBaseTool(NDBase):
 
 class NDPolygon(NDBaseTool):
     ontology_type: Literal["polygon"] = "polygon"
-    polygon: List[Point] = PydanticField(determinant=True)
+    polygon: List[Point] = PydanticField({"determinant": True})
 
     @field_validator('polygon')
     @classmethod
@@ -791,7 +791,7 @@ class NDPolygon(NDBaseTool):
 
 class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
-    line: List[Point] = PydanticField(determinant=True)
+    line: List[Point] = PydanticField({"determinant": True})
 
     @field_validator('line')
     @classmethod
@@ -804,13 +804,13 @@ class NDPolyline(NDBaseTool):
 
 class NDRectangle(NDBaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
-    bbox: Bbox = PydanticField(determinant=True)
+    bbox: Bbox = PydanticField({"determinant": True})
     #Could check if points are positive
 
 
 class NDPoint(NDBaseTool):
     ontology_type: Literal["point"] = "point"
-    point: Point = PydanticField(determinant=True)
+    point: Point = PydanticField({"determinant": True})
     #Could check if points are positive
 
 
@@ -821,7 +821,7 @@ class EntityLocation(BaseModel):
 
 class NDTextEntity(NDBaseTool):
     ontology_type: Literal["named-entity"] = "named-entity"
-    location: EntityLocation = PydanticField(determinant=True)
+    location: EntityLocation = PydanticField({"determinant": True})
 
     @field_validator('location')
     @classmethod
@@ -897,7 +897,7 @@ class URIMaskFeatures(BaseModel):
 class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
     mask: Union[URIMaskFeatures, PNGMaskFeatures,
-                RLEMaskFeatures] = PydanticField(determinant=True)
+                RLEMaskFeatures] = PydanticField({"determinant": True})
 
 
 #A union with custom construction logic to improve error messages

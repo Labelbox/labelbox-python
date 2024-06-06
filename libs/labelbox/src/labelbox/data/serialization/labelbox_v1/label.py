@@ -101,7 +101,7 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
 
         return result
 
-    model_config = ConfigDict(allow_population_by_field_name=True)
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class Review(BaseModel):
@@ -244,4 +244,4 @@ class LBV1Label(BaseModel):
             ("http://", "https://", "gs://",
              "s3://")) or "tileLayerUrl" in self.row_data
 
-    model_config = ConfigDict(allow_population_by_field_name=True)
+    model_config = ConfigDict(populate_by_name=True)

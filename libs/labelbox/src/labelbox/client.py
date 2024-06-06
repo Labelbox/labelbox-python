@@ -652,7 +652,8 @@ class Client:
         params = {"id": id}
         result = self.execute(query, params)
         if not result:
-            raise labelbox.exceptions.ResourceNotFoundError(Entity.ModelConfig, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Entity.ModelConfig, params)
         return result['deleteModelConfig']['success']
 
     def create_dataset(self,

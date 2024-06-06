@@ -39,7 +39,8 @@ def test_create_with_labels_arg(client, configured_project, object_predictions,
         label_import.input_file_url, object_predictions)
 
 
-def test_create_with_path_arg(client, tmp_path, configured_project, object_predictions,
+def test_create_with_path_arg(client, tmp_path, configured_project,
+                              object_predictions,
                               annotation_import_test_helpers):
     project = configured_project
     name = str(uuid.uuid4())

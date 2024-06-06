@@ -168,4 +168,4 @@ class VideoData(BaseData):
                 f"frames={'...' if self.frames is not None else None}," \
                 f"url={self.url})"
 
-    model_config = ConfigDict(extra=Extra.forbid,)
+    model_config = ConfigDict(extra='forbid',)

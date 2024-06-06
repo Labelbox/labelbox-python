@@ -27,9 +27,9 @@ class TestExportDataRow:
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) == 1
         assert (json.loads(list(export_task.get_stream())[0].json_str)
                 ["data_row"]["id"] == data_row.uid)
-        
+
     def test_with_data_row_object_buffered(self, client, data_row,
-                                  wait_for_data_row_processing):
+                                           wait_for_data_row_processing):
         data_row = wait_for_data_row_processing(client, data_row)
         time.sleep(7)  # temp fix for ES indexing delay
         export_task = DataRow.export(
@@ -45,7 +45,8 @@ class TestExportDataRow:
         assert export_task.get_total_file_size(
             stream_type=StreamType.RESULT) > 0
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) == 1
-        assert list(export_task.get_buffered_stream())[0].json["data_row"]["id"] == data_row.uid
+        assert list(export_task.get_buffered_stream()
+                   )[0].json["data_row"]["id"] == data_row.uid
 
     def test_with_id(self, client, data_row, wait_for_data_row_processing):
         data_row = wait_for_data_row_processing(client, data_row)

@@ -186,7 +186,7 @@ class RasterData(BaseModel, ABC):
                f"url={self.url}," \
                f"arr={symbol_or_none(self.arr)})"
 
-    model_config = ConfigDict(extra=Extra.forbid,)
+    model_config = ConfigDict(extra='forbid',)
 
 
 class MaskData(RasterData):

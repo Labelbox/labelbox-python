@@ -69,7 +69,8 @@ def test_create_from_objects(client, configured_project, object_predictions,
         label_import.input_file_url, object_predictions)
 
 
-def test_create_with_path_arg(client, tmp_path, configured_project, object_predictions,
+def test_create_with_path_arg(client, tmp_path, configured_project,
+                              object_predictions,
                               annotation_import_test_helpers):
     project = configured_project
     name = str(uuid.uuid4())
@@ -89,7 +90,8 @@ def test_create_with_path_arg(client, tmp_path, configured_project, object_predi
         label_import.input_file_url, object_predictions)
 
 
-def test_create_from_local_file(client, tmp_path, configured_project, object_predictions,
+def test_create_from_local_file(client, tmp_path, configured_project,
+                                object_predictions,
                                 annotation_import_test_helpers):
     project = configured_project
     name = str(uuid.uuid4())
@@ -99,9 +101,9 @@ def test_create_from_local_file(client, tmp_path, configured_project, object_pre
         parser.dump(object_predictions, f)
 
     label_import = LabelImport.create_from_file(client=client,
-                                               project_id=project.uid,
-                                               name=name,
-                                               path=str(file_path))
+                                                project_id=project.uid,
+                                                name=name,
+                                                path=str(file_path))
 
     assert label_import.parent_id == project.uid
     annotation_import_test_helpers.check_running_state(label_import, name)

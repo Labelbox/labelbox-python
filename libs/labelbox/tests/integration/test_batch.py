@@ -121,11 +121,11 @@ def test_archive_batch(project: Project, small_dataset: Dataset):
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
-    
+
     batch = project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
     overview = project.get_overview()
-    
+
     assert overview.to_label == 0
 
 

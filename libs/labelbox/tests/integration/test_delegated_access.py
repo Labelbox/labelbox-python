@@ -102,11 +102,12 @@ def test_add_integration_from_object():
 
     # Prepare dataset with no integration
     integration = [
-        integration for integration 
-        in integrations 
-        if 'aws-da-test-bucket' in integration.name][0]
+        integration for integration in integrations
+        if 'aws-da-test-bucket' in integration.name
+    ][0]
 
-    ds = client.create_dataset(iam_integration=None, name=f"integration_add_obj-{uuid.uuid4()}")
+    ds = client.create_dataset(iam_integration=None,
+                               name=f"integration_add_obj-{uuid.uuid4()}")
 
     # Test set integration with object
     new_integration = ds.add_iam_integration(integration)
@@ -114,6 +115,7 @@ def test_add_integration_from_object():
 
     # Cleaning
     ds.delete()
+
 
 @pytest.mark.skip(
     reason=
@@ -137,23 +139,26 @@ def test_add_integration_from_uid():
 
     # Prepare dataset with no integration
     integration = [
-        integration for integration 
-        in integrations 
-        if 'aws-da-test-bucket' in integration.name][0]
+        integration for integration in integrations
+        if 'aws-da-test-bucket' in integration.name
+    ][0]
 
-    ds = client.create_dataset(iam_integration=None, name=f"integration_add_id-{uuid.uuid4()}")
+    ds = client.create_dataset(iam_integration=None,
+                               name=f"integration_add_id-{uuid.uuid4()}")
 
     # Test set integration with integration id
     integration_id = [
-        integration.uid for integration 
-        in integrations 
-        if 'aws-da-test-bucket' in integration.name][0]
-    
+        integration.uid
+        for integration in integrations
+        if 'aws-da-test-bucket' in integration.name
+    ][0]
+
     new_integration = ds.add_iam_integration(integration_id)
     assert new_integration == integration
 
     # Cleaning
     ds.delete()
+
 
 @pytest.mark.skip(
     reason=
@@ -177,11 +182,12 @@ def test_integration_remove():
 
     # Prepare dataset with an existing integration
     integration = [
-        integration for integration 
-        in integrations 
-        if 'aws-da-test-bucket' in integration.name][0]
+        integration for integration in integrations
+        if 'aws-da-test-bucket' in integration.name
+    ][0]
 
-    ds = client.create_dataset(iam_integration=integration, name=f"integration_remove-{uuid.uuid4()}")
+    ds = client.create_dataset(iam_integration=integration,
+                               name=f"integration_remove-{uuid.uuid4()}")
 
     # Test unset integration
     ds.remove_iam_integration()
