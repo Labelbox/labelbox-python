@@ -63,7 +63,7 @@ jobs:
     with:
       base64-subjects: "${{ needs.build.outputs.hashes }}"
       upload-assets: true # upload to a new release
-      upload-tag-name: "Release ${{ inputs.tag }}" # Tag from the initiation of the workflow
+      upload-tag-name: ${{ inputs.tag }} # Tag from the initiation of the workflow
   
   # test-build:
   #   if: ${{ !inputs.skip-tests }}
@@ -148,7 +148,7 @@ jobs:
           path: ./artifact
       - name: Upload dist to release
         run: |
-          gh release upload "Release ${{ inputs.tag }}" ./artifact/*
+          gh release upload ${{ inputs.tag }} ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
