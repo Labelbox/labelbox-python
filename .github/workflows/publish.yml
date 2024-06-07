@@ -181,7 +181,7 @@ jobs:
       packages: write
     outputs:
       image: ${{ steps.image.outputs.image }}
-      digest: ${{ steps.build.outputs.digest }}
+      digest: ${{ steps.build_container.outputs.digest }}
     # if: |
     #   always() &&
     #   (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
@@ -209,7 +209,7 @@ jobs:
   
       - name: Build and push
         uses: docker/build-push-action@v5
-        id: build
+        id: build_container
         with:
           context: .
           file: ./libs/labelbox/Dockerfile

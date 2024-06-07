@@ -1,13 +1,11 @@
 
 on:
-  pull_request:
+#   pull_request:
   workflow_dispatch:
     inputs:
       tag:
         description: 'Release Tag'
         required: true
-
-
 
 jobs:
   build:
@@ -59,6 +57,6 @@ jobs:
         run: ls -R ./artifact
       - name: Upload dist to release
         run: |
-            gh release upload 6.7 ./artifact/*
+            gh release upload ${{ inputs.tag }} ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
