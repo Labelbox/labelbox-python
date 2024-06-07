@@ -1,8 +1,9 @@
 import pytest
 from unittest.mock import MagicMock
 from labelbox import Client
+from labelbox.exceptions import ResourceCreationError
 from labelbox.schema.user import User
-from labelbox.schema.user_group import UserGroup, UserGroupColor, UserGroupUser, UserGroupProject, UserGroupParameters
+from labelbox.schema.user_group import UserGroup, UserGroupColor, UserGroupUser, UserGroupProject
 
 
 class TestUserGroupColor:
@@ -51,25 +52,6 @@ class TestUserGroupProject:
     def test_user_group_project_hash(self):
         project = UserGroupProject(id="project_id", name="Test Project")
         assert hash(project) == hash("project_id")
-
-
-class TestUserGroupParameters:
-
-    def test_user_group_parameters_attributes(self):
-        params = UserGroupParameters(
-            id="group_id",
-            name="Test Group",
-            color=UserGroupColor.BLUE,
-            users={UserGroupUser(id="user_id", email="test@example.com")},
-            projects={UserGroupProject(id="project_id", name="Test Project")})
-
-        assert params["id"] == "group_id"
-        assert params["name"] == "Test Group"
-        assert params["color"] == UserGroupColor.BLUE
-        assert len(params["users"]) == 1
-        assert list(params["users"])[0].id == "user_id"
-        assert len(params["projects"]) == 1
-        assert list(params["projects"])[0].id == "project_id"
 
 
 class TestUserGroup:
@@ -122,7 +104,7 @@ class TestUserGroup:
         group = UserGroup(self.client, id="group_id", reload=False)
 
         assert group.id == "group_id"
-        assert group.name is None
+        assert group.name == ""
         assert group.color is UserGroupColor.BLUE
         assert len(group.projects) == 0
         assert len(group.users) == 0
@@ -164,7 +146,7 @@ class TestUserGroup:
 
     def test_id(self):
         group = self.group
-        assert group.id is None
+        assert group.id == ""
 
         group.id = "1"
         assert group.id == "1"
@@ -257,11 +239,18 @@ class TestUserGroup:
         assert len(updated_group.projects) == 1
         assert list(updated_group.projects)[0].id == "project_id"
 
-    def test_create_with_exception(self):
+    def test_create_with_exception_id(self):
         group = self.group
         group.id = "group_id"
 
-        with pytest.raises(Exception):
+        with pytest.raises(ResourceCreationError):
+            group.create()
+
+    def test_create_with_exception_name(self):
+        group = self.group
+        group.name = ""
+
+        with pytest.raises(ValueError):
             group.create()
 
     def test_create(self):
@@ -315,9 +304,18 @@ class TestUserGroup:
         assert execute[1]["id"] == "group_id"
         assert deleted is True
 
+    def test_user_groups_empty(self):
+        self.client.execute.return_value = {"userGroups": None}
+
+        user_groups = list(UserGroup.get_user_groups(self.client))
+
+        assert len(user_groups) == 0
+
     def test_user_groups(self):
         self.client.execute.return_value = {
             "userGroups": {
+                "nextCursor":
+                    None,
                 "nodes": [{
                     "id": "group_id_1",
                     "name": "Group 1",

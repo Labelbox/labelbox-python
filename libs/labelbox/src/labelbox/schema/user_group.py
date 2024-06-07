@@ -6,6 +6,7 @@ from labelbox.exceptions import ResourceCreationError
 from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
+from labelbox.exceptions import UnprocessableEntityError, InvalidQueryError
 
 
 class UserGroupColor(Enum):
@@ -83,24 +84,6 @@ class UserGroupProject(BaseModel):
         return self.id == other.id
 
 
-class UserGroupParameters(TypedDict):
-    """
-    Represents the parameters for a user group.
-
-    Attributes:
-        id (Optional[str]): The ID of the user group.
-        name (Optional[str]): The name of the user group.
-        color (Optional[UserGroupColor]): The color of the user group.
-        users (Optional[Set[Union[UserGroupUser, User]]]): The users in the user group.
-        projects (Optional[Set[Union[UserGroupProject, Project]]]): The projects associated with the user group.
-    """
-    id: Optional[str]
-    name: Optional[str]
-    color: Optional[UserGroupColor]
-    users: Optional[Set[Union[UserGroupUser, User]]]
-    projects: Optional[Set[Union[UserGroupProject, Project]]]
-
-
 class UserGroup:
     """
     Represents a user group in Labelbox.
@@ -117,40 +100,49 @@ class UserGroup:
         _projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group.
         _client (Client): The Labelbox client.
     """
-    _id: str = None
-    _name: str = None
-    _color: UserGroupColor = None
-    _users: Set[Union[UserGroupUser, User]] = None
-    _projects: Set[Union[UserGroupProject, Project]] = None
+    _id: str
+    _name: str
+    _color: UserGroupColor
+    _users: Set[Union[UserGroupUser, User]]
+    _projects: Set[Union[UserGroupProject, Project]]
     _client: Client
 
-    def __init__(self,
-                 client: Client,
-                 reload=True,
-                 **kwargs: UserGroupParameters):
+    def __init__(
+            self,
+            client: Client,
+            id: str = "",
+            name: str = "",
+            color: UserGroupColor = UserGroupColor.BLUE,
+            users: Set[Union[UserGroupUser, User]] = set(),
+            projects: Set[Union[UserGroupProject, Project]] = set(),
+            reload=True,
+    ):
         """
         Initializes a Group object.
 
         Args:
             client (Client): The Labelbox client.
-            **kwargs: Additional keyword arguments for initializing the Group object.
+            reload (bool): Whether to reload the group information from the server. Defaults to True.
+            color (UserGroupColor): The color of the user group. Defaults to UserGroupColor.BLUE.
+            users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group. Defaults to an empty set.
+            projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group. Defaults to an empty set.
+            name (str): The name of the user group. Defaults to None.
+            id (str): The ID of the user group. Defaults to None.
         """
         super().__init__()
-        self.color = kwargs.get('color', UserGroupColor.BLUE)
-        self.users = kwargs.get('users', set())
-        self.projects = kwargs.get('projects', set())
+        self.color = color
+        self.users = users
+        self.projects = projects
         self.client = client
 
-        # runs against _gql
         if not client.enable_experimental:
             raise RuntimeError(
-                "Experimental features are not enabled. Please enable them in the client to use this feature."
-            )
+                "Please enable experimental in client to use UserGroups")
 
-        self.name = kwargs.get('name', None)
-        self.id = kwargs.get('id', None)
-        # partial respentation of the group, reload
-        if self.id is not None and reload:
+        self.name = name
+        self.id = id
+        # partial representation of the group, reload
+        if self.id and reload:
             self._reload()
 
     def _reload(self):
@@ -160,6 +152,9 @@ class UserGroup:
         This method sends a GraphQL query to the server to fetch the latest information
         about the user group, including its name, color, projects, and members. The fetched
         information is then used to update the corresponding attributes of the `Group` object.
+
+        Raises:
+            InvalidQueryError: If the query fails to fetch the group information.
 
         Returns:
             None
@@ -191,6 +186,8 @@ class UserGroup:
             "id": self.id,
         }
         result = self.client.execute(query, params)
+        if not result:
+            raise InvalidQueryError("Failed to fetch group")
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
         self.projects = {
@@ -283,7 +280,7 @@ class UserGroup:
         self._users = value
 
     @property
-    def projects(self) -> Set[UserGroupProject]:
+    def projects(self) -> Set[Union[UserGroupProject, Project]]:
         """
         Gets the list of project IDs in the group.
 
@@ -293,7 +290,7 @@ class UserGroup:
         return self._projects
 
     @projects.setter
-    def projects(self, value: Set[UserGroupProject]) -> None:
+    def projects(self, value: Set[Union[UserGroupProject, Project]]) -> None:
         """
         Sets the list of project IDs in the group.
 
@@ -305,6 +302,12 @@ class UserGroup:
     def update(self) -> "UserGroup":
         """
         Updates the group in Labelbox.
+
+        Returns:
+            UserGroup: The updated UserGroup object. (self)
+
+        Raises:
+            UnprocessableEntityError: If the update fails.
         """
         query = """
         mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $color: String!, $projectIds: [String!]!, $userIds: [String!]!) {
@@ -348,7 +351,9 @@ class UserGroup:
                 for user in self.users
             ]
         }
-        self.client.execute(query, params)
+        result = self.client.execute(query, params)
+        if not result:
+            raise UnprocessableEntityError("Failed to update group")
         return self
 
     def create(self) -> "UserGroup":
@@ -363,10 +368,16 @@ class UserGroup:
             projects (List[Project], optional): The projects to add to the group. Defaults to [].
 
         Returns:
-            Group: The newly created group.
+            Group: The newly created group. (self)
+
+        Raises:
+            ResourceCreationError: If the group already exists or if the creation fails.
+            ValueError: If the group name is not provided.
         """
-        if self.id is not None:
+        if self.id:
             raise ResourceCreationError("Group already exists")
+        if not self.name:
+            raise ValueError("Group name is required")
         query = """
         mutation CreateUserGroupPyApi($name: String!, $color: String!, $projectIds: [String!]!, $userIds: [String!]!) {
             createUserGroup(
@@ -411,16 +422,26 @@ class UserGroup:
                 for user in self.users
             ]
         }
-        result = self.client.execute(query, params)["createUserGroup"]["group"]
+        result = self.client.execute(query, params)
+        if not result:
+            raise ResourceCreationError("Failed to create group")
+        result = result["createUserGroup"]["group"]
         self.id = result["id"]
         return self
 
     def delete(self) -> bool:
         """
-        Deletes the group from Labelbox.
+        Deletes the user group from Labelbox.
+
+        This method sends a mutation request to the Labelbox API to delete the user group
+        with the specified ID. If the deletion is successful, it returns True. Otherwise,
+        it raises an UnprocessableEntityError and returns False.
 
         Returns:
-            bool: True if the group was successfully deleted, False otherwise.
+            bool: True if the user group was successfully deleted, False otherwise.
+        
+        Raises:
+            UnprocessableEntityError: If the deletion of the user group fails.
         """
         query = """
         mutation DeleteUserGroupPyApi($id: ID!) {
@@ -431,18 +452,20 @@ class UserGroup:
         """
         params = {"id": self.id}
         result = self.client.execute(query, params)
+        if not result:
+            raise UnprocessableEntityError("Failed to delete user group")
         return result["deleteUserGroup"]["success"]
 
     @staticmethod
     def get_user_groups(client: Client) -> Iterator["UserGroup"]:
         """
-        Gets all groups in Labelbox.
+        Gets all user groups in Labelbox.
 
         Args:
             client (Client): The Labelbox client.
 
         Returns:
-            List[Group]: The list of groups.
+            Iterator[UserGroup]: An iterator over the user groups.
         """
         query = """
             query GetUserGroupsPyApi {
@@ -474,6 +497,9 @@ class UserGroup:
         while True:
             userGroups = client.execute(
                 query, {"nextCursor": nextCursor})["userGroups"]
+            if not userGroups:
+                return
+                yield
             groups = userGroups["nodes"]
             for group in groups:
                 yield UserGroup(client,
@@ -493,5 +519,5 @@ class UserGroup:
                                 })
             nextCursor = userGroups["nextCursor"]
             # this doesn't seem to be implemented right now to return a value other than null from the api
-            if nextCursor:
+            if not nextCursor:
                 break

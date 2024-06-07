@@ -6,13 +6,6 @@ from labelbox.schema.user_group import UserGroup, UserGroupColor, UserGroupUser,
 data = faker.Faker()
 
 
-@pytest.fixture
-def client(client):
-    client.enable_experimental = True
-    client.endpoint = "https://app.lb-stage.xyz/api/_gql/"
-    return client
-
-
 class TestUserGroup:
 
     def test_existing_user_groups(self, client):
@@ -88,7 +81,7 @@ class TestUserGroup:
         user_group.delete()
 
     # project_pack creates two projects
-    def test_update_user_groups(self, client, project_pack):
+    def test_update_user_group(self, client, project_pack):
         # Create a new user group
         user_group = UserGroup(client)
         user_group.name = data.name()
