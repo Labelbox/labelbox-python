@@ -30,7 +30,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
         uses: eifinger/setup-rye@v2
@@ -90,7 +89,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
         uses: eifinger/setup-rye@v2
@@ -187,7 +185,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
 
       - name: downcase CONTAINER_IMAGE
