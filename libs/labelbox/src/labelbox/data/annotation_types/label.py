@@ -205,16 +205,14 @@ class Label(BaseModel):
 
     @field_validator("annotations", mode='before')
     def validate_union(cls, value):
-        supported = tuple([
-            field.type_ for field in
-            cls.__model_fields__['annotations'].sub_fields[0].sub_fields
-        ])
         if not isinstance(value, list):
             raise TypeError(f"Annotations must be a list. Found {type(value)}")
 
+        supported_types = cls.model_fields['annotations'].annotation.__args__[
+            0].__args__
         for v in value:
-            if not isinstance(v, supported):
+            if not isinstance(v, supported_types):
                 raise TypeError(
-                    f"Annotations should be a list containing the following classes : {supported}. Found {type(v)}"
+                    f"Annotations should be a list containing the following classes : {supported_types}. Found {type(v)}"
                 )
         return value

@@ -17,13 +17,14 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = []
 
-    @model_validator(mode='before')
-    @classmethod
-    def must_set_one(cls, values):
-        if ('schema_id' not in values or values['schema_id']
-                is None) and ('name' not in values or values['name'] is None):
+    @model_validator(mode='after')
+    def must_set_one(self):
+        if self.schema_id is None and self.name is None:
             raise ValueError("Schema id or name are not set. Set either one.")
-        return values
+        if self.schema_id is not None and self.name is not None:
+            raise ValueError("Schema id and name are both set. Set only one.")
+
+        return self
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

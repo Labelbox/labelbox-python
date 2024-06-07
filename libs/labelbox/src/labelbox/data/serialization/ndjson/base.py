@@ -10,12 +10,12 @@ class DataRow(_CamelCaseMixin):
     id: str = None
     global_key: str = None
 
-    @model_validator(mode='before')
-    @classmethod
-    def must_set_one(cls, values):
-        if not is_exactly_one_set(values.get('id'), values.get('global_key')):
+    @model_validator(mode='after')
+    def must_set_one(self):
+        if not is_exactly_one_set(self.id, self.global_key):
             raise ValueError("Must set either id or global_key")
-        return values
+
+        return self
 
 
 class NDJsonBase(_CamelCaseMixin):
@@ -44,13 +44,13 @@ class NDAnnotation(NDJsonBase):
     page: Optional[int] = None
     unit: Optional[str] = None
 
-    @model_validator(mode='before')
-    @classmethod
-    def must_set_one(cls, values):
-        if ('schema_id' not in values or values['schema_id']
-                is None) and ('name' not in values or values['name'] is None):
+    @model_validator(mode='after')
+    def must_set_one(self):
+        if self.schema_id is None and self.name is None:
             raise ValueError("Schema id or name are not set. Set either one.")
-        return values
+        if self.schema_id is not None and self.name is not None:
+            raise ValueError("Schema id and name are both set. Set only one.")
+        return self
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

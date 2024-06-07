@@ -35,8 +35,8 @@ class DataRowMetadataSchema(BaseModel):
         StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     reserved: bool
     kind: DataRowMetadataKind
-    options: Optional[List["DataRowMetadataSchema"]]
-    parent: Optional[SchemaId]
+    options: Optional[List["DataRowMetadataSchema"]] = []
+    parent: Optional[SchemaId] = None
 
 
 DataRowMetadataSchema.update_forward_refs()
