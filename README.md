@@ -107,11 +107,12 @@ By using the [SLSA framework's official verifier](https://github.com/slsa-framew
 Example of usage for the v.3.72.2 release wheel:
 
 ```
-VERSION=v.3.72.2 #tag
+export VERSION=3.72.2 # sdk release version 
+export TAG=v.3.72.2 # github tag
 pip download --no-deps labelbox==${VERSION}
 
 curl --location -O \
-  https://github.com/Labelbox/labelbox-python/releases/download/${VERSION}/multiple.intoto.jsonl
+  https://github.com/Labelbox/labelbox-python/releases/download/${TAG}/multiple.intoto.jsonl
 
 slsa-verifier verify-artifact --source-branch develop --builder-id 'https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@refs/tags/v2.0.0' --source-uri "git+https://github.com/Labelbox/labelbox-python" --provenance-path multiple.intoto.jsonl ./labelbox-${VERSION}-py3-none-any.whl
 ```
