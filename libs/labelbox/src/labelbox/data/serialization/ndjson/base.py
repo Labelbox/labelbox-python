@@ -7,13 +7,14 @@ from ...annotation_types.types import Cuid
 
 
 class DataRow(_CamelCaseMixin):
-    id: str = None
-    global_key: str = None
+    id: Optional[str] = None
+    global_key: Optional[str] = None
 
     @model_validator(mode='after')
     def must_set_one(self):
-        if not is_exactly_one_set(self.id, self.global_key):
-            raise ValueError("Must set either id or global_key")
+        if self.id is None and self.global_key is None:
+            raise ValueError(
+                "Must set either id or global_key for all data rows")
 
         return self
 

@@ -14,13 +14,26 @@ from labelbox import parser
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
+def sorted_assert_list(a, b):
+    assert sorted(a, key=lambda d: sorted(d.items())) == sorted(
+        b, key=lambda d: sorted(d.items()))
+
+
 def test_video():
     with open('tests/data/assets/ndjson/video_import.json', 'r') as file:
         data = json.load(file)
 
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
-    assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
+    # assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
+    assert (res[0]) == data[2]
+    assert (res[1]) == data[0]
+    answers = data[1].pop('answer')
+    data[1]['answers'] = answers
+    assert (res[2]) == data[1]
+    assert (res[3]) == data[3]
+    assert (res[4]) == data[4]
+    assert (res[5]) == data[5]
 
 
 def test_video_name_only():

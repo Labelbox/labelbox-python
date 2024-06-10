@@ -163,7 +163,6 @@ class NDLabel(BaseModel):
             data = VideoData
         elif DICOMObjectAnnotation in types:
             data = DicomData
-
         if data_row.id:
             return data(uid=data_row.id)
         else:

@@ -116,8 +116,11 @@ class NDChecklistSubclass(NDAnswer):
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if 'answers' in res:
-            res['answer'] = res.pop('answers')
+        if kwargs.get('by_alias', False):
+            key = 'answers'
+        else:
+            key = 'answer'
+        res[key] = [a.dict(*args, **kwargs) for a in self.answer]
         return res
 
 
@@ -148,6 +151,11 @@ class NDRadioSubclass(NDAnswer):
                                    custom_metrics=radio.answer.custom_metrics),
                    name=name,
                    schema_id=feature_schema_id)
+
+    def dict(self, *args, **kwargs):
+        res = super().dict(*args, **kwargs)
+        res['answer'] = self.answer.dict(*args, **kwargs)
+        return res
 
 
 # ====== End of subclasses

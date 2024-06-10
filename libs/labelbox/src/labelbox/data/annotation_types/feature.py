@@ -14,14 +14,14 @@ class FeatureSchema(BaseModel):
     name: Optional[str] = None
     feature_schema_id: Optional[Cuid] = None
 
-    @model_validator(mode='before')
-    @classmethod
-    def must_set_one(cls, values):
-        if values['feature_schema_id'] is None and values['name'] is None:
+    @model_validator(mode='after')
+    def must_set_one(self):
+        if self.feature_schema_id is None and self.name is None:
             raise ValueError(
                 "Must set either feature_schema_id or name for all feature schemas"
             )
-        return values
+
+        return self
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
