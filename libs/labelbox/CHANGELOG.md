@@ -1,4 +1,8 @@
 # Changelog
+# Version 3.72.2 (2024-06-10)
+## Added
+* SLSA provenance generation
+
 # Version 3.72.1 (2024-06-06)
 ## Fixed
 * Fix client.get_project() for LLM projects [PR #1658](https://github.com/Labelbox/labelbox-python/pull/1658)
