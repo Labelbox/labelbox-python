@@ -7,6 +7,7 @@ from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.asset_attachment import AttachmentType
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
+from labelbox.schema.data_row import DataRow
 
 
 @pytest.fixture
@@ -117,6 +118,11 @@ def test_create_is_empty():
 
     item = DataRowCreateItem(
         id={}, payload={"row_data": "http://my_site.com/photos/img_01.jpg"})
+    assert not item.is_empty()
+
+    item = DataRowCreateItem(
+        id={},
+        payload={DataRow.row_data: "http://my_site.com/photos/img_01.jpg"})
     assert not item.is_empty()
 
 

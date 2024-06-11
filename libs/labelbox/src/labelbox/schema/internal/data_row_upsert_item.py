@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional
 from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox import pydantic_compat
+from labelbox.schema.data_row import DataRow
 
 
 class DataRowItemBase(ABC, pydantic_compat.BaseModel):
@@ -78,7 +79,8 @@ class DataRowCreateItem(DataRowItemBase):
             or the only key is `dataset_id`.
         :return: bool
         """
-        row_data = self.payload.get("row_data", None)
+        row_data = self.payload.get("row_data", None) or self.payload.get(
+            DataRow.row_data, None)
         return (not self.payload or len(self.payload.keys()) == 1 and
                 "dataset_id" in self.payload or row_data is None or
                 len(row_data) == 0)
