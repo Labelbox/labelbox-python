@@ -148,20 +148,13 @@ class VideoData(BaseData):
         out.release()
         return file_path
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_data(cls, values):
-        file_path = values.get("file_path")
-        url = values.get("url")
-        frames = values.get("frames")
-        uid = values.get("uid")
-        global_key = values.get("global_key")
-
-        if uid == file_path == frames == url == global_key == None:
+    @model_validator(mode='after')
+    def validate_data(self):
+        if self.uid == self.file_path == self.frames == self.url == self.global_key == None:
             raise ValueError(
                 "One of `file_path`, `frames`, `uid`, `global_key` or `url` required."
             )
-        return values
+        return self
 
     def __repr__(self) -> str:
         return  f"VideoData(file_path={self.file_path}," \

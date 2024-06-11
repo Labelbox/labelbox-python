@@ -155,29 +155,22 @@ class RasterData(BaseModel, ABC):
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_args(cls, values):
-        file_path = values.get("file_path")
-        im_bytes = values.get("im_bytes")
-        url = values.get("url")
-        arr = values.get("arr")
-        uid = values.get('uid')
-        global_key = values.get('global_key')
-        if uid == file_path == im_bytes == url == global_key == None and arr is None:
+    @model_validator(mode='after')
+    def validate_args(self):
+        if self.uid == self.file_path == self.im_bytes == self.url == self.global_key == None and self.arr is None:
             raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
             )
-        if arr is not None:
-            if arr.dtype != np.uint8:
+        if self.arr is not None:
+            if self.arr.dtype != np.uint8:
                 raise TypeError(
                     "Numpy array representing segmentation mask must be np.uint8"
                 )
-            elif len(arr.shape) != 3:
+            elif len(self.arr.shape) != 3:
                 raise ValueError(
                     "unsupported image format. Must be 3D ([H,W,C])."
                     f"Use {cls.__name__}.from_2D_arr to construct from 2D")
-        return values
+        return self
 
     def __repr__(self) -> str:
         symbol_or_none = lambda data: '...' if data is not None else None

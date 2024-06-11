@@ -1,11 +1,12 @@
 import sys
-from typing import Generic, TypeVar, Any
+from typing import Generic, TypeVar, Any, Type
 
 from labelbox.typing_imports import Annotated
 from packaging import version
 import numpy as np
 
-from pydantic import ValidationInfo, Field
+from pydantic import Field, GetCoreSchemaHandler, TypeAdapter
+from pydantic_core import core_schema
 
 Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
@@ -15,18 +16,28 @@ DShape = TypeVar('DShape')
 
 class _TypedArray(np.ndarray, Generic[DType, DShape]):
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    # @classmethod
+    # def __get_validators__(cls):
+    #     yield cls.validate
 
     @classmethod
-    def validate(cls, val, field_info: ValidationInfo):
+    def __get_pydantic_core_schema__(
+            cls, source_type: Type[Any],
+            handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+
+        # assert source is CompressedString
+        return core_schema.with_info_after_validator_function(
+            function=cls.validate,
+            schema=core_schema.any_schema(),
+            field_name=source_type.__args__[-1].__args__[0])
+
+    @classmethod
+    def validate(cls, val, info):
         if not isinstance(val, np.ndarray):
             raise TypeError(f"Expected numpy array. Found {type(val)}")
 
-        actual_dtype = cls.model_fields[field_info.name].type_.__args__[0]
-
-        if val.dtype != actual_dtype:
+        actual_type = info.field_name
+        if str(val.dtype) != actual_type:
             raise TypeError(
                 f"Expected numpy array have type {actual_dtype}. Found {val.dtype}"
             )
