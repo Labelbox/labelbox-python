@@ -47,7 +47,6 @@ class Catalog:
             return ExportTask(task, True)
         return task
 
-    @experimental
     def export(
         self,
         task_name: Optional[str] = None,
@@ -69,22 +68,6 @@ class Catalog:
         >>>             "label_details": True
         >>>         })
         >>>     export_task.wait_till_done()
-        >>>
-        >>>     # Return a JSON output string from the export task results/errors one by one:
-        >>>     def json_stream_handler(output: lb.JsonConverterOutput):
-        >>>       print(output.json_str)
-        >>>
-        >>>     if export_task.has_errors():
-        >>>       export_task.get_stream(
-        >>>         converter=lb.JsonConverter(),
-        >>>         stream_type=lb.StreamType.ERRORS
-        >>>       ).start(stream_handler=lambda error: print(error))
-        >>>
-        >>>     if export_task.has_result():
-        >>>       export_json = export_task.get_stream(
-        >>>         converter=lb.JsonConverter(),
-        >>>         stream_type=lb.StreamType.RESULT
-        >>>       ).start(stream_handler=json_stream_handler)
         """
         task, _ = self._export(task_name, filters, params, streamable=True)
         return ExportTask(task)
