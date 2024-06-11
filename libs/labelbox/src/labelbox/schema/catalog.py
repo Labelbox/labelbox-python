@@ -47,7 +47,6 @@ class Catalog:
             return ExportTask(task, True)
         return task
 
-    @experimental
     def export(
         self,
         task_name: Optional[str] = None,
