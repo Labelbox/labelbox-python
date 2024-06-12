@@ -141,7 +141,7 @@ class Classification:
         GLOBAL = "global"
         INDEX = "index"
     
-    class UiMode(Enum):
+    class UIMode(Enum):
         HOTKEY = "hotkey"
         SEARCHABLE = "searchable"
 
@@ -155,7 +155,7 @@ class Classification:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     scope: Scope = None
-    ui_mode: UiMode = None
+    ui_mode: UIMode = None
 
     def __post_init__(self):
         if self.class_type == Classification.Type.DROPDOWN:
