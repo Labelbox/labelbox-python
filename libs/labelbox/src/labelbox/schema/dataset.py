@@ -32,9 +32,7 @@ from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.internal.data_row_upsert_item import (DataRowItemBase,
-                                                           DataRowUpsertItem,
-                                                           DataRowCreateItem)
+from labelbox.schema.internal.data_row_upsert_item import (DataRowUpsertItem)
 import labelbox.schema.internal.data_row_uploader as data_row_uploader
 from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 from labelbox.schema.internal.datarow_upload_constants import (
@@ -290,9 +288,10 @@ class Dataset(DbObject, Updateable, Deletable):
         string_items = [item for item in items if isinstance(item, str)]
         dict_items = [item for item in items if isinstance(item, dict)]
         dict_string_items = []
+
         if len(string_items) > 0:
             dict_string_items = self._build_from_local_paths(string_items)
-        specs = DataRowCreateItem.build(self.uid,
+        specs = DataRowUpsertItem.build(self.uid,
                                         dict_items + dict_string_items)
         return self._exec_upsert_data_rows(specs, file_upload_thread_count)
 
@@ -614,7 +613,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def _exec_upsert_data_rows(
         self,
-        specs: List[DataRowItemBase],
+        specs: List[DataRowUpsertItem],
         file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT
     ) -> "DataUpsertTask":
 

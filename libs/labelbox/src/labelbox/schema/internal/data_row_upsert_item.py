@@ -1,24 +1,15 @@
-from abc import ABC, abstractmethod
-
 from typing import List, Tuple, Optional
 
-from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.identifiable import UniqueId, GlobalKey
-from labelbox import pydantic_compat
-from labelbox.schema.data_row import DataRow
+from labelbox.pydantic_compat import BaseModel
 
 
-class DataRowItemBase(ABC, pydantic_compat.BaseModel):
+class DataRowUpsertItem(BaseModel):
     """
     Base class for creating payloads for upsert operations.
     """
-
     id: dict
     payload: dict
-
-    @abstractmethod
-    def is_empty(self) -> bool:
-        ...
 
     @classmethod
     def build(
@@ -26,7 +17,7 @@ class DataRowItemBase(ABC, pydantic_compat.BaseModel):
         dataset_id: str,
         items: List[dict],
         key_types: Optional[Tuple[type, ...]] = ()
-    ) -> List["DataRowItemBase"]:
+    ) -> List["DataRowUpsertItem"]:
         upload_items = []
 
         for item in items:
@@ -50,9 +41,6 @@ class DataRowItemBase(ABC, pydantic_compat.BaseModel):
             upload_items.append(cls(payload=item, id=key))
         return upload_items
 
-
-class DataRowUpsertItem(DataRowItemBase):
-
     def is_empty(self) -> bool:
         """
         The payload is considered empty if it's actually empty or the only key is `dataset_id`.
@@ -60,36 +48,3 @@ class DataRowUpsertItem(DataRowItemBase):
         """
         return (not self.payload or
                 len(self.payload.keys()) == 1 and "dataset_id" in self.payload)
-
-    @classmethod
-    def build(
-        cls,
-        dataset_id: str,
-        items: List[dict],
-        key_types: Optional[Tuple[type, ...]] = (UniqueId, GlobalKey)
-    ) -> List["DataRowItemBase"]:
-        return super().build(dataset_id, items, (UniqueId, GlobalKey))
-
-
-class DataRowCreateItem(DataRowItemBase):
-
-    def is_empty(self) -> bool:
-        """
-        The payload is considered empty if it's actually empty or row_data is empty
-            or the only key is `dataset_id`.
-        :return: bool
-        """
-        row_data = self.payload.get("row_data", None) or self.payload.get(
-            DataRow.row_data, None)
-        return (not self.payload or len(self.payload.keys()) == 1 and
-                "dataset_id" in self.payload or row_data is None or
-                len(row_data) == 0)
-
-    @classmethod
-    def build(
-        cls,
-        dataset_id: str,
-        items: List[dict],
-        key_types: Optional[Tuple[type, ...]] = ()
-    ) -> List["DataRowItemBase"]:
-        return super().build(dataset_id, items, ())
