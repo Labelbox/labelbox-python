@@ -25,7 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
         with:
@@ -42,7 +41,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
         with:
@@ -61,7 +59,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
         with:

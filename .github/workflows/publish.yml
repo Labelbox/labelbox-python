@@ -25,10 +25,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
         uses: eifinger/setup-rye@v2
@@ -43,10 +44,25 @@ jobs:
         run: |
           rye sync
           rye build
+      - name: "Generate hashes"
+        id: hash
+        run: |
+          cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
           name: build
           path: ./dist
+  provenance_python:
+    needs: [build]
+    permissions:
+      actions: read
+      contents: write
+      id-token: write # Needed to access the workflow's OIDC identity.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: true
+      upload-tag-name: ${{ inputs.tag }} # Tag from the initiation of the workflow
   test-build:
     if: ${{ !inputs.skip-tests }}
     needs: ['build']
@@ -73,7 +89,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
         uses: eifinger/setup-rye@v2
@@ -115,6 +130,24 @@ jobs:
           rye add labelbox --path ./$(find ./dist/ -name *.tar.gz) --sync --absolute --features data
           cd libs/labelbox
           rye run pytest tests/data
+  publish-python-package-to-release:
+    runs-on: ubuntu-latest
+    needs: ['build']
+    permissions:
+      contents: write    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ./artifact
+      - name: Upload dist to release
+        run: |
+          gh release upload ${{ inputs.tag }} ./artifact/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   pypi-publish:   
     runs-on: ubuntu-latest
     needs: ['build', 'test-build']
@@ -141,6 +174,9 @@ jobs:
     needs: ['build', 'test-build']
     permissions:
       packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.build_container.outputs.digest }}
     if: |
       always() &&
       (needs.test-build.result == 'success' || needs.test-build.result == 'skipped') && github.event.inputs.tag
@@ -149,7 +185,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ inputs.tag }}
 
       - name: downcase CONTAINER_IMAGE
@@ -168,6 +203,7 @@ jobs:
   
       - name: Build and push
         uses: docker/build-push-action@v5
+        id: build_container
         with:
           context: .
           file: ./libs/labelbox/Dockerfile
@@ -181,5 +217,24 @@ jobs:
           tags: |
             ${{ env.CONTAINER_IMAGE }}:latest
             ${{ env.CONTAINER_IMAGE }}:${{ inputs.tag }}
-                    
-# Note that the build and pypi-publish jobs are split so that the additional permissions are only granted to the pypi-publish job.
+      - name: Output image
+        id: image
+        run: |
+          # NOTE: Set the image as an output because the `env` context is not
+          # available to the inputs of a reusable workflow call.
+          image_name="${CONTAINER_IMAGE}"
+          echo "image=$image_name" >> "$GITHUB_OUTPUT"
+
+  provenance_container:
+    needs: [container-publish]
+    permissions:
+      actions: read # for detecting the Github Actions environment.
+      id-token: write # for creating OIDC tokens for signing.
+      packages: write # for uploading attestations.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+    with:
+      image: ${{ needs. container-publish.outputs.image }}
+      digest: ${{ needs. container-publish.outputs.digest }}
+      registry-username: ${{ github.actor }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}

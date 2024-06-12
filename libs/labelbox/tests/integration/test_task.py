@@ -67,7 +67,7 @@ def test_task_success_label_export(client, configured_project_with_label):
     user = client.get_user()
     task = None
     for task in user.created_tasks():
-        if task.name != 'JSON Import' and task.type != 'adv-upsert-data-rows':
+        if task.name != 'JSON Import' and task.type != 'adv-upsert-data-rows' and task.type != 'mea-label-registration':
             break
 
     with pytest.raises(ValueError) as exc_info:
