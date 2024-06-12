@@ -187,7 +187,7 @@ class Classification:
                    instructions=dictionary["instructions"],
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
-                   ui_mode=cls.UIMode(dictionary.get("uiMode", None)),
+                   ui_mode=cls.UIMode(dictionary["uiMode"]) if "uiMode" in dictionary else None,
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
                    scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
