@@ -155,7 +155,7 @@ class Classification:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     scope: Scope = None
-    ui_mode: UIMode = None
+    ui_mode: UIMode = None # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
 
     def __post_init__(self):
         if self.class_type == Classification.Type.DROPDOWN:
@@ -187,7 +187,7 @@ class Classification:
                    instructions=dictionary["instructions"],
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
-                   ui_mode =dictionary.get("uiMode", None),
+                   ui_mode=cls.UIMode(dictionary["uiMode"]) if "uiMode" in dictionary else None,
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
                    scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
@@ -203,10 +203,12 @@ class Classification:
             "name": self.name,
             "required": self.required,
             "options": [o.asdict() for o in self.options],
-            "uiMode": None if self.class_type == self.Type.TEXT else self.ui_mode.value, # added since this is does nothing for text
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id
         }
+        if (self.class_type == self.Type.RADIO or self.class_type == self.Type.CHECKLIST) and self.ui_mode:
+            # added because this key does nothing for text so no point of including
+            classification["uiMode"] = self.ui_mode.value
         if is_subclass:
             return classification
         classification[
