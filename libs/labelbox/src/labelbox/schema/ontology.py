@@ -155,7 +155,7 @@ class Classification:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     scope: Scope = None
-    ui_mode: UIMode = None # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
+    ui_mode: Optional[UIMode] = None # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
 
     def __post_init__(self):
         if self.class_type == Classification.Type.DROPDOWN:
