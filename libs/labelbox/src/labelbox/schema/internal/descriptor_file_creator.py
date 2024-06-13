@@ -13,7 +13,7 @@ from labelbox.orm.model import Field
 from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.internal.datarow_upload_constants import (
     FILE_UPLOAD_THREAD_COUNT)
-from labelbox.schema.internal.data_row_upsert_item import DataRowUpsertItem
+from labelbox.schema.internal.data_row_upsert_item import DataRowItemBase, DataRowUpsertItem
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -248,7 +248,7 @@ class DescriptorFileCreator:
             return item
 
         def convert_item(data_row_item):
-            if isinstance(data_row_item, DataRowUpsertItem):
+            if isinstance(data_row_item, DataRowItemBase):
                 item = data_row_item.payload
             else:
                 item = data_row_item
@@ -273,7 +273,7 @@ class DescriptorFileCreator:
             # Upload any local file paths
             item = upload_if_necessary(item)
 
-            if isinstance(data_row_item, DataRowUpsertItem):
+            if isinstance(data_row_item, DataRowItemBase):
                 return {'id': data_row_item.id, 'payload': item}
             else:
                 return item
