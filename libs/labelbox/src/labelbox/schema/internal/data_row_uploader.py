@@ -20,7 +20,6 @@ def upload_in_chunks(client, specs: List[DataRowItemBase],
                      file_upload_thread_count: int,
                      max_chunk_size_bytes: int) -> UploadManifest:
     empty_specs = list(filter(lambda spec: spec.is_empty(), specs))
-
     if empty_specs:
         ids = list(map(lambda spec: spec.id.get("value"), empty_specs))
         ids = list(filter(lambda x: x is not None and len(x) > 0, ids))

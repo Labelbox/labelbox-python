@@ -125,6 +125,25 @@ def test_create_is_empty():
         payload={DataRow.row_data: "http://my_site.com/photos/img_01.jpg"})
     assert not item.is_empty()
 
+    legacy_converstational_data_payload = {
+        "externalId":
+            "Convo-123",
+        "type":
+            "application/vnd.labelbox.conversational",
+        "conversationalData": [{
+            "messageId":
+                "message-0",
+            "content":
+                "I love iphone! i just bought new iphone! :smiling_face_with_3_hearts: :calling:",
+            "user": {
+                "userId": "Bot 002",
+                "name": "Bot"
+            },
+        }]
+    }
+    item = DataRowCreateItem(id={}, payload=legacy_converstational_data_payload)
+    assert not item.is_empty()
+
 
 def test_create_row_data_none():
     items = [

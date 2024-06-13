@@ -81,9 +81,15 @@ class DataRowCreateItem(DataRowItemBase):
         """
         row_data = self.payload.get("row_data", None) or self.payload.get(
             DataRow.row_data, None)
-        return (not self.payload or len(self.payload.keys()) == 1 and
-                "dataset_id" in self.payload or row_data is None or
-                len(row_data) == 0)
+
+        return (not self._is_legacy_conversational_data() and
+                (not self.payload or len(self.payload.keys()) == 1 and
+                 "dataset_id" in self.payload or row_data is None or
+                 len(row_data) == 0))
+
+    def _is_legacy_conversational_data(self) -> bool:
+        return "conversationalData" in self.payload.keys(
+        ) or "conversational_data" in self.payload.keys()
 
     @classmethod
     def build(
