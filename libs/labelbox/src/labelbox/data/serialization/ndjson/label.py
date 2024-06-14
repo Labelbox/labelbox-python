@@ -156,8 +156,11 @@ class NDLabel(BaseModel):
             raise ValueError("Missing annotations while inferring media type")
 
         types = {type(annotation) for annotation in annotations}
+        types_values = {type(annotation.value) for annotation in annotations}
         data = ImageData
-        if (TextEntity in types) or (ConversationEntity in types):
+        if (ObjectAnnotation
+                in types) and ((TextEntity in types_values) or
+                               (ConversationEntity in types_values)):
             data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
             data = VideoData

@@ -7,7 +7,7 @@ from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.data_row import DataRow
 
 
-class DataRowItemBase(ABC, pydantic_compat.BaseModel):
+class DataRowItemBase(ABC, BaseModel):
     """
     Base class for creating payloads for upsert operations.
     """
