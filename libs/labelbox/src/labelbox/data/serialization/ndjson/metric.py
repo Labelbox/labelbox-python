@@ -56,7 +56,7 @@ class NDConfusionMatrixMetric(BaseNDMetric):
 
 class NDScalarMetric(BaseNDMetric):
     metric_value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
-    metric_name: Optional[str]
+    metric_name: Optional[str] = None
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
     def to_common(self) -> ScalarMetric:
