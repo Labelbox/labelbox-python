@@ -98,7 +98,7 @@ class Classification:
         removed in a future release. Dropdown will also
         no longer be able to be created in the Editor on 3/31/2022.
             
-    A classfication to be added to a Project's ontology. The
+    A classification to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
     To instantiate, the "class_type" and "name" parameters must
@@ -125,8 +125,10 @@ class Classification:
         instructions: (str)
         required: (bool)
         options: (list)
+        ui_mode: (str)
         schema_id: (str)
         feature_schema_id: (str)
+        scope: (str)
     """
 
     class Type(Enum):
@@ -138,6 +140,10 @@ class Classification:
     class Scope(Enum):
         GLOBAL = "global"
         INDEX = "index"
+    
+    class UIMode(Enum):
+        HOTKEY = "hotkey"
+        SEARCHABLE = "searchable"
 
     _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
 
@@ -149,6 +155,7 @@ class Classification:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     scope: Scope = None
+    ui_mode: Optional[UIMode] = None # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
 
     def __post_init__(self):
         if self.class_type == Classification.Type.DROPDOWN:
@@ -180,6 +187,7 @@ class Classification:
                    instructions=dictionary["instructions"],
                    required=dictionary.get("required", False),
                    options=[Option.from_dict(o) for o in dictionary["options"]],
+                   ui_mode=cls.UIMode(dictionary["uiMode"]) if "uiMode" in dictionary else None,
                    schema_id=dictionary.get("schemaNodeId", None),
                    feature_schema_id=dictionary.get("featureSchemaId", None),
                    scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)))
@@ -198,6 +206,9 @@ class Classification:
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id
         }
+        if (self.class_type == self.Type.RADIO or self.class_type == self.Type.CHECKLIST) and self.ui_mode:
+            # added because this key does nothing for text so no point of including
+            classification["uiMode"] = self.ui_mode.value
         if is_subclass:
             return classification
         classification[

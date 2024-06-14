@@ -2,6 +2,7 @@ import pytest
 
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox import Tool, Classification, Option, OntologyBuilder
+from itertools import product
 
 _SAMPLE_ONTOLOGY = {
     "tools": [{
@@ -46,6 +47,8 @@ _SAMPLE_ONTOLOGY = {
                 "nested classification",
             "type":
                 "radio",
+            'uiMode': 
+                "searchable",
             "options": [{
                 "schemaNodeId":
                     None,
@@ -120,6 +123,8 @@ _SAMPLE_ONTOLOGY = {
             "radio",
         "scope":
             "global",
+        'uiMode': 
+            "searchable",
         "options": [{
             "schemaNodeId": None,
             "featureSchemaId": None,
@@ -147,6 +152,11 @@ def test_create_tool(tool_type) -> None:
 def test_create_classification(class_type) -> None:
     c = Classification(class_type=class_type, name="classification")
     assert (c.class_type == class_type)
+
+@pytest.mark.parametrize("ui_mode_type, class_type", list(product(list(Classification.UIMode), list(Classification.Type))))
+def test_create_classification_with_ui_mode(ui_mode_type, class_type) -> None:
+    c = Classification(name="classification", class_type=class_type, ui_mode=ui_mode_type)
+    assert (c.ui_mode == ui_mode_type)
 
 
 @pytest.mark.parametrize("value, expected_value, typing",
