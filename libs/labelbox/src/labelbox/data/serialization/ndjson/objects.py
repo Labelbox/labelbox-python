@@ -7,7 +7,7 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObj
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin, CustomMetric, CustomMetricsNotSupportedMixin
 import numpy as np
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from PIL import Image
 from labelbox.data.annotation_types import feature
 

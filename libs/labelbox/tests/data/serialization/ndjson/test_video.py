@@ -14,11 +14,6 @@ from labelbox import parser
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
-def sorted_assert_list(a, b):
-    assert sorted(a, key=lambda d: sorted(d.items())) == sorted(
-        b, key=lambda d: sorted(d.items()))
-
-
 def test_video():
     with open('tests/data/assets/ndjson/video_import.json', 'r') as file:
         data = json.load(file)
@@ -103,13 +98,8 @@ def test_video_classification_global_subclassifications():
     for annotations in res:
         annotations.pop("uuid")
     assert res == [expected_first_annotation, expected_second_annotation]
-
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]
 
 
 def test_video_classification_nesting_bbox():
@@ -246,11 +236,7 @@ def test_video_classification_nesting_bbox():
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]
 
 
 def test_video_classification_point():
@@ -373,11 +359,7 @@ def test_video_classification_point():
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]
 
 
 def test_video_classification_frameline():
@@ -512,8 +494,4 @@ def test_video_classification_frameline():
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]

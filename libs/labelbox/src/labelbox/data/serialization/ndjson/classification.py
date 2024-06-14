@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator, Field
+from pydantic import BaseModel, ConfigDict, model_validator, Field, model_serializer
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
@@ -26,19 +26,13 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
 
         return self
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-        if 'name' in res and res['name'] is None:
-            res.pop('name')
-        if 'schemaId' in res and res['schemaId'] is None:
-            res.pop('schemaId')
-        if self.classifications is None or len(self.classifications) == 0:
-            res.pop('classifications')
-        else:
-            res['classifications'] = [
-                c.dict(*args, **kwargs) for c in self.classifications
-            ]
-        return res
+    @model_serializer(mode="wrap")
+    def serialize(self, serialization_handler, serialization_config):
+        serialized = serialization_handler(self, serialization_config)
+        if len(serialized['classifications']) == 0:
+            serialized.pop('classifications')
+
+        return serialized
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=camel_case)
 
@@ -79,6 +73,14 @@ class NDTextSubclass(NDAnswer):
             custom_metrics=text.custom_metrics,
         )
 
+    @model_serializer(mode="wrap")
+    def serialize(self, serialization_handler, serialization_config):
+        serialized = serialization_handler(self, serialization_config)
+        if len(serialized['classifications']) == 0:
+            serialized.pop('classifications')
+
+        return serialized
+
 
 class NDChecklistSubclass(NDAnswer):
     answer: List[NDAnswer] = Field(..., alias='answers')
@@ -114,14 +116,16 @@ class NDChecklistSubclass(NDAnswer):
                    name=name,
                    schema_id=feature_schema_id)
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-        if kwargs.get('by_alias', False):
-            key = 'answers'
-        else:
-            key = 'answer'
-        res[key] = [a.dict(*args, **kwargs) for a in self.answer]
-        return res
+    @model_serializer(mode="wrap")
+    def serialize(self, serialization_handler, serialization_config):
+        serialized = serialization_handler(self, serialization_config)
+        if 'answers' in serialized and serialization_config.by_alias:
+            serialized['answer'] = serialized.pop('answers')
+        if len(serialized['classifications']
+              ) == 0:  # no classifications on a question level
+            serialized.pop('classifications')
+
+        return serialized
 
 
 class NDRadioSubclass(NDAnswer):
@@ -152,10 +156,13 @@ class NDRadioSubclass(NDAnswer):
                    name=name,
                    schema_id=feature_schema_id)
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-        res['answer'] = self.answer.dict(*args, **kwargs)
-        return res
+    @model_serializer(mode="wrap")
+    def serialize(self, serialization_handler, serialization_config):
+        serialized = serialization_handler(self, serialization_config)
+        if len(serialized['classifications']) == 0:
+            serialized.pop('classifications')
+
+        return serialized
 
 
 # ====== End of subclasses
