@@ -67,15 +67,18 @@ def create_title(link: str) -> str:
     split_link = link.split(".")[-2].split("/")[-1].replace("_", " ").split(" ")
     title = []
 
-    # List to lower case certain words and list to keep certain acronyms capitalized
+    # List for lower casing certain words, keep certain acronyms capitalized and special mappings
     lower_case_words = ["to"]
     acronyms = ["html", "pdf", "llm", "dicom", "sam", "csv"]
+    special = {"yolov8":"YOLOv8"}
 
     for word in split_link:
         if word.lower() in acronyms:
             title.append(word.upper())
         elif word.lower() in lower_case_words:
             title.append(word.lower())
+        elif word in special.keys():
+            title.append(special[word])
         else:
             title.append(word.capitalize())
     return " ".join(title).split(".")[0]
