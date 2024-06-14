@@ -113,6 +113,7 @@ class NDJsonConverter:
                     exclude={"uuid"} if annotation_uuid == "None" else None,
                     exclude_none=True,
                 )
+
                 for k, v in list(res.items()):
                     if k in IGNORE_IF_NONE and v is None:
                         del res[k]

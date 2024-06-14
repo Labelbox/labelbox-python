@@ -20,13 +20,15 @@ class DataRow(_CamelCaseMixin):
 
 
 class NDJsonBase(_CamelCaseMixin):
-    uuid: str = None
+    uuid: str
     data_row: DataRow
 
-    @field_validator('uuid', mode='before')
+    @model_validator(mode='before')
     @classmethod
-    def set_id(cls, v):
-        return v or str(uuid4())
+    def set_uuid(cls, data):
+        if data.get('uuid') is None:
+            data['uuid'] = str(uuid4())
+        return data
 
     def dict(self, *args, **kwargs):
         """ Pop missing id or missing globalKey from dataRow """

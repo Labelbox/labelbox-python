@@ -23,8 +23,6 @@ def test_video():
     # assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
     assert (res[0]) == data[2]
     assert (res[1]) == data[0]
-    answers = data[1].pop('answer')
-    data[1]['answers'] = answers
     assert (res[2]) == data[1]
     assert (res[3]) == data[3]
     assert (res[4]) == data[4]
