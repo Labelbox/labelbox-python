@@ -228,9 +228,9 @@
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/sam/meta_sam.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
     <tr>
-      <td>Import Yolo Annotations</td>
-      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/yolo/import_yolo_annotations.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
-      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/yolo/import_yolo_annotations.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
+      <td>Import YOLOv8 Annotations</td>
+      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/integrations/yolo/import_yolov8_annotations.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
+      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/integrations/yolo/import_yolov8_annotations.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
   </tbody>
 </table>
