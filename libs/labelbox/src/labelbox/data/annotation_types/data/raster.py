@@ -157,7 +157,7 @@ class RasterData(BaseModel, ABC):
 
     @model_validator(mode='after')
     def validate_args(self):
-        if self.uid == self.file_path == self.im_bytes == self.url == self.global_key == None and self.arr is None:
+        if self.file_path == self.im_bytes == self.url == self.global_key == None and self.arr is None:
             raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
             )

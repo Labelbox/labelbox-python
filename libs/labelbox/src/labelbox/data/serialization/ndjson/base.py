@@ -51,8 +51,6 @@ class NDAnnotation(NDJsonBase):
     def must_set_one(self):
         if self.schema_id is None and self.name is None:
             raise ValueError("Schema id or name are not set. Set either one.")
-        if self.schema_id is not None and self.name is not None:
-            raise ValueError("Schema id and name are both set. Set only one.")
         return self
 
     def dict(self, *args, **kwargs):
