@@ -145,6 +145,7 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
 
 
 # TODO: Add VideoData. Currently label import job finishes without errors but project.export_labels() returns empty list.
+@pytest.mark.export_v1("tests used export v1 method, v2 test -> test_import_data_types_v2 below")
 @pytest.mark.parametrize(
     "data_type_class",
     [

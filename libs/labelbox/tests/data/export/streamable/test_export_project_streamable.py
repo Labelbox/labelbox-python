@@ -313,7 +313,7 @@ class TestExportProject:
             },
         ] * 2)
         task.wait_till_done()
-        data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
+        data_rows = [result["id"] for result in task.result]
         batch_one = f"batch one {uuid.uuid4()}"
 
         # This test creates two batches, only one batch should be exporter
