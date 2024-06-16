@@ -1,7 +1,6 @@
 from unittest.mock import patch
 import uuid
 from labelbox import parser, Project
-import time
 import pytest
 import random
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
