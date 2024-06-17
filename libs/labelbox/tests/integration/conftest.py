@@ -439,6 +439,138 @@ def chat_evaluation_project_append_to_dataset(client, dataset, rand_gen):
     project.delete()
 
 
+@pytest.fixture
+def offline_conversational_data_row(initial_dataset):
+    convo_v2_row_data = {
+        "type": "application/vnd.labelbox.conversational.model-chat-evaluation",
+        "version": 2,
+        "actors": {
+            "clxhs9wk000013b6w7imiz0h8": {
+                "role": "human",
+                "metadata": {
+                    "name": "User"
+                }
+            },
+            "clxhsc6xb00013b6w1awh579j": {
+                "role": "model",
+                "metadata": {
+                    "modelConfigId": "5a50d319-56bd-405d-87bb-4442daea0d0f"
+                }
+            },
+            "clxhsc6xb00023b6wlp0768zs": {
+                "role": "model",
+                "metadata": {
+                    "modelConfigId": "1cfc833a-2684-47df-95ac-bb7d9f9e3e1f"
+                }
+            }
+        },
+        "messages": {
+            "clxhs9wk000023b6wrufora3k": {
+                "actorId": "clxhs9wk000013b6w7imiz0h8",
+                "content": [{
+                    "type": "text",
+                    "content": "Hello world"
+                }],
+                "childMessageIds": ["clxhscb4z00033b6wukpvmuol"]
+            },
+            "clxhscb4z00033b6wukpvmuol": {
+                "actorId": "clxhsc6xb00013b6w1awh579j",
+                "content": [{
+                    "type":
+                        "text",
+                    "content":
+                        "Hello to you too! 👋 \n\nIt's great to be your guide in the digital world. What can I help you with today? 😊 \n"
+                }],
+                "childMessageIds": ["clxhu2s0900013b6wbv0ndddd"]
+            },
+            "clxhu2s0900013b6wbv0ndddd": {
+                "actorId":
+                    "clxhs9wk000013b6w7imiz0h8",
+                "content": [{
+                    "type": "text",
+                    "content": "Lets some some multi-turn happening"
+                }],
+                "childMessageIds": [
+                    "clxhu4qib00023b6wuep47b1l", "clxhu4qib00033b6wf18az01q"
+                ]
+            },
+            "clxhu4qib00023b6wuep47b1l": {
+                "actorId": "clxhsc6xb00013b6w1awh579j",
+                "content": [{
+                    "type":
+                        "text",
+                    "content":
+                        "Okay, I'm ready for some multi-turn fun! To make it interesting, how about we try building a story together? \n\n**Here's the beginning:**\n\nThe old, dusty book lay forgotten on the shelf, its leather cover cracked and faded. But as the afternoon sun slanted through the window, a single ray caught a glint of gold on the book's spine. Suddenly...\n\n**Now you tell me what happens!** What does the glint of gold turn out to be? What happens next? 🤔 \n"
+                }],
+                "childMessageIds": ["clxhu596m00043b6wvkgahcwz"]
+            },
+            "clxhu4qib00033b6wf18az01q": {
+                "actorId": "clxhsc6xb00023b6wlp0768zs",
+                "content": [{
+                    "type":
+                        "text",
+                    "content":
+                        "Okay, I'm game! Let's have a multi-turn conversation! But to get us started, give me a topic or a question to get us going! 😄 \n\nWhat's on your mind? \n"
+                }],
+                "childMessageIds": ["clxhu596m00043b6wvkgahcwz"]
+            },
+            "clxhu596m00043b6wvkgahcwz": {
+                "actorId":
+                    "clxhs9wk000013b6w7imiz0h8",
+                "content": [{
+                    "type": "text",
+                    "content": "Can you generate an image?"
+                }],
+                "childMessageIds": [
+                    "clxhu5hqk00053b6wk21u6xi7", "clxhu5hqk00063b6whl4gofx8"
+                ]
+            },
+            "clxhu5hqk00053b6wk21u6xi7": {
+                "actorId": "clxhsc6xb00013b6w1awh579j",
+                "content": [{
+                    "type":
+                        "text",
+                    "content":
+                        "I can't generate images directly yet. I'm a text-based AI, so my superpowers are all about words! 🪄 \n\nHowever, I'd love to help you describe an image that fits our story. Tell me: \n\n* **What should the image show?** (For example: The dusty book, the glint of gold, the bookshelf, the room, etc.) \n* **What kind of feeling or atmosphere should the image have?** (Mysterious? Magical? Ominous?) \n\nThe more details you give me, the better I can describe the image! ✨ \n"
+                }],
+                "childMessageIds": []
+            },
+            "clxhu5hqk00063b6whl4gofx8": {
+                "actorId": "clxhsc6xb00023b6wlp0768zs",
+                "content": [{
+                    "type":
+                        "text",
+                    "content":
+                        "I can't *actually* generate images directly. 😔 I'm primarily a text-based AI. \n\nTo help me understand what you'd like to see, tell me: \n\n* **What should be in the image?** Be specific! (e.g., \"A cat wearing a tiny hat\", \"A futuristic cityscape at sunset\")\n* **What style do you imagine?** (e.g., realistic, cartoonish, abstract)\n\nOnce you give me those details, I can try to give you a vivid description that's almost as good as seeing it! 😊 \n"
+                }],
+                "childMessageIds": []
+            }
+        },
+        "rootMessageIds": ["clxhs9wk000023b6wrufora3k"]
+    }
+
+    convo_v2_asset = {
+        "row_data": convo_v2_row_data,
+    }
+    data_row = initial_dataset.create_data_row(convo_v2_asset)
+
+    return data_row
+
+
+@pytest.fixture()
+def conversation_data_row(initial_dataset, rand_gen):
+    data = {
+        "row_data":
+            "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
+        "global_key":
+            f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
+    }
+    convo_asset = {"row_data": data}
+    data_row = initial_dataset.create_data_row(convo_asset)
+
+    return data_row
+
+
 def pytest_configure():
     pytest.report = defaultdict(int)
 

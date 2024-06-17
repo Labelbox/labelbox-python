@@ -744,7 +744,6 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
         """
-        kwargs.pop("ontology_kind", None)
         kwargs.pop("dataset_name_or_id", None)
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
@@ -823,6 +822,9 @@ class Client:
         kwargs["media_type"] = MediaType.Conversational
         kwargs[
             "editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value
+        kwargs.pop("dataset_name_or_id", None)
+        kwargs.pop("append_to_existing_dataset", None)
+        kwargs.pop("data_row_count", None)
 
         return self.create_project(**kwargs)
 
@@ -865,15 +867,6 @@ class Client:
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
             media_type_value = None
-
-        ontology_kind = kwargs.pop("ontology_kind", None)
-        if ontology_kind and OntologyKind.is_supported(ontology_kind):
-            editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
-                ontology_kind, media_type).value
-        elif ontology_kind:
-            raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
-        else:
-            editor_task_type_value = None
 
         quality_mode = kwargs.get("quality_mode")
         if not quality_mode:

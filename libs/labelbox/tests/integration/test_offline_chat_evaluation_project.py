@@ -1,6 +1,6 @@
-def test_create_offline_chat_evaluation_project(client,
-                                                offline_chat_evaluation_project,
-                                                chat_evaluation_ontology):
+def test_create_offline_chat_evaluation_project(
+        client, rand_gen, offline_chat_evaluation_project,
+        chat_evaluation_ontology, offline_conversational_data_row):
     project = offline_chat_evaluation_project
     assert project
 
@@ -9,3 +9,9 @@ def test_create_offline_chat_evaluation_project(client,
 
     assert project.labeling_frontend().name == "Editor"
     assert project.ontology().name == ontology.name
+
+    batch = project.create_batch(
+        rand_gen(str),
+        [offline_conversational_data_row.uid],  # sample of data row objects
+    )
+    assert batch
