@@ -26,6 +26,7 @@ class OntologyKind(Enum):
 class EditorTaskType(Enum):
     ModelChatEvaluation = "MODEL_CHAT_EVALUATION"
     ResponseCreation = "RESPONSE_CREATION"
+    OfflineModelChatEvaluation = "OFFLINE_MODEL_CHAT_EVALUATION"
     Missing = None
 
     @classmethod
