@@ -821,7 +821,8 @@ class Client:
 
     def create_offline_model_evaluation_project(self, **kwargs) -> Project:
         kwargs["media_type"] = MediaType.Conversational
-        kwargs["editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value
+        kwargs[
+            "editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value
 
         return self.create_project(**kwargs)
 
@@ -900,8 +901,6 @@ class Client:
                 params.pop("dataset_name_or_id", None),
             Field.Boolean("append_to_existing_dataset"):
                 params.pop("append_to_existing_dataset", None),
-            Field.Int("data_row_count"):
-                params.pop("data_row_count", None),
         }
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
 

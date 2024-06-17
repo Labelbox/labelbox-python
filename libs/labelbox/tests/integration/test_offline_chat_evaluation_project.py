@@ -1,7 +1,6 @@
-def test_create_offline_chat_evaluation_project(
-        client,
-        offline_chat_evaluation_project,
-        chat_evaluation_ontology):
+def test_create_offline_chat_evaluation_project(client,
+                                                offline_chat_evaluation_project,
+                                                chat_evaluation_ontology):
     project = offline_chat_evaluation_project
     assert project
 
