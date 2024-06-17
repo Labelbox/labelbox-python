@@ -1,6 +1,11 @@
-def test_create_offline_chat_evaluation_project(
-        client, rand_gen, offline_chat_evaluation_project,
-        chat_evaluation_ontology, offline_conversational_data_row):
+import pytest
+
+
+def test_create_offline_chat_evaluation_project(client, rand_gen,
+                                                offline_chat_evaluation_project,
+                                                chat_evaluation_ontology,
+                                                offline_conversational_data_row,
+                                                model_config):
     project = offline_chat_evaluation_project
     assert project
 
@@ -15,3 +20,7 @@ def test_create_offline_chat_evaluation_project(
         [offline_conversational_data_row.uid],  # sample of data row objects
     )
     assert batch
+
+    # Can not add a model config to an offline chat evaluation project, since we do not use live models
+    with pytest.raises(Exception):
+        project.add_model_config(model_config.uid)

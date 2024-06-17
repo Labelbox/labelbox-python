@@ -743,6 +743,10 @@ class Client:
         Raises:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
+
+        NOTE: the following attributes are used only chat model evaluation projects:
+            dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
+            They are not used for general projects and not supported in this method
         """
         kwargs.pop("dataset_name_or_id", None)
         kwargs.pop("append_to_existing_dataset", None)

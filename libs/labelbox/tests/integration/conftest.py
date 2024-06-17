@@ -400,7 +400,10 @@ def chat_evaluation_ontology(client, rand_gen):
 
     yield ontology
 
-    client.delete_unused_ontology(ontology.uid)
+    try:
+        client.delete_unused_ontology(ontology.uid)
+    except Exception as e:
+        print(f"Failed to delete ontology {ontology.uid}: {str(e)}")
 
 
 @pytest.fixture

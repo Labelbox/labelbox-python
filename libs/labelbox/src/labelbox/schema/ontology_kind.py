@@ -33,6 +33,21 @@ class EditorTaskType(Enum):
     def is_supported(cls, value):
         return isinstance(value, cls)
 
+    @classmethod
+    def _missing_(cls, name) -> 'EditorTaskType':
+        """Handle missing null new task types
+            Handle upper case names for compatibility with
+            the GraphQL"""
+
+        if name is None:
+            return cls.Missing
+
+        for name, member in cls.__members__.items():
+            if name == name.upper():
+                return member
+
+        return cls.Missing
+
 
 class EditorTaskTypeMapper:
 
