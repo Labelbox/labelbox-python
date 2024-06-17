@@ -821,7 +821,7 @@ class Client:
 
     def create_offline_model_evaluation_project(self, **kwargs) -> Project:
         kwargs["media_type"] = MediaType.Conversational
-        kwargs["editor_task_type"] = EditorTaskType.OfflineModelEvaluation.value
+        kwargs["editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value
 
         return self.create_project(**kwargs)
 

@@ -417,6 +417,15 @@ def chat_evaluation_project_create_dataset(client, rand_gen):
 
 
 @pytest.fixture
+def offline_chat_evaluation_project(client, rand_gen):
+    project_name = f"test-offline-model-evaluation-project-{rand_gen(str)}"
+    project = client.create_offline_model_evaluation_project(name=project_name)
+
+    yield project
+
+    project.delete()
+
+@pytest.fixture
 def chat_evaluation_project_append_to_dataset(client, dataset, rand_gen):
     project_name = f"test-model-evaluation-project-{rand_gen(str)}"
     dataset_id = dataset.uid
