@@ -2,9 +2,7 @@
 name = "labelbox"
 version = "3.72.2"
 description = "Labelbox Python API"
-authors = [
-    { name = "Labelbox", email = "engineering@labelbox.com" }
-]
+authors = [{ name = "Labelbox", email = "engineering@labelbox.com" }]
 dependencies = [
     "google-api-core>=1.22.1",
     "pydantic>=1.8",
@@ -16,7 +14,7 @@ dependencies = [
 ]
 readme = "README.md"
 requires-python = ">=3.8"
-classifiers=[
+classifiers = [
     # How mature is this project?
     "Development Status :: 5 - Production/Stable",
     # Indicate who your project is intended for
@@ -27,7 +25,7 @@ classifiers=[
     "Intended Audience :: Education",
     # Pick your license as you wish
     "License :: OSI Approved :: Apache Software License",
-     # Specify the Python versions you support here.
+    # Specify the Python versions you support here.
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -47,7 +45,8 @@ Changelog = "https://github.com/Labelbox/labelbox-python/blob/develop/libs/label
 [project.optional-dependencies]
 data = [
     "shapely>=2.0.3",
-    "numpy>=1.24.4",
+    # numpy v2 breaks package since it only supports python >3.9
+    "numpy>=1.24.4, <2.0.0",
     "pillow>=10.2.0",
     "typeguard>=4.1.5",
     "imagesize>=1.4.1",
@@ -85,12 +84,12 @@ unit = "pytest tests/unit"
 # LABELBOX_TEST_ENVIRON="ephemeral" \
 # SERVICE_API_KEY=${SERVICE_API_KEY} \
 # LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
-integration = { cmd = "pytest tests/integration"  }
+integration = { cmd = "pytest tests/integration" }
 data = { cmd = "pytest tests/data" }
 yapf-lint = "yapf tests src -i --verbose --recursive --parallel --style \"google\""
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
 lint = { chain = ["yapf-lint", "mypy-lint"] }
-test = { chain = ["lint", "unit", "integration" ] }
+test = { chain = ["lint", "unit", "integration"] }
 
 [tool.hatch.metadata]
 allow-direct-references = true
