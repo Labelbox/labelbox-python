@@ -24,6 +24,8 @@ def test_create_chat_evaluation_ontology_project(
         assert classification.feature_schema_id
 
     project = chat_evaluation_project_create_dataset
+    assert project.model_setup_complete is None
+
     project.setup_editor(ontology)
 
     assert project.labeling_frontend().name == "Editor"

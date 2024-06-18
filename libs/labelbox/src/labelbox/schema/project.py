@@ -13,13 +13,9 @@ import requests
 
 from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import (
-    InvalidQueryError,
-    LabelboxError,
-    ProcessingWaitTimeout,
-    ResourceConflict,
-    ResourceNotFoundError
-)
+from labelbox.exceptions import (InvalidQueryError, LabelboxError,
+                                 ProcessingWaitTimeout, ResourceConflict,
+                                 ResourceNotFoundError)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -122,6 +118,7 @@ class Project(DbObject, Updateable, Deletable):
     media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
     editor_task_type = Field.Enum(EditorTaskType, "editor_task_type")
     data_row_count = Field.Int("data_row_count")
+    model_setup_complete: Field = Field.Boolean("model_setup_complete")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -1299,6 +1296,24 @@ class Project(DbObject, Updateable, Deletable):
             raise ResourceNotFoundError(ProjectModelConfig, params)
         return result["deleteProjectModelConfig"]["success"]
 
+    def set_project_model_setup_complete(self) -> bool:
+        """ Checks if the model setup is complete for this project.
+
+        Returns:
+            bool, indicates if the model setup is complete.
+        """
+        query = """query ModelSetupCompletePyApi($projectId: ID!) {
+            project(where: {id: $projectId}, data: {modelSetupComplete: true}) {
+                modelSetupComplete
+            }
+        }"""
+
+        result = self.client.execute(query, {"projectId": self.uid})
+
+        self.update(
+            model_setup_complete=result["project"]["modelSetupComplete"])
+        return result["project"]["modelSetupComplete"]
+
     def set_labeling_parameter_overrides(
             self, data: List[LabelingParameterOverrideInput]) -> bool:
         """ Adds labeling parameter overrides to this project.
@@ -1752,7 +1767,9 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_overview(self, details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
+    def get_overview(
+            self,
+            details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
         """Return the overview of a project.
 
         This method returns the number of data rows per task queue and issues of a project,
@@ -1792,7 +1809,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Must use experimental to access "issues"
         result = self.client.execute(query, {"projectId": self.uid},
-                                        experimental=True)["project"]
+                                     experimental=True)["project"]
 
         # Reformat category names
         overview = {
@@ -1805,7 +1822,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Rename categories
         overview["to_label"] = overview.pop("unlabeled")
-        overview["total_data_rows"] = overview.pop("all")        
+        overview["total_data_rows"] = overview.pop("all")
 
         if not details:
             return ProjectOverview(**overview)
@@ -1813,18 +1830,20 @@ class Project(DbObject, Updateable, Deletable):
             # Build dictionary for queue details for review and rework queues
             for category in ["rework", "review"]:
                 queues = [
-                    {tq["name"]: tq.get("dataRowCount")}
+                    {
+                        tq["name"]: tq.get("dataRowCount")
+                    }
                     for tq in result.get("taskQueues")
                     if tq.get("queueType") == f"MANUAL_{category.upper()}_QUEUE"
                 ]
 
-                overview[f"in_{category}"]  = {
+                overview[f"in_{category}"] = {
                     "data": queues,
                     "total": overview[f"in_{category}"]
                 }
-            
+
             return ProjectOverviewDetailed(**overview)
-    
+
     def clone(self) -> "Project":
         """
         Clones the current project.
