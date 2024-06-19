@@ -733,8 +733,8 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
-            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
-                Benchmark
+            quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
+                Benchmark.
         Returns:
             A new Project object.
         Raises:
@@ -785,22 +785,24 @@ class Client:
         else:
             editor_task_type_value = None
 
-        quality_mode = kwargs.get("quality_mode")
-        if not quality_mode:
-            logger.info("Defaulting quality mode to Benchmark.")
+        quality_modes = kwargs.get("quality_modes")
+        if not quality_modes:
+            logger.info("Defaulting quality modes to Benchmark.")
 
         data = kwargs
-        data.pop("quality_mode", None)
-        if quality_mode is None or quality_mode is QualityMode.Benchmark:
+        data.pop("quality_modes", None)
+        if quality_modes is None or quality_modes == [QualityMode.Benchmark]:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-        elif quality_mode is QualityMode.Consensus:
+            data["is_benchmark_enabled"] = True
+        elif QualityMode.Consensus in quality_modes:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+            data["is_consensus_enabled"] = True
         else:
-            raise ValueError(f"{quality_mode} is not a valid quality mode.")
+            raise ValueError(f"{quality_modes} is not a valid quality modes array. Allowed values are [Benchmark, Consensus]")
 
         params = {**data}
         if media_type_value:
