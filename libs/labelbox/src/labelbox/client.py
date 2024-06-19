@@ -717,8 +717,6 @@ class Client:
             raise e
         return dataset
 
-# **** Create Project begin ****
-
     def create_project(self, **kwargs) -> Project:
         """ Creates a Project object on the server.
 
@@ -744,10 +742,11 @@ class Client:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
 
-        NOTE: the following attributes are used only chat model evaluation projects:
+        NOTE: the following attributes are used only in chat model evaluation projects:
             dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
             They are not used for general projects and not supported in this method
         """
+        #  The following arguments are not supported for general projects, only for chat model evaluation projects
         kwargs.pop("dataset_name_or_id", None)
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
@@ -823,9 +822,19 @@ class Client:
         return self._create_project(**kwargs)
 
     def create_offline_model_evaluation_project(self, **kwargs) -> Project:
-        kwargs["media_type"] = MediaType.Conversational
+        """
+        Creates a project for offline model evaluation.
+        Args:
+            **kwargs: Additional parameters to pass see the create_project method
+        Returns:
+            Project: The created project
+        """
         kwargs[
-            "editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value
+            "media_type"] = MediaType.Conversational  # Only Conversational is supported
+        kwargs[
+            "editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value  # Special editor task type for offline model evaluation
+
+        # The following arguments are not supported for offline model evaluation
         kwargs.pop("dataset_name_or_id", None)
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
@@ -833,11 +842,6 @@ class Client:
         return self.create_project(**kwargs)
 
     def _create_project(self, **kwargs) -> Project:
-        """
-        Internal method to create a project with the given parameters.
-        Args: see other create_project methods
-        NOTE: do not use this method directly. Use create_project* methods instead.
-        """
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
         auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
         if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
@@ -902,9 +906,6 @@ class Client:
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
 
         return self._create(Entity.Project, params, extra_params)
-
-
-# **** Create Project end ****
 
     def get_roles(self) -> List[Role]:
         """
