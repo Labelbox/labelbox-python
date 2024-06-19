@@ -6,7 +6,7 @@ from labelbox.exceptions import MalformedQueryException
 
 def test_create_chat_evaluation_ontology_project(
         client, chat_evaluation_ontology,
-        chat_evaluation_project_create_dataset, conversation_data_row,
+        live_chat_evaluation_project_with_new_dataset, conversation_data_row,
         rand_gen):
     ontology = chat_evaluation_ontology
 
@@ -23,7 +23,7 @@ def test_create_chat_evaluation_ontology_project(
         assert classification.schema_id
         assert classification.feature_schema_id
 
-    project = chat_evaluation_project_create_dataset
+    project = live_chat_evaluation_project_with_new_dataset
     assert project.model_setup_complete is None
 
     project.setup_editor(ontology)

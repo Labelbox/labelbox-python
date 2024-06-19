@@ -1,3 +1,4 @@
+import re
 import json
 import logging
 from string import Template
@@ -1268,7 +1269,22 @@ class Project(DbObject, Updateable, Deletable):
             "projectId": self.uid,
             "modelConfigId": model_config_id,
         }
-        result = self.client.execute(query, params)
+        try:
+            result = self.client.execute(query, params)
+        except LabelboxError as e:
+            # unfortunately, this is the type of errors our client does not deal with and so the error message is not in the same format as the other errors
+            # needs custom parsing
+            error_string = e.message
+            # Regex to find the message content
+            pattern = r"'message': '([^']+)'"
+            # Search for the pattern in the error string
+            match = re.search(pattern, error_string)
+            if match:
+                error_content = match.group(1)
+            else:
+                error_content = "Unknown error"
+            raise LabelboxError(message=error_content) from e
+
         if not result:
             raise ResourceNotFoundError(ModelConfig, params)
         return result["createProjectModelConfig"]["projectModelConfigId"]
@@ -1301,18 +1317,19 @@ class Project(DbObject, Updateable, Deletable):
 
         Returns:
             bool, indicates if the model setup is complete.
+
+        NOTE: This method should only be used for live model evaluation projects.
         """
-        query = """query ModelSetupCompletePyApi($projectId: ID!) {
-            project(where: {id: $projectId}, data: {modelSetupComplete: true}) {
+        query = """mutation SetProjectModelSetupCompletePyApi($projectId: ID!) {
+            setProjectModelSetupComplete(where: {id: $projectId}, data: {modelSetupComplete: true}) {
                 modelSetupComplete
             }
         }"""
 
         result = self.client.execute(query, {"projectId": self.uid})
-
-        self.update(
-            model_setup_complete=result["project"]["modelSetupComplete"])
-        return result["project"]["modelSetupComplete"]
+        self.model_setup_complete = result["setProjectModelSetupComplete"][
+            "modelSetupComplete"]
+        return result["setProjectModelSetupComplete"]["modelSetupComplete"]
 
     def set_labeling_parameter_overrides(
             self, data: List[LabelingParameterOverrideInput]) -> bool:
