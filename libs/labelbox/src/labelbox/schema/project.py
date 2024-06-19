@@ -1272,8 +1272,6 @@ class Project(DbObject, Updateable, Deletable):
         try:
             result = self.client.execute(query, params)
         except LabelboxError as e:
-            # unfortunately, this is the type of errors our client does not deal with and so the error message is not in the same format as the other errors
-            # needs custom parsing
             error_content = _error_message_for_unparsed_graphql_error(e.message)
             raise LabelboxError(message=error_content) from e
 
@@ -1305,12 +1303,16 @@ class Project(DbObject, Updateable, Deletable):
         return result["deleteProjectModelConfig"]["success"]
 
     def set_project_model_setup_complete(self) -> bool:
-        """ Checks if the model setup is complete for this project.
+        """
+        Sets the model setup is complete for this project.
+        Once the project is marked as "setup complete", a user can not add  / modify delete existing project model configs.
 
         Returns:
             bool, indicates if the model setup is complete.
 
         NOTE: This method should only be used for live model evaluation projects.
+            It will throw exception for all other types of projects.
+            User Project is_chat_evaluation() method to check if the project is a live model evaluation project.
         """
         query = """mutation SetProjectModelSetupCompletePyApi($projectId: ID!) {
             setProjectModelSetupComplete(where: {id: $projectId}, data: {modelSetupComplete: true}) {

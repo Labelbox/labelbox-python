@@ -840,7 +840,7 @@ class Client:
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
 
-        return self.create_project(**kwargs)
+        return self._create_project(**kwargs)
 
     def _create_project(self, **kwargs) -> Project:
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
