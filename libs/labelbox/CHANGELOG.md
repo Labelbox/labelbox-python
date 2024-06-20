@@ -1,7 +1,6 @@
 # Changelog
 # Version 3.73.0 (2024-06-20)
 ## Added
-* Model offline evaluation support (#1682)
 * Conversational data row checks (#1678)
 * UI ontology mode support (#1676)
 * Empty data row validation (#1667)
