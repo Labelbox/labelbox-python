@@ -30,6 +30,7 @@ from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
+from labelbox.schema.external_workforce import ExternalWorkforce
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
@@ -42,7 +43,7 @@ from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
 from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
-from labelbox.schema.external_workforce import ExternalWorkforce
+
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -1772,7 +1773,7 @@ class Project(DbObject, Updateable, Deletable):
 
         """
         query = """query ProjectGetOverviewPyApi($projectId: ID!) {
-            project(where: { id: $projectId }) {      
+            project(where: { id: $projectId }) {
             workstreamStateCounts {
                 state
                 count
@@ -1805,7 +1806,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Rename categories
         overview["to_label"] = overview.pop("unlabeled")
-        overview["total_data_rows"] = overview.pop("all")        
+        overview["total_data_rows"] = overview.pop("all")
 
         if not details:
             return ProjectOverview(**overview)
@@ -1822,9 +1823,9 @@ class Project(DbObject, Updateable, Deletable):
                     "data": queues,
                     "total": overview[f"in_{category}"]
                 }
-            
+
             return ProjectOverviewDetailed(**overview)
-    
+
     def clone(self) -> "Project":
         """
         Clones the current project.
@@ -1841,9 +1842,9 @@ class Project(DbObject, Updateable, Deletable):
         """
         result = self.client.execute(mutation, {"projectId": self.uid})
         return self.client.get_project(result["cloneProject"]["id"])
-    
+
     def add_external_workforce(self, workforce_id: Union[str, ExternalWorkforce]) -> List[ExternalWorkforce]:
-        
+
         """
         Add an external workforce (organization) to a project.
 
@@ -1857,7 +1858,7 @@ class Project(DbObject, Updateable, Deletable):
             LabelboxError: If the external workforce with the given ID cannot be found.
 
         Note:
-            This method adds an external workforce (organization) to the current project. 
+            This method adds an external workforce (organization) to the current project.
             The `workforce_id` parameter can be either a string representing the organization ID or an instance of the `ExternalWorkforce` class.
         """
         workforce_id = workforce_id.uid if isinstance(workforce_id, ExternalWorkforce) else workforce_id
@@ -1879,10 +1880,10 @@ class Project(DbObject, Updateable, Deletable):
         result = self.client.execute(mutation, {"projectId": self.uid, "organizationId": workforce_id})
 
         if not result:
-            raise LabelboxError(f"Can't find External Workforce {workforce_id}")
+            raise ResourceNotFoundError(ExternalWorkforce, {"id": workforce_id})
 
-        return [ExternalWorkforce(**workforce_dic) 
-                    for workforce_dic 
+        return [ExternalWorkforce(**workforce_dic)
+                    for workforce_dic
                     in result["shareProjectWithExternalOrganization"]["sharedWithOrganizations"]]
 
 
@@ -1914,14 +1915,14 @@ class Project(DbObject, Updateable, Deletable):
                 }
             }
             """
-        
-        result = self.client.execute(mutation, {"projectId": self.uid, "organizationId": workforce_id})
-        
-        if not result:
-            raise LabelboxError(f"Can't find External Workforce {workforce_id}")
 
-        return [ExternalWorkforce(**workforce_dic) 
-                for workforce_dic 
+        result = self.client.execute(mutation, {"projectId": self.uid, "organizationId": workforce_id})
+
+        if not result:
+            raise ResourceNotFoundError(ExternalWorkforce, {"id": workforce_id})
+
+        return [ExternalWorkforce(**workforce_dic)
+                for workforce_dic
                 in result["unshareProjectWithExternalOrganization"]["sharedWithOrganizations"]]
 
 
@@ -1949,7 +1950,7 @@ class Project(DbObject, Updateable, Deletable):
             """
 
         result = self.client.execute(query, {"projectId": self.uid})["project"]["sharedWithOrganizations"]
-        return [ExternalWorkforce(**workforce_dic) for workforce_dic in result]  
+        return [ExternalWorkforce(**workforce_dic) for workforce_dic in result]
 
 
 class ProjectMember(DbObject):
