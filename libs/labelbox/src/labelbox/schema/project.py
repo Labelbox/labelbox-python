@@ -1272,7 +1272,13 @@ class Project(DbObject, Updateable, Deletable):
         try:
             result = self.client.execute(query, params)
         except LabelboxError as e:
-            error_content = _error_message_for_unparsed_graphql_error(e.message)
+            if e.message.startswith(
+                    "Unknown error: "
+            ):  # unfortunate hack to handle unparsed graphql errors
+                error_content = _error_message_for_unparsed_graphql_error(
+                    e.message)
+            else:
+                error_content = e.message
             raise LabelboxError(message=error_content) from e
 
         if not result:
