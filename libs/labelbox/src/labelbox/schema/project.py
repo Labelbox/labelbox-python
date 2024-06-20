@@ -1,4 +1,3 @@
-import re
 import json
 import logging
 from string import Template
@@ -14,6 +13,7 @@ import requests
 
 from labelbox import parser
 from labelbox import utils
+from labelbox.exceptions import _error_message_for_unparsed_graphql_error
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
                                  ProcessingWaitTimeout, ResourceConflict,
                                  ResourceNotFoundError)
@@ -1274,15 +1274,7 @@ class Project(DbObject, Updateable, Deletable):
         except LabelboxError as e:
             # unfortunately, this is the type of errors our client does not deal with and so the error message is not in the same format as the other errors
             # needs custom parsing
-            error_string = e.message
-            # Regex to find the message content
-            pattern = r"'message': '([^']+)'"
-            # Search for the pattern in the error string
-            match = re.search(pattern, error_string)
-            if match:
-                error_content = match.group(1)
-            else:
-                error_content = "Unknown error"
+            error_content = _error_message_for_unparsed_graphql_error(e.message)
             raise LabelboxError(message=error_content) from e
 
         if not result:
