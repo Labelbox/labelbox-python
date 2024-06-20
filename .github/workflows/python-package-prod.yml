@@ -1,7 +1,7 @@
 name: Labelbox Python SDK Prod (Develop)
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

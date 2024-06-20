@@ -9,15 +9,18 @@
 #   generate-hashes: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-example
 alabaster==0.7.13
     # via sphinx
 annotated-types==0.7.0
     # via pydantic
+art==6.2
+    # via lbox-example
 babel==2.15.0
     # via sphinx
 cachetools==5.3.3
     # via google-auth
-certifi==2024.2.2
+certifi==2024.6.2
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -30,7 +33,7 @@ google-api-core==2.19.0
     # via labelbox
 google-auth==2.29.0
     # via google-api-core
-googleapis-common-protos==1.63.0
+googleapis-common-protos==1.63.1
     # via google-api-core
 idna==3.7
     # via requests
@@ -55,9 +58,9 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.2
+pydantic==2.7.3
     # via labelbox
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
 pygments==2.18.0
     # via sphinx
@@ -65,7 +68,7 @@ python-dateutil==2.8.2
     # via labelbox
 pytz==2024.1
     # via babel
-requests==2.32.2
+requests==2.32.3
     # via google-api-core
     # via labelbox
     # via sphinx
@@ -98,11 +101,11 @@ strenum==0.4.15
     # via labelbox
 tqdm==4.66.4
     # via labelbox
-typing-extensions==4.12.0
+typing-extensions==4.12.1
     # via annotated-types
     # via pydantic
     # via pydantic-core
 urllib3==2.2.1
     # via requests
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata

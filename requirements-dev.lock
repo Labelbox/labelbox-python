@@ -9,12 +9,15 @@
 #   generate-hashes: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-example
 alabaster==0.7.13
     # via sphinx
 annotated-types==0.7.0
     # via pydantic
 appnope==0.1.4
     # via ipython
+art==6.2
+    # via lbox-example
 asttokens==2.4.1
     # via stack-data
 attrs==23.2.0
@@ -31,7 +34,7 @@ bleach==6.1.0
     # via nbconvert
 cachetools==5.3.3
     # via google-auth
-certifi==2024.2.2
+certifi==2024.6.2
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -70,7 +73,7 @@ google-api-core==2.19.0
     # via labelbox
 google-auth==2.29.0
     # via google-api-core
-googleapis-common-protos==1.63.0
+googleapis-common-protos==1.63.1
     # via google-api-core
 idna==3.7
     # via requests
@@ -154,7 +157,7 @@ platformdirs==4.2.2
     # via yapf
 pluggy==1.5.0
     # via pytest
-prompt-toolkit==3.0.45
+prompt-toolkit==3.0.46
     # via ipython
 proto-plus==1.23.0
     # via google-api-core
@@ -171,17 +174,17 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.2
+pydantic==2.7.3
     # via databooks
     # via labelbox
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
 pygments==2.18.0
     # via ipython
     # via nbconvert
     # via rich
     # via sphinx
-pytest==8.2.1
+pytest==8.2.2
     # via pytest-cov
     # via pytest-rerunfailures
     # via pytest-snapshot
@@ -205,7 +208,7 @@ referencing==0.35.1
     # via jsonschema-specifications
 regex==2024.5.15
     # via toml-cli
-requests==2.32.2
+requests==2.32.3
     # via google-api-core
     # via labelbox
     # via sphinx
@@ -283,9 +286,9 @@ typer==0.12.3
     # via toml-cli
 types-pillow==10.2.0.20240520
 types-python-dateutil==2.9.0.20240316
-types-requests==2.32.0.20240523
+types-requests==2.32.0.20240602
 types-tqdm==4.66.0.20240417
-typing-extensions==4.12.0
+typing-extensions==4.12.1
     # via annotated-types
     # via black
     # via databooks
@@ -306,6 +309,6 @@ webencodings==0.5.1
     # via bleach
     # via tinycss2
 yapf==0.40.2
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata
     # via importlib-resources

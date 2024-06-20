@@ -1,0 +1,72 @@
+name: LBox Develop
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+
+jobs:
+  path-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      lbox: ${{ steps.filter.outputs.lbox }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: 'json'
+          filters: |
+            lbox:
+              - 'libs/lbox*/**'
+      - id: matrix
+        uses: ./.github/actions/lbox-matrix
+        with:
+          files-changed: ${{ steps.filter.outputs.lbox_files }}
+  build:
+    needs: ['path-filter']
+    if: ${{ needs.path-filter.outputs.lbox == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.matrix) }}    
+    concurrency:
+      group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}
+      cancel-in-progress: false   
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ matrix.python-version }}
+      - name: Format
+        run: rye format --check -v -p ${{ matrix.package }}
+      - name: Linting
+        run: rye lint -v -p ${{ matrix.package }}
+      - name: Unit
+        working-directory: libs/${{ matrix.package }}
+        run: rye run unit
+      - name: Integration
+        working-directory: libs/${{ matrix.package }}
+        env:
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
+          LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
+        run: rye run integration
