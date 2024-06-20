@@ -1,7 +1,7 @@
 import time
 
+from labelbox import Client
 import pytest
-import requests
 import os
 
 from labelbox import Label
@@ -29,11 +29,13 @@ def test_labels(configured_project_with_label):
 
 
 # TODO: Skipping this test in staging due to label not updating
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem" or
-                    os.environ['LABELBOX_TEST_ENVIRON'] == "staging" or
-                    os.environ['LABELBOX_TEST_ENVIRON'] == "local" or
-                    os.environ['LABELBOX_TEST_ENVIRON'] == "custom",
-                    reason="does not work for onprem")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem"
+    or os.environ["LABELBOX_TEST_ENVIRON"] == "staging"
+    or os.environ["LABELBOX_TEST_ENVIRON"] == "local"
+    or os.environ["LABELBOX_TEST_ENVIRON"] == "custom",
+    reason="does not work for onprem",
+)
 def test_label_update(configured_project_with_label):
     _, _, _, label = configured_project_with_label
     label.update(label="something else")
@@ -57,7 +59,7 @@ def test_label_bulk_deletion(configured_project_with_label):
     project, _, _, _ = configured_project_with_label
 
     for _ in range(2):
-        #only run twice, already have one label in the fixture
+        # only run twice, already have one label in the fixture
         project.create_label()
     labels = project.labels()
     l1 = next(labels)
@@ -74,3 +76,15 @@ def test_label_bulk_deletion(configured_project_with_label):
     time.sleep(5)
 
     assert set(project.labels()) == {l2}
+
+
+def test_upsert_label_scores(configured_project_with_label, client: Client):
+    project, _, _, _ = configured_project_with_label
+
+    label = next(project.labels())
+
+    scores = client.upsert_label_feedback(
+        label_id=label.uid, feedback="That's a great label!", scores={"overall": 5}
+    )
+    assert len(scores) == 1
+    assert scores[0].score == 5
