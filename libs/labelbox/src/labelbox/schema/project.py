@@ -123,6 +123,7 @@ class Project(DbObject, Updateable, Deletable):
     # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
     media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
     editor_task_type = Field.Enum(EditorTaskType, "editor_task_type")
+    data_row_count = Field.Int("data_row_count")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")

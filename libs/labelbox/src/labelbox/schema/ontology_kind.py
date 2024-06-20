@@ -26,11 +26,27 @@ class OntologyKind(Enum):
 class EditorTaskType(Enum):
     ModelChatEvaluation = "MODEL_CHAT_EVALUATION"
     ResponseCreation = "RESPONSE_CREATION"
+    OfflineModelChatEvaluation = "OFFLINE_MODEL_CHAT_EVALUATION"
     Missing = None
 
     @classmethod
     def is_supported(cls, value):
         return isinstance(value, cls)
+
+    @classmethod
+    def _missing_(cls, name) -> 'EditorTaskType':
+        """Handle missing null new task types
+            Handle upper case names for compatibility with
+            the GraphQL"""
+
+        if name is None:
+            return cls.Missing
+
+        for name, member in cls.__members__.items():
+            if name == name.upper():
+                return member
+
+        return cls.Missing
 
 
 class EditorTaskTypeMapper:
