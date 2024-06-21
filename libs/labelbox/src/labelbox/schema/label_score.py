@@ -3,11 +3,11 @@ from labelbox import pydantic_compat
 
 class LabelScore(pydantic_compat.BaseModel):
     """
-    a label score
+    A label score.
 
-    Attributes
-    name
-    score
+    Attributes:
+        name (str)
+        score (float)
 
     """
 
