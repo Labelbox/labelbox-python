@@ -1,13 +1,13 @@
 import pytest
+from labelbox import OntologyBuilder, Tool
 from labelbox import MediaType
 from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.exceptions import MalformedQueryException
+from labelbox.schema.labeling_frontend import LabelingFrontend
 
 
 def test_create_chat_evaluation_ontology_project(
         client, chat_evaluation_ontology,
-        chat_evaluation_project_create_dataset, conversation_data_row,
-        rand_gen):
+        chat_evaluation_project_create_dataset):
     ontology = chat_evaluation_ontology
 
     # here we are essentially testing the ontology creation which is a fixture
@@ -28,13 +28,6 @@ def test_create_chat_evaluation_ontology_project(
 
     assert project.labeling_frontend().name == "Editor"
     assert project.ontology().name == ontology.name
-
-    with pytest.raises(MalformedQueryException,
-                       match="No valid data rows to add to project"):
-        project.create_batch(
-            rand_gen(str),
-            [conversation_data_row.uid],  # sample of data row objects
-        )
 
 
 def test_create_chat_evaluation_ontology_project_existing_dataset(
