@@ -1,4 +1,14 @@
 # Changelog
+# Version 3.73.0 (2024-06-20)
+## Added
+* Conversational data row checks (#1678)
+* UI ontology mode support (#1676)
+* Empty data row validation (#1667)
+
+## Fixed
+* Numpy semver locked to < 2.0.0 (#1681)
+
+# Changelog
 # Version 3.72.2 (2024-06-10)
 ## Added
 * SLSA provenance generation
