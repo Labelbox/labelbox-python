@@ -152,7 +152,7 @@ class ProcessingWaitTimeout(Exception):
     """Raised when waiting for the data rows to be processed takes longer than allowed"""
 
 
-def _error_message_for_unparsed_graphql_error(error_string: str) -> str:
+def error_message_for_unparsed_graphql_error(error_string: str) -> str:
     """
     Since our client only parses certain graphql errors, this function is used to
     extract the error message from the error string when the error is not

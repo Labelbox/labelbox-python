@@ -3,9 +3,9 @@ import pytest
 from labelbox.exceptions import ResourceNotFoundError
 
 
-def test_add_single_model_config(chat_evaluation_project_create_dataset,
+def test_add_single_model_config(live_chat_evaluation_project_with_new_dataset,
                                  model_config):
-    configured_project = chat_evaluation_project_create_dataset
+    configured_project = live_chat_evaluation_project_with_new_dataset
     project_model_config_id = configured_project.add_model_config(
         model_config.uid)
 
@@ -18,9 +18,9 @@ def test_add_single_model_config(chat_evaluation_project_create_dataset,
 
 
 def test_add_multiple_model_config(client, rand_gen,
-                                   chat_evaluation_project_create_dataset,
+                                   live_chat_evaluation_project_with_new_dataset,
                                    model_config, valid_model_id):
-    configured_project = chat_evaluation_project_create_dataset
+    configured_project = live_chat_evaluation_project_with_new_dataset
     second_model_config = client.create_model_config(rand_gen(str),
                                                      valid_model_id,
                                                      {"param": "value"})
@@ -40,9 +40,9 @@ def test_add_multiple_model_config(client, rand_gen,
             project_model_config_id)
 
 
-def test_delete_project_model_config(chat_evaluation_project_create_dataset,
+def test_delete_project_model_config(live_chat_evaluation_project_with_new_dataset,
                                      model_config):
-    configured_project = chat_evaluation_project_create_dataset
+    configured_project = live_chat_evaluation_project_with_new_dataset
     assert configured_project.delete_project_model_config(
         configured_project.add_model_config(model_config.uid))
     assert not len(configured_project.project_model_configs())

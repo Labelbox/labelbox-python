@@ -13,7 +13,7 @@ import requests
 
 from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import _error_message_for_unparsed_graphql_error
+from labelbox.exceptions import error_message_for_unparsed_graphql_error
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
                                  ProcessingWaitTimeout, ResourceConflict,
                                  ResourceNotFoundError)
@@ -1275,7 +1275,7 @@ class Project(DbObject, Updateable, Deletable):
             if e.message.startswith(
                     "Unknown error: "
             ):  # unfortunate hack to handle unparsed graphql errors
-                error_content = _error_message_for_unparsed_graphql_error(
+                error_content = error_message_for_unparsed_graphql_error(
                     e.message)
             else:
                 error_content = e.message

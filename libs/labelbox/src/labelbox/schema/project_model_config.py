@@ -1,6 +1,6 @@
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.exceptions import LabelboxError, _error_message_for_unparsed_graphql_error
+from labelbox.exceptions import LabelboxError, error_message_for_unparsed_graphql_error
 
 
 class ProjectModelConfig(DbObject):
@@ -38,7 +38,7 @@ class ProjectModelConfig(DbObject):
             if e.message.startswith(
                     "Unknown error: "
             ):  # unfortunate hack to handle unparsed graphql errors
-                error_content = _error_message_for_unparsed_graphql_error(
+                error_content = error_message_for_unparsed_graphql_error(
                     e.message)
             else:
                 error_content = e.message
