@@ -2217,8 +2217,9 @@ class Client:
         raise labelbox.exceptions.ResourceNotFoundError(Embedding,
                                                         dict(name=name))
 
-    def upsert_label_feedback(self, label_id: str, feedback: str,
-                              scores: Dict[str, float]) -> List[Entity.Label]:
+    def upsert_label_feedback(
+            self, label_id: str, feedback: str,
+            scores: Dict[str, float]) -> List[labelbox.LabelScore]:
         """
         Submits the label feedback which is a free-form text and numeric
         label scores.
