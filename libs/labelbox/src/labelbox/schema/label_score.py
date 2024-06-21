@@ -1,8 +1,7 @@
-from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field
+from labelbox import pydantic_compat
 
 
-class LabelScore(DbObject):
+class LabelScore(pydantic_compat.BaseModel):
     """
     a label score
 
@@ -12,8 +11,5 @@ class LabelScore(DbObject):
 
     """
 
-    name = Field.String("name")
-    data_row_count = Field.Float("score")
-
-    def __init__(self, client, *args, **kwargs):
-        super().__init__(client, *args, **kwargs)
+    name: str
+    score: float

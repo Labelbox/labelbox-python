@@ -2218,19 +2218,41 @@ class Client:
                                                         dict(name=name))
 
     def upsert_label_feedback(self, label_id: str, feedback: str,
-                              scores: Dict[str, float]) -> Entity.Label:
+                              scores: Dict[str, float]) -> List[Entity.Label]:
         """
+        Submits the label feedback which is a free-form text and numeric
+        label scores.
 
         Args:
             label_id: Target label ID
             feedback: Free text comment regarding the label
-            scores: A dict of scores, the key is a score name and the value is the score value
-        Returns: A list of LabelScore instances
+            scores: A dict of scores, the key is a score name and the value is
+            the score value
 
+        Returns:
+            A list of LabelScore instances
         """
-        mutation_str = """mutation UpsertAutoQaLabelFeedbackPyApi($labelId: ID!, $feedback: String!, $scores: Json!){
-            upsertAutoQaLabelFeedback(input: {labelId: $labelId, feedback: $feedback, scores: $scores}) { id scores {id name score} }
-        }
+        mutation_str = """
+        mutation UpsertAutoQaLabelFeedbackPyApi(
+            $labelId: ID!
+            $feedback: String!
+            $scores: Json!
+            ) {
+            upsertAutoQaLabelFeedback(
+                input: {
+                    labelId: $labelId,
+                    feedback: $feedback,
+                    scores: $scores
+                    }
+            ) {
+                id
+                scores {
+                id
+                name
+                score
+                }
+            }
+            }
         """
         res = self.execute(mutation_str, {
             "labelId": label_id,
@@ -2239,4 +2261,7 @@ class Client:
         })
         scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
 
-        return [Entity.LabelScore(self, x) for x in scores_raw]
+        return [
+            labelbox.LabelScore(name=x['name'], score=x['score'])
+            for x in scores_raw
+        ]
