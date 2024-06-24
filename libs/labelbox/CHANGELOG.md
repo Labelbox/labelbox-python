@@ -1,4 +1,12 @@
 # Changelog
+# Version 3.74.0 (2024-06-24)
+## Added
+* Include predictions in export (#1689)
+* Upsert label feedback method Client upsert_label_feedback() (#1684)
+
+## Removed
+* Removed deprecated class LabelList (#1691)
+
 # Version 3.73.0 (2024-06-20)
 ## Added
 * Conversational data row checks (#1678)
