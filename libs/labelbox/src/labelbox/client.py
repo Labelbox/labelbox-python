@@ -653,7 +653,8 @@ class Client:
         params = {"id": id}
         result = self.execute(query, params)
         if not result:
-            raise labelbox.exceptions.ResourceNotFoundError(Entity.ModelConfig, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Entity.ModelConfig, params)
         return result['deleteModelConfig']['success']
 
     def create_dataset(self,
@@ -741,85 +742,17 @@ class Client:
         Raises:
             InvalidAttributeError: If the Project type does not contain
                 any of the attribute names given in kwargs.
+
+        NOTE: the following attributes are used only in chat model evaluation projects:
+            dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
+            They are not used for general projects and not supported in this method
         """
-
-        auto_audit_percentage = kwargs.get("auto_audit_percentage")
-        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
-            raise ValueError(
-                "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
-            )
-
-        name = kwargs.get("name")
-        if name is None or not name.strip():
-            raise ValueError("project name must be a valid string.")
-
-        queue_mode = kwargs.get("queue_mode")
-        if queue_mode is QueueMode.Dataset:
-            raise ValueError(
-                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
-            )
-        elif queue_mode is QueueMode.Batch:
-            logger.warning(
-                "Passing a queue mode of batch is redundant and will soon no longer be supported."
-            )
-
-        media_type = kwargs.get("media_type")
-        if media_type and MediaType.is_supported(media_type):
-            media_type_value = media_type.value
-        elif media_type:
-            raise TypeError(f"{media_type} is not a valid media type. Use"
-                            f" any of {MediaType.get_supported_members()}"
-                            " from MediaType. Example: MediaType.Image.")
-        else:
-            logger.warning(
-                "Creating a project without specifying media_type"
-                " through this method will soon no longer be supported.")
-            media_type_value = None
-
-        ontology_kind = kwargs.pop("ontology_kind", None)
-        if ontology_kind and OntologyKind.is_supported(ontology_kind):
-            editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
-                ontology_kind, media_type).value
-        elif ontology_kind:
-            raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
-        else:
-            editor_task_type_value = None
-
-        quality_mode = kwargs.get("quality_mode")
-        if not quality_mode:
-            logger.info("Defaulting quality mode to Benchmark.")
-
-        data = kwargs
-        data.pop("quality_mode", None)
-        if quality_mode is None or quality_mode is QualityMode.Benchmark:
-            data[
-                "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
-            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-        elif quality_mode is QualityMode.Consensus:
-            data[
-                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-        else:
-            raise ValueError(f"{quality_mode} is not a valid quality mode.")
-
-        params = {**data}
-        if media_type_value:
-            params["media_type"] = media_type_value
-        if editor_task_type_value:
-            params["editor_task_type"] = editor_task_type_value
-
-        extra_params = {
-            Field.String("dataset_name_or_id"):
-                params.pop("dataset_name_or_id", None),
-            Field.Boolean("append_to_existing_dataset"):
-                params.pop("append_to_existing_dataset", None),
-            Field.Int("data_row_count"):
-                params.pop("data_row_count", None),
-        }
-        extra_params = {k: v for k, v in extra_params.items() if v is not None}
-
-        return self._create(Entity.Project, params, extra_params)
+        #  The following arguments are not supported for general projects, only for chat model evaluation projects
+        kwargs.pop("dataset_name_or_id", None)
+        kwargs.pop("append_to_existing_dataset", None)
+        kwargs.pop("data_row_count", None)
+        kwargs.pop("editor_task_type", None)
+        return self._create_project(**kwargs)
 
     @overload
     def create_model_evaluation_project(self,
@@ -882,12 +815,98 @@ class Client:
             dataset_name_or_id = dataset_name
 
         kwargs["media_type"] = MediaType.Conversational
-        kwargs["ontology_kind"] = OntologyKind.ModelEvaluation
         kwargs["dataset_name_or_id"] = dataset_name_or_id
         kwargs["append_to_existing_dataset"] = append_to_existing_dataset
         kwargs["data_row_count"] = data_row_count
+        kwargs["editor_task_type"] = EditorTaskType.ModelChatEvaluation.value
+
+        return self._create_project(**kwargs)
+
+    def create_offline_model_evaluation_project(self, **kwargs) -> Project:
+        """
+        Creates a project for offline model evaluation.
+        Args:
+            **kwargs: Additional parameters to pass see the create_project method
+        Returns:
+            Project: The created project
+        """
+        kwargs[
+            "media_type"] = MediaType.Conversational  # Only Conversational is supported
+        kwargs[
+            "editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value  # Special editor task type for offline model evaluation
+
+        # The following arguments are not supported for offline model evaluation
+        kwargs.pop("dataset_name_or_id", None)
+        kwargs.pop("append_to_existing_dataset", None)
+        kwargs.pop("data_row_count", None)
 
         return self.create_project(**kwargs)
+
+    def _create_project(self, **kwargs) -> Project:
+        auto_audit_percentage = kwargs.get("auto_audit_percentage")
+        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
+        if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
+            raise ValueError(
+                "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+            )
+
+        name = kwargs.get("name")
+        if name is None or not name.strip():
+            raise ValueError("project name must be a valid string.")
+
+        queue_mode = kwargs.get("queue_mode")
+        if queue_mode is QueueMode.Dataset:
+            raise ValueError(
+                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
+            )
+        elif queue_mode is QueueMode.Batch:
+            logger.warning(
+                "Passing a queue mode of batch is redundant and will soon no longer be supported."
+            )
+
+        media_type = kwargs.get("media_type")
+        if media_type and MediaType.is_supported(media_type):
+            media_type_value = media_type.value
+        elif media_type:
+            raise TypeError(f"{media_type} is not a valid media type. Use"
+                            f" any of {MediaType.get_supported_members()}"
+                            " from MediaType. Example: MediaType.Image.")
+        else:
+            logger.warning(
+                "Creating a project without specifying media_type"
+                " through this method will soon no longer be supported.")
+            media_type_value = None
+
+        quality_mode = kwargs.get("quality_mode")
+        if not quality_mode:
+            logger.info("Defaulting quality mode to Benchmark.")
+
+        data = kwargs
+        data.pop("quality_mode", None)
+        if quality_mode is None or quality_mode is QualityMode.Benchmark:
+            data[
+                "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
+        elif quality_mode is QualityMode.Consensus:
+            data[
+                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+        else:
+            raise ValueError(f"{quality_mode} is not a valid quality mode.")
+
+        params = {**data}
+        if media_type_value:
+            params["media_type"] = media_type_value
+
+        extra_params = {
+            Field.String("dataset_name_or_id"):
+                params.pop("dataset_name_or_id", None),
+            Field.Boolean("append_to_existing_dataset"):
+                params.pop("append_to_existing_dataset", None),
+        }
+        extra_params = {k: v for k, v in extra_params.items() if v is not None}
+
+        return self._create(Entity.Project, params, extra_params)
 
     def get_roles(self) -> List[Role]:
         """
