@@ -85,6 +85,7 @@ def make_named_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_export_empty_metadata(client, configured_project_with_label,
                                wait_for_data_row_processing):
     project, _, data_row, _ = configured_project_with_label

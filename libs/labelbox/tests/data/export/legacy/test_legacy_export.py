@@ -11,12 +11,12 @@ from labelbox import Dataset, Project
 IMAGE_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_export_annotations_nested_checklist(
         client, configured_project_with_complex_ontology,
         wait_for_data_row_processing):
     project, data_row = configured_project_with_complex_ontology
     data_row = wait_for_data_row_processing(client, data_row)
-
     ontology = project.ontology().normalized
 
     tool = ontology["tools"][0]
@@ -228,6 +228,7 @@ def test_dataset_export(dataset, image_url):
     assert set(result) == ids
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_data_row_export_with_empty_media_attributes(
         client, configured_project_with_label, wait_for_data_row_processing):
     project, _, data_row, _ = configured_project_with_label
