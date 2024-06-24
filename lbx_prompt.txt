@@ -3360,7 +3360,7 @@ def conversation_entity_data_row(client, rand_gen):
 @pytest.fixture
 def project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
+                                    queue_modes=[QueueMode.Batch],
                                     media_type=MediaType.Image)
     yield project
     project.delete()
@@ -3370,7 +3370,7 @@ def project(client, rand_gen):
 def consensus_project(client, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     quality_mode=QualityMode.Consensus,
-                                    queue_mode=QueueMode.Batch,
+                                    queue_modes=[QueueMode.Batch],
                                     media_type=MediaType.Image)
     yield project
     project.delete()
@@ -3560,7 +3560,7 @@ def project_based_user(client, rand_gen):
 def project_pack(client):
     projects = [
         client.create_project(name=f"user-proj-{idx}",
-                              queue_mode=QueueMode.Batch,
+                              queue_modes=[QueueMode.Batch],
                               media_type=MediaType.Image) for idx in range(2)
     ]
     yield projects
@@ -3729,7 +3729,7 @@ def _setup_ontology(project):
 def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
                                              image_url):
     project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
+                                    queue_modes=[QueueMode.Batch],
                                     media_type=MediaType.Image)
     dataset = initial_dataset
     data_row = dataset.create_data_row(row_data=image_url)
@@ -6650,7 +6650,7 @@ def test_project_dataset(client, rand_gen):
     ):
         client.create_project(
             name=rand_gen(str),
-            queue_mode=QueueMode.Dataset,
+            queue_modes=[QueueMode.Dataset],
         )
 
 
@@ -8348,9 +8348,9 @@ def project_to_test_where(client, rand_gen):
     p_b_name = f"b-{rand_gen(str)}"
     p_c_name = f"c-{rand_gen(str)}"
 
-    p_a = client.create_project(name=p_a_name, queue_mode=QueueMode.Batch)
-    p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
-    p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
+    p_a = client.create_project(name=p_a_name, queue_modes=[QueueMode.Batch])
+    p_b = client.create_project(name=p_b_name, queue_modes=[QueueMode.Batch])
+    p_c = client.create_project(name=p_c_name, queue_modes=[QueueMode.Batch])
 
     yield p_a, p_b, p_c
 
@@ -10053,7 +10053,7 @@ def hardcoded_datarow_id():
 def configured_project_with_ontology(client, ontology, rand_gen):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
+        queue_modes=[QueueMode.Batch],
         media_type=MediaType.Image,
     )
     editor = list(
@@ -12803,7 +12803,7 @@ def configured_project_with_ontology(client, initial_dataset, ontology,
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
+        queue_modes=[QueueMode.Batch],
     )
     editor = list(
         client.get_labeling_frontends(
@@ -12827,7 +12827,7 @@ def configured_project_with_ontology(client, initial_dataset, ontology,
 def configured_project_without_data_rows(client, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str),
                                     description=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+                                    queue_modes=[QueueMode.Batch])
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -22430,7 +22430,7 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
-            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
+            quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark
         Returns:
             A new Project object.
@@ -22461,41 +22461,63 @@ class Client:
             )
 
         media_type = kwargs.get("media_type")
-        if media_type:
-            if MediaType.is_supported(media_type):
-                media_type = media_type.value
-            else:
-                raise TypeError(f"{media_type} is not a valid media type. Use"
-                                f" any of {MediaType.get_supported_members()}"
-                                " from MediaType. Example: MediaType.Image.")
+        if media_type and MediaType.is_supported(media_type):
+            media_type_value = media_type.value
+        elif media_type:
+            raise TypeError(f"{media_type} is not a valid media type. Use"
+                            f" any of {MediaType.get_supported_members()}"
+                            " from MediaType. Example: MediaType.Image.")
         else:
             logger.warning(
                 "Creating a project without specifying media_type"
                 " through this method will soon no longer be supported.")
+            media_type_value = None
 
-        quality_mode = kwargs.get("quality_mode")
-        if not quality_mode:
-            logger.info("Defaulting quality mode to Benchmark.")
+        ontology_kind = kwargs.pop("ontology_kind", None)
+        if ontology_kind and OntologyKind.is_supported(ontology_kind):
+            editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
+                ontology_kind, media_type).value
+        elif ontology_kind:
+            raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
+        else:
+            editor_task_type_value = None
+
+        quality_modes = kwargs.get("quality_modes")
+        if not quality_modes:
+            logger.info("Defaulting quality modes to Benchmark.")
 
         data = kwargs
-        data.pop("quality_mode", None)
-        if quality_mode is None or quality_mode is QualityMode.Benchmark:
+        data.pop("quality_modes", None)
+        if quality_modes is None or quality_modes == [QualityMode.Benchmark]:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-        elif quality_mode is QualityMode.Consensus:
+            data["is_benchmark_enabled"] = True
+        elif QualityMode.Consensus in quality_modes:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+            data["is_consensus_enabled"] = True
         else:
-            raise ValueError(f"{quality_mode} is not a valid quality mode.")
+            raise ValueError(f"{quality_modes} is not a valid quality modes array. Allowed values are [Benchmark, Consensus]")
 
-        return self._create(Entity.Project, {
-            **data,
-            **({
-                "media_type": media_type
-            } if media_type else {})
-        })
+        params = {**data}
+        if media_type_value:
+            params["media_type"] = media_type_value
+        if editor_task_type_value:
+            params["editor_task_type"] = editor_task_type_value
+
+        extra_params = {
+            Field.String("dataset_name_or_id"):
+                params.pop("dataset_name_or_id", None),
+            Field.Boolean("append_to_existing_dataset"):
+                params.pop("append_to_existing_dataset", None),
+            Field.Int("data_row_count"):
+                params.pop("data_row_count", None),
+        }
+        extra_params = {k: v for k, v in extra_params.items() if v is not None}
+
+        return self._create(Entity.Project, params, extra_params)
 
     def get_roles(self) -> List[Role]:
         """
