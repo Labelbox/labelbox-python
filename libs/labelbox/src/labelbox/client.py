@@ -53,6 +53,7 @@ from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogPar
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
+from labelbox.schema.label_score import LabelScore
 from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
                                            EditorTaskType)
 
@@ -2197,3 +2198,53 @@ class Client:
                 return e
         raise labelbox.exceptions.ResourceNotFoundError(Embedding,
                                                         dict(name=name))
+
+    def upsert_label_feedback(
+            self, label_id: str, feedback: str,
+            scores: Dict[str, float]) -> List[LabelScore]:
+        """
+        Submits the label feedback which is a free-form text and numeric
+        label scores.
+
+        Args:
+            label_id: Target label ID
+            feedback: Free text comment regarding the label
+            scores: A dict of scores, the key is a score name and the value is
+            the score value
+
+        Returns:
+            A list of LabelScore instances
+        """
+        mutation_str = """
+        mutation UpsertAutoQaLabelFeedbackPyApi(
+            $labelId: ID!
+            $feedback: String!
+            $scores: Json!
+            ) {
+            upsertAutoQaLabelFeedback(
+                input: {
+                    labelId: $labelId,
+                    feedback: $feedback,
+                    scores: $scores
+                    }
+            ) {
+                id
+                scores {
+                id
+                name
+                score
+                }
+            }
+            }
+        """
+        res = self.execute(mutation_str, {
+            "labelId": label_id,
+            "feedback": feedback,
+            "scores": scores
+        })
+        scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
+
+        return [
+            labelbox.LabelScore(name=x['name'], score=x['score'])
+            for x in scores_raw
+        ]
