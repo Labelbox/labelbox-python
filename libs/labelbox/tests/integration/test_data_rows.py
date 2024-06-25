@@ -10,10 +10,9 @@ import pytest
 
 from labelbox.schema.media_type import MediaType
 from labelbox import DataRow, AssetAttachment
-from labelbox.exceptions import MalformedQueryException
-from labelbox.schema.task import Task
+from labelbox.exceptions import MalformedQueryException, ResourceCreationError
+from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
-import labelbox.exceptions
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
@@ -1050,7 +1049,7 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
         dataset, sample_image):
     global_key_1 = str(uuid.uuid4())
 
-    with pytest.raises(labelbox.exceptions.MalformedQueryException) as exc_info:
+    with pytest.raises(ResourceCreationError) as exc_info:
         dataset.create_data_rows_sync([{
             DataRow.row_data: sample_image,
             DataRow.global_key: global_key_1
@@ -1061,8 +1060,8 @@ def test_data_row_bulk_creation_sync_with_same_global_keys(
 
     assert len(list(dataset.data_rows())) == 1
     assert list(dataset.data_rows())[0].global_key == global_key_1
-    assert "Some data rows were not imported. Check error output here" in str(
-        exc_info.value)
+    assert "Duplicate global key" in str(exc_info.value)
+    assert exc_info.value.args[1]  # task id
 
 
 @pytest.fixture

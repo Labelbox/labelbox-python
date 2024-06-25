@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
-from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
+from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, ResourceCreationError
 from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -214,7 +214,10 @@ class Dataset(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {**args, 'dataset': self.uid})
         return DataRow(self.client, res['createDataRow'])
 
-    def create_data_rows_sync(self, items) -> None:
+    def create_data_rows_sync(
+            self,
+            items,
+            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> None:
         """ Synchronously bulk upload data rows.
 
         Use this instead of `Dataset.create_data_rows` for smaller batches of data rows that need to be uploaded quickly.
@@ -228,6 +231,7 @@ class Dataset(DbObject, Updateable, Deletable):
             None. If the function doesn't raise an exception then the import was successful.
 
         Raises:
+            ResourceCreationError: Errors in data row upload
             InvalidQueryError: If the `items` parameter does not conform to
                 the specification in Dataset._create_descriptor_file or if the server did not accept the
                 DataRow creation request (unknown reason).
@@ -242,18 +246,25 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Dataset.create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
                 " For larger imports use the async function Dataset.create_data_rows()"
             )
-        descriptor_url = DescriptorFileCreator(self.client).create_one(
-            items, max_attachments_per_data_row=max_attachments_per_data_row)
-        dataset_param = "datasetId"
-        url_param = "jsonUrl"
-        query_str = """mutation AppendRowsToDatasetSyncPyApi($%s: ID!, $%s: String!){
-            appendRowsToDatasetSync(data:{datasetId: $%s, jsonFileUrl: $%s}
-            ){dataset{id}}} """ % (dataset_param, url_param, dataset_param,
-                                   url_param)
-        self.client.execute(query_str, {
-            dataset_param: self.uid,
-            url_param: descriptor_url
-        })
+        if file_upload_thread_count < 1:
+            raise ValueError(
+                "file_upload_thread_count must be a positive integer")
+
+        upload_items = self._separate_and_process_items(items)
+        specs = DataRowCreateItem.build(self.uid, upload_items)
+        task: DataUpsertTask = self._exec_upsert_data_rows(
+            specs, file_upload_thread_count)
+        task.wait_till_done()
+
+        if task.has_errors():
+            raise ResourceCreationError(
+                f"Data row upload errors: {task.errors}", cause=task.uid)
+        if task.status != "COMPLETE":
+            raise ResourceCreationError(
+                f"Data row upload did not complete, task status {task.status} task id {task.uid}"
+            )
+
+        return None
 
     def create_data_rows(self,
                          items,
@@ -287,14 +298,18 @@ class Dataset(DbObject, Updateable, Deletable):
             raise ValueError(
                 "file_upload_thread_count must be a positive integer")
 
+        # Usage example
+        upload_items = self._separate_and_process_items(items)
+        specs = DataRowCreateItem.build(self.uid, upload_items)
+        return self._exec_upsert_data_rows(specs, file_upload_thread_count)
+
+    def _separate_and_process_items(self, items):
         string_items = [item for item in items if isinstance(item, str)]
         dict_items = [item for item in items if isinstance(item, dict)]
         dict_string_items = []
         if len(string_items) > 0:
             dict_string_items = self._build_from_local_paths(string_items)
-        specs = DataRowCreateItem.build(self.uid,
-                                        dict_items + dict_string_items)
-        return self._exec_upsert_data_rows(specs, file_upload_thread_count)
+        return dict_items + dict_string_items
 
     def _build_from_local_paths(
             self,
