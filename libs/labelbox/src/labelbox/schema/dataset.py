@@ -141,78 +141,31 @@ class Dataset(DbObject, Updateable, Deletable):
                 any of the field names given in `kwargs`.
 
         """
-        invalid_argument_error = "Argument to create_data_row() must be either a dictionary, or kwargs containing `row_data` at minimum"
+        file_upload_thread_count = 1
+        args = items if items is not None else kwargs
 
-        def convert_field_keys(items):
-            if not isinstance(items, dict):
-                raise InvalidQueryError(invalid_argument_error)
-            return {
-                key.name if isinstance(key, Field) else key: value
-                for key, value in items.items()
-            }
+        upload_items = self._separate_and_process_items([args])
+        specs = DataRowCreateItem.build(self.uid, upload_items)
+        task: DataUpsertTask = self._exec_upsert_data_rows(
+            specs, file_upload_thread_count)
 
-        if items is not None and len(kwargs) > 0:
-            raise InvalidQueryError(invalid_argument_error)
+        task.wait_till_done()
 
-        DataRow = Entity.DataRow
-        args = convert_field_keys(items) if items is not None else kwargs
+        if task.has_errors():
+            raise ResourceCreationError(
+                f"Data row upload errors: {task.errors}", cause=task.uid)
+        if task.status != "COMPLETE":
+            raise ResourceCreationError(
+                f"Data row upload did not complete, task status {task.status} task id {task.uid}"
+            )
 
-        if DataRow.row_data.name not in args:
-            raise InvalidQueryError(
-                "DataRow.row_data missing when creating DataRow.")
+        res = task.result
+        if res is None or len(res) == 0:
+            raise ResourceCreationError(
+                f"Data row upload did not complete, task status {task.status} task id {task.uid}"
+            )
 
-        row_data = args[DataRow.row_data.name]
-
-        if isinstance(row_data, str) and row_data.startswith("s3:/"):
-            raise InvalidQueryError(
-                "row_data: s3 assets must start with 'https'.")
-
-        if not isinstance(row_data, str):
-            # If the row data is an object, upload as a string
-            args[DataRow.row_data.name] = json.dumps(row_data)
-        elif os.path.exists(row_data):
-            # If row data is a local file path, upload it to server.
-            args[DataRow.row_data.name] = self.client.upload_file(row_data)
-
-        # Parse metadata fields, if they are provided
-        if DataRow.metadata_fields.name in args:
-            mdo = self.client.get_data_row_metadata_ontology()
-            args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
-                args[DataRow.metadata_fields.name])
-
-        if "embeddings" in args:
-            args["embeddings"] = [
-                EmbeddingVector(**e).to_gql() for e in args["embeddings"]
-            ]
-
-        query_str = """mutation CreateDataRowPyApi(
-            $row_data: String!,
-            $metadata_fields: [DataRowCustomMetadataUpsertInput!],
-            $attachments: [DataRowAttachmentInput!],
-            $media_type : MediaType,
-            $external_id : String,
-            $global_key : String,
-            $dataset: ID!,
-            $embeddings: [DataRowEmbeddingVectorInput!]
-            ){
-                createDataRow(
-                    data:
-                      {
-                        rowData: $row_data
-                        mediaType: $media_type
-                        metadataFields: $metadata_fields
-                        externalId: $external_id
-                        globalKey: $global_key
-                        attachments: $attachments
-                        dataset: {connect: {id: $dataset}}
-                        embeddings: $embeddings
-                    }
-                   )
-                {%s}
-            }
-        """ % query.results_query_part(Entity.DataRow)
-        res = self.client.execute(query_str, {**args, 'dataset': self.uid})
-        return DataRow(self.client, res['createDataRow'])
+        return self.client.get_data_row(res[0]['id'])
 
     def create_data_rows_sync(
             self,
