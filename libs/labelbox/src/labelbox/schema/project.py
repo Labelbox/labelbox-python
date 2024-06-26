@@ -13,13 +13,10 @@ import requests
 
 from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import (
-    InvalidQueryError,
-    LabelboxError,
-    ProcessingWaitTimeout,
-    ResourceConflict,
-    ResourceNotFoundError
-)
+from labelbox.exceptions import error_message_for_unparsed_graphql_error
+from labelbox.exceptions import (InvalidQueryError, LabelboxError,
+                                 ProcessingWaitTimeout, ResourceConflict,
+                                 ResourceNotFoundError)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -122,6 +119,7 @@ class Project(DbObject, Updateable, Deletable):
     media_type = Field.Enum(MediaType, "media_type", "allowedMediaType")
     editor_task_type = Field.Enum(EditorTaskType, "editor_task_type")
     data_row_count = Field.Int("data_row_count")
+    model_setup_complete: Field = Field.Boolean("model_setup_complete")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -1271,7 +1269,18 @@ class Project(DbObject, Updateable, Deletable):
             "projectId": self.uid,
             "modelConfigId": model_config_id,
         }
-        result = self.client.execute(query, params)
+        try:
+            result = self.client.execute(query, params)
+        except LabelboxError as e:
+            if e.message.startswith(
+                    "Unknown error: "
+            ):  # unfortunate hack to handle unparsed graphql errors
+                error_content = error_message_for_unparsed_graphql_error(
+                    e.message)
+            else:
+                error_content = e.message
+            raise LabelboxError(message=error_content) from e
+
         if not result:
             raise ResourceNotFoundError(ModelConfig, params)
         return result["createProjectModelConfig"]["projectModelConfigId"]
@@ -1298,6 +1307,29 @@ class Project(DbObject, Updateable, Deletable):
         if not result:
             raise ResourceNotFoundError(ProjectModelConfig, params)
         return result["deleteProjectModelConfig"]["success"]
+
+    def set_project_model_setup_complete(self) -> bool:
+        """
+        Sets the model setup is complete for this project.
+        Once the project is marked as "setup complete", a user can not add  / modify delete existing project model configs.
+
+        Returns:
+            bool, indicates if the model setup is complete.
+
+        NOTE: This method should only be used for live model evaluation projects.
+            It will throw exception for all other types of projects.
+            User Project is_chat_evaluation() method to check if the project is a live model evaluation project.
+        """
+        query = """mutation SetProjectModelSetupCompletePyApi($projectId: ID!) {
+            setProjectModelSetupComplete(where: {id: $projectId}, data: {modelSetupComplete: true}) {
+                modelSetupComplete
+            }
+        }"""
+
+        result = self.client.execute(query, {"projectId": self.uid})
+        self.model_setup_complete = result["setProjectModelSetupComplete"][
+            "modelSetupComplete"]
+        return result["setProjectModelSetupComplete"]["modelSetupComplete"]
 
     def set_labeling_parameter_overrides(
             self, data: List[LabelingParameterOverrideInput]) -> bool:
@@ -1752,7 +1784,9 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_overview(self, details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
+    def get_overview(
+            self,
+            details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
         """Return the overview of a project.
 
         This method returns the number of data rows per task queue and issues of a project,
@@ -1792,7 +1826,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Must use experimental to access "issues"
         result = self.client.execute(query, {"projectId": self.uid},
-                                        experimental=True)["project"]
+                                     experimental=True)["project"]
 
         # Reformat category names
         overview = {
@@ -1805,7 +1839,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Rename categories
         overview["to_label"] = overview.pop("unlabeled")
-        overview["total_data_rows"] = overview.pop("all")        
+        overview["total_data_rows"] = overview.pop("all")
 
         if not details:
             return ProjectOverview(**overview)
@@ -1813,18 +1847,20 @@ class Project(DbObject, Updateable, Deletable):
             # Build dictionary for queue details for review and rework queues
             for category in ["rework", "review"]:
                 queues = [
-                    {tq["name"]: tq.get("dataRowCount")}
+                    {
+                        tq["name"]: tq.get("dataRowCount")
+                    }
                     for tq in result.get("taskQueues")
                     if tq.get("queueType") == f"MANUAL_{category.upper()}_QUEUE"
                 ]
 
-                overview[f"in_{category}"]  = {
+                overview[f"in_{category}"] = {
                     "data": queues,
                     "total": overview[f"in_{category}"]
                 }
-            
+
             return ProjectOverviewDetailed(**overview)
-    
+
     def clone(self) -> "Project":
         """
         Clones the current project.
