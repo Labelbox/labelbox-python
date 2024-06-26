@@ -4,7 +4,7 @@ from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
 import warnings
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.relationship import RelationshipAnnotation
@@ -28,16 +28,16 @@ AnnotationType = Union[NDObjectType, NDClassificationType,
                        NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship]
 
 
-class NDLabel(pydantic_compat.BaseModel):
+class NDLabel(BaseModel):
     annotations: List[AnnotationType]
 
-    class _Relationship(pydantic_compat.BaseModel):
+    class _Relationship(BaseModel):
         """This object holds information about the relationship"""
         ndjson: NDRelationship
         source: str
         target: str
 
-    class _AnnotationGroup(pydantic_compat.BaseModel):
+    class _AnnotationGroup(BaseModel):
         """Stores all the annotations and relationships per datarow"""
         data_row: DataRow = None
         ndjson_annotations: Dict[str, AnnotationType] = {}
@@ -156,14 +156,16 @@ class NDLabel(pydantic_compat.BaseModel):
             raise ValueError("Missing annotations while inferring media type")
 
         types = {type(annotation) for annotation in annotations}
+        types_values = {type(annotation.value) for annotation in annotations}
         data = ImageData
-        if (TextEntity in types) or (ConversationEntity in types):
+        if (ObjectAnnotation
+                in types) and ((TextEntity in types_values) or
+                               (ConversationEntity in types_values)):
             data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
             data = VideoData
         elif DICOMObjectAnnotation in types:
             data = DicomData
-
         if data_row.id:
             return data(uid=data_row.id)
         else:

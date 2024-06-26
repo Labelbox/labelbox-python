@@ -1,15 +1,16 @@
 from abc import ABC
 from typing import Dict, Optional, Any, Union
+from labelbox.typing_imports import Annotated
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, field_validator, Field, ValidationError
 
-ConfidenceValue = pydantic_compat.confloat(ge=0, le=1)
+ConfidenceValue = Annotated[float, Field(ge=0, le=1)]
 
 MIN_CONFIDENCE_SCORES = 2
 MAX_CONFIDENCE_SCORES = 15
 
 
-class BaseMetric(pydantic_compat.BaseModel, ABC):
+class BaseMetric(BaseModel, ABC):
     value: Union[Any, Dict[float, Any]]
     feature_name: Optional[str] = None
     subclass_name: Optional[str] = None
@@ -19,17 +20,17 @@ class BaseMetric(pydantic_compat.BaseModel, ABC):
         res = super().dict(*args, **kwargs)
         return {k: v for k, v in res.items() if v is not None}
 
-    @pydantic_compat.validator('value')
+    @field_validator('value')
+    @classmethod
     def validate_value(cls, value):
         if isinstance(value, Dict):
             if not (MIN_CONFIDENCE_SCORES <= len(value) <=
                     MAX_CONFIDENCE_SCORES):
-                raise pydantic_compat.ValidationError([
-                    pydantic_compat.ErrorWrapper(ValueError(
+                raise ValidationError([
+                    ValueError(
                         "Number of confidence scores must be greater"
                         f" than or equal to {MIN_CONFIDENCE_SCORES} and"
                         f" less than or equal to {MAX_CONFIDENCE_SCORES}. Found {len(value)}"
                     ),
-                                                 loc='value')
                 ], cls)
         return value

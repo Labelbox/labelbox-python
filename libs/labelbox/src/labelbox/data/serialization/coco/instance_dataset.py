@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from tqdm import tqdm
-from .... import pydantic_compat
+from pydantic import BaseModel
 
 from ...annotation_types import ImageData, MaskData, Mask, ObjectAnnotation, Label, Polygon, Point, Rectangle
 from ...annotation_types.collection import LabelCollection
@@ -129,7 +129,7 @@ def process_label(
     return image, coco_annotations, categories
 
 
-class CocoInstanceDataset(pydantic_compat.BaseModel):
+class CocoInstanceDataset(BaseModel):
     info: Dict[str, Any] = {}
     images: List[CocoImage]
     annotations: List[COCOObjectAnnotation]

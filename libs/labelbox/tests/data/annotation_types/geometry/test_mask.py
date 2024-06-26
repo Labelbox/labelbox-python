@@ -3,12 +3,13 @@ import pytest
 import numpy as np
 import cv2
 
+from pydantic import ValidationError
+
 from labelbox.data.annotation_types import Point, Rectangle, Mask, MaskData
-from labelbox import pydantic_compat
 
 
 def test_mask():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         mask = Mask()
 
     mask_data = np.zeros((32, 32, 3), dtype=np.uint8)

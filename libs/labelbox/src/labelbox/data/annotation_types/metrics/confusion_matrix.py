@@ -1,11 +1,12 @@
 from enum import Enum
 from typing import Tuple, Dict, Union
+from labelbox.typing_imports import Annotated
 
-from labelbox import pydantic_compat
+from pydantic import Field
 
 from .base import ConfidenceValue, BaseMetric
 
-Count = pydantic_compat.conint(ge=0, le=1e10)
+Count = Annotated[int, Field(ge=0, le=1e10)]
 
 ConfusionMatrixMetricValue = Tuple[Count, Count, Count, Count]
 ConfusionMatrixMetricConfidenceValue = Dict[ConfidenceValue,
@@ -30,5 +31,4 @@ class ConfusionMatrixMetric(BaseMetric):
     metric_name: str
     value: Union[ConfusionMatrixMetricValue,
                  ConfusionMatrixMetricConfidenceValue]
-    aggregation: ConfusionMatrixAggregation = pydantic_compat.Field(
-        ConfusionMatrixAggregation.CONFUSION_MATRIX, const=True)
+    aggregation: ConfusionMatrixAggregation = ConfusionMatrixAggregation.CONFUSION_MATRIX

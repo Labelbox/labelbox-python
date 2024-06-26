@@ -2,13 +2,12 @@ from abc import ABC, abstractmethod
 
 from typing import List, Tuple, Optional
 
-from labelbox.pydantic_compat import BaseModel
+from pydantic import BaseModel
 from labelbox.schema.identifiable import UniqueId, GlobalKey
-from labelbox import pydantic_compat
 from labelbox.schema.data_row import DataRow
 
 
-class DataRowItemBase(ABC, pydantic_compat.BaseModel):
+class DataRowItemBase(ABC, BaseModel):
     """
     Base class for creating payloads for upsert operations.
     """

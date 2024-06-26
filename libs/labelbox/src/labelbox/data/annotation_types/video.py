@@ -1,7 +1,9 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator, field_validator
+
+from pydantic import BaseModel
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
@@ -87,12 +89,13 @@ class DICOMObjectAnnotation(VideoObjectAnnotation):
     group_key: GroupKey
 
 
-class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
+class MaskFrame(_CamelCaseMixin, BaseModel):
     index: int
     instance_uri: Optional[str] = None
     im_bytes: Optional[bytes] = None
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode='before')
+    @classmethod
     def validate_args(cls, values):
         im_bytes = values.get("im_bytes")
         instance_uri = values.get("instance_uri")
@@ -101,7 +104,8 @@ class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return values
 
-    @pydantic_compat.validator("instance_uri")
+    @field_validator("instance_uri")
+    @classmethod
     def validate_uri(cls, v):
         if not is_valid_uri(v):
             raise ValueError(f"{v} is not a valid uri")
@@ -113,7 +117,7 @@ class MaskInstance(_CamelCaseMixin, FeatureSchema):
     name: str
 
 
-class VideoMaskAnnotation(pydantic_compat.BaseModel):
+class VideoMaskAnnotation(BaseModel):
     """Video mask annotation
        >>> VideoMaskAnnotation(
        >>>     frames=[

@@ -2,28 +2,33 @@ from typing import Optional
 from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
-from labelbox import pydantic_compat
+from pydantic import model_validator, field_validator
 from ...annotation_types.types import Cuid
 
 
 class DataRow(_CamelCaseMixin):
-    id: str = None
-    global_key: str = None
+    id: Optional[str] = None
+    global_key: Optional[str] = None
 
-    @pydantic_compat.root_validator()
-    def must_set_one(cls, values):
-        if not is_exactly_one_set(values.get('id'), values.get('global_key')):
-            raise ValueError("Must set either id or global_key")
-        return values
+    @model_validator(mode='after')
+    def must_set_one(self):
+        if self.id is None and self.global_key is None:
+            raise ValueError(
+                "Must set either id or global_key for all data rows")
+
+        return self
 
 
 class NDJsonBase(_CamelCaseMixin):
-    uuid: str = None
+    uuid: str
     data_row: DataRow
 
-    @pydantic_compat.validator('uuid', pre=True, always=True)
-    def set_id(cls, v):
-        return v or str(uuid4())
+    @model_validator(mode='before')
+    @classmethod
+    def set_uuid(cls, data):
+        if data.get('uuid') is None:
+            data['uuid'] = str(uuid4())
+        return data
 
     def dict(self, *args, **kwargs):
         """ Pop missing id or missing globalKey from dataRow """
@@ -42,12 +47,11 @@ class NDAnnotation(NDJsonBase):
     page: Optional[int] = None
     unit: Optional[str] = None
 
-    @pydantic_compat.root_validator()
-    def must_set_one(cls, values):
-        if ('schema_id' not in values or values['schema_id']
-                is None) and ('name' not in values or values['name'] is None):
+    @model_validator(mode='after')
+    def must_set_one(self):
+        if self.schema_id is None and self.name is None:
             raise ValueError("Schema id or name are not set. Set either one.")
-        return values
+        return self
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)

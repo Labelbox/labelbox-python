@@ -13,13 +13,9 @@ import requests
 
 from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import (
-    InvalidQueryError,
-    LabelboxError,
-    ProcessingWaitTimeout,
-    ResourceConflict,
-    ResourceNotFoundError
-)
+from labelbox.exceptions import (InvalidQueryError, LabelboxError,
+                                 ProcessingWaitTimeout, ResourceConflict,
+                                 ResourceNotFoundError)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -896,8 +892,8 @@ class Project(DbObject, Updateable, Deletable):
             dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
-                by_alias=True)
+            consensus_settings = ConsensusSettings.model_validate(
+                consensus_settings).dict(by_alias=True)
 
         if row_count >= 1_000:
             return self._create_batch_async(name, dr_ids, global_keys, priority,
@@ -953,8 +949,8 @@ class Project(DbObject, Updateable, Deletable):
             dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
-                by_alias=True)
+            consensus_settings = ConsensusSettings.model_validate(
+                consensus_settings).dict(by_alias=True)
 
         method = 'createBatches'
         mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesInput!) {
@@ -1020,8 +1016,8 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Project must be in batch mode")
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
-                by_alias=True)
+            consensus_settings = ConsensusSettings.model_validate(
+                consensus_settings).dict(by_alias=True)
 
         method = 'createBatchesFromDataset'
         mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesFromDatasetInput!) {
@@ -1752,7 +1748,9 @@ class Project(DbObject, Updateable, Deletable):
         return response["queryAllDataRowsHaveBeenProcessed"][
             "allDataRowsHaveBeenProcessed"]
 
-    def get_overview(self, details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
+    def get_overview(
+            self,
+            details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
         """Return the overview of a project.
 
         This method returns the number of data rows per task queue and issues of a project,
@@ -1792,7 +1790,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Must use experimental to access "issues"
         result = self.client.execute(query, {"projectId": self.uid},
-                                        experimental=True)["project"]
+                                     experimental=True)["project"]
 
         # Reformat category names
         overview = {
@@ -1805,7 +1803,7 @@ class Project(DbObject, Updateable, Deletable):
 
         # Rename categories
         overview["to_label"] = overview.pop("unlabeled")
-        overview["total_data_rows"] = overview.pop("all")        
+        overview["total_data_rows"] = overview.pop("all")
 
         if not details:
             return ProjectOverview(**overview)
@@ -1813,18 +1811,20 @@ class Project(DbObject, Updateable, Deletable):
             # Build dictionary for queue details for review and rework queues
             for category in ["rework", "review"]:
                 queues = [
-                    {tq["name"]: tq.get("dataRowCount")}
+                    {
+                        tq["name"]: tq.get("dataRowCount")
+                    }
                     for tq in result.get("taskQueues")
                     if tq.get("queueType") == f"MANUAL_{category.upper()}_QUEUE"
                 ]
 
-                overview[f"in_{category}"]  = {
+                overview[f"in_{category}"] = {
                     "data": queues,
                     "total": overview[f"in_{category}"]
                 }
-            
+
             return ProjectOverviewDetailed(**overview)
-    
+
     def clone(self) -> "Project":
         """
         Clones the current project.

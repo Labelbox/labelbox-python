@@ -128,7 +128,8 @@ class TestExportTask:
             mock_requests_get.return_value.content = "b"
             export_task = ExportTask(mock_task, is_export_v2=True)
             output_data = []
-            export_task.get_buffered_stream().start(stream_handler=lambda x: output_data.append(x.json))
+            export_task.get_buffered_stream().start(
+                stream_handler=lambda x: output_data.append(x.json))
             assert data == output_data[0]
 
     def test_export_task_bad_offsets(self):

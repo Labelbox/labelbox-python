@@ -6,8 +6,11 @@ from itertools import chain
 import warnings
 
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
+from labelbox.typing_imports import Annotated
 
-from labelbox import pydantic_compat
+from pydantic import StringConstraints, Field, ConfigDict
+
+from pydantic import BaseModel
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 
@@ -25,23 +28,22 @@ class DataRowMetadataKind(Enum):
 
 
 # Metadata schema
-class DataRowMetadataSchema(pydantic_compat.BaseModel):
+class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     reserved: bool
     kind: DataRowMetadataKind
-    options: Optional[List["DataRowMetadataSchema"]]
-    parent: Optional[SchemaId]
+    options: Optional[List["DataRowMetadataSchema"]] = []
+    parent: Optional[SchemaId] = None
 
 
 DataRowMetadataSchema.update_forward_refs()
 
-Embedding: Type[List[float]] = pydantic_compat.conlist(float,
-                                                       min_items=128,
-                                                       max_items=128)
-String: Type[str] = pydantic_compat.constr(max_length=4096)
+Embedding: Type[List[float]] = Annotated[List[float],
+                                         Field(min_items=128, max_items=128)]
+String: Type[str] = Annotated[List[str], Field(max_length=4096)]
 
 
 # Metadata base class
@@ -65,8 +67,7 @@ class DeleteDataRowMetadata(_CamelCaseMixin):
     data_row_id: Union[str, UniqueId, GlobalKey]
     fields: List[SchemaId]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
@@ -97,9 +98,8 @@ class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
 
-    class Config:
-        arbitrary_types_allowed = True
-        alias_generator = camel_case
+    model_config = ConfigDict(arbitrary_types_allowed=True,
+                              alias_generator=camel_case)
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
@@ -124,17 +124,17 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     kind: str
 
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     kind: str
     options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]]
 

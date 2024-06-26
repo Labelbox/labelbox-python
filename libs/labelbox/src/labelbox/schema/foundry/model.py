@@ -1,12 +1,12 @@
 from labelbox.utils import _CamelCaseMixin
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 from datetime import datetime
 from typing import Dict
 
 
-class Model(_CamelCaseMixin, pydantic_compat.BaseModel):
+class Model(_CamelCaseMixin, BaseModel):
     id: str
     description: str
     inference_params_json_schema: Dict

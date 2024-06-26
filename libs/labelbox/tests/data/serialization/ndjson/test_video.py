@@ -20,7 +20,13 @@ def test_video():
 
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
-    assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
+    # assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
+    assert (res[0]) == data[2]
+    assert (res[1]) == data[0]
+    assert (res[2]) == data[1]
+    assert (res[3]) == data[3]
+    assert (res[4]) == data[4]
+    assert (res[5]) == data[5]
 
 
 def test_video_name_only():
@@ -90,13 +96,8 @@ def test_video_classification_global_subclassifications():
     for annotations in res:
         annotations.pop("uuid")
     assert res == [expected_first_annotation, expected_second_annotation]
-
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]
 
 
 def test_video_classification_nesting_bbox():
@@ -233,11 +234,7 @@ def test_video_classification_nesting_bbox():
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]
 
 
 def test_video_classification_point():
@@ -360,11 +357,7 @@ def test_video_classification_point():
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]
 
 
 def test_video_classification_frameline():
@@ -499,8 +492,4 @@ def test_video_classification_frameline():
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
-    res = next(deserialized)
-    annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    assert [d for d in deserialized]

@@ -5,6 +5,7 @@ from labelbox.data.serialization.ndjson.classification import NDRadio
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.data.serialization.ndjson.objects import NDLine
+from labelbox.data.annotation_types.metrics.scalar import ScalarMetricAggregation
 
 
 def round_dict(data):
@@ -21,8 +22,21 @@ def round_dict(data):
 
 
 @pytest.mark.parametrize('filename', [
-    'tests/data/assets/ndjson/classification_import_global_key.json',
     'tests/data/assets/ndjson/metric_import_global_key.json',
+])
+def test_metric_import(filename: str):
+    with open(filename, 'r') as f:
+        data = json.load(f)
+    res = list(NDJsonConverter.deserialize(data))
+    res = list(NDJsonConverter.serialize(res))
+
+    data[0]['aggregation'] = ScalarMetricAggregation.ARITHMETIC_MEAN.name
+    assert res == data
+    f.close()
+
+
+@pytest.mark.parametrize('filename', [
+    'tests/data/assets/ndjson/classification_import_global_key.json',
     'tests/data/assets/ndjson/polyline_import_global_key.json',
     'tests/data/assets/ndjson/text_entity_import_global_key.json',
     'tests/data/assets/ndjson/conversation_entity_import_global_key.json',
@@ -32,6 +46,7 @@ def test_many_types(filename: str):
         data = json.load(f)
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
+
     assert res == data
     f.close()
 

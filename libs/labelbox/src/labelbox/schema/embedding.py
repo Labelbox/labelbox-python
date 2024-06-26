@@ -1,7 +1,7 @@
 from typing import Optional, Callable, Dict, Any, List
 
 from labelbox.adv_client import AdvClient
-from labelbox.pydantic_compat import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 
 
 class EmbeddingVector(BaseModel):

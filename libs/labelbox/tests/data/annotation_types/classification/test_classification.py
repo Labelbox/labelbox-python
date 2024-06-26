@@ -1,14 +1,14 @@
 import pytest
 
+from pydantic import ValidationError
+
 from labelbox.data.annotation_types import (Checklist, ClassificationAnswer,
                                             Dropdown, Radio, Text,
                                             ClassificationAnnotation)
 
-from labelbox import pydantic_compat
-
 
 def test_classification_answer():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         ClassificationAnswer()
 
     feature_schema_id = "schema_id"
@@ -37,7 +37,7 @@ def test_classification():
                                               name="a classification")
     assert classification.dict()['value']['answer'] == answer
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         ClassificationAnnotation()
 
 
@@ -45,7 +45,7 @@ def test_subclass():
     answer = "1234"
     feature_schema_id = "11232"
     name = "my_feature"
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         # Should have feature schema info
         classification = ClassificationAnnotation(value=Text(answer=answer))
     classification = ClassificationAnnotation(value=Text(answer=answer),
@@ -98,11 +98,11 @@ def test_radio():
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = ClassificationAnnotation(value=Radio(
             answer=answer.name))
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Radio(answer=[answer])
     classification = Radio(answer=answer,)
     assert classification.dict() == {
@@ -159,10 +159,10 @@ def test_checklist():
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Checklist(answer=answer.name)
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Checklist(answer=answer)
 
     classification = Checklist(answer=[answer])
@@ -208,11 +208,11 @@ def test_dropdown():
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = ClassificationAnnotation(
             value=Dropdown(answer=answer.name), name="test")
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Dropdown(answer=answer)
     classification = Dropdown(answer=[answer])
     assert classification.dict() == {

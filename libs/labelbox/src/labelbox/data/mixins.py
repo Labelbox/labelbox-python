@@ -1,14 +1,15 @@
 from typing import Optional, List
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, field_validator
 
 from labelbox.exceptions import ConfidenceNotSupportedException, CustomMetricsNotSupportedException
 
 
-class ConfidenceMixin(pydantic_compat.BaseModel):
+class ConfidenceMixin(BaseModel):
     confidence: Optional[float] = None
 
-    @pydantic_compat.validator("confidence")
+    @field_validator('confidence')
+    @classmethod
     def confidence_valid_float(cls, value):
         if value is None:
             return value
@@ -32,24 +33,26 @@ class ConfidenceNotSupportedMixin:
         return super().__new__(cls)
 
 
-class CustomMetric(pydantic_compat.BaseModel):
+class CustomMetric(BaseModel):
     name: str
     value: float
 
-    @pydantic_compat.validator("name")
+    @field_validator("name")
+    @classmethod
     def confidence_valid_float(cls, value):
         if not isinstance(value, str):
             raise ValueError("Name must be a string")
         return value
 
-    @pydantic_compat.validator("value")
+    @field_validator("value")
+    @classmethod
     def value_valid_float(cls, value):
         if not isinstance(value, (int, float)):
             raise ValueError("Value must be a number")
         return value
 
 
-class CustomMetricsMixin(pydantic_compat.BaseModel):
+class CustomMetricsMixin(BaseModel):
     custom_metrics: Optional[List[CustomMetric]] = None
 
     def dict(self, *args, **kwargs):

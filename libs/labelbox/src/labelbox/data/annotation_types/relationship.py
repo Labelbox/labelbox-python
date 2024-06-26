@@ -1,9 +1,9 @@
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 from enum import Enum
 from labelbox.data.annotation_types.annotation import BaseAnnotation, ObjectAnnotation
 
 
-class Relationship(pydantic_compat.BaseModel):
+class Relationship(BaseModel):
 
     class Type(Enum):
         UNIDIRECTIONAL = "unidirectional"

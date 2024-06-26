@@ -1,11 +1,14 @@
+from dataclasses import field
 from typing import Dict, Optional, Union
+from labelbox.typing_imports import Annotated
+
 from enum import Enum
 
 from .base import ConfidenceValue, BaseMetric
 
-from labelbox import pydantic_compat
+from pydantic import Field, field_validator
 
-ScalarMetricValue = pydantic_compat.confloat(ge=0, le=100_000_000)
+ScalarMetricValue = Annotated[float, Field(ge=0, le=100_000_000)]
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
 
 
@@ -33,7 +36,8 @@ class ScalarMetric(BaseMetric):
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
-    @pydantic_compat.validator('metric_name')
+    @field_validator('metric_name')
+    @classmethod
     def validate_metric_name(cls, name: Union[str, None]):
         if name is None:
             return None

@@ -1,8 +1,9 @@
+from pyexpat import model
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
 from typing import List, Optional, Union, Dict, Any
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, ConfigDict, Field
 
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
@@ -35,7 +36,7 @@ class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
 
 
 class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
-    frame_number: int = pydantic_compat.Field(..., alias='frameNumber')
+    frame_number: int = Field(..., alias='frameNumber')
 
     def to_common(
         self
@@ -100,36 +101,32 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
 
         return result
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
-class Review(pydantic_compat.BaseModel):
+class Review(BaseModel):
     score: int
     id: str
     created_at: str
     created_by: str
     label_id: Optional[str] = None
 
-    class Config:
-        alias_generator = camel_case
+    model_config = ConfigDict(alias_generator=camel_case)
 
 
-Extra = lambda name: pydantic_compat.Field(None, alias=name, extra_field=True)
+Extra = lambda name: Field(None, alias=name, extra_field=True)
 
 
-class LBV1Label(pydantic_compat.BaseModel):
+class LBV1Label(BaseModel):
     label: Union[LBV1LabelAnnotations,
-                 List[LBV1LabelAnnotationsVideo]] = pydantic_compat.Field(
-                     ..., alias='Label')
-    data_row_id: str = pydantic_compat.Field(..., alias="DataRow ID")
-    row_data: str = pydantic_compat.Field(None, alias="Labeled Data")
-    id: Optional[str] = pydantic_compat.Field(None, alias='ID')
-    external_id: Optional[str] = pydantic_compat.Field(None,
-                                                       alias="External ID")
-    data_row_media_attributes: Optional[Dict[str, Any]] = pydantic_compat.Field(
+                 List[LBV1LabelAnnotationsVideo]] = Field(..., alias='Label')
+    data_row_id: str = Field(..., alias="DataRow ID")
+    row_data: str = Field(None, alias="Labeled Data")
+    id: Optional[str] = Field(None, alias='ID')
+    external_id: Optional[str] = Field(None, alias="External ID")
+    data_row_media_attributes: Optional[Dict[str, Any]] = Field(
         {}, alias="Media Attributes")
-    data_row_metadata: Optional[List[Dict[str, Any]]] = pydantic_compat.Field(
+    data_row_metadata: Optional[List[Dict[str, Any]]] = Field(
         [], alias="DataRow Metadata")
 
     created_by: Optional[str] = Extra('Created By')
@@ -247,5 +244,4 @@ class LBV1Label(pydantic_compat.BaseModel):
             ("http://", "https://", "gs://",
              "s3://")) or "tileLayerUrl" in self.row_data
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)

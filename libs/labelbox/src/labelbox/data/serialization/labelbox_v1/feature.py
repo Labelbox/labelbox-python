@@ -1,19 +1,20 @@
 from typing import Optional
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator, ConfigDict
 
 from labelbox.utils import camel_case
 from ...annotation_types.types import Cuid
 
 
-class LBV1Feature(pydantic_compat.BaseModel):
+class LBV1Feature(BaseModel):
     keyframe: Optional[bool] = None
     title: str = None
     value: Optional[str] = None
     schema_id: Optional[Cuid] = None
     feature_id: Optional[Cuid] = None
 
-    @pydantic_compat.root_validator
+    @model_validator(mode='before')
+    @classmethod
     def check_ids(cls, values):
         if values.get('value') is None:
             values['value'] = values['title']
@@ -26,6 +27,4 @@ class LBV1Feature(pydantic_compat.BaseModel):
             res.pop('keyframe')
         return res
 
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
+    model_config = ConfigDict(populate_by_name=True, alias_generator=camel_case)
