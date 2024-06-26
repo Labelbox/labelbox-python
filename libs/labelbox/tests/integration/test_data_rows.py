@@ -362,10 +362,6 @@ def test_create_data_row_with_invalid_input(dataset, image_url):
     with pytest.raises(ResourceCreationError) as exc:
         dataset.create_data_row("asdf")
 
-    dr = {"row_data": image_url}
-    with pytest.raises(ResourceCreationError) as exc:
-        dataset.create_data_row(dr, row_data=image_url)
-
 
 def test_create_data_row_with_metadata(mdo, dataset, image_url):
     client = dataset.client

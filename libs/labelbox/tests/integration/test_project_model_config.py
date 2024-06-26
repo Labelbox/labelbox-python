@@ -1,4 +1,3 @@
-from _pytest import config
 import pytest
 from labelbox.exceptions import ResourceNotFoundError
 
