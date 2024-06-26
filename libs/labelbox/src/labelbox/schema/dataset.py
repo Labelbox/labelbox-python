@@ -124,7 +124,7 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
-
+        Now users upsert
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
