@@ -140,6 +140,8 @@ class Catalog:
                         _params.get('label_details', False),
                     "includeInterpolatedFrames":
                         _params.get('interpolated_frames', False),
+                    "includePredictions":
+                        _params.get('predictions', False),
                     "projectIds":
                         _params.get('project_ids', None),
                     "modelRunIds":
