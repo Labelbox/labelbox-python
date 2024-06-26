@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Set, List, Optional, Union, TypedDict, Iterator
+from typing import Set, List, Union, Iterator, Optional
 
 from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
@@ -84,7 +84,7 @@ class UserGroupProject(BaseModel):
         return self.id == other.id
 
 
-class UserGroup:
+class UserGroup(BaseModel):
     """
     Represents a user group in Labelbox.
 
@@ -93,54 +93,51 @@ class UserGroup:
         **kwargs: Additional keyword arguments for initializing the UserGroup object.
 
     Attributes:
-        _id (str): The ID of the user group.
-        _name (str): The name of the user group.
-        _color (UserGroupColor): The color of the user group.
-        _users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group.
-        _projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group.
-        _client (Client): The Labelbox client.
+        id (str): The ID of the user group.
+        name (str): The name of the user group.
+        color (UserGroupColor): The color of the user group.
+        users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group.
+        projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group.
+        client (Client): The Labelbox client.
     """
-    _id: str
-    _name: str
-    _color: UserGroupColor
-    _users: Set[Union[UserGroupUser, User]]
-    _projects: Set[Union[UserGroupProject, Project]]
-    _client: Client
+    id: Optional[str]
+    name: Optional[str]
+    color: UserGroupColor
+    users: Set[Union[UserGroupUser, User]]
+    projects: Set[Union[UserGroupProject, Project]]
+    client: Client
+
+    class Config:
+        # fix for pydnatic 2
+        arbitrary_types_allowed = True
 
     def __init__(
-            self,
-            client: Client,
-            id: str = "",
-            name: str = "",
-            color: UserGroupColor = UserGroupColor.BLUE,
-            users: Set[Union[UserGroupUser, User]] = set(),
-            projects: Set[Union[UserGroupProject, Project]] = set(),
-            reload=True,
+        self,
+        client: Client,
+        id: str = "",
+        name: str = "",
+        color: UserGroupColor = UserGroupColor.BLUE,
+        users: Set[Union[UserGroupUser, User]] = set(),
+        projects: Set[Union[UserGroupProject, Project]] = set(),
+        reload=True,
     ):
         """
-        Initializes a Group object.
+        Initializes a UserGroup object.
 
         Args:
             client (Client): The Labelbox client.
-            reload (bool): Whether to reload the group information from the server. Defaults to True.
+            id (str): The ID of the user group. Defaults to an empty string.
+            name (str): The name of the user group. Defaults to an empty string.
             color (UserGroupColor): The color of the user group. Defaults to UserGroupColor.BLUE.
             users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group. Defaults to an empty set.
             projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group. Defaults to an empty set.
-            name (str): The name of the user group. Defaults to None.
-            id (str): The ID of the user group. Defaults to None.
+            reload (bool): Whether to reload the group information from the server. Defaults to True.
         """
-        super().__init__()
-        self.color = color
-        self.users = users
-        self.projects = projects
-        self.client = client
-
-        if not client.enable_experimental:
+        super().__init__(client=client, id=id, name=name, color=color, users=users, projects=projects)
+        if not self.client.enable_experimental:
             raise RuntimeError(
                 "Please enable experimental in client to use UserGroups")
 
-        self.name = name
-        self.id = id
         # partial representation of the group, reload
         if self.id and reload:
             self._reload()
@@ -198,106 +195,6 @@ class UserGroup:
             UserGroupUser(id=member["id"], email=member["email"])
             for member in result["userGroup"]["members"]["nodes"]
         }
-
-    @property
-    def id(self) -> str:
-        """
-        Gets the ID of the group.
-
-        Returns:
-            str: The ID of the group.
-        """
-        return self._id
-
-    @id.setter
-    def id(self, value: str) -> None:
-        """
-        Sets the ID of the group.
-
-        Args:
-            value (str): The ID to set.
-        """
-        self._id = value
-
-    @property
-    def name(self) -> str:
-        """
-        Gets the name of the group.
-
-        Returns:
-            str: The name of the group.
-        """
-        return self._name
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """
-        Sets the name of the group.
-
-        Args:
-            value (str): The name to set.
-        """
-        self._name = value
-
-    @property
-    def color(self) -> UserGroupColor:
-        """
-        Gets the color of the group.
-
-        Returns:
-            GroupColor: The color of the group.
-        """
-        return self._color
-
-    @color.setter
-    def color(self, value: UserGroupColor) -> None:
-        """
-        Sets the color of the group.
-
-        Args:
-            value (GroupColor): The color to set.
-        """
-        self._color = value
-
-    @property
-    def users(self) -> Set[Union[UserGroupUser, User]]:
-        """
-        Gets the list of user IDs in the group.
-
-        Returns:
-            Set[GroupUser]: The list of user IDs in the group.
-        """
-        return self._users
-
-    @users.setter
-    def users(self, value: Set[Union[UserGroupUser, User]]) -> None:
-        """
-        Sets the list of user IDs in the group.
-
-        Args:
-            value (Set[GroupUser]): The list of user IDs to set.
-        """
-        self._users = value
-
-    @property
-    def projects(self) -> Set[Union[UserGroupProject, Project]]:
-        """
-        Gets the list of project IDs in the group.
-
-        Returns:
-            Set[GroupProject]: The list of project IDs in the group.
-        """
-        return self._projects
-
-    @projects.setter
-    def projects(self, value: Set[Union[UserGroupProject, Project]]) -> None:
-        """
-        Sets the list of project IDs in the group.
-
-        Args:
-            value (Set[GroupProject]): The list of project IDs to set.
-        """
-        self._projects = value
 
     def update(self) -> "UserGroup":
         """

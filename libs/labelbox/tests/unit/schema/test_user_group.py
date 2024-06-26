@@ -57,10 +57,10 @@ class TestUserGroupProject:
 class TestUserGroup:
 
     def setup_method(self):
-        self.client = MagicMock()
-        self.group = UserGroup(self.client, name="Test Group")
+        self.client = MagicMock(Client)
         self.client.enable_experimental = True
-
+        self.group = UserGroup(client=self.client, name="Test Group")
+  
     def test_constructor_experimental_needed(self):
         client = MagicMock(Client)
         client.enable_experimental = False
