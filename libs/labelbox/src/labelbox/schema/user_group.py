@@ -83,28 +83,33 @@ class UserGroupProject(BaseModel):
             return False
         return self.id == other.id
 
-
+ 
 class UserGroup(BaseModel):
     """
     Represents a user group in Labelbox.
 
-    Args:
-        client (Client): The Labelbox client.
-        **kwargs: Additional keyword arguments for initializing the UserGroup object.
-
     Attributes:
-        id (str): The ID of the user group.
-        name (str): The name of the user group.
+        id (Optional[str]): The ID of the user group.
+        name (Optional[str]): The name of the user group.
         color (UserGroupColor): The color of the user group.
-        users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group.
-        projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group.
-        client (Client): The Labelbox client.
+        users (Set[UserGroupUser]): The set of users in the user group.
+        projects (Set[UserGroupProject]): The set of projects associated with the user group.
+        client (Client): The Labelbox client object.
+
+    Methods:
+        __init__(self, client: Client, id: str = "", name: str = "", color: UserGroupColor = UserGroupColor.BLUE,
+                 users: Set[UserGroupUser] = set(), projects: Set[UserGroupProject] = set(), reload=True)
+        _reload(self)
+        update(self) -> "UserGroup"
+        create(self) -> "UserGroup"
+        delete(self) -> bool
+        get_user_groups(client: Client) -> Iterator["UserGroup"]
     """
     id: Optional[str]
     name: Optional[str]
     color: UserGroupColor
-    users: Set[Union[UserGroupUser, User]]
-    projects: Set[Union[UserGroupProject, Project]]
+    users: Set[UserGroupUser]
+    projects: Set[UserGroupProject]
     client: Client
 
     class Config:
@@ -117,21 +122,25 @@ class UserGroup(BaseModel):
         id: str = "",
         name: str = "",
         color: UserGroupColor = UserGroupColor.BLUE,
-        users: Set[Union[UserGroupUser, User]] = set(),
-        projects: Set[Union[UserGroupProject, Project]] = set(),
+        users: Set[UserGroupUser] = set(),
+        projects: Set[UserGroupProject] = set(),
         reload=True,
     ):
         """
         Initializes a UserGroup object.
 
         Args:
-            client (Client): The Labelbox client.
-            id (str): The ID of the user group. Defaults to an empty string.
-            name (str): The name of the user group. Defaults to an empty string.
-            color (UserGroupColor): The color of the user group. Defaults to UserGroupColor.BLUE.
-            users (Set[Union[UserGroupUser, User]]): The set of user IDs in the user group. Defaults to an empty set.
-            projects (Set[Union[UserGroupProject, Project]]): The set of project IDs in the user group. Defaults to an empty set.
-            reload (bool): Whether to reload the group information from the server. Defaults to True.
+            client (Client): The Labelbox client object.
+            id (str, optional): The ID of the user group. Defaults to an empty string.
+            name (str, optional): The name of the user group. Defaults to an empty string.
+            color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
+            users (Set[UserGroupUser], optional): The set of users in the user group. Defaults to an empty set.
+            projects (Set[UserGroupProject], optional): The set of projects associated with the user group. Defaults to an empty set.
+            reload (bool, optional): Whether to reload the partial representation of the group. Defaults to True.
+
+        Raises:
+            RuntimeError: If the experimental feature is not enabled in the client.
+
         """
         super().__init__(client=client, id=id, name=name, color=color, users=users, projects=projects)
         if not self.client.enable_experimental:
@@ -240,12 +249,10 @@ class UserGroup(BaseModel):
             "color":
                 self.color.value,
             "projectIds": [
-                project.id if hasattr(project, 'id') else project.uid
-                for project in self.projects
+                project.id for project in self.projects
             ],
             "userIds": [
-                user.id if hasattr(user, 'id') else user.uid
-                for user in self.users
+                user.id for user in self.users
             ]
         }
         result = self.client.execute(query, params)
@@ -255,21 +262,14 @@ class UserGroup(BaseModel):
 
     def create(self) -> "UserGroup":
         """
-        Creates a new group in Labelbox.
-
-        Args:
-            client (Client): The Labelbox client.
-            name (str): The name of the group.
-            color (GroupColor, optional): The color of the group. Defaults to GroupColor.BLUE.
-            users (List[User], optional): The users to add to the group. Defaults to [].
-            projects (List[Project], optional): The projects to add to the group. Defaults to [].
-
-        Returns:
-            Group: The newly created group. (self)
+        Creates a new user group.
 
         Raises:
-            ResourceCreationError: If the group already exists or if the creation fails.
+            ResourceCreationError: If the group already exists.
             ValueError: If the group name is not provided.
+
+        Returns:
+            UserGroup: The created user group.
         """
         if self.id:
             raise ResourceCreationError("Group already exists")
@@ -311,12 +311,10 @@ class UserGroup(BaseModel):
             "color":
                 self.color.value,
             "projectIds": [
-                project.id if hasattr(project, 'id') else project.uid
-                for project in self.projects
+                project.id for project in self.projects
             ],
             "userIds": [
-                user.id if hasattr(user, 'id') else user.uid
-                for user in self.users
+                user.id for user in self.users
             ]
         }
         result = self.client.execute(query, params)
