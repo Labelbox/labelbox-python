@@ -24,6 +24,7 @@ dev-dependencies = [
     "pytest-cov>=4.1.0",
     "pytest-xdist>=3.5.0",
     "toml-cli>=0.6.0",
+    "faker>=25.5.0",
 ]
 
 [tool.rye.workspace]

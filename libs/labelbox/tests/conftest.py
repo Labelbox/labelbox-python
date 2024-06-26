@@ -158,6 +158,8 @@ class IntegrationClient(Client):
             assert re.match(r"\s*(?:query|mutation) \w+PyApi",
                             query) is not None
         self.queries.append((query, params))
+        if not kwargs.get('timeout'):
+            kwargs['timeout'] = 30.0
         return super().execute(query, params, **kwargs)
 
 

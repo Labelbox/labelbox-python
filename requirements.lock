@@ -17,7 +17,7 @@ babel==2.15.0
     # via sphinx
 cachetools==5.3.3
     # via google-auth
-certifi==2024.2.2
+certifi==2024.6.2
     # via pyproj
     # via requests
 charset-normalizer==3.3.2
@@ -27,18 +27,18 @@ docutils==0.20.1
     # via sphinx-rtd-theme
 geojson==3.1.0
     # via labelbox
-google-api-core==2.19.0
+google-api-core==2.19.1
     # via labelbox
-google-auth==2.29.0
+google-auth==2.30.0
     # via google-api-core
-googleapis-common-protos==1.63.0
+googleapis-common-protos==1.63.2
     # via google-api-core
 idna==3.7
     # via requests
 imagesize==1.4.1
     # via labelbox
     # via sphinx
-importlib-metadata==7.1.0
+importlib-metadata==7.2.1
     # via sphinx
     # via typeguard
 jinja2==3.1.4
@@ -51,13 +51,13 @@ numpy==1.24.4
     # via shapely
 opencv-python-headless==4.10.0.84
     # via labelbox
-packaging==24.0
+packaging==24.1
     # via sphinx
 pillow==10.3.0
     # via labelbox
-proto-plus==1.23.0
+proto-plus==1.24.0
     # via google-api-core
-protobuf==4.25.3
+protobuf==5.27.1
     # via google-api-core
     # via googleapis-common-protos
     # via proto-plus
@@ -66,9 +66,9 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.2
+pydantic==2.7.4
     # via labelbox
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
 pygeotile==1.0.6
     # via labelbox
@@ -80,7 +80,7 @@ python-dateutil==2.8.2
     # via labelbox
 pytz==2024.1
     # via babel
-requests==2.32.2
+requests==2.32.3
     # via google-api-core
     # via labelbox
     # via sphinx
@@ -117,13 +117,13 @@ tqdm==4.66.4
     # via labelbox
 typeguard==4.3.0
     # via labelbox
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via annotated-types
     # via labelbox
     # via pydantic
     # via pydantic-core
     # via typeguard
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata
