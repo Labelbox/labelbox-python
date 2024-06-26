@@ -1111,8 +1111,6 @@ def test_create_tiled_layer(dataset, tile_content):
             **tile_content, 'media_type': 'TMS_GEO'
         },
         tile_content,
-        # Old way to check for backwards compatibility
-        tile_content['row_data']
     ]
     dataset.create_data_rows_sync(examples)
     data_rows = list(dataset.data_rows())
