@@ -1,6 +1,6 @@
 from unittest.mock import patch
 import uuid
-from labelbox import parser
+from labelbox import parser, Project
 import pytest
 import random
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
@@ -217,20 +217,20 @@ def test_delete(configured_project, predictions):
     assert len(list(all_import_requests)) == 0
 
 
-def test_pdf_mal_bbox(client, configured_project_pdf):
+def test_pdf_mal_bbox(client, configured_project_pdf:Project):
     """
     tests pdf mal against only a bbox annotation
     """
     annotations = []
     num_annotations = 1
 
-    for row in configured_project_pdf.export_queued_data_rows():
+    for data_row_id in configured_project_pdf.data_row_ids:
         for _ in range(num_annotations):
             annotations.append({
                 "uuid": str(uuid.uuid4()),
                 "name": "bbox",
                 "dataRow": {
-                    "id": row['id']
+                    "id": data_row_id
                 },
                 "bbox": {
                     "top": round(random.uniform(0, 300), 2),
@@ -247,14 +247,14 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
                 'answer': 'the answer to the text question',
                 'uuid': 'fc1913c6-b735-4dea-bd25-c18152a4715f',
                 "dataRow": {
-                    "id": row['id']
+                    "id": data_row_id
                 }
             },
             {
                 'name': 'checklist',
                 'uuid': '9d7b2e57-d68f-4388-867a-af2a9b233719',
                 "dataRow": {
-                    "id": row['id']
+                    "id": data_row_id
                 },
                 'answer': [{
                     'name': 'option1'
@@ -269,14 +269,14 @@ def test_pdf_mal_bbox(client, configured_project_pdf):
                 },
                 'uuid': 'ad60897f-ea1a-47de-b923-459339764921',
                 "dataRow": {
-                    "id": row['id']
+                    "id": data_row_id
                 }
             },
             {  #adding this with the intention to ensure we allow page: 0 
                 "uuid": str(uuid.uuid4()),
                 "name": "bbox",
                 "dataRow": {
-                    "id": row['id']
+                    "id": data_row_id
                 },
                 "bbox": {
                     "top": round(random.uniform(0, 300), 2),

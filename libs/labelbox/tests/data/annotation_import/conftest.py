@@ -608,7 +608,7 @@ def configured_project_one_datarow_id(configured_project_with_one_data_row):
 
     yield get_data_row_id
 
-
+#TODO: Switch to setup_editor, setup might get removed in later releases
 @pytest.fixture
 def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     dataset = initial_dataset
@@ -642,7 +642,7 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
 
     project.delete()
 
-
+#TODO: Switch to setup_editor, setup might get removed in later releases
 @pytest.fixture
 def project_with_ontology(client, configured_project, ontology, rand_gen):
     project = client.create_project(name=rand_gen(str),
@@ -657,7 +657,7 @@ def project_with_ontology(client, configured_project, ontology, rand_gen):
 
     project.delete()
 
-
+#TODO: Switch to setup_editor, setup might get removed in later releases
 @pytest.fixture
 def configured_project_pdf(client, ontology, rand_gen, pdf_url):
     project = client.create_project(name=rand_gen(str),
