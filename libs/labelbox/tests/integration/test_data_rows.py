@@ -10,7 +10,7 @@ import pytest
 
 from labelbox.schema.media_type import MediaType
 from labelbox import DataRow, AssetAttachment
-from labelbox.exceptions import MalformedQueryException, ResourceCreationError
+from labelbox.exceptions import MalformedQueryException, ResourceCreationError, InvalidQueryError
 from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 
@@ -128,11 +128,11 @@ def test_get_data_row(data_row, client):
 
 
 def test_create_invalid_aws_data_row(dataset, client):
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+    with pytest.raises(InvalidQueryError) as exc:
         dataset.create_data_row(row_data="s3://labelbox-public-data/invalid")
     assert "s3" in exc.value.message
 
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+    with pytest.raises(InvalidQueryError) as exc:
         dataset.create_data_rows([{
             "row_data": "s3://labelbox-public-data/invalid"
         }])
@@ -359,11 +359,11 @@ def test_create_data_row_with_dict_unpacked(dataset, image_url):
 
 
 def test_create_data_row_with_invalid_input(dataset, image_url):
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+    with pytest.raises(ResourceCreationError) as exc:
         dataset.create_data_row("asdf")
 
     dr = {"row_data": image_url}
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+    with pytest.raises(ResourceCreationError) as exc:
         dataset.create_data_row(dr, row_data=image_url)
 
 
@@ -421,7 +421,7 @@ def test_create_data_row_with_invalid_metadata(dataset, image_url):
     fields.append(
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value='some msg'))
 
-    with pytest.raises(labelbox.exceptions.MalformedQueryException):
+    with pytest.raises(ResourceCreationError):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
 
 
@@ -1103,7 +1103,7 @@ def test_invalid_media_type(dataset, conversational_content):
                   ]]:
         # TODO: What error kind should this be? It looks like for global key we are
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
-        with pytest.raises(labelbox.exceptions.InvalidQueryError):
+        with pytest.raises(ResourceCreationError):
             dataset.create_data_rows_sync([{
                 **conversational_content, 'media_type': 'IMAGE'
             }])
@@ -1137,11 +1137,10 @@ def test_create_data_row_with_attachments(dataset):
 
 
 def test_create_data_row_with_media_type(dataset, image_url):
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as exc:
+    with pytest.raises(ResourceCreationError) as exc:
         dr = dataset.create_data_row(
             row_data={'invalid_object': 'invalid_value'}, media_type="IMAGE")
 
-    assert "Media type validation failed, expected: 'image/*', was: application/json" in str(
-        exc.value)
+    assert "Expected type image/*, detected: application/json" in str(exc.value)
 
     dataset.create_data_row(row_data=image_url, media_type="IMAGE")
