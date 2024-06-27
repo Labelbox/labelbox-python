@@ -154,7 +154,7 @@ class Dataset(DbObject, Updateable, Deletable):
         res = completed_task.result
         if res is None or len(res) == 0:
             raise ResourceCreationError(
-                f"Data row upload did not complete, task status {task.status} task id {task.uid}"
+                f"Data row upload did not complete, task status {completed_task.status} task id {completed_task.uid}"
             )
 
         return self.client.get_data_row(res[0]['id'])
@@ -183,7 +183,6 @@ class Dataset(DbObject, Updateable, Deletable):
                 a DataRow.
             ValueError: When the upload parameters are invalid
         """
-        max_attachments_per_data_row = 5
         self._create_data_rows_sync(
             items, file_upload_thread_count=file_upload_thread_count)
 
