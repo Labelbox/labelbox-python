@@ -144,68 +144,6 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     return data_row
 
 
-# TODO: Add VideoData. Currently label import job finishes without errors but project.export_labels() returns empty list.
-@pytest.mark.export_v1("tests used export v1 method, v2 test -> test_import_data_types_v2 below")
-@pytest.mark.parametrize(
-    "data_type_class",
-    [
-        AudioData,
-        ConversationData,
-        DicomData,
-        DocumentData,
-        HTMLData,
-        ImageData,
-        TextData,
-        LlmPromptCreationData,
-        LlmPromptResponseCreationData,
-        LlmResponseCreationData,
-    ],
-)
-def test_import_data_types(
-    client,
-    configured_project,
-    initial_dataset,
-    rand_gen,
-    data_row_json_by_data_type,
-    annotations_by_data_type,
-    data_type_class,
-    helpers,
-):
-    project = configured_project
-    project_id = project.uid
-    dataset = initial_dataset
-
-    helpers.set_project_media_type_from_data_type(project, data_type_class)
-
-    data_type_string = data_type_class.__name__[:-4].lower()
-    data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
-                                           rand_gen(str))
-
-    annotations_ndjson = annotations_by_data_type[data_type_string]
-    annotations_list = [
-        label.annotations
-        for label in NDJsonConverter.deserialize(annotations_ndjson)
-    ]
-    labels = [
-        lb_types.Label(data=data_type_class(uid=data_row.uid),
-                       annotations=annotations)
-        for annotations in annotations_list
-    ]
-
-    label_import = lb.LabelImport.create_from_objects(
-        client, project_id, f"test-import-{data_type_string}", labels)
-    label_import.wait_until_done()
-
-    assert label_import.state == AnnotationImportState.FINISHED
-    assert len(label_import.errors) == 0
-    exported_labels = project.export_labels(download=True)
-    objects = exported_labels[0]["Label"]["objects"]
-    classifications = exported_labels[0]["Label"]["classifications"]
-    assert len(objects) + len(classifications) == len(labels)
-    data_row.delete()
-
-
 def test_import_data_types_by_global_key(
     client,
     configured_project,

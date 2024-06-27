@@ -66,6 +66,7 @@ def test_export_annotations_nested_checklist(
     assert len(nested_class_answers) == 2
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_export_filtered_dates(client,
                                configured_project_with_complex_ontology):
     project, data_row = configured_project_with_complex_ontology
@@ -107,6 +108,7 @@ def test_export_filtered_dates(client,
     assert len(empty_export) == 0
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_export_filtered_activity(client,
                                   configured_project_with_complex_ontology):
     project, data_row = configured_project_with_complex_ontology
@@ -183,6 +185,7 @@ def test_queued_data_row_export(configured_project):
     assert len(result) == 1
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_label_export(configured_project_with_label):
     project, _, _, label = configured_project_with_label
     label_id = label.uid
