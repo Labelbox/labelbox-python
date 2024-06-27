@@ -124,7 +124,6 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
-        Now users upsert
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
@@ -139,7 +138,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 in `kwargs`.
             InvalidAttributeError: in case the DB object type does not contain
                 any of the field names given in `kwargs`.
-
+            ResourceCreationError: If data row creation failed on the server side.
         """
         file_upload_thread_count = 1
         args = items if items is not None else kwargs
@@ -184,8 +183,7 @@ class Dataset(DbObject, Updateable, Deletable):
             None. If the function doesn't raise an exception then the import was successful.
 
         Raises:
-            ResourceCreationError: Errors in data row upload
-            InvalidQueryError: If the `items` parameter does not conform to
+            ResourceCreationError: If the `items` parameter does not conform to
                 the specification in Dataset._create_descriptor_file or if the server did not accept the
                 DataRow creation request (unknown reason).
             InvalidAttributeError: If there are fields in `items` not valid for
