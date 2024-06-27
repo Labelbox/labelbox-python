@@ -140,25 +140,18 @@ class Dataset(DbObject, Updateable, Deletable):
                 any of the field names given in `kwargs`.
             ResourceCreationError: If data row creation failed on the server side.
         """
-        file_upload_thread_count = 1
+        invalid_argument_error = "Argument to create_data_row() must be either a dictionary, or kwargs containing `row_data` at minimum"
+
+        if items is not None and len(kwargs) > 0:
+            raise InvalidQueryError(invalid_argument_error)
+
         args = items if items is not None else kwargs
 
-        upload_items = self._separate_and_process_items([args])
-        specs = DataRowCreateItem.build(self.uid, upload_items)
-        task: DataUpsertTask = self._exec_upsert_data_rows(
-            specs, file_upload_thread_count)
+        file_upload_thread_count = 1
+        completed_task = self._create_data_rows_sync(
+            [args], file_upload_thread_count=file_upload_thread_count)
 
-        task.wait_till_done()
-
-        if task.has_errors():
-            raise ResourceCreationError(
-                f"Data row upload errors: {task.errors}", cause=task.uid)
-        if task.status != "COMPLETE":
-            raise ResourceCreationError(
-                f"Data row upload did not complete, task status {task.status} task id {task.uid}"
-            )
-
-        res = task.result
+        res = completed_task.result
         if res is None or len(res) == 0:
             raise ResourceCreationError(
                 f"Data row upload did not complete, task status {task.status} task id {task.uid}"
@@ -190,8 +183,17 @@ class Dataset(DbObject, Updateable, Deletable):
                 a DataRow.
             ValueError: When the upload parameters are invalid
         """
-        max_data_rows_supported = 1000
         max_attachments_per_data_row = 5
+        self._create_data_rows_sync(
+            items, file_upload_thread_count=file_upload_thread_count)
+
+        return None  # Return None if no exception is raised
+
+    def _create_data_rows_sync(self,
+                               items,
+                               file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+                              ) -> "DataUpsertTask":
+        max_data_rows_supported = 1000
         if len(items) > max_data_rows_supported:
             raise ValueError(
                 f"Dataset.create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
@@ -215,7 +217,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Data row upload did not complete, task status {task.status} task id {task.uid}"
             )
 
-        return None
+        return task
 
     def create_data_rows(self,
                          items,
