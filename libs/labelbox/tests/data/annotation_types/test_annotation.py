@@ -1,7 +1,8 @@
 import pytest
 
-from labelbox.data.annotation_types import (Text, Point, Line,
+from labelbox.data.annotation_types import (Text, Point, Line, PromptText,
                                             ClassificationAnnotation,
+                                            PromptClassificationAnnotation,
                                             ObjectAnnotation, TextEntity)
 from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
@@ -32,6 +33,12 @@ def test_annotation():
     ClassificationAnnotation(
         value=classification,
         name=name,
+    )
+    
+    # Check prompt classification
+    PromptClassificationAnnotation(
+        value=PromptText(answer="some text answer"),
+        name=name
     )
 
     # Invalid subclass

@@ -937,3 +937,12 @@ class NDAnnotation(
             data['definitions'].update(schema_.pop('definitions'))
             data[type_.__name__] = schema_
         return data
+
+###### Prompt Response ######
+
+class NDPromptClassification(
+        SpecialUnion,
+        Type[Union[  # type: ignore
+        NDText
+        ]]):
+    ...

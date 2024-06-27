@@ -1,0 +1,34 @@
+from typing import Union
+
+from labelbox.data.annotation_types.base_annotation import BaseAnnotation
+
+from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
+
+from labelbox import pydantic_compat
+
+
+class PromptText(ConfidenceMixin, CustomMetricsMixin, pydantic_compat.BaseModel):
+    """ Prompt text for LLM data generation
+
+    >>> PromptText(answer = "some text answer")
+
+    """
+    answer: str
+
+
+class PromptClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
+                               CustomMetricsMixin):
+    """Prompt annotation (non localized)
+
+    >>> PromptAnnotation(
+    >>>     value=PromptText(answer="my caption message"),
+    >>>     feature_schema_id="my-feature-schema-id"
+    >>> )
+
+    Args:
+        name (Optional[str])
+        feature_schema_id (Optional[Cuid])
+        value (Union[Text])
+     """
+
+    value: Union[PromptText] 

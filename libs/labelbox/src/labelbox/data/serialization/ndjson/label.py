@@ -16,14 +16,15 @@ from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity, ConversationEntity
 from ...annotation_types.classification import Dropdown
 from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
+from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
-from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
+from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass, NDPromptClassification, NDPromptClassificationType
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .relationship import NDRelationship
 from .base import DataRow
 
-AnnotationType = Union[NDObjectType, NDClassificationType,
+AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
                        NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship]
 
@@ -269,6 +270,8 @@ class NDLabel(pydantic_compat.BaseModel):
                 yield NDMetricAnnotation.from_common(annotation, label.data)
             elif isinstance(annotation, RelationshipAnnotation):
                 yield NDRelationship.from_common(annotation, label.data)
+            elif isinstance(annotation, PromptClassificationAnnotation):
+                yield NDPromptClassification.from_common(annotation, label.data)
             else:
                 raise TypeError(
                     f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"

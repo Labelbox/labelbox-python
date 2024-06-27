@@ -1083,6 +1083,12 @@ def checklist_inference(prediction_id_mapping):
     del checklist["tool"]
     return checklist
 
+#TODO: Once data gen ontologies are able to be created will need to provide that here inside the prediction_id_mapping
+@pytest.fixture
+def prompt_text_inference():
+    prompt_text = {"answer": "free form text..."}
+
+    return prompt_text
 
 @pytest.fixture
 def checklist_inference_index(prediction_id_mapping):

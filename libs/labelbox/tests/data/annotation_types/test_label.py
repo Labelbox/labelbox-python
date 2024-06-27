@@ -4,8 +4,10 @@ import labelbox.types as lb_types
 from labelbox import OntologyBuilder, Tool, Classification as OClassification, Option
 from labelbox.data.annotation_types import (ClassificationAnswer, Radio, Text,
                                             ClassificationAnnotation,
+                                            PromptText,
                                             ObjectAnnotation, Point, Line,
                                             ImageData, Label)
+import pytest
 
 
 def test_schema_assignment_geometry():
@@ -193,3 +195,15 @@ def test_initialize_label_no_coercion():
                   annotations=[ner_annotation])
     assert isinstance(label.data, lb_types.ConversationData)
     assert label.data.global_key == global_key
+
+def test_prompt_classification_validation():
+    global_key = 'global-key'
+    prompt_text = lb_types.PromptClassificationAnnotation(
+        value=PromptText(answer="test")
+    )
+    prompt_text_2 = lb_types.PromptClassificationAnnotation(
+        value=PromptText(answer="test")
+    )
+    with pytest.raises(TypeError) as e_info:
+        label = Label(data={"global_key": global_key},
+                  annotations=[prompt_text, prompt_text_2])

@@ -9,6 +9,7 @@ from labelbox.schema.bulk_import_request import (NDChecklist, NDClassification,
                                                  NDMask, NDPolygon, NDPolyline,
                                                  NDRadio, NDRectangle, NDText,
                                                  NDTextEntity, NDTool,
+                                                 NDPromptClassification,
                                                  _validate_ndjson)
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.queue_mode import QueueMode
@@ -39,7 +40,9 @@ def configured_project_with_ontology(client, ontology, rand_gen):
     yield project
 
     project.delete()
-
+def test_prompt_classification_construction(prompt_text_inference):
+    prompt_text = NDPromptClassification.build(prompt_text_inference)
+    assert isinstance(prompt_text, NDText)
 
 def test_classification_construction(checklist_inference, text_inference):
     checklist = NDClassification.build(checklist_inference)
