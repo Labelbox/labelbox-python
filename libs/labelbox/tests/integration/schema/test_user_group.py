@@ -48,7 +48,7 @@ def test_update_user_group(user_group):
 
 def test_get_user_groups(user_group, client):
     # Get all user groups
-    user_groups_old = UserGroup.get_user_groups(client)
+    user_groups_old = list(UserGroup.get_user_groups(client))
 
     # manual delete for iterators
     group_name = data.name()
@@ -56,7 +56,7 @@ def test_get_user_groups(user_group, client):
     user_group.name = group_name
     user_group.create()
 
-    user_groups_new = UserGroup.get_user_groups(client)
+    user_groups_new = list(UserGroup.get_user_groups(client))
 
     # Verify that at least one user group is returned
     assert len(user_groups_new) > 0
@@ -76,13 +76,23 @@ def test_update_user_group(user_group, client, project_pack):
     projects = project_pack
 
     # Add the user to the group
-    user_group.users.add(users[0])
-    user_group.projects.add(projects[0])
+    user = users[0]
+    user = UserGroupUser(
+        id=user.uid,
+        email=user.email
+    )
+    project = projects[0]
+    project = UserGroupProject(
+        id=project.uid,
+        name=project.name
+    )
+    user_group.users.add(user)
+    user_group.projects.add(project)
     user_group.update()
 
     # Verify that the user is added to the group
-    assert users[0] in user_group.users
-    assert projects[0] in user_group.projects
+    assert user in user_group.users
+    assert project in user_group.projects
 
 
 if __name__ == "__main__":
