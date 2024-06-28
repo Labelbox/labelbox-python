@@ -206,10 +206,8 @@ class Dataset(DbObject, Updateable, Deletable):
             raise ValueError(
                 "file_upload_thread_count must be a positive integer")
 
-        upload_items = self._separate_and_process_items(items)
-        specs = DataRowCreateItem.build(self.uid, upload_items)
-        task: DataUpsertTask = self._exec_upsert_data_rows(
-            specs, file_upload_thread_count)
+        task: DataUpsertTask = self.create_data_rows(items,
+                                                     file_upload_thread_count)
         task.wait_till_done()
 
         if task.has_errors():
