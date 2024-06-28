@@ -19,14 +19,15 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
-from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass, NDPromptClassification, NDPromptClassificationType
+from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass, NDPromptClassification, NDPromptClassificationType, NDPromptText
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .relationship import NDRelationship
 from .base import DataRow
 
 AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
-                       NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship]
+                       NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship,
+                       NDPromptText]
 
 
 class NDLabel(pydantic_compat.BaseModel):
