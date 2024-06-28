@@ -1,4 +1,5 @@
 import uuid
+import pytest
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.data.text import TextData
@@ -6,7 +7,7 @@ from labelbox.data.annotation_types.ner import ConversationEntity
 
 from labelbox.schema.annotation_import import MALPredictionImport
 
-
+@pytest.mark.order(1)
 def test_conversation_entity(client, configured_project_with_one_data_row,
                              dataset_conversation_entity, rand_gen):
 

@@ -36,7 +36,7 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     concurrency:
-      group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}
+      group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}-integration
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
@@ -48,14 +48,16 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - name: Integration Testing
         env:
-          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
           LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
           LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
         working-directory: libs/labelbox
-        run: rye run integration
+        run: rye run integration -n 32
   unit-data:
     runs-on: ubuntu-latest
+    concurrency:
+      group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}-unit-data
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,12 +68,11 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - name: Unit && Data Testing
         env:
-          PYTEST_XDIST_AUTO_NUM_WORKERS: 20
           LABELBOX_TEST_API_KEY: ${{ secrets[inputs.api-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
           LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
         working-directory: libs/labelbox
         run: |
           rye sync -f --features labelbox/data
-          rye run unit
-          rye run data 
+          rye run unit -n 32
+          rye run data -n 32
