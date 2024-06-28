@@ -52,7 +52,7 @@ jobs:
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[inputs.da-test-key] }}
           LABELBOX_TEST_ENVIRON: ${{ inputs.test-env }}
         working-directory: libs/labelbox
-        run: rye run integration
+        run: rye run integration -n 32
   unit-data:
     runs-on: ubuntu-latest
     concurrency:
@@ -74,5 +74,5 @@ jobs:
         working-directory: libs/labelbox
         run: |
           rye sync -f --features labelbox/data
-          rye run unit
-          rye run data 
+          rye run unit -n 32
+          rye run data -n 32

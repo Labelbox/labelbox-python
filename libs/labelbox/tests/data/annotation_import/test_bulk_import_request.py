@@ -25,7 +25,7 @@ from labelbox.schema.media_type import MediaType
 
 """
 
-
+@pytest.mark.order(1)
 def test_create_from_url(project):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"

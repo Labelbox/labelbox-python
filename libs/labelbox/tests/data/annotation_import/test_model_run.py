@@ -6,7 +6,7 @@ from collections import Counter
 
 from labelbox import DataSplit, ModelRun
 
-
+@pytest.mark.order(1)
 def test_model_run(client, configured_project_with_label, data_row, rand_gen):
     project, _, _, label = configured_project_with_label
     label_id = label.uid

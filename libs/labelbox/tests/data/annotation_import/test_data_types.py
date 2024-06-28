@@ -144,6 +144,7 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
     return data_row
 
 
+@pytest.mark.skip(reason="broken export v1 api, to be retired soon")
 def test_import_data_types_by_global_key(
     client,
     configured_project,
@@ -197,7 +198,7 @@ def validate_iso_format(date_string: str):
     assert parsed_t.minute is not None
     assert parsed_t.second is not None
 
-
+@pytest.mark.order(1)
 @pytest.mark.parametrize(
     "data_type_class",
     [
