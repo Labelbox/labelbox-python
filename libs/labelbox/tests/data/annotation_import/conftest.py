@@ -1083,6 +1083,7 @@ def checklist_inference(prediction_id_mapping):
     del checklist["tool"]
     return checklist
 
+
 @pytest.fixture
 def checklist_inference_index(prediction_id_mapping):
     checklist = prediction_id_mapping["checklist_index"].copy()
