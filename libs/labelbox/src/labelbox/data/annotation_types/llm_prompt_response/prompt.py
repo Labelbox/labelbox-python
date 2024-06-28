@@ -20,7 +20,7 @@ class PromptClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
                                CustomMetricsMixin):
     """Prompt annotation (non localized)
 
-    >>> PromptAnnotation(
+    >>> PromptClassificationAnnotation(
     >>>     value=PromptText(answer="my caption message"),
     >>>     feature_schema_id="my-feature-schema-id"
     >>> )
