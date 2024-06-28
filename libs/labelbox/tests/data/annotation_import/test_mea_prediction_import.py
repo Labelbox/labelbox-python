@@ -12,7 +12,7 @@ from labelbox.schema.export_params import ModelRunExportParams
 
 """
 
-
+@pytest.mark.order(1)
 def test_create_from_objects(model_run_with_data_rows,
                              object_predictions_for_annotation_import,
                              annotation_import_test_helpers):

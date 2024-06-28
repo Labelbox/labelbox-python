@@ -25,13 +25,17 @@ dev-dependencies = [
     "pytest-xdist>=3.5.0",
     "toml-cli>=0.6.0",
     "faker>=25.5.0",
+    "pytest-timestamper>=0.0.10",
+    "pytest-timeout>=2.3.1",
+    "pytest-order>=1.2.1",
 ]
 
 [tool.rye.workspace]
 members = ["libs/*", "examples"]
 
 [tool.pytest.ini_options]
-addopts = "-rP -vvv --reruns 1 --reruns-delay 5 --durations=20 -n auto --maxprocesses=10 --cov=labelbox --import-mode=importlib"
+# https://github.com/pytest-dev/pytest-rerunfailures/issues/99
+addopts = "-rP -vvv --reruns 1 --reruns-delay 5 --durations=20 -n auto --cov=labelbox --import-mode=importlib --order-group-scope=module"
 markers = """
     slow: marks tests as slow (deselect with '-m "not slow"')
 """

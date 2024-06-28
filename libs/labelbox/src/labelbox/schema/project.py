@@ -53,6 +53,7 @@ LabelingParameterOverrideInput = Tuple[Union[DataRow, DataRowIdentifier],
                                        DataRowPriority]
 
 logger = logging.getLogger(__name__)
+MAX_SYNC_BATCH_ROW_COUNT = 1_000
 
 
 def validate_labeling_parameter_overrides(
@@ -137,7 +138,15 @@ class Project(DbObject, Updateable, Deletable):
     _wait_processing_max_seconds = 3600
 
     def is_chat_evaluation(self) -> bool:
+        """
+        Returns:
+            True if this project is a live chat evaluation project, False otherwise
+        """
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
+
+    def is_auto_data_generation(self) -> bool:
+        return self.media_type == MediaType.LLMPromptCreation or self.media_type == MediaType.LLMPromptResponseCreation or self.is_chat_evaluation(
+        )
 
     def project_model_configs(self):
         query_str = """query ProjectModelConfigsPyApi($id: ID!) {
@@ -860,11 +869,17 @@ class Project(DbObject, Updateable, Deletable):
                 'coverage_percentage': 0.1}
 
         Returns: the created batch
-        """
 
+        Raises:
+            labelbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
+        """
         # @TODO: make this automatic?
         if self.queue_mode != QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
+
+        if self.is_auto_data_generation():
+            raise ValueError(
+                "Cannot create batches for auto data generation projects")
 
         dr_ids = []
         if data_rows is not None:
@@ -897,7 +912,7 @@ class Project(DbObject, Updateable, Deletable):
             consensus_settings = ConsensusSettings(**consensus_settings).dict(
                 by_alias=True)
 
-        if row_count >= 1_000:
+        if row_count >= MAX_SYNC_BATCH_ROW_COUNT:
             return self._create_batch_async(name, dr_ids, global_keys, priority,
                                             consensus_settings)
         else:

@@ -86,6 +86,7 @@ def make_named_metadata(dr_id) -> DataRowMetadata:
     return metadata
 
 
+@pytest.mark.order(1)
 def test_bulk_delete_datarow_metadata(data_row, mdo):
     """test bulk deletes for all fields"""
     metadata = make_metadata(data_row.uid)
