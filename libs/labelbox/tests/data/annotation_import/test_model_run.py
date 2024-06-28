@@ -119,7 +119,7 @@ def test_model_run_upsert_data_rows_with_existing_labels(
     assert n_data_rows == len(
         list(model_run_with_data_rows.model_run_data_rows()))
 
-
+@pytest.mark.export_v1("tests used export v1 method, v2 test -> test_import_data_types_v2 below")
 def test_model_run_export_labels(model_run_with_data_rows):
     labels = model_run_with_data_rows.export_labels(download=True)
     assert len(labels) == 3

@@ -53,6 +53,7 @@ from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogPar
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task
 from labelbox.schema.user import User
+from labelbox.schema.label_score import LabelScore
 from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
                                            EditorTaskType)
 
@@ -542,6 +543,19 @@ class Client:
         """
         return self._get_all(Entity.Project, where)
 
+    def get_users(self, where=None) -> PaginatedCollection:
+        """ Fetches all the users.
+
+        >>> users = client.get_users(where=User.email == "<user_email>")
+
+        Args:
+            where (Comparison, LogicalOperation or None): The `where` clause
+                for filtering.
+        Returns:
+            An iterable of Users (typically a PaginatedCollection).
+        """
+        return self._get_all(Entity.User, where, filter_deleted=False)
+    
     def get_datasets(self, where=None) -> PaginatedCollection:
         """ Fetches one or more datasets.
 
@@ -839,7 +853,7 @@ class Client:
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
 
-        return self.create_project(**kwargs)
+        return self._create_project(**kwargs)
 
     def _create_project(self, **kwargs) -> Project:
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
@@ -2216,3 +2230,53 @@ class Client:
                 return e
         raise labelbox.exceptions.ResourceNotFoundError(Embedding,
                                                         dict(name=name))
+
+    def upsert_label_feedback(
+            self, label_id: str, feedback: str,
+            scores: Dict[str, float]) -> List[LabelScore]:
+        """
+        Submits the label feedback which is a free-form text and numeric
+        label scores.
+
+        Args:
+            label_id: Target label ID
+            feedback: Free text comment regarding the label
+            scores: A dict of scores, the key is a score name and the value is
+            the score value
+
+        Returns:
+            A list of LabelScore instances
+        """
+        mutation_str = """
+        mutation UpsertAutoQaLabelFeedbackPyApi(
+            $labelId: ID!
+            $feedback: String!
+            $scores: Json!
+            ) {
+            upsertAutoQaLabelFeedback(
+                input: {
+                    labelId: $labelId,
+                    feedback: $feedback,
+                    scores: $scores
+                    }
+            ) {
+                id
+                scores {
+                id
+                name
+                score
+                }
+            }
+            }
+        """
+        res = self.execute(mutation_str, {
+            "labelId": label_id,
+            "feedback": feedback,
+            "scores": scores
+        })
+        scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
+
+        return [
+            labelbox.LabelScore(name=x['name'], score=x['score'])
+            for x in scores_raw
+        ]

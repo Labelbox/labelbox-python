@@ -31,6 +31,7 @@ def test_project_editor_task_type(api_editor_task_type,
             "allowedMediaType": "IMAGE",
             "queueMode": "BATCH",
             "setupComplete": "2021-06-01T00:00:00.000Z",
+            "modelSetupComplete": None,
         })
 
     assert project.editor_task_type == expected_editor_task_type

@@ -24,13 +24,14 @@ dev-dependencies = [
     "pytest-cov>=4.1.0",
     "pytest-xdist>=3.5.0",
     "toml-cli>=0.6.0",
+    "faker>=25.5.0",
 ]
 
 [tool.rye.workspace]
 members = ["libs/*", "examples"]
 
 [tool.pytest.ini_options]
-addopts = "-rP -vvv --reruns 2 --reruns-delay 10 --durations=20 -n auto --cov=labelbox --import-mode=importlib"
+addopts = "-rP -vvv --reruns 1 --reruns-delay 5 --durations=20 -n auto --maxprocesses=10 --cov=labelbox --import-mode=importlib"
 markers = """
     slow: marks tests as slow (deselect with '-m "not slow"')
 """

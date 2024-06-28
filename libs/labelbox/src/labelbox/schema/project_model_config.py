@@ -1,5 +1,6 @@
-from labelbox.orm.db_object import DbObject, Deletable
+from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.exceptions import LabelboxError, error_message_for_unparsed_graphql_error
 
 
 class ProjectModelConfig(DbObject):
@@ -30,5 +31,17 @@ class ProjectModelConfig(DbObject):
         params = {
             "id": self.uid,
         }
-        result = self.client.execute(query, params)
+
+        try:
+            result = self.client.execute(query, params)
+        except LabelboxError as e:
+            if e.message.startswith(
+                    "Unknown error: "
+            ):  # unfortunate hack to handle unparsed graphql errors
+                error_content = error_message_for_unparsed_graphql_error(
+                    e.message)
+            else:
+                error_content = e.message
+            raise LabelboxError(message=error_content) from e
+
         return result["deleteProjectModelConfig"]["success"]
