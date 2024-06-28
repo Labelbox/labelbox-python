@@ -807,7 +807,7 @@ class ExportTask:
         variables = {"where": {"id": task_id}, "streamType": stream_type.value}
         res = client.execute(query, variables, error_log_key="errors")
         res = res["task"]["exportMetadataHeader"]
-        return _MetadataHeader(**res) if res else None
+        return _MetadataHeader(**res) if res and int(res["totalSize"]) > 0 and int(res["totalLines"]) > 0 else None
 
     def get_total_file_size(self, stream_type: StreamType) -> Union[int, None]:
         """Returns the total file size for a specific task."""
