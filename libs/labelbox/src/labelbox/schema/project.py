@@ -53,6 +53,7 @@ LabelingParameterOverrideInput = Tuple[Union[DataRow, DataRowIdentifier],
                                        DataRowPriority]
 
 logger = logging.getLogger(__name__)
+MAX_SYNC_BATCH_ROW_COUNT = 1_000
 
 
 def validate_labeling_parameter_overrides(
@@ -861,7 +862,6 @@ class Project(DbObject, Updateable, Deletable):
 
         Returns: the created batch
         """
-
         # @TODO: make this automatic?
         if self.queue_mode != QueueMode.Batch:
             raise ValueError("Project must be in batch mode")
@@ -897,7 +897,7 @@ class Project(DbObject, Updateable, Deletable):
             consensus_settings = ConsensusSettings(**consensus_settings).dict(
                 by_alias=True)
 
-        if row_count >= 1_000:
+        if row_count >= MAX_SYNC_BATCH_ROW_COUNT:
             return self._create_batch_async(name, dr_ids, global_keys, priority,
                                             consensus_settings)
         else:

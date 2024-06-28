@@ -1,4 +1,6 @@
 import pytest
+from unittest.mock import patch
+
 from labelbox import MediaType
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.exceptions import MalformedQueryException
@@ -6,8 +8,8 @@ from labelbox.exceptions import MalformedQueryException
 
 def test_create_chat_evaluation_ontology_project(
         client, chat_evaluation_ontology,
-        live_chat_evaluation_project_with_new_dataset, conversation_data_row,
-        rand_gen):
+        live_chat_evaluation_project_with_new_dataset,
+        offline_conversational_data_row, rand_gen):
     ontology = chat_evaluation_ontology
 
     # here we are essentially testing the ontology creation which is a fixture
@@ -35,8 +37,19 @@ def test_create_chat_evaluation_ontology_project(
                        match="No valid data rows to add to project"):
         project.create_batch(
             rand_gen(str),
-            [conversation_data_row.uid],  # sample of data row objects
+            [offline_conversational_data_row.uid],  # sample of data row objects
         )
+
+    with pytest.raises(MalformedQueryException,
+                       match="No valid data rows to add to project"):
+        with patch('labelbox.schema.project.MAX_SYNC_BATCH_ROW_COUNT',
+                   new=0):  # force to async
+
+            project.create_batch(
+                rand_gen(str),
+                [offline_conversational_data_row.uid
+                ],  # sample of data row objects
+            )
 
 
 def test_create_chat_evaluation_ontology_project_existing_dataset(
