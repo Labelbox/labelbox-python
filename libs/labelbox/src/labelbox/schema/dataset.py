@@ -183,6 +183,10 @@ class Dataset(DbObject, Updateable, Deletable):
                 a DataRow.
             ValueError: When the upload parameters are invalid
         """
+        warnings.warn(
+            "This method is deprecated and will be "
+            "removed in a future release. Please use create_data_rows instead.")
+
         self._create_data_rows_sync(
             items, file_upload_thread_count=file_upload_thread_count)
 
