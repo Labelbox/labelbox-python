@@ -210,8 +210,6 @@ def validate_iso_format(date_string: str):
         ConversationData,
         DocumentData,
         DicomData,
-        LlmPromptCreationData,
-        LlmPromptResponseCreationData,
         LlmResponseCreationData,
     ],
 )
