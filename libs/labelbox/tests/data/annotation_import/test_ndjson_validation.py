@@ -9,7 +9,6 @@ from labelbox.schema.bulk_import_request import (NDChecklist, NDClassification,
                                                  NDMask, NDPolygon, NDPolyline,
                                                  NDRadio, NDRectangle, NDText,
                                                  NDTextEntity, NDTool,
-                                                 NDPromptClassification,
                                                  _validate_ndjson)
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.queue_mode import QueueMode
