@@ -122,6 +122,9 @@ class NDLabel(pydantic_compat.BaseModel):
                                 (NDScalarMetric, NDConfusionMatrixMetric)):
                     annotations.append(
                         NDMetricAnnotation.to_common(ndjson_annotation))
+                elif isinstance(ndjson_annotation, NDPromptClassificationType):
+                    annotation = NDPromptClassification.to_common(ndjson_annotation)
+                    annotations.append(annotation)
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(ndjson_annotation)}")

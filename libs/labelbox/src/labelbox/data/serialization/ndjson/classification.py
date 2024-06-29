@@ -151,6 +151,26 @@ class NDRadioSubclass(NDAnswer):
                    schema_id=feature_schema_id)
 
 
+class NDPromptTextSubclass(NDAnswer):
+    answer: str
+
+    def to_common(self) -> Text:
+        return PromptText(answer=self.answer,
+                    confidence=self.confidence,
+                    custom_metrics=self.custom_metrics)
+
+    @classmethod
+    def from_common(cls, text: PromptText, name: str,
+                    feature_schema_id: Cuid) -> "NDPromptTextSubclass":
+        return cls(
+            answer=text.answer,
+            name=name,
+            schema_id=feature_schema_id,
+            confidence=text.confidence,
+            custom_metrics=text.custom_metrics,
+        )
+
+
 # ====== End of subclasses
 
 
@@ -245,7 +265,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    confidence=confidence)
         
         
-class NDPromptText(NDAnnotation):
+class NDPromptText(NDAnnotation, NDPromptTextSubclass):
     
     @classmethod
     def from_common(
@@ -253,7 +273,7 @@ class NDPromptText(NDAnnotation):
         uuid: str,
         text: PromptText,
         name,
-        data: Union[VideoData, TextData, ImageData],
+        data: Dict,
         feature_schema_id: Cuid,
         confidence: Optional[float] = None
     ) -> "NDPromptText":
@@ -363,7 +383,7 @@ class NDPromptClassification:
         annotation: "NDPromptClassificationType"
     ) -> Union[PromptClassificationAnnotation]:
         common = PromptClassificationAnnotation(
-            value=annotation.to_common(),
+            value=annotation,
             name=annotation.name,
             feature_schema_id=annotation.schema_id,
             extra={'uuid': annotation.uuid},
