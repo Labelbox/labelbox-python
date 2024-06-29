@@ -199,9 +199,11 @@ def test_initialize_label_no_coercion():
 def test_prompt_classification_validation():
     global_key = 'global-key'
     prompt_text = lb_types.PromptClassificationAnnotation(
+        name="prompt text",
         value=PromptText(answer="test")
     )
     prompt_text_2 = lb_types.PromptClassificationAnnotation(
+        name="prompt text",
         value=PromptText(answer="test")
     )
     with pytest.raises(TypeError) as e_info:
