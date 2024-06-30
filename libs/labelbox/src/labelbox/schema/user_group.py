@@ -89,24 +89,23 @@ class UserGroup(BaseModel):
     Represents a user group in Labelbox.
 
     Attributes:
-        id (Optional[str]): The ID of the user group.
-        name (Optional[str]): The name of the user group.
+        id (str): The ID of the user group.
+        name (str): The name of the user group.
         color (UserGroupColor): The color of the user group.
         users (Set[UserGroupUser]): The set of users in the user group.
         projects (Set[UserGroupProject]): The set of projects associated with the user group.
         client (Client): The Labelbox client object.
 
     Methods:
-        __init__(self, client: Client, id: str = "", name: str = "", color: UserGroupColor = UserGroupColor.BLUE,
-                 users: Set[UserGroupUser] = set(), projects: Set[UserGroupProject] = set(), reload=True)
-        _reload(self)
+        __init__(self, client: Client)
+        get(self) -> "UserGroup"
         update(self) -> "UserGroup"
         create(self) -> "UserGroup"
         delete(self) -> bool
         get_user_groups(client: Client) -> Iterator["UserGroup"]
     """
-    id: Optional[str]
-    name: Optional[str]
+    id: str
+    name: str
     color: UserGroupColor
     users: Set[UserGroupUser]
     projects: Set[UserGroupProject]
@@ -119,39 +118,23 @@ class UserGroup(BaseModel):
     def __init__(
         self,
         client: Client,
-        id: str = "",
-        name: str = "",
-        color: UserGroupColor = UserGroupColor.BLUE,
-        users: Set[UserGroupUser] = set(),
-        projects: Set[UserGroupProject] = set(),
-        reload=True,
     ):
         """
         Initializes a UserGroup object.
 
         Args:
             client (Client): The Labelbox client object.
-            id (str, optional): The ID of the user group. Defaults to an empty string.
-            name (str, optional): The name of the user group. Defaults to an empty string.
-            color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
-            users (Set[UserGroupUser], optional): The set of users in the user group. Defaults to an empty set.
-            projects (Set[UserGroupProject], optional): The set of projects associated with the user group. Defaults to an empty set.
-            reload (bool, optional): Whether to reload the partial representation of the group. Defaults to True.
 
         Raises:
             RuntimeError: If the experimental feature is not enabled in the client.
 
         """
-        super().__init__(client=client, id=id, name=name, color=color, users=users, projects=projects)
+        super().__init__(client=client, id="", name="", color=UserGroupColor.BLUE, users=set(), projects=set())
         if not self.client.enable_experimental:
             raise RuntimeError(
                 "Please enable experimental in client to use UserGroups")
 
-        # partial representation of the group, reload
-        if self.id and reload:
-            self._reload()
-
-    def _reload(self):
+    def get(self) -> "UserGroup":
         """
         Reloads the user group information from the server.
 
@@ -159,11 +142,14 @@ class UserGroup(BaseModel):
         about the user group, including its name, color, projects, and members. The fetched
         information is then used to update the corresponding attributes of the `Group` object.
 
-        Raises:
-            InvalidQueryError: If the query fails to fetch the group information.
+        Args:
+            id (str): The ID of the user group to fetch.
 
         Returns:
-            None
+            UserGroup of passed in ID (self)
+
+        Raises:
+            InvalidQueryError: If the query fails to fetch the group information.
         """
         query = """
             query GetUserGroupPyApi($id: ID!) {
@@ -204,6 +190,7 @@ class UserGroup(BaseModel):
             UserGroupUser(id=member["id"], email=member["email"])
             for member in result["userGroup"]["members"]["nodes"]
         }
+        return self
 
     def update(self) -> "UserGroup":
         """
@@ -397,21 +384,19 @@ class UserGroup(BaseModel):
                 yield
             groups = userGroups["nodes"]
             for group in groups:
-                yield UserGroup(client,
-                                reload=False,
-                                id=group["id"],
-                                name=group["name"],
-                                color=UserGroupColor(group["color"]),
-                                users={
-                                    UserGroupUser(id=member["id"],
-                                                  email=member["email"])
-                                    for member in group["members"]["nodes"]
-                                },
-                                projects={
-                                    UserGroupProject(id=project["id"],
-                                                     name=project["name"])
-                                    for project in group["projects"]["nodes"]
-                                })
+                userGroup = UserGroup(client)
+                userGroup.id = group["id"]
+                userGroup.name = group["name"]
+                userGroup.color = UserGroupColor(group["color"])
+                userGroup.users = {
+                    UserGroupUser(id=member["id"], email=member["email"])
+                    for member in group["members"]["nodes"]
+                }
+                userGroup.projects = {
+                    UserGroupProject(id=project["id"], name=project["name"])
+                    for project in group["projects"]["nodes"]
+                }
+                yield userGroup
             nextCursor = userGroups["nextCursor"]
             # this doesn't seem to be implemented right now to return a value other than null from the api
             if not nextCursor:

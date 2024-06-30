@@ -59,7 +59,7 @@ class TestUserGroup:
     def setup_method(self):
         self.client = MagicMock(Client)
         self.client.enable_experimental = True
-        self.group = UserGroup(client=self.client, name="Test Group")
+        self.group = UserGroup(client=self.client)
   
     def test_constructor_experimental_needed(self):
         client = MagicMock(Client)
@@ -67,63 +67,36 @@ class TestUserGroup:
         with pytest.raises(RuntimeError):
             group = UserGroup(client)
 
-    def test_constructor_name(self):
-        group = self.group
-        assert group.name == "Test Group"
-        assert group.color == UserGroupColor.BLUE
+    def test_constructor(self):
+        group = UserGroup(self.client)
 
-    def test_constructor_id_no_reload(self):
-        projects = [{
-            "id": "project_id_1",
-            "name": "project_1"
-        }, {
-            "id": "project_id_2",
-            "name": "project_2"
-        }]
-        group_members = [{
-            "id": "user_id_1",
-            "email": "email_1"
-        }, {
-            "id": "user_id_2",
-            "email": "email_2"
-        }]
-        self.client.execute.return_value = {
-            "userGroup": {
-                "id": "group_id",
-                "name": "Test Group",
-                "color": "4ED2F9",
-                "projects": {
-                    "nodes": projects
-                },
-                "members": {
-                    "nodes": group_members
-                }
-            }
-        }
-
-        group = UserGroup(self.client, id="group_id", reload=False)
-
-        assert group.id == "group_id"
+        assert group.id == ""
         assert group.name == ""
         assert group.color is UserGroupColor.BLUE
         assert len(group.projects) == 0
         assert len(group.users) == 0
 
-    def test_constructor_id(self):
-        projects = [{
-            "id": "project_id_1",
-            "name": "project_1"
-        }, {
-            "id": "project_id_2",
-            "name": "project_2"
-        }]
-        group_members = [{
-            "id": "user_id_1",
-            "email": "email_1"
-        }, {
-            "id": "user_id_2",
-            "email": "email_2"
-        }]
+    def test_get(self):
+        projects = [
+            {
+                "id": "project_id_1",
+                "name": "project_1"
+            },
+            {
+                "id": "project_id_2",
+                "name": "project_2"
+            }
+        ]
+        group_members = [
+            {
+                "id": "user_id_1",
+                "email": "email_1"
+            },
+            {
+                "id": "user_id_2",
+                "email": "email_2"
+            }
+        ]
         self.client.execute.return_value = {
             "userGroup": {
                 "id": "group_id",
@@ -137,10 +110,19 @@ class TestUserGroup:
                 }
             }
         }
-        group = UserGroup(self.client, id="group_id")
+        group = UserGroup(self.client)
+        assert group.id == ""
+        assert group.name == ""
+        assert group.color is UserGroupColor.BLUE
+        assert len(group.projects) == 0
+        assert len(group.users) == 0
+
+        group.id = "group_id"
+        group.get()
+
         assert group.id == "group_id"
         assert group.name == "Test Group"
-        assert group.color == UserGroupColor.CYAN
+        assert group.color is UserGroupColor.CYAN
         assert len(group.projects) == 2
         assert len(group.users) == 2
 
@@ -148,15 +130,9 @@ class TestUserGroup:
         group = self.group
         assert group.id == ""
 
-        group.id = "1"
-        assert group.id == "1"
-
-        group.id = "2"
-        assert group.id == "2"
-
     def test_name(self):
         group = self.group
-        assert group.name == "Test Group"
+        assert group.name == ""
 
         group.name = "New Group"
         assert group.name == "New Group"
