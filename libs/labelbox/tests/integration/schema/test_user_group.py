@@ -21,7 +21,9 @@ def user_group(client):
 
 def test_existing_user_groups(user_group, client):
     # Verify that the user group was created successfully
-    user_group_equal = UserGroup(client, id=user_group.id)
+    user_group_equal = UserGroup(client)
+    user_group_equal.id = user_group.id
+    user_group_equal.get()
     assert user_group.id == user_group_equal.id
     assert user_group.name == user_group_equal.name
     assert user_group.color == user_group_equal.color
