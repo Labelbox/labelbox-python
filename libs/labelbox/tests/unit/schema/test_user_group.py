@@ -283,7 +283,7 @@ class TestUserGroup:
     def test_user_groups_empty(self):
         self.client.execute.return_value = {"userGroups": None}
 
-        user_groups = list(UserGroup.get_user_groups(self.client))
+        user_groups = list(UserGroup(self.client).get_user_groups())
 
         assert len(user_groups) == 0
 
@@ -362,8 +362,10 @@ class TestUserGroup:
             }
         }
 
-        user_groups = list(UserGroup.get_user_groups(self.client))
+        user_groups = list(UserGroup(self.client).get_user_groups())
+        execute = self.client.execute.call_args[0]
 
+        assert "GetUserGroupsPyApi" in execute[0]
         assert len(user_groups) == 3
 
         # Check the attributes of the first user group

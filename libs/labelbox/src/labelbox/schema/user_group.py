@@ -338,8 +338,7 @@ class UserGroup(BaseModel):
             raise UnprocessableEntityError("Failed to delete user group")
         return result["deleteUserGroup"]["success"]
 
-    @staticmethod
-    def get_user_groups(client: Client) -> Iterator["UserGroup"]:
+    def get_user_groups(self) -> Iterator["UserGroup"]:
         """
         Gets all user groups in Labelbox.
 
@@ -377,14 +376,14 @@ class UserGroup(BaseModel):
         """
         nextCursor = None
         while True:
-            userGroups = client.execute(
+            userGroups = self.client.execute(
                 query, {"nextCursor": nextCursor})["userGroups"]
             if not userGroups:
                 return
                 yield
             groups = userGroups["nodes"]
             for group in groups:
-                userGroup = UserGroup(client)
+                userGroup = UserGroup(self.client)
                 userGroup.id = group["id"]
                 userGroup.name = group["name"]
                 userGroup.color = UserGroupColor(group["color"])

@@ -50,7 +50,7 @@ def test_update_user_group(user_group):
 
 def test_get_user_groups(user_group, client):
     # Get all user groups
-    user_groups_old = list(UserGroup.get_user_groups(client))
+    user_groups_old = list(UserGroup(client).get_user_groups())
 
     # manual delete for iterators
     group_name = data.name()
@@ -58,7 +58,7 @@ def test_get_user_groups(user_group, client):
     user_group.name = group_name
     user_group.create()
 
-    user_groups_new = list(UserGroup.get_user_groups(client))
+    user_groups_new = list(UserGroup(client).get_user_groups())
 
     # Verify that at least one user group is returned
     assert len(user_groups_new) > 0
