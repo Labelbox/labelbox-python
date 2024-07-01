@@ -1,9 +1,11 @@
 import pytest
+from collections import defaultdict
 from unittest.mock import MagicMock
 from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
+from labelbox.schema.project import Project
 from labelbox.schema.user import User
-from labelbox.schema.user_group import UserGroup, UserGroupColor, UserGroupUser, UserGroupProject
+from labelbox.schema.user_group import UserGroup, UserGroupColor
 
 
 class TestUserGroupColor:
@@ -18,40 +20,6 @@ class TestUserGroupColor:
         assert UserGroupColor.GREEN.value == "3FDC9A"
         assert UserGroupColor.YELLOW.value == "E7BF00"
         assert UserGroupColor.GRAY.value == "B8C4D3"
-
-
-class TestUserGroupUser:
-
-    def test_user_group_user_attributes(self):
-        user = UserGroupUser(id="user_id", email="test@example.com")
-        assert user.id == "user_id"
-        assert user.email == "test@example.com"
-
-    def test_user_group_user_equality(self):
-        user1 = UserGroupUser(id="user_id", email="test@example.com")
-        user2 = UserGroupUser(id="user_id", email="test@example.com")
-        assert user1 == user2
-
-    def test_user_group_user_hash(self):
-        user = UserGroupUser(id="user_id", email="test@example.com")
-        assert hash(user) == hash("user_id")
-
-
-class TestUserGroupProject:
-
-    def test_user_group_project_attributes(self):
-        project = UserGroupProject(id="project_id", name="Test Project")
-        assert project.id == "project_id"
-        assert project.name == "Test Project"
-
-    def test_user_group_project_equality(self):
-        project1 = UserGroupProject(id="project_id", name="Test Project")
-        project2 = UserGroupProject(id="project_id", name="Test Project")
-        assert project1 == project2
-
-    def test_user_group_project_hash(self):
-        project = UserGroupProject(id="project_id", name="Test Project")
-        assert hash(project) == hash("project_id")
 
 
 class TestUserGroup:
@@ -233,9 +201,13 @@ class TestUserGroup:
         group = self.group
         group.name = "New Group"
         group.color = UserGroupColor.PINK
-        group.users = {UserGroupUser(id="user_id", email="test@example.com")}
+        user_values = defaultdict(lambda: None)
+        user_values["id"] = "user_id"
+        user_values["email"] = "test@example.com"
+        group.users = {User(self.client, user_values)}
+        project_values = defaultdict(lambda: None)
         group.projects = {
-            UserGroupProject(id="project_id", name="Test Project")
+            Project(self.client, {id="project_id", name="Test Project", qu})
         }
 
         self.client.execute.return_value = {
