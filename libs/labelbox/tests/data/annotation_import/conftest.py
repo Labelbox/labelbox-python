@@ -622,12 +622,15 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
     data_row_ids = []
 
     ontologies = ontology["tools"] + ontology["classifications"]
+    data_row_data = []
     for ind in range(len(ontologies)):
-        data_row_ids.append(
-            dataset.create_data_row(
-                row_data=image_url,
-                global_key=f"gk_{ontologies[ind]['name']}_{rand_gen(str)}",
-            ).uid)
+        data_row_data.append({
+            "row_data": image_url,
+            "global_key": f"gk_{ontologies[ind]['name']}_{rand_gen(str)}"
+        })
+    task = dataset.create_data_rows(data_row_data)
+    task.wait_till_done()
+    data_row_ids = [row['id'] for row in task.result]
     project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
                                                 sleep_interval=3)
 

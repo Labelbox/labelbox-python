@@ -2,7 +2,7 @@ import pytest
 import requests
 from unittest.mock import MagicMock
 from labelbox import Dataset
-from labelbox.exceptions import ResourceNotFoundError, InvalidQueryError
+from labelbox.exceptions import ResourceNotFoundError, ResourceCreationError
 
 from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 
@@ -128,7 +128,7 @@ def test_create_pdf(dataset):
     },
                             media_type="PDF")
 
-    with pytest.raises(InvalidQueryError):
+    with pytest.raises(ResourceCreationError):
         # Wrong media type
         dataset.create_data_row(row_data={
             "pdfUrl":
