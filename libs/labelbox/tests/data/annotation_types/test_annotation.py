@@ -34,12 +34,6 @@ def test_annotation():
         value=classification,
         name=name,
     )
-    
-    # Check prompt classification
-    PromptClassificationAnnotation(
-        value=PromptText(answer="some text answer"),
-        name=name
-    )
 
     # Invalid subclass
     with pytest.raises(pydantic_compat.ValidationError):

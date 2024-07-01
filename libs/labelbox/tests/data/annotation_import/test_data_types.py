@@ -425,3 +425,4 @@ def test_import_mal_annotations_global_key(client,
 
     assert import_annotations.errors == []
     # MAL Labels cannot be exported and compared to input labels
+    

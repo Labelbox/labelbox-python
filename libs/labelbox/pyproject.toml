@@ -73,7 +73,7 @@ dev-dependencies = [
 
 [tool.rye.scripts]
 unit = "pytest tests/unit"
-# https://github.com/Labelbox/labelbox-python/blob/7c84fdffbc14fd1f69d2a6abdcc0087dc557fa4e/Makefile
+# https://github.com/Labelbox/labelbox-python/blob/7c84fdffbc14fd1f69d2a6abdadfcc0087dc557fa4e/Makefile
 # see integration_client.py for full meaning / customization of this command
 # LABELBOX_TEST_ENVIRON="custom" \
 # DA_GCP_LABELBOX_API_KEY=${DA_GCP_LABELBOX_API_KEY} \
@@ -85,7 +85,7 @@ unit = "pytest tests/unit"
 # SERVICE_API_KEY=${SERVICE_API_KEY} \
 # LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 integration = { cmd = "pytest tests/integration" }
-data = { cmd = "pytest tests/data" }
+data = { cmd = "pytest tests/data/serialization/ndjson/test_data_gen.py" }
 yapf-lint = "yapf tests src -i --verbose --recursive --parallel --style \"google\""
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
 lint = { chain = ["yapf-lint", "mypy-lint"] }

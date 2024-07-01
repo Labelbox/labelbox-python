@@ -12,6 +12,7 @@ from ...annotation_types.video import DICOMObjectAnnotation, VideoClassification
 from ...annotation_types.video import VideoObjectAnnotation, VideoMaskAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import DicomData, ImageData, TextData, VideoData
+from ...annotation_types.data.generic_data_row_data import GenericDataRowData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity, ConversationEntity
 from ...annotation_types.classification import Dropdown
@@ -161,7 +162,7 @@ class NDLabel(pydantic_compat.BaseModel):
             raise ValueError("Missing annotations while inferring media type")
 
         types = {type(annotation) for annotation in annotations}
-        data = ImageData
+        data = GenericDataRowData
         if (TextEntity in types) or (ConversationEntity in types):
             data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
