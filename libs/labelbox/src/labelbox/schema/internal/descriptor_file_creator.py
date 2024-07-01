@@ -33,26 +33,10 @@ class DescriptorFileCreator:
 
     def __init__(self, client: "Client"):
         self.client = client
-        """"
-        This method is used to convert a list to json and upload it in a file to gcs.
-        It will create multiple files if the size of upload is greater than max_chunk_size_bytes in bytes,
-        It uploads the files to gcs in parallel, and return a list of urls
 
-            Args:
-            items: The list to upload
-            is_upsert (bool): Whether the upload is an upsert
-            max_attachments_per_data_row (int): The maximum number of attachments per data row
-            max_chunk_size_bytes (int): The maximum size of the file in bytes
-        """
-
-    def create(self,
-               items,
-               max_attachments_per_data_row=None,
-               max_chunk_size_bytes=None) -> List[str]:
+    def create(self, items, max_chunk_size_bytes=None) -> List[str]:
         is_upsert = True  # This class will only support upsert use cases
-        items = self._prepare_items_for_upload(items,
-                                               max_attachments_per_data_row,
-                                               is_upsert=is_upsert)
+        items = self._prepare_items_for_upload(items, is_upsert=is_upsert)
         json_chunks = self._chunk_down_by_bytes(items, max_chunk_size_bytes)
         with ThreadPoolExecutor(FILE_UPLOAD_THREAD_COUNT) as executor:
             futures = [
@@ -62,19 +46,15 @@ class DescriptorFileCreator:
             ]
             return [future.result() for future in as_completed(futures)]
 
-    def create_one(self, items, max_attachments_per_data_row=None) -> List[str]:
-        items = self._prepare_items_for_upload(items,
-                                               max_attachments_per_data_row)
+    def create_one(self, items) -> List[str]:
+        items = self._prepare_items_for_upload(items,)
         # Prepare and upload the descriptor file
         data = json.dumps(items)
         return self.client.upload_data(data,
                                        content_type="application/json",
                                        filename="json_import.json")
 
-    def _prepare_items_for_upload(self,
-                                  items,
-                                  max_attachments_per_data_row=None,
-                                  is_upsert=False):
+    def _prepare_items_for_upload(self, items, is_upsert=False):
         """
         This function is used to prepare the input file. The user defined input is validated, processed, and json stringified.
         Finally the json data is uploaded to gcs and a uri is returned. This uri can be passed as a parameter to a mutation that uploads data rows
@@ -102,8 +82,6 @@ class DescriptorFileCreator:
 
         Args:
             items (iterable of (dict or str)): See above for details.
-            max_attachments_per_data_row (Optional[int]): Param used during attachment validation to determine
-                if the user has provided too many attachments.
 
         Returns:
             uri (string): A reference to the uploaded json data.
@@ -137,12 +115,6 @@ class DescriptorFileCreator:
             attachments = item.get('attachments')
             if attachments:
                 if isinstance(attachments, list):
-                    if max_attachments_per_data_row and len(
-                            attachments) > max_attachments_per_data_row:
-                        raise ValueError(
-                            f"Max attachments number of supported attachments per data row is {max_attachments_per_data_row}."
-                            f" Found {len(attachments)}. Condense multiple attachments into one with the HTML attachment type if necessary."
-                        )
                     for attachment in attachments:
                         AssetAttachment.validate_attachment_json(attachment)
                 else:
