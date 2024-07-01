@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Set, List, Union, Iterator, Optional
+from typing import Set, Iterator
+from collections import defaultdict
 
 from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
@@ -7,6 +8,9 @@ from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.exceptions import UnprocessableEntityError, InvalidQueryError
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.ontology_kind import EditorTaskType
+from labelbox.schema.media_type import MediaType
 
 
 class UserGroupColor(Enum):
@@ -34,82 +38,32 @@ class UserGroupColor(Enum):
     YELLOW = "E7BF00"
     GRAY = "B8C4D3"
 
-
-class UserGroupUser(BaseModel):
-    """
-    Represents a user in a group.
-
-    Attributes:
-        id (str): The ID of the user.
-        email (str): The email of the user.
-    """
-    id: str
-    email: str
-
-    def __hash__(self):
-        return hash((self.id))
-
-    def __eq__(self, other):
-        if not isinstance(other, UserGroupUser):
-            return False
-        return self.id == other.id
-
-
-class UserGroupProject(BaseModel):
-    """
-    Represents a project in a group.
-
-    Attributes:
-        id (str): The ID of the project.
-        name (str): The name of the project.
-    """
-    id: str
-    name: str
-
-    def __hash__(self):
-        return hash((self.id))
-
-    def __eq__(self, other):
-        """
-        Check if this GroupProject object is equal to another GroupProject object.
-
-        Args:
-            other (GroupProject): The other GroupProject object to compare with.
-
-        Returns:
-            bool: True if the two GroupProject objects are equal, False otherwise.
-        """
-        if not isinstance(other, UserGroupProject):
-            return False
-        return self.id == other.id
-
  
 class UserGroup(BaseModel):
     """
     Represents a user group in Labelbox.
 
     Attributes:
-        id (Optional[str]): The ID of the user group.
-        name (Optional[str]): The name of the user group.
+        id (str): The ID of the user group.
+        name (str): The name of the user group.
         color (UserGroupColor): The color of the user group.
         users (Set[UserGroupUser]): The set of users in the user group.
         projects (Set[UserGroupProject]): The set of projects associated with the user group.
         client (Client): The Labelbox client object.
 
     Methods:
-        __init__(self, client: Client, id: str = "", name: str = "", color: UserGroupColor = UserGroupColor.BLUE,
-                 users: Set[UserGroupUser] = set(), projects: Set[UserGroupProject] = set(), reload=True)
-        _reload(self)
+        __init__(self, client: Client)
+        get(self) -> "UserGroup"
         update(self) -> "UserGroup"
         create(self) -> "UserGroup"
         delete(self) -> bool
         get_user_groups(client: Client) -> Iterator["UserGroup"]
     """
-    id: Optional[str]
-    name: Optional[str]
+    id: str
+    name: str
     color: UserGroupColor
-    users: Set[UserGroupUser]
-    projects: Set[UserGroupProject]
+    users: Set[User]
+    projects: Set[Project]
     client: Client
 
     class Config:
@@ -122,9 +76,8 @@ class UserGroup(BaseModel):
         id: str = "",
         name: str = "",
         color: UserGroupColor = UserGroupColor.BLUE,
-        users: Set[UserGroupUser] = set(),
-        projects: Set[UserGroupProject] = set(),
-        reload=True,
+        users: Set[User] = set(),
+        projects: Set[Project] = set()
     ):
         """
         Initializes a UserGroup object.
@@ -134,24 +87,17 @@ class UserGroup(BaseModel):
             id (str, optional): The ID of the user group. Defaults to an empty string.
             name (str, optional): The name of the user group. Defaults to an empty string.
             color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
-            users (Set[UserGroupUser], optional): The set of users in the user group. Defaults to an empty set.
-            projects (Set[UserGroupProject], optional): The set of projects associated with the user group. Defaults to an empty set.
-            reload (bool, optional): Whether to reload the partial representation of the group. Defaults to True.
+            users (Set[User], optional): The set of users in the user group. Defaults to an empty set.
+            projects (Set[Project], optional): The set of projects associated with the user group. Defaults to an empty set.
 
         Raises:
             RuntimeError: If the experimental feature is not enabled in the client.
-
         """
         super().__init__(client=client, id=id, name=name, color=color, users=users, projects=projects)
         if not self.client.enable_experimental:
-            raise RuntimeError(
-                "Please enable experimental in client to use UserGroups")
+            raise RuntimeError("Please enable experimental in client to use UserGroups")
 
-        # partial representation of the group, reload
-        if self.id and reload:
-            self._reload()
-
-    def _reload(self):
+    def get(self) -> "UserGroup":
         """
         Reloads the user group information from the server.
 
@@ -159,11 +105,14 @@ class UserGroup(BaseModel):
         about the user group, including its name, color, projects, and members. The fetched
         information is then used to update the corresponding attributes of the `Group` object.
 
-        Raises:
-            InvalidQueryError: If the query fails to fetch the group information.
+        Args:
+            id (str): The ID of the user group to fetch.
 
         Returns:
-            None
+            UserGroup of passed in ID (self)
+
+        Raises:
+            InvalidQueryError: If the query fails to fetch the group information.
         """
         query = """
             query GetUserGroupPyApi($id: ID!) {
@@ -196,14 +145,9 @@ class UserGroup(BaseModel):
             raise InvalidQueryError("Failed to fetch group")
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
-        self.projects = {
-            UserGroupProject(id=project["id"], name=project["name"])
-            for project in result["userGroup"]["projects"]["nodes"]
-        }
-        self.users = {
-            UserGroupUser(id=member["id"], email=member["email"])
-            for member in result["userGroup"]["members"]["nodes"]
-        }
+        self.projects = self._get_projects_set(result["userGroup"]["projects"]["nodes"])
+        self.users = self._get_users_set(result["userGroup"]["members"]["nodes"])
+        return self
 
     def update(self) -> "UserGroup":
         """
@@ -249,10 +193,10 @@ class UserGroup(BaseModel):
             "color":
                 self.color.value,
             "projectIds": [
-                project.id for project in self.projects
+                project.uid for project in self.projects
             ],
             "userIds": [
-                user.id for user in self.users
+                user.uid for user in self.users
             ]
         }
         result = self.client.execute(query, params)
@@ -311,10 +255,10 @@ class UserGroup(BaseModel):
             "color":
                 self.color.value,
             "projectIds": [
-                project.id for project in self.projects
+                project.uid for project in self.projects
             ],
             "userIds": [
-                user.id for user in self.users
+                user.uid for user in self.users
             ]
         }
         result = self.client.execute(query, params)
@@ -351,8 +295,7 @@ class UserGroup(BaseModel):
             raise UnprocessableEntityError("Failed to delete user group")
         return result["deleteUserGroup"]["success"]
 
-    @staticmethod
-    def get_user_groups(client: Client) -> Iterator["UserGroup"]:
+    def get_user_groups(self) -> Iterator["UserGroup"]:
         """
         Gets all user groups in Labelbox.
 
@@ -390,29 +333,60 @@ class UserGroup(BaseModel):
         """
         nextCursor = None
         while True:
-            userGroups = client.execute(
+            userGroups = self.client.execute(
                 query, {"nextCursor": nextCursor})["userGroups"]
             if not userGroups:
                 return
                 yield
             groups = userGroups["nodes"]
             for group in groups:
-                yield UserGroup(client,
-                                reload=False,
-                                id=group["id"],
-                                name=group["name"],
-                                color=UserGroupColor(group["color"]),
-                                users={
-                                    UserGroupUser(id=member["id"],
-                                                  email=member["email"])
-                                    for member in group["members"]["nodes"]
-                                },
-                                projects={
-                                    UserGroupProject(id=project["id"],
-                                                     name=project["name"])
-                                    for project in group["projects"]["nodes"]
-                                })
+                userGroup = UserGroup(self.client)
+                userGroup.id = group["id"]
+                userGroup.name = group["name"]
+                userGroup.color = UserGroupColor(group["color"])
+                userGroup.users = self._get_users_set(group["members"]["nodes"])
+                userGroup.projects = self._get_projects_set(group["projects"]["nodes"])
+                yield userGroup
             nextCursor = userGroups["nextCursor"]
             # this doesn't seem to be implemented right now to return a value other than null from the api
             if not nextCursor:
                 break
+
+    def _get_users_set(self, user_nodes):
+        """
+        Retrieves a set of User objects from the given user nodes.
+
+        Args:
+            user_nodes (list): A list of user nodes containing user information.
+
+        Returns:
+            set: A set of User objects.
+        """
+        users = set()
+        for user in user_nodes:
+            user_values = defaultdict(lambda: None)
+            user_values["id"] = user["id"]
+            user_values["email"] = user["email"]
+            users.add(User(self.client, user_values))
+        return users
+
+    def _get_projects_set(self, project_nodes):
+        """
+        Retrieves a set of projects based on the given project nodes.
+
+        Args:
+            project_nodes (list): A list of project nodes.
+
+        Returns:
+            set: A set of Project objects.
+        """
+        projects = set()
+        for project in project_nodes:
+            project_values = defaultdict(lambda: None)
+            project_values["id"] = project["id"]
+            project_values["name"] = project["name"]
+            project_values["queueMode"] = QueueMode.Batch.value
+            project_values["editorTaskType"] = EditorTaskType.Missing.value
+            project_values["mediaType"] = MediaType.Image.value
+            projects.add(Project(self.client, project_values))
+        return projects
