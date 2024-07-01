@@ -555,7 +555,7 @@ class Client:
             An iterable of Users (typically a PaginatedCollection).
         """
         return self._get_all(Entity.User, where, filter_deleted=False)
-    
+
     def get_datasets(self, where=None) -> PaginatedCollection:
         """ Fetches one or more datasets.
 
@@ -609,6 +609,7 @@ class Client:
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
         res = self.execute(query_string, params)
+
         if not res:
             raise labelbox.exceptions.LabelboxError("Failed to create %s" %
                                                     db_object_type.type_name())
@@ -2231,9 +2232,8 @@ class Client:
         raise labelbox.exceptions.ResourceNotFoundError(Embedding,
                                                         dict(name=name))
 
-    def upsert_label_feedback(
-            self, label_id: str, feedback: str,
-            scores: Dict[str, float]) -> List[LabelScore]:
+    def upsert_label_feedback(self, label_id: str, feedback: str,
+                              scores: Dict[str, float]) -> List[LabelScore]:
         """
         Submits the label feedback which is a free-form text and numeric
         label scores.
