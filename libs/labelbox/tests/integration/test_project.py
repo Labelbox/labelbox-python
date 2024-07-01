@@ -244,7 +244,9 @@ def test_media_type(client, project: Project, rand_gen):
     for media_type in MediaType.get_supported_members():
         # Exclude LLM media types for now, as they are not supported
         if MediaType[media_type] in [
-                MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation
+                MediaType.LLMPromptCreation,
+                MediaType.LLMPromptResponseCreation,
+                MediaType.LLM
         ]:
             continue
 
