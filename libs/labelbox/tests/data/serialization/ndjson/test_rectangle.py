@@ -25,7 +25,7 @@ def test_rectangle_inverted_start_end_points():
         ),
         extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"})
 
-    label = lb_types.Label(data=lb_types.ImageData(uid=DATAROW_ID),
+    label = lb_types.Label(data={"uid":DATAROW_ID},
                            annotations=[bbox])
 
     res = list(NDJsonConverter.serialize([label]))
@@ -43,7 +43,7 @@ def test_rectangle_inverted_start_end_points():
             "unit": None
         })
 
-    label = lb_types.Label(data=lb_types.ImageData(uid=DATAROW_ID),
+    label = lb_types.Label(data={"uid":DATAROW_ID},
                            annotations=[expected_bbox])
 
     res = list(NDJsonConverter.deserialize(res))
@@ -62,7 +62,7 @@ def test_rectangle_mixed_start_end_points():
         ),
         extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"})
 
-    label = lb_types.Label(data=lb_types.ImageData(uid=DATAROW_ID),
+    label = lb_types.Label(data={"uid":DATAROW_ID},
                            annotations=[bbox])
 
     res = list(NDJsonConverter.serialize([label]))
@@ -80,7 +80,7 @@ def test_rectangle_mixed_start_end_points():
             "unit": None
         })
 
-    label = lb_types.Label(data=lb_types.ImageData(uid=DATAROW_ID),
+    label = lb_types.Label(data={"uid":DATAROW_ID},
                            annotations=[bbox])
 
     res = list(NDJsonConverter.deserialize(res))
