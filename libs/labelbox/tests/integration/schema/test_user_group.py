@@ -1,7 +1,7 @@
 import pytest
 import faker
 from labelbox import Client
-from labelbox.schema.user_group import UserGroup, UserGroupColor, UserGroupUser, UserGroupProject
+from labelbox.schema.user_group import UserGroup, UserGroupColor
 
 data = faker.Faker()
 
@@ -79,15 +79,7 @@ def test_update_user_group(user_group, client, project_pack):
 
     # Add the user to the group
     user = users[0]
-    user = UserGroupUser(
-        id=user.uid,
-        email=user.email
-    )
     project = projects[0]
-    project = UserGroupProject(
-        id=project.uid,
-        name=project.name
-    )
     user_group.users.add(user)
     user_group.projects.add(project)
     user_group.update()
