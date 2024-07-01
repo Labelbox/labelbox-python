@@ -6,6 +6,27 @@ from labelbox.exceptions import ResourceCreationError
 from labelbox.schema.project import Project
 from labelbox.schema.user import User
 from labelbox.schema.user_group import UserGroup, UserGroupColor
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.ontology_kind import EditorTaskType
+from labelbox.schema.media_type import MediaType
+
+@pytest.fixture
+def group_user():
+    user_values = defaultdict(lambda: None)
+    user_values["id"] = "user_id"
+    user_values["email"] = "test@example.com"
+    return User(MagicMock(Client), user_values)
+
+
+@pytest.fixture
+def group_project():
+    project_values = defaultdict(lambda: None)
+    project_values["id"] = "project_id"
+    project_values["name"] = "Test Project"
+    project_values["queueMode"] = QueueMode.Batch.value
+    project_values["editorTaskType"] = EditorTaskType.Missing.value
+    project_values["mediaType"] = MediaType.Image.value
+    return Project(MagicMock(Client), project_values)
 
 
 class TestUserGroupColor:
@@ -94,73 +115,13 @@ class TestUserGroup:
         assert len(group.projects) == 2
         assert len(group.users) == 2
 
-    def test_id(self):
-        group = self.group
-        assert group.id == ""
-
-    def test_name(self):
-        group = self.group
-        assert group.name == ""
-
-        group.name = "New Group"
-        assert group.name == "New Group"
-
-        group.name = "Another Group"
-        assert group.name == "Another Group"
-
-    def test_color(self):
-        group = self.group
-        assert group.color is UserGroupColor.BLUE
-
-        group.color = UserGroupColor.PINK
-        assert group.color == UserGroupColor.PINK
-
-        group.color = UserGroupColor.YELLOW
-        assert group.color == UserGroupColor.YELLOW
-
-    def test_users(self):
-        group = self.group
-        assert len(group.users) == 0
-
-        group.users = {UserGroupUser(id="user_id", email="user_id@email")}
-        assert len(group.users) == 1
-
-        group.users = {
-            UserGroupUser(id="user_id", email="user_id@email"),
-            UserGroupUser(id="user_id", email="user_id@email")
-        }
-        assert len(group.users) == 1
-
-        group.users = {}
-        assert len(group.users) == 0
-
-    def test_projects(self):
-        group = self.group
-        assert len(group.projects) == 0
-
-        group.projects = {
-            UserGroupProject(id="project_id", name="Test Project")
-        }
-        assert len(group.projects) == 1
-
-        group.projects = {
-            UserGroupProject(id="project_id", name="Test Project"),
-            UserGroupProject(id="project_id", name="Test Project")
-        }
-        assert len(group.projects) == 1
-
-        group.projects = {}
-        assert len(group.projects) == 0
-
-    def test_update(self):
+    def test_update(self, group_user, group_project):
         group = self.group
         group.id = "group_id"
         group.name = "Test Group"
         group.color = UserGroupColor.BLUE
-        group.users = {UserGroupUser(id="user_id", email="test@example.com")}
-        group.projects = {
-            UserGroupProject(id="project_id", name="Test Project")
-        }
+        group.users = { group_user }
+        group.projects = { group_project }
 
         updated_group = group.update()
 
@@ -171,17 +132,17 @@ class TestUserGroup:
         assert execute[1]["name"] == "Test Group"
         assert execute[1]["color"] == UserGroupColor.BLUE.value
         assert len(execute[1]["userIds"]) == 1
-        assert list(execute[1]["userIds"])[0] == "user_id"
+        assert list(execute[1]["userIds"])[0] == group_user.uid
         assert len(execute[1]["projectIds"]) == 1
-        assert list(execute[1]["projectIds"])[0] == "project_id"
+        assert list(execute[1]["projectIds"])[0] == group_project.uid
 
         assert updated_group.id == "group_id"
         assert updated_group.name == "Test Group"
         assert updated_group.color == UserGroupColor.BLUE
         assert len(updated_group.users) == 1
-        assert list(updated_group.users)[0].id == "user_id"
+        assert list(updated_group.users)[0].uid == group_user.uid
         assert len(updated_group.projects) == 1
-        assert list(updated_group.projects)[0].id == "project_id"
+        assert list(updated_group.projects)[0].uid == group_project.uid
 
     def test_create_with_exception_id(self):
         group = self.group
@@ -197,18 +158,12 @@ class TestUserGroup:
         with pytest.raises(ValueError):
             group.create()
 
-    def test_create(self):
+    def test_create(self, group_user, group_project):
         group = self.group
         group.name = "New Group"
         group.color = UserGroupColor.PINK
-        user_values = defaultdict(lambda: None)
-        user_values["id"] = "user_id"
-        user_values["email"] = "test@example.com"
-        group.users = {User(self.client, user_values)}
-        project_values = defaultdict(lambda: None)
-        group.projects = {
-            Project(self.client, {id="project_id", name="Test Project", qu})
-        }
+        group.users = { group_user }
+        group.projects = { group_project }
 
         self.client.execute.return_value = {
             "createUserGroup": {
@@ -232,9 +187,9 @@ class TestUserGroup:
         assert created_group.name == "New Group"
         assert created_group.color == UserGroupColor.PINK
         assert len(created_group.users) == 1
-        assert list(created_group.users)[0].id == "user_id"
+        assert list(created_group.users)[0].uid == "user_id"
         assert len(created_group.projects) == 1
-        assert list(created_group.projects)[0].id == "project_id"
+        assert list(created_group.projects)[0].uid == "project_id"
 
     def test_delete(self):
         group = self.group

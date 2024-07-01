@@ -73,21 +73,29 @@ class UserGroup(BaseModel):
     def __init__(
         self,
         client: Client,
+        id: str = "",
+        name: str = "",
+        color: UserGroupColor = UserGroupColor.BLUE,
+        users: Set[User] = set(),
+        projects: Set[Project] = set()
     ):
         """
         Initializes a UserGroup object.
 
         Args:
             client (Client): The Labelbox client object.
+            id (str, optional): The ID of the user group. Defaults to an empty string.
+            name (str, optional): The name of the user group. Defaults to an empty string.
+            color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
+            users (Set[User], optional): The set of users in the user group. Defaults to an empty set.
+            projects (Set[Project], optional): The set of projects associated with the user group. Defaults to an empty set.
 
         Raises:
             RuntimeError: If the experimental feature is not enabled in the client.
-
         """
-        super().__init__(client=client, id="", name="", color=UserGroupColor.BLUE, users=set(), projects=set())
+        super().__init__(client=client, id=id, name=name, color=color, users=users, projects=projects)
         if not self.client.enable_experimental:
-            raise RuntimeError(
-                "Please enable experimental in client to use UserGroups")
+            raise RuntimeError("Please enable experimental in client to use UserGroups")
 
     def get(self) -> "UserGroup":
         """
@@ -379,6 +387,6 @@ class UserGroup(BaseModel):
             project_values["name"] = project["name"]
             project_values["queueMode"] = QueueMode.Batch.value
             project_values["editorTaskType"] = EditorTaskType.Missing.value
-            project_values["mediaType"] = MediaType.Audio.value
+            project_values["mediaType"] = MediaType.Image.value
             projects.add(Project(self.client, project_values))
         return projects
