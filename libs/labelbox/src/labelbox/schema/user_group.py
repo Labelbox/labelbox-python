@@ -142,7 +142,7 @@ class UserGroup(BaseModel):
         }
         result = self.client.execute(query, params)
         if not result:
-            raise InvalidQueryError("Failed to fetch group")
+            raise InvalidQueryError("Failed to fetch group, ID likely incorrect")
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
         self.projects = self._get_projects_set(result["userGroup"]["projects"]["nodes"])
@@ -201,7 +201,7 @@ class UserGroup(BaseModel):
         }
         result = self.client.execute(query, params)
         if not result:
-            raise UnprocessableEntityError("Failed to update group")
+            raise UnprocessableEntityError("Failed to update user group, either user group name is in use currently, or provided user or projects don't exist")
         return self
 
     def create(self) -> "UserGroup":
@@ -263,7 +263,7 @@ class UserGroup(BaseModel):
         }
         result = self.client.execute(query, params)
         if not result:
-            raise ResourceCreationError("Failed to create group")
+            raise ResourceCreationError("Failed to create user group, either user group name is in use currently, or provided user or projects don't exist")
         result = result["createUserGroup"]["group"]
         self.id = result["id"]
         return self
