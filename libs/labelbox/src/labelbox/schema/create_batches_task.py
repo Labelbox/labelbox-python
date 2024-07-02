@@ -23,6 +23,9 @@ class CreateBatchesTask:
             Entity.Task.get_task(self.client, task_id) for task_id in task_ids
         ]
 
+    def wait_until_done(self, timeout_seconds: int = 300) -> None:
+        self.wait_till_done(timeout_seconds)
+
     def wait_till_done(self, timeout_seconds: int = 300) -> None:
         """
         Waits for the task to complete.

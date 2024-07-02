@@ -181,6 +181,9 @@ class BulkImportRequest(DbObject):
         res = res[utils.camel_case(BulkImportRequest.type_name())]
         self._set_field_values(res)
 
+    def wait_till_done(self, sleep_time_seconds: int = 5) -> None:
+        self.wait_until_done(sleep_time_seconds)
+
     def wait_until_done(self, sleep_time_seconds: int = 5) -> None:
         """Blocks import job until certain conditions are met.
 
