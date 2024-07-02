@@ -37,7 +37,8 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
-from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind)
+from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind,
+                                           UploadType)
 from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
 
 if TYPE_CHECKING:
@@ -121,6 +122,7 @@ class Project(DbObject, Updateable, Deletable):
     editor_task_type = Field.Enum(EditorTaskType, "editor_task_type")
     data_row_count = Field.Int("data_row_count")
     model_setup_complete: Field = Field.Boolean("model_setup_complete")
+    upload_type: Field = Field.Enum(UploadType, "upload_type")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -145,8 +147,7 @@ class Project(DbObject, Updateable, Deletable):
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
 
     def is_auto_data_generation(self) -> bool:
-        return self.media_type == MediaType.LLMPromptCreation or self.media_type == MediaType.LLMPromptResponseCreation or self.is_chat_evaluation(
-        )
+        return (self.upload_type == UploadType.Auto)  # type: ignore
 
     def project_model_configs(self):
         query_str = """query ProjectModelConfigsPyApi($id: ID!) {

@@ -34,16 +34,16 @@ class EditorTaskType(Enum):
         return isinstance(value, cls)
 
     @classmethod
-    def _missing_(cls, name) -> 'EditorTaskType':
+    def _missing_(cls, value) -> 'EditorTaskType':
         """Handle missing null new task types
             Handle upper case names for compatibility with
             the GraphQL"""
 
-        if name is None:
+        if value is None:
             return cls.Missing
 
         for name, member in cls.__members__.items():
-            if name == name.upper():
+            if value == name.upper():
                 return member
 
         return cls.Missing
@@ -71,3 +71,24 @@ class EditorTaskTypeMapper:
             return EditorTaskType.ModelChatEvaluation
         else:
             return EditorTaskType.Missing
+
+
+class UploadType(Enum):
+    Auto = 'AUTO',
+    Manual = 'MANUAL',
+    Missing = None
+
+    @classmethod
+    def is_supported(cls, value):
+        return isinstance(value, cls)
+
+    @classmethod
+    def _missing_(cls, value: object) -> 'UploadType':
+        if value is None:
+            return cls.Missing
+
+        for name, member in cls.__members__.items():
+            if value == name.upper():
+                return member
+
+        return cls.Missing
