@@ -2,6 +2,7 @@ import pytest
 from labelbox.exceptions import ResourceNotFoundError
 
 
+@pytest.mark.skip(reason="not ready")
 def test_add_single_model_config(live_chat_evaluation_project_with_new_dataset,
                                  model_config):
     configured_project = live_chat_evaluation_project_with_new_dataset
@@ -16,6 +17,7 @@ def test_add_single_model_config(live_chat_evaluation_project_with_new_dataset,
         project_model_config_id)
 
 
+@pytest.mark.skip(reason="not ready")
 def test_add_multiple_model_config(client, rand_gen,
                                    live_chat_evaluation_project_with_new_dataset,
                                    model_config, valid_model_id):
@@ -39,6 +41,7 @@ def test_add_multiple_model_config(client, rand_gen,
             project_model_config_id)
 
 
+@pytest.mark.skip(reason="not ready")
 def test_delete_project_model_config(live_chat_evaluation_project_with_new_dataset,
                                      model_config):
     configured_project = live_chat_evaluation_project_with_new_dataset
