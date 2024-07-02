@@ -1,7 +1,8 @@
 import pytest
 
-from labelbox.data.annotation_types import (Text, Point, Line,
+from labelbox.data.annotation_types import (Text, Point, Line, PromptText,
                                             ClassificationAnnotation,
+                                            PromptClassificationAnnotation,
                                             ObjectAnnotation, TextEntity)
 from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
