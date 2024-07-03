@@ -12,20 +12,23 @@ from ...annotation_types.video import DICOMObjectAnnotation, VideoClassification
 from ...annotation_types.video import VideoObjectAnnotation, VideoMaskAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data import DicomData, ImageData, TextData, VideoData
+from ...annotation_types.data.generic_data_row_data import GenericDataRowData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity, ConversationEntity
 from ...annotation_types.classification import Dropdown
 from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
+from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
-from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass
+from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass, NDPromptClassification, NDPromptClassificationType, NDPromptText
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .relationship import NDRelationship
 from .base import DataRow
 
-AnnotationType = Union[NDObjectType, NDClassificationType,
+AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
-                       NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship]
+                       NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship,
+                       NDPromptText]
 
 
 class NDLabel(pydantic_compat.BaseModel):
@@ -120,6 +123,9 @@ class NDLabel(pydantic_compat.BaseModel):
                                 (NDScalarMetric, NDConfusionMatrixMetric)):
                     annotations.append(
                         NDMetricAnnotation.to_common(ndjson_annotation))
+                elif isinstance(ndjson_annotation, NDPromptClassificationType):
+                    annotation = NDPromptClassification.to_common(ndjson_annotation)
+                    annotations.append(annotation)
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(ndjson_annotation)}")
@@ -156,7 +162,7 @@ class NDLabel(pydantic_compat.BaseModel):
             raise ValueError("Missing annotations while inferring media type")
 
         types = {type(annotation) for annotation in annotations}
-        data = ImageData
+        data = GenericDataRowData
         if (TextEntity in types) or (ConversationEntity in types):
             data = TextData
         elif VideoClassificationAnnotation in types or VideoObjectAnnotation in types:
@@ -269,6 +275,8 @@ class NDLabel(pydantic_compat.BaseModel):
                 yield NDMetricAnnotation.from_common(annotation, label.data)
             elif isinstance(annotation, RelationshipAnnotation):
                 yield NDRelationship.from_common(annotation, label.data)
+            elif isinstance(annotation, PromptClassificationAnnotation):
+                yield NDPromptClassification.from_common(annotation, label.data)
             else:
                 raise TypeError(
                     f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"

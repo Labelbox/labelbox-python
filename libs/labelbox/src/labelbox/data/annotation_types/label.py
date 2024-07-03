@@ -10,6 +10,7 @@ from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
+from .llm_prompt_response.prompt import PromptClassificationAnnotation
 from .classification import ClassificationAnswer
 from .data import AudioData, ConversationData, DicomData, DocumentData, HTMLData, ImageData, TextData, VideoData, LlmPromptCreationData, LlmPromptResponseCreationData, LlmResponseCreationData
 from .geometry import Mask
@@ -50,7 +51,8 @@ class Label(pydantic_compat.BaseModel):
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoMaskAnnotation, ScalarMetric,
                             ConfusionMatrixMetric,
-                            RelationshipAnnotation]] = []
+                            RelationshipAnnotation,
+                            PromptClassificationAnnotation]] = []
     extra: Dict[str, Any] = {}
 
     @pydantic_compat.root_validator(pre=True)
@@ -209,10 +211,17 @@ class Label(pydantic_compat.BaseModel):
         ])
         if not isinstance(value, list):
             raise TypeError(f"Annotations must be a list. Found {type(value)}")
-
+        prompt_count = 0
         for v in value:
             if not isinstance(v, supported):
                 raise TypeError(
                     f"Annotations should be a list containing the following classes : {supported}. Found {type(v)}"
                 )
+            # Validates only one prompt annotation is included
+            if isinstance(v, PromptClassificationAnnotation):
+               prompt_count+=1
+               if prompt_count > 1:
+                   raise TypeError(
+                       f"Only one prompt annotation is allowed per label"
+                   )
         return value

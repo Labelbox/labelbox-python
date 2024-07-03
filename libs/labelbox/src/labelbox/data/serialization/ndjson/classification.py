@@ -7,6 +7,7 @@ from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
+from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation, PromptText
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
@@ -150,6 +151,26 @@ class NDRadioSubclass(NDAnswer):
                    schema_id=feature_schema_id)
 
 
+class NDPromptTextSubclass(NDAnswer):
+    answer: str
+
+    def to_common(self) -> PromptText:
+        return PromptText(answer=self.answer,
+                    confidence=self.confidence,
+                    custom_metrics=self.custom_metrics)
+
+    @classmethod
+    def from_common(cls, prompt_text: PromptText, name: str,
+                    feature_schema_id: Cuid) -> "NDPromptTextSubclass":
+        return cls(
+            answer=prompt_text.answer,
+            name=name,
+            schema_id=feature_schema_id,
+            confidence=prompt_text.confidence,
+            custom_metrics=prompt_text.custom_metrics,
+        )
+
+
 # ====== End of subclasses
 
 
@@ -242,6 +263,28 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    frames=extra.get('frames'),
                    message_id=message_id,
                    confidence=confidence)
+        
+        
+class NDPromptText(NDAnnotation, NDPromptTextSubclass):
+    
+    @classmethod
+    def from_common(
+        cls,
+        uuid: str,
+        text: PromptText,
+        name,
+        data: Dict,
+        feature_schema_id: Cuid,
+        confidence: Optional[float] = None
+    ) -> "NDPromptText":
+        return cls(
+            answer=text.answer,
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            name=name,
+            schema_id=feature_schema_id,
+            uuid=uuid,
+            confidence=text.confidence,
+            custom_metrics=text.custom_metrics)
 
 
 class NDSubclassification:
@@ -333,6 +376,33 @@ class NDClassification:
             Radio: NDRadio
         }.get(type(annotation.value))
 
+class NDPromptClassification:
+
+    @staticmethod
+    def to_common(
+        annotation: "NDPromptClassificationType"
+    ) -> Union[PromptClassificationAnnotation]:
+        common = PromptClassificationAnnotation(
+            value=annotation,
+            name=annotation.name,
+            feature_schema_id=annotation.schema_id,
+            extra={'uuid': annotation.uuid},
+            confidence=annotation.confidence,
+        )
+
+        return common
+
+    @classmethod
+    def from_common(
+        cls, annotation: Union[PromptClassificationAnnotation],
+        data: Union[VideoData, TextData, ImageData]
+    ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
+        return NDPromptText.from_common(str(annotation._uuid), annotation.value,
+                                        annotation.name,
+                                        data,
+                                        annotation.feature_schema_id,
+                                        annotation.confidence)
+
 
 # Make sure to keep NDChecklistSubclass prior to NDRadioSubclass in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
@@ -345,8 +415,10 @@ NDChecklist.update_forward_refs()
 NDRadioSubclass.update_forward_refs()
 NDRadio.update_forward_refs()
 NDText.update_forward_refs()
+NDPromptText.update_forward_refs()
 NDTextSubclass.update_forward_refs()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
 NDClassificationType = Union[NDChecklist, NDRadio, NDText]
+NDPromptClassificationType = Union[NDPromptText]
