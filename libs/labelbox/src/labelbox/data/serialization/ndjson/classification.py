@@ -154,20 +154,20 @@ class NDRadioSubclass(NDAnswer):
 class NDPromptTextSubclass(NDAnswer):
     answer: str
 
-    def to_common(self) -> Text:
+    def to_common(self) -> PromptText:
         return PromptText(answer=self.answer,
                     confidence=self.confidence,
                     custom_metrics=self.custom_metrics)
 
     @classmethod
-    def from_common(cls, text: PromptText, name: str,
+    def from_common(cls, prompt_text: PromptText, name: str,
                     feature_schema_id: Cuid) -> "NDPromptTextSubclass":
         return cls(
-            answer=text.answer,
+            answer=prompt_text.answer,
             name=name,
             schema_id=feature_schema_id,
-            confidence=text.confidence,
-            custom_metrics=text.custom_metrics,
+            confidence=prompt_text.confidence,
+            custom_metrics=prompt_text.custom_metrics,
         )
 
 
