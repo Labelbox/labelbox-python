@@ -2,7 +2,7 @@ import pytest
 from collections import defaultdict
 from unittest.mock import MagicMock
 from labelbox import Client
-from labelbox.exceptions import ResourceCreationError
+from labelbox.exceptions import ResourceConflict, ResourceCreationError, ResourceNotFoundError, MalformedQueryException, UnprocessableEntityError
 from labelbox.schema.project import Project
 from labelbox.schema.user import User
 from labelbox.schema.user_group import UserGroup, UserGroupColor
@@ -115,6 +115,14 @@ class TestUserGroup:
         assert len(group.projects) == 2
         assert len(group.users) == 2
 
+    def test_get_resource_not_found_error(self):
+        self.client.execute.return_value = None
+        group = UserGroup(self.client)
+        group.name = "Test Group"
+
+        with pytest.raises(ResourceNotFoundError):
+            group.get()
+
     def test_update(self, group_user, group_project):
         group = self.group
         group.id = "group_id"
@@ -143,6 +151,24 @@ class TestUserGroup:
         assert list(updated_group.users)[0].uid == group_user.uid
         assert len(updated_group.projects) == 1
         assert list(updated_group.projects)[0].uid == group_project.uid
+
+    def test_update_resource_error_input_bad(self):
+        self.client.execute.side_effect = MalformedQueryException("Error")
+        group = UserGroup(self.client)
+        group.name = "Test Group"
+        group.id = "group_id"
+
+        with pytest.raises(UnprocessableEntityError):
+            group.update()
+
+    def test_update_resource_error_unknown_id(self):
+        self.client.execute.return_value = None
+        group = UserGroup(self.client)
+        group.name = "Test Group"
+        group.id = "group_id"
+
+        with pytest.raises(ResourceNotFoundError) as e:
+            group.update()
 
     def test_create_with_exception_id(self):
         group = self.group
@@ -190,6 +216,14 @@ class TestUserGroup:
         assert list(created_group.users)[0].uid == "user_id"
         assert len(created_group.projects) == 1
         assert list(created_group.projects)[0].uid == "project_id"
+    
+    def test_create_resource_creation_error(self):
+        self.client.execute.side_effect = ResourceConflict("Error")
+        group = UserGroup(self.client)
+        group.name = "Test Group"
+
+        with pytest.raises(ResourceCreationError):
+            group.create()
 
     def test_delete(self):
         group = self.group
@@ -206,6 +240,14 @@ class TestUserGroup:
         assert "DeleteUserGroupPyApi" in execute[0]
         assert execute[1]["id"] == "group_id"
         assert deleted is True
+
+    def test_delete_resource_not_found_error(self):
+        self.client.execute.return_value = None
+        group = UserGroup(self.client)
+        group.id = "group_id"
+
+        with pytest.raises(ResourceNotFoundError):
+            group.delete()
 
     def test_user_groups_empty(self):
         self.client.execute.return_value = {"userGroups": None}
